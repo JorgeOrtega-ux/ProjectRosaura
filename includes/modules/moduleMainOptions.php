@@ -59,7 +59,7 @@ $parseRoleColor = function($roleColorRaw) {
                         <span class="component-account-name"><?php echo htmlspecialchars($activeAcc['user_name'] ?? __('user_default_name')); ?></span>
                         <span class="component-account-email"><?php echo htmlspecialchars($activeAcc['user_email'] ?? ''); ?></span>
                     </div>
-                    <span class="material-symbols-rounded" style="color: var(--text-muted);">navigate_next</span>
+                    <span class="material-symbols-rounded">navigate_next</span>
                 </div>
                 <div class="component-menu-divider"></div>
             <?php endif; ?>

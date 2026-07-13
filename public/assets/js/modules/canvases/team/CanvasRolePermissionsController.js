@@ -21,7 +21,7 @@ class CanvasRolePermissionsController {
         this.isSystem = wrapper.getAttribute('data-is-system') === '1';
 
         if (this.isSystem) {
-            showMessage('No puedes editar los permisos de un rol del sistema.', 'warning');
+            showMessage(window.__('err_edit_system_role'), 'warning');
             return;
         }
 
@@ -78,7 +78,7 @@ class CanvasRolePermissionsController {
                 restoreButton(btn);
             }
         } catch (error) {
-            showMessage('Error al guardar los permisos.', "error");
+            showMessage(window.__('err_save_permissions'), 'error');
             restoreButton(btn);
         }
     }

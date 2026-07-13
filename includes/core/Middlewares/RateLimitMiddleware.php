@@ -36,7 +36,7 @@ class RateLimitMiddleware implements MiddlewareInterface {
         $limitCheck = $this->rateLimiter->consume($redisKey, $maxAttempts, $decayMinutes, $isCritical);
 
         if (!$limitCheck['allowed']) {
-            Logger::security("Rate limit excedido por middleware o servicio no disponible", 'warning', [
+            Logger::security("Rate limit exceeded by middleware or service unavailable", 'warning', [
                 'action' => $actionPrefix,
                 'identifier' => $identifier,
                 'redis_key' => $redisKey,

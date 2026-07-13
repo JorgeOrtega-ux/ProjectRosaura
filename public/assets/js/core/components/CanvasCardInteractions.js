@@ -182,32 +182,32 @@ export class CanvasCardInteractions {
                 
                 const confirmRes = await window.dialogSystem.show('confirmActionModal', {
                     title: window.__('downgrade_basic_title'),
-                    message: 'Esta acciÃ³n es IRREVERSIBLE. Se recortarÃ¡ tu lienzo a 64x64 desde la esquina superior izquierda, se perderÃ¡n los miembros excedentes, y la paleta se restablecerÃ¡ a la original. Escribe CONFIRMAR para proceder.',
-                    inputPlaceholder: 'CONFIRMAR',
-                    expectedInput: 'CONFIRMAR'
+                    message: window.__('downgrade_basic_message') || 'IRREVERSIBLE action. Type CONFIRM to proceed.',
+                    inputPlaceholder: 'CONFIRM',
+                    expectedInput: 'CONFIRM'
                 });
                 
                 if (confirmRes && confirmRes.confirmed) {
                     const userInput = confirmRes.data && confirmRes.data.confirm_input ? confirmRes.data.confirm_input.trim().toUpperCase() : '';
-                    if (userInput === 'CONFIRMAR') {
+                    if (userInput === 'CONFIRM') {
                         confirmed = true;
                     } else {
-                        showMessage('Debes escribir CONFIRMAR exactamente', 'error');
+                        showMessage(window.__('must_type_confirm') || 'Must type CONFIRM', 'error');
                     }
                 }
             } catch(e) {
                 
-                const ans = prompt("Escribe CONFIRMAR para degradar el lienzo a bÃ¡sico. Esta acciÃ³n es IRREVERSIBLE.");
-                if (ans === 'CONFIRMAR') confirmed = true;
+                const ans = prompt("Type CONFIRM to downgrade. IRREVERSIBLE.");
+                if (ans === 'CONFIRM') confirmed = true;
             }
         } else {
-            const ans = prompt("Escribe CONFIRMAR para degradar el lienzo a bÃ¡sico. Esta acciÃ³n es IRREVERSIBLE. Se perderÃ¡n datos que superen el plan bÃ¡sico (tamaÃ±o, miembros extras, paletas).");
-            if (ans === 'CONFIRMAR') confirmed = true;
+            const ans = prompt(window.__('downgrade_basic_prompt') || "Type CONFIRM to downgrade.");
+            if (ans === 'CONFIRM') confirmed = true;
         }
 
         if (!confirmed) return;
 
-        const res = await this.api.post(ApiRoutes.Canvases.Downgrade, { uuid: uuid, confirm_word: 'CONFIRMAR' }, this.abortController.signal);
+        const res = await this.api.post(ApiRoutes.Canvases.Downgrade, { uuid: uuid, confirm_word: 'CONFIRM' }, this.abortController.signal);
         
         if (res.aborted) return;
 
@@ -225,7 +225,7 @@ export class CanvasCardInteractions {
         document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
             el.classList.remove('active');
             el.classList.add('disabled');
-            // Si es un menú dinámico de una tarjeta, lo eliminamos del DOM
+            // Remove dynamic card menus from DOM
             if (el.closest('.component-dropdown-wrapper')) {
                 setTimeout(() => el.remove(), 250); // Le damos tiempo a la animación de cierre
             }

@@ -247,7 +247,7 @@ class StripeServices {
                     'amount' => (string) $coinsAmount
                 ],
                 'payment_intent_data' => [
-                    'description' => "Compra de {$coinsAmount} monedas",
+                    'description' => "Purchase of {$coinsAmount} coins",
                     'metadata' => [
                         'type' => 'coins',
                         'user_id' => (string) $userId,
@@ -445,12 +445,12 @@ class StripeServices {
                 foreach ($charges->data as $charge) {
                     $desc = $charge->description;
                     if (empty($desc) && isset($charge->metadata->type) && $charge->metadata->type === 'coins') {
-                        $desc = "Compra de " . ($charge->metadata->amount ?? '') . " monedas";
+                        $desc = "Purchase of " . ($charge->metadata->amount ?? '') . " coins";
                     }
                     $history[] = [
                         'id' => $charge->id,
                         'created_at' => date('Y-m-d H:i:s', $charge->created),
-                        'description' => $desc ?: 'Suscripción',
+                        'description' => $desc ?: 'Subscription',
                         'amount_cents' => $charge->amount,
                         'currency' => $charge->currency,
                         'status' => $charge->status 

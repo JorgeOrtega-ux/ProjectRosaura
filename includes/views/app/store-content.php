@@ -49,15 +49,15 @@ $acceptedContentTerms = !empty($userPrefs['accepted_content_store_terms']);
                 
                 <div class="component-card__actions component-badge-group">
                     <div class="component-badge">
-                        <span class="material-symbols-rounded">toll</span> <?= \App\Core\Helpers\Utils::formatNumber($pkg['price_coins']) ?> Monedas
+                        <span class="material-symbols-rounded">toll</span> <?= \App\Core\Helpers\Utils::formatNumber($pkg['price_coins']) ?> <?= __('coins') ?>
                     </div>
                     <?php if ($pkg['is_single_use']): ?>
                     <div class="component-badge component-badge--warning">
-                        <span class="material-symbols-rounded">info</span> Un solo uso
+                        <span class="material-symbols-rounded">info</span> <?= __('single_use') ?>
                     </div>
                     <?php endif; ?>
                     <div data-action="buyPerk" data-perkid="<?= $pkg['id'] ?>" class="btn-buy-perk component-badge component-badge--dark component-badge--interactive component-badge--full">
-                        <span class="material-symbols-rounded">shopping_cart</span> Comprar
+                        <span class="material-symbols-rounded">shopping_cart</span> <?= __('buy') ?>
                     </div>
                 </div>
             </div>

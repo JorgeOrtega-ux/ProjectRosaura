@@ -635,7 +635,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $physicalPath = $baseDir . DIRECTORY_SEPARATOR . $relativePath;
             
             if (!file_exists($physicalPath)) {
-                Logger::error("getUserStorageUsed: Archivo no encontrado en la ruta física.", ['path_intentado' => $physicalPath]);
+                Logger::error("getUserStorageUsed: File not found at physical path.", ['path_intentado' => $physicalPath]);
                 continue;
             }
 

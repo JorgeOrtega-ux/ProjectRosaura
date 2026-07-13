@@ -117,10 +117,10 @@ class CanvasSnapshotsGalleryController {
             
             if (newPrivacy === 'private') {
                 if (iconSpan) iconSpan.textContent = 'visibility';
-                if (textSpan) textSpan.textContent = window.__('make_public') || 'Hacer público';
+                if (textSpan) textSpan.textContent = window.__('make_public') || 'Make public';
             } else {
                 if (iconSpan) iconSpan.textContent = 'visibility_off';
-                if (textSpan) textSpan.textContent = window.__('make_private') || 'Hacer privado';
+                if (textSpan) textSpan.textContent = window.__('make_private') || 'Make private';
             }
         } else {
             showMessage(res.message, 'error');
@@ -137,14 +137,14 @@ class CanvasSnapshotsGalleryController {
         let confirmed = false;
         if (window.dialogSystem && window.dialogSystem.show) {
             const confirmRes = await window.dialogSystem.show('confirmActionModal', {
-                title: window.__('delete_snapshot') || 'Eliminar Snapshot',
-                message: window.__('confirm_delete_snapshot') || '¿Estás seguro de que deseas eliminar este snapshot? Esta acción no se puede deshacer.'
+                title: window.__('delete_snapshot'),
+                message: window.__('confirm_delete_snapshot') || 'Are you sure you want to delete this snapshot? This action cannot be undone.'
             });
             if (confirmRes && confirmRes.confirmed) {
                 confirmed = true;
             }
         } else {
-            confirmed = confirm("¿Estás seguro de que deseas eliminar este snapshot?");
+            confirmed = confirm(window.__('confirm_delete_snapshot_prompt'));
         }
 
         if (!confirmed) return;
@@ -178,7 +178,7 @@ class CanvasSnapshotsGalleryController {
             const url = `${window.location.origin}${this.basePath}/snapshot/view/${uuid}`;
             try {
                 await navigator.clipboard.writeText(url);
-                showMessage(window.__('msg_link_copied') || 'Enlace copiado', 'success');
+                showMessage(window.__('msg_link_copied'), 'success');
                 this.closeDropdowns();
             } catch (err) {
                 showMessage(window.__('err_default'), 'error');

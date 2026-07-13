@@ -21,7 +21,7 @@ if (isset($_SESSION['user_id'])) {
             $lastUpdateText = $date->format('d/m/Y H:i');
         }
     } catch (\Throwable $e) {
-        Logger::error("Fallo al obtener la última actualización de contraseña en la vista security.php", ['user_id' => $_SESSION['user_id'], 'exception' => $e]);
+        Logger::error("Failed to fetch last password update in security.php", ['user_id' => $_SESSION['user_id'], 'exception' => $e]);
     }
 }
 ?>

@@ -13,7 +13,7 @@
         </div>
         
         <div class="component-menu-section-parent">
-            <div class="component-menu-center" style="display: flex; flex-direction: column; flex: 1; overflow-y: auto;">
+            <div class="component-menu-center">
                 
                 <div class="component-menu-section-parent component-menu-section-parent--bordered">
                     <div class="component-menu-top">
@@ -40,7 +40,7 @@
             </div>
             
             <div class="component-menu-bottom">
-                <div class="component-form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                <div class="component-form-group">
                     <button class="component-button component-button--full component-button--primary component-button--h40" data-action="toggleTimelapsePlayPause" data-ref="btn-timelapse-play-pause">
                         <span class="material-symbols-rounded">pause</span> Pause
                     </button>

@@ -65,7 +65,7 @@ class TokenRepository implements TokenRepositoryInterface {
         if (empty($selectors)) return [];
         if (count($selectors) > 100) {
             $selectors = array_slice($selectors, 0, 100);
-            Logger::warning("Se han detectado demasiados selectores en findValidTokensBySelectors, truncando a 100 por seguridad.", []);
+            Logger::warning("Too many selectors detected in findValidTokensBySelectors, truncating to 100 for security.", []);
         }
         
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;

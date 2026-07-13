@@ -30,7 +30,7 @@ try {
     
     if ($userData) {
         $targetUserId = (int)$userData['id'];
-        $targetUsername = !empty($userData['username']) ? $userData['username'] : 'Usuario #' . $targetUserId;
+        $targetUsername = !empty($userData['username']) ? $userData['username'] : (__('user') ?: 'User') . ' #' . $targetUserId;
         if (!empty($userData['profile_picture'])) {
             $targetAvatar = $userData['profile_picture'];
         }

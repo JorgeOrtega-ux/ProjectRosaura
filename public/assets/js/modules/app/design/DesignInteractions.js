@@ -280,7 +280,7 @@ export const DesignInteractions = {
                 if (this.selectedPixels.size < maxBalance) {
                     this.selectedPixels.add(key);
                 } else {
-                    showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance) || 'Límite alcanzado', 'warning');
+                    showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance) || 'Limit reached', 'warning');
                 }
             }
             this.isSelecting = true;
@@ -885,7 +885,7 @@ export const DesignInteractions = {
             if (this.interactionMode === 'protecting') {
                 this.txtPlacePixels.textContent = `Proteger (${this.selectedPixels.size})`;
             } else if (this.interactionMode === 'erasing') {
-                this.txtPlacePixels.textContent = `Borrar (${this.selectedPixels.size})`;
+                this.txtPlacePixels.textContent = `${window.__('erase') || 'Erase'} (${this.selectedPixels.size})`;
             } else {
                 this.txtPlacePixels.textContent = __('btn_place_pixels');
             }
@@ -994,7 +994,7 @@ export const DesignInteractions = {
             showMessage(window.__('msg_prot_applied'), 'success');
         } else if (this.interactionMode === 'erasing') {
             this.perkEraserLeft -= validPixels.length;
-            showMessage('Borrador aplicado', 'success');
+            showMessage(window.__('eraser_applied'), 'success');
         }
 
         this.selectedPixels.clear();
@@ -1011,7 +1011,7 @@ export const DesignInteractions = {
         this.interactionMode = 'normal';
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-        showMessage('Modo especial desactivado', 'info');
+        showMessage(window.__('special_mode_deactivated'), 'info');
     },
 
     handleResize() {
@@ -1046,7 +1046,7 @@ export const DesignInteractions = {
             if (result && result.success) {
                 list.innerHTML = '';
                 if (result.data.length === 0) {
-                    showEmpty('No tienes ventajas disponibles.');
+                    showEmpty(window.__('no_perks_available'));
                     return;
                 }
 
@@ -1103,7 +1103,7 @@ export const DesignInteractions = {
         if (perkId === 'no_cooldown_10s') {
             this.perkNoCooldownReady = true;
             if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-            if (typeof showMessage === 'function') showMessage('Ventaja equipada. Haz clic en el badge a la izquierda para activarla.', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_perk_equipped_click_badge') || 'Perk equipped. Click the badge on the left to activate it.', 'info');
 
             const btnClose = document.querySelector('.component-sheet-close[data-action="closeSheet"]');
             if(btnClose) btnClose.click();
@@ -1117,7 +1117,7 @@ export const DesignInteractions = {
             if (btn) btn.classList.remove('loading');
             
             if (result && result.success) {
-                if (typeof showMessage === 'function') showMessage('Ventaja activada exitosamente', 'success');
+                if (typeof showMessage === 'function') showMessage(window.__('msg_perk_activated_success') || 'Perk successfully activated', 'success');
 
                 if (result.perk_id === 'pixel_protection_25') {
                     this.perkProtectionLeft = (this.perkProtectionLeft || 0) + 25;
@@ -1135,12 +1135,12 @@ export const DesignInteractions = {
 
                 this.loadUserPerks(); 
             } else {
-                if (typeof showMessage === 'function') showMessage(result?.message_key || 'Error al activar ventaja', 'error');
+                if (typeof showMessage === 'function') showMessage(result?.message_key || window.__('err_activate_perk'), 'error');
             }
         } catch (error) {
             if (btn) btn.classList.remove('loading');
             
-            if (typeof showMessage === 'function') showMessage('Error al conectar con el servidor', 'error');
+            if (typeof showMessage === 'function') showMessage(window.__('err_server_connection') || 'Error connecting to server', 'error');
         }
     },
     
@@ -1155,31 +1155,31 @@ export const DesignInteractions = {
                 noCdBadge.className = 'component-badge';
                 noCdBadge.setAttribute('data-badge-id', 'perk-no-cooldown');
                 noCdBadge.style.cursor = 'pointer';
-                noCdBadge.title = 'Haz clic para activar Sin Enfriamiento';
+                noCdBadge.title = window.__('click_to_activate_no_cooldown');
                 
                 noCdBadge.addEventListener('click', async () => {
                     if (this.perkNoCooldownReady && !this.perkNoCooldown) {
                         try {
                             
-                            noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-primary);">hourglass_empty</span><span>Activando...</span>`;
+                            noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-primary);">hourglass_empty</span><span>${window.__('activating') || 'Activating...'}</span>`;
                             const result = await this.api.post('store.activate_perk', { perk_id: 'no_cooldown_10s' });
                             
                             if (result && result.success) {
                                 this.perkNoCooldownReady = false;
                                 this.perkNoCooldown = true;
                                 this.perkNoCooldownExpires = Date.now() + 10000;
-                                if (typeof showMessage === 'function') showMessage('¡Sin Enfriamiento activado por 10s!', 'success');
+                                if (typeof showMessage === 'function') showMessage(window.__('msg_no_cooldown_10s_active') || 'No Cooldown activated for 10s!', 'success');
                                 this.updatePerkBadges();
                                 this.updateSelectionUI();
                                 this.loadUserPerks(); 
                             } else {
-                                if (typeof showMessage === 'function') showMessage(result?.message_key || 'Error al activar ventaja', 'error');
+                                if (typeof showMessage === 'function') showMessage(result?.message_key || window.__('err_activate_perk'), 'error');
                                 this.perkNoCooldownReady = false; 
                                 this.updatePerkBadges();
                             }
                         } catch (error) {
                             
-                            if (typeof showMessage === 'function') showMessage('Error al conectar con el servidor', 'error');
+                            if (typeof showMessage === 'function') showMessage(window.__('err_server_connection') || 'Error connecting to server', 'error');
                             this.perkNoCooldownReady = false; 
                             this.updatePerkBadges();
                         }
@@ -1190,11 +1190,11 @@ export const DesignInteractions = {
             }
 
             if (this.perkNoCooldown) {
-                noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-success);">bolt</span><span>Sin Cooldown</span>`;
+                noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-success);">bolt</span><span>${window.__('badge_no_cooldown') || 'No Cooldown'}</span>`;
                 noCdBadge.style.border = '1px solid var(--color-success)';
                 noCdBadge.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
             } else if (this.perkNoCooldownReady) {
-                noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-primary);">bolt</span><span>Activar Sin Cooldown</span>`;
+                noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-primary);">bolt</span><span>${window.__('badge_activate_no_cooldown') || 'Activate No Cooldown'}</span>`;
                 noCdBadge.style.border = '';
                 noCdBadge.style.backgroundColor = '';
             }
@@ -1218,7 +1218,7 @@ export const DesignInteractions = {
                 });
                 badgesLeft.appendChild(protBadge);
             }
-            protBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-success);">shield</span><span>Protección: ${this.perkProtectionLeft}</span>`;
+            protBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-success);">shield</span><span>${window.__('badge_protection') || 'Protection'}: ${this.perkProtectionLeft}</span>`;
             if (this.interactionMode === 'protecting') {
                 protBadge.style.border = '1px solid var(--color-success)';
                 protBadge.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
@@ -1237,22 +1237,22 @@ export const DesignInteractions = {
                 eraserBadge.className = 'component-badge';
                 eraserBadge.setAttribute('data-badge-id', 'perk-eraser');
                 eraserBadge.style.cursor = 'pointer';
-                eraserBadge.title = 'Haz clic para alternar Modo Borrador';
+                eraserBadge.title = window.__('click_toggle_eraser');
                 eraserBadge.addEventListener('click', () => {
                     this.interactionMode = this.interactionMode === 'erasing' ? 'normal' : 'erasing';
                     this.updateSelectionUI();
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-                    if (typeof showMessage === 'function') showMessage(this.interactionMode === 'erasing' ? 'Modo Borrador activado' : 'Modo Borrador desactivado', 'info');
+                    if (typeof showMessage === 'function') showMessage(this.interactionMode === 'erasing' ? (window.__('msg_eraser_mode_on') || 'Eraser mode activated') : (window.__('msg_eraser_mode_off') || 'Eraser mode deactivated'), 'info');
                 });
                 badgesLeft.appendChild(eraserBadge);
             }
             
             if (this.interactionMode === 'erasing') {
-                eraserBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-success);">ink_eraser</span><span>Borrador: ${this.perkEraserLeft}</span>`;
+                eraserBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-success);">ink_eraser</span><span>${window.__('badge_eraser') || 'Eraser'}: ${this.perkEraserLeft}</span>`;
                 eraserBadge.style.border = '1px solid var(--color-success)';
                 eraserBadge.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
             } else {
-                eraserBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-danger);">ink_eraser</span><span>Borrador: ${this.perkEraserLeft}</span>`;
+                eraserBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-danger);">ink_eraser</span><span>${window.__('badge_eraser') || 'Eraser'}: ${this.perkEraserLeft}</span>`;
                 eraserBadge.style.border = '';
                 eraserBadge.style.backgroundColor = '';
             }

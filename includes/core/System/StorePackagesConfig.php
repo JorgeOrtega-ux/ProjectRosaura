@@ -7,9 +7,9 @@ class StorePackagesConfig {
         return [
             1000 => [
                 'id' => 'coins_1000',
-                'name' => '1,000 Monedas',
+                'name' => '1,000 Coins',
                 'amount' => 1000,
-                'description' => 'Paquete básico de monedas.',
+                'description' => 'Basic coin package.',
                 'price_usd' => 0.99,
                 'bonus_text' => null,
                 'icon' => 'monetization_on',
@@ -22,7 +22,7 @@ class StorePackagesConfig {
             ],
             2750 => [
                 'id' => 'coins_2750',
-                'name' => '2,750 Monedas',
+                'name' => '2,750 Coins',
                 'amount' => 2750,
                 'description' => '2,000 + 750 de bonificación',
                 'price_usd' => 2.49,
@@ -37,7 +37,7 @@ class StorePackagesConfig {
             ],
             5750 => [
                 'id' => 'coins_5750',
-                'name' => '5,750 Monedas',
+                'name' => '5,750 Coins',
                 'amount' => 5750,
                 'description' => '4,500 + 1,250 de bonificación',
                 'price_usd' => 4.99,
@@ -52,7 +52,7 @@ class StorePackagesConfig {
             ],
             13250 => [
                 'id' => 'coins_13250',
-                'name' => '13,250 Monedas',
+                'name' => '13,250 Coins',
                 'amount' => 13250,
                 'description' => '10,000 + 3,250 de bonificación',
                 'price_usd' => 9.99,
@@ -72,7 +72,7 @@ class StorePackagesConfig {
             'no_cooldown_10s' => [
                 'id' => 'no_cooldown_10s',
                 'name' => 'Sin Cooldown (10s)',
-                'description' => 'Elimina tu tiempo de espera por 10 segundos en un lienzo oficial. Una vez activo, el tiempo no podrá pausarse.',
+                'description' => 'Removes cooldown for 10 seconds in an official canvas. Once active, time cannot be paused.',
                 'price_coins' => 1500,
                 'icon' => 'timer_off',
                 'is_single_use' => true,
@@ -80,15 +80,15 @@ class StorePackagesConfig {
             'pixel_protection_25' => [
                 'id' => 'pixel_protection_25',
                 'name' => 'Protección de Píxel',
-                'description' => 'Otorga protección contra sobrescritura para un máximo de 25 píxeles en un lienzo oficial.',
+                'description' => 'Grants overwrite protection for up to 25 pixels in an official canvas.',
                 'price_coins' => 3000,
                 'icon' => 'security',
                 'is_single_use' => true,
             ],
             'elite_eraser_25' => [
                 'id' => 'elite_eraser_25',
-                'name' => 'Borrador de Élite',
-                'description' => 'Permite sobrescribir y eliminar la protección de hasta 25 píxeles protegidos por otros usuarios.',
+                'name' => 'Elite Eraser',
+                'description' => 'Allows overwriting and removing protection of up to 25 pixels protected by other users.',
                 'price_coins' => 5000,
                 'icon' => 'ink_eraser',
                 'is_single_use' => true,

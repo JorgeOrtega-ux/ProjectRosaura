@@ -30,8 +30,8 @@ if (class_exists('\App\Core\Helpers\Utils') && \App\Core\Helpers\Utils::isMainte
     <body>
         <div class="container">
             <div class="loader"></div>
-            <h1>Sistema en Mantenimiento</h1>
-            <p>Estamos realizando la restauración segura de la base de datos. Por favor, espera, recargaremos esta página automáticamente cuando el proceso termine.</p>
+            <h1>' . __('system_maintenance') . '</h1>
+            <p>' . __('system_maintenance_desc') . '</p>
             <script>
                 // Auto-recarga: Verifica cada 5 segundos si el modo mantenimiento ya se desactivó
                 setInterval(() => {

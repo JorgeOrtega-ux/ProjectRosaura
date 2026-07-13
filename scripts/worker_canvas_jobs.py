@@ -82,13 +82,13 @@ def process_resize_task(r, db, task_data):
         old_w, old_h = parse_size(old_size_meta_raw)
         new_w, new_h = parse_size(new_size_raw)
 
-        logging.info(f"Redimensionando lienzo {canvas_id} de {old_w}x{old_h} hacia {new_w}x{new_h}")
+        logging.info(f"Resizing canvas {canvas_id} from {old_w}x{old_h} to {new_w}x{new_h}")
 
         state_key = f"canvas:{canvas_id}:state"
         old_state = r.get(state_key)
 
         if not old_state:
-            raise ValueError(f"Estado binario no encontrado para lienzo {canvas_id}.")
+            raise ValueError(f"Binary state not found for canvas {canvas_id}.")
 
         actual_len = len(old_state)
         expected_size = old_w * old_h
@@ -96,7 +96,7 @@ def process_resize_task(r, db, task_data):
         if actual_len != expected_size:
             logging.warning(f"DesincronizaciÃ³n detectada. Metadata esperaba {expected_size} bytes, Redis tiene {actual_len} bytes.")
             real_old_size = int(math.sqrt(actual_len))
-            logging.warning(f"Auto-corrigiendo tamaÃ±o base a {real_old_size}x{real_old_size} para procesar correctamente.")
+            logging.warning(f"Auto-correcting base size to {real_old_size}x{real_old_size} for correct processing.")
             old_w, old_h = real_old_size, real_old_size
 
         new_state = bytearray([255] * (new_w * new_h))
@@ -127,7 +127,7 @@ def process_resize_task(r, db, task_data):
         r.publish("admin:canvas_events", json.dumps({
             "type": "canvas_resize_completed", "canvas_id": canvas_id, "new_size": new_size_db_str
         }))
-        logging.info(f"RedimensiÃ³n de lienzo {canvas_id} completada exitosamente.")
+        logging.info(f"Canvas resize for {canvas_id} completed successfully.")
 
     except Exception as e:
         logging.error(f"Error crÃ­tico en Resize: {str(e)}")
@@ -170,7 +170,7 @@ def process_reset_task(r, db, task_data):
     take_snapshot = task_data.get('take_snapshot', 1)
     canvas_size = task_data.get('canvas_size', '64x64')
     
-    logging.info(f"Iniciando reseteo para lienzo ID {canvas_id}.")
+    logging.info(f"Starting reset for canvas ID {canvas_id}.")
 
     try:
         state_key = f"canvas:{canvas_id}:state"
@@ -195,7 +195,7 @@ def process_reset_task(r, db, task_data):
             if r.exists(snapshot_done_key):
                 r.delete(snapshot_done_key)
             else:
-                logging.warning(f"Timeout esperando snapshot HQ del lienzo {canvas_id}.")
+                logging.warning(f"Timeout waiting for HQ snapshot of canvas {canvas_id}.")
 
         size_w, size_h = parse_size(canvas_size)
         empty_state = bytes([255] * (size_w * size_h))
@@ -214,16 +214,16 @@ def process_reset_task(r, db, task_data):
         if os.path.exists(snapshot_path):
             try:
                 os.remove(snapshot_path)
-                logging.info(f"Imagen pÃºblica eliminada para lienzo {canvas_id}.")
+                logging.info(f"Public image deleted for canvas {canvas_id}.")
             except Exception as e:
-                logging.error(f"No se pudo eliminar imagen pÃºblica {canvas_id}: {e}")
+                logging.error(f"Could not delete public image {canvas_id}: {e}")
         
         r.delete(f"canvas:{canvas_id}:reset_lock")
         r.publish("admin:canvas_events", json.dumps({"type": "canvas_cleared", "canvas_id": canvas_id, "next_reset_at": None}))
-        logging.info(f"Reseteo de lienzo {canvas_id} completado exitosamente.")
+        logging.info(f"Canvas reset for {canvas_id} completed successfully.")
 
     except Exception as e:
-        logging.error(f"Error fatal durante reseteo de lienzo {canvas_id}: {e}")
+        logging.error(f"Fatal error during reset of canvas {canvas_id}: {e}")
         r.delete(f"canvas:{canvas_id}:reset_lock")
 
 def reset_listener_thread():
@@ -277,7 +277,7 @@ def scheduler_thread():
                 """)
                 for pr in cursor.fetchall():
                     canvas_id = pr['canvas_id']
-                    logging.info(f"Programador: Disparando Resize para lienzo {canvas_id}")
+                    logging.info(f"Scheduler: Triggering Resize for canvas {canvas_id}")
                     
                     r.lpush("canvases:pending_resizes", json.dumps({
                         'canvas_id': canvas_id, 'old_size': str(pr['old_size']), 'new_size': str(pr['target_size'])
@@ -297,7 +297,7 @@ def scheduler_thread():
                 """)
                 for pr in cursor.fetchall():
                     canvas_id = pr['canvas_id']
-                    logging.info(f"Programador: Disparando Reset para lienzo {canvas_id}")
+                    logging.info(f"Scheduler: Triggering Reset for canvas {canvas_id}")
                     
                     r.lpush("canvases:pending_resets", json.dumps({
                         'canvas_id': canvas_id, 'take_snapshot': pr['take_snapshot'], 'canvas_size': str(pr['canvas_size'])
@@ -310,7 +310,7 @@ def scheduler_thread():
                 force_resets = r.smembers("canvases:force_resets")
                 for b_canvas_id in force_resets:
                     canvas_id = int(b_canvas_id)
-                    logging.info(f"Programador: Disparando Reset FORZADO para lienzo {canvas_id}")
+                    logging.info(f"Scheduler: Triggering FORCED Reset for canvas {canvas_id}")
                     cursor.execute("SELECT size FROM canvases WHERE id = %s", (canvas_id,))
                     res = cursor.fetchone()
                     
@@ -358,7 +358,7 @@ def load_palettes():
                     APP_PALETTES[pal_id] = [c.get('hex', '#000000') if isinstance(c, dict) else c for c in raw_colors]
             print(f"[+] Palettes successfully loaded from {PALETTES_FILE_PATH}")
         else:
-            raise FileNotFoundError("El archivo JSON no existe en la ruta.")
+            raise FileNotFoundError("JSON file does not exist at path.")
     except Exception as e:
         print(f"[!] Error loading palettes from {PALETTES_FILE_PATH}: {e}")
         APP_PALETTES['default'] = [

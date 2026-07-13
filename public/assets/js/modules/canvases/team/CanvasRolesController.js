@@ -144,8 +144,8 @@ class CanvasRolesController {
         if (!this.selectedRoleId) return;
         
         const resultDialog = await window.dialogSystem.show('confirmAction', { 
-            title: 'Eliminar Rol', 
-            message: '¿Estás seguro de eliminar este rol? Los usuarios con este rol perderán sus permisos.' 
+            title: window.__('delete_role'), 
+            message: window.__('confirm_delete_role') 
         });
         if (!resultDialog.confirmed) return;
 

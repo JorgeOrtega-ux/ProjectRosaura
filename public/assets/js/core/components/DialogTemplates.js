@@ -15,19 +15,19 @@ export const DialogTemplates = {
                     <div class="component-card__icon-container" style="color: var(--accent-primary);">
                         <span class="material-symbols-rounded" style="font-size: 64px;">stars</span>
                     </div>
-                    <h2 class="component-modal-title" style="font-size: 24px; font-weight: 600;">¡Bienvenido a ${tierName}!</h2>
+                    <h2 class="component-modal-title" style="font-size: 24px; font-weight: 600;">${window.__('welcome_to')} ${tierName}!</h2>
                     <p class="component-modal-desc" style="color: var(--text-secondary); line-height: 1.6;">
-                        Tu suscripción se ha activado correctamente. Ahora tienes acceso a todas las herramientas exclusivas de tu plan.
+                        ${window.__('subscription_activated')}
                     </p>
                 </div>
                 <div class="component-modal-body">
                     <div style="background: var(--bg-surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                            <span style="color: var(--text-secondary);">Nivel actual</span>
+                            <span style="color: var(--text-secondary);">${window.__('current_level') || 'Current Tier'}</span>
                             <strong style="color: var(--accent-primary);">${tierName}</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--text-secondary);">Próxima renovación</span>
+                            <span style="color: var(--text-secondary);">${window.__('next_renewal') || 'Next Renewal'}</span>
                             <strong>${endDate}</strong>
                         </div>
                     </div>
@@ -36,7 +36,7 @@ export const DialogTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="window.location.reload()">
-                        ¡Empezar a explorar!
+                        ${window.__('start_exploring') || 'Start Exploring!'}
                     </button>
                 </div>
             `;
@@ -47,20 +47,20 @@ export const DialogTemplates = {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
             <div class="component-modal-header">
-                <h2 class="component-modal-title">Condiciones de Compra</h2>
+                <h2 class="component-modal-title">${window.__('purchase_conditions')}</h2>
                 <p class="component-modal-desc">
-                    Antes de continuar, ten en cuenta que todos los precios en la tienda de monedas se muestran en <strong>dólares estadounidenses (USD)</strong>. Adicionalmente, por la naturaleza digital de estos bienes, no ofrecemos reembolsos bajo ninguna circunstancia una vez completada la transacción.
+                    ${window.__('usd_warning')} ${window.__('no_refunds_digital_goods')}
                 </p>
             </div>
             <div class="component-modal-body">
                 <label class="component-checkbox" style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; margin-bottom: 24px;">
                     <input type="checkbox" id="checkAcceptStoreTerms" style="margin-top: 4px;">
-                    <span style="font-size: 14px; color: var(--text-primary);">He leído y acepto que los precios están en USD y no hay reembolsos.</span>
+                    <span style="font-size: 14px; color: var(--text-primary);">${window.__('accept_usd_no_refunds')}</span>
                 </label>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">Cancelar</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">Confirmar y Continuar</button>
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${window.__('cancel')}</button>
+                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${window.__('confirm_and_continue')}</button>
             </div>
         `
     },
@@ -69,20 +69,20 @@ export const DialogTemplates = {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
             <div class="component-modal-header">
-                <h2 class="component-modal-title">Condiciones de Uso</h2>
+                <h2 class="component-modal-title">${window.__('terms_of_use')}</h2>
                 <p class="component-modal-desc">
-                    Ten en cuenta que las ventajas y objetos de la tienda <strong>solo podrán ser utilizadas en lienzos seleccionados</strong>. No todos los lienzos permiten el uso de ventajas y esto depende de la configuración de su administrador.
+                    ${window.__('items_only_selected_canvases')} ${window.__('perks_may_be_disabled_by_admin')}
                 </p>
             </div>
             <div class="component-modal-body">
                 <label class="component-checkbox" style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; margin-bottom: 24px;">
                     <input type="checkbox" id="checkAcceptContentTerms" style="margin-top: 4px;">
-                    <span style="font-size: 14px; color: var(--text-primary);">Entiendo que las ventajas pueden estar deshabilitadas en algunos lienzos.</span>
+                    <span style="font-size: 14px; color: var(--text-primary);">${window.__('understand_perks_disabled')}</span>
                 </label>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">Cancelar</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">Confirmar y Continuar</button>
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${window.__('cancel')}</button>
+                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${window.__('confirm_and_continue')}</button>
             </div>
         `
     },
@@ -505,7 +505,7 @@ export const DialogTemplates = {
     verifyPasswordDeleteCanvases: {
         build: (data) => DialogTemplates.verifyPasswordDialog.build({
             titleKey: 'title_verify_delete_canvases',
-            descHtml: __('desc_verify_delete_canvases') ? __('desc_verify_delete_canvases').replace(':count', data.count || 0) : `Se eliminarán ${data.count || 0} lienzos permanentemente. Introduce tu contraseña para confirmar.`,
+            descHtml: __('desc_verify_delete_canvases') ? __('desc_verify_delete_canvases').replace(':count', data.count || 0) : (window.__('default_delete_canvases_desc') ? window.__('default_delete_canvases_desc').replace(':count', data.count || 0) : `Permanently deleting ${data.count || 0} canvases. Enter your password to confirm.`),
             confirmKey: 'btn_delete_canvas'
         })
     },
@@ -654,8 +654,8 @@ export const DialogTemplates = {
             <div class="component-modal-header component-modal-header--with-icon">
                 <span class="material-symbols-rounded">gavel</span>
                 <div class="component-modal-header-text">
-                    <h3 class="component-modal-title">Términos y condiciones</h3>
-                    <p class="component-modal-desc">Por favor acepta las normas antes de unirte.</p>
+                    <h3 class="component-modal-title">${window.__('terms_and_conditions') || 'Terms and Conditions'}</h3>
+                    <p class="component-modal-desc">${window.__('please_accept_rules') || 'Please accept the community rules before joining.'}</p>
                 </div>
             </div>
             <div class="component-modal-body">
@@ -663,8 +663,8 @@ export const DialogTemplates = {
                     <div class="component-group-item component-group-item--wrap">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Aceptar normas de la comunidad</h2>
-                                <p class="component-card__description">Reconozco que la web no tiene control sobre lo que ocurre dentro de este lienzo privado y me comprometo a no romper las reglas.</p>
+                                <h2 class="component-card__title">${window.__('accept_community_rules') || 'Accept Community Rules'}</h2>
+                                <p class="component-card__description">${window.__('acknowledge_private_canvas_rules') || 'I acknowledge that the platform has no control over what happens inside this private canvas and I commit to not breaking the rules.'}</p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -678,7 +678,7 @@ export const DialogTemplates = {
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--dark component-button--h45 component-button--full" data-modal-action="confirm">Unirme al lienzo</button>
+                <button class="component-button component-button--dark component-button--h45 component-button--full" data-modal-action="confirm">${window.__('join_canvas') || 'Join Canvas'}</button>
             </div>
         `
     },
@@ -686,7 +686,7 @@ export const DialogTemplates = {
     confirmDeleteMessage: {
         build: () => DialogTemplates.confirmAction.build({
             titleKey: 'title_confirm_action',
-            descHtml: '¿Seguro que deseas eliminar este mensaje?',
+            descHtml: __('confirm_delete_message'),
             confirmClass: 'component-button--danger'
         })
     },

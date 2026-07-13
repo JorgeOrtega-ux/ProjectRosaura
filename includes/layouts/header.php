@@ -103,7 +103,7 @@ if ($isLoggedIn) {
 
             <?php if ($isMaintenanceActive && $isPrivileged): ?>
                 <button class="component-button component-button--icon component-button--h40" data-tooltip="<?php echo __('tooltip_maintenance'); ?>" data-position="bottom">
-                    <span class="material-symbols-rounded" style="color: var(--status-warning);">warning</span>
+                    <span class="material-symbols-rounded">warning</span>
                 </button>
             <?php endif; ?>
 

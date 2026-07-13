@@ -90,7 +90,7 @@ try {
                 <span class="material-symbols-rounded">history</span> <?php echo __('lbl_historical_mode'); ?>
             </div>
 
-            <div id="tl-stats-badge" class="component-badge component-badge--dark component-badge--absolute-tl" style="top: 48px; opacity: 0; transition: opacity 0.3s ease;">
+            <div id="tl-stats-badge" class="component-badge component-badge--dark component-badge--absolute-tl">
                 <span class="material-symbols-rounded">analytics</span> 
                 <span id="tl-stats-text">0 / 0 (0%)</span>
             </div>

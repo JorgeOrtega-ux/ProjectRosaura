@@ -111,7 +111,6 @@ class CanvasChatRestrictionController {
                         $redis->setex("canvas:{$canvasId}:chat_restricted:{$targetUserId}", $ttl, '1');
                     }
                 } else {
-                    // permanent or no end date
                     $redis->set("canvas:{$canvasId}:chat_restricted:{$targetUserId}", '1');
                 }
 

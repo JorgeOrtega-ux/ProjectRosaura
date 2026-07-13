@@ -314,7 +314,7 @@ class CanvasCoreService {
                     }
                 }
             } catch (Exception $e) {
-                Logger::error('Error leyendo lienzo de Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+                Logger::error('Error reading canvas from Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
             }
 
             if ($stateRaw === null || $stateRaw === false) {
@@ -468,7 +468,7 @@ class CanvasCoreService {
                     }
                 }
             } catch (Exception $e) {
-                Logger::error('No se pudo guardar la config de cooldown en Redis.', ['error' => $e->getMessage()]);
+                Logger::error('Could not save cooldown config in Redis.', ['error' => $e->getMessage()]);
             }
 
             return ['success' => true, 'message' => __('msg_canvas_created'), 'data' => ['uuid' => $uuid]];

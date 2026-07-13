@@ -525,7 +525,6 @@ export const DesignNetwork = {
         
         const tpl = this.templates.find(t => t.id === this.liveTemplateId);
         if (!tpl) {
-            // Emitting empty state if no template (e.g. deleted)
             this.wsManager.send({
                 type: 'update_live_share',
                 code: this.liveShareCode,

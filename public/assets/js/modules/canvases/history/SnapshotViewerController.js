@@ -267,7 +267,6 @@ class SnapshotViewerController {
             }
 
             const text = response.data;
-            // Solo separamos las líneas, no parseamos el JSON de golpe para evitar congelar el navegador.
             this.timelapseData = text.trim().split('\n');
 
             return true;

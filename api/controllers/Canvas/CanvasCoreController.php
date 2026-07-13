@@ -269,7 +269,7 @@ class CanvasCoreController extends BaseController {
             }
 
             $confirmWord = $input['confirm_word'] ?? '';
-            if (trim(strtoupper($confirmWord)) !== 'CONFIRMAR') {
+            if (trim(strtoupper($confirmWord)) !== 'CONFIRM') {
                 return $this->respond(['success' => false, 'message' => __('err_confirm_word_required')]);
             }
 

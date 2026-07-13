@@ -143,15 +143,15 @@ if ($error) {
                                  decoding="async"
                                  onerror="this.src='<?php echo htmlspecialchars($fallbackImg); ?>'">
                             <div class="component-gallery-badges-container">
-                                <div class="component-badge component-badge--glass" style="display: flex; gap: 4px; align-items: center;">
+                                <div class="component-badge component-badge--glass">
                                     <span class="material-symbols-rounded">history</span>
                                     <span><?php echo $dateLabel; ?></span>
-                                    <span class="component-badge-divider" style="margin: 0 2px;">|</span>
-                                    <span class="material-symbols-rounded" style="color:var(--accent-color)">favorite</span>
+                                    <span class="component-badge-divider">|</span>
+                                    <span class="material-symbols-rounded">favorite</span>
                                     <span><?php echo (int)($snapshot['likes_count'] ?? 0); ?></span>
                                 </div>
                                 <?php if ($snapshot['privacy'] === 'private'): ?>
-                                <div class="component-badge component-badge--danger" style="margin-top: 4px;">
+                                <div class="component-badge component-badge--danger">
                                     <span class="material-symbols-rounded">lock</span>
                                     <span>Privado</span>
                                 </div>

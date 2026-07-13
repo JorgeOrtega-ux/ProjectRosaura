@@ -50,17 +50,17 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <?php else: ?>
                             <?php foreach ($history as $item): 
                                 $date = date('d/m/Y', strtotime($item['created_at']));
-                                $description = htmlspecialchars($item['description'] ?: 'Suscripción');
+                                $description = htmlspecialchars($item['description'] ?: __('subscription') ?: 'Subscription');
                                 $amount = '$' . number_format($item['amount_cents'] / 100, 2) . ' ' . strtoupper(htmlspecialchars($item['currency']));
                                 
                                 $statusClass = 'component-text-notice--success';
                                 $statusIcon = 'check_circle';
-                                $statusText = 'Pagado';
+                                $statusText = __('paid') ?: 'Paid';
                                 
                                 if ($item['status'] !== 'succeeded' && $item['status'] !== 'paid') {
                                     $statusClass = 'component-text-notice--error';
                                     $statusIcon = 'error';
-                                    $statusText = 'Fallido';
+                                    $statusText = __('failed') ?: 'Failed';
                                 }
                             ?>
                             <tr>

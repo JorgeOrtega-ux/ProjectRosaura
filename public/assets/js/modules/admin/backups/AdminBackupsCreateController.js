@@ -252,7 +252,7 @@ class AdminBackupsCreateController {
                 } else if (res.status === 'pending' || res.status === 'processing') {
                 } else {
                     clearInterval(this.pollInterval);
-                    showMessage('Estado desconocido reportado por el servidor.', 'error');
+                    showMessage(window.__('err_unknown_server_state'), 'error');
                     this.resetBackupUI(btn, originalText);
                 }
             } else {

@@ -21,8 +21,8 @@ class Loader {
                     <div class="component-message-icon-wrapper">
                         <span class="material-symbols-rounded component-message-icon">error_outline</span>
                     </div>
-                    <h1 class="component-message-title">Ocurrió un problema</h1>
-                    <p class="component-message-desc">No pudimos cargar la sección solicitada. Por favor, intenta regresar al inicio o recargar la página.</p>
+                    <h1 class="component-message-title">' . __('err_problem_occurred') . '</h1>
+                    <p class="component-message-desc">' . __('err_load_section') . '</p>
                 </div>
             </div>';
         }

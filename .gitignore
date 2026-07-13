@@ -3,7 +3,6 @@
 .env.*
 !.env.example
 
-# Archivos del sistema operativo
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -16,17 +15,14 @@ node_modules/
 *.log
 error_log
 
-# === IGNORAR LA CARPETA DEL NUEVO SISTEMA DE LOGS ===
 /storage/private/logs/
 !/storage/private/logs/.gitkeep
 
-# === CARPETA DE LIENZOS (CANVASES) PRIVADOS ===
 /storage/private/canvases/
 !/storage/private/canvases/.gitkeep
 
 /storage/canvases/
 
-# === IGNORAR COPIAS DE SEGURIDAD DE LA BASE DE DATOS ===
 storage/private/backups/*.sql
 storage/private/backups/*.enc
 storage/private/backups/*.gz
@@ -37,7 +33,6 @@ storage/private/backups/*.gz
 # Ignorar la base de datos binaria de GeoIP
 /storage/private/geoip/*.mmdb
 
-# Ignorar todas las fotos de perfil (tanto las predeterminadas como las subidas)
 /storage/public/profilePictures/default/*
 /storage/public/profilePictures/uploaded/*
 !/storage/public/profilePictures/.htaccess
@@ -59,5 +54,4 @@ storage/private/backups/*.gz
 /storage/public/snapshots_archive/
 /storage/public/templates/
 
-# Ignorar archivos subidos a los lienzos (fotos del chat, etc)
 /storage/public/canvases/

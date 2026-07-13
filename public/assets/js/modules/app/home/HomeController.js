@@ -127,7 +127,7 @@ class HomeController {
                     <p class="component-empty-state-text" style="font-size: 1.1rem;">${msgEmpty}</p>
                     <div style="margin-top: 24px;">
                         <a href="${this.basePath}/explore" class="component-button component-button--brand" data-nav="${this.basePath}/explore">
-                            <span class="material-symbols-rounded">rocket_launch</span> Explorar Ahora
+                            <span class="material-symbols-rounded">rocket_launch</span> ${window.__('explore_now') || 'Explore Now'}
                         </a>
                     </div>
                 </div>
@@ -183,10 +183,10 @@ class HomeController {
                         <p class="component-empty-state-text" style="font-size: 1.1rem; max-width: 400px; margin: 0 auto;">${msgEmpty}</p>
                         <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                             <a href="${this.basePath}/canvases/manage" class="component-button component-button--brand" data-nav="${this.basePath}/canvases/manage">
-                                <span class="material-symbols-rounded">add</span> Crear
+                                <span class="material-symbols-rounded">add</span> ${window.__('create')}
                             </a>
                             <a href="${this.basePath}/explore" class="component-button component-button--dark" data-nav="${this.basePath}/explore">
-                                <span class="material-symbols-rounded">explore</span> Explorar
+                                <span class="material-symbols-rounded">explore</span> ${window.__('explore') || 'Explore'}
                             </a>
                         </div>
                     </div>
@@ -258,7 +258,7 @@ class HomeController {
                 
                 this.renderCanvases(this.contentArea, this.allCanvases, isLoadMore);
             } else if (isError && !isLoadMore) {
-                this.showError(this.contentArea, window.__ ? window.__('err_load_public_canvases') : 'Error al cargar lienzos. El servidor no responde.');
+                this.showError(this.contentArea, window.__ ? window.__('err_load_public_canvases') : 'Error loading canvases. The server is not responding.');
             } else if (!isLoadMore) {
                 const msgEmpty = window.__ ? window.__('empty_home_gallery') || window.__('empty_home_gallery') : window.__('empty_home_gallery');
                 this.contentArea.innerHTML = CardTemplates.emptyState(msgEmpty, 'collections');

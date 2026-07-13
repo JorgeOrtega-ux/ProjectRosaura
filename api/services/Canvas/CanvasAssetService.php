@@ -74,7 +74,7 @@ class CanvasAssetService {
                     'ContentType' => $allowedTypes[$extension]
                 ]);
             } catch (Exception $e) {
-                Logger::error('Fallo al subir el archivo de plantilla a S3.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+                Logger::error('Failed to upload template file to S3.', ['user_id' => $userId, 'error' => $e->getMessage()]);
                 return ['success' => false, 'message' => __('err_file_write')];
             }
 
@@ -139,7 +139,7 @@ class CanvasAssetService {
                             'Key'    => ltrim($s3Key, '/')
                         ]);
                     } catch (Exception $e) {
-                        Logger::error('Fallo al eliminar archivo de plantilla de S3.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+                        Logger::error('Failed to delete template file from S3.', ['user_id' => $userId, 'error' => $e->getMessage()]);
                     }
                 }
                 return ['success' => true, 'message' => __('msg_template_deleted')];

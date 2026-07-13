@@ -84,7 +84,7 @@ class AdminUserRoleEditController {
         } else {
             const errorMessage = window.Translations && window.Translations[result.message_key] 
                                  ? window.Translations[result.message_key] 
-                                 : (result.message_key || result.message || 'Error al actualizar roles.');
+                                 : (result.message_key || result.message || window.__('err_update_roles'));
             showMessage(errorMessage, 'error');
         }
     }

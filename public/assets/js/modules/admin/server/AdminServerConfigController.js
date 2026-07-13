@@ -193,7 +193,7 @@ class AdminServerConfigController {
     updateDomainTextInfo(count) {
         const textEl = document.querySelector('[data-ref="text_allowed_domains"]');
         if (textEl) {
-            textEl.textContent = count > 0 ? `${count} seleccionados` : 'Ninguno';
+            textEl.textContent = count > 0 ? `${count} " + window.__('selected')` : window.__('none');
         }
     }
     handleAdjustment(btn) {

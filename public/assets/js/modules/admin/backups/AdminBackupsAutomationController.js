@@ -261,7 +261,7 @@ class AdminBackupsAutomationController {
             }
         } catch (error) {
             restoreButton(btn, originalText);
-            showMessage(typeof window.__ === 'function' ? window.__('err_save_config') : 'Error al guardar', 'error');
+            showMessage(typeof window.__ === 'function' ? window.__('err_save_config') : window.__('err_save'), 'error');
         }
     }
 }

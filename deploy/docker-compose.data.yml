@@ -107,7 +107,6 @@ services:
       - rosaura_data_network
 
   # ==========================================
-  # WORKERS DE PYTHON (Solo corren aquí, no en App Nodes)
   # ==========================================
   worker_backups:
     build:
@@ -152,8 +151,6 @@ services:
     command: python -u scripts/worker_persistence.py
     volumes:
       - ../:/app
-      # Este worker ahora tendrá que enviar los timelapses al MinIO a través de la API S3 de Python,
-      # ya no los dejará en disco local (o los procesa en memoria temporal y los sube).
     depends_on:
       db:
         condition: service_healthy

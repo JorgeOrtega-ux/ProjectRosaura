@@ -24,7 +24,7 @@ export class DesignChat {
         this.isChatEnabled = document.querySelector('.component-wrapper')?.dataset.allowChat === '1';
         this.isFirstRenderScrollPending = true;
         this.currentUserId = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.userId || null;
-        this.currentUsername = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.username || 'Usuario';
+        this.currentUsername = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.username || window.__('user') || 'User';
         this.canModerateChat = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.canModerate === '1';
 
         this.typingUsers = new Map();
@@ -291,15 +291,15 @@ export class DesignChat {
 
         for (const file of files) {
             if (this.selectedFiles.length >= maxFiles) {
-                showMessage(`Solo puedes adjuntar hasta ${maxFiles} fotos por mensaje`, 'warning');
+                showMessage(window.__('err_max_files').replace('{max}', maxFiles), 'warning');
                 break;
             }
             if (!file.type.startsWith('image/')) {
-                showMessage(`El archivo ${file.name} no es una imagen válida`, 'warning');
+                showMessage(window.__('err_invalid_image').replace('{file}', file.name), 'warning');
                 continue;
             }
             if (totalSize + file.size > maxSize) {
-                showMessage(`El tamaño total no puede superar los 25 MB`, 'warning');
+                showMessage(window.__('err_max_size_25mb'), 'warning');
                 break;
             }
             this.selectedFiles.push(file);
@@ -430,7 +430,7 @@ export class DesignChat {
         } catch (error) {
             
             if (this.offset === 0 && this.loader) {
-                this.loader.innerHTML = 'Error al cargar mensajes.';
+                this.loader.innerHTML = window.__('err_load_messages');
             }
         } finally {
             this.isLoading = false;
@@ -470,14 +470,14 @@ export class DesignChat {
             }
 
             if (response.success === false || response.status === 'error') {
-                showMessage(response.message || 'Error al enviar el mensaje', 'error');
+                showMessage(response.message || window.__('err_send_message'), 'error');
                 this.chatInput.value = backupText; 
                 this.selectedFiles = backupFiles;
                 this.renderPreview();
             }
         } catch (error) {
             
-            showMessage('Error al enviar el mensaje', 'error');
+            showMessage(window.__('err_send_message'), 'error');
             this.chatInput.value = backupText;
             this.selectedFiles = backupFiles;
             this.renderPreview();
@@ -506,7 +506,7 @@ export class DesignChat {
             const res = await window.dialogSystem.show('confirmDeleteMessage');
             if (!res.confirmed) return;
         } else {
-            if (!confirm('¿Seguro que deseas eliminar este mensaje?')) return;
+            if (!confirm(window.__('confirm_delete_message'))) return;
         }
 
         try {
@@ -523,7 +523,7 @@ export class DesignChat {
             }
         } catch (error) {
             
-            showMessage('Error al eliminar mensaje', 'error');
+            showMessage(window.__('err_delete_message'), 'error');
         }
     }
 
@@ -685,7 +685,7 @@ export class DesignChat {
                                 <span class="material-symbols-rounded" style="color: var(--danger-color);">delete</span>
                             </div>
                             <div class="component-menu-link-text">
-                                <span style="color: var(--danger-color);">Eliminar</span>
+                                <span style="color: var(--danger-color);">${window.__('delete') || 'Delete'}</span>
                             </div>
                         </div>
                         ` : ''}

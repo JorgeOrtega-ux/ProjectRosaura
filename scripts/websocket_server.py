@@ -147,7 +147,7 @@ async def handler(websocket):
 
     if not ticket:
         print("[DEBUG WS] Connection rejected: No previous HTTP ticket.")
-        await websocket.close(code=1008, reason="Ticket requerido para conexiÃ³n.")
+        await websocket.close(code=1008, reason="Ticket required for connection.")
         return
 
     r = await get_redis_client()
@@ -405,7 +405,7 @@ async def handler(websocket):
                         protected_by = await r.get(protected_key)
                         
                         if protected_by:
-                            print(f"[DEBUG PY] Pixel {x},{y} protegido for el usuario {protected_by.decode('utf-8')}")
+                            print(f"[DEBUG PY] Pixel {x},{y} protected by user {protected_by.decode('utf-8')}")
                             redis_state_key = f"canvas:{canvas_id}:state"
                             orig_color = await r.getrange(redis_state_key, offset, offset)
                             orig_c_index = orig_color[0] if orig_color else 255
@@ -423,7 +423,7 @@ async def handler(websocket):
                             
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
-                                "message": "Este pÃ­xel estÃ¡ protegido. Usa el Borrador de Ã‰lite para sobrescribirlo.",
+                                "message": "err_pixel_protected",
                                 "x": x,
                                 "y": y,
                                 "color": orig_c_index,
@@ -573,7 +573,7 @@ async def handler(websocket):
                         else:
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
-                                "message": "No tienes uses de protecciÃ³n disponibles",
+                                "message": "err_no_protection_uses",
                                 "perk_protection_left": 0
                             })
                             await websocket.send(error_msg)
@@ -604,7 +604,7 @@ async def handler(websocket):
                             if not protected_by:
                                 error_msg = json.dumps({
                                     "type": "pixel_protected_error",
-                                    "message": "Este pÃ­xel no estÃ¡ protegido. No se gastÃ³ tu borrador.",
+                                    "message": "err_pixel_not_protected",
                                     "perk_eraser_left": eraser_left
                                 })
                                 await websocket.send(error_msg)
@@ -659,7 +659,7 @@ async def handler(websocket):
                         else:
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
-                                "message": "No tienes uses de borrador disponibles",
+                                "message": "err_no_eraser_uses",
                                 "perk_eraser_left": 0
                             })
                             await websocket.send(error_msg)

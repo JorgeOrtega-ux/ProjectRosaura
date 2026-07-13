@@ -20,7 +20,7 @@ class MiddlewarePipeline {
             $className = "App\\Core\\Middlewares\\" . $type . "Middleware";
 
             if (!class_exists($className)) {
-                Logger::error("Fallo Fatal: Middleware no encontrado en pipeline: {$className}");
+                Logger::error("Fatal Error: Middleware not found in pipeline: {$className}");
                 http_response_code(500);
                 echo json_encode(['success' => false, 'message_key' => 'error.internal_server_error']);
                 return false; 

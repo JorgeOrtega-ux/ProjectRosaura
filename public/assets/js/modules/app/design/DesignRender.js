@@ -14,7 +14,7 @@ export const DesignRender = {
             if (emptyState) {
                 emptyState.classList.remove('disabled'); emptyState.classList.add('active');
                 const emptyText = emptyState.querySelector('.component-empty-state-text');
-                if (emptyText) emptyText.innerText = 'No hay colores disponibles.';
+                if (emptyText) emptyText.innerText = window.__('no_colors_available');
             }
             return;
         }

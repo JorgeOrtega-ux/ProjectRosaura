@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
         <div class="component-bottom">
             <div class="component-header-card">
                 <h1 class="component-page-title"><?php echo __('menu_subscription'); ?></h1>
-                <p class="component-page-description">Gestiona tu plan actual, límites y ciclo de facturación.</p>
+                <p class="component-page-description"><?= __('manage_billing_desc') ?></p>
             </div>
 
                         <div class="component-card--grouped" data-ref="subscription-content-area">

@@ -217,9 +217,9 @@ class AdminUsersController {
         restoreButton(btn);
         if (result.success) {
             if (result.failed_count > 0) {
-                showMessage(`Se eliminaron ${result.deleted_count} usuario(s). Se omitieron ${result.failed_count} por falta de permisos.`, 'warning');
+                showMessage(`Deleted ${result.deleted_count} user(s). Skipped ${result.failed_count} due to lack of permissions.`, 'warning');
             } else {
-                showMessage(`Se han eliminado ${result.deleted_count} usuario(s) exitosamente.`, 'success');
+                showMessage(window.__('users_deleted_success').replace('{deleted}', result.deleted_count), 'success');
             }
             this.selectedUserIds.clear();
             setTimeout(() => {

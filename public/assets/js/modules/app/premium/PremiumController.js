@@ -116,7 +116,7 @@ export class PremiumController {
 
             this._pollSubscriptionStatus(3);
         } else if (status === 'cancel') {
-            showMessage('El pago fue cancelado. Puedes intentarlo de nuevo cuando quieras.', 'warning');
+            showMessage(window.__('payment_cancelled'), 'warning');
             
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
@@ -186,7 +186,7 @@ export class PremiumController {
                     setTimeout(() => { window.location.reload(); }, 1500);
                 } else {
                     restoreButton(btn);
-                    const msg = result.message || 'Error al actualizar la suscripción';
+                    const msg = result.message || window.__('err_update_subscription');
                     showMessage(msg, 'error');
                 }
 

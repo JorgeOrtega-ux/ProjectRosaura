@@ -294,7 +294,7 @@ if (!isset($timerActions[$activeTimer])) {
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('canvas_reset_snapshot_title'); ?></h2>
-                            <p class="component-card__description">Tomar una foto del lienzo antes de reiniciarlo de forma instantánea.</p>
+                            <p class="component-card__description"><?= __('take_photo_before_reset') ?></p>
                             <?php if (!$canTakeSnapshot): ?>
                                 <p class="component-card__description text-danger"><b><?php echo __('snapshot_limit_reached', ['current' => $currentSnapshots, 'max' => $maxSnapshots]); ?></b> <?php echo __('snapshot_upgrade_plan'); ?></p>
                             <?php endif; ?>

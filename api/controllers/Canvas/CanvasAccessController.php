@@ -20,7 +20,6 @@ class CanvasAccessController extends BaseController {
 
 
     /**
-     * Función auxiliar para verificar si el usuario tiene el permiso de gestionar lienzos oficiales.
      */
     private function canManageOfficial(): bool {
         $perms = [];

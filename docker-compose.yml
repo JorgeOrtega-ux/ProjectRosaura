@@ -86,7 +86,6 @@ services:
       - typesense_data:/data
     networks:
       - rosaura_network
-    # Healthcheck eliminado intencionalmente porque Typesense no incluye wget
 
   # ==========================================
   # SERVIDOR WEBSOCKET

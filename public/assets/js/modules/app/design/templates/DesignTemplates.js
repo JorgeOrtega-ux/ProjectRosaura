@@ -103,7 +103,7 @@ export const DesignTemplates = {
                 const code = input.value.trim().toUpperCase();
                 
                 if (code.length !== 9) {
-                    showMessage('El código debe tener 8 caracteres (ej: ABCD-EFGH)', 'warning');
+                    showMessage(window.__('err_code_8_chars'), 'warning');
                     return true;
                 }
                 
@@ -131,7 +131,7 @@ export const DesignTemplates = {
                             btnSubmitJoinLive.classList.remove('disabled-interactive');
                         }
                     } catch (error) {
-                        showMessage(error.message || 'Error al unirse', 'error');
+                        showMessage(error.message || window.__('err_join'), 'error');
                         btnSubmitJoinLive.innerHTML = originalText;
                         btnSubmitJoinLive.classList.remove('disabled-interactive');
                     }
@@ -170,7 +170,7 @@ export const DesignTemplates = {
                         const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
                         if (btnOpenJoinLive) {
                             btnOpenJoinLive.classList.add('disabled-interactive');
-                            btnOpenJoinLive.setAttribute('title', 'No puedes unirte mientras transmites');
+                            btnOpenJoinLive.setAttribute('title', window.__('err_cannot_join_while_streaming'));
                         }
                         
                         const btnToggleLiveMenu = document.querySelector('[data-menu-target="menu-live"]');
@@ -250,7 +250,7 @@ export const DesignTemplates = {
             if (emptyState) {
                 emptyState.classList.remove('disabled'); emptyState.classList.add('active');
                 const emptyText = emptyState.querySelector('.component-empty-state-text');
-                if (emptyText) emptyText.innerText = 'No tienes plantillas guardadas.';
+                if (emptyText) emptyText.innerText = window.__('no_saved_templates');
             }
             this.updateTemplateUI();
             return;
@@ -293,7 +293,7 @@ export const DesignTemplates = {
         const btnUpload = document.querySelector('[data-action="triggerTemplateUpload"]');
         if (btnUpload) {
             btnUpload.classList.add('disabled-interactive');
-            btnUpload.innerHTML = `<span class="material-symbols-rounded icon-spin-slow">autorenew</span> Subiendo...`;
+            btnUpload.innerHTML = `<span class="material-symbols-rounded icon-spin-slow">autorenew</span> ${window.__('uploading')}...`;
         }
 
         const formData = new FormData();
@@ -315,7 +315,7 @@ export const DesignTemplates = {
             this.fileInput.value = '';
             if (btnUpload) {
                 btnUpload.classList.remove('disabled-interactive');
-                btnUpload.innerHTML = `<span class="material-symbols-rounded">cloud_upload</span> Subir a mi librería`;
+                btnUpload.innerHTML = `<span class="material-symbols-rounded">cloud_upload</span> ${window.__('upload_to_library')}`;
             }
         }
     },

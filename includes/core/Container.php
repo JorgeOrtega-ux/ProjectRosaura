@@ -103,11 +103,11 @@ class Container implements ContainerInterface {
         try {
             $reflection = new ReflectionClass($className);
         } catch (\ReflectionException $e) {
-            throw new Exception("Error en contenedor: No se pudo reflejar {$className}");
+            throw new Exception("Container error: Could not reflect {$className}");
         }
 
         if (!$reflection->isInstantiable()) {
-            throw new Exception("La clase {$className} no es instanciable (interfaz sin binding o clase abstracta).");
+            throw new Exception("Class {$className} is not instantiable.");
         }
 
         $constructor = $reflection->getConstructor();
@@ -121,14 +121,14 @@ class Container implements ContainerInterface {
             $type = $param->getType();
             
             if (!$type) {
-                throw new Exception("Fallo en {$className}: El parámetro \${$param->getName()} no tiene tipo definido.");
+                throw new Exception("Error in {$className}: Parameter \${$param->getName()} has no defined type.");
             }
             
             if ($type instanceof ReflectionNamedType && $type->isBuiltin()) {
                 if ($param->isDefaultValueAvailable()) {
                     return $param->getDefaultValue();
                 }
-                throw new Exception("Fallo en {$className}: No se puede auto-inyectar el parámetro primitivo \${$param->getName()} sin un valor por defecto.");
+                throw new Exception("Error in {$className}: Cannot auto-inject primitive parameter \${$param->getName()}.");
             }
             
             return $this->get($type->getName());

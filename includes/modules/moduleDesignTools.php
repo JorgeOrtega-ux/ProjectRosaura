@@ -17,7 +17,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         </div>
         
         <div class="component-menu-section-parent component-menu-section-parent--chat">
-            <div class="component-menu-center" style="display: flex; flex-direction: column; flex: 1; overflow-y: auto;">
+            <div class="component-menu-center">
                 <div class="component-menu-section-parent component-menu-section-parent--bordered">
                     <div class="component-menu-top">
                         <div class="component-menu-header-box">
@@ -95,7 +95,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             </div>
             
             <div class="component-menu-bottom">
-                <div class="component-form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                <div class="component-form-group">
                     <button class="component-button component-button--full component-button--dark component-button--h40" data-action="startLive">
                         <span class="material-symbols-rounded">play_arrow</span> <?php echo __('dt_start'); ?>
                     </button>

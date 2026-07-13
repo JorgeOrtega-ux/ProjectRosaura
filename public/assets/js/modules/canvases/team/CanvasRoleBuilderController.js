@@ -120,7 +120,7 @@ class CanvasRoleBuilderController {
         const roleWeight = weightDisplay ? parseInt(weightDisplay.dataset.val, 10) : 1;
 
         if (!roleName && !this.isSystemRole) {
-            showMessage('El nombre del rol es obligatorio', 'error');
+            showMessage(window.__('err_role_name_required'), 'error');
             return;
         }
 
@@ -158,7 +158,7 @@ class CanvasRoleBuilderController {
                 restoreButton(btn);
             }
         } catch (error) {
-            showMessage('Error al guardar el rol.', "error");
+            showMessage(window.__('err_save_role'), 'error');
             restoreButton(btn);
         }
     }

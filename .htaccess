@@ -1,7 +1,6 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
-    # IMPORTANTE: +FollowSymLinks es obligatorio en servidores Windows para mod_rewrite
     Options +FollowSymLinks -Indexes -MultiViews
 
     # Base de tu proyecto local
@@ -18,7 +17,6 @@
     # 3. Si la petición ya está apuntando a public/ internamente, la dejamos pasar
     RewriteRule ^public/ - [L]
 
-    # 4. Si piden un archivo físico que SÍ existe (ej. un .png), dejarlo pasar
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 

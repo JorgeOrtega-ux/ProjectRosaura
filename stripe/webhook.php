@@ -1,7 +1,5 @@
 <?php
 // stripe/webhook.php
-// Endpoint standalone para recibir webhooks de Stripe.
-// NO usa sesión, NO usa CSRF, NO usa el API router principal.
 // Solo verifica la firma de Stripe y procesa los eventos.
 
 header('Content-Type: application/json');
@@ -18,7 +16,6 @@ use App\Core\System\Logger;
 use App\Core\System\SubscriptionPlanConstants;
 use App\Config\Database\RedisCache;
 
-// 1. Leer el payload crudo y la firma
 $payload = @file_get_contents('php://input');
 $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
 $webhookSecret = $_ENV['STRIPE_WEBHOOK_SECRET'] ?? '';
@@ -29,7 +26,6 @@ if (empty($payload) || empty($sigHeader) || empty($webhookSecret)) {
     exit;
 }
 
-// 2. Verificar la firma del webhook
 try {
     \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
     $event = \Stripe\Webhook::constructEvent($payload, $sigHeader, $webhookSecret);
@@ -56,13 +52,11 @@ try {
     switch ($event->type) {
 
         // ===================================================================
-        // CHECKOUT COMPLETADO: El usuario pagó exitosamente
         // ===================================================================
         case 'checkout.session.completed':
             $session = $event->data->object;
             $metadata = $session->metadata;
 
-            // Revisar si es compra de tienda (monedas)
             if (isset($metadata->type) && $metadata->type === 'coins') {
                 $userId = isset($metadata->user_id) ? (int) $metadata->user_id : 0;
                 $amountCoins = isset($metadata->amount) ? (int) $metadata->amount : 0;
@@ -86,7 +80,7 @@ try {
                         'stripe_invoice_id' => null,
                         'amount_cents' => $session->amount_total ?? 0,
                         'currency' => strtolower($session->currency ?? 'usd'),
-                        'description' => "Compra de {$amountCoins} monedas",
+                        'description' => "Purchase of {$amountCoins} coins",
                         'status' => 'succeeded'
                     ]);
 
@@ -107,22 +101,18 @@ try {
                 break;
             }
 
-            // Actualizar la suscripción en BD
             $subRepo->updateByCheckoutSessionId($session->id, [
                 'status' => 'active',
                 'stripe_subscription_id' => $session->subscription ?? null,
                 'stripe_customer_id' => $session->customer ?? null
             ]);
 
-            // Actualizar el tier del usuario
             $subRepo->updateUserTier($userId, $tier);
 
-            // Actualizar stripe_customer_id del usuario
             if (!empty($session->customer)) {
                 $subRepo->updateUserStripeCustomerId($userId, $session->customer);
             }
 
-            // Registrar pago en el historial
             $amountTotal = $session->amount_total ?? 0;
             $tierName = SubscriptionPlanConstants::getTierLimits($tier)['name'];
             $periodLabel = $billingPeriod === 'yearly' ? 'Anual' : 'Mensual';
@@ -133,7 +123,7 @@ try {
                 'stripe_invoice_id' => $session->invoice ?? null,
                 'amount_cents' => $amountTotal,
                 'currency' => strtolower($session->currency ?? 'usd'),
-                'description' => "Suscripción {$tierName} ({$periodLabel})",
+                'description' => "Subscription {$tierName} ({$periodLabel})",
                 'status' => 'succeeded'
             ]);
 
@@ -162,7 +152,6 @@ try {
             break;
 
         // ===================================================================
-        // SUSCRIPCIÓN CANCELADA / EXPIRADA
         // ===================================================================
         case 'customer.subscription.deleted':
             $subscription = $event->data->object;
@@ -170,16 +159,13 @@ try {
 
             $localSub = $subRepo->findByStripeSubscriptionId($stripeSubId);
             if ($localSub) {
-                // Marcar como cancelada
                 $subRepo->updateByStripeSubscriptionId($stripeSubId, [
                     'status' => 'canceled',
                     'canceled_at' => date('Y-m-d H:i:s')
                 ]);
 
-                // Regresar al usuario al tier básico (0)
                 $subRepo->updateUserTier((int) $localSub['user_id'], SubscriptionPlanConstants::TIER_BASIC);
 
-                // Disparador instantáneo para re-evaluar bloqueos de lienzos
                 try {
                     $container = new \App\Core\Container();
                     $lockManager = $container->get(\App\Api\Services\Canvas\CanvasLockManager::class);
@@ -196,7 +182,6 @@ try {
             break;
 
         // ===================================================================
-        // SUSCRIPCIÓN ACTUALIZADA (cambio de plan, periodo, etc.)
         // ===================================================================
         case 'customer.subscription.updated':
             $subscription = $event->data->object;
@@ -225,12 +210,10 @@ try {
             break;
 
         // ===================================================================
-        // PAGO DE FACTURA EXITOSO (renovación recurrente)
         // ===================================================================
         case 'invoice.payment_succeeded':
             $invoice = $event->data->object;
             
-            // Solo procesar facturas de suscripciones (no el pago inicial que ya fue registrado)
             if (empty($invoice->subscription) || ($invoice->billing_reason === 'subscription_create')) {
                 break;
             }
@@ -243,7 +226,7 @@ try {
                     'stripe_invoice_id' => $invoice->id,
                     'amount_cents' => $invoice->amount_paid ?? 0,
                     'currency' => strtolower($invoice->currency ?? 'usd'),
-                    'description' => 'Renovación de suscripción',
+                    'description' => 'Subscription Renewal',
                     'status' => 'succeeded'
                 ]);
 
@@ -255,7 +238,6 @@ try {
             break;
 
         // ===================================================================
-        // PAGO DE FACTURA FALLIDO
         // ===================================================================
         case 'invoice.payment_failed':
             $invoice = $event->data->object;
@@ -276,7 +258,6 @@ try {
             break;
 
         default:
-            // Evento no manejado - ignorar silenciosamente
             break;
     }
 

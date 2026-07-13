@@ -44,7 +44,7 @@ export class StoreController {
                     showMessage(window.__('err_accept_conditions'), 'error');
                     return;
                 }
-                setButtonLoading(btn, 'Guardando...');
+                setButtonLoading(btn, window.__('saving') + '...');
                 try {
                     const res = await this.api.post(ApiRoutes.Settings.UpdatePreferences, { key: 'accepted_content_store_terms', value: 1 });
                     if (res && res.success) {
@@ -68,7 +68,7 @@ export class StoreController {
         const perkId = btn.getAttribute('data-perkid');
         if (!perkId) return;
 
-        setButtonLoading(btn, 'Cargando...');
+        setButtonLoading(btn, window.__('loading') + '...');
         
         try {
             const result = await this.api.post(ApiRoutes.Store.BuyPerk, { perk_id: perkId });
@@ -99,7 +99,7 @@ export class StoreController {
                     showMessage(window.__('err_accept_conditions'), 'error');
                     return;
                 }
-                setButtonLoading(btn, 'Guardando...');
+                setButtonLoading(btn, window.__('saving') + '...');
                 try {
                     const res = await this.api.post(ApiRoutes.Settings.UpdatePreferences, { key: 'accepted_store_terms', value: 1 });
                     if (res && res.success) {
@@ -123,7 +123,7 @@ export class StoreController {
         const amount = parseInt(btn.getAttribute('data-amount'));
         if (!amount) return;
         
-        setButtonLoading(btn, 'Cargando...');
+        setButtonLoading(btn, window.__('loading') + '...');
         
         try {
             const result = await this.api.post(ApiRoutes.Stripe.CreateCoinCheckout, { 

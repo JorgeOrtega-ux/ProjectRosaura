@@ -344,15 +344,15 @@ class AuthController {
                 if (formWrapper) {
                     formWrapper.innerHTML = `
                         <div class="component-form-header">
-                            <h1 class="component-form-title">Cuenta en eliminación</h1>
-                            <p class="component-form-desc">Tu cuenta ha sido programada para ser eliminada permanentemente el <strong>${new Date(result.scheduled_at).toLocaleDateString()}</strong>.</p>
+                            <h1 class="component-form-title">${window.__('account_in_deletion')}</h1>
+                            <p class="component-form-desc">${window.__('account_scheduled_deletion').replace(':date', `<strong>${new Date(result.scheduled_at).toLocaleDateString()}</strong>`)}</p>
                         </div>
                         <div class="component-form-body">
-                            <p style="margin-bottom: 24px; font-size: 14px; color: var(--color-text-primary); text-align: center;">¿Deseas cancelar el proceso y recuperar el acceso a tu cuenta?</p>
-                            <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="cancelAccountDeletion" data-token="${result.temp_auth_token}">Sí, cancelar eliminación y entrar</button>
+                            <p style="margin-bottom: 24px; font-size: 14px; color: var(--color-text-primary); text-align: center;">${window.__('cancel_deletion_prompt')}</p>
+                            <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="cancelAccountDeletion" data-token="${result.temp_auth_token}">${window.__('yes_cancel_deletion')}</button>
                             
                             <div class="component-link-container component-link-container--center" style="margin-top: 16px;">
-                                <span class="component-link" data-action="continueAccountDeletion" style="cursor: pointer;">No, mantener eliminación y salir</span>
+                                <span class="component-link" data-action="continueAccountDeletion" style="cursor: pointer;">${window.__('no_keep_deletion')}</span>
                             </div>
                         </div>
                     `;
@@ -609,7 +609,7 @@ class AuthController {
 
         let defaultText = __('btn_resend_email');
         if (defaultText === 'btn_resend_email') {
-            defaultText = 'Reenviar correo';
+            defaultText = window.__('resend_email') || 'Resend email';
         }
 
         if (result.success) {

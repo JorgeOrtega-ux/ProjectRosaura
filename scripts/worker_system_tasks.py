@@ -318,7 +318,7 @@ def process_email(payload):
                     return
 
                 msg = MIMEMultipart('alternative')
-                msg['Subject'] = "Â¡Gracias por tu suscripciÃ³n!"
+                msg['Subject'] = "Thank you for your subscription!"
                 msg['From'] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
                 msg['To'] = user_email
                 
@@ -328,9 +328,9 @@ def process_email(payload):
                 <body style='margin: 0; padding: 0; background-color: #f5f5fa; font-family: Arial, sans-serif;'>
                     <div style='padding: 20px; background-color: #f5f5fa; color: #111;'>
                         <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #00000020;'>
-                            <h2 style='color: #111111; margin-top: 0;'>Â¡Gracias por tu suscripciÃ³n!</h2>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hola {username}, hemos procesado exitosamente tu pago y tu suscripciÃ³n a {tier_name} ({billing_period}) estÃ¡ activa.</p>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Puedes empezar a disfrutar de tus nuevos beneficios de inmediato.</p>
+                            <h2 style='color: #111111; margin-top: 0;'>Thank you for your subscription!</h2>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hi {username}, we have successfully processed your payment and your {tier_name} ({billing_period}) subscription is active.</p>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>You can start enjoying your new perks right away.</p>
                         </div>
                     </div>
                 </body>
@@ -361,7 +361,7 @@ def process_email(payload):
         billing_period = payload.get('billingPeriod', 'monthly')
         renewal_date = payload.get('renewalDate', '')
         
-        billing_period_es = 'Anual' if billing_period == 'yearly' else 'Mensual'
+        billing_period_display = 'Yearly' if billing_period == 'yearly' else 'Monthly'
         
         conn = None
         try:
@@ -379,7 +379,7 @@ def process_email(payload):
                     return
 
                 msg = MIMEMultipart('alternative')
-                msg['Subject'] = "Recordatorio: Tu suscripciÃ³n estÃ¡ por renovarse"
+                msg['Subject'] = "Reminder: Your subscription is about to renew"
                 msg['From'] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
                 msg['To'] = user_email
                 
@@ -389,10 +389,10 @@ def process_email(payload):
                 <body style='margin: 0; padding: 0; background-color: #f5f5fa; font-family: Arial, sans-serif;'>
                     <div style='padding: 20px; background-color: #f5f5fa; color: #111;'>
                         <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #00000020;'>
-                            <h2 style='color: #111111; margin-top: 0;'>Recordatorio de renovaciÃ³n</h2>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hola {username},</p>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Te recordamos que tu suscripciÃ³n a <strong>{tier_name} ({billing_period_es})</strong> se renovarÃ¡ automÃ¡ticamente el prÃ³ximo <strong>{renewal_date}</strong>.</p>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Si deseas continuar disfrutando de tus beneficios, no necesitas hacer nada. Si prefieres cancelar, puedes hacerlo desde la configuraciÃ³n de tu cuenta antes de esta fecha.</p>
+                            <h2 style='color: #111111; margin-top: 0;'>Renewal Reminder</h2>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hi {username},</p>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>This is a reminder that your <strong>{tier_name} ({billing_period_display})</strong> subscription will automatically renew on <strong>{renewal_date}</strong>.</p>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>If you wish to continue enjoying your benefits, you don't need to do anything. If you prefer to cancel, you can do so from your account settings before this date.</p>
                         </div>
                     </div>
                 </body>
@@ -832,7 +832,7 @@ def typesense_thread():
         time.sleep(TS_SYNC_INTERVAL)
 
 if __name__ == "__main__":
-    Logger.info("INICIANDO WORKER UNIFICADO DE TAREAS DE SISTEMA (MANTENIMIENTO, CORREOS, TELEMETRIA, TYPESENSE)...")
+    Logger.info("STARTING UNIFIED SYSTEM TASKS WORKER...")
     threading.Thread(target=scheduler_loop, daemon=True, name="Thread-Scheduler").start()
     threading.Thread(target=system_tasks_thread, daemon=True, name="Thread-SystemTasks").start()
     threading.Thread(target=telemetry_thread, daemon=True, name="Thread-Telemetry").start()

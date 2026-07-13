@@ -35,7 +35,7 @@ function parseUserAgentPHP($ua) {
                 
                 <?php if (empty($devices)): ?>
                     <div class="component-group-item empty-row">
-                        <p class="component-text--danger">No se pudieron cargar los dispositivos.</p>
+                        <p class="component-text--danger"><?= __('err_devices_load') ?></p>
                     </div>
                 <?php else: ?>
                     
@@ -75,7 +75,7 @@ function parseUserAgentPHP($ua) {
                                 <?php if ($isCurrent): ?>
                                     <div class="component-badge component-badge--sm component-badge--success">
                                         <span class="material-symbols-rounded component-icon--sm">verified</span>
-                                        <?php echo __('device_current') ?: 'Sesión Actual'; ?>
+                                        <?php echo __('device_current') ?: 'Current Session'; ?>
                                     </div>
                                 <?php else: ?>
                                     <button class="component-button component-button--danger component-button--h36" data-action="revokeDevice" data-id="<?php echo $device['id']; ?>">
@@ -99,7 +99,7 @@ function parseUserAgentPHP($ua) {
                             </div>
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('btn_revoke_all'); ?></h2>
-                                <p class="component-card__description"><?php echo __('devices_revoke_all_desc') ?: 'Cierra todas tus sesiones activas en otros dispositivos para mantener tu cuenta segura.'; ?></p>
+                                <p class="component-card__description"><?php echo __('devices_revoke_all_desc') ?: 'Revoke all your active sessions on other devices to keep your account secure.'; ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">

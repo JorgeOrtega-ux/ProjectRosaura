@@ -275,7 +275,7 @@ class RoleRepository implements RoleRepositoryInterface {
         $tblRoles = DB::TBL_ROLES;
 
         if ($executorWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && (int)$role['weight'] >= $executorWeight) {
-            throw new Exception("Security Violation: Intento de modificar un rol de jerarquía superior o igual.");
+            throw new Exception("Security Violation: Attempted to modify a role of equal or higher hierarchy.");
         }
 
         try {
@@ -306,11 +306,11 @@ class RoleRepository implements RoleRepositoryInterface {
         $tblRoles = DB::TBL_ROLES;
 
         if ((int)$role['is_system'] === 1) {
-            throw new Exception("Security Violation: Intento de eliminar un rol fundamental del sistema.");
+            throw new Exception("Security Violation: Attempted to delete a fundamental system role.");
         }
 
         if ($executorWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && (int)$role['weight'] >= $executorWeight) {
-            throw new Exception("Security Violation: Intento de eliminar un rol de jerarquía superior o igual.");
+            throw new Exception("Security Violation: Attempted to delete a role of equal or higher hierarchy.");
         }
 
         try {
@@ -333,7 +333,7 @@ class RoleRepository implements RoleRepositoryInterface {
         if (!$role) return false;
 
         if ($executorWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && (int)$role['weight'] >= $executorWeight) {
-            throw new Exception("Security Violation: Intento de modificar permisos de un rol de jerarquía superior o igual.");
+            throw new Exception("Security Violation: Attempted to modify permissions of a role of equal or higher hierarchy.");
         }
 
         $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
@@ -382,7 +382,7 @@ class RoleRepository implements RoleRepositoryInterface {
 
         foreach ($rolesData as $rd) {
             if ($executorWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && (int)$rd['weight'] > $executorWeight) {
-                throw new Exception("Security Violation: No tienes jerarquía suficiente para asignar el rol ID " . $rd['id']);
+                throw new Exception("Security Violation: Insufficient hierarchy to assign role ID " . $rd['id']);
             }
         }
 
