@@ -9,7 +9,10 @@ export class CanvasCardInteractions {
     }
 
     handleAction(action, btn) {
-        if (action === 'openCanvasNewTab') {
+        if (action === 'toggleDynamicMenu') {
+            this.toggleDynamicMenu(btn);
+            return true;
+        } else if (action === 'openCanvasNewTab') {
             this.openCanvasNewTab(btn);
             return true;
         } else if (action === 'copyCanvasLink') {
@@ -222,6 +225,98 @@ export class CanvasCardInteractions {
         document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
             el.classList.remove('active');
             el.classList.add('disabled');
+            // Si es un menú dinámico de una tarjeta, lo eliminamos del DOM
+            if (el.closest('.component-dropdown-wrapper')) {
+                setTimeout(() => el.remove(), 250); // Le damos tiempo a la animación de cierre
+            }
         });
+    }
+
+    toggleDynamicMenu(btn) {
+        const wrapper = btn.closest('.component-dropdown-wrapper');
+        if (!wrapper) return;
+        
+        let moduleEl = wrapper.querySelector('.component-module');
+        
+        if (moduleEl) {
+            if (moduleEl.classList.contains('active')) {
+                moduleEl.classList.remove('active');
+                moduleEl.classList.add('disabled');
+                setTimeout(() => moduleEl.remove(), 250);
+            } else {
+                this.closeDropdowns();
+                moduleEl.classList.remove('disabled');
+                moduleEl.classList.add('active');
+            }
+            return;
+        }
+
+        const id = btn.getAttribute('data-id');
+        const uuid = btn.getAttribute('data-uuid');
+        const isOwner = btn.getAttribute('data-owner') === '1';
+        const isLocked = btn.getAttribute('data-locked') === '1';
+
+        const actionButtonHtml = isOwner 
+            ? `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="deleteCanvas" data-id="${id}" data-uuid="${uuid}">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
+                    <div class="component-menu-link-text"><span>${window.__('delete_canvas')}</span></div>
+               </button>`
+            : `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="leaveCanvas" data-id="${id}" data-uuid="${uuid}">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
+                    <div class="component-menu-link-text"><span>${window.__('leave_canvas')}</span></div>
+               </button>`;
+
+        let warningMenuOption = '';
+        if (isLocked && isOwner) {
+            warningMenuOption = `
+                <button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--warning" data-action="downgradeCanvas" data-id="${id}" data-uuid="${uuid}">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">build_circle</span></div>
+                    <div class="component-menu-link-text"><span>${window.__('convert_to_basic')}</span></div>
+                </button>
+            `;
+        }
+
+        const html = `
+            <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed active" data-module="snapshot-menu-${id}">
+                <div class="component-menu component-menu--w265">
+                    <div class="pill-container"><div class="drag-handle"></div></div>
+                    
+                    <div class="component-menu-list">
+                        <button type="button" class="component-menu-link" data-action="openCanvasNewTab" data-uuid="${uuid}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">open_in_new</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('open_in_new_tab')}</span></div>
+                        </button>
+
+                        <button type="button" class="component-menu-link" data-action="copyCanvasLink" data-uuid="${uuid}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">content_copy</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('copy_link')}</span></div>
+                        </button>
+                        
+                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/design/s/${uuid}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('view_restart_gallery')}</span></div>
+                        </button>
+                        
+                        ${warningMenuOption}
+
+                        ${actionButtonHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        this.closeDropdowns();
+        wrapper.insertAdjacentHTML('beforeend', html);
+        
+        // Let the global app re-init events for this new module if necessary, or just rely on global delegation
+        if (window.app && typeof window.app.initModules === 'function') {
+            window.app.initModules(wrapper);
+        } else if (window.uiUtils && typeof window.uiUtils.initDropdowns === 'function') {
+            window.uiUtils.initDropdowns(wrapper);
+        }
+        
+        if (window.router && typeof window.router.bindLinks === 'function') {
+            window.router.bindLinks(wrapper);
+        }
     }
 }

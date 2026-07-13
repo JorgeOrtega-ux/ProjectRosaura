@@ -580,6 +580,15 @@ export class DesignChat {
         if (msgEl) {
             msgEl.remove();
         }
+        
+        const remainingMsgs = this.chatContainer.querySelectorAll('.chat-message');
+        if (remainingMsgs.length === 0) {
+            const emptyState = this.chatContainer.querySelector('[data-ref="empty-state-rendered"]');
+            if (emptyState) {
+                emptyState.classList.remove('disabled');
+                emptyState.classList.add('active');
+            }
+        }
     }
 
     handleTypingEvent(data) {
@@ -757,6 +766,12 @@ export class DesignChat {
     }
 
     appendMessage(msg, scroll = true) {
+        const emptyState = this.chatContainer.querySelector('[data-ref="empty-state-rendered"]');
+        if (emptyState && emptyState.classList.contains('active')) {
+            emptyState.classList.remove('active');
+            emptyState.classList.add('disabled');
+        }
+
         const isScrolledToBottom = this.chatContainer.scrollHeight - this.chatContainer.clientHeight <= this.chatContainer.scrollTop + 50;
         
         const el = this.createMessageElement(msg);

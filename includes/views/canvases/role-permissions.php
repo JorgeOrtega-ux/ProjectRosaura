@@ -93,7 +93,6 @@ if (trim($rawName) !== '') {
     if ($isSystemRole) {
         $roleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower(trim($rawName)));
         $translatedName = __($roleKey);
-        if ($translatedName === $roleKey) $translatedName = $rawName;
     } else {
         $translatedName = htmlspecialchars($rawName);
     }

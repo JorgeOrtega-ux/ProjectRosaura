@@ -137,7 +137,6 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                             if ($isSystemFlag) {
                                 $roleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower(trim($rawName)));
                                 $translatedName = __($roleKey);
-                                if ($translatedName === $roleKey) $translatedName = $rawName;
                                 $desc = __('desc_role_' . strtolower(trim($rawName)));
                             } else {
                                 $translatedName = htmlspecialchars($rawName);

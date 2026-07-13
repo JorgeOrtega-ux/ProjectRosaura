@@ -17,15 +17,6 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                  decoding="async" 
                  onerror="this.src='${fallbackImg}'">`;
 
-        const actionButtonHtml = canvas.is_owner 
-            ? `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="deleteCanvas" data-id="${canvas.id}" data-uuid="${uuid}">
-                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
-                    <div class="component-menu-link-text"><span>${window.__('delete_canvas')}</span></div>
-               </button>`
-            : `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="leaveCanvas" data-id="${canvas.id}" data-uuid="${uuid}">
-                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
-                    <div class="component-menu-link-text"><span>${window.__('leave_canvas')}</span></div>
-               </button>`;
         const onlinePlayers = parseInt(canvas.online_players || 0, 10);
         const membersCount = parseInt(canvas.members_count || 0, 10);
         const likesCount = parseInt(canvas.favorites_count || 0, 10);
@@ -64,7 +55,6 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         }
         
         let warningOverlay = '';
-        let warningMenuOption = '';
         
         if (canvas.locked_requires_downgrade) {
             warningOverlay = `
@@ -76,15 +66,6 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                     </div>
                 </div>
             `;
-            
-            if (canvas.is_owner) {
-                warningMenuOption = `
-                    <button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--warning" data-action="downgradeCanvas" data-id="${canvas.id}" data-uuid="${uuid}">
-                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">build_circle</span></div>
-                        <div class="component-menu-link-text"><span>${window.__('convert_to_basic')}</span></div>
-                    </button>
-                `;
-            }
         }
 
         const navAction = canvas.locked_requires_downgrade ? '' : `data-nav="${basePath}/design/${uuid}"`;
@@ -105,36 +86,9 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                         <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite ${isFavoriteClass}" data-action="toggleFavorite" data-id="${canvas.id}">
                             <span class="material-symbols-rounded component-icon--20">favorite</span>
                         </button>
-                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="snapshot-menu-${canvas.id}">
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleDynamicMenu" data-id="${canvas.id}" data-uuid="${uuid}" data-owner="${canvas.is_owner ? '1' : '0'}" data-locked="${canvas.locked_requires_downgrade ? '1' : '0'}">
                             <span class="material-symbols-rounded">more_vert</span>
                         </button>
-                    </div>
-                    
-                    <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed disabled" data-module="snapshot-menu-${canvas.id}">
-                        <div class="component-menu component-menu--w265">
-                            <div class="pill-container"><div class="drag-handle"></div></div>
-                            
-                            <div class="component-menu-list">
-                                <button type="button" class="component-menu-link" data-action="openCanvasNewTab" data-uuid="${uuid}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">open_in_new</span></div>
-                                    <div class="component-menu-link-text"><span>${window.__('open_in_new_tab')}</span></div>
-                                </button>
-
-                                <button type="button" class="component-menu-link" data-action="copyCanvasLink" data-uuid="${uuid}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">content_copy</span></div>
-                                    <div class="component-menu-link-text"><span>${window.__('copy_link')}</span></div>
-                                </button>
-                                
-                                <button type="button" class="component-menu-link" data-nav="${basePath}/design/s/${uuid}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
-                                    <div class="component-menu-link-text"><span>${window.__('view_restart_gallery')}</span></div>
-                                </button>
-                                
-                                ${warningMenuOption}
-
-                                ${actionButtonHtml}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
