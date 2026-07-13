@@ -381,8 +381,8 @@ export const DialogTemplates = {
         })
     },
 
-    confirmDeleteCanvas: {
-        build: () => DialogTemplates.confirmAction.build({
+    verifyPasswordDeleteCanvas: {
+        build: () => DialogTemplates.verifyPasswordDialog.build({
             titleKey: 'title_confirm_delete_canvas',
             descKey: 'desc_confirm_delete_canvas',
             confirmClass: 'component-button--danger',

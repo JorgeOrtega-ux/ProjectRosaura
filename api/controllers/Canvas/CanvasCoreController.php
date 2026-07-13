@@ -185,7 +185,7 @@ class CanvasCoreController extends BaseController {
 
             $uuid = $input['id'] ?? $input['uuid'] ?? null;
             if ($uuid && is_string($uuid) && empty($input['canvas_ids'])) {
-                $result = $this->canvasServices->deleteSingleCanvas($userId, $uuid, $this->canManageOfficial());
+                $result = $this->canvasServices->deleteCanvas($userId, $uuid, $this->canManageOfficial());
                 return $this->respond($result);
             }
 

@@ -1,4 +1,4 @@
-﻿import { ApiRoutes } from '../api/ApiRoutes.js';
+import { ApiRoutes } from '../api/ApiRoutes.js';
 import { showMessage } from '../utils/uiUtils.js';
 
 export class CanvasCardInteractions {
@@ -112,20 +112,31 @@ export class CanvasCardInteractions {
         this.closeDropdowns();
 
         if (window.dialogSystem) {
-            const confirm = await window.dialogSystem.show('confirmDeleteCanvas', { uuid: uuid });
+            const confirm = await window.dialogSystem.show('verifyPasswordDeleteCanvas', { uuid: uuid });
             if (!confirm.confirmed) return;
-        }
+            
+            const password = confirm.data['modal_verify_password'] ? confirm.data['modal_verify_password'].trim() : '';
+            if (!password) {
+                showMessage(window.__('err_password_required'), 'error');
+                return;
+            }
 
-        const res = await this.api.post(ApiRoutes.Canvases.Delete, { uuid: uuid }, this.abortController.signal);
-        
-        if (res.aborted) return;
+            const payload = {
+                canvas_ids: [id],
+                password: password
+            };
 
-        if (res.success) {
-            showMessage(window.__('msg_canvas_deleted'), 'success');
-            const card = document.querySelector(`.component-gallery-card[data-card-id="${id}"]`);
-            if (card) card.remove();
-        } else {
-            showMessage(res.message, 'error');
+            const res = await this.api.post(ApiRoutes.Canvases.Delete, payload, this.abortController.signal);
+            
+            if (res.aborted) return;
+
+            if (res.success) {
+                showMessage(window.__('msg_canvas_deleted'), 'success');
+                const card = document.querySelector(`.component-gallery-card[data-card-id="${id}"]`);
+                if (card) card.remove();
+            } else {
+                showMessage(res.message, 'error');
+            }
         }
     }
 
