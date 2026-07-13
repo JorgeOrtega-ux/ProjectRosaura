@@ -102,6 +102,7 @@ class CanvasMediaController extends BaseController {
 
     public function get_snapshot_timelapse($input) {
         try {
+            $t0 = microtime(true);
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             $snapshotId = $input['id'] ?? null;
 
@@ -110,6 +111,7 @@ class CanvasMediaController extends BaseController {
             }
 
             $result = $this->canvasServices->prepareSnapshotTimelapseDownload($userId, $snapshotId, $this->canManageOfficial());
+            $t1 = microtime(true);
 
             if (!$result['success']) {
                 $code = $result['http_code'] ?? 400;
@@ -120,6 +122,7 @@ class CanvasMediaController extends BaseController {
             $s3Key = $result['file_path'];
             $bucket = \App\Core\Helpers\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
             $s3Client = \App\Core\Helpers\Utils::getS3Client();
+            $t2 = microtime(true);
 
             try {
                 $head = $s3Client->headObject([
@@ -129,14 +132,26 @@ class CanvasMediaController extends BaseController {
             } catch (\Exception $e) {
                 return $this->respond(['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => 404]);
             }
+            $t3 = microtime(true);
 
             if (ob_get_level()) {
                 ob_end_clean();
             }
 
+            session_write_close();
+            $t4 = microtime(true);
+
+            \App\Core\System\Logger::info("Timelapse PHP Timings", [
+                'prepare' => round($t1 - $t0, 4),
+                'getS3Client' => round($t2 - $t1, 4),
+                'headObject' => round($t3 - $t2, 4),
+                'sessionClose' => round($t4 - $t3, 4),
+                'total_before_headers' => round($t4 - $t0, 4)
+            ]);
+
             header('Content-Type: application/x-ndjson');
             header('Content-Disposition: attachment; filename="snapshot_timelapse_' . $snapshotId . '.jsonl"');
-            // header('Content-Length: ' . $head['ContentLength']);
+            header('Content-Length: ' . $head['ContentLength']);
             header('Cache-Control: no-cache, must-revalidate');
             header('Pragma: no-cache');
             header('Expires: 0');
@@ -186,6 +201,65 @@ class CanvasMediaController extends BaseController {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
 
             $result = $this->canvasServices->getSnapshotDetail($id, $userId, $this->canManageOfficial());
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+    public function toggle_snapshot_like($input) {
+        try {
+            $id = $input['id'] ?? null;
+            if (!$id) {
+                return $this->respond(['success' => false, 'message' => __('err_snapshot_id_missing')]);
+            }
+            
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_auth_required'), 'http_code' => 401]);
+            }
+            
+            $userId = $this->session->getActiveAccountId();
+            $result = $this->canvasServices->toggleSnapshotLike($id, $userId);
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function toggle_snapshot_privacy($input) {
+        try {
+            $id = $input['id'] ?? null;
+            if (!$id) {
+                return $this->respond(['success' => false, 'message' => __('err_snapshot_id_missing')]);
+            }
+            
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_auth_required'), 'http_code' => 401]);
+            }
+            
+            $userId = $this->session->getActiveAccountId();
+            $result = $this->canvasServices->toggleSnapshotPrivacy($id, $userId, $this->canManageOfficial());
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function delete_snapshot($input) {
+        try {
+            $id = $input['id'] ?? null;
+            if (!$id) {
+                return $this->respond(['success' => false, 'message' => __('err_snapshot_id_missing')]);
+            }
+            
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_auth_required'), 'http_code' => 401]);
+            }
+            
+            $userId = $this->session->getActiveAccountId();
+            $result = $this->canvasServices->deleteSnapshot($id, $userId, $this->canManageOfficial());
             return $this->respond($result);
 
         } catch (\Throwable $e) {

@@ -33,9 +33,11 @@ if ($uuid) {
             $canvasName = $canvas['name'];
             $isAuthorized = true;
 
+            $userId = $_SESSION['user_id'] ?? null;
+            $isOwner = ($canvas['owner_id'] == $userId);
+            $isPrivileged = isset($_SESSION['user_permissions']) && in_array('access_admin_panel', $_SESSION['user_permissions']);
+
             if ($canvas['privacy'] === DB::PRIVACY_PRIVATE) {
-                $userId = $_SESSION['user_id'] ?? null;
-                $isOwner = ($canvas['owner_id'] == $userId);
                 $isMember = false;
 
                 if ($userId && !$isOwner) {
@@ -43,8 +45,6 @@ if ($uuid) {
                     $memberStmt->execute([':canvas_id' => $canvas['id'], ':user_id' => $userId]);
                     $isMember = (bool) $memberStmt->fetch(PDO::FETCH_ASSOC);
                 }
-
-                $isPrivileged = isset($_SESSION['user_permissions']) && in_array('access_admin_panel', $_SESSION['user_permissions']);
 
                 if (!$isOwner && !$isMember && !$isPrivileged) {
                     $isAuthorized = false;
@@ -55,13 +55,16 @@ if ($uuid) {
             }
 
             if ($isAuthorized) {
+                $userIdParam = $_SESSION['user_id'] ?? 0;
                 $stmtHist = $db->prepare('
-                    SELECT id, file_path, snapshot_uuid, created_at
-                    FROM canvas_snapshots_history
-                    WHERE canvas_id = :canvas_id
-                    ORDER BY created_at DESC
+                    SELECT s.id, s.file_path, s.snapshot_uuid, s.created_at, s.privacy,
+                           (SELECT COUNT(*) FROM canvas_snapshots_likes l WHERE l.snapshot_id = s.id) as likes_count,
+                           (SELECT COUNT(*) FROM canvas_snapshots_likes l WHERE l.snapshot_id = s.id AND l.user_id = :user_id) as user_liked
+                    FROM canvas_snapshots_history s
+                    WHERE s.canvas_id = :canvas_id
+                    ORDER BY s.created_at DESC
                 ');
-                $stmtHist->execute([':canvas_id' => $canvas['id']]);
+                $stmtHist->execute([':canvas_id' => $canvas['id'], ':user_id' => $userIdParam]);
                 $history = $stmtHist->fetchAll(PDO::FETCH_ASSOC);
 
                 foreach ($history as $item) {
@@ -72,6 +75,9 @@ if ($uuid) {
                         'url' => $imageUrl,
                         'date' => date('d/m/Y H:i', strtotime($item['created_at'])),
                         'snapshot_uuid' => $item['snapshot_uuid'],
+                        'privacy' => $item['privacy'],
+                        'likes_count' => $item['likes_count'],
+                        'user_liked' => $item['user_liked'] > 0
                     ];
                 }
             }
@@ -140,6 +146,47 @@ if ($error) {
                             <div data-nav="<?php echo $viewUrl; ?>" class="component-gallery-link">
                                 <h3 class="component-gallery-title"><?php echo $nameLabel; ?></h3>
                             </div>
+
+                            <div class="component-gallery-actions-wrapper component-dropdown-wrapper">
+                                <div class="component-gallery-actions">
+                                    <?php $isLikedClass = $snapshot['user_liked'] ? 'is-favorite' : ''; ?>
+                                    <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite <?php echo $isLikedClass; ?>" data-action="toggleSnapshotLike" data-id="<?php echo $snapshot['snapshot_uuid']; ?>">
+                                        <span class="material-symbols-rounded component-icon--20">favorite</span>
+                                    </button>
+                                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="snapshot-menu-<?php echo $snapshot['id']; ?>">
+                                        <span class="material-symbols-rounded">more_vert</span>
+                                    </button>
+                                </div>
+                                
+                                <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed disabled" data-module="snapshot-menu-<?php echo $snapshot['id']; ?>">
+                                    <div class="component-menu component-menu--w265">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            <button type="button" class="component-menu-link" data-action="openSnapshotNewTab" data-uuid="<?php echo $snapshot['snapshot_uuid']; ?>">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">open_in_new</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('open_in_new_tab'); ?></span></div>
+                                            </button>
+                                            <button type="button" class="component-menu-link" data-action="copySnapshotLink" data-uuid="<?php echo $snapshot['snapshot_uuid']; ?>">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">content_copy</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('copy_link'); ?></span></div>
+                                            </button>
+                                            
+                                            <?php if ($isAuthorized && ($isOwner || $isPrivileged)): ?>
+                                            <button type="button" class="component-menu-link" data-action="toggleSnapshotPrivacy" data-id="<?php echo $snapshot['snapshot_uuid']; ?>">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo $snapshot['privacy'] === 'public' ? 'visibility_off' : 'visibility'; ?></span></div>
+                                                <div class="component-menu-link-text"><span class="privacy-text"><?php echo $snapshot['privacy'] === 'public' ? __('make_private') : __('make_public'); ?></span></div>
+                                            </button>
+                                            
+                                            <button type="button" class="component-menu-link component-text-notice--danger" data-action="deleteSnapshot" data-id="<?php echo $snapshot['snapshot_uuid']; ?>" data-card-id="<?php echo $snapshot['id']; ?>">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('delete_snapshot'); ?></span></div>
+                                            </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     <?php endforeach; ?>
                 </div>

@@ -175,11 +175,22 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots_history` (
   `snapshot_uuid` varchar(36) NOT NULL,
   `file_path` varchar(255) NOT NULL,
   `timelapse_file_path` varchar(255) DEFAULT NULL,
+  `privacy` ENUM('public', 'private') NOT NULL DEFAULT 'public',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_snapshot_uuid` (`snapshot_uuid`),
   CONSTRAINT `fk_history_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `canvas_snapshots_likes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `snapshot_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_snapshot_user` (`snapshot_id`, `user_id`),
+  CONSTRAINT `fk_like_snapshot` FOREIGN KEY (`snapshot_id`) REFERENCES `canvas_snapshots_history` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
 CREATE TABLE IF NOT EXISTS `user_templates` (

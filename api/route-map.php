@@ -539,6 +539,21 @@ return [
         'action' => 'get_snapshot_detail',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snap_detail', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
+    'canvases.toggle_snapshot_like' => [
+        'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',
+        'action' => 'toggle_snapshot_like',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_toggle_snap_like', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.toggle_snapshot_privacy' => [
+        'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',
+        'action' => 'toggle_snapshot_privacy',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_toggle_snap_privacy', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.delete_snapshot' => [
+        'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',
+        'action' => 'delete_snapshot',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_delete_snapshot', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
 
     'canvases.get_timelapse' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',

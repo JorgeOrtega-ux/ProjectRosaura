@@ -136,7 +136,11 @@ class SnapshotViewerController {
                 
                 if (!this.timelapseData) {
                     btnPlayPause.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">sync</span> Loading...';
+                    console.time('fetchTimelapseData');
+                    console.log('[SnapshotViewer] Starting fetchTimelapseData at', performance.now());
                     const ok = await this.fetchTimelapseData();
+                    console.log('[SnapshotViewer] Finished fetchTimelapseData at', performance.now());
+                    console.timeEnd('fetchTimelapseData');
                     if (!ok) {
                         btnPlayPause.innerHTML = '<span class="material-symbols-rounded">play_arrow</span> Play';
                         return;
@@ -263,11 +267,8 @@ class SnapshotViewerController {
             }
 
             const text = response.data;
-            const lines = text.trim().split('\n');
-            
-            this.timelapseData = lines.map((line) => {
-                try { return JSON.parse(line); } catch(e) { return null; }
-            }).filter(item => item !== null);
+            // Solo separamos las líneas, no parseamos el JSON de golpe para evitar congelar el navegador.
+            this.timelapseData = text.trim().split('\n');
 
             return true;
         } catch(e) {
@@ -327,8 +328,13 @@ class SnapshotViewerController {
             for (let i = 0; i < pixelsToDraw; i++) {
                 if (this.currentFrame >= this.timelapseData.length) break;
                 
-                const frame = this.timelapseData[this.currentFrame];
-                this.drawSinglePixel(frame);
+                const rawLine = this.timelapseData[this.currentFrame];
+                if (rawLine) {
+                    try {
+                        const frame = JSON.parse(rawLine);
+                        this.drawSinglePixel(frame);
+                    } catch(e) {}
+                }
                 this.currentFrame++;
             }
             

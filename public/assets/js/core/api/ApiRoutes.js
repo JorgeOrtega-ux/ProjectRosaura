@@ -108,6 +108,9 @@ export const ApiRoutes = {
         ResetNow: 'canvases.reset_now',
 
         GetSnapshotsGallery: 'canvases.get_snapshots_gallery',
+        ToggleSnapshotLike: 'canvases.toggle_snapshot_like',
+        ToggleSnapshotPrivacy: 'canvases.toggle_snapshot_privacy',
+        DeleteSnapshot: 'canvases.delete_snapshot',
 
         UploadTemplate: 'canvases.upload_template',
         GetTemplates: 'canvases.get_templates',
