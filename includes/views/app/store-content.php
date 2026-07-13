@@ -49,7 +49,7 @@ $acceptedContentTerms = !empty($userPrefs['accepted_content_store_terms']);
                 
                 <div class="component-card__actions component-badge-group">
                     <div class="component-badge">
-                        <span class="material-symbols-rounded">toll</span> <?= number_format($pkg['price_coins']) ?> Monedas
+                        <span class="material-symbols-rounded">toll</span> <?= \App\Core\Helpers\Utils::formatNumber($pkg['price_coins']) ?> Monedas
                     </div>
                     <?php if ($pkg['is_single_use']): ?>
                     <div class="component-badge component-badge--warning">

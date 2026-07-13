@@ -1,7 +1,6 @@
 import { ApiService } from './core/api/ApiServices.js';
 import { ApiRoutes } from './core/api/ApiRoutes.js';
-import { showMessage, setButtonLoading, restoreButton } from './core/utils/uiUtils.js';
-
+import { showMessage, setButtonLoading, restoreButton, formatNumber } from './core/utils/uiUtils.js';
 export class MainController {
     constructor() {
         this.dom = { header: null, topBar: null, scrolleableArea: null };
@@ -102,7 +101,7 @@ export class MainController {
             const response = await this.api.post(ApiRoutes.Store.GetBalance, {});
             if (response && response.success && response.coins !== undefined) {
                 displays.forEach(d => {
-                    d.textContent = response.coins.toLocaleString();
+                    d.textContent = formatNumber(response.coins);
                 });
             }
         } catch (e) {

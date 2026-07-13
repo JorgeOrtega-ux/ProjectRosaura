@@ -49,7 +49,7 @@ $acceptedStoreTerms = !empty($userPrefs['accepted_store_terms']);
                 
                 <div class="component-badge-group component-mt-16">
                     <div class="component-badge">
-                        <span class="material-symbols-rounded">payments</span> $<?= number_format($pkg['price_usd'], 2) ?> USD
+                        <span class="material-symbols-rounded">payments</span> $<?= \App\Core\Helpers\Utils::formatNumber($pkg['price_usd'], 2) ?> USD
                     </div>
                     <div data-action="buyCoins" data-amount="<?= $pkg['amount'] ?>" class="btn-buy-coins component-badge component-badge--dark component-badge--interactive">
                         <span class="material-symbols-rounded">shopping_cart</span> <?php echo __('btn_buy'); ?>

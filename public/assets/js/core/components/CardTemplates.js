@@ -1,6 +1,4 @@
-import { escapeHTML } from '../utils/uiUtils.js';
-
-export const CardTemplates = {
+import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const CardTemplates = {
     
     canvasCard: (canvas, config = {}) => {
         const name = escapeHTML(canvas.name);
@@ -42,7 +40,7 @@ export const CardTemplates = {
                     </div>
                     <div class="component-badge component-badge--glass">
                         <span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">person</span>
-                        ${onlinePlayers} ${window.__('online')}
+                        ${formatNumber(onlinePlayers)} ${window.__('online')}
                     </div>
                 </div>
             `;
@@ -50,10 +48,10 @@ export const CardTemplates = {
             badgeHtml = `
                 <div class="component-badge component-badge--glass component-badge--absolute-tr">
                     <span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">person</span>
-                    <span>${onlinePlayers} ${window.__('online')}</span> 
+                    <span>${formatNumber(onlinePlayers)} ${window.__('online')}</span> 
                     <span class="component-badge-divider">|</span>
                     <span class="material-symbols-rounded">group</span>
-                    <span>${membersCount}</span>
+                    <span>${formatNumber(membersCount)}</span>
                 </div>
             `;
         }

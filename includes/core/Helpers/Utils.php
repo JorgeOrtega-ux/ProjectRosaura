@@ -503,4 +503,9 @@ class Utils {
         $clean = htmlspecialchars(trim($clean), ENT_QUOTES, 'UTF-8');
         return empty($clean) ? null : $clean;
     }
+
+    public static function formatNumber($number, $decimals = 0) {
+        if (!is_numeric($number)) return '0';
+        return number_format((float)$number, $decimals);
+    }
 }

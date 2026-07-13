@@ -366,27 +366,25 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
-                            <div>
-                                <div class="component-dropdown-wrapper">
-                                    <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownPalette">
-                                        <span class="material-symbols-rounded" data-ref="icon-palette">palette</span>
-                                        <span class="component-dropdown-text" data-ref="text-palette"><?php echo __('lbl_loading'); ?></span>
-                                        <span class="material-symbols-rounded">expand_more</span>
-                                    </div>
-                                    <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownPalette">
-                                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                            <div class="pill-container"><div class="drag-handle"></div></div>
-                                            <div class="component-menu-list component-menu-list--scrollable" data-ref="palette-selector-container">
-                                            </div>
-                                            <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
-                                                <div>
-                                                    <button type="button" class="component-button component-button--text component-button--h34" data-action="navigateCustomPalette">
-                                                        <span class="material-symbols-rounded">add_circle</span>
-                                                        <span><?php echo __('btn_create_custom_palette'); ?></span>
-                                                    </button>
-                                                </div>
-                                            <?php endif; ?>
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownPalette">
+                                    <span class="material-symbols-rounded" data-ref="icon-palette">palette</span>
+                                    <span class="component-dropdown-text" data-ref="text-palette"><?php echo __('lbl_loading'); ?></span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownPalette">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable" data-ref="palette-selector-container">
                                         </div>
+                                        <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
+                                            <div>
+                                                <button type="button" class="component-button component-button--text component-button--h34" data-action="navigateCustomPalette">
+                                                    <span class="material-symbols-rounded">add_circle</span>
+                                                    <span><?php echo __('btn_create_custom_palette'); ?></span>
+                                                </button>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>

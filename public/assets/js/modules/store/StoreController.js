@@ -1,7 +1,6 @@
 import { ApiService } from '../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
-
+import { showMessage, setButtonLoading, restoreButton, formatNumber } from '../../core/utils/uiUtils.js';
 export class StoreController {
     constructor() {
         this.api = new ApiService();
@@ -147,7 +146,7 @@ export class StoreController {
         const balanceEls = document.querySelectorAll('[data-ref="user-coins-balance"]');
         balanceEls.forEach(el => {
             if (newBalance !== undefined) {
-                el.innerText = newBalance.toLocaleString();
+                el.innerText = formatNumber(newBalance);
             }
         });
         window.dispatchEvent(new CustomEvent('coins-updated', { detail: { balance: newBalance } }));

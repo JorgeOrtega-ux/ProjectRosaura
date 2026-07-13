@@ -41,4 +41,9 @@ function escapeHTML(str) {
     return p.innerHTML;
 }
 
-export { showMessage, setButtonLoading, restoreButton, renderSkeleton, escapeHTML };
+function formatNumber(num) {
+    if (num === null || num === undefined) return '0';
+    return Number(num).toLocaleString('en-US');
+}
+
+export { showMessage, setButtonLoading, restoreButton, renderSkeleton, escapeHTML, formatNumber };
