@@ -95,35 +95,40 @@ export const DesignRender = {
             if (tpl) {
                 this.ctx.save();
                 this.ctx.globalAlpha = tpl.opacity;
-                this.ctx.drawImage(tpl.img, tpl.x, tpl.y, tpl.w, tpl.h);
-                this.ctx.restore();
-
+                
+                const cx = Math.round(tpl.x + tpl.w / 2);
+                const cy = Math.round(tpl.y + tpl.h / 2);
+                this.ctx.translate(cx, cy);
+                if (tpl.angle) {
+                    this.ctx.rotate((tpl.angle * Math.PI) / 180);
+                }
+                const hw = Math.round(tpl.w / 2);
+                const hh = Math.round(tpl.h / 2);
+                
+                this.ctx.drawImage(tpl.img, -hw, -hh, tpl.w, tpl.h);
                 if (!tpl.locked) {
-                    this.ctx.save();
                     this.ctx.strokeStyle = '#2196F3';
                     this.ctx.lineWidth = 2 / this.transform.scale;
-                    this.ctx.strokeRect(tpl.x, tpl.y, tpl.w, tpl.h);
-
-                    const hs = 10 / this.transform.scale;
+                    this.ctx.strokeRect(-hw, -hh, tpl.w, tpl.h);
+                    
+                    const handleSize = 8 / this.transform.scale;
                     this.ctx.fillStyle = '#FFFFFF';
-                    this.ctx.strokeStyle = '#2196F3';
-                    this.ctx.lineWidth = 1.5 / this.transform.scale;
-
-                    const drawHandle = (hx, hy) => {
-                        this.ctx.fillRect(hx - hs/2, hy - hs/2, hs, hs);
-                        this.ctx.strokeRect(hx - hs/2, hy - hs/2, hs, hs);
-                    };
-
-                    drawHandle(tpl.x, tpl.y);
-                    drawHandle(tpl.x + tpl.w, tpl.y);
-                    drawHandle(tpl.x, tpl.y + tpl.h);
-                    drawHandle(tpl.x + tpl.w, tpl.y + tpl.h);
-
-                    this.ctx.restore();
+                    const handles = [
+                        [-hw, -hh],
+                        [hw, -hh],
+                        [-hw, hh],
+                        [hw, hh]
+                    ];
+                    handles.forEach(([hx, hy]) => {
+                        this.ctx.fillRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
+                        this.ctx.strokeRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
+                    });
                 }
+                
+                this.ctx.restore();
             }
         }
-
+        
         if (this.transform.scale > 4) {
             this.ctx.lineWidth = 1 / this.transform.scale;
             this.ctx.strokeStyle = gridColor; 

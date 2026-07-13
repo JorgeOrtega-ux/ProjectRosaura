@@ -228,7 +228,8 @@ class CanvasAccessService {
                 }
             }
 
-            $code = 'SHR-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 4));
+            $hex = strtoupper(bin2hex(random_bytes(4)));
+            $code = substr($hex, 0, 4) . '-' . substr($hex, 4, 4);
 
             $data = [
                 'owner_id' => $userId,

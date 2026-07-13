@@ -4105,3 +4105,43 @@ html.dark-theme .component-skeleton::after {
     gap: 4px;
 }
 
+/* ==========================================================================
+   Template Transformer Overlay
+   ========================================================================== */
+.component-template-transformer {
+    position: absolute;
+    border: 2px solid var(--accent-color, #2196F3);
+    pointer-events: none;
+    z-index: 50;
+    box-sizing: border-box;
+    transform-origin: center center;
+    will-change: transform;
+}
+
+.transformer-handle {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background-color: #fff;
+    border: 2px solid var(--accent-color, #2196F3);
+    border-radius: 4px;
+    pointer-events: auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.transformer-handle.tl { top: -7px; left: -7px; cursor: nwse-resize; }
+.transformer-handle.tr { top: -7px; right: -7px; cursor: nesw-resize; }
+.transformer-handle.bl { bottom: -7px; left: -7px; cursor: nesw-resize; }
+.transformer-handle.br { bottom: -7px; right: -7px; cursor: nwse-resize; }
+
+
+
+#live-share-badge .material-symbols-rounded {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}

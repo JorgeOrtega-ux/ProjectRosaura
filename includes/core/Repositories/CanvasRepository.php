@@ -865,7 +865,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getSnapshotsHistoryByUuid(string $uuid): array {
-        $sql = "SELECT h.id, h.snapshot_uuid, h.file_path, h.created_at 
+        $sql = "SELECT h.id, h.snapshot_uuid, h.file_path, h.created_at, c.privacy, 
+                       (SELECT COUNT(*) FROM canvas_snapshots_likes l WHERE l.snapshot_id = h.id) as likes_count
                 FROM " . DB::TBL_CANVAS_SNAPSHOTS_HISTORY . " h
                 INNER JOIN " . DB::TBL_CANVASES . " c ON h.canvas_id = c.id
                 WHERE c.uuid = :uuid

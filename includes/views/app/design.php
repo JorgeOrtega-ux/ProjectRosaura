@@ -247,6 +247,9 @@ if (!empty($canvasUuid)) {
                     <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleTemplateLock" data-ref="btn-template-lock" data-tooltip="<?php echo __('tooltip_toggle_lock'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">lock_open</span>
                     </button>
+                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="rotateTemplate" data-ref="btn-template-rotate" data-tooltip="Rotar plantilla 90°" data-position="bottom">
+                        <span class="material-symbols-rounded">rotate_right</span>
+                    </button>
                     <button class="component-button component-button--icon component-button--h40 component-button--danger disabled" data-action="deleteTemplate" data-ref="btn-template-delete" data-tooltip="<?php echo __('tooltip_remove_template'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
@@ -275,8 +278,13 @@ if (!empty($canvasUuid)) {
         </div>
         <div class="component-bottom">
             <canvas data-ref="design-canvas" class="component-canvas-surface <?php echo (isset($isBlockedInit) && $isBlockedInit) ? 'component-canvas-blocked disabled-interactive' : ''; ?>"></canvas>
-            
+
             <div class="canvas-badges-left" data-ref="badges-left">
+                <div class="component-badge" id="live-share-badge" style="display: none;">
+                    <span class="material-symbols-rounded">sensors</span>
+                    <span>Transmisión en curso</span>
+                </div>
+                
                 <div class="component-badge" data-badge-id="coords">
                     <span class="material-symbols-rounded">my_location</span>
                     <span>- , -</span>

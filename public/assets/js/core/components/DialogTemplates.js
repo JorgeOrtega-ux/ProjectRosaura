@@ -563,7 +563,7 @@ export const DialogTemplates = {
             <div class="component-modal-body">
                 <div class="component-form-box component-form-box--full" style="max-width: 100%;">
                     <div class="component-input-group">
-                        <input type="text" data-ref="live-join-code-modal" class="component-input-field" placeholder="${__('ph_live_share_code')}">
+                        <input type="text" data-ref="live-join-code-modal" class="component-input-field" placeholder="${__('ph_live_share_code')}" maxlength="9" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/(.{4})(.+)/, '$1-$2').slice(0, 9);" style="text-transform: uppercase;">
                         <label class="component-input-label">${__('lbl_live_share_code')}</label>
                     </div>
                 </div>

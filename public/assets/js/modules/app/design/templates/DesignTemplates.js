@@ -102,6 +102,11 @@ export const DesignTemplates = {
             if (input && input.value.trim() !== '') {
                 const code = input.value.trim().toUpperCase();
                 
+                if (code.length !== 9) {
+                    showMessage('El código debe tener 8 caracteres (ej: ABCD-EFGH)', 'warning');
+                    return true;
+                }
+                
                 const originalText = btnSubmitJoinLive.innerHTML;
                 btnSubmitJoinLive.innerHTML = '<span class="component-spinner component-spinner--small"></span> Uniendo...';
                 btnSubmitJoinLive.classList.add('disabled-interactive');
@@ -202,7 +207,7 @@ export const DesignTemplates = {
 
                 const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
                 if (btnOpenJoinLive) {
-                    btnOpenJoinLive.classList.remove('disabled-interactive');
+                    btnOpenJoinLive.classList.remove('disabled-interactive', 'disabled');
                     btnOpenJoinLive.removeAttribute('title');
                 }
 
@@ -408,25 +413,30 @@ export const DesignTemplates = {
         });
 
         const btnLock = document.querySelector('[data-ref="btn-template-lock"]');
+        const btnRotate = document.querySelector('[data-ref="btn-template-rotate"]');
         const btnDel = document.querySelector('[data-ref="btn-template-delete"]');
         const btnLive = document.querySelector('[data-ref="btn-start-live"]');
         const divider = document.querySelector('[data-ref="template-actions-divider"]');
 
         if (this.activeTemplateId) {
             const tpl = this.templates.find(t => t.id === this.activeTemplateId);
-            if (btnLock && btnDel && divider && btnLive && tpl) {
-                btnLock.classList.remove('disabled');
-                btnDel.classList.remove('disabled');
-                btnLive.classList.remove('disabled');
-                divider.classList.remove('disabled');
+            if (tpl) {
+                if (btnLock) btnLock.classList.remove('disabled');
+                if (btnRotate) btnRotate.classList.remove('disabled');
+                if (btnDel) btnDel.classList.remove('disabled');
+                if (btnLive) btnLive.classList.remove('disabled');
+                if (divider) divider.classList.remove('disabled');
                 
-                const iconLock = btnLock.querySelector('.material-symbols-rounded');
-                if (iconLock) {
-                    iconLock.textContent = tpl.locked ? 'lock' : 'lock_open';
+                if (btnLock) {
+                    const iconLock = btnLock.querySelector('.material-symbols-rounded');
+                    if (iconLock) {
+                        iconLock.textContent = tpl.locked ? 'lock' : 'lock_open';
+                    }
                 }
             }
         } else {
             if (btnLock) btnLock.classList.add('disabled');
+            if (btnRotate) btnRotate.classList.add('disabled');
             if (btnDel) btnDel.classList.add('disabled');
             if (btnLive) btnLive.classList.add('disabled');
             if (divider) divider.classList.add('disabled');
@@ -458,14 +468,89 @@ export const DesignTemplates = {
         }
     },
 
+    rotateTemplate() {
+        if (!this.activeTemplateId) return;
+        const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+        if (tpl) {
+            const oldCx = tpl.x + tpl.w / 2;
+            const oldCy = tpl.y + tpl.h / 2;
+
+            tpl.angle = (tpl.angle || 0) + 90;
+            if (tpl.angle >= 360) {
+                tpl.angle -= 360;
+            }
+
+            const angleRad = tpl.angle * Math.PI / 180;
+            const cosA = Math.cos(angleRad);
+            const sinA = Math.sin(angleRad);
+
+            let w2 = tpl.w / 2;
+            let h2 = tpl.h / 2;
+
+            const getRotatedBounds = (w, h) => {
+                const corners = [
+                    { x: -w/2, y: -h/2 }, { x: w/2, y: -h/2 },
+                    { x: -w/2, y: h/2 }, { x: w/2, y: h/2 }
+                ];
+                let minRx = Infinity, maxRx = -Infinity;
+                let minRy = Infinity, maxRy = -Infinity;
+                for (let c of corners) {
+                    const rx = c.x * cosA - c.y * sinA;
+                    const ry = c.x * sinA + c.y * cosA;
+                    if (rx < minRx) minRx = rx;
+                    if (rx > maxRx) maxRx = rx;
+                    if (ry < minRy) minRy = ry;
+                    if (ry > maxRy) maxRy = ry;
+                }
+                return { minRx, maxRx, minRy, maxRy, visualWidth: maxRx - minRx, visualHeight: maxRy - minRy };
+            };
+
+            let bounds = getRotatedBounds(tpl.w, tpl.h);
+
+            // Shrink if too big
+            if (bounds.visualWidth > this.boardWidth || bounds.visualHeight > this.boardHeight) {
+                const scaleX = this.boardWidth / bounds.visualWidth;
+                const scaleY = this.boardHeight / bounds.visualHeight;
+                const shrinkScale = Math.min(scaleX, scaleY) * 0.99; // tiny margin
+                
+                const aspect = tpl.w / tpl.h;
+                let newW = tpl.w * shrinkScale;
+                newW = Math.round(newW / 2) * 2;
+                let newH = Math.round(newW / aspect);
+                newH = Math.round(newH / 2) * 2;
+                
+                tpl.w = newW;
+                tpl.h = newH;
+                bounds = getRotatedBounds(tpl.w, tpl.h);
+            }
+
+            // Restore center and clamp to board
+            tpl.x = oldCx - tpl.w / 2;
+            tpl.y = oldCy - tpl.h / 2;
+
+            const minX = Math.round(-tpl.w/2 - bounds.minRx);
+            const maxX = Math.round(this.boardWidth - tpl.w/2 - bounds.maxRx);
+            const minY = Math.round(-tpl.h/2 - bounds.minRy);
+            const maxY = Math.round(this.boardHeight - tpl.h/2 - bounds.maxRy);
+
+            tpl.x = Math.max(minX, Math.min(tpl.x, maxX));
+            tpl.y = Math.max(minY, Math.min(tpl.y, maxY));
+
+            if (typeof this.emitLiveImageUpdate === 'function') {
+                this.emitLiveImageUpdate();
+            }
+            if (typeof this.updateTransformerUI === 'function') {
+                this.updateTransformerUI();
+            }
+            this.requestRender();
+        }
+    },
+
     deleteTemplate() {
         if (!this.activeTemplateId) return;
 
-        if (this.liveShareStatus === 'owner' && this.liveTemplateId === this.activeTemplateId) {
-            if (typeof this.stopLiveShare === 'function') {
-                this.stopLiveShare();
-            }
-        }
+        // If we delete the active template and it was being live-shared, we just keep the live share active.
+        // Spectators will see nothing until a new template is placed.
 
         this.templates = this.templates.filter(t => t.id !== this.activeTemplateId);
         this.activeTemplateId = null;
@@ -473,28 +558,56 @@ export const DesignTemplates = {
         this.requestRender();
     },
 
+    checkTemplateHandleHit(ex, ey) {
+        if (!this.activeTemplateId) return null;
+        const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+        if (!tpl || tpl.locked) return null;
+
+        let px = ex;
+        let py = ey;
+
+        if (tpl.angle) {
+            const cx = tpl.x + tpl.w / 2;
+            const cy = tpl.y + tpl.h / 2;
+            const rad = (-tpl.angle * Math.PI) / 180;
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            
+            px = cos * (ex - cx) - sin * (ey - cy) + cx;
+            py = sin * (ex - cx) + cos * (ey - cy) + cy;
+        }
+
+        const scale = this.transform?.scale || 1;
+        const hs = 12 / scale; 
+
+        if (Math.abs(px - tpl.x) <= hs && Math.abs(py - tpl.y) <= hs) return 'tl';
+        if (Math.abs(px - (tpl.x + tpl.w)) <= hs && Math.abs(py - tpl.y) <= hs) return 'tr';
+        if (Math.abs(px - tpl.x) <= hs && Math.abs(py - (tpl.y + tpl.h)) <= hs) return 'bl';
+        if (Math.abs(px - (tpl.x + tpl.w)) <= hs && Math.abs(py - (tpl.y + tpl.h)) <= hs) return 'br';
+
+        return null;
+    },
+
     checkTemplateHit(ex, ey) {
         if (!this.activeTemplateId) return null;
         const tpl = this.templates.find(t => t.id === this.activeTemplateId);
         if (!tpl || tpl.locked) return null; 
 
-        const handleSize = 16 / this.transform.scale;
-        const hs = handleSize / 2;
+        let px = ex;
+        let py = ey;
 
-        const corners = [
-            { id: 'resize-tl', x: tpl.x, y: tpl.y },
-            { id: 'resize-tr', x: tpl.x + tpl.w, y: tpl.y },
-            { id: 'resize-bl', x: tpl.x, y: tpl.y + tpl.h },
-            { id: 'resize-br', x: tpl.x + tpl.w, y: tpl.y + tpl.h }
-        ];
-
-        for (const c of corners) {
-            if (ex >= c.x - hs && ex <= c.x + hs && ey >= c.y - hs && ey <= c.y + hs) {
-                return c.id;
-            }
+        if (tpl.angle) {
+            const cx = tpl.x + tpl.w / 2;
+            const cy = tpl.y + tpl.h / 2;
+            const rad = (-tpl.angle * Math.PI) / 180;
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            
+            px = cos * (ex - cx) - sin * (ey - cy) + cx;
+            py = sin * (ex - cx) + cos * (ey - cy) + cy;
         }
 
-        if (ex >= tpl.x && ex <= tpl.x + tpl.w && ey >= tpl.y && ey <= tpl.y + tpl.h) {
+        if (px >= tpl.x && px <= tpl.x + tpl.w && py >= tpl.y && py <= tpl.y + tpl.h) {
             return 'move';
         }
 

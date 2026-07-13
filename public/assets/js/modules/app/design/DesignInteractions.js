@@ -116,6 +116,16 @@ export const DesignInteractions = {
             }
             return;
         }
+        
+        const btnRotate = e.target.closest('[data-action="rotateTemplate"]');
+        if (btnRotate) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof this.rotateTemplate === 'function') {
+                this.rotateTemplate();
+            }
+            return;
+        }
 
         const btnDelete = e.target.closest('[data-action="deleteTemplate"]');
         if (btnDelete) {
@@ -203,6 +213,30 @@ export const DesignInteractions = {
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target || this.isResizeLocked) return;
 
+        const exact = this.getExactBoardCoords(e.clientX, e.clientY);
+        if (!exact) return;
+
+        if (this.activeTemplateId && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
+            const handleHit = typeof this.checkTemplateHandleHit === 'function' ? this.checkTemplateHandleHit(exact.x, exact.y) : null;
+            if (handleHit) {
+                e.preventDefault();
+                const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+                if (!tpl || tpl.locked) return;
+                
+                this.templateInteraction = {
+                    type: 'resize-' + handleHit,
+                    startX: exact.x,
+                    startY: exact.y,
+                    origX: tpl.x,
+                    origY: tpl.y,
+                    origW: tpl.w,
+                    origH: tpl.h,
+                    origAngle: tpl.angle || 0
+                };
+                return;
+            }
+        }
+
         if (e.shiftKey || e.button === 1 || this.isSpectator || this.timelapseActive || this.isResetLocked) {
             this.isDragging = true;
             this.lastMouse = { x: e.clientX, y: e.clientY };
@@ -210,14 +244,10 @@ export const DesignInteractions = {
             return;
         }
 
-        const exact = this.getExactBoardCoords(e.clientX, e.clientY);
-        if (exact) {
-            let hit = null;
-            if (typeof this.checkTemplateHit === 'function') {
-                hit = this.checkTemplateHit(exact.x, exact.y);
-            }
+        if (this.activeTemplateId && typeof this.checkTemplateHit === 'function') {
+            let hit = this.checkTemplateHit(exact.x, exact.y);
             
-            if (hit) {
+            if (hit === 'move') {
                 if (this.liveShareStatus === 'spectator' && this.liveTemplateId === this.activeTemplateId) {
                     showMessage(__('err_only_owner_moves'), 'warning');
                     return;
@@ -231,7 +261,8 @@ export const DesignInteractions = {
                     origX: tpl.x,
                     origY: tpl.y,
                     origW: tpl.w,
-                    origH: tpl.h
+                    origH: tpl.h,
+                    origAngle: tpl.angle || 0
                 };
                 return; 
             }
@@ -286,52 +317,134 @@ export const DesignInteractions = {
                 let newX = Math.round(this.templateInteraction.origX + dx);
                 let newY = Math.round(this.templateInteraction.origY + dy);
                 
-                newX = Math.max(0, Math.min(newX, this.boardWidth - tpl.w));
-                newY = Math.max(0, Math.min(newY, this.boardHeight - tpl.h));
+                const angleRad = (tpl.angle || 0) * Math.PI / 180;
+                const cosA = Math.cos(angleRad);
+                const sinA = Math.sin(angleRad);
+                
+                const w2 = tpl.w / 2;
+                const h2 = tpl.h / 2;
+                
+                const corners = [
+                    { x: -w2, y: -h2 },
+                    { x: w2, y: -h2 },
+                    { x: -w2, y: h2 },
+                    { x: w2, y: h2 }
+                ];
+                
+                let minRx = Infinity, maxRx = -Infinity;
+                let minRy = Infinity, maxRy = -Infinity;
+                
+                for (let c of corners) {
+                    const rx = c.x * cosA - c.y * sinA;
+                    const ry = c.x * sinA + c.y * cosA;
+                    if (rx < minRx) minRx = rx;
+                    if (rx > maxRx) maxRx = rx;
+                    if (ry < minRy) minRy = ry;
+                    if (ry > maxRy) maxRy = ry;
+                }
+                
+                const minX = Math.round(-w2 - minRx);
+                const maxX = Math.round(this.boardWidth - w2 - maxRx);
+                const minY = Math.round(-h2 - minRy);
+                const maxY = Math.round(this.boardHeight - h2 - maxRy);
+                
+                newX = Math.max(minX, Math.min(newX, maxX));
+                newY = Math.max(minY, Math.min(newY, maxY));
                 
                 tpl.x = newX;
                 tpl.y = newY;
             } else {
                 const aspect = this.templateInteraction.origW / this.templateInteraction.origH;
-                let newW, newH;
+                const angleRad = (this.templateInteraction.origAngle || 0) * Math.PI / 180;
+                const cosA = Math.cos(angleRad);
+                const sinA = Math.sin(angleRad);
 
+                // 1. Determine anchor's local coordinates relative to center
+                let localAnchorX, localAnchorY;
+                let signX = 1, signY = 1;
+                
                 if (this.templateInteraction.type === 'resize-br') {
-                    newW = Math.round(this.templateInteraction.origW + dx);
-                    let maxW = this.boardWidth - this.templateInteraction.origX;
-                    let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
-                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
-                    newH = Math.round(newW / aspect);
-                    
-                    tpl.w = newW; tpl.h = newH;
+                    localAnchorX = -this.templateInteraction.origW / 2;
+                    localAnchorY = -this.templateInteraction.origH / 2;
+                    signX = 1; signY = 1;
                 } else if (this.templateInteraction.type === 'resize-tl') {
-                    newW = Math.round(this.templateInteraction.origW - dx);
-                    let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
-                    let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
-                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
-                    newH = Math.round(newW / aspect);
-                    
-                    tpl.w = newW; tpl.h = newH;
-                    tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - newW;
-                    tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - newH;
+                    localAnchorX = this.templateInteraction.origW / 2;
+                    localAnchorY = this.templateInteraction.origH / 2;
+                    signX = -1; signY = -1;
                 } else if (this.templateInteraction.type === 'resize-tr') {
-                    newW = Math.round(this.templateInteraction.origW + dx);
-                    let maxW = this.boardWidth - this.templateInteraction.origX;
-                    let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
-                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
-                    newH = Math.round(newW / aspect);
-
-                    tpl.w = newW; tpl.h = newH;
-                    tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - newH;
+                    localAnchorX = -this.templateInteraction.origW / 2;
+                    localAnchorY = this.templateInteraction.origH / 2;
+                    signX = 1; signY = -1;
                 } else if (this.templateInteraction.type === 'resize-bl') {
-                    newW = Math.round(this.templateInteraction.origW - dx);
-                    let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
-                    let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
-                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
-                    newH = Math.round(newW / aspect);
-
-                    tpl.w = newW; tpl.h = newH;
-                    tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - newW;
+                    localAnchorX = this.templateInteraction.origW / 2;
+                    localAnchorY = -this.templateInteraction.origH / 2;
+                    signX = -1; signY = 1;
                 }
+
+                // 2. Calculate anchor's board coordinates
+                const origCx = this.templateInteraction.origX + this.templateInteraction.origW / 2;
+                const origCy = this.templateInteraction.origY + this.templateInteraction.origH / 2;
+                const anchorBoardX = origCx + localAnchorX * cosA - localAnchorY * sinA;
+                const anchorBoardY = origCy + localAnchorX * sinA + localAnchorY * cosA;
+
+                // 3. Inverse rotate mouse position around the anchor board coordinate
+                const dxAnchor = exact.x - anchorBoardX;
+                const dyAnchor = exact.y - anchorBoardY;
+                const cosInv = Math.cos(-angleRad);
+                const sinInv = Math.sin(-angleRad);
+                const mouseUnrotatedX = dxAnchor * cosInv - dyAnchor * sinInv;
+                const mouseUnrotatedY = dxAnchor * sinInv + dyAnchor * cosInv;
+
+                // 4. Calculate proposed width and height
+                const proposedW_X = mouseUnrotatedX * signX;
+                const proposedW_Y = (mouseUnrotatedY * signY) * aspect;
+                let newW = Math.max(proposedW_X, proposedW_Y);
+
+                // 5. Apply limits and round to even
+                newW = Math.max(20, newW);
+                
+                // Calculate strict maxW to prevent visual bounds from escaping the board
+                let strictMaxW = Infinity;
+                const normAnchorX = localAnchorX / this.templateInteraction.origW;
+                const normAnchorY = localAnchorY / this.templateInteraction.origW;
+
+                const cornerNorms = [
+                    { nx: -0.5, ny: -0.5 / aspect },
+                    { nx: 0.5, ny: -0.5 / aspect },
+                    { nx: -0.5, ny: 0.5 / aspect },
+                    { nx: 0.5, ny: 0.5 / aspect }
+                ];
+
+                for (let cn of cornerNorms) {
+                    const diffX = cn.nx - normAnchorX;
+                    const diffY = cn.ny - normAnchorY;
+                    const kX = diffX * cosA - diffY * sinA;
+                    const kY = diffX * sinA + diffY * cosA;
+
+                    if (kX > 0.0001) strictMaxW = Math.min(strictMaxW, (this.boardWidth - anchorBoardX) / kX);
+                    else if (kX < -0.0001) strictMaxW = Math.min(strictMaxW, -anchorBoardX / kX);
+
+                    if (kY > 0.0001) strictMaxW = Math.min(strictMaxW, (this.boardHeight - anchorBoardY) / kY);
+                    else if (kY < -0.0001) strictMaxW = Math.min(strictMaxW, -anchorBoardY / kY);
+                }
+
+                newW = Math.min(newW, strictMaxW);
+                
+                newW = Math.round(newW / 2) * 2;
+                let newH = Math.round(newW / aspect);
+                newH = Math.round(newH / 2) * 2;
+
+                // 6. Calculate new center to keep anchor stationary
+                let newLocalAnchorX = localAnchorX < 0 ? -newW / 2 : newW / 2;
+                let newLocalAnchorY = localAnchorY < 0 ? -newH / 2 : newH / 2;
+
+                const newCx = anchorBoardX - (newLocalAnchorX * cosA - newLocalAnchorY * sinA);
+                const newCy = anchorBoardY - (newLocalAnchorX * sinA + newLocalAnchorY * cosA);
+
+                tpl.w = newW;
+                tpl.h = newH;
+                tpl.x = Math.round(newCx - newW / 2);
+                tpl.y = Math.round(newCy - newH / 2);
             }
 
             if (this.liveShareStatus === 'owner' && this.activeTemplateId === this.liveTemplateId) {
@@ -376,19 +489,41 @@ export const DesignInteractions = {
             const exact = this.getExactBoardCoords(e.clientX, e.clientY);
             let hit = null;
             if (exact && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
-                if (typeof this.checkTemplateHit === 'function') {
+                if (typeof this.checkTemplateHandleHit === 'function') {
+                    hit = this.checkTemplateHandleHit(exact.x, exact.y);
+                    if (hit) hit = 'resize-' + hit;
+                }
+                if (!hit && typeof this.checkTemplateHit === 'function') {
                     hit = this.checkTemplateHit(exact.x, exact.y);
                 }
             }
             
             if (hit) {
                 if (this.liveShareStatus === 'spectator' && this.liveTemplateId === this.activeTemplateId) {
-                    this.canvas.classList.remove('component-cursor-move', 'component-cursor-nwse', 'component-cursor-nesw');
+                    this.canvas.classList.remove('component-cursor-move', 'component-cursor-nwse', 'component-cursor-nesw', 'component-cursor-pointer');
                 } else {
-                    this.canvas.classList.remove('component-cursor-move', 'component-cursor-nwse', 'component-cursor-nesw');
+                    this.canvas.classList.remove('component-cursor-move', 'component-cursor-nwse', 'component-cursor-nesw', 'component-cursor-pointer');
+                    
+                    let visualHit = hit;
+                    if (hit && hit.startsWith('resize-')) {
+                        let angle = 0;
+                        if (this.activeTemplateId) {
+                            const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+                            if (tpl && tpl.angle) angle = (tpl.angle % 360 + 360) % 360;
+                        }
+                        const corners = ['tl', 'tr', 'br', 'bl'];
+                        const corner = hit.split('-')[1];
+                        const index = corners.indexOf(corner);
+                        if (index !== -1) {
+                            const steps = Math.floor((angle + 45) / 90);
+                            const visualIndex = (index + steps) % 4;
+                            visualHit = 'resize-' + corners[visualIndex];
+                        }
+                    }
+
                     if (hit === 'move') this.canvas.classList.add('component-cursor-move');
-                    else if (hit === 'resize-tl' || hit === 'resize-br') this.canvas.classList.add('component-cursor-nwse');
-                    else if (hit === 'resize-tr' || hit === 'resize-bl') this.canvas.classList.add('component-cursor-nesw');
+                    else if (visualHit === 'resize-tl' || visualHit === 'resize-br') this.canvas.classList.add('component-cursor-nwse');
+                    else if (visualHit === 'resize-tr' || visualHit === 'resize-bl') this.canvas.classList.add('component-cursor-nesw');
                 }
                 
                 if (this.hoveredPixel !== null) {
@@ -544,6 +679,19 @@ export const DesignInteractions = {
                 newY = Math.max(0, Math.min(newY, this.boardHeight - tpl.h));
                 tpl.x = newX;
                 tpl.y = newY;
+            } else if (this.templateInteraction.type === 'rotate') {
+                const cx = this.templateInteraction.origX + (this.templateInteraction.origW / 2);
+                const cy = this.templateInteraction.origY + (this.templateInteraction.origH / 2);
+                
+                const dxCenter = exact.x - cx;
+                const dyCenter = exact.y - cy;
+                
+                let angle = Math.atan2(dyCenter, dxCenter) * (180 / Math.PI);
+                angle += 90; 
+                
+                if (angle < 0) angle += 360;
+                
+                tpl.angle = Math.round(angle);
             } else {
                 const aspect = this.templateInteraction.origW / this.templateInteraction.origH;
                 let newW, newH;

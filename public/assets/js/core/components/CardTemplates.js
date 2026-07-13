@@ -150,18 +150,33 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const fallbackImg = `${basePath}/assets/img/fallbacks/canvas-default.png`;
         const viewUrl = `${basePath}/snapshot/view/${snapshotUuid}`;
         const imageUrl = snapshot.url ? (snapshot.url.startsWith('/') ? snapshot.url : `/${snapshot.url}`) : fallbackImg;
+        const likesCount = parseInt(snapshot.likes_count || 0, 10);
+
+        let privateBadge = '';
+        if (snapshot.is_private) {
+            privateBadge = `
+                <div class="component-gallery-badge component-badge--danger" style="top: 8px; left: 8px; right: auto; padding: 4px 8px; border-radius: 8px; background: rgba(239,68,68,0.9); z-index: 10;">
+                    <span class="material-symbols-rounded" style="font-size: 14px;">lock</span>
+                    <span style="font-size: 12px; font-weight: 600;">Privado</span>
+                </div>
+            `;
+        }
 
         return `
             <div class="component-gallery-card">
+                ${privateBadge}
                 <img src="${escapeHTML(imageUrl)}" 
                      alt="${canvasName}" 
                      class="component-gallery-card__image" 
                      loading="lazy" 
                      decoding="async"
                      onerror="this.src='${fallbackImg}'">
-                <div class="component-gallery-badge">
+                <div class="component-gallery-badge" style="display: flex; gap: 4px;">
                     <span class="material-symbols-rounded">history</span>
-                    ${date}
+                    <span>${date}</span>
+                    <span class="component-badge-divider" style="margin: 0 2px;">|</span>
+                    <span class="material-symbols-rounded" style="color:var(--accent-color)">favorite</span>
+                    <span>${formatNumber(likesCount)}</span>
                 </div>
                 <div data-nav="${viewUrl}" class="component-gallery-link">
                     <h3 class="component-gallery-title">${canvasName}</h3>

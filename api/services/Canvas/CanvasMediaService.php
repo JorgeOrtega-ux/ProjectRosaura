@@ -161,7 +161,9 @@ class CanvasMediaService {
                     'id' => $item['id'],
                     'url' => $imageUrl,
                     'date' => date('d/m/Y H:i', strtotime($item['created_at'])),
-                    'snapshot_uuid' => $item['snapshot_uuid']
+                    'snapshot_uuid' => $item['snapshot_uuid'],
+                    'likes_count' => (int)($item['likes_count'] ?? 0),
+                    'is_private' => ($item['privacy'] ?? '') === DB::PRIVACY_PRIVATE
                 ];
             }, $history);
 

@@ -399,6 +399,9 @@ export const DesignNetwork = {
                 if (this.uiLiveInputY) this.uiLiveInputY.value = tpl.y;
                 if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.value = tpl.opacity || 1;
 
+                const badge = document.getElementById('live-share-badge');
+                if (badge) badge.style.display = 'flex';
+
                 showMessage(__('msg_broadcasting').replace(':code', this.liveShareCode), 'success');
                 return true;
             } else {
@@ -423,6 +426,15 @@ export const DesignNetwork = {
         this.liveShareStatus = 'none';
         this.liveShareCode = null;
         this.liveTemplateId = null;
+
+        const badge = document.getElementById('live-share-badge');
+        if (badge) badge.style.display = 'none';
+
+        const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
+        if (btnOpenJoinLive) {
+            btnOpenJoinLive.classList.remove('disabled-interactive', 'disabled');
+            btnOpenJoinLive.removeAttribute('title');
+        }
 
         showMessage(__('msg_broadcast_stopped'), 'info');
         return true;
@@ -470,14 +482,24 @@ export const DesignNetwork = {
                                 url: img.src
                             });
                             this.activeTemplateId = liveId;
+                            
+                            const badge = document.getElementById('live-share-badge');
+                            if (badge) badge.style.display = 'flex';
+                            
                             resolve();
                         };
-                        img.onerror = resolve; 
+                        img.onerror = () => {
+                            showMessage(__('err_load_live_img'), 'error');
+                            resolve();
+                        };
                     });
+                } else {
+                    const badge = document.getElementById('live-share-badge');
+                    if (badge) badge.style.display = 'flex';
                 }
 
                 if (this.wsManager) {
-                    this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
+                    this.wsManager.send({ type: 'join_live_share', code: code });
                 }
 
                 showMessage(__('msg_joined_broadcast').replace(':code', code), 'success');
@@ -500,7 +522,15 @@ export const DesignNetwork = {
         if (this.liveShareStatus !== 'owner' || !this.liveShareCode || !this.wsManager) return;
         
         const tpl = this.templates.find(t => t.id === this.liveTemplateId);
-        if (!tpl) return;
+        if (!tpl) {
+            // Emitting empty state if no template (e.g. deleted)
+            this.wsManager.send({
+                type: 'update_live_share',
+                code: this.liveShareCode,
+                empty: true
+            });
+            return;
+        }
 
         this.wsManager.send({
             type: 'update_live_share',
@@ -509,7 +539,8 @@ export const DesignNetwork = {
             y: tpl.y,
             w: tpl.w,
             h: tpl.h,
-            opacity: tpl.opacity || 1
+            opacity: tpl.opacity || 1,
+            angle: tpl.angle || 0
         });
     },
 
@@ -517,11 +548,16 @@ export const DesignNetwork = {
         if (this.liveShareStatus === 'spectator' && this.liveShareCode === data.code) {
             const tpl = this.templates.find(t => t.id === this.liveTemplateId);
             if (tpl) {
-                tpl.x = data.x;
-                tpl.y = data.y;
-                tpl.w = data.w;
-                tpl.h = data.h;
-                tpl.opacity = data.opacity !== undefined ? data.opacity : 1;
+                if (data.empty) {
+                    tpl.opacity = 0; // Hide the template if the owner deleted it but kept the session open
+                } else {
+                    tpl.x = data.x;
+                    tpl.y = data.y;
+                    tpl.w = data.w;
+                    tpl.h = data.h;
+                    tpl.opacity = data.opacity !== undefined ? data.opacity : 1;
+                    tpl.angle = data.angle || 0;
+                }
                 this.requestRender();
             }
         }
@@ -533,17 +569,26 @@ export const DesignNetwork = {
             this.liveShareStatus = 'none';
             this.liveShareCode = null;
             
-            this.templates = this.templates.filter(t => t.id !== this.liveTemplateId);
-            this.activeTemplateId = null;
-            this.liveTemplateId = null;
+            const badge = document.getElementById('live-share-badge');
+            if (badge) badge.style.display = 'none';
+
+            if (this.liveTemplateId) {
+                this.templates = this.templates.filter(t => t.id !== this.liveTemplateId);
+                if (this.activeTemplateId === this.liveTemplateId) {
+                    this.activeTemplateId = null;
+                }
+                this.liveTemplateId = null;
+            }
             
-            this.requestRender();
+            this.canvas.classList.remove('component-cursor-move', 'component-cursor-nwse', 'component-cursor-nesw');
             
             const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
             if (btnOpenJoinLive) {
-                btnOpenJoinLive.classList.remove('component-color-indicator');
-                btnOpenJoinLive.style.removeProperty('--active-color');
+                btnOpenJoinLive.classList.remove('disabled-interactive', 'disabled');
+                btnOpenJoinLive.removeAttribute('title');
             }
+
+            this.requestRender();
         }
     },
 
