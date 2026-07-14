@@ -46,6 +46,10 @@ if ($canvasUuid) {
             $cLimit = (int)($canvasData['max_participants'] ?? 10);
             $cAllowPurchases = (int)($canvasData['allow_purchases'] ?? 1);
             $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
+            $cTags = [];
+            if (!empty($canvasData['tags'])) {
+                $cTags = json_decode($canvasData['tags'], true) ?? [];
+            }
         }
     } catch (\Exception $e) {
     }
@@ -174,6 +178,45 @@ if (!$canvasId) {
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
                                                 <div class="component-menu-link-text"><span><?php echo __('canvas_privacy_private'); ?></span></div>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider">
+
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_tags_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_tags_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-dropdown-wrapper" data-dropdown-type="multiple" data-max="8">
+                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownTags">
+                                    <span class="material-symbols-rounded">label</span>
+                                    <span class="component-dropdown-text" data-ref="text-tags">
+                                        <?php echo count($cTags) > 0 ? count($cTags) . ' seleccionadas' : __('ph_select_tags'); ?>
+                                    </span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownTags">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            <?php 
+                                            $allowedTags = ['fun', 'tension', 'action', 'strategy', 'roleplay', 'casual', 'romance', 'horror', 'scifi', 'fantasy'];
+                                            foreach ($allowedTags as $tag): 
+                                                $isActive = in_array($tag, $cTags);
+                                            ?>
+                                            <div class="component-menu-link <?php echo $isActive ? 'active' : ''; ?>" data-action="toggleTag" data-value="<?php echo $tag; ?>" data-label="<?php echo __('tag_' . $tag); ?>">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded" data-ref="icon-check"><?php echo $isActive ? 'check_box' : 'check_box_outline_blank'; ?></span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('tag_' . $tag); ?></span></div>
+                                            </div>
+                                            <?php endforeach; ?>
                                         </div>
                                     </div>
                                 </div>

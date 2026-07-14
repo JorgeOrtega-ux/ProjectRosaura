@@ -257,6 +257,41 @@ class CanvasEditController {
         }
     }
 
+    toggleTag(btn) {
+        if (!this.state.tags) this.state.tags = [];
+        const val = btn.getAttribute('data-value');
+        const isSelected = this.state.tags.includes(val);
+        
+        if (isSelected) {
+            this.state.tags = this.state.tags.filter(t => t !== val);
+            btn.classList.remove('active');
+            const icon = btn.querySelector('[data-ref="icon-check"]');
+            if (icon) icon.textContent = 'check_box_outline_blank';
+        } else {
+            if (this.state.tags.length >= 8) {
+                showMessage(window.__ ? window.__('msg_max_tags') || 'Puedes seleccionar máximo 8 etiquetas.' : 'Puedes seleccionar máximo 8 etiquetas.', 'warning');
+                return;
+            }
+            this.state.tags.push(val);
+            btn.classList.add('active');
+            const icon = btn.querySelector('[data-ref="icon-check"]');
+            if (icon) icon.textContent = 'check_box';
+        }
+
+        const triggerWrapper = btn.closest('.component-dropdown-wrapper');
+        if (triggerWrapper) {
+            const textRef = triggerWrapper.querySelector('[data-ref="text-tags"]');
+            if (textRef) {
+                if (this.state.tags.length > 0) {
+                    textRef.textContent = `${this.state.tags.length} seleccionadas`;
+                } else {
+                    textRef.textContent = window.__('ph_select_tags');
+                }
+            }
+        }
+    }
+
+
     selectValue(btn) {
         const type = btn.getAttribute('data-type');
         const value = btn.getAttribute('data-value');
@@ -390,6 +425,8 @@ class CanvasEditController {
             return;
         }
 
+        const activeTags = Array.from(this.container.querySelectorAll('[data-action="toggleTag"].active')).map(el => el.getAttribute('data-value'));
+
         const payload = {
             id: this.canvasId, 
             name: this.state.name,
@@ -400,7 +437,8 @@ class CanvasEditController {
             cooldown_pixels_batch: this.state.cooldown_pixels_batch,
             cooldown_seconds: this.state.cooldown_seconds,
             allow_purchases: this.state.allow_purchases,
-            allow_chat: this.state.allow_chat
+            allow_chat: this.state.allow_chat,
+            tags: activeTags
         };
 
         setButtonLoading(btn);

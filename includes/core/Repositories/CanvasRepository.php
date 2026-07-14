@@ -38,8 +38,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function create(array $canvasData): int {
         $sql = "INSERT INTO " . DB::TBL_CANVASES . " 
-                (uuid, owner_id, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, scope_type, scope_ref_1, scope_ref_2, scope_ref_3, allow_purchases, allow_chat) 
-                VALUES (:uuid, :owner_id, :name, :description, :privacy, :requires_approval, :size, :palette_id, :max_participants, :cooldown_pixels_batch, :cooldown_seconds, :scope_type, :scope_ref_1, :scope_ref_2, :scope_ref_3, :allow_purchases, :allow_chat)";
+                (uuid, owner_id, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, scope_type, scope_ref_1, scope_ref_2, scope_ref_3, allow_purchases, allow_chat, tags) 
+                VALUES (:uuid, :owner_id, :name, :description, :privacy, :requires_approval, :size, :palette_id, :max_participants, :cooldown_pixels_batch, :cooldown_seconds, :scope_type, :scope_ref_1, :scope_ref_2, :scope_ref_3, :allow_purchases, :allow_chat, :tags)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -59,7 +59,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':scope_ref_2'           => $canvasData['scope_ref_2'] ?? null,
             ':scope_ref_3'           => $canvasData['scope_ref_3'] ?? null,
             ':allow_purchases'       => $canvasData['allow_purchases'] ?? 1,
-            ':allow_chat'            => $canvasData['allow_chat'] ?? 0
+            ':allow_chat'            => $canvasData['allow_chat'] ?? 0,
+            ':tags'                  => isset($canvasData['tags']) ? json_encode($canvasData['tags']) : null
         ]);
 
         $id = (int)$this->db->lastInsertId();
@@ -121,7 +122,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
-                LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
+                LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                 WHERE c.privacy = 'public' AND c.scope_type = 'personal' AND c.is_locked = 0
                 $orderClause 
                 LIMIT :limit OFFSET :offset";
@@ -142,6 +143,75 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
 
+    public function getHomeFeed(?int $userId, string $tagFilter = 'all', int $limit = 20, int $offset = 0): array {
+        $params = [];
+        $whereConditions = ["c.is_locked = 0"];
+        
+        if ($tagFilter !== 'all') {
+            $whereConditions[] = "JSON_CONTAINS(c.tags, :tag)";
+            $params[':tag'] = json_encode($tagFilter);
+        }
+        
+        $userIdParam = $userId ?? 0;
+        
+        if ($userId) {
+            $whereConditions[] = "(c.privacy = 'public' OR c.owner_id = :current_user_id_w1 OR EXISTS(SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm WHERE cm.canvas_id = c.id AND cm.user_id = :current_user_id_w2))";
+            $params[':current_user_id_w1'] = $userIdParam;
+            $params[':current_user_id_w2'] = $userIdParam;
+        } else {
+            $whereConditions[] = "(c.privacy = 'public' OR c.scope_type = 'global')";
+        }
+        
+        $whereSql = implode(' AND ', $whereConditions);
+
+        $orderSql = "ORDER BY 
+            CASE 
+                WHEN c.scope_type = 'global' THEN 1
+                WHEN c.owner_id = :current_user_id_o1 THEN 2
+                WHEN EXISTS(SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm2 WHERE cm2.canvas_id = c.id AND cm2.user_id = :current_user_id_o2) THEN 3
+                ELSE 4
+            END ASC,
+            c.created_at DESC";
+            
+        $params[':current_user_id_o1'] = $userIdParam;
+        $params[':current_user_id_o2'] = $userIdParam;
+        
+        $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, c.favorites_count, c.tags,
+                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
+                       c.members_count
+                FROM " . DB::TBL_CANVASES . " c
+                LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id_fav
+                WHERE $whereSql
+                $orderSql
+                LIMIT :limit OFFSET :offset";
+                
+        $params[':current_user_id_fav'] = $userIdParam;
+        $params[':limit'] = $limit;
+        $params[':offset'] = $offset;
+        
+        $stmt = $this->db->prepare($sql);
+        
+        foreach ($params as $key => $val) {
+            $type = is_int($val) ? PDO::PARAM_INT : PDO::PARAM_STR;
+            $stmt->bindValue($key, $val, $type);
+        }
+        
+        $stmt->execute();
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        $results = array_map(function($canvas) {
+            $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
+            if (!empty($canvas['tags'])) {
+                $canvas['tags'] = json_decode($canvas['tags'], true);
+            } else {
+                $canvas['tags'] = [];
+            }
+            return $canvas;
+        }, $results);
+
+        return array_map([$this, 'appendSnapshotUrl'], $results);
+    }
+
     public function getOfficialCanvases(?int $currentUserId = null, string $sort = 'newest', int $limit = 50, int $offset = 0): array {
         $orderClause = "ORDER BY c.created_at DESC";
         if ($sort === 'oldest') {
@@ -154,7 +224,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
-                LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
+                LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                 WHERE c.owner_id IS NULL AND c.scope_type != 'personal' AND c.is_locked = 0
                 $orderClause
                 LIMIT :limit OFFSET :offset";
@@ -176,11 +246,11 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getUserAndJoinedCanvases(int $userId, int $limit = 50, string $filter = 'all', int $offset = 0): array {
-        $whereClause = "WHERE (c.owner_id = :uid3 OR EXISTS (SELECT 1 FROM canvas_user_roles cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4))";
+        $whereClause = "WHERE (c.owner_id = :uid3 OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_USER_ROLES . " cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4))";
         if ($filter === 'mine') {
             $whereClause = "WHERE c.owner_id = :uid3";
         } elseif ($filter === 'joined') {
-            $whereClause = "WHERE c.owner_id != :uid3 AND EXISTS (SELECT 1 FROM canvas_user_roles cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4)";
+            $whereClause = "WHERE c.owner_id != :uid3 AND EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_USER_ROLES . " cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4)";
         } elseif ($filter === 'favorites') {
             $whereClause .= " AND f.canvas_id IS NOT NULL";
         }
@@ -190,7 +260,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                        c.members_count,
                        CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner
                 FROM " . DB::TBL_CANVASES . " c
-                LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :uid2
+                LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :uid2
                 $whereClause
                 ORDER BY c.id DESC 
                 LIMIT :limit OFFSET :offset";
@@ -220,7 +290,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
-                LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :oid
+                LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :oid
                 WHERE c.owner_id = :oid 
                 ORDER BY c.id DESC 
                 LIMIT :limit OFFSET :offset";
@@ -323,7 +393,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     cooldown_pixels_batch = :cooldown_pixels_batch,
                     cooldown_seconds = :cooldown_seconds,
                     allow_purchases = :allow_purchases,
-                    allow_chat = :allow_chat
+                    allow_chat = :allow_chat,
+                    tags = :tags
                 WHERE id = :id";
         
         $stmt = $this->db->prepare($sql);
@@ -338,6 +409,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':cooldown_seconds'      => $data['cooldown_seconds'],
             ':allow_purchases'       => $data['allow_purchases'] ?? 1,
             ':allow_chat'            => $data['allow_chat'] ?? 0,
+            ':tags'                  => isset($data['tags']) ? json_encode($data['tags']) : null,
             ':id'                    => $id
         ]);
         if ($success) {
@@ -368,7 +440,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function createAccessRequest(int $canvasId, int $userId): bool {
-        $sql = "INSERT INTO canvas_access_requests (canvas_id, user_id, status) 
+        $sql = "INSERT INTO " . DB::TBL_CANVAS_ACCESS_REQUESTS . " (canvas_id, user_id, status) 
                 VALUES (:canvas_id, :user_id, 'pending')
                 ON DUPLICATE KEY UPDATE status = 'pending', updated_at = CURRENT_TIMESTAMP";
         $stmt = $this->db->prepare($sql);
@@ -379,7 +451,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getAccessRequest(int $canvasId, int $userId): ?array {
-        $sql = "SELECT * FROM canvas_access_requests WHERE canvas_id = :canvas_id AND user_id = :user_id LIMIT 1";
+        $sql = "SELECT * FROM " . DB::TBL_CANVAS_ACCESS_REQUESTS . " WHERE canvas_id = :canvas_id AND user_id = :user_id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -387,7 +459,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getRequestById(int $requestId): ?array {
-        $sql = "SELECT * FROM canvas_access_requests WHERE id = :id LIMIT 1";
+        $sql = "SELECT * FROM " . DB::TBL_CANVAS_ACCESS_REQUESTS . " WHERE id = :id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id' => $requestId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -395,13 +467,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function updateRequestStatus(int $requestId, string $status): bool {
-        $sql = "UPDATE canvas_access_requests SET status = :status WHERE id = :id";
+        $sql = "UPDATE " . DB::TBL_CANVAS_ACCESS_REQUESTS . " SET status = :status WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':status' => $status, ':id' => $requestId]);
     }
 
     public function getPendingRequests(int $canvasId): array {
-        $sql = "SELECT * FROM canvas_access_requests WHERE canvas_id = :canvas_id AND status = 'pending' ORDER BY created_at ASC";
+        $sql = "SELECT * FROM " . DB::TBL_CANVAS_ACCESS_REQUESTS . " WHERE canvas_id = :canvas_id AND status = 'pending' ORDER BY created_at ASC";
             $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -411,11 +483,11 @@ class CanvasRepository implements CanvasRepositoryInterface {
         try {
             $this->pdo->beginTransaction();
 
-            $stmtDelete = $this->pdo->prepare("DELETE FROM canvas_user_roles WHERE canvas_id = :cid AND user_id = :uid");
+            $stmtDelete = $this->pdo->prepare("DELETE FROM " . DB::TBL_CANVAS_USER_ROLES . " WHERE canvas_id = :cid AND user_id = :uid");
             $stmtDelete->execute(['cid' => $canvasId, 'uid' => $userId]);
 
             if (!empty($roleIds)) {
-                $stmtInsert = $this->pdo->prepare("INSERT IGNORE INTO canvas_user_roles (canvas_id, user_id, role_id) VALUES (:cid, :uid, :rid)");
+                $stmtInsert = $this->pdo->prepare("INSERT IGNORE INTO " . DB::TBL_CANVAS_USER_ROLES . " (canvas_id, user_id, role_id) VALUES (:cid, :uid, :rid)");
                 foreach ($roleIds as $roleId) {
                     $stmtInsert->execute(['cid' => $canvasId, 'uid' => $userId, 'rid' => $roleId]);
                 }
@@ -432,8 +504,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function getMemberRoles(int $canvasId, int $userId): array {
         $sql = "SELECT r.* 
-                FROM canvas_user_roles cur
-                INNER JOIN canvas_roles r ON cur.role_id = r.id
+                FROM " . DB::TBL_CANVAS_USER_ROLES . " cur
+                INNER JOIN " . DB::TBL_CANVAS_ROLES . " r ON cur.role_id = r.id
                 WHERE cur.canvas_id = :canvas_id AND cur.user_id = :user_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
@@ -444,10 +516,10 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function hasCanvasPermission(int $canvasId, int $userId, string $permission): bool {
         $sql = "SELECT 1 
-                FROM canvas_user_roles cur
-                INNER JOIN canvas_roles r ON cur.role_id = r.id
-                INNER JOIN canvas_role_permissions crp ON r.id = crp.role_id
-                INNER JOIN canvas_permissions p ON crp.permission_id = p.id
+                FROM " . DB::TBL_CANVAS_USER_ROLES . " cur
+                INNER JOIN " . DB::TBL_CANVAS_ROLES . " r ON cur.role_id = r.id
+                INNER JOIN " . DB::TBL_CANVAS_ROLE_PERMISSIONS . " crp ON r.id = crp.role_id
+                INNER JOIN " . DB::TBL_CANVAS_PERMISSIONS . " p ON crp.permission_id = p.id
                 WHERE cur.canvas_id = :canvas_id 
                   AND cur.user_id = :user_id 
                   AND p.name = :permission
@@ -462,7 +534,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function assignMemberRole(int $canvasId, int $userId, int $roleId): bool {
-        $sql = "INSERT IGNORE INTO canvas_user_roles (canvas_id, user_id, role_id) 
+        $sql = "INSERT IGNORE INTO " . DB::TBL_CANVAS_USER_ROLES . " (canvas_id, user_id, role_id) 
                 VALUES (:canvas_id, :user_id, :role_id)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
@@ -473,7 +545,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function removeMemberRole(int $canvasId, int $userId, int $roleId): bool {
-        $sql = "DELETE FROM canvas_user_roles 
+        $sql = "DELETE FROM " . DB::TBL_CANVAS_USER_ROLES . " 
                 WHERE canvas_id = :canvas_id AND user_id = :user_id AND role_id = :role_id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
@@ -484,15 +556,15 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getCanvasRoles(?int $canvasId = null): array {
-        $sql = "SELECT * FROM canvas_roles WHERE canvas_id IS NULL OR canvas_id = :canvas_id ORDER BY weight DESC";
+        $sql = "SELECT * FROM " . DB::TBL_CANVAS_ROLES . " WHERE canvas_id IS NULL OR canvas_id = :canvas_id ORDER BY weight DESC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
         
         $roles = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         foreach ($roles as &$role) {
             $sqlPerms = "SELECT p.name 
-                         FROM canvas_role_permissions crp
-                         INNER JOIN canvas_permissions p ON crp.permission_id = p.id
+                         FROM " . DB::TBL_CANVAS_ROLE_PERMISSIONS . " crp
+                         INNER JOIN " . DB::TBL_CANVAS_PERMISSIONS . " p ON crp.permission_id = p.id
                          WHERE crp.role_id = :role_id";
             $stmtPerms = $this->db->prepare($sqlPerms);
             $stmtPerms->execute([':role_id' => $role['id']]);
@@ -503,7 +575,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getCanvasPermissions(): array {
-        $sql = "SELECT * FROM canvas_permissions ORDER BY id ASC";
+        $sql = "SELECT * FROM " . DB::TBL_CANVAS_PERMISSIONS . " ORDER BY id ASC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -513,7 +585,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         try {
             $this->db->beginTransaction();
             
-            $sql = "INSERT INTO canvas_roles (canvas_id, name, weight, is_system) 
+            $sql = "INSERT INTO " . DB::TBL_CANVAS_ROLES . " (canvas_id, name, weight, is_system) 
                     VALUES (:canvas_id, :name, :weight, :is_system)";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
@@ -543,7 +615,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         try {
             $this->db->beginTransaction();
             
-            $sql = "UPDATE canvas_roles SET name = :name, weight = :weight WHERE id = :id AND canvas_id = :canvas_id AND is_system = 0";
+            $sql = "UPDATE " . DB::TBL_CANVAS_ROLES . " SET name = :name, weight = :weight WHERE id = :id AND canvas_id = :canvas_id AND is_system = 0";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':name' => $name,
@@ -583,7 +655,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function deleteCanvasRole(int $roleId, int $canvasId): bool {
-        $sql = "DELETE FROM canvas_roles WHERE id = :id AND canvas_id = :canvas_id AND is_system = 0";
+        $sql = "DELETE FROM " . DB::TBL_CANVAS_ROLES . " WHERE id = :id AND canvas_id = :canvas_id AND is_system = 0";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             ':id' => $roleId,
@@ -592,20 +664,20 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     private function syncRolePermissions(int $roleId, array $permissions) {
-        $delSql = "DELETE FROM canvas_role_permissions WHERE role_id = :role_id";
+        $delSql = "DELETE FROM " . DB::TBL_CANVAS_ROLE_PERMISSIONS . " WHERE role_id = :role_id";
         $delStmt = $this->db->prepare($delSql);
         $delStmt->execute([':role_id' => $roleId]);
         
         if (empty($permissions)) return;
         $placeholders = implode(',', array_fill(0, count($permissions), '?'));
-        $permSql = "SELECT id FROM canvas_permissions WHERE name IN ($placeholders)";
+        $permSql = "SELECT id FROM " . DB::TBL_CANVAS_PERMISSIONS . " WHERE name IN ($placeholders)";
         $permStmt = $this->db->prepare($permSql);
         $permStmt->execute($permissions);
         $permIds = $permStmt->fetchAll(PDO::FETCH_COLUMN);
         
         if (empty($permIds)) return;
         
-        $insertSql = "INSERT INTO canvas_role_permissions (role_id, permission_id) VALUES (?, ?)";
+        $insertSql = "INSERT INTO " . DB::TBL_CANVAS_ROLE_PERMISSIONS . " (role_id, permission_id) VALUES (?, ?)";
         $insertStmt = $this->db->prepare($insertSql);
         foreach ($permIds as $pid) {
             $insertStmt->execute([$roleId, $pid]);
@@ -613,14 +685,14 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function countCanvasMembers(int $canvasId): int {
-        $sql = "SELECT COUNT(DISTINCT user_id) FROM canvas_user_roles WHERE canvas_id = :canvas_id";
+        $sql = "SELECT COUNT(DISTINCT user_id) FROM " . DB::TBL_CANVAS_USER_ROLES . " WHERE canvas_id = :canvas_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
         return (int)$stmt->fetchColumn();
     }
 
  public function getUserStorageUsed(int $userId): float {
-        $sql = "SELECT file_path FROM user_templates WHERE user_id = :user_id";
+        $sql = "SELECT file_path FROM " . DB::TBL_USER_TEMPLATES . " WHERE user_id = :user_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':user_id' => $userId]);
         $paths = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
@@ -685,7 +757,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         try {
             $this->db->beginTransaction();
             
-            $sqlRoles = "DELETE FROM canvas_user_roles WHERE canvas_id = :canvas_id AND user_id = :user_id";
+            $sqlRoles = "DELETE FROM " . DB::TBL_CANVAS_USER_ROLES . " WHERE canvas_id = :canvas_id AND user_id = :user_id";
             $stmtRoles = $this->db->prepare($sqlRoles);
             $stmtRoles->execute([
                 ':canvas_id' => $canvasId,
@@ -716,11 +788,11 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function trimMembersToLimit(int $canvasId, int $limit): bool {
-        $sql = "DELETE FROM canvas_user_roles
+        $sql = "DELETE FROM " . DB::TBL_CANVAS_USER_ROLES . "
                 WHERE canvas_id = :canvas_id 
                 AND user_id NOT IN (
                     SELECT user_id FROM (
-                        SELECT user_id FROM canvas_user_roles 
+                        SELECT user_id FROM " . DB::TBL_CANVAS_USER_ROLES . " 
                         WHERE canvas_id = :canvas_id2 
                         ORDER BY canvas_id ASC 
                         LIMIT :limit
@@ -734,7 +806,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $sqlClean = "DELETE FROM " . DB::TBL_CANVAS_MEMBERS . " 
                      WHERE canvas_id = :canvas_id 
                      AND user_id NOT IN (
-                         SELECT user_id FROM canvas_user_roles WHERE canvas_id = :canvas_id2
+                         SELECT user_id FROM " . DB::TBL_CANVAS_USER_ROLES . " WHERE canvas_id = :canvas_id2
                      )";
         $stmtClean = $this->db->prepare($sqlClean);
         $stmtClean->bindValue(':canvas_id', $canvasId, PDO::PARAM_INT);
@@ -745,7 +817,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getSnapshot(int $canvasId): ?string {
-        $sql = "SELECT snapshot_data FROM canvas_snapshots WHERE canvas_id = :canvas_id LIMIT 1";
+        $sql = "SELECT snapshot_data FROM " . DB::TBL_CANVAS_SNAPSHOTS . " WHERE canvas_id = :canvas_id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
         
@@ -756,7 +828,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     public function saveSnapshot(int $canvasId, string $snapshotData): bool {
         $compressed = gzcompress($snapshotData);
         
-        $sql = "INSERT INTO canvas_snapshots (canvas_id, snapshot_data) 
+        $sql = "INSERT INTO " . DB::TBL_CANVAS_SNAPSHOTS . " (canvas_id, snapshot_data) 
                 VALUES (:canvas_id, :data)
                 ON DUPLICATE KEY UPDATE snapshot_data = :update_data, last_updated = CURRENT_TIMESTAMP";
         
@@ -769,13 +841,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function clearCanvasData(int $canvasId): bool {
-        $sql = "DELETE FROM canvas_snapshots WHERE canvas_id = :canvas_id";
+        $sql = "DELETE FROM " . DB::TBL_CANVAS_SNAPSHOTS . " WHERE canvas_id = :canvas_id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':canvas_id' => $canvasId]);
     }
 
     public function getResetSettings(int $canvasId): ?array {
-        $sql = "SELECT * FROM canvas_reset_settings WHERE canvas_id = :canvas_id LIMIT 1";
+        $sql = "SELECT * FROM " . DB::TBL_CANVAS_RESET_SETTINGS . " WHERE canvas_id = :canvas_id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
         
@@ -784,7 +856,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function updateResetSettings(int $canvasId, array $settings): bool {
-        $sql = "INSERT INTO canvas_reset_settings 
+        $sql = "INSERT INTO " . DB::TBL_CANVAS_RESET_SETTINGS . " 
                 (canvas_id, is_active, next_reset_at, take_snapshot, timer_action)
                 VALUES 
                 (:canvas_id, :is_active, :next_reset_at, :take_snapshot, :timer_action)
@@ -810,7 +882,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getResizeSettings(int $canvasId): ?array {
-        $sql = "SELECT * FROM canvas_resize_settings WHERE canvas_id = :canvas_id LIMIT 1";
+        $sql = "SELECT * FROM " . DB::TBL_CANVAS_RESIZE_SETTINGS . " WHERE canvas_id = :canvas_id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
         
@@ -819,7 +891,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function updateResizeSettings(int $canvasId, array $settings): bool {
-        $sql = "INSERT INTO canvas_resize_settings 
+        $sql = "INSERT INTO " . DB::TBL_CANVAS_RESIZE_SETTINGS . " 
                 (canvas_id, is_active, next_resize_at, target_size, timer_action)
                 VALUES 
                 (:canvas_id, :is_active, :next_resize_at, :target_size, :timer_action)
@@ -866,7 +938,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function getSnapshotsHistoryByUuid(string $uuid): array {
         $sql = "SELECT h.id, h.snapshot_uuid, h.file_path, h.created_at, c.privacy, 
-                       (SELECT COUNT(*) FROM canvas_snapshots_likes l WHERE l.snapshot_id = h.id) as likes_count
+                       (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_SNAPSHOTS_LIKES . " l WHERE l.snapshot_id = h.id) as likes_count
                 FROM " . DB::TBL_CANVAS_SNAPSHOTS_HISTORY . " h
                 INNER JOIN " . DB::TBL_CANVASES . " c ON h.canvas_id = c.id
                 WHERE c.uuid = :uuid
@@ -879,7 +951,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function saveTemplateMetadata(int $userId, string $filePath): int {
-        $sql = "INSERT INTO user_templates (user_id, file_path) 
+        $sql = "INSERT INTO " . DB::TBL_USER_TEMPLATES . " (user_id, file_path) 
                 VALUES (:user_id, :file_path)";
         
         $stmt = $this->db->prepare($sql);
@@ -893,7 +965,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function getUserTemplates(int $userId): array {
         $sql = "SELECT id, user_id, file_path, created_at 
-                FROM user_templates 
+                FROM " . DB::TBL_USER_TEMPLATES . " 
                 WHERE user_id = :user_id 
                 ORDER BY created_at DESC";
         
@@ -904,7 +976,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function deleteTemplate(int $templateId, int $userId): bool {
-        $sql = "DELETE FROM user_templates 
+        $sql = "DELETE FROM " . DB::TBL_USER_TEMPLATES . " 
                 WHERE id = :id AND user_id = :user_id";
         
         $stmt = $this->db->prepare($sql);
@@ -918,12 +990,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
         try {
             $this->db->beginTransaction();
 
-            $stmt = $this->db->prepare("SELECT 1 FROM canvas_favorites WHERE user_id = :user_id AND canvas_id = :canvas_id LIMIT 1");
+            $stmt = $this->db->prepare("SELECT 1 FROM " . DB::TBL_CANVAS_FAVORITES . " WHERE user_id = :user_id AND canvas_id = :canvas_id LIMIT 1");
             $stmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
             $isFavorite = $stmt->fetchColumn();
 
             if ($isFavorite) {
-                $delStmt = $this->db->prepare("DELETE FROM canvas_favorites WHERE user_id = :user_id AND canvas_id = :canvas_id");
+                $delStmt = $this->db->prepare("DELETE FROM " . DB::TBL_CANVAS_FAVORITES . " WHERE user_id = :user_id AND canvas_id = :canvas_id");
                 $delStmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
 
                 $updStmt = $this->db->prepare("UPDATE " . DB::TBL_CANVASES . " SET favorites_count = GREATEST(0, favorites_count - 1) WHERE id = :canvas_id");
@@ -931,7 +1003,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
                 $action = 'removed';
             } else {
-                $insStmt = $this->db->prepare("INSERT INTO canvas_favorites (user_id, canvas_id) VALUES (:user_id, :canvas_id)");
+                $insStmt = $this->db->prepare("INSERT INTO " . DB::TBL_CANVAS_FAVORITES . " (user_id, canvas_id) VALUES (:user_id, :canvas_id)");
                 $insStmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
 
                 $updStmt = $this->db->prepare("UPDATE " . DB::TBL_CANVASES . " SET favorites_count = favorites_count + 1 WHERE id = :canvas_id");
@@ -960,12 +1032,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function isFavorite(int $userId, int $canvasId): bool {
-        $stmt = $this->db->prepare("SELECT 1 FROM canvas_favorites WHERE user_id = :user_id AND canvas_id = :canvas_id LIMIT 1");
+        $stmt = $this->db->prepare("SELECT 1 FROM " . DB::TBL_CANVAS_FAVORITES . " WHERE user_id = :user_id AND canvas_id = :canvas_id LIMIT 1");
         $stmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
         return (bool)$stmt->fetchColumn();
     }
     public function createInvite(int $canvasId, string $code, string $roleId, ?int $maxUses, ?string $expiresAt, int $createdBy): int {
-        $sql = "INSERT INTO canvas_invites (canvas_id, code, role, max_uses, expires_at, created_by) 
+        $sql = "INSERT INTO " . DB::TBL_CANVAS_INVITES . " (canvas_id, code, role, max_uses, expires_at, created_by) 
                 VALUES (:canvas_id, :code, :role_id, :max_uses, :expires_at, :created_by)";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -981,7 +1053,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function getInvites(int $canvasId): array {
         $sql = "SELECT i.*, u.username as creator_name 
-                FROM canvas_invites i
+                FROM " . DB::TBL_CANVAS_INVITES . " i
                 LEFT JOIN users u ON i.created_by = u.id
                 WHERE i.canvas_id = :canvas_id
                 ORDER BY i.created_at DESC";
@@ -991,7 +1063,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getInviteByCode(string $code): ?array {
-        $sql = "SELECT * FROM canvas_invites WHERE code = :code LIMIT 1";
+        $sql = "SELECT * FROM " . DB::TBL_CANVAS_INVITES . " WHERE code = :code LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':code' => $code]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -999,13 +1071,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function incrementInviteUses(int $inviteId): bool {
-        $sql = "UPDATE canvas_invites SET uses_count = uses_count + 1 WHERE id = :id";
+        $sql = "UPDATE " . DB::TBL_CANVAS_INVITES . " SET uses_count = uses_count + 1 WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':id' => $inviteId]);
     }
 
     public function revokeInvite(int $inviteId, int $canvasId): bool {
-        $sql = "DELETE FROM canvas_invites WHERE id = :id AND canvas_id = :canvas_id";
+        $sql = "DELETE FROM " . DB::TBL_CANVAS_INVITES . " WHERE id = :id AND canvas_id = :canvas_id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':id' => $inviteId, ':canvas_id' => $canvasId]);
     }
@@ -1027,8 +1099,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
         }
 
         $sql = "SELECT r.weight 
-                FROM canvas_roles r 
-                JOIN canvas_user_roles ur ON r.id = ur.role_id 
+                FROM " . DB::TBL_CANVAS_ROLES . " r 
+                JOIN " . DB::TBL_CANVAS_USER_ROLES . " ur ON r.id = ur.role_id 
                 WHERE ur.canvas_id = :cid AND ur.user_id = :uid 
                 ORDER BY r.weight DESC LIMIT 1";
         $stmt = $this->db->prepare($sql);

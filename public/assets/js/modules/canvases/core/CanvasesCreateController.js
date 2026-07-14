@@ -176,6 +176,8 @@ class CanvasesCreateController {
             this.toggleDropdown(actionBtn);
         } else if (action === 'selectValue') {
             this.selectDropdownValue(actionBtn);
+        } else if (action === 'toggleTag') {
+            this.toggleTag(actionBtn);
         } else if (action === 'adjustLimit') {
             this.adjustParticipantLimit(actionBtn);
         } else if (action === 'adjustCooldownBatch') {
@@ -497,6 +499,40 @@ class CanvasesCreateController {
             if(dropdownModule) {
                 dropdownModule.classList.remove('active');
                 dropdownModule.classList.add('disabled');
+            }
+        }
+    }
+
+    toggleTag(btn) {
+        if (!this.formState.tags) this.formState.tags = [];
+        const val = btn.getAttribute('data-value');
+        const isSelected = this.formState.tags.includes(val);
+        
+        if (isSelected) {
+            this.formState.tags = this.formState.tags.filter(t => t !== val);
+            btn.classList.remove('active');
+            const icon = btn.querySelector('[data-ref="icon-check"]');
+            if (icon) icon.textContent = 'check_box_outline_blank';
+        } else {
+            if (this.formState.tags.length >= 8) {
+                showMessage(window.__ ? window.__('msg_max_tags') || 'Puedes seleccionar máximo 8 etiquetas.' : 'Puedes seleccionar máximo 8 etiquetas.', 'warning');
+                return;
+            }
+            this.formState.tags.push(val);
+            btn.classList.add('active');
+            const icon = btn.querySelector('[data-ref="icon-check"]');
+            if (icon) icon.textContent = 'check_box';
+        }
+
+        const triggerWrapper = btn.closest('.component-dropdown-wrapper');
+        if (triggerWrapper) {
+            const textRef = triggerWrapper.querySelector('[data-ref="text-tags"]');
+            if (textRef) {
+                if (this.formState.tags.length > 0) {
+                    textRef.textContent = `${this.formState.tags.length} seleccionadas`;
+                } else {
+                    textRef.textContent = window.__('ph_select_tags');
+                }
             }
         }
     }

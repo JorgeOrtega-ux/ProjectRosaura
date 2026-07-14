@@ -26,16 +26,19 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         if (isOfficial) {
             badgeHtml = `
                 <div class="component-gallery-badges-container">
-                    <div class="component-badge component-badge--brand">
-                        <span class="material-symbols-rounded">verified</span>
-                        ${window.__('official')}
-                    </div>
                     <div class="component-badge component-badge--glass">
                         <span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">person</span>
-                        ${formatNumber(onlinePlayers)} ${window.__('online')}
+                        <span>${formatNumber(onlinePlayers)} ${window.__('online')}</span> 
+                        <span class="component-badge-divider">|</span>
+                        <span class="material-symbols-rounded">group</span>
+                        <span>${formatNumber(membersCount)}</span>
                         <span class="component-badge-divider">|</span>
                         <span class="material-symbols-rounded" style="color:var(--accent-color)">favorite</span>
                         <span>${formatNumber(likesCount)}</span>
+                    </div>
+                    <div class="component-badge component-badge--glass">
+                        <span class="material-symbols-rounded">verified</span>
+                        <span>${window.__('official')}</span>
                     </div>
                 </div>
             `;

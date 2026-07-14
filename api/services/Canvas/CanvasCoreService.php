@@ -71,7 +71,44 @@ class CanvasCoreService {
         }
     }
 
-    public function getPublicCanvases(?int $currentUserId, int $limit = 20, string $sort = 'newest', int $offset = 0): array {
+    public function getHomeFeed(?int $currentUserId, string $tagFilter = 'all', int $limit = 20, int $offset = 0, bool $canManageOfficial = false): array {
+        try {
+            $canvases = $this->canvasRepository->getHomeFeed($currentUserId, $tagFilter, $limit, $offset);
+            
+            $onlineCounts = [];
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis && !empty($canvases)) {
+                        $canvasIds = array_column($canvases, 'id');
+                        $rawCounts = $redis->hmGet("canvas:online_counts", $canvasIds);
+                        foreach ($canvasIds as $idx => $cId) {
+                            if ($rawCounts[$idx] !== false) {
+                                $onlineCounts[$cId] = $rawCounts[$idx];
+                            }
+                        }
+                    }
+                }
+            } catch (Exception $e) {}
+            
+            $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts, $canManageOfficial) {
+                $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id'])) || (empty($canvas['owner_id']) && $canManageOfficial);
+                
+                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
+                
+                $canvas['thumbnail_url'] = $thumbnailUrl;
+                $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
+                return $canvas;
+            }, $canvases);
+
+            return ['success' => true, 'data' => $formattedCanvases];
+        } catch (Exception $e) {
+            Logger::error("Error in getHomeFeed: " . $e->getMessage(), ['user_id' => $currentUserId, 'tag' => $tagFilter]);
+            return ['success' => false, 'message' => __('err_fetch_canvases'), 'http_code' => 500];
+        }
+    }
+
+    public function getPublicCanvases(?int $currentUserId, int $limit = 20, string $sort = 'newest', int $offset = 0, bool $canManageOfficial = false): array {
         try {
             $canvases = $this->canvasRepository->getPublicCanvases($limit, $currentUserId, $sort, $offset);
             
@@ -91,8 +128,8 @@ class CanvasCoreService {
                 }
             } catch (Exception $e) {}
             
-            $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts) {
-                $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && $canvas['owner_id'] !== null);
+            $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts, $canManageOfficial) {
+                $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id'])) || (empty($canvas['owner_id']) && $canManageOfficial);
                 
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
                 
@@ -110,7 +147,7 @@ class CanvasCoreService {
         }
     }
 
-    public function getOfficialCanvases(?int $currentUserId = null, string $sort = 'newest', int $limit = 50, int $offset = 0): array {
+    public function getOfficialCanvases(?int $currentUserId = null, int $limit = 50, string $sort = 'newest', int $offset = 0, bool $canManageOfficial = false): array {
         try {
             $canvases = $this->canvasRepository->getOfficialCanvases($currentUserId, $sort, $limit, $offset);
             
@@ -130,8 +167,8 @@ class CanvasCoreService {
                 }
             } catch (Exception $e) {}
             
-            $formattedCanvases = array_map(function($canvas) use ($onlineCounts) {
-                $canvas['is_owner'] = false; 
+            $formattedCanvases = array_map(function($canvas) use ($onlineCounts, $canManageOfficial) {
+                $canvas['is_owner'] = $canManageOfficial;
                 $canvas['privacy'] = 'public'; 
                 
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
@@ -368,7 +405,8 @@ class CanvasCoreService {
         ?string $scopeRef3 = null,
         bool $canManageOfficial = false,
         int $allowPurchases = 1,
-        int $allowChat = 0
+        int $allowChat = 0,
+        array $tags = []
     ): array {
         try {
             if ($scopeType !== 'personal' && !$canManageOfficial) {
@@ -437,14 +475,22 @@ class CanvasCoreService {
                 'scope_ref_2'           => $scopeRef2,
                 'scope_ref_3'           => $scopeRef3,
                 'allow_purchases'       => $allowPurchases,
-                'allow_chat'            => $allowChat
+                'allow_chat'            => $allowChat,
+                'tags'                  => array_values(array_intersect($tags, [
+                    'fun', 'tension', 'action', 'strategy', 'roleplay', 
+                    'casual', 'romance', 'horror', 'scifi', 'fantasy'
+                ]))
             ];
+            
+            if (count($canvasData['tags']) > 8) {
+                $canvasData['tags'] = array_slice($canvasData['tags'], 0, 8);
+            }
 
             $canvasId = $this->canvasRepository->create($canvasData);
 
+            $this->canvasRepository->addMember($canvasId, $userId, 4);
+
             if ($scopeType === 'personal') {
-                $this->canvasRepository->addMember($canvasId, $userId, 4); 
-                
                 try {
                     $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository);
                     $lockManager->evaluateUserCanvases($userId);
@@ -525,6 +571,18 @@ class CanvasCoreService {
 
             if (isset($data['allow_chat'])) {
                 $data['allow_chat'] = (int)$data['allow_chat'];
+            }
+
+            if (isset($data['tags']) && is_array($data['tags'])) {
+                $data['tags'] = array_values(array_intersect($data['tags'], [
+                    'fun', 'tension', 'action', 'strategy', 'roleplay', 
+                    'casual', 'romance', 'horror', 'scifi', 'fantasy'
+                ]));
+                if (count($data['tags']) > 8) {
+                    $data['tags'] = array_slice($data['tags'], 0, 8);
+                }
+            } else {
+                $data['tags'] = null;
             }
 
             $updated = $this->canvasRepository->updateCanvasData($canvasId, $data);

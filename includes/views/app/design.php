@@ -92,9 +92,15 @@ if (!empty($canvasUuid)) {
             $isPremiumBlockedInit = false;
             try {
                 if (isset($canvas['owner_id']) && $canvas['owner_id']) {
-                    $uStmt = $db->prepare("SELECT subscription_tier FROM users WHERE id = :uid LIMIT 1");
-                    $uStmt->execute([':uid' => $canvas['owner_id']]);
-                    $ownerTier = (int)($uStmt->fetchColumn() ?: 0);
+                    try {
+                        $dbIdentityManager = new \App\Core\Database\DatabaseManager();
+                        $roleRepo = new \App\Core\Repositories\RoleRepository($dbIdentityManager);
+                        $userRepo = new \App\Core\Repositories\UserRepository($dbIdentityManager, $roleRepo);
+                        $uRow = $userRepo->findById($canvas['owner_id']);
+                        $ownerTier = $uRow ? (int)$uRow['subscription_tier'] : 0;
+                    } catch (\Exception $e) {
+                        $ownerTier = 0;
+                    }
                     
                     $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($ownerTier);
                     $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();

@@ -28,7 +28,8 @@ class CanvasCoreController extends BaseController {
             $perms = [];
         }
         return in_array('access_admin_panel', $perms) || 
-               in_array('canvases.manage_official', $perms);
+               in_array('canvases.manage_official', $perms) ||
+               in_array('canvases.create_official', $perms);
     }
 
     private function canCreateOfficial(): bool {
@@ -116,12 +117,13 @@ class CanvasCoreController extends BaseController {
 
             $allowPurchases = isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : 1;
             $allowChat = isset($input['allow_chat']) ? (int)$input['allow_chat'] : 0;
+            $tags = isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : [];
 
             $result = $this->canvasServices->createCanvas(
                 $userId, $name, $description, $privacy, $requiresApproval, 
                 $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds,
                 $scopeType, $scopeRef1, $scopeRef2, $scopeRef3, $this->canCreateOfficial(),
-                $allowPurchases, $allowChat
+                $allowPurchases, $allowChat, $tags
             );
 
 
@@ -161,7 +163,8 @@ class CanvasCoreController extends BaseController {
                 'cooldown_pixels_batch' => $input['cooldown_pixels_batch'] ?? null,
                 'cooldown_seconds' => $input['cooldown_seconds'] ?? null,
                 'allow_purchases' => isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : null,
-                'allow_chat' => isset($input['allow_chat']) ? (int)$input['allow_chat'] : null
+                'allow_chat' => isset($input['allow_chat']) ? (int)$input['allow_chat'] : null,
+                'tags' => isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : []
             ];
 
             $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data, $this->canManageOfficial());
@@ -208,6 +211,21 @@ class CanvasCoreController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
+    public function get_home_feed($input) {
+        try {
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+            $limit = isset($input['limit']) ? (int)$input['limit'] : 20;
+            $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
+            $tag = $input['tag'] ?? 'all';
+
+            $result = $this->canvasServices->getHomeFeed($userId, $tag, $limit, $offset, $this->canManageOfficial());
+            
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
 
     public function get_public($input) {
         try {
@@ -216,7 +234,7 @@ class CanvasCoreController extends BaseController {
             $sort = $input['sort'] ?? 'newest';
             $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
 
-            $result = $this->canvasServices->getPublicCanvases($userId, $limit, $sort, $offset);
+            $result = $this->canvasServices->getPublicCanvases($userId, $limit, $sort, $offset, $this->canManageOfficial());
             
             return $this->respond($result);
         } catch (\Throwable $e) {
@@ -245,7 +263,7 @@ class CanvasCoreController extends BaseController {
             $sort = $input['sort'] ?? 'newest';
             $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
             
-            $result = $this->canvasServices->getOfficialCanvases($userId, $sort, $limit, $offset);
+            $result = $this->canvasServices->getOfficialCanvases($userId, $limit, $sort, $offset, $this->canManageOfficial());
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

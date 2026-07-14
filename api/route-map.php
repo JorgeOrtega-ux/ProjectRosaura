@@ -355,6 +355,12 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_del_c_palette', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
+    'canvases.get_home_feed' => [
+        'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
+        'action' => 'get_home_feed',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_home', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
+    ],
+
     'canvases.get_public' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'get_public',

@@ -57,6 +57,13 @@ class UserRepository implements UserRepositoryInterface {
             $permissionsArray = $this->roleRepository->getMergedPermissionsForUser($user['id']);
             $user['permissions'] = !empty($permissionsArray) ? implode(',', $permissionsArray) : null;
 
+            if (
+                (isset($user['role_name']) && $user['role_name'] === 'SuperAdministrator') ||
+                (is_array($permissionsArray) && (in_array('canvases.create_official', $permissionsArray) || in_array('canvases.manage_official', $permissionsArray)))
+            ) {
+                $user['subscription_tier'] = \App\Core\System\SubscriptionPlanConstants::TIER_ADVANCED;
+            }
+
             return $user;
 
         } catch (PDOException $e) {

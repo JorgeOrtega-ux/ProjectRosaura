@@ -64,11 +64,16 @@ if ($row) {
 
 $ownerTier = 0;
 if ($canvas['owner_id'] !== null) {
-    $stmtTier = $pdo->prepare('SELECT subscription_tier FROM ' . DB::TBL_USERS . ' WHERE id = :uid LIMIT 1');
-    $stmtTier->execute(['uid' => $canvas['owner_id']]);
-    $uRow = $stmtTier->fetch(PDO::FETCH_ASSOC);
-    if ($uRow) {
-        $ownerTier = (int)$uRow['subscription_tier'];
+    try {
+        $dbIdentityManager = new \App\Core\Database\DatabaseManager();
+        $roleRepo = new \App\Core\Repositories\RoleRepository($dbIdentityManager);
+        $userRepo = new \App\Core\Repositories\UserRepository($dbIdentityManager, $roleRepo);
+        $uRow = $userRepo->findById($canvas['owner_id']);
+        if ($uRow) {
+            $ownerTier = (int)$uRow['subscription_tier'];
+        }
+    } catch (\Exception $e) {
+        $ownerTier = 0;
     }
 }
 

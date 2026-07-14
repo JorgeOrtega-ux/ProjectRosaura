@@ -22,14 +22,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                         <span><?php echo __('menu_home'); ?></span>
                     </div>
                 </div>
-                <div class="component-menu-link nav-item" data-nav="/explore">
-                    <div class="component-menu-link-icon">
-                        <span class="material-symbols-rounded">explore</span>
-                    </div>
-                    <div class="component-menu-link-text">
-                        <span><?php echo __('menu_explore'); ?></span>
-                    </div>
-                </div>
+
             </div>
         </div>
 

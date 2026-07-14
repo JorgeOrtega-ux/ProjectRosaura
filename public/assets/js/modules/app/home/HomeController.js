@@ -48,6 +48,7 @@ class HomeController {
         
         this.loadCanvases();
         this.checkCheckoutSuccess();
+        this.setupCarouselDrag();
     }
 
     destroy() {
@@ -58,6 +59,83 @@ class HomeController {
 
     bindEvents() {
         document.addEventListener('click', this.handleGlobalClickBound);
+        
+        const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
+        if (carousel) {
+            carousel.addEventListener('scroll', () => this.updateCarouselButtons());
+            window.addEventListener('resize', () => this.updateCarouselButtons());
+            
+            setTimeout(() => this.updateCarouselButtons(), 100);
+        }
+    }
+
+    updateCarouselButtons() {
+        const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
+        const leftBtn = document.querySelector('.component-tag-nav-left');
+        const rightBtn = document.querySelector('.component-tag-nav-right');
+        
+        if (!carousel || !leftBtn || !rightBtn) return;
+        
+        if (carousel.scrollLeft > 0) {
+            leftBtn.style.display = 'flex';
+        } else {
+            leftBtn.style.display = 'none';
+        }
+        
+        if (carousel.scrollWidth > carousel.clientWidth && Math.ceil(carousel.scrollLeft + carousel.clientWidth) < carousel.scrollWidth) {
+            rightBtn.style.display = 'flex';
+        } else {
+            rightBtn.style.display = 'none';
+        }
+    }
+
+    setupCarouselDrag() {
+        const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
+        if (!carousel) return;
+        
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let isDragging = false;
+
+        carousel.addEventListener('mousedown', (e) => {
+            isDown = true;
+            isDragging = false;
+            startX = e.pageX - carousel.offsetLeft;
+            scrollLeft = carousel.scrollLeft;
+        });
+        
+        carousel.addEventListener('mouseleave', () => {
+            isDown = false;
+            carousel.classList.remove('is-dragging');
+        });
+        
+        carousel.addEventListener('mouseup', () => {
+            isDown = false;
+            carousel.classList.remove('is-dragging');
+            setTimeout(() => { isDragging = false; }, 50);
+        });
+        
+        carousel.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - carousel.offsetLeft;
+            const walk = (x - startX) * 2; 
+            if (Math.abs(walk) > 5) {
+                isDragging = true;
+                carousel.classList.add('is-dragging');
+            }
+            if (isDragging) {
+                carousel.scrollLeft = scrollLeft - walk;
+            }
+        });
+
+        carousel.addEventListener('click', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, { capture: true });
     }
 
     handleGlobalClick(e) {
@@ -72,32 +150,29 @@ class HomeController {
             return;
         }
 
-        if (action === 'openFilterSubMenu') {
-            this.openFilterSubMenu(actionBtn);
-            return;
-        }
-
-        if (action === 'backToMainFilters') {
-            this.backToMainFilters(actionBtn);
-            return;
-        }
-
-        if (action === 'changeHomeFilter' || action === 'changeExploreSort') {
-
-            if (actionBtn.tagName.toLowerCase() === 'input' && actionBtn.type === 'checkbox') {
-                const name = actionBtn.getAttribute('name');
-                document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
-                    if (cb !== actionBtn) cb.checked = false;
-                });
+        if (action === 'filterHomeTag') {
+            document.querySelectorAll('.component-tags-carousel .component-badge').forEach(btn => btn.classList.remove('active'));
+            actionBtn.classList.add('active');
+            
+            let skeletonCards = '';
+            for (let i = 0; i < 12; i++) {
+                skeletonCards += `<div class="component-skeleton" style="width: 100%; aspect-ratio: 2/1; border-radius: 12px;"></div>`;
             }
-
-            this.updateFilterDot();
-
-            const dropdownModule = actionBtn.closest('.component-module');
-            if (dropdownModule) {
-                
-            }
+            this.contentArea.innerHTML = `<div class="component-grid" data-ref="home-all-canvases">${skeletonCards}</div>`;
+            
             this.loadCanvases();
+            return;
+        }
+
+        if (action === 'scrollTagsLeft') {
+            const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
+            if (carousel) carousel.scrollBy({ left: -200, behavior: 'smooth' });
+            return;
+        }
+        
+        if (action === 'scrollTagsRight') {
+            const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
+            if (carousel) carousel.scrollBy({ left: 200, behavior: 'smooth' });
             return;
         }
 
@@ -115,27 +190,8 @@ class HomeController {
 
         if (!this.hasMore || this.isLoadingMore) return;
         
-        const isExplore = window.location.pathname.includes('/explore');
-        const isHome = !isExplore && (window.location.pathname === '/' || window.location.pathname.includes('/home'));
-        const isLoggedIn = window.activeUserId !== null;
-
-        if (isHome && !isLoggedIn) {
-            const msgEmpty = window.__ ? window.__('msg_home_guest') || window.__('msg_home_guest') : window.__('msg_home_guest');
-            const emptyHtml = `
-                <div class="component-empty-state" data-ref="empty-state-rendered" style="padding: 40px 20px;">
-                    <span class="material-symbols-rounded component-empty-state-icon">explore</span>
-                    <p class="component-empty-state-text" style="font-size: 1.1rem;">${msgEmpty}</p>
-                    <div style="margin-top: 24px;">
-                        <a href="${this.basePath}/explore" class="component-button component-button--brand" data-nav="${this.basePath}/explore">
-                            <span class="material-symbols-rounded">rocket_launch</span> ${window.__('explore_now') || 'Explore Now'}
-                        </a>
-                    </div>
-                </div>
-            `;
-            this.contentArea.innerHTML = emptyHtml;
-            this.reinitializeUI();
-            return;
-        }
+        const activeTagEl = document.querySelector('.component-tags-carousel .component-badge.active');
+        const currentTag = activeTagEl ? activeTagEl.getAttribute('data-tag') : 'all';
 
         this.isLoadingMore = true;
         if (isLoadMore && this.contentArea) {
@@ -145,124 +201,46 @@ class HomeController {
 
         let newCanvases = [];
         let isError = false;
+        let res = null;
         const limit = 20;
 
-        if (isHome && isLoggedIn) {
-            
-            const filterRadio = document.querySelector('input[name="home_filter"]:checked');
-            const filter = filterRadio ? filterRadio.value : 'all';
-
-            if (window.initialHomeCanvases && filter === 'all' && !isLoadMore) {
-                newCanvases = window.initialHomeCanvases;
-                window.initialHomeCanvases = null; 
-            } else {
-                const res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: limit, offset: this.currentOffset, filter: filter }, this.abortController.signal).catch(() => null);
-                
-                if (this.abortController.signal.aborted) {
-                    this.isLoadingMore = false;
-                    return;
-                }
-                
-                if (res && res.success) {
-                    newCanvases = res.data || [];
-                } else {
-                    isError = true;
-                }
-            }
-
-            if (newCanvases.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
-                this.allCanvases = this.allCanvases.concat(newCanvases);
-                this.renderCanvases(this.contentArea, this.allCanvases, isLoadMore);
-            } else if (isError && !isLoadMore) {
-                this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
-            } else if (!isLoadMore) {
-                const msgEmpty = window.__ ? window.__('msg_home_empty') || window.__('msg_home_empty') : window.__('msg_home_empty');
-                const emptyHtml = `
-                    <div class="component-empty-state" data-ref="empty-state-rendered" style="padding: 40px 20px;">
-                        <span class="material-symbols-rounded component-empty-state-icon">dashboard_customize</span>
-                        <p class="component-empty-state-text" style="font-size: 1.1rem; max-width: 400px; margin: 0 auto;">${msgEmpty}</p>
-                        <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                            <a href="${this.basePath}/canvases/manage" class="component-button component-button--brand" data-nav="${this.basePath}/canvases/manage">
-                                <span class="material-symbols-rounded">add</span> ${window.__('create')}
-                            </a>
-                            <a href="${this.basePath}/explore" class="component-button component-button--dark" data-nav="${this.basePath}/explore">
-                                <span class="material-symbols-rounded">explore</span> ${window.__('explore') || 'Explore'}
-                            </a>
-                        </div>
-                    </div>
-                `;
-                this.contentArea.innerHTML = emptyHtml;
-            }
+        if (window.initialHomeCanvases && currentTag === 'all' && !isLoadMore) {
+            newCanvases = window.initialHomeCanvases;
+            window.initialHomeCanvases = null; 
         } else {
+            res = await this.api.post(ApiRoutes.Canvases.GetHomeFeed, { limit: limit, offset: this.currentOffset, tag: currentTag }, this.abortController.signal).catch(() => null);
             
-            const sortRadio = document.querySelector('input[name="explore_sort"]:checked');
-            const sort = sortRadio ? sortRadio.value : 'newest';
-
-            if (window.initialHomeCanvases && sort === 'newest' && !isLoadMore) {
-                newCanvases = window.initialHomeCanvases;
-                window.initialHomeCanvases = null;
+            if (this.abortController.signal.aborted) {
+                this.isLoadingMore = false;
+                return;
+            }
+            
+            if (res && res.success) {
+                newCanvases = res.data || [];
             } else {
-                
-                const [publicRes, officialRes] = await Promise.all([
-                    this.api.post(ApiRoutes.Canvases.GetPublic, { limit: limit, offset: this.currentOffset, sort: sort }, this.abortController.signal).catch(() => null),
-                    this.api.post(ApiRoutes.Canvases.GetOfficial, { limit: limit, offset: this.currentOffset, sort: sort }, this.abortController.signal).catch(() => null)
-                ]);
-                
-                if (this.abortController.signal.aborted) {
-                    this.isLoadingMore = false;
-                    return;
-                }
-
-                let currentFetched = [];
-
-                if (officialRes && officialRes.success) {
-                    currentFetched = currentFetched.concat(officialRes.data || []);
-                } else if (!officialRes) {
-                    isError = true;
-                }
-
-                if (publicRes && publicRes.success) {
-                    const existingIds = new Set(currentFetched.map(c => c.id));
-                    const newPublics = (publicRes.data || []).filter(c => !existingIds.has(c.id));
-                    currentFetched = currentFetched.concat(newPublics);
-                } else if (!publicRes) {
-                    isError = true;
-                }
-
-                if (currentFetched.length > 0) {
-                    currentFetched.sort((a, b) => {
-                        if (sort === 'oldest') {
-                            return new Date(a.created_at) - new Date(b.created_at);
-                        } else if (sort === 'members') {
-                            if (b.members_count !== a.members_count) {
-                                return b.members_count - a.members_count;
-                            }
-                            return new Date(b.created_at) - new Date(a.created_at);
-                        } else { 
-                            return new Date(b.created_at) - new Date(a.created_at);
-                        }
-                    });
-                    newCanvases = currentFetched;
-                }
+                isError = true;
             }
+        }
 
-            if (newCanvases.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
-                this.allCanvases = this.allCanvases.concat(newCanvases);
-                
-                const existingIdsGlobal = new Set();
-                this.allCanvases = this.allCanvases.filter(c => {
-                    if (existingIdsGlobal.has(c.id)) return false;
-                    existingIdsGlobal.add(c.id);
-                    return true;
-                });
-                
-                this.renderCanvases(this.contentArea, this.allCanvases, isLoadMore);
-            } else if (isError && !isLoadMore) {
-                this.showError(this.contentArea, window.__ ? window.__('err_load_public_canvases') : 'Error loading canvases. The server is not responding.');
-            } else if (!isLoadMore) {
-                const msgEmpty = window.__ ? window.__('empty_home_gallery') || window.__('empty_home_gallery') : window.__('empty_home_gallery');
-                this.contentArea.innerHTML = CardTemplates.emptyState(msgEmpty, 'collections');
-            }
+        if (newCanvases.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
+            this.allCanvases = this.allCanvases.concat(newCanvases);
+            this.renderCanvases(this.contentArea, this.allCanvases, isLoadMore);
+        } else if (isError && !isLoadMore) {
+            this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
+        } else if (!isLoadMore) {
+            const msgEmpty = window.__ ? window.__('msg_home_empty') || window.__('msg_home_empty') : window.__('msg_home_empty');
+            const emptyHtml = `
+                <div class="component-empty-state" data-ref="empty-state-rendered" style="padding: 40px 20px;">
+                    <span class="material-symbols-rounded component-empty-state-icon">dashboard_customize</span>
+                    <p class="component-empty-state-text" style="font-size: 1.1rem; max-width: 400px; margin: 0 auto;">${msgEmpty}</p>
+                    <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                        <a href="${this.basePath}/canvases/manage" class="component-button component-button--brand" data-nav="${this.basePath}/canvases/manage">
+                            <span class="material-symbols-rounded">add</span> ${window.__('create')}
+                        </a>
+                    </div>
+                </div>
+            `;
+            this.contentArea.innerHTML = emptyHtml;
         }
         
         const loader = this.contentArea ? this.contentArea.querySelector('.infinite-scroll-loader') : null;
@@ -353,61 +331,6 @@ class HomeController {
                     
                 }
                 await new Promise(resolve => setTimeout(resolve, 2000));
-            }
-        }
-    }
-
-    openFilterSubMenu(btn) {
-        const targetId = btn.getAttribute('data-target');
-        const dropdown = btn.closest('.component-module');
-        if (!dropdown) return;
-
-        const targetMenu = dropdown.querySelector(`[data-ref="${targetId}"]`);
-        const mainFilters = dropdown.querySelector('[data-ref="menuMainFilters"]');
-        
-        if (targetMenu && mainFilters) {
-            mainFilters.classList.add('disabled');
-            mainFilters.classList.remove('active');
-            targetMenu.classList.remove('disabled');
-            targetMenu.classList.add('active');
-        }
-    }
-
-    backToMainFilters(btn) {
-        const activeModule = btn.closest('.component-module');
-        if (!activeModule) return;
-        
-        const mainFilters = activeModule.querySelector('[data-ref="menuMainFilters"]');
-        const subMenus = activeModule.querySelectorAll('.component-menu:not([data-ref="menuMainFilters"])');
-        
-        if (mainFilters) {
-            subMenus.forEach(menu => {
-                menu.classList.add('disabled');
-                menu.classList.remove('active');
-            });
-            mainFilters.classList.remove('disabled');
-            mainFilters.classList.add('active');
-        }
-    }
-
-    updateFilterDot() {
-        const homeFiltersBtn = document.querySelector('[data-target="moduleHomeFilters"]');
-        if (homeFiltersBtn) {
-            const isDefault = document.querySelector('input[name="home_filter"][value="all"]')?.checked;
-            if (isDefault) {
-                homeFiltersBtn.classList.remove('has-active-filter');
-            } else {
-                homeFiltersBtn.classList.add('has-active-filter');
-            }
-        }
-
-        const exploreFiltersBtn = document.querySelector('[data-target="moduleExploreFilters"]');
-        if (exploreFiltersBtn) {
-            const isDefault = document.querySelector('input[name="explore_sort"][value="newest"]')?.checked;
-            if (isDefault) {
-                exploreFiltersBtn.classList.remove('has-active-filter');
-            } else {
-                exploreFiltersBtn.classList.add('has-active-filter');
             }
         }
     }

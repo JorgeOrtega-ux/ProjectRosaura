@@ -52,11 +52,15 @@ if ($canvasUuid && $userId) {
                 $currentSnapshots = 0;
                 
                 if ($canvas['owner_id'] !== null) {
-                    $dbIdentity = new DatabaseManager();
-                    $pdoIdentity = $dbIdentity->getConnection(DB::CONN_IDENTITY);
-                    $stmtOwner = $pdoIdentity->prepare('SELECT subscription_tier FROM users WHERE id = :id LIMIT 1');
-                    $stmtOwner->execute(['id' => $canvas['owner_id']]);
-                    $ownerTier = (int)$stmtOwner->fetchColumn();
+                    try {
+                        $dbIdentityManager = new \App\Core\Database\DatabaseManager();
+                        $roleRepo = new \App\Core\Repositories\RoleRepository($dbIdentityManager);
+                        $userRepo = new \App\Core\Repositories\UserRepository($dbIdentityManager, $roleRepo);
+                        $uRow = $userRepo->findById($canvas['owner_id']);
+                        $ownerTier = $uRow ? (int)$uRow['subscription_tier'] : 0;
+                    } catch (\Exception $e) {
+                        $ownerTier = 0;
+                    }
                     $planLimits = SubscriptionPlanConstants::getTierLimits($ownerTier);
                     $maxSnapshots = $planLimits['max_snapshots_per_canvas'];
                 }

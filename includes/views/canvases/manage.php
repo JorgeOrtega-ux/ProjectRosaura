@@ -150,6 +150,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                     <thead>
                         <tr>
                             <th><?php echo __('table_header_canvas_name'); ?></th>
+                            <th>Tipo</th>
                             <th><?php echo __('table_header_privacy'); ?></th>
                             <th><?php echo __('table_header_size'); ?></th>
                             <th><?php echo __('table_header_limit'); ?></th>
@@ -166,12 +167,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">palette</span>
                                                 <span class="search-target font-medium"><?php echo htmlspecialchars($canvas['name']); ?></span>
-                                                
-                                                <?php if ($canvas['scope_type'] !== 'personal'): ?>
-                                                    <span>
-                                                        <?php echo htmlspecialchars($canvas['scope_type']); ?>
-                                                    </span>
-                                                <?php endif; ?>
                                             </div>
                                         </div>
                                         <?php if (!empty($canvas['description'])): ?>
@@ -179,6 +174,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                                 <?php echo htmlspecialchars($canvas['description']); ?>
                                             </div>
                                         <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div class="component-badge component-badge--sm">
+                                            <span class="material-symbols-rounded">category</span>
+                                            <span class="search-target"><?php echo htmlspecialchars(ucfirst($canvas['scope_type'] ?? 'personal')); ?></span>
+                                        </div>
                                     </td>
                                     <td>
                                         <div class="component-badge component-badge--sm">

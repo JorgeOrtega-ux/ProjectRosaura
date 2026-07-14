@@ -2,7 +2,7 @@
 
 return [
     '/' => ['view' => 'app/home.php'],
-    '/explore' => ['view' => 'app/explore.php'],
+
     '/search' => ['view' => 'app/search.php'], 
     '/premium' => ['view' => 'app/premium.php'], 
     '/store/coins' => ['view' => 'app/store-coins.php'],

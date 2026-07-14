@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `uuid` varchar(36) NOT NULL,
   `owner_id` int(11) DEFAULT NULL,
   `name` varchar(100) NOT NULL,
+  `tags` json DEFAULT NULL,
   `description` text DEFAULT NULL,
   `privacy` enum('public', 'private') DEFAULT 'private',
   `requires_approval` tinyint(1) NOT NULL DEFAULT 0,
