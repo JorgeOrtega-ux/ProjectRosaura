@@ -71,7 +71,9 @@ export class WebSocketManager {
 
     handleReconnect() {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
-            const delay = this.baseDelay * Math.pow(2, this.reconnectAttempts);
+            const baseDelayCalc = this.baseDelay * Math.pow(2, this.reconnectAttempts);
+            const jitter = Math.floor(Math.random() * 2000); // 0 to 2 seconds of random jitter
+            const delay = baseDelayCalc + jitter;
 
             setTimeout(() => {
                 this.reconnectAttempts++;

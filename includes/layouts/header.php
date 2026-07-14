@@ -121,7 +121,7 @@ if ($isLoggedIn) {
                     <span class="material-symbols-rounded">more_vert</span>
                 </button>
             <?php else: ?>
-                <button class="component-button component-button--profile role-dynamic ui-skeleton-loader" 
+                <button class="component-button component-button--profile role-dynamic" 
                         data-role-bg="<?php echo $activeRoleBg; ?>"
                         data-action="toggleModule" 
                         data-target="moduleMainOptions" 
@@ -129,7 +129,7 @@ if ($isLoggedIn) {
                         data-position="bottom">
                     <img src="<?php echo htmlspecialchars($userPic); ?>" 
                          alt="<?php echo __('alt_profile'); ?>"
-                         onload="this.parentElement.classList.add('is-loaded')">
+                         onerror="this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'">
                 </button>
             <?php endif; ?>
         </div>

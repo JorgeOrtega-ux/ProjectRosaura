@@ -197,7 +197,9 @@ export const DesignNetwork = {
 
             this.wsManager.handleReconnect = async () => {
                 if (this.wsManager.reconnectAttempts < this.wsManager.maxReconnectAttempts) {
-                    const delay = this.wsManager.baseDelay * Math.pow(2, this.wsManager.reconnectAttempts);
+                    const baseDelayCalc = this.wsManager.baseDelay * Math.pow(2, this.wsManager.reconnectAttempts);
+                    const jitter = Math.floor(Math.random() * 2000); // 0 to 2 seconds of random jitter
+                    const delay = baseDelayCalc + jitter;
                     
                     setTimeout(async () => {
                         this.wsManager.reconnectAttempts++;
