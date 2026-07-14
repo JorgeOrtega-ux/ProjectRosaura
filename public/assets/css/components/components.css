@@ -1339,6 +1339,17 @@ html.dark-theme .component-avatar__overlay {
     transition: border-bottom-color 0.3s ease;
 }
 
+.component-menu-footer {
+    flex: 0 0 auto; 
+    display: flex;
+    flex-direction: column;
+    padding: 8px; 
+    border-top: 1px solid var(--border-color);
+    position: relative;
+    z-index: 10;
+    transition: border-top-color 0.3s ease;
+}
+
 .component-menu-header::after {
     content: '';
     position: absolute;

@@ -52,6 +52,10 @@ class SessionManager implements SessionManagerInterface {
         return $_SESSION[$key] ?? $default;
     }
 
+    public function getPermissions(): array {
+        return $_SESSION['user_permissions'] ?? [];
+    }
+
     public function has(string $key): bool {
         return isset($_SESSION[$key]);
     }

@@ -238,8 +238,8 @@ if (!$canvasId) {
                                         <div class="component-menu-list component-menu-list--scrollable" data-ref="palette-selector-container">
                                         </div>
                                         <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
-                                            <div>
-                                                <button type="button" class="component-button component-button--text component-button--h34" data-action="navigateCustomPalette">
+                                            <div class="component-menu-footer">
+                                                <button type="button" class="component-button component-button--full" data-action="navigateCustomPalette">
                                                     <span class="material-symbols-rounded">add_circle</span>
                                                     <span><?php echo __('btn_create_custom_palette'); ?></span>
                                                 </button>

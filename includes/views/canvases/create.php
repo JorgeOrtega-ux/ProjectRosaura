@@ -15,8 +15,12 @@ $userPerms = $_SESSION['user_permissions'] ?? [];
 $canCreateOfficial = in_array('access_admin_panel', $userPerms) || in_array('canvases.create_official', $userPerms);
 $canvasSizesList = Utils::getCanvasSizes();
 $defaultSizeKey = '64x64';
-$defaultSizeData = $canvasSizesList[$defaultSizeKey] ?? reset($canvasSizesList);
-$defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
+if (!isset($canvasSizesList[$defaultSizeKey])) {
+    $defaultSizeData = reset($canvasSizesList);
+    $defaultSizeKey = key($canvasSizesList);
+} else {
+    $defaultSizeData = $canvasSizesList[$defaultSizeKey];
+}
 ?>
 <div class="view-content" data-ref="canvas-create-wrapper" data-user-tier="<?php echo $tier; ?>">
     
@@ -378,8 +382,8 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
                                         <div class="component-menu-list component-menu-list--scrollable" data-ref="palette-selector-container">
                                         </div>
                                         <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
-                                            <div>
-                                                <button type="button" class="component-button component-button--text component-button--h34" data-action="navigateCustomPalette">
+                                            <div class="component-menu-footer">
+                                                <button type="button" class="component-button component-button--full" data-action="navigateCustomPalette">
                                                     <span class="material-symbols-rounded">add_circle</span>
                                                     <span><?php echo __('btn_create_custom_palette'); ?></span>
                                                 </button>
