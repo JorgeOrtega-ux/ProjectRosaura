@@ -92,7 +92,7 @@ class CanvasCoreService {
             } catch (Exception $e) {}
             
             $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts) {
-                $canvas['is_owner'] = ($canvas['owner_id'] === $currentUserId && $canvas['owner_id'] !== null);
+                $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && $canvas['owner_id'] !== null);
                 
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
                 
@@ -214,7 +214,7 @@ class CanvasCoreService {
                 $canvas['is_favorite'] = false;
             }
             
-            $isOwner = ($userId !== null && $canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($userId !== null && $canvas['owner_id'] == $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
             if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && empty($roles) && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -488,7 +488,7 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
 
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] == $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
             if (!$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
@@ -567,7 +567,7 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
             
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] == $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
             if (!$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
@@ -684,7 +684,7 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
             
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] == $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
             if (!$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }

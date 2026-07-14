@@ -30,7 +30,10 @@ class Utils {
         if (self::$s3Client === null) {
             $endpoint = EnvLoader::get('MINIO_ENDPOINT', 'http://minio:9000');
             if (strpos($endpoint, 'http') !== 0) {
-                $endpoint = 'http://' . $endpoint . ':9000';
+                $endpoint = 'http://' . $endpoint;
+            }
+            if (parse_url($endpoint, PHP_URL_PORT) === null) {
+                $endpoint .= ':9000';
             }
             $credentials = new \Aws\Credentials\Credentials(
                 EnvLoader::get('MINIO_ROOT_USER', 'admin'),

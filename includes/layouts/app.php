@@ -168,6 +168,8 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
             if (isDark) document.documentElement.classList.add('dark-theme');
             else document.documentElement.classList.add('light-theme');
         })();
+
+        console.info("%c🚀 [Load Balancer] Petición atendida por el nodo (VPS): <?php echo gethostname(); ?>", "color: #4CAF50; font-weight: bold; background: #222; padding: 4px; border-radius: 4px;");
     </script>
 </head>
 <body>

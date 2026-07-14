@@ -42,7 +42,7 @@ class CanvasLockManager {
             // I will use DatabaseManager directly here if Repository method is missing, or I'll implement it in Repository.
             
             // For now, let's inject DatabaseManager to update directly, which is faster and avoids N+1
-            $dbManager = \App\Config\Database\DatabaseManager::getInstance();
+            $dbManager = new \App\Config\Database\DatabaseManager();
             $canvasesDb = $dbManager->getConnection('db_canvases');
             
             $stmt = $canvasesDb->prepare("SELECT id, size, palette_id, max_participants, created_at FROM canvases WHERE owner_id = :owner_id ORDER BY created_at ASC");

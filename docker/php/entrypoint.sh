@@ -2,11 +2,7 @@
 set -e
 echo "[*] Running startup script (Entrypoint)..."
 
-mkdir -p /var/www/html/storage/public/profilePictures/default
-mkdir -p /var/www/html/storage/public/profilePictures/uploaded
-mkdir -p /var/www/html/storage/public/templates
-mkdir -p /var/www/html/storage/public/snapshots
-mkdir -p /var/www/html/storage/public/snapshots_archive
+
 mkdir -p /var/www/html/storage/private/logs/app
 mkdir -p /var/www/html/storage/private/backups
 mkdir -p /var/www/html/storage/private/canvases/timelapses

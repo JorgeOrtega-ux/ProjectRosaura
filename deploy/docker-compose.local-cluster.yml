@@ -2,7 +2,76 @@ version: '3.8'
 
 services:
   # ==========================================
-  # SERVICIOS DE DATOS BASE
+  # LOAD BALANCER
+  # ==========================================
+  lb:
+    image: nginx:alpine
+    container_name: rosaura_local_lb
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.local.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app1
+      - app2
+    networks:
+      - rosaura_local_network
+
+  # ==========================================
+  # WEB NODES (VPS Simulados)
+  # ==========================================
+  app1:
+    build:
+      context: ../
+      dockerfile: docker/php/Dockerfile
+    container_name: rosaura_app1
+    restart: always
+    volumes:
+      - ../:/var/www/html
+    env_file:
+      - ../.env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+      - DB_HOST=db
+      - REDIS_HOST=redis
+      - TYPESENSE_HOST=typesense
+      - MINIO_ENDPOINT=minio:9000
+      - SESSION_DRIVER=redis
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rosaura_local_network
+
+  app2:
+    build:
+      context: ../
+      dockerfile: docker/php/Dockerfile
+    container_name: rosaura_app2
+    restart: always
+    volumes:
+      - ../:/var/www/html
+    env_file:
+      - ../.env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+      - DB_HOST=db
+      - REDIS_HOST=redis
+      - TYPESENSE_HOST=typesense
+      - MINIO_ENDPOINT=minio:9000
+      - SESSION_DRIVER=redis
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rosaura_local_network
+
+  # ==========================================
+  # DATA NODE (VPS Simulado)
   # ==========================================
   db:
     image: mysql:8.0
@@ -15,12 +84,12 @@ services:
       MYSQL_PASSWORD: ${DB_PASS}
       TZ: ${APP_TIMEZONE:-UTC}
     ports:
-      - "3306:3306" # Expuesto para que los VPS 2 y 3 puedan conectarse (Asegurar con Firewall/VPC)
+      - "127.0.0.1:3306:3306"
     volumes:
       - db_data:/var/lib/mysql
       - ../docker/mysql/init:/docker-entrypoint-initdb.d 
     networks:
-      - rosaura_data_network
+      - rosaura_local_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
@@ -37,11 +106,11 @@ services:
     env_file:
       - ../.env
     ports:
-      - "6379:6379" # Expuesto para App Nodes (Sesiones y Caché)
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - rosaura_data_network
+      - rosaura_local_network
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASS\" ping | grep PONG || exit 1"]
       interval: 10s
@@ -56,22 +125,19 @@ services:
       - TYPESENSE_DATA_DIR=/data
       - TYPESENSE_API_KEY=${TYPESENSE_API_KEY}
     ports:
-      - "8108:8108" # Expuesto para App Nodes y Frontend
+      - "8108:8108"
     volumes:
       - typesense_data:/data
     networks:
-      - rosaura_data_network
+      - rosaura_local_network
 
-  # ==========================================
-  # SERVICIO DE STORAGE (MINIO / S3)
-  # ==========================================
   minio:
     image: minio/minio
     container_name: rosaura_minio
     restart: always
     ports:
-      - "9000:9000" # API (Donde los App Nodes guardan/leen archivos)
-      - "9001:9001" # Consola Web de Administración
+      - "9000:9000" 
+      - "9001:9001" 
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-admin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-password}
@@ -88,11 +154,8 @@ services:
     volumes:
       - minio_data:/data
     networks:
-      - rosaura_data_network
+      - rosaura_local_network
 
-  # ==========================================
-  # SERVIDOR WEBSOCKET
-  # ==========================================
   websocket_server:
     build:
       context: ../
@@ -113,10 +176,8 @@ services:
       - TZ=${APP_TIMEZONE:-UTC}
       - REDIS_HOST=redis
     networks:
-      - rosaura_data_network
+      - rosaura_local_network
 
-  # ==========================================
-  # ==========================================
   worker_backups:
     build:
       context: ../
@@ -132,7 +193,7 @@ services:
     env_file:
       - ../.env
     networks:
-      - rosaura_data_network
+      - rosaura_local_network
 
   worker_system_tasks:
     build:
@@ -149,7 +210,7 @@ services:
     env_file:
       - ../.env
     networks:
-      - rosaura_data_network
+      - rosaura_local_network
 
   worker_persistence:
     build:
@@ -166,7 +227,7 @@ services:
     env_file:
       - ../.env
     networks:
-      - rosaura_data_network
+      - rosaura_local_network
 
   worker_canvas_jobs:
     build:
@@ -183,10 +244,10 @@ services:
     env_file:
       - ../.env
     networks:
-      - rosaura_data_network
+      - rosaura_local_network
 
 networks:
-  rosaura_data_network:
+  rosaura_local_network:
     driver: bridge
 
 volumes:
