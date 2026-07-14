@@ -4,13 +4,27 @@ services:
   # ==========================================
   # SERVICIOS BASE (APP, MYSQL, REDIS, TYPESENSE)
   # ==========================================
-  app:
+  nginx:
+    image: nginx:alpine
+    container_name: rosaura_nginx
+    ports:
+      - "80:80"
+      - "${WS_PORT:-8765}:${WS_PORT:-8765}"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app1
+      - app2
+      - websocket_server_1
+      - websocket_server_2
+    networks:
+      - rosaura_network
+
+  app1:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
-    container_name: rosaura_app
-    ports:
-      - "80:80"
+    container_name: rosaura_app1
     volumes:
       - .:/var/www/html
       - ./storage/private/canvases/timelapses:/var/www/html/storage/private/canvases/timelapses
@@ -20,7 +34,28 @@ services:
       redis:
         condition: service_healthy
       typesense:
-        # Cambiado a service_started para evitar el bloqueo por falta de healthcheck
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
+  app2:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: rosaura_app2
+    volumes:
+      - .:/var/www/html
+      - ./storage/private/canvases/timelapses:/var/www/html/storage/private/canvases/timelapses
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      typesense:
         condition: service_started
     env_file:
       - .env
@@ -90,17 +125,34 @@ services:
   # ==========================================
   # SERVIDOR WEBSOCKET
   # ==========================================
-  websocket_server:
+  websocket_server_1:
     build:
       context: .
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_websocket_server
+    container_name: rosaura_websocket_server_1
     restart: always
     command: python -u scripts/websocket_server.py
     volumes:
       - .:/app
-    ports:
-      - "${WS_PORT:-8765}:${WS_PORT:-8765}"
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
+  websocket_server_2:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_websocket_server_2
+    restart: always
+    command: python -u scripts/websocket_server.py
+    volumes:
+      - .:/app
     depends_on:
       redis:
         condition: service_healthy

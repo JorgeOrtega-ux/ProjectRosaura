@@ -615,6 +615,10 @@ export const DesignNetwork = {
     },
 
     handleCooldownSync(data) {
+        if (data.type === 'init_cooldown' && data.node_id) {
+            console.log(`[Network] Conectado al servidor WebSocket: ${data.node_id}`);
+        }
+
         if (this.isSpectator) {
             return;
         }

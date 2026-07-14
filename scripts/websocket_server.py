@@ -3,9 +3,11 @@ import websockets
 import os
 import json
 import time
+import uuid
 from urllib.parse import urlparse, parse_qs
 import redis.asyncio as redis
 
+NODE_ID = str(uuid.uuid4())
 ROOMS = {}
 LIVE_ROOMS = {} # Para las sesiones live share: { code: set(websockets) }
 OWNER_CONNS = {} # Mapeo { websocket: code } para limpiar si el dueÃ±o se desconecta de golpe
@@ -106,6 +108,49 @@ async def admin_events_listener():
                     print(f"[!] Error processing Pub/Sub message: {e}")
     except Exception as e:
         print(f"[!] Fatal error in Pub/Sub listener: {e}")
+
+async def sync_events_listener():
+    r = await get_redis_client()
+    pubsub = r.pubsub()
+    await pubsub.subscribe("canvas:sync_events")
+    
+    print("[*] WS Server listening for global sync events on 'canvas:sync_events'")
+    
+    try:
+        async for message in pubsub.listen():
+            if message["type"] == "message":
+                try:
+                    data = json.loads(message["data"].decode('utf-8'))
+                    
+                    if data.get("source_node") == NODE_ID:
+                        continue
+                        
+                    target_type = data.get("target_type")
+                    payload = data.get("payload")
+                    
+                    if target_type == "canvas":
+                        canvas_id = str(data.get("canvas_id"))
+                        if canvas_id in ROOMS:
+                            tasks = [
+                                asyncio.create_task(client.send(payload))
+                                for client in ROOMS[canvas_id]
+                            ]
+                            if tasks:
+                                await asyncio.gather(*tasks)
+                                
+                    elif target_type == "live":
+                        code = str(data.get("code"))
+                        if code in LIVE_ROOMS:
+                            tasks = [
+                                asyncio.create_task(client.send(payload))
+                                for client in LIVE_ROOMS[code]
+                            ]
+                            if tasks:
+                                await asyncio.gather(*tasks)
+                except Exception as e:
+                    print(f"[!] Error processing sync event message: {e}")
+    except Exception as e:
+        print(f"[!] Fatal error in sync_events_listener: {e}")
 
 async def sync_online_counts():
     r = await get_redis_client()
@@ -257,6 +302,7 @@ async def handler(websocket):
                         
                     init_msg = json.dumps({
                         "type": "init_cooldown",
+                        "node_id": NODE_ID,
                         "balance": int(balance),
                         "max_batch": config_batch,
                         "cooldown_sec": config_sec,
@@ -335,6 +381,7 @@ async def handler(websocket):
                         ]
                         if tasks:
                             await asyncio.gather(*tasks)
+                        await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "live", "code": code, "payload": update_msg}))
                             
                 elif data.get("type") == "end_live_share":
                     code = data.get("code")
@@ -349,6 +396,7 @@ async def handler(websocket):
                         ]
                         if tasks:
                             await asyncio.gather(*tasks)
+                        await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "live", "code": code, "payload": end_msg}))
                             
                         del LIVE_ROOMS[code]
                         await r.delete(f"live_share:{code}")
@@ -493,6 +541,7 @@ async def handler(websocket):
                                     ]
                                     if tasks:
                                         await asyncio.gather(*tasks)
+                                await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": message}))
 
                         else:
                             print(f"[DEBUG PY] Cooldown active. Insufficient pixels for {user_id}.")
@@ -570,6 +619,7 @@ async def handler(websocket):
                             if len(clients_in_room) > 0:
                                 tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
                                 await asyncio.gather(*tasks)
+                            await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
                         else:
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
@@ -641,6 +691,7 @@ async def handler(websocket):
                             if len(clients_in_room) > 0:
                                 tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
                                 await asyncio.gather(*tasks)
+                            await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
 
                             clients_in_room = ROOMS.get(canvas_id, set())
                             if len(clients_in_room) > 1:
@@ -656,6 +707,7 @@ async def handler(websocket):
                                 ]
                                 if tasks:
                                     await asyncio.gather(*tasks)
+                                await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
                         else:
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
@@ -682,6 +734,7 @@ async def handler(websocket):
                             tasks = [asyncio.create_task(client.send(typing_msg)) for client in clients_in_room if client != websocket]
                             if tasks:
                                 await asyncio.gather(*tasks)
+                        await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": typing_msg}))
 
             except Exception as e:
                 print(f"[!] Error processing WS message or writing to Redis: {e}")
@@ -732,6 +785,7 @@ async def main():
     print(f"Starting WebSocket server on ws://{host}:{port}")
     
     asyncio.create_task(admin_events_listener())
+    asyncio.create_task(sync_events_listener())
     asyncio.create_task(sync_online_counts())
     
     async with websockets.serve(handler, host, port, max_size=4096):
