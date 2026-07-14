@@ -173,6 +173,22 @@ document.addEventListener('DOMContentLoaded', () => {
         initialCleanUrl = initialCleanUrl.slice(0, -1);
     }
 
+    const showWelcomeFlow = async (step = 1) => {
+        if (!window.dialogSystem) return;
+        const result = await window.dialogSystem.show('welcomeUserModal', { step });
+        if (result.action === 'next') {
+            showWelcomeFlow(step + 1);
+        } else if (result.action === 'back') {
+            showWelcomeFlow(step - 1);
+        } else if (result.action === 'finish') {
+            console.log('Welcome flow finished');
+        }
+    };
+
+    setTimeout(() => {
+        showWelcomeFlow(1);
+    }, 500);
+
     window.dispatchEvent(new CustomEvent('viewLoaded', { 
         detail: { 
             url: currentPath,

@@ -3,6 +3,7 @@ import re
 import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import auth_tester
 
 # --- CONFIGURACIÓN ---
 WORDS_FILE = 'word.txt'
@@ -75,15 +76,20 @@ def main():
     print("1 - Identificar textos hardcodeados (Internacionalización)")
     print("2 - Identificar estilos inline (style=\"...\") en archivos PHP")
     print("3 - Identificar código de depuración (console.log, var_dump, etc.)")
-    choice = input(f"{Colors.WARNING}Ingresa 1, 2 o 3: {Colors.ENDC}").strip()
+    print("4 - Ejecutar pruebas automatizadas de Autenticación (Login, Registro, 2FA, Reset Password)")
+    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3 o 4: {Colors.ENDC}").strip()
 
-    if choice not in ('1', '2', '3'):
+    if choice not in ('1', '2', '3', '4'):
         print(f"{Colors.FAIL}Opción no válida. Saliendo.{Colors.ENDC}")
         return
 
     start_time = time.time()
     script_dir = os.path.dirname(os.path.abspath(__file__))
     target_path = os.path.abspath(os.path.join(script_dir, TARGET_DIR))
+
+    if choice == '4':
+        auth_tester.run_auth_tests()
+        return
 
     if choice == '1':
         words_path = os.path.join(script_dir, WORDS_FILE)

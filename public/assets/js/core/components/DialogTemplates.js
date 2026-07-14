@@ -43,6 +43,40 @@ export const DialogTemplates = {
         }
     },
 
+    welcomeUserModal: {
+        build: (data) => {
+            const step = data.step || 1;
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div style="display: flex; flex-direction: column; width: 400px; height: 500px; max-width: 100%; max-height: 100%; border-radius: 12px; overflow: hidden; background: var(--bg-surface);">
+                    <div style="flex: 1; min-height: 200px; background-image: url('https://images.unsplash.com/photo-1518791841217-8f162f1e1131?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'); background-size: cover; background-position: center;">
+                        <!-- Top photo area -->
+                    </div>
+                    <div style="padding: 24px; display: flex; flex-direction: column; flex: 1;">
+                        <h2 class="component-modal-title" style="margin-bottom: 8px; font-size: 24px;">${window.__('welcome_title') || 'Welcome!'}</h2>
+                        <p class="component-modal-desc" style="color: var(--text-secondary); margin-bottom: 24px; flex: 1;">
+                            ${step === 1 ? (window.__('welcome_desc_1') || 'Discover all the amazing features we have for you.') : (window.__('welcome_desc_2') || 'Get started by creating your first project.')}
+                        </p>
+                        
+                        <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 24px;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: ${step === 1 ? 'var(--accent-primary)' : 'var(--border-color)'};"></div>
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: ${step === 2 ? 'var(--accent-primary)' : 'var(--border-color)'};"></div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; justify-content: space-between;">
+                            <button class="component-button component-button--h45" data-modal-action="back" ${step === 1 ? 'disabled style="opacity: 0.5;"' : ''}>
+                                ${window.__('btn_back') || 'Back'}
+                            </button>
+                            <button class="component-button component-button--h45 component-button--dark" data-modal-action="${step === 2 ? 'finish' : 'next'}">
+                                ${step === 2 ? (window.__('btn_finish') || 'Finish') : (window.__('btn_next') || 'Next')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    },
+
     modalStoreTerms: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>

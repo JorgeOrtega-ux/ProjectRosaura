@@ -56,6 +56,27 @@ class StripeServices {
         return $map;
     }
 
+    private function getBaseUrl(array $input): string {
+        if (!empty($input['return_url'])) {
+            $parsed = parse_url($input['return_url']);
+            if (isset($parsed['scheme']) && isset($parsed['host'])) {
+                $port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
+                return rtrim($parsed['scheme'] . '://' . $parsed['host'] . $port, '/');
+            }
+        }
+        if (!empty($_SERVER['HTTP_ORIGIN'])) {
+            return rtrim($_SERVER['HTTP_ORIGIN'], '/');
+        }
+        if (!empty($_SERVER['HTTP_REFERER'])) {
+            $parsed = parse_url($_SERVER['HTTP_REFERER']);
+            if (isset($parsed['scheme']) && isset($parsed['host'])) {
+                $port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
+                return rtrim($parsed['scheme'] . '://' . $parsed['host'] . $port, '/');
+            }
+        }
+        return APP_URL;
+    }
+
     public function __construct(
         SessionManagerInterface $sessionManager,
         SubscriptionRepositoryInterface $subscriptionRepo,
@@ -64,6 +85,7 @@ class StripeServices {
         $this->sessionManager = $sessionManager;
         $this->subscriptionRepo = $subscriptionRepo;
         $this->userRepo = $userRepo;
+        \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
     }
 
     public function createCheckoutSession(array $input): array {
@@ -131,6 +153,9 @@ class StripeServices {
             $tierName = SubscriptionPlanConstants::getTierLimits($tier)['name'];
             $periodLabel = $billingPeriod === 'yearly' ? 'Anual' : 'Mensual';
 
+            $baseUrl = $this->getBaseUrl($input);
+            Logger::info("Stripe Checkout preparing return URLs", ['base_url' => $baseUrl, 'user_id' => $userId]);
+
             $session = \Stripe\Checkout\Session::create([
                 'customer' => $stripeCustomerId,
                 'mode' => 'subscription',
@@ -138,8 +163,8 @@ class StripeServices {
                     'price' => $priceId,
                     'quantity' => 1
                 ]],
-                'success_url' => APP_URL . '/?checkout=success&session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => APP_URL . '/premium?status=cancel',
+                'success_url' => $baseUrl . '/?checkout=success&session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => $baseUrl . '/premium?status=cancel',
                 'metadata' => [
                     'user_id' => (string) $userId,
                     'tier' => (string) $tier,
@@ -230,7 +255,9 @@ class StripeServices {
                 $this->subscriptionRepo->updateUserStripeCustomerId($userId, $stripeCustomerId);
             }
 
-            $returnUrl = isset($input['return_url']) ? rtrim($input['return_url'], '/') : APP_URL . '/store';
+            $baseUrl = $this->getBaseUrl($input);
+            $returnUrl = isset($input['return_url']) ? rtrim($input['return_url'], '/') : $baseUrl . '/store';
+            Logger::info("Stripe Coin Checkout preparing return URLs", ['return_url' => $returnUrl, 'user_id' => $userId]);
 
             $session = \Stripe\Checkout\Session::create([
                 'customer' => $stripeCustomerId,
@@ -590,12 +617,15 @@ class StripeServices {
                 $this->subscriptionRepo->updateUserStripeCustomerId($userId, $stripeCustomerId);
             }
 
+            $baseUrl = $this->getBaseUrl($input);
+            Logger::info("Stripe Setup Session preparing return URLs", ['base_url' => $baseUrl, 'user_id' => $userId]);
+
             $session = \Stripe\Checkout\Session::create([
                 'payment_method_types' => ['card'],
                 'mode' => 'setup',
                 'customer' => $stripeCustomerId,
-                'success_url' => APP_URL . '/settings/billing?status=success',
-                'cancel_url' => APP_URL . '/settings/billing?status=cancel',
+                'success_url' => $baseUrl . '/settings/billing?status=success',
+                'cancel_url' => $baseUrl . '/settings/billing?status=cancel',
                 'metadata' => [
                     'user_id' => (string) $userId
                 ]
