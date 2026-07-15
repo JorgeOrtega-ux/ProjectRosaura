@@ -154,10 +154,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         $userIdParam = $userId ?? 0;
         
+        $joinMemberSql = "";
         if ($userId) {
-            $whereConditions[] = "(c.privacy = 'public' OR c.owner_id = :current_user_id_w1 OR EXISTS(SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm WHERE cm.canvas_id = c.id AND cm.user_id = :current_user_id_w2))";
+            $whereConditions[] = "(c.privacy = 'public' OR c.owner_id = :current_user_id_w1 OR cm_feed.canvas_id IS NOT NULL)";
             $params[':current_user_id_w1'] = $userIdParam;
-            $params[':current_user_id_w2'] = $userIdParam;
+            $joinMemberSql = "LEFT JOIN " . DB::TBL_CANVAS_MEMBERS . " cm_feed ON c.id = cm_feed.canvas_id AND cm_feed.user_id = :current_user_id_member";
+            $params[':current_user_id_member'] = $userIdParam;
         } else {
             $whereConditions[] = "(c.privacy = 'public' OR c.scope_type = 'global')";
         }
@@ -168,19 +170,19 @@ class CanvasRepository implements CanvasRepositoryInterface {
             CASE 
                 WHEN c.scope_type = 'global' THEN 1
                 WHEN c.owner_id = :current_user_id_o1 THEN 2
-                WHEN EXISTS(SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm2 WHERE cm2.canvas_id = c.id AND cm2.user_id = :current_user_id_o2) THEN 3
+                WHEN cm_feed.canvas_id IS NOT NULL THEN 3
                 ELSE 4
             END ASC,
             c.created_at DESC";
             
         $params[':current_user_id_o1'] = $userIdParam;
-        $params[':current_user_id_o2'] = $userIdParam;
         
         $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, c.favorites_count, c.tags,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id_fav
+                $joinMemberSql
                 WHERE $whereSql
                 $orderSql
                 LIMIT :limit OFFSET :offset";
@@ -246,13 +248,15 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getUserAndJoinedCanvases(int $userId, int $limit = 50, string $filter = 'all', int $offset = 0): array {
-        $whereClause = "WHERE (c.owner_id = :uid3 OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_USER_ROLES . " cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4))";
+        $joinRolesSql = "LEFT JOIN " . DB::TBL_CANVAS_MEMBERS . " cm2 ON c.id = cm2.canvas_id AND cm2.user_id = :uid4";
+        
+        $whereClause = "WHERE (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL)";
         if ($filter === 'mine') {
             $whereClause = "WHERE c.owner_id = :uid3";
         } elseif ($filter === 'joined') {
-            $whereClause = "WHERE c.owner_id != :uid3 AND EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_USER_ROLES . " cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4)";
+            $whereClause = "WHERE c.owner_id != :uid3 AND cm2.canvas_id IS NOT NULL";
         } elseif ($filter === 'favorites') {
-            $whereClause .= " AND f.canvas_id IS NOT NULL";
+            $whereClause = "WHERE (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL) AND f.canvas_id IS NOT NULL";
         }
 
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type, c.owner_id, c.is_locked, c.locked_reasons, c.favorites_count,
@@ -261,6 +265,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                        CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :uid2
+                $joinRolesSql
                 $whereClause
                 ORDER BY c.id DESC 
                 LIMIT :limit OFFSET :offset";

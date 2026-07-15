@@ -352,7 +352,7 @@ class ChatServices
 }
 
         $s3Key = 'canvases/' . $canvasUuid . '/chat/' . $file;
-        $bucket = \App\Core\Helpers\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+        $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
         $s3Client = \App\Core\Helpers\Utils::getS3Client();
 
         try {
@@ -361,10 +361,10 @@ class ChatServices
                 'Key' => $s3Key
             ]);
             
-            $publicEndpoint = rtrim(\App\Core\Helpers\EnvLoader::get('MINIO_PUBLIC_URL', 'http://localhost:9000'), '/');
+            $publicEndpoint = rtrim(\App\Core\Helpers\EnvLoader::get('AWS_PUBLIC_URL', 'http://localhost:9000'), '/');
             $credentials = new \Aws\Credentials\Credentials(
-                \App\Core\Helpers\EnvLoader::get('MINIO_ROOT_USER', 'admin'),
-                \App\Core\Helpers\EnvLoader::get('MINIO_ROOT_PASSWORD', 'password')
+                \App\Core\Helpers\EnvLoader::get('AWS_ACCESS_KEY_ID', 'admin'),
+                \App\Core\Helpers\EnvLoader::get('AWS_SECRET_ACCESS_KEY', 'password')
             );
             $s3PublicClient = new \Aws\S3\S3Client([
                 'version' => 'latest',

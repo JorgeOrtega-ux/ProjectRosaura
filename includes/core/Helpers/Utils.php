@@ -28,7 +28,7 @@ class Utils {
 
     public static function getS3Client() {
         if (self::$s3Client === null) {
-            $endpoint = EnvLoader::get('MINIO_ENDPOINT', 'http://minio:9000');
+            $endpoint = EnvLoader::get('AWS_ENDPOINT', 'http://minio:9000');
             if (strpos($endpoint, 'http') !== 0) {
                 $endpoint = 'http://' . $endpoint;
             }
@@ -36,8 +36,8 @@ class Utils {
                 $endpoint .= ':9000';
             }
             $credentials = new \Aws\Credentials\Credentials(
-                EnvLoader::get('MINIO_ROOT_USER', 'admin'),
-                EnvLoader::get('MINIO_ROOT_PASSWORD', 'password')
+                EnvLoader::get('AWS_ACCESS_KEY_ID', 'admin'),
+                EnvLoader::get('AWS_SECRET_ACCESS_KEY', 'password')
             );
             self::$s3Client = new \Aws\S3\S3Client([
                 'version' => 'latest',
@@ -59,8 +59,8 @@ class Utils {
         
         $path = preg_replace('#^/?public/storage/#', '', ltrim($path, '/'));
         
-        $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
-        $publicUrl = rtrim(EnvLoader::get('MINIO_PUBLIC_URL', 'http://localhost:9000'), '/');
+        $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+        $publicUrl = rtrim(EnvLoader::get('AWS_PUBLIC_URL', 'http://localhost:9000'), '/');
         
         return $publicUrl . '/' . $bucket . '/' . ltrim($path, '/');
     }
@@ -119,7 +119,7 @@ class Utils {
             return 'public/assets/img/fallbacks/avatar-default.png';
         }
         $fileName = $uuid . '.png';
-        $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+        $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
         $s3Client = self::getS3Client();
         try {
             $s3Client->putObject([
@@ -371,7 +371,7 @@ class Utils {
         }
 
         if ($imageRecreated && $imageContent !== null) {
-            $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
             $s3Client = self::getS3Client();
             $s3Key = trim($uploadDir, '/') . '/' . $fileName;
             $s3Key = preg_replace('#/+#', '/', ltrim($s3Key, '/'));
@@ -398,7 +398,7 @@ class Utils {
             if (strpos($oldPicPath, 'uploaded/') !== false || strpos($oldPicPath, 'default/') !== false) {
                 $s3Key = preg_replace('#^/?public/storage/#', '', ltrim($oldPicPath, '/'));
                 
-                $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+                $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
                 $s3Client = self::getS3Client();
                 try {
                     $s3Client->deleteObject([

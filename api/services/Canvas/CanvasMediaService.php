@@ -45,7 +45,7 @@ class CanvasMediaService {
 
             $s3Key = 'timelapses/' . $canvas['uuid'] . '/live/live_canvas_' . $canvas['uuid'] . '.jsonl';
 
-            $bucket = \App\Core\Helpers\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
             $s3Client = Utils::getS3Client();
 
             if (!$s3Client->doesObjectExist($bucket, $s3Key)) {
@@ -103,7 +103,7 @@ class CanvasMediaService {
                 $s3Key = str_replace('private/canvases/', '', $s3Key);
             }
 
-            $bucket = \App\Core\Helpers\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
             $tx3 = microtime(true);
             
             // NOTE: REMOVED doesObjectExist to avoid redundant S3 call. 
@@ -345,7 +345,7 @@ class CanvasMediaService {
             $stmt = $pdo->prepare("DELETE FROM canvas_snapshots_history WHERE id = :id");
             $stmt->execute([':id' => $data['id']]);
 
-            $bucket = \App\Core\Helpers\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
             $s3Client = Utils::getS3Client();
 
             if (!empty($data['file_path'])) {

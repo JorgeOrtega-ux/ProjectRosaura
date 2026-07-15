@@ -64,7 +64,7 @@ class CanvasAssetService {
 
             $fileName = sprintf('%s_%s.%s', $userId, Utils::generateUUID(), $extension);
             
-            $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
             $s3Client = Utils::getS3Client();
             try {
                 $s3Client->putObject([
@@ -131,7 +131,7 @@ class CanvasAssetService {
             if ($deleted) {
                 if ($filePath) {
                     $s3Key = preg_replace('#^/?public/storage/#', '', ltrim($filePath, '/'));
-                    $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+                    $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
                     $s3Client = Utils::getS3Client();
                     try {
                         $s3Client->deleteObject([

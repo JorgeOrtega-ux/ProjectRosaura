@@ -19,7 +19,7 @@ services:
       - DB_HOST=${DB_HOST_PROD} 
       - REDIS_HOST=${REDIS_HOST_PROD}
       - TYPESENSE_HOST=${TYPESENSE_HOST_PROD}
-      - MINIO_ENDPOINT=${MINIO_ENDPOINT_PROD}
+      - AWS_ENDPOINT=${AWS_ENDPOINT}
       - SESSION_DRIVER=redis
     networks:
       - rosaura_app_network

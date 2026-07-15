@@ -261,23 +261,24 @@ services:
       - rosaura_network
 
   # ==========================================
-  # SERVIDOR MINIO (Object Storage S3)
+  # SERVIDOR MINIO (Object Storage Amazon S3 Mock)
   # ==========================================
   minio:
     image: minio/minio
     container_name: rosaura_minio
     restart: always
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-admin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-password}
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-admin}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-password}
     entrypoint: >
       /bin/sh -c "
       (/bin/sh -c '
-        until /usr/bin/mc alias set myminio http://localhost:9000 $${MINIO_ROOT_USER:-admin} $${MINIO_ROOT_PASSWORD:-password}; do
-          sleep 2;
+        until /usr/bin/mc alias set myminio http://localhost:9000 $${AWS_ACCESS_KEY_ID:-admin} $${AWS_SECRET_ACCESS_KEY:-password}; do
+          echo Waiting for MinIO to be ready;
+          sleep 1;
         done;
-        /usr/bin/mc mb myminio/$${MINIO_BUCKET:-rosaura-storage} || true;
-        /usr/bin/mc anonymous set download myminio/$${MINIO_BUCKET:-rosaura-storage} || true;
+        /usr/bin/mc mb myminio/$${AWS_BUCKET:-rosaura-storage} || true;
+        /usr/bin/mc anonymous set download myminio/$${AWS_BUCKET:-rosaura-storage} || true;
       ') &
       exec /usr/bin/docker-entrypoint.sh minio server /data --console-address ':9001'
       "

@@ -63,7 +63,7 @@ class CanvasMediaController extends BaseController {
             }
 
             $s3Key = $result['file_path'];
-            $bucket = \App\Core\Helpers\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
             $s3Client = \App\Core\Helpers\Utils::getS3Client();
 
             try {
@@ -119,7 +119,7 @@ class CanvasMediaController extends BaseController {
             }
 
             $s3Key = $result['file_path'];
-            $bucket = \App\Core\Helpers\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
             $s3Client = \App\Core\Helpers\Utils::getS3Client();
             $t2 = microtime(true);
 
