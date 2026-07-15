@@ -106,10 +106,41 @@ if ($redirectUrl) {
     else { header("Location: " . $redirectUrl); exit; }
 }
 
+$initialCanvasesJson = '[]';
+if ($currentView === 'app/home.php' && class_exists('\App\Api\Services\Canvas\CanvasCoreService')) {
+    try {
+        global $container, $sessionManager;
+        if ($container && $sessionManager) {
+            $canvasServices = $container->get(\App\Api\Services\Canvas\CanvasCoreService::class);
+            $userId = $isLoggedIn ? $sessionManager->getActiveAccountId() : null;
+            $perms = $isLoggedIn ? $sessionManager->getPermissions() : [];
+            if (empty($perms) && isset($_SESSION['user_permissions'])) {
+                $perms = $_SESSION['user_permissions'];
+            }
+            $canManageOfficial = in_array('access_admin_panel', $perms) || 
+                                 in_array('canvases.manage_official', $perms) || 
+                                 in_array('canvases.create_official', $perms);
+
+            $res = $canvasServices->getHomeFeed($userId, 'all', 20, 0, $canManageOfficial);
+            if ($res && isset($res['success']) && $res['success'] && isset($res['data'])) {
+                $initialCanvasesJson = htmlspecialchars(json_encode($res['data']), ENT_QUOTES, 'UTF-8');
+            }
+        }
+    } catch (\Throwable $e) {
+        if (class_exists('\App\Core\System\Logger')) {
+            \App\Core\System\Logger::security("Error fetching home feed: " . $e->getMessage(), 'error');
+        }
+    }
+}
+
 if ($isSpaRequest) { 
     try {
         $loader->load($currentView); 
-    } catch (\Throwable $e) {}
+    } catch (\Throwable $e) {
+        if (class_exists('\App\Core\System\Logger')) {
+            \App\Core\System\Logger::security("Error loading SPA view $currentView: " . $e->getMessage(), 'error');
+        }
+    }
     exit; 
 }
 ?>

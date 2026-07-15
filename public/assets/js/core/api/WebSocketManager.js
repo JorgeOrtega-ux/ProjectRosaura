@@ -17,6 +17,7 @@ export class WebSocketManager {
 
     connect(canvasId, ticket = null) {
         this.canvasId = canvasId;
+        this.ticket = ticket;
         this.isIntentionalDisconnect = false;
         
         let url = `${WsConfig.getBaseUrl()}/canvas/${this.canvasId}`;
@@ -78,7 +79,7 @@ export class WebSocketManager {
             setTimeout(() => {
                 this.reconnectAttempts++;
 
-                this.connect(this.canvasId);
+                this.connect(this.canvasId, this.ticket);
             }, delay);
         } else {
             

@@ -36,7 +36,11 @@ try {
         $redisPath = "tcp://$redisHost:6379" . (!empty($redisPass) ? "?auth=$redisPass" : "");
         ini_set('session.save_path', $redisPath);
     }
-} catch (\Throwable $e) {}
+} catch (\Throwable $e) {
+    if (class_exists('\App\Core\System\Logger')) {
+        \App\Core\System\Logger::security("Redis setup failed: " . $e->getMessage(), 'error');
+    }
+}
 
 try {
     if (session_status() === PHP_SESSION_NONE) {
@@ -53,6 +57,9 @@ try {
     }
 } catch (\Throwable $e) {
     $_SESSION = [];
+    if (class_exists('\App\Core\System\Logger')) {
+        \App\Core\System\Logger::security("Session start failed: " . $e->getMessage(), 'error');
+    }
 }
 
 function render_restoring_view() {
@@ -69,7 +76,11 @@ try {
     if ($redisClient && $redisClient->exists('system_status:restoring')) {
         render_restoring_view();
     }
-} catch (\Throwable $e) {}
+} catch (\Throwable $e) {
+    if (class_exists('\App\Core\System\Logger')) {
+        \App\Core\System\Logger::security("Restoring status check failed: " . $e->getMessage(), 'error');
+    }
+}
 
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
@@ -201,7 +212,11 @@ if ($isLoggedIn && !empty($userPrefs['language'])) {
     $lang = Utils::getClosestLanguage($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '');
 }
 
-try { Translator::init($lang); } catch (\Throwable $e) {}
+try { Translator::init($lang); } catch (\Throwable $e) {
+    if (class_exists('\App\Core\System\Logger')) {
+        \App\Core\System\Logger::security("Translator init failed: " . $e->getMessage(), 'error');
+    }
+}
 
 if (!function_exists('__')) { 
     function __($key, $params = []) { 

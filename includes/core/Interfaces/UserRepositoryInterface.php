@@ -20,5 +20,6 @@ interface UserRepositoryInterface {
     public function cancelDeletion(int $userId): bool;
     public function deleteUserHard(int $userId): bool;
     public function getRegistrationStats(string $startDate, string $endDate): array;
+    public function getCustomPalettes(int $userId): array;
 }
 ?>

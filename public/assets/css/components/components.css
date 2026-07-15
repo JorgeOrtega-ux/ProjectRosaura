@@ -4258,3 +4258,47 @@ html.dark-theme .component-skeleton::after {
     50% { opacity: 0.5; }
     100% { opacity: 1; }
 }
+
+.component-tags-carousel::-webkit-scrollbar { display: none; }
+.component-tags-carousel.is-dragging {
+    scroll-behavior: auto !important;
+    cursor: grabbing;
+    user-select: none;
+}
+.component-tags-carousel.is-dragging .component-badge {
+    pointer-events: none;
+}
+.component-badge {
+    transition: all 0.2s ease;
+}
+.component-badge.active {
+    background: var(--text-primary) !important;
+    color: var(--bg-surface) !important;
+    border-color: var(--text-primary) !important;
+}
+.component-tag-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: all 0.2s ease;
+
+}
+.component-tag-nav-btn:hover {
+    background: var(--bg-surface);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transform: translateY(-50%) scale(1.05);
+}
+.component-tag-nav-left { left: 0; }
+.component-tag-nav-right { right: 0; }

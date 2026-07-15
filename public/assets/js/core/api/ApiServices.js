@@ -2,8 +2,61 @@ import { ApiRoutes } from './ApiRoutes.js';
 import { showMessage } from '../utils/uiUtils.js';
 
 export class ApiService {
+    static isRefreshingCsrf = false;
+    static csrfRefreshSubscribers = [];
+
+    static onCsrfRefreshed(token) {
+        ApiService.csrfRefreshSubscribers.forEach(callback => callback(token));
+        ApiService.csrfRefreshSubscribers = [];
+    }
+
+    static addCsrfSubscriber(callback) {
+        ApiService.csrfRefreshSubscribers.push(callback);
+    }
+
     constructor() {
         this.baseUrl = (window.AppBasePath || '') + '/api/index.php'; 
+    }
+
+    async _handleCsrfRetry(originalFetchOptions) {
+        return new Promise((resolve) => {
+            ApiService.addCsrfSubscriber(async (newToken) => {
+                if (newToken) {
+                    originalFetchOptions.headers['X-CSRF-Token'] = newToken;
+                    try {
+                        const retryResponse = await fetch(this.baseUrl, originalFetchOptions);
+                        resolve(retryResponse);
+                    } catch (e) {
+                        resolve(null);
+                    }
+                } else {
+                    resolve(null);
+                }
+            });
+
+            if (!ApiService.isRefreshingCsrf) {
+                ApiService.isRefreshingCsrf = true;
+                
+                fetch(window.location.href)
+                    .then(res => res.text())
+                    .then(text => {
+                        const match = text.match(/<meta name="csrf-token" content="([^"]+)">/);
+                        const newToken = (match && match[1]) ? match[1] : null;
+                        
+                        if (newToken) {
+                            const meta = document.querySelector('meta[name="csrf-token"]');
+                            if (meta) meta.setAttribute('content', newToken);
+                        }
+                        
+                        ApiService.isRefreshingCsrf = false;
+                        ApiService.onCsrfRefreshed(newToken);
+                    })
+                    .catch(() => {
+                        ApiService.isRefreshingCsrf = false;
+                        ApiService.onCsrfRefreshed(null);
+                    });
+            }
+        });
     }
 
     _processResponse(result) {
@@ -85,6 +138,15 @@ export class ApiService {
 
                 if (response.status === 403 || response.status === 429) {
                     const result = await response.json(); 
+
+                    if (response.status === 403 && result.message_key === 'error.invalid_csrf_token') {
+                        const retryResponse = await this._handleCsrfRetry(fetchOptions);
+                        if (retryResponse && retryResponse.ok) {
+                            const retryResult = await retryResponse.json();
+                            return this._processResponse(retryResult);
+                        }
+                    }
+
                     const processedResult = this._processResponse(result);
                     
                     if (response.status === 403) {
@@ -133,6 +195,15 @@ export class ApiService {
 
                 if (response.status === 403 || response.status === 429) {
                     const result = await response.json(); 
+
+                    if (response.status === 403 && result.message_key === 'error.invalid_csrf_token') {
+                        const retryResponse = await this._handleCsrfRetry(fetchOptions);
+                        if (retryResponse && retryResponse.ok) {
+                            const retryResult = await retryResponse.json();
+                            return this._processResponse(retryResult);
+                        }
+                    }
+
                     const processedResult = this._processResponse(result);
                     
                     if (response.status === 403) {
@@ -185,6 +256,18 @@ export class ApiService {
 
                 if (response.status === 403 || response.status === 429) {
                     const result = await response.json(); 
+
+                    if (response.status === 403 && result.message_key === 'error.invalid_csrf_token') {
+                        const retryResponse = await this._handleCsrfRetry(fetchOptions);
+                        if (retryResponse && retryResponse.ok) {
+                            return { 
+                                success: true, 
+                                reader: retryResponse.body.getReader(), 
+                                totalBytes: parseInt(retryResponse.headers.get('Content-Length') || '0', 10) 
+                            };
+                        }
+                    }
+
                     const processedResult = this._processResponse(result);
                     if (response.status === 403) {
                         window.dispatchEvent(new CustomEvent('securityViolationTriggered', { detail: processedResult }));
@@ -242,6 +325,15 @@ export class ApiService {
 
                 try {
                     const errorResult = await response.json();
+
+                    if (response.status === 403 && errorResult.message_key === 'error.invalid_csrf_token') {
+                        const retryResponse = await this._handleCsrfRetry(fetchOptions);
+                        if (retryResponse && retryResponse.ok) {
+                            const text = await retryResponse.text();
+                            return { success: true, data: text };
+                        }
+                    }
+
                     return this._processResponse(errorResult);
                 } catch (e) {
                      throw new Error(`Error HTTP: ${response.status}`);

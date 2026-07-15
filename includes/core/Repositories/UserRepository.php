@@ -367,5 +367,20 @@ class UserRepository implements UserRepositoryInterface {
             return [];
         }
     }
+
+    public function getCustomPalettes(int $userId): array {
+        try {
+            $stmt = $this->pdo->prepare("SELECT palette_key, name, colors FROM custom_palettes WHERE user_id = :user_id");
+            $stmt->execute([':user_id' => $userId]);
+            $customPalettes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($customPalettes as &$p) {
+                $p['colors'] = json_decode($p['colors'], true) ?? [];
+            }
+            return $customPalettes;
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
+            return [];
+        }
+    }
 }
 ?>
