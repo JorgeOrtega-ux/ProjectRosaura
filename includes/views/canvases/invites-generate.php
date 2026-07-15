@@ -11,15 +11,17 @@ $db = new DatabaseManager();
 $connNameCanvases = defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
 
 $canvasId = null;
+$canvasOwnerId = null;
 
 if ($canvasUuid) {
     try {
         $pdoCanvases = $db->getConnection($connNameCanvases);
-        $stmt = $pdoCanvases->prepare("SELECT id FROM canvases WHERE uuid = :uuid LIMIT 1");
+        $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
         $stmt->execute(['uuid' => $canvasUuid]);
         $canvasData = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($canvasData) {
             $canvasId = (int)$canvasData['id'];
+            $canvasOwnerId = isset($canvasData['owner_id']) ? (int)$canvasData['owner_id'] : null;
         }
     } catch (\Exception $e) {
     }
@@ -28,6 +30,16 @@ if ($canvasUuid) {
 if (!$userId || !$canvasId) {
     echo "<div class='view-content'><p>".__('err_canvas_not_found_or_no_access')."</p></div>";
     return;
+}
+
+// Verify ownership: only the canvas owner can generate invites
+if ((int)$userId !== $canvasOwnerId) {
+    $userPerms = $_SESSION['user_permissions'] ?? $_SESSION['permissions'] ?? [];
+    $isAdmin = is_array($userPerms) && (in_array('access_admin_panel', $userPerms) || in_array('canvases.manage_official', $userPerms));
+    if (!$isAdmin || $canvasOwnerId !== null) {
+        echo "<div class='view-content'><p>".__('err_unauthorized')."</p></div>";
+        return;
+    }
 }
 
 $availableRoles = [];

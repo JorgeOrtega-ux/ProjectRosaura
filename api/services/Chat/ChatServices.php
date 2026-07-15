@@ -42,9 +42,12 @@ class ChatServices
         try {
             $this->pdo->exec("ALTER TABLE canvas_chat_messages ADD COLUMN attachments JSON DEFAULT NULL AFTER message;");
         } catch (\Exception $e) {}
+        try {
+            $this->pdo->exec("ALTER TABLE canvas_chat_messages ADD COLUMN visibility ENUM('visible','under_review','deleted') NOT NULL DEFAULT 'visible' AFTER file_size;");
+        } catch (\Exception $e) {}
 
         $stmt = $this->pdo->prepare("
-            SELECT id, user_id, message, attachments, created_at 
+            SELECT id, user_id, message, attachments, created_at, visibility 
             FROM canvas_chat_messages
             WHERE canvas_id = ?
             ORDER BY id DESC
@@ -72,6 +75,13 @@ class ChatServices
                 $uid = $msg['user_id'];
                 $msg['username'] = $usersMap[$uid]['username'] ?? __('default_user');
                 $msg['avatar'] = isset($usersMap[$uid]['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($usersMap[$uid]['profile_picture']) : null;
+                
+                // Strip content for non-visible messages
+                $vis = $msg['visibility'] ?? 'visible';
+                if ($vis !== 'visible') {
+                    $msg['message'] = '';
+                    $msg['attachments'] = null;
+                }
             }
             unset($msg);
         }
@@ -283,42 +293,43 @@ class ChatServices
     {
         if ($messageId <= 0 || $canvasId <= 0) {
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => 400];
-}
+        }
 
-        $stmt = $this->pdo->prepare("SELECT user_id, file_size FROM canvas_chat_messages WHERE id = ? AND canvas_id = ?");
+        $stmt = $this->pdo->prepare("SELECT user_id, file_size, visibility FROM canvas_chat_messages WHERE id = ? AND canvas_id = ?");
         $stmt->execute([$messageId, $canvasId]);
         $msg = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$msg) {
             return ['success' => false, 'message' => __('err_message_not_found'), 'http_code' => 404];
         }
-        
+
         if ($msg['user_id'] != $userId) {
             return ['success' => false, 'message' => __('err_cannot_delete_others_message'), 'http_code' => 403];
-}
-
-        $stmt = $this->pdo->prepare("DELETE FROM canvas_chat_messages WHERE id = ?");
-        $stmt->execute([$messageId]);
-
-        if ($msg['file_size'] > 0) {
-            $dbManager = new DatabaseManager();
-            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager));
-            $userRepo->updateStorageUsed($userId, -$msg['file_size']);
         }
+
+        // Already deleted — no-op
+        if (($msg['visibility'] ?? 'visible') === 'deleted') {
+            return ['success' => true, 'message' => __('msg_message_deleted')];
+        }
+
+        // Soft-delete: mark as 'deleted' instead of removing from DB
+        $stmt = $this->pdo->prepare("UPDATE canvas_chat_messages SET visibility = 'deleted' WHERE id = ?");
+        $stmt->execute([$messageId]);
 
         if ($this->redis) {
             $eventPayload = [
                 'type' => 'chat_message_deleted',
                 'canvas_id' => $canvasId,
                 'data' => [
-                    'id' => $messageId
+                    'id' => $messageId,
+                    'visibility' => 'deleted'
                 ]
             ];
             $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
-}
+        }
 
         return ['success' => true, 'message' => __('msg_message_deleted')];
-}
+    }
 
     public function report($userId, $messageId, $reason)
     {

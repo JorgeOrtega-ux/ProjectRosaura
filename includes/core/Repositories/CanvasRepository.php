@@ -1087,9 +1087,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function incrementInviteUses(int $inviteId): bool {
-        $sql = "UPDATE " . DB::TBL_CANVAS_INVITES . " SET uses_count = uses_count + 1 WHERE id = :id";
+        $sql = "UPDATE " . DB::TBL_CANVAS_INVITES . " 
+                SET uses_count = uses_count + 1 
+                WHERE id = :id AND (max_uses IS NULL OR uses_count < max_uses)";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([':id' => $inviteId]);
+        $stmt->execute([':id' => $inviteId]);
+        return $stmt->rowCount() > 0;
     }
 
     public function revokeInvite(int $inviteId, int $canvasId): bool {

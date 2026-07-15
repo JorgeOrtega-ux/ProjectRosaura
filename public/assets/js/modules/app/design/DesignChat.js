@@ -222,7 +222,8 @@ export class DesignChat {
         });
 
         document.addEventListener('canvas:chat_message_deleted', (e) => {
-            this.removeMessageElement(e.detail.id);
+            const { id, visibility } = e.detail;
+            this.updateMessageVisibility(id, visibility || 'deleted');
         });
 
         document.addEventListener('click', (e) => {
@@ -526,7 +527,7 @@ export class DesignChat {
             });
             
             if (response.success || response.status === 'success') {
-                this.removeMessageElement(id);
+                this.updateMessageVisibility(id, 'deleted');
                 showMessage(response.message, 'success');
             } else {
                 showMessage(response.message, 'error');
@@ -585,20 +586,35 @@ export class DesignChat {
         }
     }
 
-    removeMessageElement(id) {
+    updateMessageVisibility(id, visibility) {
         const msgEl = this.chatContainer.querySelector(`[data-message-id="${id}"]`);
-        if (msgEl) {
-            msgEl.remove();
+        if (!msgEl) return;
+
+        const statusEl = this.createStatusMessageElement(id, msgEl, visibility);
+        msgEl.replaceWith(statusEl);
+    }
+
+    createStatusMessageElement(id, originalEl, visibility) {
+        const el = document.createElement('div');
+        el.className = 'chat-message chat-message--status';
+        el.dataset.messageId = id;
+
+        let icon, text;
+        if (visibility === 'under_review') {
+            icon = 'visibility_off';
+            text = window.__('msg_chat_under_review') || 'Este mensaje se encuentra en revisión';
+        } else {
+            icon = 'delete';
+            text = window.__('msg_chat_deleted') || 'Este mensaje fue eliminado';
         }
-        
-        const remainingMsgs = this.chatContainer.querySelectorAll('.chat-message');
-        if (remainingMsgs.length === 0) {
-            const emptyState = this.chatContainer.querySelector('[data-ref="empty-state-rendered"]');
-            if (emptyState) {
-                emptyState.classList.remove('disabled');
-                emptyState.classList.add('active');
-            }
-        }
+
+        el.innerHTML = `
+            <div class="chat-message-status-bubble">
+                <span class="material-symbols-rounded">${icon}</span>
+                <span>${text}</span>
+            </div>
+        `;
+        return el;
     }
 
     handleTypingEvent(data) {
@@ -640,6 +656,12 @@ export class DesignChat {
     }
 
     createMessageElement(msg) {
+        // Handle non-visible messages (deleted / under_review)
+        const visibility = msg.visibility || 'visible';
+        if (visibility !== 'visible') {
+            return this.createStatusMessageElement(msg.id, null, visibility);
+        }
+
         const el = document.createElement('div');
         el.className = 'chat-message';
         el.dataset.messageId = msg.id;

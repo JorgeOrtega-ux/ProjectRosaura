@@ -17,6 +17,7 @@ class HomeController {
         this.allCanvases = [];
         this.isLoadingMore = false;
         this.hasMore = true;
+        this.currentTag = 'all';
         this.observer = null;
         
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
@@ -151,6 +152,11 @@ class HomeController {
         }
 
         if (action === 'filterHomeTag') {
+            const selectedTag = actionBtn.getAttribute('data-tag') || 'all';
+            
+            // Skip if clicking the already-active tag
+            if (selectedTag === this.currentTag) return;
+            
             document.querySelectorAll('.component-tags-carousel .component-badge').forEach(btn => btn.classList.remove('active'));
             actionBtn.classList.add('active');
             
@@ -192,6 +198,7 @@ class HomeController {
         
         const activeTagEl = document.querySelector('.component-tags-carousel .component-badge.active');
         const currentTag = activeTagEl ? activeTagEl.getAttribute('data-tag') : 'all';
+        this.currentTag = currentTag;
 
         this.isLoadingMore = true;
         if (isLoadMore && this.contentArea) {

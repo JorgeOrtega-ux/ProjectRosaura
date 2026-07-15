@@ -214,9 +214,15 @@ class CanvasCoreController extends BaseController {
     public function get_home_feed($input) {
         try {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
-            $limit = isset($input['limit']) ? (int)$input['limit'] : 20;
-            $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
+            $limit = isset($input['limit']) ? min(max((int)$input['limit'], 1), 50) : 20;
+            $offset = isset($input['offset']) ? max((int)$input['offset'], 0) : 0;
             $tag = $input['tag'] ?? 'all';
+
+            // Whitelist of valid tags - reject anything not in the list
+            $validTags = ['all', 'fun', 'tension', 'action', 'strategy', 'roleplay', 'casual', 'romance', 'horror', 'scifi', 'fantasy'];
+            if (!in_array($tag, $validTags, true)) {
+                $tag = 'all';
+            }
 
             $result = $this->canvasServices->getHomeFeed($userId, $tag, $limit, $offset, $this->canManageOfficial());
             

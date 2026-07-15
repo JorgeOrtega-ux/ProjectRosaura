@@ -405,6 +405,7 @@ class CanvasAccessService {
                 return ['success' => false, 'message' => __('err_invite_expired')];
             }
 
+            // Pre-check limit (non-authoritative, just for fast feedback)
             if ($invite['max_uses'] !== null && $invite['uses_count'] >= $invite['max_uses']) {
                 return ['success' => false, 'message' => __('err_invite_limit_reached')];
             }
@@ -431,9 +432,14 @@ class CanvasAccessService {
                 }
             }
 
+            // Atomic increment: this is the authoritative limit check (prevents race condition)
+            $incremented = $this->canvasRepository->incrementInviteUses($invite['id']);
+            if (!$incremented) {
+                return ['success' => false, 'message' => __('err_invite_limit_reached')];
+            }
+
             $added = $this->canvasRepository->addMember($canvasId, $userId, (int)$invite['role']);
             if ($added) {
-                $this->canvasRepository->incrementInviteUses($invite['id']);
                 return ['success' => true, 'message' => __('msg_joined_canvas'), 'data' => ['uuid' => $canvas['uuid']]];
             }
 

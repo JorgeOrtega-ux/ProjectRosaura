@@ -213,4 +213,103 @@ class CanvasAccessController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
+
+    public function generate_invite($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+
+            $canvasId = $input['canvas_id'] ?? null;
+            $role = $input['role'] ?? null;
+            $expiresAt = $input['expires_at'] ?? null;
+
+            if (!$canvasId || !$role) {
+                return $this->respond(['success' => false, 'message' => __('err_incomplete_invite_data')]);
+            }
+
+            // Sanitize max_uses: must be a positive integer or null
+            $maxUses = $input['max_uses'] ?? null;
+            if ($maxUses !== null && $maxUses !== '') {
+                $maxUses = (int)$maxUses;
+                if ($maxUses < 1) {
+                    $maxUses = null;
+                } elseif ($maxUses > 999) {
+                    $maxUses = 999;
+                }
+            } else {
+                $maxUses = null;
+            }
+
+            $result = $this->canvasServices->generateInvite($userId, (int)$canvasId, $role, $maxUses, $expiresAt, $this->canManageOfficial());
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function list_invites($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+
+            $canvasId = $input['canvas_id'] ?? null;
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
+            }
+
+            $result = $this->canvasServices->listInvites($userId, (int)$canvasId, $this->canManageOfficial());
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function revoke_invite($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+
+            $canvasId = $input['canvas_id'] ?? null;
+            $inviteId = $input['invite_id'] ?? null;
+
+            if (!$canvasId || !$inviteId) {
+                return $this->respond(['success' => false, 'message' => __('err_incomplete_revoke_data')]);
+            }
+
+            $result = $this->canvasServices->revokeInvite($userId, (int)$canvasId, (int)$inviteId, $this->canManageOfficial());
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function join_via_invite($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+
+            $code = trim($input['code'] ?? '');
+            if (empty($code) || strlen($code) < 5) {
+                return $this->respond(['success' => false, 'message' => __('err_invalid_invite_code')]);
+            }
+
+            $termsAccepted = filter_var($input['terms_accepted'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            if (!$termsAccepted) {
+                return $this->respond(['success' => false, 'message' => __('err_accept_rules_required')]);
+            }
+
+            $result = $this->canvasServices->joinViaInvite($userId, strtoupper($code));
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
 }
