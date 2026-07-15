@@ -166,16 +166,24 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         $whereSql = implode(' AND ', $whereConditions);
 
-        $orderSql = "ORDER BY 
-            CASE 
-                WHEN c.scope_type = 'global' THEN 1
-                WHEN c.owner_id = :current_user_id_o1 THEN 2
-                WHEN cm_feed.canvas_id IS NOT NULL THEN 3
-                ELSE 4
-            END ASC,
-            c.created_at DESC";
-            
-        $params[':current_user_id_o1'] = $userIdParam;
+        if ($userId) {
+            $orderSql = "ORDER BY 
+                CASE 
+                    WHEN c.scope_type = 'global' THEN 1
+                    WHEN c.owner_id = :current_user_id_o1 THEN 2
+                    WHEN cm_feed.canvas_id IS NOT NULL THEN 3
+                    ELSE 4
+                END ASC,
+                c.created_at DESC";
+            $params[':current_user_id_o1'] = $userIdParam;
+        } else {
+            $orderSql = "ORDER BY 
+                CASE 
+                    WHEN c.scope_type = 'global' THEN 1
+                    ELSE 4
+                END ASC,
+                c.created_at DESC";
+        }
         
         $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, c.favorites_count, c.tags,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
@@ -697,27 +705,10 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
  public function getUserStorageUsed(int $userId): float {
-        $sql = "SELECT file_path FROM " . DB::TBL_USER_TEMPLATES . " WHERE user_id = :user_id";
+        $sql = "SELECT SUM(file_size) FROM " . DB::TBL_USER_TEMPLATES . " WHERE user_id = :user_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':user_id' => $userId]);
-        $paths = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
-        
-        $totalBytes = 0;
-        
-        $baseDir = dirname(__DIR__, 3); 
-        
-        foreach ($paths as $path) {
-            $cleanPath = ltrim($path, '/');
-            $relativePath = str_replace('public/storage/', 'storage/public/', $cleanPath);
-            $physicalPath = $baseDir . DIRECTORY_SEPARATOR . $relativePath;
-            
-            if (!file_exists($physicalPath)) {
-                Logger::error("getUserStorageUsed: File not found at physical path.", ['path_intentado' => $physicalPath]);
-                continue;
-            }
-
-            $totalBytes += filesize($physicalPath);
-        }
+        $totalBytes = (float)$stmt->fetchColumn();
         
         return $totalBytes / (1024 * 1024); 
     }
@@ -955,14 +946,15 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function saveTemplateMetadata(int $userId, string $filePath): int {
-        $sql = "INSERT INTO " . DB::TBL_USER_TEMPLATES . " (user_id, file_path) 
-                VALUES (:user_id, :file_path)";
+    public function saveTemplateMetadata(int $userId, string $filePath, int $fileSize = 0): int {
+        $sql = "INSERT INTO " . DB::TBL_USER_TEMPLATES . " (user_id, file_path, file_size) 
+                VALUES (:user_id, :file_path, :file_size)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             ':user_id'   => $userId,
-            ':file_path' => $filePath
+            ':file_path' => $filePath,
+            ':file_size' => $fileSize
         ]);
 
         return (int)$this->db->lastInsertId();

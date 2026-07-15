@@ -96,7 +96,10 @@ export class DesignChat {
 
     setupEventListeners() {
         if (this.btnSend) {
-            this.btnSend.addEventListener('click', () => this.sendMessage());
+            this.btnSend.addEventListener('click', (e) => {
+                if (e) e.preventDefault();
+                this.sendMessage();
+            });
         }
 
         if (this.fileInput) {
@@ -443,14 +446,14 @@ export class DesignChat {
 
         this.chatInput.disabled = true;
         this.btnSend.disabled = true;
-        this.btnSend.classList.remove('active');
+        
+        const originalBtnHtml = this.btnSend.innerHTML;
+        setTimeout(() => {
+            if (this.btnSend) this.btnSend.innerHTML = '<span class="material-symbols-rounded icon-spin-slow">sync</span>';
+        }, 0);
         
         const backupText = text;
         const backupFiles = [...this.selectedFiles];
-        
-        this.chatInput.value = '';
-        this.selectedFiles = [];
-        this.renderPreview();
 
         try {
             let response;
@@ -471,21 +474,23 @@ export class DesignChat {
 
             if (response.success === false || response.status === 'error') {
                 showMessage(response.message || window.__('err_send_message'), 'error');
-                this.chatInput.value = backupText; 
-                this.selectedFiles = backupFiles;
+            } else {
+                this.chatInput.value = '';
+                this.selectedFiles = [];
                 this.renderPreview();
+                this.btnSend.classList.remove('active');
             }
         } catch (error) {
-            
             showMessage(window.__('err_send_message'), 'error');
-            this.chatInput.value = backupText;
-            this.selectedFiles = backupFiles;
-            this.renderPreview();
         } finally {
+            this.btnSend.innerHTML = originalBtnHtml;
             this.chatInput.disabled = false;
             this.btnSend.disabled = false;
+            
             if (this.chatInput.value.trim().length > 0 || this.selectedFiles.length > 0) {
                 this.btnSend.classList.add('active');
+            } else {
+                this.btnSend.classList.remove('active');
             }
             this.chatInput.focus();
 

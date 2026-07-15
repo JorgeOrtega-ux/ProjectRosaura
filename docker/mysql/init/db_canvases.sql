@@ -200,6 +200,7 @@ CREATE TABLE IF NOT EXISTS `user_templates` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `file_path` varchar(255) NOT NULL,
+  `file_size` bigint(20) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   INDEX `idx_user_templates` (`user_id`)

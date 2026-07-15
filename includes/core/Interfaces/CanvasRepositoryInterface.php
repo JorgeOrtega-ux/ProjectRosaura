@@ -49,7 +49,7 @@ interface CanvasRepositoryInterface {
     public function getSnapshotByUuid(string $uuid): ?array;
     public function getSnapshotsByCanvasId(int $canvasId): array;
     public function getSnapshotsHistoryByUuid(string $uuid): array;
-    public function saveTemplateMetadata(int $userId, string $filePath): int;
+    public function saveTemplateMetadata(int $userId, string $filePath, int $fileSize = 0): int;
     public function getUserTemplates(int $userId): array;
     public function deleteTemplate(int $templateId, int $userId): bool;
     public function toggleFavorite(int $userId, int $canvasId): array;

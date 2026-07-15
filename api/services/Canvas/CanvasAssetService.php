@@ -80,7 +80,7 @@ class CanvasAssetService {
 
             $dbPath = 'public/storage/templates/' . $fileName;
             
-            $templateId = $this->canvasRepository->saveTemplateMetadata($userId, $dbPath);
+            $templateId = $this->canvasRepository->saveTemplateMetadata($userId, $dbPath, $fileInfo['size']);
 
             return [
                 'success' => true,

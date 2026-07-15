@@ -1362,6 +1362,11 @@ html.dark-theme .component-avatar__overlay {
     z-index: 100;
 }
 
+.component-module--dropdown-top {
+    top: auto !important;
+    bottom: calc(100% + 5px) !important;
+}
+
 .component-module--dropdown-left {
     right: 0 !important;
     left: auto !important;
