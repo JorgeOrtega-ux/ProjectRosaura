@@ -230,6 +230,7 @@ CREATE TABLE IF NOT EXISTS `canvas_chat_messages` (
     `message` TEXT NOT NULL,
     `attachments` JSON DEFAULT NULL,
     `file_size` BIGINT(20) NOT NULL DEFAULT 0,
+    `visibility` ENUM('visible','under_review','deleted') NOT NULL DEFAULT 'visible',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX (`canvas_id`),
     INDEX (`created_at`),
