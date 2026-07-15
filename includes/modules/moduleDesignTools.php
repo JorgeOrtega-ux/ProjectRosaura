@@ -182,6 +182,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         </div>
     </div>
 
+    <?php if (!isset($canvasAllowPurchases) || $canvasAllowPurchases == '1'): ?>
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding disabled" data-ref="menu-advantages">
         <div class="pill-container"><div class="drag-handle"></div></div>
         
@@ -216,5 +217,6 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
 </div>

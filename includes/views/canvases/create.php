@@ -97,7 +97,7 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                         </div>
                     </div>
 
-                    <hr class="component-divider" data-ref="scope-divider-main">
+                    <hr class="component-divider disabled" data-ref="scope-divider-main">
 
                     <div class="component-group-item component-group-item--stacked disabled" data-ref="scope-section-country">
                         <div class="component-card__content">
@@ -116,6 +116,16 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownScopeCountry">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-header">
+                                            <div class="component-search component-search--full component-search--h36">
+                                                <div class="component-search-icon">
+                                                    <span class="material-symbols-rounded">search</span>
+                                                </div>
+                                                <div class="component-search-input">
+                                                    <input type="text" data-ref="country-search" placeholder="<?php echo __('search_country'); ?>">
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="component-menu-list component-menu-list--scrollable" data-ref="list-scope-country">
                                             <div class="component-menu-link disabled">
                                                 <div class="component-menu-link-text"><span><?php echo __('lbl_loading'); ?></span></div>
@@ -145,6 +155,16 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownScopeState">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-header">
+                                            <div class="component-search component-search--full component-search--h36">
+                                                <div class="component-search-icon">
+                                                    <span class="material-symbols-rounded">search</span>
+                                                </div>
+                                                <div class="component-search-input">
+                                                    <input type="text" data-ref="state-search" placeholder="<?php echo __('search_state'); ?>">
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="component-menu-list component-menu-list--scrollable" data-ref="list-scope-state">
                                             <div class="component-menu-link disabled">
                                                 <div class="component-menu-link-text"><span><?php echo __('lbl_loading'); ?></span></div>
@@ -174,6 +194,16 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownScopeCity">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-header">
+                                            <div class="component-search component-search--full component-search--h36">
+                                                <div class="component-search-icon">
+                                                    <span class="material-symbols-rounded">search</span>
+                                                </div>
+                                                <div class="component-search-input">
+                                                    <input type="text" data-ref="city-search" placeholder="<?php echo __('search_city'); ?>">
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="component-menu-list component-menu-list--scrollable" data-ref="list-scope-city">
                                             <div class="component-menu-link disabled">
                                                 <div class="component-menu-link-text"><span><?php echo __('lbl_loading'); ?></span></div>
@@ -200,6 +230,8 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                         </div>
                     </div>
                     
+                    <hr class="component-divider">
+
                     <div class="component-group-item component-group-item--stateful">
                         <div class="active component-state-box" data-state="canvasname-view">
                             <div class="component-card__content">
@@ -266,6 +298,16 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownTags">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-header">
+                                            <div class="component-search component-search--full component-search--h36">
+                                                <div class="component-search-icon">
+                                                    <span class="material-symbols-rounded">search</span>
+                                                </div>
+                                                <div class="component-search-input">
+                                                    <input type="text" data-ref="tags-search" placeholder="<?php echo __('search_tags'); ?>">
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="component-menu-list component-menu-list--scrollable">
                                             <?php 
                                             $allowedTags = ['fun', 'tension', 'action', 'strategy', 'roleplay', 'casual', 'romance', 'horror', 'scifi', 'fantasy'];
@@ -419,7 +461,7 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                                         </div>
                                         <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
                                             <div class="component-menu-footer">
-                                                <button type="button" class="component-button component-button--full" data-action="navigateCustomPalette">
+                                                <button type="button" class="component-button component-button--h34 component-button--full" data-action="navigateCustomPalette">
                                                     <span class="material-symbols-rounded">add_circle</span>
                                                     <span><?php echo __('btn_create_custom_palette'); ?></span>
                                                 </button>

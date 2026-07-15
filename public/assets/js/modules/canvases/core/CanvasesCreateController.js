@@ -44,6 +44,7 @@ class CanvasesCreateController {
 
         this.countriesLoaded = false;
         this.handleClickBound = this.handleClick.bind(this);
+        this.handleInputBound = this.handleInput.bind(this);
     }
 
     init() {
@@ -58,10 +59,12 @@ class CanvasesCreateController {
     destroy() {
         if (this.abortController) this.abortController.abort();
         document.removeEventListener('click', this.handleClickBound);
+        document.removeEventListener('input', this.handleInputBound);
     }
 
     bindEvents() {
         document.addEventListener('click', this.handleClickBound);
+        document.addEventListener('input', this.handleInputBound);
     }
 
     checkAdminPermissions() {
@@ -162,6 +165,37 @@ class CanvasesCreateController {
         }
     }
 
+    handleInput(e) {
+        if (e.target.matches('[data-ref$="-search"]')) {
+            const query = e.target.value.toLowerCase();
+            const menuList = e.target.closest('.component-menu').querySelector('.component-menu-list');
+            if (menuList) {
+                let hasVisible = false;
+                menuList.querySelectorAll('.component-menu-link:not(.component-menu-empty .component-menu-link)').forEach(link => {
+                    const textEl = link.querySelector('.component-menu-link-text span');
+                    if (textEl) {
+                        const text = textEl.textContent.toLowerCase();
+                        if (text.includes(query)) {
+                            link.style.display = '';
+                            hasVisible = true;
+                        } else {
+                            link.style.display = 'none';
+                        }
+                    }
+                });
+                
+                let emptyEl = menuList.querySelector('.component-menu-empty');
+                if (!emptyEl) {
+                    emptyEl = document.createElement('div');
+                    emptyEl.className = 'component-menu-empty';
+                    emptyEl.innerHTML = `<div class="component-menu-link disabled-interactive"><div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div><div class="component-menu-link-text"><span class="component-text-notice--muted">${window.__ ? window.__('no_results_found') : 'No results found'}</span></div></div>`;
+                    menuList.appendChild(emptyEl);
+                }
+                emptyEl.hidden = hasVisible;
+            }
+        }
+    }
+
     handleClick(e) {
         const actionBtn = e.target.closest('[data-action]');
         if (!actionBtn) return;
@@ -204,6 +238,7 @@ class CanvasesCreateController {
         this.formState.scope_type = type;
         
         const refsToHide = [
+            'scope-divider-main',
             'scope-divider-country', 'scope-section-country',
             'scope-divider-state', 'scope-section-state',
             'scope-divider-city', 'scope-section-city',
@@ -216,9 +251,11 @@ class CanvasesCreateController {
         });
 
         if (type === 'organization') {
+            document.querySelector('[data-ref="scope-divider-main"]')?.classList.remove('disabled');
             document.querySelector('[data-ref="scope-divider-org"]')?.classList.remove('disabled');
             document.querySelector('[data-ref="scope-section-org"]')?.classList.remove('disabled');
         } else if (['country', 'state', 'municipality'].includes(type)) {
+            document.querySelector('[data-ref="scope-divider-main"]')?.classList.remove('disabled');
             document.querySelector('[data-ref="scope-divider-country"]')?.classList.remove('disabled');
             document.querySelector('[data-ref="scope-section-country"]')?.classList.remove('disabled');
             

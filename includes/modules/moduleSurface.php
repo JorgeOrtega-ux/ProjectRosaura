@@ -26,6 +26,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
             </div>
         </div>
 
+        <?php if ($isLoggedIn): ?>
         <div class="component-menu-bottom">
             <div class="component-menu-list">
                 <div class="component-menu-link nav-item" data-nav="/store/coins">
@@ -46,6 +47,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                 </div>
             </div>
         </div>
+        <?php endif; ?>
     </div>
 
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isSitePolicyArea ? 'active' : 'disabled'; ?>" data-ref="sidebar-menu-site-policy">

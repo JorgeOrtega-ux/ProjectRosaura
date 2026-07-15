@@ -56,8 +56,8 @@ if ($isMaintenanceActive && !$isPrivileged) {
             $currentView = 'system/message.php';
             $systemMessageType = '404';
         } else {
-            $currentView = 'settings/guest.php';
-            $redirectUrl = APP_URL . '/settings/guest';
+            $currentView = 'auth/login.php';
+            $redirectUrl = APP_URL . '/login';
         }
     }
 

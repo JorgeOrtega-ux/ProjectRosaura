@@ -12,6 +12,7 @@ $canvasPalette = 'default';
 $canvasPrivacy = 'private'; 
 $canvasApproval = '0'; 
 $canvasAllowChat = '0';
+$canvasAllowPurchases = '1';
 $canvasCooldownBatch = '5';
 $canvasCooldownSeconds = '10';
 $resetActive = '0';
@@ -30,7 +31,7 @@ if (!empty($canvasUuid)) {
         $dbManager = new DatabaseManager();
         $db = $dbManager->getConnection(DB::CONN_CANVASES);
         $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, 
-                       c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat,
+                       c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat, c.allow_purchases,
                        r.is_active as reset_active, r.next_reset_at, r.timer_action as reset_timer_action,
                        rs.is_active as resize_active, rs.next_resize_at, rs.target_size, rs.timer_action as resize_timer_action
                 FROM " . DB::TBL_CANVASES . " c
@@ -50,6 +51,7 @@ if (!empty($canvasUuid)) {
             $canvasPrivacy = $canvas['privacy'] ?? 'private';
             $canvasApproval = $canvas['requires_approval'] ?? '0';
             $canvasAllowChat = $canvas['allow_chat'] ?? '0';
+            $canvasAllowPurchases = $canvas['allow_purchases'] ?? '1';
             
             $canvasCooldownBatch = $canvas['cooldown_pixels_batch'] ?? '5';
             $canvasCooldownSeconds = $canvas['cooldown_seconds'] ?? '10';
@@ -267,10 +269,13 @@ if (!empty($canvasUuid)) {
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">photo_library</span>
                     </button>
+                    
+                    <?php if ($canvasAllowPurchases == '1'): ?>
                     <div class="component-divider-vertical" data-ref="advantages-actions-divider"></div>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-advantages" data-tooltip="<?php echo __('tooltip_active_advantages'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">stars</span>
                     </button>
+                    <?php endif; ?>
                     
                     <?php if ($canvasAllowChat == '1'): ?>
                     <div class="component-divider-vertical" data-ref="chat-actions-divider"></div>
