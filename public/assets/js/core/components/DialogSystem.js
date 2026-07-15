@@ -80,6 +80,9 @@ export class DialogSystem {
             
             this.activeBox = document.createElement('div');
             this.activeBox.className = 'component-modal-box';
+            if (this.templates[templateName].noPadding) {
+                this.activeBox.classList.add('component-modal-box--no-padding');
+            }
             this.activeBox.innerHTML = this.templates[templateName].build(data);
             
             const closeBtn = document.createElement('button');

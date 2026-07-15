@@ -44,32 +44,91 @@ export const DialogTemplates = {
     },
 
     welcomeUserModal: {
-        build: (data) => {
-            const step = data.step || 1;
+        noPadding: true,
+        build: () => {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div style="display: flex; flex-direction: column; width: 400px; height: 500px; max-width: 100%; max-height: 100%; border-radius: 12px; overflow: hidden; background: var(--bg-surface);">
-                    <div style="flex: 1; min-height: 200px; background-image: url('https://images.unsplash.com/photo-1518791841217-8f162f1e1131?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'); background-size: cover; background-position: center;">
-                        <!-- Top photo area -->
+                <div class="step-modal-container">
+                    <div class="step-modal-banner">
+                        <img src="assets/images/welcome-banner.png" alt="Welcome Banner" onerror="this.style.display='none'">
                     </div>
-                    <div style="padding: 24px; display: flex; flex-direction: column; flex: 1;">
-                        <h2 class="component-modal-title" style="margin-bottom: 8px; font-size: 24px;">${window.__('welcome_title') || 'Welcome!'}</h2>
-                        <p class="component-modal-desc" style="color: var(--text-secondary); margin-bottom: 24px; flex: 1;">
-                            ${step === 1 ? (window.__('welcome_desc_1') || 'Discover all the amazing features we have for you.') : (window.__('welcome_desc_2') || 'Get started by creating your first project.')}
-                        </p>
-                        
-                        <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 24px;">
-                            <div style="width: 8px; height: 8px; border-radius: 50%; background: ${step === 1 ? 'var(--accent-primary)' : 'var(--border-color)'};"></div>
-                            <div style="width: 8px; height: 8px; border-radius: 50%; background: ${step === 2 ? 'var(--accent-primary)' : 'var(--border-color)'};"></div>
+                    
+                    <div class="step-modal-content">
+                        <!-- Step 1 -->
+                        <div class="step-modal-step active" id="welcome-step-1">
+                            <h2 class="component-modal-title">¡Te damos la bienvenida!</h2>
+                            <p class="component-modal-desc step-modal-desc">
+                                Descubre todas las herramientas que hemos preparado para ayudarte a gestionar tus proyectos y flujos de trabajo de forma rápida y sencilla.
+                            </p>
+                            
+                            <div class="step-modal-dots">
+                                <div class="step-modal-dot active"></div>
+                                <div class="step-modal-dot"></div>
+                                <div class="step-modal-dot"></div>
+                            </div>
+
+                            <div class="step-modal-actions">
+                                <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="document.getElementById('welcome-step-1').classList.remove('active'); document.getElementById('welcome-step-2').classList.add('active');">
+                                    Siguiente
+                                </button>
+                            </div>
                         </div>
 
-                        <div style="display: flex; gap: 12px; justify-content: space-between;">
-                            <button class="component-button component-button--h45" data-modal-action="back" ${step === 1 ? 'disabled style="opacity: 0.5;"' : ''}>
-                                ${window.__('btn_back') || 'Back'}
-                            </button>
-                            <button class="component-button component-button--h45 component-button--dark" data-modal-action="${step === 2 ? 'finish' : 'next'}">
-                                ${step === 2 ? (window.__('btn_finish') || 'Finish') : (window.__('btn_next') || 'Next')}
-                            </button>
+                        <!-- Step 2 -->
+                        <div class="step-modal-step" id="welcome-step-2">
+                            <h2 class="component-modal-title">Colaboración en tiempo real</h2>
+                            <p class="component-modal-desc step-modal-desc">
+                                Invita a tu equipo y trabajen juntos en vivo. Comparte ideas, diseña y toma decisiones importantes en el mismo lienzo sin interrupciones.
+                            </p>
+                            
+                            <div class="step-modal-dots">
+                                <div class="step-modal-dot"></div>
+                                <div class="step-modal-dot active"></div>
+                                <div class="step-modal-dot"></div>
+                            </div>
+
+                            <div class="step-modal-actions">
+                                <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="document.getElementById('welcome-step-2').classList.remove('active'); document.getElementById('welcome-step-3').classList.add('active');">
+                                    Siguiente
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="step-modal-step" id="welcome-step-3">
+                            <h2 class="component-modal-title">Potencia tu cuenta</h2>
+                            <p class="component-modal-desc step-modal-desc" style="margin-bottom: 12px; flex: none;">
+                                Sube de nivel y desbloquea funciones exclusivas para ti o tu equipo.
+                            </p>
+                            
+                            <div style="display: flex; gap: 12px; margin-bottom: 24px; flex: 1; align-items: stretch;">
+                                <div style="flex: 1; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; text-align: center; cursor: pointer; transition: border-color 0.2s ease; display: flex; flex-direction: column; justify-content: center;"
+                                     onmouseover="this.style.borderColor='var(--text-primary)'"
+                                     onmouseout="this.style.borderColor='var(--border-color)'"
+                                     onclick="if(window.spaRouter){window.spaRouter.navigate('/premium');}else{window.location.href='/premium';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
+                                    <h4 style="margin: 0 0 8px 0; font-size: 15px; color: var(--text-primary);">Plan Pro</h4>
+                                    <div style="font-size: 18px; font-weight: bold; color: var(--text-primary);">$9.99<span style="font-size: 12px; color: var(--text-secondary); font-weight: normal;">/mes</span></div>
+                                </div>
+                                <div style="flex: 1; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; text-align: center; cursor: pointer; transition: border-color 0.2s ease; display: flex; flex-direction: column; justify-content: center;"
+                                     onmouseover="this.style.borderColor='var(--text-primary)'"
+                                     onmouseout="this.style.borderColor='var(--border-color)'"
+                                     onclick="if(window.spaRouter){window.spaRouter.navigate('/premium');}else{window.location.href='/premium';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
+                                    <h4 style="margin: 0 0 8px 0; font-size: 15px; color: var(--text-primary);">Plan Advanced</h4>
+                                    <div style="font-size: 18px; font-weight: bold; color: var(--text-primary);">$19.99<span style="font-size: 12px; color: var(--text-secondary); font-weight: normal;">/mes</span></div>
+                                </div>
+                            </div>
+                            
+                            <div class="step-modal-dots">
+                                <div class="step-modal-dot"></div>
+                                <div class="step-modal-dot"></div>
+                                <div class="step-modal-dot active"></div>
+                            </div>
+
+                            <div class="step-modal-actions">
+                                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="finish">
+                                    Terminar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

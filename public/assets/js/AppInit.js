@@ -4,6 +4,8 @@ import { DialogSystem } from './core/components/DialogSystem.js';
 import { TooltipSystem } from './core/components/TooltipSystem.js';
 import { TelemetryTracker } from './core/telemetry/TelemetryTracker.js';
 import { RouteModulesMap } from './core/router/RouteModulesMap.js';
+import { ApiService } from './core/api/ApiServices.js';
+import { ApiRoutes } from './core/api/ApiRoutes.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     window.appUserTier = window.APP_USER ? window.APP_USER.subscription_tier : 0;
@@ -173,20 +175,30 @@ document.addEventListener('DOMContentLoaded', () => {
         initialCleanUrl = initialCleanUrl.slice(0, -1);
     }
 
-    const showWelcomeFlow = async (step = 1) => {
-        if (!window.dialogSystem) return;
-        const result = await window.dialogSystem.show('welcomeUserModal', { step });
-        if (result.action === 'next') {
-            showWelcomeFlow(step + 1);
-        } else if (result.action === 'back') {
-            showWelcomeFlow(step - 1);
-        } else if (result.action === 'finish') {
+    const showWelcomeFlow = async () => {
+        if (!window.dialogSystem || !window.AppUserPrefs) return;
+        if (window.AppUserPrefs.has_seen_welcome_modal == 1 || window.AppUserPrefs.has_seen_welcome_modal === '1' || window.AppUserPrefs.has_seen_welcome_modal === true) {
+            return;
+        }
+
+        const result = await window.dialogSystem.show('welcomeUserModal');
+        if (result.action === 'finish') {
             console.log('Welcome flow finished');
+            
+            try {
+                const api = new ApiService();
+                const res = await api.post(ApiRoutes.Settings.UpdatePreferences, { key: 'has_seen_welcome_modal', value: 1 });
+                if (res && res.success) {
+                    window.AppUserPrefs.has_seen_welcome_modal = 1;
+                }
+            } catch (e) {
+                console.error('Failed to save preference for welcome modal', e);
+            }
         }
     };
 
     setTimeout(() => {
-        showWelcomeFlow(1);
+        showWelcomeFlow();
     }, 500);
 
     window.dispatchEvent(new CustomEvent('viewLoaded', { 
