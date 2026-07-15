@@ -194,24 +194,29 @@ def chat_persistence_thread():
                         try:
                             insert_data = []
                             for raw_msg in raw_messages:
-                                msg_data = json.loads(raw_msg.decode('utf-8'))
-                                insert_data.append((
-                                    msg_data['canvas_id'],
-                                    msg_data['user_id'],
-                                    msg_data['message'],
-                                    msg_data['attachments'],
-                                    msg_data['created_at']
-                                ))
+                                try:
+                                    msg_data = json.loads(raw_msg.decode('utf-8'))
+                                    insert_data.append((
+                                        msg_data['canvas_id'],
+                                        msg_data['user_id'],
+                                        msg_data['message'],
+                                        msg_data['attachments'],
+                                        msg_data.get('file_size', 0),
+                                        msg_data['created_at']
+                                    ))
+                                except Exception as e:
+                                    print(f"[!] Error parsing message from Redis, discarding: {e}")
                             
-                            query = """
-                                INSERT INTO canvas_chat_messages (canvas_id, user_id, message, attachments, created_at) 
-                                VALUES (%s, %s, %s, %s, %s)
-                            """
-                            cursor.executemany(query, insert_data)
-                            db_conn.commit()
+                            if insert_data:
+                                query = """
+                                    INSERT INTO canvas_chat_messages (canvas_id, user_id, message, attachments, file_size, created_at) 
+                                    VALUES (%s, %s, %s, %s, %s, %s)
+                                """
+                                cursor.executemany(query, insert_data)
+                                db_conn.commit()
+                                print(f"[+] Bulk inserted {len(insert_data)} chat messages into MySQL.")
                             
                             r.ltrim('canvas_chat_queue', limit, -1)
-                            print(f"[+] Bulk inserted {len(insert_data)} chat messages into MySQL.")
                         
                         except Exception as e:
                             print(f"[!] Error bulk inserting chat to DB: {e}")

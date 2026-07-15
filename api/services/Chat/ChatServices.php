@@ -178,6 +178,7 @@ class ChatServices
 
         $attachments = [];
         $canvasUuid = $canvas['uuid'];
+        $totalSize = 0;
         
         if ($files && is_array($files['name']) && count($files['name']) > 0 && !empty($files['name'][0])) {
             $maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
@@ -245,6 +246,7 @@ class ChatServices
                 'user_id' => $userId,
                 'message' => $messageText,
                 'attachments' => $attachmentsJson,
+                'file_size' => $totalSize,
                 'created_at' => $messageData['created_at'],
                 'temp_id' => $msgId,
                 'username' => $messageData['username'],
@@ -260,10 +262,16 @@ class ChatServices
             
             $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
         } else {
-            $stmtInsert = $this->pdo->prepare("INSERT INTO canvas_chat_messages (canvas_id, user_id, message, attachments, created_at) VALUES (?, ?, ?, ?, ?)");
-            $stmtInsert->execute([$canvasId, $userId, $messageText, $attachmentsJson, $messageData['created_at']]);
+            $stmtInsert = $this->pdo->prepare("INSERT INTO canvas_chat_messages (canvas_id, user_id, message, attachments, file_size, created_at) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmtInsert->execute([$canvasId, $userId, $messageText, $attachmentsJson, $totalSize, $messageData['created_at']]);
             $messageData['id'] = $this->pdo->lastInsertId();
-}
+        }
+
+        if ($totalSize > 0) {
+            $dbManager = new DatabaseManager();
+            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager));
+            $userRepo->updateStorageUsed($userId, $totalSize);
+        }
 
         return [
             'success' => true,
@@ -277,20 +285,26 @@ class ChatServices
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => 400];
 }
 
-        $stmt = $this->pdo->prepare("SELECT user_id FROM canvas_chat_messages WHERE id = ? AND canvas_id = ?");
+        $stmt = $this->pdo->prepare("SELECT user_id, file_size FROM canvas_chat_messages WHERE id = ? AND canvas_id = ?");
         $stmt->execute([$messageId, $canvasId]);
         $msg = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$msg) {
             return ['success' => false, 'message' => __('err_message_not_found'), 'http_code' => 404];
-}
-
+        }
+        
         if ($msg['user_id'] != $userId) {
             return ['success' => false, 'message' => __('err_cannot_delete_others_message'), 'http_code' => 403];
 }
 
         $stmt = $this->pdo->prepare("DELETE FROM canvas_chat_messages WHERE id = ?");
         $stmt->execute([$messageId]);
+
+        if ($msg['file_size'] > 0) {
+            $dbManager = new DatabaseManager();
+            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager));
+            $userRepo->updateStorageUsed($userId, -$msg['file_size']);
+        }
 
         if ($this->redis) {
             $eventPayload = [

@@ -228,6 +228,8 @@ CREATE TABLE IF NOT EXISTS `canvas_chat_messages` (
     `canvas_id` INT NOT NULL,
     `user_id` INT NOT NULL,
     `message` TEXT NOT NULL,
+    `attachments` JSON DEFAULT NULL,
+    `file_size` BIGINT(20) NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX (`canvas_id`),
     INDEX (`created_at`),

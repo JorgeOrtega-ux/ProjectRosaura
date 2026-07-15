@@ -325,6 +325,31 @@ class UserRepository implements UserRepositoryInterface {
             return false;
         }
     }
+
+    public function updateStorageUsed(int $userId, int $bytesDelta): bool {
+        $tblUsers = DB::TBL_USERS;
+        try {
+            $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET storage_used_bytes = GREATEST(0, storage_used_bytes + ?) WHERE id = ?");
+            return $stmt->execute([$bytesDelta, $userId]);
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'delta' => $bytesDelta, 'exception' => $e]);
+            return false;
+        }
+    }
+
+    public function getStorageUsed(int $userId): float {
+        $tblUsers = DB::TBL_USERS;
+        try {
+            $stmt = $this->pdo->prepare("SELECT storage_used_bytes FROM {$tblUsers} WHERE id = ?");
+            $stmt->execute([$userId]);
+            $bytes = (float)$stmt->fetchColumn();
+            return $bytes / (1024 * 1024);
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
+            return 0.0;
+        }
+    }
+
     public function getRegistrationStats(string $startDate, string $endDate): array {
         $tblUsers = DB::TBL_USERS;
         try {

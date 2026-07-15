@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `deletion_scheduled_at` datetime DEFAULT NULL,
   `profile_picture` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `storage_used_bytes` bigint(20) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
   UNIQUE KEY `email` (`email`),

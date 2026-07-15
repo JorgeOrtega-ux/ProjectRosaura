@@ -229,6 +229,7 @@ export class DesignChat {
             const toggleBtn = e.target.closest('[data-action="toggleChatDropdown"]');
             if (toggleBtn) {
                 e.preventDefault();
+                e.stopImmediatePropagation();
                 const targetId = toggleBtn.getAttribute('data-target');
                 const dropdown = document.querySelector(`[data-module="${targetId}"]`);
                 

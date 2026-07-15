@@ -704,13 +704,11 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return (int)$stmt->fetchColumn();
     }
 
- public function getUserStorageUsed(int $userId): float {
-        $sql = "SELECT SUM(file_size) FROM " . DB::TBL_USER_TEMPLATES . " WHERE user_id = :user_id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':user_id' => $userId]);
-        $totalBytes = (float)$stmt->fetchColumn();
-        
-        return $totalBytes / (1024 * 1024); 
+    public function getUserStorageUsed(int $userId): float {
+        // Obtenemos el almacenamiento del Identity DB
+        $dbManager = new DatabaseManager();
+        $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager));
+        return $userRepo->getStorageUsed($userId);
     }
 
     public function countCanvasSnapshots(int $canvasId): int {
@@ -957,7 +955,15 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':file_size' => $fileSize
         ]);
 
-        return (int)$this->db->lastInsertId();
+        $insertId = (int)$this->db->lastInsertId();
+
+        if ($fileSize > 0) {
+            $dbManager = new DatabaseManager();
+            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager));
+            $userRepo->updateStorageUsed($userId, $fileSize);
+        }
+
+        return $insertId;
     }
 
     public function getUserTemplates(int $userId): array {
@@ -973,14 +979,27 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function deleteTemplate(int $templateId, int $userId): bool {
+        // Fetch file size first to decrement storage
+        $stmt = $this->db->prepare("SELECT file_size FROM " . DB::TBL_USER_TEMPLATES . " WHERE id = :id AND user_id = :user_id");
+        $stmt->execute([':id' => $templateId, ':user_id' => $userId]);
+        $fileSize = (int)$stmt->fetchColumn();
+
         $sql = "DELETE FROM " . DB::TBL_USER_TEMPLATES . " 
                 WHERE id = :id AND user_id = :user_id";
         
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
+        $result = $stmt->execute([
             ':id'      => $templateId,
             ':user_id' => $userId
         ]);
+
+        if ($result && $fileSize > 0) {
+            $dbManager = new DatabaseManager();
+            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager));
+            $userRepo->updateStorageUsed($userId, -$fileSize);
+        }
+
+        return $result;
     }
 
     public function toggleFavorite(int $userId, int $canvasId): array {
