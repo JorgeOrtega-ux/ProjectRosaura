@@ -122,7 +122,7 @@ $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
                             data-role-weight="<?php echo (int)$role['weight']; ?>">
                             <td>
                                 <div class="td-user-info">
-                                    <div class="component-button--profile role-dynamic component-avatar--static-sm">
+                                    <div class="component-button--profile role-dynamic component-avatar--static-sm" data-role-bg="<?php echo htmlspecialchars($cssColorValue); ?>">
                                         <img src="/public/assets/img/fallbacks/avatar-default.png" alt="<?php echo __('alt_role_avatar'); ?>">
                                     </div>
                                     <div class="component-badge component-badge--sm">

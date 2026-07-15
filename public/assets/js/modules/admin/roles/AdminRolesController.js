@@ -178,27 +178,27 @@ class AdminRolesController {
         const deleteBtn = document.querySelector('[data-action="deleteRole"]');
         const editBtn = document.querySelector('[data-action="editRole"]');
         const permsBtn = document.querySelector('[data-action="editPermissions"]');
-        if (deleteBtn) { .classList.remove('disabled-interactive');  deleteBtn.removeAttribute('title'); }
-        if (editBtn) { .classList.remove('disabled-interactive');  editBtn.removeAttribute('title'); }
-        if (permsBtn) { .classList.remove('disabled-interactive');  permsBtn.removeAttribute('title'); }
+        if (deleteBtn) { deleteBtn.classList.remove('disabled-interactive');  deleteBtn.removeAttribute('title'); }
+        if (editBtn) { editBtn.classList.remove('disabled-interactive');  editBtn.removeAttribute('title'); }
+        if (permsBtn) { permsBtn.classList.remove('disabled-interactive');  permsBtn.removeAttribute('title'); }
         if (currentUserWeight < 100 && roleWeight >= currentUserWeight) {
             if (deleteBtn) {
-                .classList.add('disabled-interactive'); 
+                deleteBtn.classList.add('disabled-interactive'); 
                 deleteBtn.setAttribute('title', _t());
             }
             if (editBtn) {
-                .classList.add('disabled-interactive'); 
+                editBtn.classList.add('disabled-interactive'); 
                 editBtn.setAttribute('title', _t());
             }
             if (permsBtn) {
-                .classList.add('disabled-interactive'); 
+                permsBtn.classList.add('disabled-interactive'); 
                 permsBtn.setAttribute('title', _t());
             }
             return; 
         }
         if (isSystem) {
             if (deleteBtn) {
-                .classList.add('disabled-interactive');
+                deleteBtn.classList.add('disabled-interactive');
                 deleteBtn.setAttribute('title', _t());
             }
             if (editBtn) {

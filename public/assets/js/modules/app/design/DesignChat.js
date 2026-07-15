@@ -636,7 +636,7 @@ export class DesignChat {
         
         const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         
-        let avatarUrl = '';
+        let avatarUrl = `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`;
         if (msg.avatar) {
             if (msg.avatar.startsWith('http') || msg.avatar.startsWith('data:')) {
                 avatarUrl = msg.avatar;
@@ -646,9 +646,8 @@ export class DesignChat {
             }
         }
         
-        const avatarStr = msg.avatar 
-            ? `<img src="${avatarUrl}" class="chat-message-avatar-img">`
-            : `<div class="chat-message-avatar-placeholder"><span class="material-symbols-rounded">person</span></div>`;
+        const fallbackUrl = `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`;
+        const avatarStr = `<img src="${avatarUrl}" class="chat-message-avatar-img" onerror="this.src='${fallbackUrl}'">`;
 
         const isMine = String(msg.user_id) === String(this.currentUserId);
         const uniqueId = 'msg-menu-' + msg.id;

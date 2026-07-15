@@ -129,6 +129,7 @@ def canvas_persistence_thread():
                         s3.put_object(Bucket=S3_BUCKET, Key=live_key, Body=final_data, ContentType='application/jsonl')
                     except Exception as e:
                         print(f"[!] S3 error saving timelapse: {e}")
+                        continue
                     
                     msg_ids = [msg_id_b for msg_id_b, _ in msgs]
                     r.xack(stream_name, CONSUMER_GROUP, *msg_ids)

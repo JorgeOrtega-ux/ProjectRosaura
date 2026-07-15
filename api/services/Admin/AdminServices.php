@@ -408,6 +408,13 @@ class AdminServices {
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 10, 30);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
+        foreach ($rolesIds as $rId) {
+            $r = $this->roleRepository->findById((int)$rId);
+            if ($r && (int)$r['weight'] >= SecurityConstants::WEIGHT_SUPER_ADMIN && $currentUserId != 1) {
+                return ['success' => false, 'message' => __('admin.hierarchical_restriction')];
+            }
+        }
+
         $currentWeight = $this->getCurrentAdminWeight();
 
         try {

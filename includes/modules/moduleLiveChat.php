@@ -45,7 +45,7 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
                             <button class="component-chat-send-btn" data-action="toggleChatDropdown" data-target="chat-attach-menu" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
                                 <span class="material-symbols-rounded">add</span>
                             </button>
-                            <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-fixed chat-dropdown-module disabled" data-module="chat-attach-menu">
+                            <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-right component-module--dropdown-fixed chat-dropdown-module disabled" data-module="chat-attach-menu">
                                 <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="chat-attach-options">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list component-menu-list--scrollable">
@@ -70,7 +70,7 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
                             </div>
                         </div>
 
-                        <input type="file" id="chat-file-input" multiple accept="image/jpeg, image/png, image/webp, image/gif">
+                        <input type="file" id="chat-file-input" class="disabled" multiple accept="image/jpeg, image/png, image/webp, image/gif">
 
                         <?php 
                         $placeholder = __('chat_placeholder');

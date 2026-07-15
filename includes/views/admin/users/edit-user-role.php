@@ -104,7 +104,7 @@ $isTargetSuperAdmin = in_array(4, $assignedRoleIds);
                             </div>
                             <div class="component-card__actions component-card__actions--end">
                                 <label class="component-toggle-switch <?php echo $isDisabled ? 'disabled-interaction' : ''; ?>">
-                                    <input type="checkbox" name="assigned_roles[]" value="<?php echo htmlspecialchars($r['id']); ?>" class="admin-role-checkbox <?php echo $disabledClass; ?>" <?php echo $isChecked; ?>>
+                                    <input type="checkbox" name="assigned_roles[]" value="<?php echo htmlspecialchars($r['id']); ?>" class="admin-role-checkbox <?php echo $disabledClass; ?>" <?php echo $isChecked; ?> <?php echo $isDisabled ? 'disabled' : ''; ?>>
                                     <span class="component-toggle-slider"></span>
                                 </label>
                             </div>

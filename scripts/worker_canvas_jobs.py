@@ -447,6 +447,8 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             s3.put_object(Bucket=S3_BUCKET, Key=f"thumbnails/canvas_{canvas_uuid}.png", Body=thumb_io, ContentType='image/png')
         except Exception as e:
             print(f"[!] Error uploading thumbnail to S3: {e}")
+            return False
+
         
         if r.exists(f"canvas:{canvas_id}:reset_lock"):
             
@@ -497,6 +499,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                     print(f"[+] Historical file saved to S3 successfully: {archive_key}")
                 except Exception as e:
                     print(f"[!] Error uploading archive to S3: {e}")
+                    return False
 
                 snapshot_uuid = str(uuid.uuid4())
                 public_filepath = f"snapshots_archive/{canvas_uuid}/{archive_filename}"

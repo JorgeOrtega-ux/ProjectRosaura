@@ -3103,6 +3103,7 @@ input:checked + .component-toggle-slider:before {
     z-index: 1; 
     pointer-events: none;
     border-radius: inherit; 
+    color: transparent;
 }
 
 .component-gallery-link {

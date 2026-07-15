@@ -305,7 +305,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/manage-users?page=' . ($p
                                     <td>
                                         <div class="td-user-info">
                                             <div class="component-button--profile role-dynamic component-avatar--static-sm" data-role-bg="<?php echo htmlspecialchars($roleColorCSS); ?>">
-                                                <img src="<?php echo $appUrl . '/' . htmlspecialchars($validUserPic); ?>" alt="<?php echo __('alt_avatar'); ?>">
+                                                <img src="<?php echo $appUrl . '/' . htmlspecialchars($validUserPic); ?>" alt="<?php echo __('alt_avatar'); ?>" onerror="this.src='<?php echo $appUrl; ?>/public/assets/img/fallbacks/avatar-default.png'">
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">person</span>
@@ -352,7 +352,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/manage-users?page=' . ($p
                                                 $eKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower($eName));
                                                 $eTrans = __($eKey);
                                             ?>
-                                                <span class="search-target" data-role-original-name="<?php echo htmlspecialchars($eName); ?>">
+                                                <span class="search-target" data-role-original-name="<?php echo htmlspecialchars($eName); ?>" style="display: none;">
                                                     <?php echo htmlspecialchars($eTrans); ?>
                                                 </span>
                                             <?php endforeach; ?>
