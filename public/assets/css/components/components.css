@@ -3849,6 +3849,28 @@ input:checked + .component-toggle-slider:before {
     line-height: 1.4;
 }
 
+/* Soft-deleted / under-review status messages */
+.chat-message.chat-message--status {
+    justify-content: center;
+    padding: 4px 16px;
+}
+.chat-message-status-bubble {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: var(--border-color, #00000010);
+    user-select: none;
+}
+.chat-message-status-bubble .material-symbols-rounded {
+    font-size: 16px;
+}
+
 .chat-attachments-preview-container {
     display: flex;
     gap: 8px;
