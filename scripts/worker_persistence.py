@@ -58,7 +58,7 @@ def get_db_connection():
 
 def canvas_persistence_thread():
     print("[*] Starting Canvas Persistence Thread (Files + DB)...")
-    os.makedirs(TIMELAPSE_DIR, exist_ok=True)
+    
     
     try:
         r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS, db=0, decode_responses=False)

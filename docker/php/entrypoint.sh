@@ -5,9 +5,8 @@ echo "[*] Running startup script (Entrypoint)..."
 
 mkdir -p /var/www/html/storage/private/logs/app
 mkdir -p /var/www/html/storage/private/backups
-mkdir -p /var/www/html/storage/private/canvases/timelapses
 mkdir -p /var/www/html/storage/private/system
-mkdir -p /var/www/html/storage/private/geoip
+mkdir -p /var/www/html/storage/private/geolocation
 
 echo "[*] Configuring public Symlink..."
 

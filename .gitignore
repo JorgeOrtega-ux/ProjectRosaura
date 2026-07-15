@@ -31,7 +31,7 @@ storage/private/backups/*.gz
 # === BLOQUEO ESTRICTO: DATOS SENSIBLES Y ARCHIVOS BINARIOS ===
 
 # Ignorar la base de datos binaria de GeoIP
-/storage/private/geoip/*.mmdb
+/storage/private/geolocation/*.mmdb
 
 /storage/public/profilePictures/default/*
 /storage/public/profilePictures/uploaded/*

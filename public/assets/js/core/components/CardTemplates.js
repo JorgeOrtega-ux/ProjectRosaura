@@ -86,9 +86,11 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
 
                 <div class="component-gallery-actions-wrapper component-dropdown-wrapper">
                     <div class="component-gallery-actions">
+                        ${window.activeUserId ? `
                         <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite ${isFavoriteClass}" data-action="toggleFavorite" data-id="${canvas.id}">
                             <span class="material-symbols-rounded component-icon--20">favorite</span>
                         </button>
+                        ` : ''}
                         <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleDynamicMenu" data-id="${canvas.id}" data-uuid="${uuid}" data-owner="${canvas.is_owner ? '1' : '0'}" data-locked="${canvas.locked_requires_downgrade ? '1' : '0'}">
                             <span class="material-symbols-rounded">more_vert</span>
                         </button>

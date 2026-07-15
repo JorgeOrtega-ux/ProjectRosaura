@@ -256,15 +256,18 @@ export class CanvasCardInteractions {
         const isOwner = btn.getAttribute('data-owner') === '1';
         const isLocked = btn.getAttribute('data-locked') === '1';
 
-        const actionButtonHtml = isOwner 
-            ? `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="deleteCanvas" data-id="${id}" data-uuid="${uuid}">
-                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
-                    <div class="component-menu-link-text"><span>${window.__('delete_canvas')}</span></div>
-               </button>`
-            : `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="leaveCanvas" data-id="${id}" data-uuid="${uuid}">
-                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
-                    <div class="component-menu-link-text"><span>${window.__('leave_canvas')}</span></div>
-               </button>`;
+        let actionButtonHtml = '';
+        if (window.activeUserId) {
+            actionButtonHtml = isOwner 
+                ? `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="deleteCanvas" data-id="${id}" data-uuid="${uuid}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
+                        <div class="component-menu-link-text"><span>${window.__('delete_canvas')}</span></div>
+                   </button>`
+                : `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="leaveCanvas" data-id="${id}" data-uuid="${uuid}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
+                        <div class="component-menu-link-text"><span>${window.__('leave_canvas')}</span></div>
+                   </button>`;
+        }
 
         let warningMenuOption = '';
         if (isLocked && isOwner) {

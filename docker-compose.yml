@@ -27,7 +27,6 @@ services:
     container_name: rosaura_app1
     volumes:
       - .:/var/www/html
-      - ./storage/private/canvases/timelapses:/var/www/html/storage/private/canvases/timelapses
     depends_on:
       db:
         condition: service_healthy
@@ -49,7 +48,6 @@ services:
     container_name: rosaura_app2
     volumes:
       - .:/var/www/html
-      - ./storage/private/canvases/timelapses:/var/www/html/storage/private/canvases/timelapses
     depends_on:
       db:
         condition: service_healthy
@@ -228,7 +226,6 @@ services:
     command: python -u scripts/worker_persistence.py
     volumes:
       - .:/app
-      - ./storage/private/canvases/timelapses:/app/storage/private/canvases/timelapses
     depends_on:
       db:
         condition: service_healthy
@@ -276,8 +273,9 @@ services:
     entrypoint: >
       /bin/sh -c "
       (/bin/sh -c '
-        sleep 5;
-        /usr/bin/mc alias set myminio http://localhost:9000 $${MINIO_ROOT_USER:-admin} $${MINIO_ROOT_PASSWORD:-password};
+        until /usr/bin/mc alias set myminio http://localhost:9000 $${MINIO_ROOT_USER:-admin} $${MINIO_ROOT_PASSWORD:-password}; do
+          sleep 2;
+        done;
         /usr/bin/mc mb myminio/$${MINIO_BUCKET:-rosaura-storage} || true;
         /usr/bin/mc anonymous set download myminio/$${MINIO_BUCKET:-rosaura-storage} || true;
       ') &

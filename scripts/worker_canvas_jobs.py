@@ -539,9 +539,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
 def thumbnails_thread():
     logging.info("Starting Snapshots Worker (Tiering Logic Injected)...")
     
-    os.makedirs(THUMBNAILS_DIR, exist_ok=True)
-    os.makedirs(ARCHIVE_DIR, exist_ok=True)
-    os.makedirs(TIMELAPSE_DIR, exist_ok=True)
+    
     
     load_palettes()
     

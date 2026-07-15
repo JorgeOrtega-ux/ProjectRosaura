@@ -50,7 +50,7 @@ export const DialogTemplates = {
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="step-modal-container">
                     <div class="step-modal-banner">
-                        <img src="assets/images/welcome-banner.png" alt="Welcome Banner" onerror="this.style.display='none'">
+                        <img src="assets/img/welcome-banner.png" alt="Welcome Banner" onerror="this.style.display='none'">
                     </div>
                     
                     <div class="step-modal-content">

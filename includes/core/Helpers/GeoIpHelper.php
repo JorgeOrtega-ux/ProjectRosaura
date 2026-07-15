@@ -11,7 +11,7 @@ class GeoIpHelper {
             return null; 
         }
 
-        $databaseFile = dirname(__DIR__, 3) . '/storage/private/geoip/GeoLite2-City.mmdb';
+        $databaseFile = dirname(__DIR__, 3) . '/storage/private/geolocation/GeoLite2-City.mmdb';
         if (!file_exists($databaseFile)) {
             return null;
         }
@@ -41,7 +41,7 @@ class GeoIpHelper {
             return null; 
         }
 
-        $databaseFile = dirname(__DIR__, 3) . '/storage/private/geoip/GeoLite2-ASN.mmdb';
+        $databaseFile = dirname(__DIR__, 3) . '/storage/private/geolocation/GeoLite2-ASN.mmdb';
 
         if (!file_exists($databaseFile)) {
             return null;

@@ -163,10 +163,12 @@ if ($error) {
 
                             <div class="component-gallery-actions-wrapper component-dropdown-wrapper">
                                 <div class="component-gallery-actions">
+                                    <?php if (!empty($_SESSION['user_id'])): ?>
                                     <?php $isLikedClass = $snapshot['user_liked'] ? 'is-favorite' : ''; ?>
                                     <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite <?php echo $isLikedClass; ?>" data-action="toggleSnapshotLike" data-id="<?php echo $snapshot['snapshot_uuid']; ?>">
                                         <span class="material-symbols-rounded component-icon--20">favorite</span>
                                     </button>
+                                    <?php endif; ?>
                                     <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="snapshot-menu-<?php echo $snapshot['id']; ?>">
                                         <span class="material-symbols-rounded">more_vert</span>
                                     </button>
