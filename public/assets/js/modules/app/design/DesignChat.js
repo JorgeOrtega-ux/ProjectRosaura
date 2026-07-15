@@ -27,6 +27,10 @@ export class DesignChat {
         this.currentUsername = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.username || window.__('user') || 'User';
         this.canModerateChat = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.canModerate === '1';
 
+        const moduleChat = document.querySelector('[data-module="moduleLiveChat"]');
+        this.maxFilesLimit = moduleChat ? parseInt(moduleChat.dataset.maxImages, 10) || 6 : 6;
+        this.maxUploadMbLimit = moduleChat ? parseInt(moduleChat.dataset.maxSizeMb, 10) || 10 : 10;
+
         this.typingUsers = new Map();
         this.lastTypingSent = 0;
         this.lastIsTyping = false;
@@ -287,8 +291,8 @@ export class DesignChat {
         const files = Array.from(e.target.files);
         if (!files.length) return;
 
-        const maxFiles = 8;
-        const maxSize = 25 * 1024 * 1024; 
+        const maxFiles = this.maxFilesLimit;
+        const maxSize = this.maxUploadMbLimit * 1024 * 1024; 
 
         let totalSize = this.selectedFiles.reduce((acc, file) => acc + file.size, 0);
 
@@ -302,7 +306,7 @@ export class DesignChat {
                 continue;
             }
             if (totalSize + file.size > maxSize) {
-                showMessage(window.__('err_max_size_25mb'), 'warning');
+                showMessage(window.__('err_max_size_mb') ? window.__('err_max_size_mb').replace('{mb}', this.maxUploadMbLimit) : `El peso excede los ${this.maxUploadMbLimit}MB permitidos`, 'warning');
                 break;
             }
             this.selectedFiles.push(file);

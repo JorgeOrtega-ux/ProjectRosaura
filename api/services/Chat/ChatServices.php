@@ -180,14 +180,16 @@ class ChatServices
         $canvasUuid = $canvas['uuid'];
         
         if ($files && is_array($files['name']) && count($files['name']) > 0 && !empty($files['name'][0])) {
+            $maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
+            $maxImages = \App\Core\System\ChatConstants::CHAT_MAX_IMAGES;
+            
             $totalSize = array_sum($files['size']);
-            if ($totalSize > 25 * 1024 * 1024) {
+            if ($totalSize > $maxUploadMB * 1024 * 1024) {
                 return ['success' => false, 'message' => __('err_chat_image_size'), 'http_code' => 400];
             }
-            if (count($files['name']) > 8) {
+            if (count($files['name']) > $maxImages) {
                 return ['success' => false, 'message' => __('err_chat_image_count'), 'http_code' => 400];
-}
-
+            }
             $uploadDir = 'canvases/' . $canvasUuid . '/chat/';
 
             for ($i = 0; $i < count($files['name']); $i++) {
