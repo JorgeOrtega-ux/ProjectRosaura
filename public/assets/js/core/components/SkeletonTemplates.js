@@ -3,6 +3,8 @@ export const SkeletonTemplates = {
         switch (type) {
             case 'layout-grid':
                 return this.gridSkeleton();
+            case 'homeCanvasGrid':
+                return this.gridCardsSkeleton();
             default:
                 return this.basicSkeleton();
         }
@@ -60,5 +62,14 @@ export const SkeletonTemplates = {
                 
             </div>
         </div>`;
+    },
+
+    gridCardsSkeleton() {
+        let cards = '';
+        for (let i = 0; i < 12; i++) {
+            cards += `
+            <div class="component-skeleton" style="width: 100%; aspect-ratio: 2/1; border-radius: 12px;"></div>`;
+        }
+        return cards;
     }
 };

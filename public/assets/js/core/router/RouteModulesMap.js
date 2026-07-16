@@ -4,7 +4,7 @@ export const RouteModulesMap = {
     '/home': { path: './modules/app/home/HomeController.js', className: 'HomeController', skeletonType: 'layout-grid' },
     '/explore': { path: './modules/app/home/HomeController.js', className: 'HomeController', skeletonType: 'layout-grid' },
     
-    '/search': { path: './modules/app/search/SearchController.js', className: 'SearchController', skeletonType: 'layout-basic' },
+    '/search': { path: './modules/app/search/SearchController.js', className: 'SearchController', skeletonType: 'layout-grid' },
     
     '/premium': { path: './modules/app/premium/PremiumController.js', className: 'PremiumController', skeletonType: 'layout-basic' },
 

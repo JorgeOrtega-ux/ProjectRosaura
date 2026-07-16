@@ -50,6 +50,7 @@ class SearchServices {
                         'privacy'      => $doc['privacy'],
                         'scope_type'   => $doc['scope_type'],
                         'is_favorite'  => false, 
+                        'is_owner'     => $currentUserId !== null && $currentUserId === (int)($doc['owner_id'] ?? 0),
                         'thumbnail_url' => $this->getThumbnailUrl($doc['uuid'])
                     ];
                 }

@@ -284,7 +284,8 @@ class Utils {
     private static $fallbacks = [
         'avatar' => 'public/assets/img/fallbacks/avatar-default.png',
         'canvas' => 'public/assets/img/fallbacks/canvas-default.png',
-        'snapshot' => 'public/assets/img/fallbacks/canvas-default.png'
+        'snapshot' => 'public/assets/img/fallbacks/canvas-default.png',
+        'chat_attachment' => 'public/assets/img/fallbacks/canvas-default.png'
     ];
 
     public static function getValidImage($path, $type = 'avatar') {

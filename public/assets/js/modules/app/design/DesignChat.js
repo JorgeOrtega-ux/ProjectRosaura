@@ -759,9 +759,10 @@ export class DesignChat {
                 if (i === 3 && count > 4) {
                     overlay = `<div class="chat-attachment-item-overlay">+${count - 4}</div>`;
                 }
+                let fallbackUrl = (window.AppBasePath || '') + '/public/assets/img/fallbacks/canvas-default.png';
                 attachmentsHtml += `
                 <div class="chat-attachment-item" data-action="openChatImageViewer" data-message-id="${msg.id}" data-index="${i}" data-canvas-uuid="${extractedUuid}">
-                    <img src="${url}" loading="lazy" />
+                    <img src="${url}" loading="lazy" onerror="this.src='${fallbackUrl}'" />
                     ${overlay}
                 </div>
                 `;

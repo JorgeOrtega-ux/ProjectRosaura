@@ -2,6 +2,7 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
+import { renderSkeleton } from '../../../core/utils/uiUtils.js';
 
 export class SearchController {
     constructor() {
@@ -25,6 +26,11 @@ export class SearchController {
         const params = new URLSearchParams(window.location.search);
         const query = params.get('q') || '';
         
+        const globalSearchInput = document.getElementById('globalSearchInput');
+        if (globalSearchInput) {
+            globalSearchInput.value = query;
+        }
+        
         if (!query.trim()) {
             if (this.title) this.title.textContent = window.__('msg_enter_search_term');
             if (this.contentArea) {
@@ -38,6 +44,11 @@ export class SearchController {
         }
         
         try {
+            if (this.contentArea) {
+                this.contentArea.innerHTML = '<div class="component-grid" data-ref="search-results-grid"></div>';
+                renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
+            }
+
             const reqUrl = (window.AppBasePath || '') + '/api/index.php';
             const csrfMeta = document.querySelector('meta[name="csrf-token"]');
             const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';

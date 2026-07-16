@@ -107,7 +107,9 @@ $attachmentsJson = json_encode($attachments);
         <?php if ($errorMsg): ?>
             <div><?php echo htmlspecialchars($errorMsg); ?></div>
         <?php elseif ($totalImages > 0 || $isPending): ?>
-            <img id="cv-main-image" src="<?php echo $totalImages > 0 ? htmlspecialchars($attachments[$idx]) : ''; ?>">
+            <div class="component-image-viewer-container">
+                <img id="cv-main-image" class="component-image-viewer-image" src="<?php echo $totalImages > 0 ? htmlspecialchars($attachments[$idx]) : ''; ?>">
+            </div>
         <?php else: ?>
             <div><?php echo __('lbl_no_images'); ?></div>
         <?php endif; ?>
