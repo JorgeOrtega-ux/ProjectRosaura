@@ -303,6 +303,8 @@ CREATE TABLE IF NOT EXISTS server_config (
   auto_backup_frequency_hours INT NOT NULL DEFAULT 24,
   auto_backup_retention_count INT NOT NULL DEFAULT 5,
   backup_schema_config LONGTEXT DEFAULT NULL,
+  verification_code_expiration_minutes INT NOT NULL DEFAULT 15,
+  password_reset_expiration_minutes INT NOT NULL DEFAULT 15,
   maintenance_mode TINYINT(1) NOT NULL DEFAULT 0,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
