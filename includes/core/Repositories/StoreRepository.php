@@ -2,33 +2,57 @@
 namespace App\Core\Repositories;
 
 use App\Config\Database\DatabaseManager;
+use App\Config\Database\RedisCache;
+use App\Core\System\CacheConstants;
 use App\Core\Interfaces\StoreRepositoryInterface;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 
 class StoreRepository implements StoreRepositoryInterface {
     private $db;
+    private $redisClient;
 
-    public function __construct(DatabaseManager $db) {
+    public function __construct(DatabaseManager $db, RedisCache $redisCache = null) {
         $this->db = $db->getConnection(DB::CONN_IDENTITY);
+        $this->redisClient = $redisCache ? $redisCache->getClient() : null;
     }
 
     public function addCoins(int $userId, int $amount): bool {
         $stmt = $this->db->prepare("UPDATE users SET coins = coins + ? WHERE id = ?");
-        return $stmt->execute([$amount, $userId]);
+        $res = $stmt->execute([$amount, $userId]);
+        if ($res && $this->redisClient) {
+            $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+        }
+        return $res;
     }
 
     public function deductCoins(int $userId, int $amount): bool {
         $stmt = $this->db->prepare("UPDATE users SET coins = coins - ? WHERE id = ? AND coins >= ?");
         $stmt->execute([$amount, $userId, $amount]);
-        return $stmt->rowCount() > 0;
+        $res = $stmt->rowCount() > 0;
+        if ($res && $this->redisClient) {
+            $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+        }
+        return $res;
     }
 
     public function getCoins(int $userId): int {
+        $cacheKey = CacheConstants::PREFIX_STORE_COINS . $userId;
+        if ($this->redisClient) {
+            $cached = $this->redisClient->get($cacheKey);
+            if ($cached !== null) return (int)$cached;
+        }
+
         $stmt = $this->db->prepare("SELECT coins FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ? (int) $result['coins'] : 0;
+        $coins = $result ? (int) $result['coins'] : 0;
+        
+        if ($this->redisClient) {
+            $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, $coins);
+        }
+        
+        return $coins;
     }
 
     public function createStorePurchaseRecord(array $data): bool {

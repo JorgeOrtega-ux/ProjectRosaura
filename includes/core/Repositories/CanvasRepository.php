@@ -9,13 +9,23 @@ use App\Config\Database\DatabaseManager;
 use App\Config\Search\TypesenseManager;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
+use App\Core\System\CacheConstants;
+use App\Config\Database\RedisCache;
 
 class CanvasRepository implements CanvasRepositoryInterface {
     private $db;
     private TypesenseManager $typesenseManager;
-    public function __construct(DatabaseManager $databaseManager, TypesenseManager $typesenseManager) {
+    private $redisClient;
+    public function __construct(DatabaseManager $databaseManager, TypesenseManager $typesenseManager, RedisCache $redisCache = null) {
         $this->db = $databaseManager->getConnection(DB::CONN_CANVASES);
         $this->typesenseManager = $typesenseManager;
+        $this->redisClient = $redisCache ? $redisCache->getClient() : null;
+    }
+
+    private function invalidateCanvasCache(int $id): void {
+        if ($this->redisClient) {
+            $this->redisClient->del(CacheConstants::PREFIX_CANVAS_DETAIL . $id);
+        }
     }
 
     private function appendSnapshotUrl(array $canvas): array {
@@ -111,6 +121,15 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null, string $sort = 'newest', int $offset = 0): array {
+        $cacheKey = null;
+        if ($this->redisClient && $currentUserId === null) {
+            $cacheKey = CacheConstants::PREFIX_CANVAS_PUBLIC_PAGE . "{$sort}:{$limit}:{$offset}";
+            $cached = $this->redisClient->get($cacheKey);
+            if ($cached) {
+                return json_decode($cached, true);
+            }
+        }
+
         $orderClause = "ORDER BY c.created_at DESC";
         if ($sort === 'oldest') {
             $orderClause = "ORDER BY c.created_at ASC";
@@ -140,7 +159,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
             return $canvas;
         }, $results);
 
-        return array_map([$this, 'appendSnapshotUrl'], $results);
+        $results = array_map([$this, 'appendSnapshotUrl'], $results);
+        
+        if ($cacheKey && $this->redisClient) {
+            $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($results));
+        }
+        
+        return $results;
     }
 
     public function getHomeFeed(?int $userId, string $tagFilter = 'all', int $limit = 20, int $offset = 0): array {
@@ -223,6 +248,15 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getOfficialCanvases(?int $currentUserId = null, string $sort = 'newest', int $limit = 50, int $offset = 0): array {
+        $cacheKey = null;
+        if ($this->redisClient && $currentUserId === null) {
+            $cacheKey = CacheConstants::PREFIX_CANVAS_OFFICIAL_PAGE . "{$sort}:{$limit}:{$offset}";
+            $cached = $this->redisClient->get($cacheKey);
+            if ($cached) {
+                return json_decode($cached, true);
+            }
+        }
+
         $orderClause = "ORDER BY c.created_at DESC";
         if ($sort === 'oldest') {
             $orderClause = "ORDER BY c.created_at ASC";
@@ -252,7 +286,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
             return $canvas;
         }, $results);
 
-        return array_map([$this, 'appendSnapshotUrl'], $results);
+        $results = array_map([$this, 'appendSnapshotUrl'], $results);
+
+        if ($cacheKey && $this->redisClient) {
+            $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($results));
+        }
+
+        return $results;
     }
 
     public function getUserAndJoinedCanvases(int $userId, int $limit = 50, string $filter = 'all', int $offset = 0): array {
@@ -379,12 +419,24 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getById(int $id): ?array {
+        $cacheKey = CacheConstants::PREFIX_CANVAS_DETAIL . $id;
+        if ($this->redisClient) {
+            $cached = $this->redisClient->get($cacheKey);
+            if ($cached) return json_decode($cached, true);
+        }
+
         $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id' => $id]);
         
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ? $this->appendSnapshotUrl($result) : null;
+        $final = $result ? $this->appendSnapshotUrl($result) : null;
+        
+        if ($final && $this->redisClient) {
+            $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($final));
+        }
+        
+        return $final;
     }
 
     public function getByScopeHash(string $hash): ?array {
@@ -426,6 +478,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':id'                    => $id
         ]);
         if ($success) {
+            $this->invalidateCanvasCache($id);
             $client = $this->typesenseManager->getClient();
             if ($client) {
                 try {
@@ -446,10 +499,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
     public function updateSize(int $canvasId, string $newSize): bool {
         $sql = "UPDATE " . DB::TBL_CANVASES . " SET size = :size WHERE id = :id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
+        $success = $stmt->execute([
             ':size' => $newSize, 
             ':id' => $canvasId
         ]);
+        if ($success) $this->invalidateCanvasCache($canvasId);
+        return $success;
     }
 
     public function createAccessRequest(int $canvasId, int $userId): bool {

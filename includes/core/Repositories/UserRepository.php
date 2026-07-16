@@ -8,6 +8,8 @@ use App\Config\Database\DatabaseManager;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\SecurityConstants;
+use App\Core\System\CacheConstants;
+use App\Config\Database\RedisCache;
 use PDO;
 use PDOException;
 use Exception;
@@ -15,12 +17,30 @@ use Exception;
 class UserRepository implements UserRepositoryInterface {
     private $pdo;
     private $roleRepository;
+    private $redisClient;
 
-    public function __construct(DatabaseManager $db, RoleRepositoryInterface $roleRepository) {
+    public function __construct(DatabaseManager $db, RoleRepositoryInterface $roleRepository, RedisCache $redisCache = null) {
         $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
         $this->roleRepository = $roleRepository;
+        $this->redisClient = $redisCache ? $redisCache->getClient() : null;
     }
+    
+    private function invalidateProfileCache(int $userId): void {
+        if ($this->redisClient) {
+            $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+        }
+    }
+
     private function getUserWithDetails(string $column, $value): ?array {
+        $cacheKey = null;
+        if ($this->redisClient && ($column === 'id' || $column === 'uuid')) {
+            $cacheKey = CacheConstants::PREFIX_USER_PROFILE . $value;
+            $cached = $this->redisClient->get($cacheKey);
+            if ($cached) {
+                return json_decode($cached, true);
+            }
+        }
+
         $tblUsers = DB::TBL_USERS;
         $tblUserRestr = DB::TBL_USER_RESTRICTIONS;
 
@@ -62,6 +82,10 @@ class UserRepository implements UserRepositoryInterface {
                 (is_array($permissionsArray) && (in_array('canvases.create_official', $permissionsArray) || in_array('canvases.manage_official', $permissionsArray)))
             ) {
                 $user['subscription_tier'] = \App\Core\System\SubscriptionPlanConstants::TIER_ADVANCED;
+            }
+
+            if ($cacheKey && $this->redisClient) {
+                $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($user));
             }
 
             return $user;
@@ -218,7 +242,9 @@ class UserRepository implements UserRepositoryInterface {
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET profile_picture = ? WHERE id = ?");
-            return $stmt->execute([$path, $id]);
+            $res = $stmt->execute([$path, $id]);
+            if ($res) $this->invalidateProfileCache($id);
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'path' => $path, 'exception' => $e]);
             return false;
@@ -229,7 +255,9 @@ class UserRepository implements UserRepositoryInterface {
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET username = ? WHERE id = ?");
-            return $stmt->execute([$username, $id]);
+            $res = $stmt->execute([$username, $id]);
+            if ($res) $this->invalidateProfileCache($id);
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'username' => $username, 'exception' => $e]);
             return false;
@@ -240,7 +268,9 @@ class UserRepository implements UserRepositoryInterface {
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET email = ? WHERE id = ?");
-            return $stmt->execute([$email, $id]);
+            $res = $stmt->execute([$email, $id]);
+            if ($res) $this->invalidateProfileCache($id);
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'email' => $email, 'exception' => $e]);
             return false;
@@ -251,7 +281,9 @@ class UserRepository implements UserRepositoryInterface {
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET password = ? WHERE id = ?");
-            return $stmt->execute([$hashedPassword, $id]);
+            $res = $stmt->execute([$hashedPassword, $id]);
+            if ($res) $this->invalidateProfileCache($id);
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'exception' => $e]);
             return false;

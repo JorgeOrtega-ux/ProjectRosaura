@@ -31,21 +31,41 @@ $maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
                     <span class="material-symbols-rounded component-empty-state-icon">error</span>
                     <p class="component-empty-state-text"><?php echo __('chat_no_messages'); ?></p>
                 </div>
-                <div class="component-loader-center component-loader-center--compact" data-ref="chat-loader">
-                    <div class="component-empty-state-content">
-                        <span class="material-symbols-rounded icon-spin-slow">sync</span><br>
-                        <?php echo __('chat_loading_messages'); ?>
+                <div class="component-loader-center component-loader-center--compact" data-ref="chat-loader" style="justify-content: flex-end; padding: 16px; background: transparent; height: 100%;">
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 24px; padding-top: auto;">
+                        <div style="display: flex; gap: 12px;">
+                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
+                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; gap: 6px;">
+                                <div class="component-skeleton component-skeleton--text-short" style="width: 25%;"></div>
+                                <div class="component-skeleton component-skeleton--h45" style="border-radius: 12px; border-top-left-radius: 4px; width: 70%;"></div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 12px; flex-direction: row-reverse;">
+                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
+                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                                <div class="component-skeleton component-skeleton--text-short" style="width: 35%;"></div>
+                                <div class="component-skeleton component-skeleton--h100" style="border-radius: 12px; border-top-right-radius: 4px; width: 90%;"></div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px;">
+                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
+                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; gap: 6px;">
+                                <div class="component-skeleton component-skeleton--text-short" style="width: 20%;"></div>
+                                <div class="component-skeleton component-skeleton--h40" style="border-radius: 12px; border-top-left-radius: 4px; width: 50%;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             
                         <div class="component-menu-bottom component-chat-input-area">
-                <div class="chat-attachments-preview-container" data-ref="chat-attachments-preview"></div>
                 <div class="component-search component-search--w-auto">
-                    <div class="component-search-input <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled-interaction' : ''; ?>">
+                    <div class="component-search-input <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled-interactive' : ''; ?>">
                         
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
-                            <button class="component-chat-send-btn" data-action="toggleChatDropdown" data-target="chat-attach-menu" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
+                            <button class="component-chat-attach-btn" data-action="toggleChatDropdown" data-target="chat-attach-menu" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
                                 <span class="material-symbols-rounded">add</span>
                             </button>
                             <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-right component-module--dropdown-fixed chat-dropdown-module disabled" data-module="chat-attach-menu">
@@ -87,7 +107,7 @@ $maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
                         ?>
                         <input type="text" data-ref="chat-input-message" placeholder="<?php echo htmlspecialchars($placeholder); ?>" maxlength="255" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
                         <button class="component-chat-send-btn" data-action="sendChatMessage" data-ref="chat-btn-send" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
-                            <span class="material-symbols-rounded">arrow_upward</span>
+                            <span class="material-symbols-rounded">send</span>
                         </button>
                     </div>
                 </div>

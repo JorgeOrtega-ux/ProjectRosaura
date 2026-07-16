@@ -35,8 +35,17 @@ class CacheConstants {
     public const KEY_SYSTEM_RESTORING = 'system_status:restoring';
     public const KEY_SYSTEM_PANIC_MODE = 'system_status:panic_mode';
     public const KEY_SERVER_CONFIG = 'system:server_config';
+    public const PREFIX_CHAT_CANVAS_RECENT = 'chat:canvas:recent:';
+    public const PREFIX_CANVAS_PUBLIC_PAGE = 'canvases:public:page:';
+    public const PREFIX_CANVAS_OFFICIAL_PAGE = 'canvases:official:page:';
+    public const PREFIX_CANVAS_DETAIL = 'canvas:id:';
+    public const PREFIX_USER_PROFILE = 'user:profile:';
+    public const PREFIX_STORE_COINS = 'store:user:coins:';
     public const PATTERN_CACHE = 'cache:*';
     public const PATTERN_PR_CACHE = 'PR_cache:*';
+    public const TTL_ONE_MIN = 60;
+    public const TTL_FIVE_MINS = 300;
+    public const TTL_ONE_HOUR = 3600;
     public const TTL_ONE_DAY = 86400;
     public const TTL_ONE_WEEK = 604800;
 }

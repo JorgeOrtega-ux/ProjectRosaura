@@ -4,6 +4,7 @@ namespace App\Api\Services\Chat;
 use App\Core\System\DatabaseConstants as DB;
 use App\Config\Database\DatabaseManager;
 use App\Config\Database\RedisCache;
+use App\Core\System\CacheConstants;
 use App\Core\Helpers\Utils;
 use PDO;
 
@@ -87,27 +88,34 @@ class ChatServices
         }
         
         if ($offset === 0 && $this->redis) {
-            $redisMessages = [];
-            $rawQueue = $this->redis->lrange('canvas_chat_queue', 0, -1);
-            if ($rawQueue) {
-                foreach ($rawQueue as $item) {
+            $cacheKey = CacheConstants::PREFIX_CHAT_CANVAS_RECENT . $canvasId;
+            $rawRecent = $this->redis->lrange($cacheKey, 0, -1);
+            if ($rawRecent) {
+                $redisMessages = [];
+                foreach ($rawRecent as $item) {
                     $data = json_decode($item, true);
-                    if ($data && $data['canvas_id'] == $canvasId) {
+                    if ($data) {
                         $redisMessages[] = [
-                            'id' => $data['temp_id'],
+                            'id' => $data['temp_id'] ?? $data['id'] ?? uniqid(),
                             'user_id' => $data['user_id'],
-                            'message' => htmlspecialchars_decode($data['message'], ENT_QUOTES),
-                            'attachments' => $data['attachments'],
+                            'message' => htmlspecialchars_decode($data['message'] ?? '', ENT_QUOTES),
+                            'attachments' => $data['attachments'] ?? null,
                             'created_at' => $data['created_at'],
                             'username' => $data['username'],
                             'avatar' => $data['avatar']
                         ];
                     }
                 }
+                
+                $mysqlIds = array_column($messages, 'id');
+                $filteredRedisMessages = array_filter($redisMessages, function($m) use ($mysqlIds) {
+                    return !in_array($m['id'], $mysqlIds);
+                });
+                $messages = array_merge($filteredRedisMessages, $messages);
+                // Keep only top 50
+                $messages = array_slice($messages, 0, $limit);
             }
-            $redisMessages = array_reverse($redisMessages);
-            $messages = array_merge($redisMessages, $messages);
-}
+        }
 
         $canvasUuid = $canvas['uuid'];
 
@@ -263,6 +271,10 @@ class ChatServices
                 'avatar' => $messageData['avatar']
             ];
             $this->redis->rpush('canvas_chat_queue', json_encode($queuePayload));
+
+            $cacheKey = CacheConstants::PREFIX_CHAT_CANVAS_RECENT . $canvasId;
+            $this->redis->lpush($cacheKey, json_encode($queuePayload));
+            $this->redis->ltrim($cacheKey, 0, 49);
 
             $eventPayload = [
                 'type' => 'chat_message',

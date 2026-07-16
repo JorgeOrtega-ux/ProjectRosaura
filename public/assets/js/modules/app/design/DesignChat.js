@@ -14,7 +14,7 @@ export class DesignChat {
         this.btnSend = document.querySelector('[data-ref="chat-btn-send"]');
         this.loader = document.querySelector('[data-ref="chat-loader"]');
         this.fileInput = document.getElementById('chat-file-input');
-        this.previewContainer = document.querySelector('[data-ref="chat-attachments-preview"]');
+        this.previewContainer = null;
 
         this.offset = 0;
         this.isLoading = false;
@@ -38,19 +38,7 @@ export class DesignChat {
         this.badWords = [];
         this.loadBadWords();
 
-        this.typingContainer = document.createElement('div');
-        this.typingContainer.className = 'chat-typing-indicator';
-        this.typingContainer.classList.remove('active'); this.typingContainer.classList.add('disabled');
-        this.typingContainer.style.fontSize = '12px';
-        this.typingContainer.style.color = 'var(--text-secondary)';
-        this.typingContainer.style.padding = '4px 16px';
-        this.typingContainer.style.fontStyle = 'italic';
-        this.typingContainer.style.minHeight = '20px';
-        
-        const inputArea = document.querySelector('.component-chat-input-area');
-        if (inputArea && inputArea.parentNode) {
-            inputArea.parentNode.insertBefore(this.typingContainer, inputArea);
-        }
+        this.typingContainer = null;
 
         if (this.isChatEnabled && this.chatContainer) {
             this.init();
@@ -95,7 +83,24 @@ export class DesignChat {
             }
         }, 1000);
 
-        this.loadHistory();
+        this.initialHistoryLoaded = false;
+        const chatModule = document.querySelector('[data-module="moduleLiveChat"]');
+        
+        if (chatModule && !chatModule.classList.contains('disabled')) {
+            this.initialHistoryLoaded = true;
+            this.loadHistory();
+        } else if (!chatModule) {
+            this.initialHistoryLoaded = true;
+            this.loadHistory();
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-module-target="moduleLiveChat"]');
+            if (btn && !this.initialHistoryLoaded) {
+                this.initialHistoryLoaded = true;
+                this.loadHistory();
+            }
+        });
     }
 
     setupEventListeners() {
@@ -324,25 +329,45 @@ export class DesignChat {
     }
 
     renderPreview() {
-        if (!this.previewContainer) return;
-        
         if (this.selectedFiles.length === 0) {
-            this.previewContainer.classList.remove('active'); this.previewContainer.classList.add('disabled');
-            this.previewContainer.innerHTML = '';
+            if (this.previewContainer && this.previewContainer.parentNode) {
+                this.previewContainer.parentNode.removeChild(this.previewContainer);
+            }
+            if (this.previewContainer) this.previewContainer.innerHTML = '';
             return;
         }
 
-        this.previewContainer.classList.remove('disabled'); this.previewContainer.classList.add('active');
+        if (!this.previewContainer) {
+            this.previewContainer = document.createElement('div');
+            this.previewContainer.className = 'chat-attachments-preview-container active';
+            this.previewContainer.setAttribute('data-ref', 'chat-attachments-preview');
+        } else {
+            this.previewContainer.classList.remove('disabled');
+            this.previewContainer.classList.add('active');
+        }
+
+        const inputArea = document.querySelector('.component-chat-input-area');
+        if (inputArea && !this.previewContainer.parentNode) {
+            inputArea.insertBefore(this.previewContainer, inputArea.firstChild);
+        }
+
         this.previewContainer.innerHTML = '';
 
         this.selectedFiles.forEach((file, index) => {
             const reader = new FileReader();
             
             const card = document.createElement('div');
-            card.className = 'chat-attachment-preview-card';
+            card.className = 'chat-attachment-preview-card component-skeleton';
             
             const img = document.createElement('img');
-            reader.onload = (e) => { img.src = e.target.result; };
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.2s ease';
+            
+            reader.onload = (e) => { 
+                img.src = e.target.result; 
+                card.classList.remove('component-skeleton');
+                img.style.opacity = '1';
+            };
             reader.readAsDataURL(file);
             
             const btn = document.createElement('button');
@@ -419,6 +444,8 @@ export class DesignChat {
                 msgs.forEach(msg => {
                     this.prependMessage(msg);
                 });
+                
+                this.updateDateDividers();
 
                 if (isFirstLoad) {
                     if (this.chatContainer.clientHeight > 0) {
@@ -450,13 +477,8 @@ export class DesignChat {
         const text = this.chatInput.value.trim();
         if (!text && this.selectedFiles.length === 0) return;
 
-        this.chatInput.disabled = true;
-        this.btnSend.disabled = true;
-        
-        const originalBtnHtml = this.btnSend.innerHTML;
-        setTimeout(() => {
-            if (this.btnSend) this.btnSend.innerHTML = '<span class="material-symbols-rounded icon-spin-slow">sync</span>';
-        }, 0);
+        const searchInput = document.querySelector('.component-search-input');
+        if (searchInput) searchInput.classList.add('disabled-interactive');
         
         const backupText = text;
         const backupFiles = [...this.selectedFiles];
@@ -468,7 +490,8 @@ export class DesignChat {
                 formData.append('canvas_id', this.canvasId);
                 formData.append('message', backupText);
                 for (let i = 0; i < backupFiles.length; i++) {
-                    formData.append('images[]', backupFiles[i]);
+                    const compressedFile = await this.compressImage(backupFiles[i]);
+                    formData.append('images[]', compressedFile);
                 }
                 response = await this.api.postForm(ApiRoutes.Chat.Send, formData);
             } else {
@@ -489,9 +512,8 @@ export class DesignChat {
         } catch (error) {
             showMessage(window.__('err_send_message'), 'error');
         } finally {
-            this.btnSend.innerHTML = originalBtnHtml;
-            this.chatInput.disabled = false;
-            this.btnSend.disabled = false;
+            const searchInput = document.querySelector('.component-search-input');
+            if (searchInput) searchInput.classList.remove('disabled-interactive');
             
             if (this.chatInput.value.trim().length > 0 || this.selectedFiles.length > 0) {
                 this.btnSend.classList.add('active');
@@ -594,10 +616,27 @@ export class DesignChat {
         msgEl.replaceWith(statusEl);
     }
 
-    createStatusMessageElement(id, originalEl, visibility) {
+    createStatusMessageElement(id, originalEl, visibility, createdAt) {
         const el = document.createElement('div');
         el.className = 'chat-message chat-message--status';
         el.dataset.messageId = id;
+        
+        if (createdAt) {
+            const msgDate = new Date(createdAt);
+            const now = new Date();
+            const isToday = msgDate.getDate() === now.getDate() && msgDate.getMonth() === now.getMonth() && msgDate.getFullYear() === now.getFullYear();
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            const isYesterday = msgDate.getDate() === yesterday.getDate() && msgDate.getMonth() === yesterday.getMonth() && msgDate.getFullYear() === yesterday.getFullYear();
+            
+            const dateFormatted = msgDate.toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'});
+            let dateDividerStr = dateFormatted;
+            if (isToday) dateDividerStr = window.__('date_today') || 'Hoy';
+            else if (isYesterday) dateDividerStr = window.__('date_yesterday') || 'Ayer';
+            el.dataset.dateString = dateDividerStr;
+        } else if (originalEl && originalEl.dataset.dateString) {
+            el.dataset.dateString = originalEl.dataset.dateString;
+        }
 
         let icon, text;
         if (visibility === 'under_review') {
@@ -643,15 +682,31 @@ export class DesignChat {
 
         const count = this.typingUsers.size;
         if (count === 0) {
-            this.typingContainer.classList.remove('active'); this.typingContainer.classList.add('disabled');
-            this.typingContainer.innerHTML = '';
-        } else if (count === 1) {
+            if (this.typingContainer && this.typingContainer.parentNode) {
+                this.typingContainer.parentNode.removeChild(this.typingContainer);
+            }
+            if (this.typingContainer) this.typingContainer.innerHTML = '';
+            return;
+        }
+
+        if (!this.typingContainer) {
+            this.typingContainer = document.createElement('div');
+            this.typingContainer.className = 'chat-typing-indicator active';
+        } else {
+            this.typingContainer.classList.remove('disabled');
+            this.typingContainer.classList.add('active');
+        }
+
+        const inputArea = document.querySelector('.component-chat-input-area');
+        if (inputArea && !this.typingContainer.parentNode) {
+            inputArea.parentNode.insertBefore(this.typingContainer, inputArea);
+        }
+
+        if (count === 1) {
             const username = Array.from(this.typingUsers.values())[0].username;
             this.typingContainer.innerHTML = `<strong>${username}</strong> está escribiendo...`;
-            this.typingContainer.classList.remove('disabled'); this.typingContainer.classList.add('active');
         } else {
             this.typingContainer.innerHTML = `${count} usuarios están escribiendo...`;
-            this.typingContainer.classList.remove('disabled'); this.typingContainer.classList.add('active');
         }
     }
 
@@ -659,14 +714,30 @@ export class DesignChat {
         // Handle non-visible messages (deleted / under_review)
         const visibility = msg.visibility || 'visible';
         if (visibility !== 'visible') {
-            return this.createStatusMessageElement(msg.id, null, visibility);
+            return this.createStatusMessageElement(msg.id, null, visibility, msg.created_at);
         }
 
         const el = document.createElement('div');
-        el.className = 'chat-message';
+        const isMine = String(msg.user_id) === String(this.currentUserId);
+        el.className = 'chat-message' + (isMine ? ' chat-message--mine' : '');
         el.dataset.messageId = msg.id;
         
-        const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const msgDate = new Date(msg.created_at);
+        const now = new Date();
+        const isToday = msgDate.getDate() === now.getDate() && msgDate.getMonth() === now.getMonth() && msgDate.getFullYear() === now.getFullYear();
+        
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const isYesterday = msgDate.getDate() === yesterday.getDate() && msgDate.getMonth() === yesterday.getMonth() && msgDate.getFullYear() === yesterday.getFullYear();
+
+        const time = msgDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const dateFormatted = msgDate.toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'});
+
+        let dateDividerStr = dateFormatted;
+        if (isToday) dateDividerStr = window.__('date_today') || 'Hoy';
+        else if (isYesterday) dateDividerStr = window.__('date_yesterday') || 'Ayer';
+        
+        el.dataset.dateString = dateDividerStr;
         
         let avatarUrl = `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`;
         if (msg.avatar) {
@@ -681,7 +752,6 @@ export class DesignChat {
         const fallbackUrl = `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`;
         const avatarStr = `<img src="${avatarUrl}" class="chat-message-avatar-img" onerror="this.src='${fallbackUrl}'">`;
 
-        const isMine = String(msg.user_id) === String(this.currentUserId);
         const uniqueId = 'msg-menu-' + msg.id;
 
         const menuBtn = `<div class="component-dropdown-wrapper component-dropdown-wrapper--fit chat-msg-actions" style="margin-left: auto;">
@@ -777,10 +847,11 @@ export class DesignChat {
 
         el.innerHTML = `
             ${avatarStr}
-            <div class="chat-message-bubble" style="overflow: visible;">
+            <div class="chat-message-bubble">
                 <div class="chat-message-header" style="align-items: center;">
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <strong class="chat-message-username">${msg.username}</strong>
+                        <span style="color: var(--text-secondary); font-size: 10px;">•</span>
                         <span class="chat-message-time">${time}</span>
                     </div>
                     ${menuBtn}
@@ -808,6 +879,7 @@ export class DesignChat {
         
         const el = this.createMessageElement(msg);
         this.chatContainer.appendChild(el);
+        this.updateDateDividers();
         
         if (scroll && isScrolledToBottom) {
             this.scrollToBottom();
@@ -816,5 +888,73 @@ export class DesignChat {
 
     scrollToBottom() {
         this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+    }
+
+    updateDateDividers() {
+        this.chatContainer.querySelectorAll('.chat-date-divider').forEach(el => el.remove());
+        
+        const messages = Array.from(this.chatContainer.querySelectorAll('.chat-message'));
+        let lastDateStr = null;
+        
+        messages.forEach(msgEl => {
+            const dateStr = msgEl.dataset.dateString;
+            if (dateStr && dateStr !== lastDateStr) {
+                const divider = document.createElement('div');
+                divider.className = 'chat-date-divider';
+                divider.innerHTML = `<span>${dateStr}</span>`;
+                msgEl.parentNode.insertBefore(divider, msgEl);
+                lastDateStr = dateStr;
+            }
+        });
+    }
+
+    async compressImage(file) {
+        if (!file.type.startsWith('image/')) return file;
+        
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_SIZE = 1920;
+
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            });
+                            resolve(newFile);
+                        } else {
+                            resolve(file);
+                        }
+                    }, 'image/jpeg', 0.85);
+                };
+                img.onerror = () => resolve(file);
+            };
+            reader.onerror = () => resolve(file);
+        });
     }
 }
