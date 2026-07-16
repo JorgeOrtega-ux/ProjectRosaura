@@ -800,29 +800,37 @@ def typesense_thread():
                 user=DB_USER,
                 password=DB_PASS,
                 database=db_canvases,
-                cursorclass=pymysql.cursors.DictCursor
+                cursorclass=pymysql.cursors.SSDictCursor
             )
 
             with connection:
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT id, uuid, name, owner_id, privacy, scope_type, UNIX_TIMESTAMP(created_at) as created_at FROM canvases")
-                    canvases = cursor.fetchall()
                     
-                    documents = []
-                    for c in canvases:
-                        documents.append({
-                            'id': str(c['id']),
-                            'uuid': c['uuid'],
-                            'name': c['name'],
-                            'owner_id': c['owner_id'] if c['owner_id'] else 0,
-                            'privacy': c['privacy'],
-                            'scope_type': c['scope_type'] if c['scope_type'] else 'personal',
-                            'created_at': int(c['created_at']) if c['created_at'] else 0
-                        })
+                    total_synced = 0
+                    while True:
+                        canvases = cursor.fetchmany(1000)
+                        if not canvases:
+                            break
+                            
+                        documents = []
+                        for c in canvases:
+                            documents.append({
+                                'id': str(c['id']),
+                                'uuid': c['uuid'],
+                                'name': c['name'],
+                                'owner_id': c['owner_id'] if c['owner_id'] else 0,
+                                'privacy': c['privacy'],
+                                'scope_type': c['scope_type'] if c['scope_type'] else 'personal',
+                                'created_at': int(c['created_at']) if c['created_at'] else 0
+                            })
+                        
+                        if documents:
+                            client.collections['canvases'].documents.import_(documents, {'action': 'upsert'})
+                            total_synced += len(documents)
                     
-                    if documents:
-                        client.collections['canvases'].documents.import_(documents, {'action': 'upsert'})
-                        logger.info(f"Sync completed: {len(documents)} canvases indexed/updated.")
+                    if total_synced > 0:
+                        logger.info(f"Sync completed: {total_synced} canvases indexed/updated in batches.")
                     else:
                         logger.info("No canvases in database to index.")
                         

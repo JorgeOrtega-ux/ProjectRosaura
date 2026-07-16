@@ -775,8 +775,15 @@ async def handler(websocket):
             del OWNER_CONNS[websocket]
             
         if websocket in WS_META:
+            user_id = WS_META[websocket].get('user_id')
             del WS_META[websocket]
             print(f"[-] Client disconnected. Remaining global total: {len(WS_META)}")
+            
+            if user_id and user_id in USER_LOCKS:
+                user_still_connected = any(meta.get('user_id') == user_id for meta in WS_META.values())
+                if not user_still_connected:
+                    del USER_LOCKS[user_id]
+                    print(f"[-] User lock for {user_id} garbage collected.")
 
 async def main():
     host = os.getenv("WS_HOST", "0.0.0.0")
