@@ -41,14 +41,14 @@ class CanvasSettingsController extends BaseController {
         }
 
 
-        return in_array('access_admin_panel', $perms) || 
-               in_array('canvases.manage_official', $perms);
+        return in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms) || 
+               in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms);
     }
 
  public function resize($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $userId = $this->session->getActiveAccountId();
@@ -76,7 +76,7 @@ class CanvasSettingsController extends BaseController {
     public function get_resize_settings($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $userId = $this->session->getActiveAccountId();
@@ -94,7 +94,7 @@ class CanvasSettingsController extends BaseController {
     public function update_resize_settings($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $userId = $this->session->getActiveAccountId();
@@ -119,7 +119,7 @@ class CanvasSettingsController extends BaseController {
     public function reset_now($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $userId = $this->session->getActiveAccountId();
@@ -140,7 +140,7 @@ class CanvasSettingsController extends BaseController {
     public function get_reset_settings($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $userId = $this->session->getActiveAccountId();
@@ -158,7 +158,7 @@ class CanvasSettingsController extends BaseController {
     public function update_reset_settings($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $userId = $this->session->getActiveAccountId();

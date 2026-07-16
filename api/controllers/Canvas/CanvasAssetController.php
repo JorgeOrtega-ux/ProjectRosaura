@@ -41,14 +41,14 @@ class CanvasAssetController extends BaseController {
         }
 
 
-        return in_array('access_admin_panel', $perms) || 
-               in_array('canvases.manage_official', $perms);
+        return in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms) || 
+               in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms);
     }
 
     public function upload_template($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             
             $userId = $this->session->getActiveAccountId();
@@ -68,7 +68,7 @@ class CanvasAssetController extends BaseController {
     public function get_templates($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             
             $userId = $this->session->getActiveAccountId();
@@ -84,7 +84,7 @@ class CanvasAssetController extends BaseController {
     public function delete_template($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             
             $userId = $this->session->getActiveAccountId();
@@ -104,7 +104,7 @@ class CanvasAssetController extends BaseController {
     public function get_custom_palettes($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             $userId = $this->session->getActiveAccountId();
             $result = $this->canvasServices->getCustomPalettes($userId);
@@ -117,7 +117,7 @@ class CanvasAssetController extends BaseController {
     public function create_custom_palette($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             $userId = $this->session->getActiveAccountId();
             
@@ -138,7 +138,7 @@ class CanvasAssetController extends BaseController {
     public function delete_custom_palette($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             $userId = $this->session->getActiveAccountId();
             $paletteId = $input['id'] ?? $input['palette_key'] ?? null;

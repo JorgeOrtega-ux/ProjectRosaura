@@ -40,7 +40,7 @@ class CanvasCoreService {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
-                return ['success' => false, 'message' => __('err_canvas_not_found'), 'http_code' => 404];
+                return ['success' => false, 'message' => __('err_canvas_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
             }
 
             $ticketUuid = Utils::generateUUID();
@@ -261,14 +261,14 @@ class CanvasCoreService {
             
             $permissions = [];
             if ($isOwner) {
-                $permissions = ['place_pixels', 'manage_settings', 'manage_members', 'manage_roles', 'assign_roles', 'view_history', 'manage_resets'];
+                $permissions = [\App\Core\System\PermissionsConstants::PLACE_PIXELS, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS, \App\Core\System\PermissionsConstants::MANAGE_MEMBERS, 'manage_roles', \App\Core\System\PermissionsConstants::ASSIGN_ROLES, 'view_history', 'manage_resets'];
             } else {
                 foreach ($roles as $r) {
-                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'place_pixels')) $permissions[] = 'place_pixels';
-                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_settings')) $permissions[] = 'manage_settings';
-                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_members')) $permissions[] = 'manage_members';
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::PLACE_PIXELS)) $permissions[] = \App\Core\System\PermissionsConstants::PLACE_PIXELS;
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS)) $permissions[] = \App\Core\System\PermissionsConstants::MANAGE_SETTINGS;
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_MEMBERS)) $permissions[] = \App\Core\System\PermissionsConstants::MANAGE_MEMBERS;
                     if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) $permissions[] = 'manage_roles';
-                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'assign_roles')) $permissions[] = 'assign_roles';
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::ASSIGN_ROLES)) $permissions[] = \App\Core\System\PermissionsConstants::ASSIGN_ROLES;
                     if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'view_history')) $permissions[] = 'view_history';
                     if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_resets')) $permissions[] = 'manage_resets';
                 }
@@ -278,9 +278,9 @@ class CanvasCoreService {
 
             if ($isOwner) {
                 $canvas['role'] = 'admin';
-            } elseif (in_array('manage_settings', $permissions) || in_array('manage_roles', $permissions)) {
+            } elseif (in_array(\App\Core\System\PermissionsConstants::MANAGE_SETTINGS, $permissions) || in_array('manage_roles', $permissions)) {
                 $canvas['role'] = 'admin';
-            } elseif (in_array('place_pixels', $permissions)) {
+            } elseif (in_array(\App\Core\System\PermissionsConstants::PLACE_PIXELS, $permissions)) {
                 $canvas['role'] = 'editor';
             } else {
                 $canvas['role'] = 'spectator';
@@ -421,7 +421,7 @@ class CanvasCoreService {
                 }
             }
 
-            if ($scopeType === 'personal') {
+            if ($scopeType === \App\Core\System\CanvasConstants::SCOPE_PERSONAL) {
                 $user = $this->userRepository->findById($userId);
                 $tier = $user['subscription_tier'] ?? 0;
                 $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
@@ -460,7 +460,7 @@ class CanvasCoreService {
 
             $canvasData = [
                 'uuid'                  => $uuid,
-                'owner_id'              => ($scopeType === 'personal') ? $userId : null,
+                'owner_id'              => ($scopeType === \App\Core\System\CanvasConstants::SCOPE_PERSONAL) ? $userId : null,
                 'name'                  => trim($name),
                 'description'           => $description ? trim($description) : null,
                 'privacy'               => $privacy,
@@ -490,7 +490,7 @@ class CanvasCoreService {
 
             $this->canvasRepository->addMember($canvasId, $userId, 4);
 
-            if ($scopeType === 'personal') {
+            if ($scopeType === \App\Core\System\CanvasConstants::SCOPE_PERSONAL) {
                 try {
                     $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository);
                     $lockManager->evaluateUserCanvases($userId);

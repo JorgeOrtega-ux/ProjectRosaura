@@ -33,7 +33,7 @@ $userPic = \App\Core\Helpers\Utils::getValidImage($rawUserPic, 'avatar');
 
 global $serverConfig;
 $isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
-$isPrivileged = in_array('access_admin_panel', $userPermissions);
+$isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions);
 
 $canCreateCanvas = in_array('create_canvas', $userPermissions);
 $canManageCanvases = in_array('manage_canvases', $userPermissions);

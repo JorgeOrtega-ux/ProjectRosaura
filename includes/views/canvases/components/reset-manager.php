@@ -18,8 +18,8 @@ $resetSettings = [
 $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 $canManageOfficial = in_array('manage_canvases', $userPermissions)
-    || in_array('access_admin_panel', $userPermissions)
-    || in_array('canvases.manage_official', $userPermissions);
+    || in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions)
+    || in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPermissions);
 
 if ($canvasUuid && $userId) {
     try {

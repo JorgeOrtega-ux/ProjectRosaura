@@ -5,7 +5,7 @@ use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 $userPermissions = $_SESSION['user_permissions'] ?? [];
-if (!in_array('manage_roles_structure', $userPermissions)) {
+if (!in_array(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE, $userPermissions)) {
     header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/manage-roles");
     exit;
 }
@@ -351,7 +351,7 @@ if (trim($rawName) !== '') {
                             <div class="component-dropdown-wrapper">
                                 <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleGradientAngle" data-val="<?php echo $gradientAngle; ?>" data-ref="gradientAngleTrigger">
                                     <span class="material-symbols-rounded">rotate_right</span>
-                                    <span class="component-dropdown-text" data-ref="gradientAngleText"><?php echo $gradientAngle; ?>°</span>
+                                    <span class="component-dropdown-text" data-ref="gradientAngleText"><?php echo $gradientAngle; ?>Â°</span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleGradientAngle">
@@ -368,7 +368,7 @@ if (trim($rawName) !== '') {
                                                 echo '
                                                 <div class="component-menu-link ' . $active . '" data-action="setGradientAngle" data-value="' . $ang . '">
                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">' . $icon . '</span></div>
-                                                    <div class="component-menu-link-text"><span>' . $ang . '°</span></div>
+                                                    <div class="component-menu-link-text"><span>' . $ang . 'Â°</span></div>
                                                 </div>';
                                             }
                                             ?>

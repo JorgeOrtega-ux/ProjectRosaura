@@ -41,8 +41,8 @@ class CanvasMediaController extends BaseController {
         }
 
 
-        return in_array('access_admin_panel', $perms) || 
-               in_array('canvases.manage_official', $perms);
+        return in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms) || 
+               in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms);
     }
 
     public function get_timelapse($input) {
@@ -51,7 +51,7 @@ class CanvasMediaController extends BaseController {
             $canvasId = $input['id'] ?? null;
 
             if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id'), 'http_code' => 400]);
+                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST]);
             }
 
             $result = $this->canvasServices->prepareTimelapseDownload($userId, (int)$canvasId, $this->canManageOfficial());
@@ -72,7 +72,7 @@ class CanvasMediaController extends BaseController {
                     'Key' => $s3Key
                 ]);
             } catch (\Exception $e) {
-                return $this->respond(['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => 404]);
+                return $this->respond(['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND]);
             }
 
             if (ob_get_level()) {
@@ -106,7 +106,7 @@ class CanvasMediaController extends BaseController {
             $snapshotId = $input['id'] ?? null;
 
             if (!$snapshotId) {
-                return $this->respond(['success' => false, 'message' => __('err_snapshot_id_missing'), 'http_code' => 400]);
+                return $this->respond(['success' => false, 'message' => __('err_snapshot_id_missing'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST]);
             }
 
             $result = $this->canvasServices->prepareSnapshotTimelapseDownload($userId, $snapshotId, $this->canManageOfficial());
@@ -129,7 +129,7 @@ class CanvasMediaController extends BaseController {
                     'Key' => $s3Key
                 ]);
             } catch (\Exception $e) {
-                return $this->respond(['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => 404]);
+                return $this->respond(['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND]);
             }
             $t3 = microtime(true);
 
@@ -214,7 +214,7 @@ class CanvasMediaController extends BaseController {
             }
             
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_auth_required'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_auth_required'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             
             $userId = $this->session->getActiveAccountId();
@@ -234,7 +234,7 @@ class CanvasMediaController extends BaseController {
             }
             
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_auth_required'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_auth_required'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             
             $userId = $this->session->getActiveAccountId();
@@ -254,7 +254,7 @@ class CanvasMediaController extends BaseController {
             }
             
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_auth_required'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_auth_required'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             
             $userId = $this->session->getActiveAccountId();

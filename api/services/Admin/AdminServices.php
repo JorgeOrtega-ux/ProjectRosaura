@@ -157,7 +157,7 @@ class AdminServices {
             $jobKey = CacheConstants::PREFIX_BACKUP_JOB . $jobId;
             $message = ($type === 'manual_custom') ? 'queued_custom_backup' : 'queued_modular_backup';
 
-            $redis->hmset($jobKey, ['status' => 'pending', 'message' => $message, 'created_at' => time()]);
+            $redis->hmset($jobKey, ['status' => \App\Core\System\StatusConstants::REQUEST_PENDING, 'message' => $message, 'created_at' => time()]);
             $redis->expire($jobKey, 3600);
 
             $payloadData = [
@@ -388,7 +388,7 @@ class AdminServices {
     }
 
     public function updateRoles($data) {
-        if (!$this->hasPermission('assign_roles')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ASSIGN_ROLES)) return ['success' => false, 'message' => __('error.unauthorized')];
 
         $targetId = (int)($data['target_user_id'] ?? 0);
         $rolesIds = $data['roles'] ?? [];
@@ -677,7 +677,7 @@ class AdminServices {
     }
 
     public function getRoles() {
-        if (!$this->hasPermission('view_roles')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::VIEW_ROLES)) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
         
@@ -685,7 +685,7 @@ class AdminServices {
     }
 
     public function createRole($data) {
-        if (!$this->hasPermission('manage_roles_structure')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE)) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -712,7 +712,7 @@ class AdminServices {
     }
 
     public function editRole($data) {
-        if (!$this->hasPermission('manage_roles_structure')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE)) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -752,7 +752,7 @@ class AdminServices {
         } catch (\Exception $e) {
             Logger::error("edit_role_failed", ["exception" => $e->getMessage()]);
             if (strpos($e->getMessage(), 'Security Violation') !== false) {
-                return ['success' => false, 'message' => __('error.unauthorized'), 'http_code' => 403];
+                return ['success' => false, 'message' => __('error.unauthorized'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
             }
         }
 
@@ -760,7 +760,7 @@ class AdminServices {
     }
 
     public function deleteRole($data) {
-        if (!$this->hasPermission('manage_roles_structure')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE)) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -772,7 +772,7 @@ class AdminServices {
 
         $isSystemRole = (isset($existingById['is_system']) ? (int)$existingById['is_system'] === 1 : $id <= SecurityConstants::MAX_SYSTEM_ROLE_ID);
         if ($isSystemRole) {
-            return ['success' => false, 'message' => __('admin.cannot_delete_base_role'), 'http_code' => 403];
+            return ['success' => false, 'message' => __('admin.cannot_delete_base_role'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
         }
 
         $currentWeight = $this->getCurrentAdminWeight();
@@ -784,7 +784,7 @@ class AdminServices {
         } catch (\Exception $e) {
             Logger::error("delete_role_failed", ["exception" => $e->getMessage()]);
             if (strpos($e->getMessage(), 'Security Violation') !== false) {
-                return ['success' => false, 'message' => __('error.unauthorized'), 'http_code' => 403];
+                return ['success' => false, 'message' => __('error.unauthorized'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
             }
         }
 
@@ -806,7 +806,7 @@ class AdminServices {
     }
 
     public function updateRolePermissions($data) {
-        if (!$this->hasPermission('manage_roles_structure')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE)) return ['success' => false, 'message' => __('error.unauthorized')];
         
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
@@ -837,10 +837,10 @@ class AdminServices {
 
         if ($attemptingToGrantCritical) {
             if ($currentWeight < SecurityConstants::WEIGHT_SUPER_ADMIN) {
-                return ['success' => false, 'message' => __('admin.insufficient_privileges_to_grant_critical'), 'http_code' => 403];
+                return ['success' => false, 'message' => __('admin.insufficient_privileges_to_grant_critical'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
             }
             if ((int)$targetRole['weight'] < SecurityConstants::WEIGHT_CRITICAL_ROLE_MIN) {
-                return ['success' => false, 'message' => __('admin.role_weight_too_low_for_critical'), 'http_code' => 403];
+                return ['success' => false, 'message' => __('admin.role_weight_too_low_for_critical'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
             }
         }
 
@@ -851,7 +851,7 @@ class AdminServices {
         } catch (\Exception $e) {
             Logger::error("update_role_permissions_failed", ["exception" => $e->getMessage()]);
             if (strpos($e->getMessage(), 'Security Violation') !== false) {
-                return ['success' => false, 'message' => __('error.unauthorized'), 'http_code' => 403];
+                return ['success' => false, 'message' => __('error.unauthorized'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
             }
         }
 
@@ -1041,7 +1041,7 @@ class AdminServices {
             $jobId = Utils::generateUUID();
             $jobKey = CacheConstants::PREFIX_BACKUP_JOB . $jobId;
 
-            $redis->hmset($jobKey, ['status' => 'pending', 'message' => 'queued_restore', 'created_at' => time()]);
+            $redis->hmset($jobKey, ['status' => \App\Core\System\StatusConstants::REQUEST_PENDING, 'message' => 'queued_restore', 'created_at' => time()]);
             $redis->expire($jobKey, 3600);
             $redis->setex(CacheConstants::KEY_SYSTEM_RESTORING, 900, '1');
             
@@ -1112,7 +1112,7 @@ class AdminServices {
     }
 
     public function getDashboardMetrics($data) {
-        if (!$this->hasPermission('access_admin_panel')) {
+        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) {
             return ['success' => false, 'message' => __('error.unauthorized')];
         }
         
@@ -1174,7 +1174,7 @@ class AdminServices {
     }
 
     public function getAllMessages($page = 1, $limit = 50) {
-        $this->requirePermission('view_logs'); // Usamos view_logs o rol de admin genérico
+        $this->requirePermission('view_logs'); // Usamos view_logs o rol de admin genÃƒÂ©rico
 
         $offset = ($page - 1) * $limit;
         
@@ -1242,7 +1242,7 @@ class AdminServices {
         }
         
         if (!in_array($visibility, ['visible', 'under_review', 'deleted'])) {
-            throw new \Exception("Visibilidad no válida.");
+            throw new \Exception("Visibilidad no vÃƒÂ¡lida.");
         }
 
         if ($visibility !== 'deleted') {

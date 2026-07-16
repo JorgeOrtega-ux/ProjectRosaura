@@ -33,7 +33,7 @@ class CanvasSettingsService {
 
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
             if (!$isOwner) {
-                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_settings')) {
+                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS)) {
                     return ['success' => false, 'message' => __('err_unauthorized')];
                 }
             }
@@ -323,7 +323,7 @@ class CanvasSettingsService {
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
             if (!$isOwner) {
-                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_settings')) {
+                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS)) {
                     return ['success' => false, 'message' => __('err_unauthorized')];
                 }
             }

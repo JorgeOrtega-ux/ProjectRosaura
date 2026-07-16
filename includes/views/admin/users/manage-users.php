@@ -8,7 +8,7 @@ use PDO;
 $userPerms = $_SESSION['user_permissions'] ?? [];
 $isSuperAdmin = isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4;
 $canEditUsers = in_array('edit_users', $userPerms);
-$canAssignRoles = in_array('assign_roles', $userPerms);
+$canAssignRoles = in_array(\App\Core\System\PermissionsConstants::ASSIGN_ROLES, $userPerms);
 $canDeleteUsers = in_array('delete_users', $userPerms) || $isSuperAdmin;
 $canModerateUsers = count(array_intersect(['moderate_users', 'delete_users'], $userPerms)) > 0;
 $canViewKardex = in_array('view_kardex', $userPerms);

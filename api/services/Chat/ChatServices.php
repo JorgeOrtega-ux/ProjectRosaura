@@ -29,7 +29,7 @@ class ChatServices
         $limit = 50;
 
         if ($canvasId <= 0) {
-            return ['success' => false, 'message' => __('err_invalid_canvas'), 'http_code' => 400];
+            return ['success' => false, 'message' => __('err_invalid_canvas'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
 }
 
         $stmt = $this->pdo->prepare("SELECT allow_chat, uuid FROM " . DB::TBL_CANVASES . " WHERE id = ?");
@@ -37,7 +37,7 @@ class ChatServices
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$canvas || $canvas['allow_chat'] != 1) {
-            return ['success' => false, 'message' => __('err_chat_disabled'), 'http_code' => 403];
+            return ['success' => false, 'message' => __('err_chat_disabled'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
 }
 
         try {
@@ -152,11 +152,11 @@ class ChatServices
     public function send($userId, $canvasId, $messageText, $files)
     {
         if ($canvasId <= 0 || (empty($messageText) && empty($files['name'][0]))) {
-            return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => 400];
+            return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
 }
 
         if (mb_strlen($messageText) > 255) {
-            return ['success' => false, 'message' => __('err_message_too_long'), 'http_code' => 400];
+            return ['success' => false, 'message' => __('err_message_too_long'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
 }
 
         $stmt = $this->pdo->prepare("SELECT allow_chat, uuid FROM " . DB::TBL_CANVASES . " WHERE id = ?");
@@ -164,13 +164,13 @@ class ChatServices
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$canvas || $canvas['allow_chat'] != 1) {
-            return ['success' => false, 'message' => __('err_chat_disabled'), 'http_code' => 403];
+            return ['success' => false, 'message' => __('err_chat_disabled'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
 }
 
         $stmt = $this->pdo->prepare("SELECT id FROM canvas_chat_restrictions WHERE canvas_id = ? AND user_id = ? AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW()))");
         $stmt->execute([$canvasId, $userId]);
         if ($stmt->fetch()) {
-            return ['success' => false, 'message' => __('err_chat_restricted'), 'http_code' => 403];
+            return ['success' => false, 'message' => __('err_chat_restricted'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
 }
 
         if ($this->redis) {
@@ -182,13 +182,13 @@ class ChatServices
                 $this->redis->expire($redisKeyBurst, 5);
             }
             if ($burstCount > 3) {
-                return ['success' => false, 'message' => __('err_chat_rate_limit'), 'http_code' => 429];
+                return ['success' => false, 'message' => __('err_chat_rate_limit'), 'http_code' => \App\Core\System\HttpConstants::TOO_MANY_REQUESTS];
 }
 
             if (!empty($messageText)) {
                 $lastMsg = $this->redis->get($redisKeyLastMsg);
                 if ($lastMsg === $messageText) {
-                    return ['success' => false, 'message' => __('err_chat_duplicate'), 'http_code' => 429];
+                    return ['success' => false, 'message' => __('err_chat_duplicate'), 'http_code' => \App\Core\System\HttpConstants::TOO_MANY_REQUESTS];
                 }
                 $this->redis->setex($redisKeyLastMsg, 10, $messageText);
             }
@@ -204,10 +204,10 @@ class ChatServices
             
             $totalSize = array_sum($files['size']);
             if ($totalSize > $maxUploadMB * 1024 * 1024) {
-                return ['success' => false, 'message' => __('err_chat_image_size'), 'http_code' => 400];
+                return ['success' => false, 'message' => __('err_chat_image_size'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
             }
             if (count($files['name']) > $maxImages) {
-                return ['success' => false, 'message' => __('err_chat_image_count'), 'http_code' => 400];
+                return ['success' => false, 'message' => __('err_chat_image_count'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
             }
             $uploadDir = 'canvases/' . $canvasUuid . '/chat/';
 
@@ -304,7 +304,7 @@ class ChatServices
     public function delete($userId, $canvasId, $messageId)
     {
         if ($messageId <= 0 || $canvasId <= 0) {
-            return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => 400];
+            return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 
         $stmt = $this->pdo->prepare("SELECT user_id, file_size, visibility FROM canvas_chat_messages WHERE id = ? AND canvas_id = ?");
@@ -312,14 +312,14 @@ class ChatServices
         $msg = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$msg) {
-            return ['success' => false, 'message' => __('err_message_not_found'), 'http_code' => 404];
+            return ['success' => false, 'message' => __('err_message_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
         }
 
         if ($msg['user_id'] != $userId) {
-            return ['success' => false, 'message' => __('err_cannot_delete_others_message'), 'http_code' => 403];
+            return ['success' => false, 'message' => __('err_cannot_delete_others_message'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
         }
 
-        // Already deleted — no-op
+        // Already deleted Ã¢â‚¬â€ no-op
         if (($msg['visibility'] ?? 'visible') === 'deleted') {
             return ['success' => true, 'message' => __('msg_message_deleted')];
         }
@@ -346,7 +346,7 @@ class ChatServices
     public function report($userId, $messageId, $reason)
     {
         if ($messageId <= 0 || empty($reason)) {
-            return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => 400];
+            return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
         return ['success' => true, 'message' => __('msg_message_reported')];
 }
@@ -354,7 +354,7 @@ class ChatServices
     public function getAttachmentAccess($userId, $canvasUuid, $file, $userPermissions)
     {
         if (empty($canvasUuid) || empty($file)) {
-            return ['success' => false, 'http_code' => 400];
+            return ['success' => false, 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
 }
 
         $stmt = $this->pdo->prepare("SELECT id, privacy, allow_chat, owner_id FROM " . DB::TBL_CANVASES . " WHERE uuid = ?");
@@ -362,15 +362,15 @@ class ChatServices
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$canvas) {
-            return ['success' => false, 'http_code' => 404];
+            return ['success' => false, 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
 }
 
         $canvasId = (int)$canvas['id'];
         $hasAccess = false;
         
-        $isAdmin = is_array($userPermissions) && in_array('access_admin_panel', $userPermissions);
+        $isAdmin = is_array($userPermissions) && in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions);
 
-        if ($canvas['privacy'] !== 'private' || $isAdmin) {
+        if ($canvas['privacy'] !== \App\Core\System\CanvasConstants::PRIVACY_PRIVATE || $isAdmin) {
             $hasAccess = true;
         } else if ($userId && $canvas['owner_id'] == $userId) {
             $hasAccess = true;
@@ -384,9 +384,9 @@ class ChatServices
 
         if (!$hasAccess) {
             if (!$userId) {
-                return ['success' => false, 'http_code' => 401];
+                return ['success' => false, 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED];
             } else {
-                return ['success' => false, 'http_code' => 403];
+                return ['success' => false, 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
             }
 }
 
@@ -425,7 +425,7 @@ class ChatServices
                 'presigned_url' => $presignedUrl
             ];
         } catch (\Exception $e) {
-            return ['success' => false, 'http_code' => 404];
+            return ['success' => false, 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
         }
     }
 }

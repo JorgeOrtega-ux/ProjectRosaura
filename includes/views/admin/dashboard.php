@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 
-$canManageRoles = in_array('view_roles', $userPermissions);
+$canManageRoles = in_array(\App\Core\System\PermissionsConstants::VIEW_ROLES, $userPermissions);
 $canViewLogs = in_array('view_logs', $userPermissions);
 $canManageMessages = true; // Por ahora todos los admins
 

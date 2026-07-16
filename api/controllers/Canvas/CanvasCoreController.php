@@ -27,9 +27,9 @@ class CanvasCoreController extends BaseController {
         if (!is_array($perms)) {
             $perms = [];
         }
-        return in_array('access_admin_panel', $perms) || 
-               in_array('canvases.manage_official', $perms) ||
-               in_array('canvases.create_official', $perms);
+        return in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms) || 
+               in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms) ||
+               in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $perms);
     }
 
     private function canCreateOfficial(): bool {
@@ -40,8 +40,8 @@ class CanvasCoreController extends BaseController {
         if (!is_array($perms)) {
             $perms = [];
         }
-        return in_array('access_admin_panel', $perms) || 
-               in_array('canvases.create_official', $perms);
+        return in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms) || 
+               in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $perms);
     }
 
     public function get($input) {
@@ -65,17 +65,17 @@ class CanvasCoreController extends BaseController {
    public function create($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $userId = $this->session->getActiveAccountId();
             if (!$userId) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             
             $name = $input['name'] ?? '';
             $description = $input['description'] ?? null;
-            $privacy = $input['privacy'] ?? 'private';
+            $privacy = $input['privacy'] ?? \App\Core\System\CanvasConstants::PRIVACY_PRIVATE;
             $requiresApproval = filter_var($input['requires_approval'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $size = $input['size'] ?? '64x64';
             
@@ -101,17 +101,17 @@ class CanvasCoreController extends BaseController {
             }
 
 
-            if ($scopeType === 'global') {
+            if ($scopeType === \App\Core\System\CanvasConstants::SCOPE_GLOBAL) {
                 $scopeRef1 = null; 
                 $scopeRef2 = null; 
                 $scopeRef3 = null;
-            } elseif ($scopeType === 'country' && empty($scopeRef1)) {
+            } elseif ($scopeType === \App\Core\System\CanvasConstants::SCOPE_COUNTRY && empty($scopeRef1)) {
                 return $this->respond(['success' => false, 'message' => __('err_country_required')]);
-            } elseif ($scopeType === 'state' && (empty($scopeRef1) || empty($scopeRef2))) {
+            } elseif ($scopeType === \App\Core\System\CanvasConstants::SCOPE_STATE && (empty($scopeRef1) || empty($scopeRef2))) {
                 return $this->respond(['success' => false, 'message' => __('err_state_required')]);
-            } elseif ($scopeType === 'municipality' && (empty($scopeRef1) || empty($scopeRef2) || empty($scopeRef3))) {
+            } elseif ($scopeType === \App\Core\System\CanvasConstants::SCOPE_MUNICIPALITY && (empty($scopeRef1) || empty($scopeRef2) || empty($scopeRef3))) {
                 return $this->respond(['success' => false, 'message' => __('err_city_required')]);
-            } elseif ($scopeType === 'organization' && empty($scopeRef1)) {
+            } elseif ($scopeType === \App\Core\System\CanvasConstants::SCOPE_ORGANIZATION && empty($scopeRef1)) {
                 return $this->respond(['success' => false, 'message' => __('err_org_required')]);
             }
 
@@ -127,7 +127,7 @@ class CanvasCoreController extends BaseController {
             );
 
 
-            if (!$result['success'] && strpos($result['message'] ?? '', 'límite') !== false) {
+            if (!$result['success'] && strpos($result['message'] ?? '', 'lÃƒÂ­mite') !== false) {
                 $result['http_code'] = 403;
                 $result['error_code'] = 'UPGRADE_REQUIRED';
                 http_response_code(403);
@@ -143,14 +143,14 @@ class CanvasCoreController extends BaseController {
     public function update($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $userId = $this->session->getActiveAccountId();
             $canvasId = $input['id'] ?? null;
             
             if (!$userId || !$canvasId) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             
             $data = [
@@ -178,12 +178,12 @@ class CanvasCoreController extends BaseController {
     public function delete($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $userId = $this->session->getActiveAccountId();
             if (!$userId) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $uuid = $input['id'] ?? $input['uuid'] ?? null;
@@ -219,7 +219,7 @@ class CanvasCoreController extends BaseController {
             $tag = $input['tag'] ?? 'all';
 
             // Whitelist of valid tags - reject anything not in the list
-            $validTags = ['all', 'fun', 'tension', 'action', 'strategy', 'roleplay', 'casual', 'romance', 'horror', 'scifi', 'fantasy'];
+            $validTags = \App\Core\System\CanvasConstants::VALID_TAGS;
             if (!in_array($tag, $validTags, true)) {
                 $tag = 'all';
             }
@@ -279,12 +279,12 @@ class CanvasCoreController extends BaseController {
     public function downgrade($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $userId = $this->session->getActiveAccountId();
             if (!$userId) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $uuid = $input['id'] ?? $input['uuid'] ?? null;
@@ -310,7 +310,7 @@ class CanvasCoreController extends BaseController {
             $canvasId = $input['canvas_id'] ?? $input['id'] ?? null;
             
             if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id'), 'http_code' => 400]);
+                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST]);
             }
 
             $isLoggedIn = $this->session->isLoggedIn();
@@ -321,14 +321,14 @@ class CanvasCoreController extends BaseController {
                 $token = $input['cf-turnstile-response'] ?? $input['turnstile_token'] ?? null;
                 
                 if (!$token) {
-                    return $this->respond(['success' => false, 'message' => __('err_turnstile_required'), 'http_code' => 403]);
+                    return $this->respond(['success' => false, 'message' => __('err_turnstile_required'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN]);
                 }
                 
                 $turnstile = new TurnstileValidator();
                 $remoteIp = $_SERVER['REMOTE_ADDR'] ?? null;
                 
                 if (!$turnstile->isValid($token, $remoteIp)) {
-                    return $this->respond(['success' => false, 'message' => __('err_bot_detected'), 'http_code' => 403]);
+                    return $this->respond(['success' => false, 'message' => __('err_bot_detected'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN]);
                 }
             }
 
@@ -349,7 +349,7 @@ class CanvasCoreController extends BaseController {
                         return $this->respond([
                             'success' => false, 
                             'message' => __('err_too_many_tickets'), 
-                            'http_code' => 429
+                            'http_code' => \App\Core\System\HttpConstants::TOO_MANY_REQUESTS
                         ]);
                     }
                 }

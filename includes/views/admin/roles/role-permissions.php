@@ -5,7 +5,7 @@ use App\Config\Database\DatabaseManager;
 use App\Config\Database\RedisCache;
 use App\Core\Repositories\RoleRepository;
 $userPermissions = $_SESSION['user_permissions'] ?? [];
-if (!in_array('manage_roles_structure', $userPermissions)) {
+if (!in_array(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE, $userPermissions)) {
     header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/manage-roles");
     exit;
 }

@@ -22,8 +22,8 @@ if (!$canvasUuid) {
 
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 $canManageOfficial = in_array('manage_canvases', $userPermissions)
-    || in_array('access_admin_panel', $userPermissions)
-    || in_array('canvases.manage_official', $userPermissions);
+    || in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions)
+    || in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPermissions);
 
 $db = new DatabaseManager();
 $pdo = $db->getConnection(DB::CONN_CANVASES);

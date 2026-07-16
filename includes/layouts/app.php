@@ -16,7 +16,7 @@ $isDegraded = defined('SYSTEM_DEGRADED') && SYSTEM_DEGRADED === true;
 $isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
 
 $userPermissions = $_SESSION['user_permissions'] ?? [];
-$isPrivileged = in_array('access_admin_panel', $userPermissions);
+$isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions);
 
 $isMaintenanceRestricted = ($isMaintenanceActive && !$isPrivileged);
 
@@ -172,7 +172,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
             else document.documentElement.classList.add('light-theme');
         })();
 
-        console.info("%c🚀 [Load Balancer] Petición atendida por el nodo (VPS): <?php echo gethostname(); ?>", "color: #4CAF50; font-weight: bold; background: #222; padding: 4px; border-radius: 4px;");
+        console.info("%cðŸš€ [Load Balancer] PeticiÃ³n atendida por el nodo (VPS): <?php echo gethostname(); ?>", "color: #4CAF50; font-weight: bold; background: #222; padding: 4px; border-radius: 4px;");
     </script>
 </head>
 <body>

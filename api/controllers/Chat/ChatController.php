@@ -36,7 +36,7 @@ class ChatController extends BaseController
         try {
             $userId = $this->sessionManager->getActiveAccountId();
             if (!$userId) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $canvasId = (int)($request['canvas_id'] ?? 0);
@@ -55,7 +55,7 @@ class ChatController extends BaseController
         try {
             $userId = $this->sessionManager->getActiveAccountId();
             if (!$userId) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $messageId = (int)($request['message_id'] ?? 0);
@@ -73,7 +73,7 @@ class ChatController extends BaseController
         try {
             $userId = $this->sessionManager->getActiveAccountId();
             if (!$userId) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $messageId = (int)($request['message_id'] ?? 0);

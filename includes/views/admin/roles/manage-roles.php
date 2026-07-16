@@ -6,7 +6,7 @@ use App\Core\Helpers\Utils;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 $userPerms = $_SESSION['user_permissions'] ?? [];
-$canManageRoles = in_array('manage_roles_structure', $userPerms);
+$canManageRoles = in_array(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE, $userPerms);
 $db = new DatabaseManager();
 $pdo = $db->getConnection(DB::CONN_IDENTITY);
 

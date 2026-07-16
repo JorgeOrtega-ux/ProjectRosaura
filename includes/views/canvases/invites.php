@@ -36,7 +36,7 @@ if (!$userId || !$canvasId) {
 // Verify ownership: only the canvas owner can manage invites
 if ((int)$userId !== $canvasOwnerId) {
     $userPerms = $_SESSION['user_permissions'] ?? $_SESSION['permissions'] ?? [];
-    $isAdmin = is_array($userPerms) && (in_array('access_admin_panel', $userPerms) || in_array('canvases.manage_official', $userPerms));
+    $isAdmin = is_array($userPerms) && (in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPerms) || in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPerms));
     if (!$isAdmin || $canvasOwnerId !== null) {
         echo "<div class='view-content'><p>".__('err_unauthorized')."</p></div>";
         return;
@@ -123,7 +123,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                     <td>
                                         <div class="component-badge component-badge--sm">
                                             <span class="material-symbols-rounded">group</span>
-                                            <span><?php echo $invite['uses_count']; ?> / <?php echo $invite['max_uses'] ?? '∞'; ?></span>
+                                            <span><?php echo $invite['uses_count']; ?> / <?php echo $invite['max_uses'] ?? 'âˆž'; ?></span>
                                         </div>
                                     </td>
                                     <td>

@@ -40,7 +40,7 @@ class CanvasMediaService {
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
             if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
-                return ['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 403];
+                return ['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
             }
 
             $s3Key = 'timelapses/' . $canvas['uuid'] . '/live/live_canvas_' . $canvas['uuid'] . '.jsonl';
@@ -49,7 +49,7 @@ class CanvasMediaService {
             $s3Client = Utils::getS3Client();
 
             if (!$s3Client->doesObjectExist($bucket, $s3Key)) {
-                return ['success' => false, 'message' => __('err_no_timelapse_data'), 'http_code' => 404];
+                return ['success' => false, 'message' => __('err_no_timelapse_data'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
             }
 
             return ['success' => true, 'file_path' => $s3Key];
@@ -78,7 +78,7 @@ class CanvasMediaService {
             $tx1 = microtime(true);
 
             if (!$data) {
-                return ['success' => false, 'message' => __('err_snapshot_not_found'), 'http_code' => 404];
+                return ['success' => false, 'message' => __('err_snapshot_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
             }
 
             $hasRole = false;
@@ -91,11 +91,11 @@ class CanvasMediaService {
             $isOwner = ($data['owner_id'] === $userId) || ($data['owner_id'] === null && $canManageOfficial);
 
             if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
-                return ['success' => false, 'message' => __('err_unauthorized_view_timelapse'), 'http_code' => 403];
+                return ['success' => false, 'message' => __('err_unauthorized_view_timelapse'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
             }
 
             if (empty($data['timelapse_file_path'])) {
-                return ['success' => false, 'message' => __('err_no_timelapse_file'), 'http_code' => 404];
+                return ['success' => false, 'message' => __('err_no_timelapse_file'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
             }
 
             $s3Key = ltrim($data['timelapse_file_path'], '/');
@@ -110,7 +110,7 @@ class CanvasMediaService {
             // The controller already checks headObject.
             // $s3Client = Utils::getS3Client();
             // if (!$s3Client->doesObjectExist($bucket, $s3Key)) {
-            //     return ['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => 404];
+            //     return ['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
             // }
             $tx4 = microtime(true);
 
@@ -304,7 +304,7 @@ class CanvasMediaService {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
-            $newPrivacy = ($data['privacy'] === 'public') ? 'private' : 'public';
+            $newPrivacy = ($data['privacy'] === \App\Core\System\CanvasConstants::PRIVACY_PUBLIC) ? 'private' : 'public';
 
             $stmt = $pdo->prepare("UPDATE canvas_snapshots_history SET privacy = :priv WHERE id = :id");
             $stmt->execute([':priv' => $newPrivacy, ':id' => $data['id']]);

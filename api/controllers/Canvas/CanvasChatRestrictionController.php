@@ -60,7 +60,7 @@ class CanvasChatRestrictionController {
 
         // Only owner can ban (or implement role logic later)
         if ($canvas['user_id'] != $userId) {
-            // Wait, also check canvas_roles? For now, just owner, as requested: "si el dueño quiero banear..."
+            // Wait, also check canvas_roles? For now, just owner, as requested: "si el dueÃ±o quiero banear..."
             // But let's check canvas_roles for moderation if needed
             $stmt = $this->pdo->prepare("SELECT cp.name FROM canvas_user_roles cur JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id JOIN canvas_permissions cp ON crp.permission_id = cp.id WHERE cur.canvas_id = ? AND cur.user_id = ?");
             $stmt->execute([$canvasId, $userId]);
@@ -68,7 +68,7 @@ class CanvasChatRestrictionController {
             $perms = array_column($permissionsRows, 'name');
             
             $canModerate = false;
-            if (in_array('manage_settings', $perms) || in_array('manage_members', $perms) || in_array('moderate_chat', $perms)) {
+            if (in_array(\App\Core\System\PermissionsConstants::MANAGE_SETTINGS, $perms) || in_array(\App\Core\System\PermissionsConstants::MANAGE_MEMBERS, $perms) || in_array(\App\Core\System\PermissionsConstants::MODERATE_CHAT, $perms)) {
                 $canModerate = true;
             }
             if (!$canModerate) {

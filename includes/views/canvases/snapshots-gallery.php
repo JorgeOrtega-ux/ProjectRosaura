@@ -35,7 +35,7 @@ if ($uuid) {
 
             $userId = $_SESSION['user_id'] ?? null;
             $isOwner = ($canvas['owner_id'] == $userId);
-            $isPrivileged = isset($_SESSION['user_permissions']) && in_array('access_admin_panel', $_SESSION['user_permissions']);
+            $isPrivileged = isset($_SESSION['user_permissions']) && in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $_SESSION['user_permissions']);
 
             if ($canvas['privacy'] === DB::PRIVACY_PRIVATE) {
                 $isMember = false;

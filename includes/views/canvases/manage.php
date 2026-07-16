@@ -12,8 +12,8 @@ if (!$userId) {
 }
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 $isAdmin = in_array('manage_canvases', $userPermissions) || 
-           in_array('access_admin_panel', $userPermissions) || 
-           in_array('canvases.manage_official', $userPermissions);
+           in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions) || 
+           in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPermissions);
 
 $limit = 25; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;

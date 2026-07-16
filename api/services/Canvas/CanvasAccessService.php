@@ -81,7 +81,7 @@ class CanvasAccessService {
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
             $isOwner = ($canvas['owner_id'] === $requesterId) || ($canvas['owner_id'] === null && $canManageOfficial);
-            $isAdmin = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, 'manage_roles') || $this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, 'manage_settings');
+            $isAdmin = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, 'manage_roles') || $this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS);
 
             if (!$isAdmin) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -130,7 +130,7 @@ class CanvasAccessService {
             }
 
             $existingReq = $this->canvasRepository->getAccessRequest($canvasId, $userId);
-            if ($existingReq && $existingReq['status'] === 'pending') {
+            if ($existingReq && $existingReq['status'] === \App\Core\System\StatusConstants::REQUEST_PENDING) {
                 return ['success' => false, 'message' => __('err_request_pending')];
             }
 
@@ -222,8 +222,8 @@ class CanvasAccessService {
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
             if (!$isOwner) {
-                $hasPermission = $this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'place_pixels');
-                if (!$hasPermission && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_settings')) {
+                $hasPermission = $this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::PLACE_PIXELS);
+                if (!$hasPermission && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS)) {
                     return ['success' => false, 'message' => __('err_unauthorized')];
                 }
             }
@@ -333,7 +333,7 @@ class CanvasAccessService {
             }
 
             $nameLower = strtolower(trim($roleData['name']));
-            if (in_array($nameLower, ['owner', 'propietario', 'superadmin', 'superadministrador']) || (isset($roleData['weight']) && (int)$roleData['weight'] >= 100)) {
+            if (in_array($nameLower, \App\Core\System\CanvasConstants::RESERVED_ROLES) || (isset($roleData['weight']) && (int)$roleData['weight'] >= 100)) {
                 return ['success' => false, 'message' => __('err_cannot_invite_high_privilege')];
             }
 

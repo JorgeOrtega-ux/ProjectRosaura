@@ -41,8 +41,8 @@ class CanvasAccessController extends BaseController {
         }
 
 
-        return in_array('access_admin_panel', $perms) || 
-               in_array('canvases.manage_official', $perms);
+        return in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms) || 
+               in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms);
     }
 
     public function join_live_share($input) {
@@ -72,7 +72,7 @@ class CanvasAccessController extends BaseController {
     public function leave($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
             $userId = $this->session->getActiveAccountId();
@@ -92,7 +92,7 @@ class CanvasAccessController extends BaseController {
 
     public function request_access($input) {
         try {
-            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             $userId = $this->session->getActiveAccountId();
             $canvasId = $input['canvas_id'] ?? null;
             $termsAccepted = filter_var($input['terms_accepted'] ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -108,7 +108,7 @@ class CanvasAccessController extends BaseController {
 
     public function approve_request($input) {
         try {
-            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             $userId = $this->session->getActiveAccountId();
             $requestId = $input['request_id'] ?? null;
             if (!$requestId) return $this->respond(['success' => false, 'message' => __('err_request_not_provided')]);
@@ -121,7 +121,7 @@ class CanvasAccessController extends BaseController {
 
     public function reject_request($input) {
         try {
-            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             $userId = $this->session->getActiveAccountId();
             $requestId = $input['request_id'] ?? null;
             if (!$requestId) return $this->respond(['success' => false, 'message' => __('err_request_not_provided')]);
@@ -134,7 +134,7 @@ class CanvasAccessController extends BaseController {
 
     public function get_pending_requests($input) {
         try {
-            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             $userId = $this->session->getActiveAccountId();
             $canvasId = $input['canvas_id'] ?? null;
             if (!$canvasId) return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
@@ -147,7 +147,7 @@ class CanvasAccessController extends BaseController {
 
     public function assign_member_role($input) {
         try {
-            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             $userId = $this->session->getActiveAccountId();
             
             $canvasId = $input['canvas_id'] ?? null;
@@ -170,7 +170,7 @@ class CanvasAccessController extends BaseController {
 
     public function remove_member($input) {
         try {
-            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             $userId = $this->session->getActiveAccountId();
             
             $canvasId = $input['canvas_id'] ?? null;
@@ -190,7 +190,7 @@ class CanvasAccessController extends BaseController {
     public function create_live_share($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             $userId = $this->session->getActiveAccountId();
             
@@ -217,7 +217,7 @@ class CanvasAccessController extends BaseController {
     public function generate_invite($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             $userId = $this->session->getActiveAccountId();
 
@@ -252,7 +252,7 @@ class CanvasAccessController extends BaseController {
     public function list_invites($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             $userId = $this->session->getActiveAccountId();
 
@@ -271,7 +271,7 @@ class CanvasAccessController extends BaseController {
     public function revoke_invite($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             $userId = $this->session->getActiveAccountId();
 
@@ -292,7 +292,7 @@ class CanvasAccessController extends BaseController {
     public function join_via_invite($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             $userId = $this->session->getActiveAccountId();
 

@@ -71,17 +71,17 @@ class CanvasLockManager {
                 $requiredTier = $allSizes[$sizeStr]['tier'] ?? 0;
                 if ($tier < $requiredTier) {
                     $isLocked = true;
-                    if (!in_array('size', $lockedReasons)) $lockedReasons[] = 'size';
+                    if (!in_array(\App\Core\System\CanvasConstants::LOCK_REASON_SIZE, $lockedReasons)) $lockedReasons[] = \App\Core\System\CanvasConstants::LOCK_REASON_SIZE;
                 }
 
                 if (isset($canvas['palette_id']) && $canvas['palette_id'] !== 'default' && empty($planLimits['custom_palettes'])) {
                     $isLocked = true;
-                    if (!in_array('palette', $lockedReasons)) $lockedReasons[] = 'palette';
+                    if (!in_array(\App\Core\System\CanvasConstants::LOCK_REASON_PALETTE, $lockedReasons)) $lockedReasons[] = \App\Core\System\CanvasConstants::LOCK_REASON_PALETTE;
                 }
 
                 if ($planLimits['max_members_per_canvas'] !== -1 && $canvas['max_participants'] > $planLimits['max_members_per_canvas']) {
                     $isLocked = true;
-                    if (!in_array('members', $lockedReasons)) $lockedReasons[] = 'members';
+                    if (!in_array(\App\Core\System\CanvasConstants::LOCK_REASON_MEMBERS, $lockedReasons)) $lockedReasons[] = \App\Core\System\CanvasConstants::LOCK_REASON_MEMBERS;
                 }
 
                 $updateStmt->execute([

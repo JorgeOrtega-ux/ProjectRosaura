@@ -35,7 +35,7 @@ if (!$userId || !$canvasId) {
 // Verify ownership: only the canvas owner can generate invites
 if ((int)$userId !== $canvasOwnerId) {
     $userPerms = $_SESSION['user_permissions'] ?? $_SESSION['permissions'] ?? [];
-    $isAdmin = is_array($userPerms) && (in_array('access_admin_panel', $userPerms) || in_array('canvases.manage_official', $userPerms));
+    $isAdmin = is_array($userPerms) && (in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPerms) || in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPerms));
     if (!$isAdmin || $canvasOwnerId !== null) {
         echo "<div class='view-content'><p>".__('err_unauthorized')."</p></div>";
         return;

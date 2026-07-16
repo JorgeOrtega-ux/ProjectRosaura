@@ -20,7 +20,7 @@ $isLoggedIn = $isLoggedIn ?? false;
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 $isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
 
-$isPrivileged = in_array('access_admin_panel', $userPermissions);
+$isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions);
 
 if ($isMaintenanceActive && !$isPrivileged) {
     $currentView = 'system/message.php';
@@ -117,9 +117,9 @@ if ($currentView === 'app/home.php' && class_exists('\App\Api\Services\Canvas\Ca
             if (empty($perms) && isset($_SESSION['user_permissions'])) {
                 $perms = $_SESSION['user_permissions'];
             }
-            $canManageOfficial = in_array('access_admin_panel', $perms) || 
-                                 in_array('canvases.manage_official', $perms) || 
-                                 in_array('canvases.create_official', $perms);
+            $canManageOfficial = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms) || 
+                                 in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms) || 
+                                 in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $perms);
 
             $res = $canvasServices->getHomeFeed($userId, 'all', 20, 0, $canManageOfficial);
             if ($res && isset($res['success']) && $res['success'] && isset($res['data'])) {
