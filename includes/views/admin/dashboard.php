@@ -62,6 +62,16 @@ $canManageMessages = true; // Por ahora todos los admins
                         <span class="component-stat-card__value" id="stat-pageviews">--</span>
                     </div>
                 </div>
+
+                <div class="component-item-card component-stat-card">
+                    <div class="component-card__icon-container component-card__icon-container--bordered component-stat-card__icon">
+                        <span class="material-symbols-rounded">info</span>
+                    </div>
+                    <div class="component-stat-card__content">
+                        <span class="component-stat-card__title">Versión del Sistema</span>
+                        <span class="component-stat-card__value" style="font-size: 20px;">v<?php echo $_ENV['APP_VERSION'] ?? '1.0.0'; ?></span>
+                    </div>
+                </div>
             </div>
 
         </div> 

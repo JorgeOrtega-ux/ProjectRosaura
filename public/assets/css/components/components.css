@@ -4087,7 +4087,7 @@ input:checked + .component-toggle-slider:before {
     transition: transform 0.2s ease;
 }
 .chat-attachment-item:hover img {
-    transform: scale(1.05);
+    /* transform removed */
 }
 
 .chat-attachment-item-overlay {
@@ -4109,11 +4109,13 @@ input:checked + .component-toggle-slider:before {
     width: 100%;
     height: 100%;
     min-height: calc(100vh - 160px);
+    padding: 24px;
+    box-sizing: border-box;
 }
 
 .component-image-viewer-image {
     max-width: 100%;
-    max-height: calc(100vh - 160px);
+    max-height: calc(100vh - 208px);
     object-fit: contain;
     border-radius: 12px;
     box-shadow: var(--shadow-card, 0 4px 12px rgba(0,0,0,0.15));

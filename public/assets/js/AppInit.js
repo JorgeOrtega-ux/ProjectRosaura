@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const showWelcomeFlow = async () => {
-        if (!window.dialogSystem || !window.AppUserFlags) return;
+        if (!window.dialogSystem || !window.AppUserFlags || !window.APP_USER) return;
         if (window.AppUserFlags.includes('welcome_modal_seen')) {
             return;
         }
