@@ -152,62 +152,7 @@ $selectedModules = $schemaConfig['_modules'] ?? [
 
                 </div>
 
-                <div class="component-card--grouped component-accordion <?php echo !$autoEnabled ? 'disabled' : ''; ?>" data-ref="wrapper-auto-modules" data-form-group="admin-auto-form">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="auto_modules_settings">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('auto_backup_modules_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('auto_backup_modules_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
-                        </div>
-                    </div>
-                    
-                    <div class="component-accordion-body">
-                        <div class="component-accordion-content">
-                            
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                                        <span class="material-symbols-rounded">folder_shared</span>
-                                    </div>
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('auto_backup_uploaded_avatars_title'); ?></h2>
-                                        <p class="component-card__description"><?php echo __('auto_backup_uploaded_avatars_desc'); ?></p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" data-ref="auto-module-uploaded" data-action="toggleAutoModule" <?php echo !empty($selectedModules['avatars_uploaded']) ? 'checked' : ''; ?>>
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <hr class="component-divider">
-                            
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                                        <span class="material-symbols-rounded">folder_special</span>
-                                    </div>
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('auto_backup_default_avatars_title'); ?></h2>
-                                        <p class="component-card__description"><?php echo __('auto_backup_default_avatars_desc'); ?></p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" data-ref="auto-module-default" data-action="toggleAutoModule" <?php echo !empty($selectedModules['avatars_default']) ? 'checked' : ''; ?>>
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <div class="component-card--grouped component-accordion <?php echo !$autoEnabled ? 'disabled' : ''; ?>" data-ref="wrapper-auto-schema" data-form-group="admin-auto-form">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="auto_schema_root">

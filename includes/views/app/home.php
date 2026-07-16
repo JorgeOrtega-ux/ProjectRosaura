@@ -6,13 +6,13 @@ $initialCanvasesJson = $initialCanvasesJson ?? '[]';
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="purchase-history-wrapper">
         
         <div class="component-top">
-            <div class="component-top-right" style="width: 100%;">
-                <div class="component-tags-carousel-wrapper" style="position: relative; width: 100%; display: flex; align-items: center;">
-                    <button class="component-tag-nav-btn component-tag-nav-left" data-action="scrollTagsLeft" style="display: none;">
+            <div class="component-top-right component-top-right--full">
+                <div class="component-tags-carousel-wrapper">
+                    <button class="component-tag-nav-btn component-tag-nav-left disabled" data-action="scrollTagsLeft">
                         <span class="material-symbols-rounded">chevron_left</span>
                     </button>
 
-                    <div class="component-tags-carousel" data-ref="home-tags-carousel" style="display: flex; gap: 8px; overflow-x: auto; scroll-behavior: smooth; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; flex: 1; padding: 4px 10px;">
+                    <div class="component-tags-carousel" data-ref="home-tags-carousel">
                         <button class="component-badge component-badge--interactive active" data-action="filterHomeTag" data-tag="all">
                             <span class="material-symbols-rounded">explore</span>
                             <?php echo __('filter_all_canvases'); ?>
@@ -38,7 +38,7 @@ $initialCanvasesJson = $initialCanvasesJson ?? '[]';
                         <?php endforeach; ?>
                     </div>
 
-                    <button class="component-tag-nav-btn component-tag-nav-right" data-action="scrollTagsRight" style="display: none;">
+                    <button class="component-tag-nav-btn component-tag-nav-right disabled" data-action="scrollTagsRight">
                         <span class="material-symbols-rounded">chevron_right</span>
                     </button>
                 </div>

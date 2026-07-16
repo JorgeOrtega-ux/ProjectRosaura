@@ -168,6 +168,11 @@ return [
         'action' => 'getMessages',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_get_messages', 'max' => 60, 'time' => 1, 'identifier' => 'user_id']]
     ],
+    'admin.update_message_visibility' => [
+        'controller' => 'App\Api\Controllers\Admin\AdminController',
+        'action' => 'updateMessageVisibility',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_upd_msg', 'max' => 30, 'time' => 1, 'identifier' => 'user_id']]
+    ],
 
     'admin.get_dashboard_metrics' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',

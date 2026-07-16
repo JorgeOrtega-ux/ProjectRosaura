@@ -29,6 +29,7 @@ export class SpaRouter {
         if (url.startsWith('/canvases/edit/')) return '/canvases/edit/:uuid';
         if (url.startsWith('/canvases/members/') && url.includes('/role/')) return '/canvases/members/:uuid/role/:id';
         if (url.startsWith('/canvases/members/')) return '/canvases/members/:uuid';
+        if (url.startsWith('/admin/messages/visibility/')) return '/admin/messages/visibility/:uuid';
         
         return url;
     }
@@ -199,7 +200,13 @@ export class SpaRouter {
                     }
                 }
 
-                let cleanUrl = url.split('?')[0].split('#')[0];
+                let cleanUrl = url;
+                try {
+                    if (url.startsWith('http')) {
+                        cleanUrl = new URL(url).pathname;
+                    }
+                } catch(e) {}
+                cleanUrl = cleanUrl.split('?')[0].split('#')[0];
                 
                 if (cleanUrl.endsWith('/') && cleanUrl.length > 1) {
                     cleanUrl = cleanUrl.slice(0, -1);

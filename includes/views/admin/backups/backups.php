@@ -199,7 +199,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                     <thead>
                         <tr>
                             <th><?php echo __('table_header_file'); ?></th>
-                            <th class="hide-mobile"><?php echo __('table_header_content'); ?></th>
+
                             <th><?php echo __('table_header_type'); ?></th>
                             <th><?php echo __('table_header_status'); ?></th>
                             <th><?php echo __('table_header_size'); ?></th>
@@ -226,12 +226,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="hide-mobile">
-                                        <div>
-                                            <span class="material-symbols-rounded" title="<?php echo __('title_database'); ?>">database</span>
-                                            <span class="material-symbols-rounded" title="<?php echo __('title_physical_files'); ?>">folder_zip</span>
-                                        </div>
-                                    </td>
+
                                     <td>
                                         <div class="component-badge component-badge--sm">
                                             <span class="material-symbols-rounded">settings</span>
@@ -260,7 +255,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                             <?php endforeach; ?>
                             
                             <tr class="disabled" data-ref="empty-search-table">
-                                <td colspan="6" class="component-empty-table-cell">
+                                <td colspan="5" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
                                         <p class="component-empty-state-text"><?php echo __('empty_search_backups'); ?></p>
@@ -270,7 +265,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
 
                         <?php else: ?>
                             <tr>
-                                <td colspan="6" class="component-empty-table-cell">
+                                <td colspan="5" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">cloud_off</span>
                                         <p class="component-empty-state-text"><?php echo __('empty_backups_system'); ?></p>

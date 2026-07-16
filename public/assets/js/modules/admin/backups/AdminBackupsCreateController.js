@@ -73,9 +73,7 @@ class AdminBackupsCreateController {
             }
             this.updateUIState(); 
         }
-        if (e.target && (e.target.getAttribute('data-ref') === 'cb-module-db' || 
-                         e.target.getAttribute('data-ref') === 'cb-module-uploaded' || 
-                         e.target.getAttribute('data-ref') === 'cb-module-default')) {
+        if (e.target && e.target.getAttribute('data-ref') === 'cb-module-db') {
             this.validateSelection();
         }
     }
@@ -179,10 +177,10 @@ class AdminBackupsCreateController {
             const badge = document.querySelector(`[data-badge="${dbName}"]`);
             if (badge) {
                 if (!isExpanded && selectedCount > 0) {
-                    badge.classList.remove('disabled'); .classList.add('active');
+                    badge.classList.remove('disabled'); badge.classList.add('active');
                     badge.textContent = `${selectedCount}/${totalCount} seleccionadas`;
                 } else {
-                    .classList.remove('active'); .classList.add('disabled');
+                    badge.classList.remove('active'); badge.classList.add('disabled');
                 }
             }
         }
@@ -201,9 +199,7 @@ class AdminBackupsCreateController {
             }
         }
         const cbDb = document.querySelector('[data-ref="cb-module-db"]')?.checked;
-        const cbUploaded = document.querySelector('[data-ref="cb-module-uploaded"]')?.checked;
-        const cbDefault = document.querySelector('[data-ref="cb-module-default"]')?.checked;
-        if ((cbDb && hasSchemaSelection) || cbUploaded || cbDefault) {
+        if (cbDb && hasSchemaSelection) {
             confirmBtn.classList.remove('disabled-interaction');
         } else {
             confirmBtn.classList.add('disabled-interaction');
@@ -219,9 +215,7 @@ class AdminBackupsCreateController {
             }
         }
         const payloadModules = {
-            db: document.querySelector('[data-ref="cb-module-db"]')?.checked || false,
-            avatars_uploaded: document.querySelector('[data-ref="cb-module-uploaded"]')?.checked || false,
-            avatars_default: document.querySelector('[data-ref="cb-module-default"]')?.checked || false
+            db: document.querySelector('[data-ref="cb-module-db"]')?.checked || false
         };
         const originalText = setButtonLoading(btn);
         showMessage(__('msg_sending_custom_schema'), 'success');

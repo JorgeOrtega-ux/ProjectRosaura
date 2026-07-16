@@ -35,7 +35,7 @@ if ($page > $totalPages) {
 $messages = [];
 try {
     $stmt = $pdoCanvases->prepare("
-        SELECT m.id, m.user_id, m.message, m.visibility, m.created_at, m.canvas_id
+        SELECT m.id, m.uuid, m.user_id, m.message, m.attachments, m.visibility, m.created_at, m.canvas_id
         FROM canvas_chat_messages m
         ORDER BY m.id DESC 
         LIMIT :limit OFFSET :offset
@@ -51,14 +51,16 @@ try {
         $canvasMap = [];
         if (!empty($canvasIds)) {
             $cPlaceholders = implode(',', array_fill(0, count($canvasIds), '?'));
-            $cStmt = $pdoCanvases->prepare("SELECT id, name FROM canvases WHERE id IN ($cPlaceholders)");
+            $cStmt = $pdoCanvases->prepare("SELECT id, uuid, name FROM canvases WHERE id IN ($cPlaceholders)");
             $cStmt->execute($canvasIds);
             while ($cRow = $cStmt->fetch(PDO::FETCH_ASSOC)) {
-                $canvasMap[$cRow['id']] = $cRow['name'];
+                $canvasMap[$cRow['id']] = ['name' => $cRow['name'], 'uuid' => $cRow['uuid']];
             }
         }
         foreach ($messages as &$msg) {
-            $msg['canvas_name'] = $canvasMap[$msg['canvas_id']] ?? 'ID: ' . $msg['canvas_id'];
+            $cData = $canvasMap[$msg['canvas_id']] ?? null;
+            $msg['canvas_name'] = $cData ? $cData['name'] : 'ID: ' . $msg['canvas_id'];
+            $msg['canvas_uuid'] = $cData ? $cData['uuid'] : '';
         }
         unset($msg);
     }
@@ -79,12 +81,14 @@ try {
                 if ($data) {
                     $redisMessages[] = [
                         'id' => 'REDIS-' . ($data['temp_id'] ?? rand(1000,9999)),
+                        'uuid' => 'REDIS-' . ($data['temp_id'] ?? rand(1000,9999)),
                         'user_id' => $data['user_id'],
                         'message' => htmlspecialchars_decode($data['message'] ?? '', ENT_QUOTES),
-                        'visibility' => 'visible', // Redis messages are usually visible until saved
+                        'attachments' => $data['attachments'] ?? null,
+                        'visibility' => 'visible',
                         'created_at' => $data['created_at'] ?? date('Y-m-d H:i:s'),
                         'canvas_id' => $data['canvas_id'] ?? 0,
-                        'canvas_name' => 'ID: ' . ($data['canvas_id'] ?? 0) // Placeholder
+                        'canvas_name' => 'ID: ' . ($data['canvas_id'] ?? 0)
                     ];
                 }
             }
@@ -123,10 +127,18 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page 
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title">Gestionar Mensajes</h1>
+                <h1 class="component-top-title"><?php echo __('admin_manage_messages'); ?></h1>
             </div>
             
             <div class="component-top-right">
+                <div class="component-actions disabled" data-ref="header-selection-actions">
+                    <button class="component-button component-button--icon component-button--h40" data-action="editMessageVisibility" data-tooltip="<?php echo __('tooltip_change_visibility'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">visibility</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h40" data-action="deselectMessage" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
+                </div>
                 <div class="component-actions active" data-ref="header-default-actions">
                     <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]); ?>" data-position="bottom">
                         <div class="component-inline-control__group">
@@ -150,12 +162,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page 
                 <table class="component-table component-table--hoverable">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Mensaje</th>
-                            <th>Visibilidad</th>
-                            <th>Remitente</th>
-                            <th>Grupo (Lienzo)</th>
-                            <th>Fecha</th>
+                            <th><?php echo __('table_id'); ?></th>
+                            <th><?php echo __('table_message'); ?></th>
+                            <th><?php echo __('table_visibility'); ?></th>
+                            <th><?php echo __('table_sender'); ?></th>
+                            <th><?php echo __('table_canvas_group'); ?></th>
+                            <th><?php echo __('table_date'); ?></th>
                         </tr>
                     </thead>
                     <tbody data-ref="messages-tbody">
@@ -164,28 +176,49 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page 
                             <td colspan="6" class="component-table-empty">
                                 <div class="component-table-empty__content">
                                     <span class="material-symbols-rounded component-table-empty__icon">chat</span>
-                                    <p class="component-table-empty__text">No hay mensajes disponibles</p>
+                                    <p class="component-table-empty__text"><?php echo __('admin_msg_empty_list'); ?></p>
                                 </div>
                             </td>
                         </tr>
                         <?php else: ?>
                             <?php foreach ($messages as $msg): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($msg['id']); ?></td>
+                            <tr class="component-table-row" data-action="selectMessage" data-message-uuid="<?php echo htmlspecialchars($msg['uuid']); ?>">
+                                <td><span class="component-badge component-badge--sm"><?php echo htmlspecialchars($msg['id']); ?></span></td>
                                 <td>
                                     <?php 
-                                        $snippet = mb_substr(strip_tags($msg['message']), 0, 100);
-                                        echo htmlspecialchars($snippet) . (mb_strlen($msg['message']) > 100 ? '...' : ''); 
+                                        $rawAttachments = $msg['attachments'] ?? null;
+                                        $attachCount = 0;
+                                        if (!empty($rawAttachments)) {
+                                            $decoded = is_string($rawAttachments) ? json_decode($rawAttachments, true) : $rawAttachments;
+                                            $attachCount = is_array($decoded) ? count($decoded) : 0;
+                                        }
+                                        $textContent = trim(strip_tags($msg['message'] ?? ''));
+                                        $snippet = mb_substr($textContent, 0, 100);
+
+                                        $badgeContent = '';
+                                        if (!empty($snippet)) {
+                                            $badgeContent .= htmlspecialchars($snippet) . (mb_strlen($textContent) > 100 ? '...' : '');
+                                        }
+                                        if ($attachCount > 0) {
+                                            if (!empty($snippet)) $badgeContent .= ' ';
+                                            $viewerUrl = $appUrl . '/canvases/chat-viewer?canvas=' . urlencode($msg['canvas_uuid']) . '&msg=' . urlencode($msg['id']) . '&idx=0';
+                                            $badgeContent .= '<a class="component-table-inline-icon" data-nav="' . htmlspecialchars($viewerUrl) . '"><span class="material-symbols-rounded">image</span> ' . $attachCount . '</a>';
+                                        }
+                                        if (empty($snippet) && $attachCount === 0) {
+                                            $badgeContent .= '<span class="component-text-notice--muted">' . __('admin_msg_empty') . '</span>';
+                                        }
+                                        
+                                        echo '<span class="component-badge component-badge--sm">' . $badgeContent . '</span>';
                                     ?>
                                 </td>
                                 <td>
-                                    <span class="component-badge component-badge--<?php echo $msg['visibility'] === 'visible' ? 'success' : ($msg['visibility'] === 'deleted' ? 'danger' : 'warning'); ?>">
+                                    <span class="component-badge component-badge--sm component-badge--<?php echo $msg['visibility'] === 'visible' ? 'success' : ($msg['visibility'] === 'deleted' ? 'danger' : 'warning'); ?>">
                                         <?php echo htmlspecialchars($msg['visibility']); ?>
                                     </span>
                                 </td>
-                                <td><?php echo htmlspecialchars($msg['username']); ?></td>
-                                <td><?php echo htmlspecialchars($msg['canvas_name'] ?? 'ID: '.$msg['canvas_id']); ?></td>
-                                <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($msg['created_at']))); ?></td>
+                                <td><span class="component-badge component-badge--sm"><?php echo htmlspecialchars($msg['username']); ?></span></td>
+                                <td><span class="component-badge component-badge--sm"><?php echo htmlspecialchars($msg['canvas_name'] ?? 'ID: '.$msg['canvas_id']); ?></span></td>
+                                <td><span class="component-badge component-badge--sm"><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($msg['created_at']))); ?></span></td>
                             </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -193,6 +226,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page 
                 </table>
             </div>
         </div>
+        
         
     </div>
 </div>

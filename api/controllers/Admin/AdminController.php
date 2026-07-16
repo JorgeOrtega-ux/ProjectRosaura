@@ -352,4 +352,18 @@ class AdminController extends BaseController {
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
+
+    public function updateMessageVisibility($input) {
+        try {
+            $this->requirePermission('view_logs');
+            $data = [
+                'uuid' => $input['uuid'] ?? null,
+                'visibility' => $input['visibility'] ?? null,
+                'deleted_by' => $input['deleted_by'] ?? null,
+                'delete_reason' => $input['delete_reason'] ?? null
+            ];
+            return $this->respond($this->adminServices->updateMessageVisibility($data));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
 }

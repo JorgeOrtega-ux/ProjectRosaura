@@ -352,7 +352,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/manage-users?page=' . ($p
                                                 $eKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower($eName));
                                                 $eTrans = __($eKey);
                                             ?>
-                                                <span class="search-target" data-role-original-name="<?php echo htmlspecialchars($eName); ?>" style="display: none;">
+                                                <span class="search-target disabled" data-role-original-name="<?php echo htmlspecialchars($eName); ?>">
                                                     <?php echo htmlspecialchars($eTrans); ?>
                                                 </span>
                                             <?php endforeach; ?>

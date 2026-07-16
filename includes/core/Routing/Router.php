@@ -164,6 +164,16 @@ class Router {
             exit;
         }
 
+        if (preg_match('#^/admin/messages/visibility/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/admin/messages/visibility/:uuid'] ?? [
+                'view' => 'admin/messages/edit-visibility.php',
+                'auth' => true,
+                'permissions' => ['view_logs'],
+                'requires_2fa' => false
+            ];
+        }
+
         if (!array_key_exists($relativePath, $this->routes)) {
             Logger::warning("Route not found (404)", [
                 'uri' => $requestUri, 

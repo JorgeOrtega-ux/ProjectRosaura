@@ -1188,7 +1188,7 @@ class AdminServices {
         $totalPages = ceil($totalItems / $limit);
 
         $stmt = $pdoCanvases->prepare("
-            SELECT m.id, m.user_id, m.message, m.visibility, m.created_at, m.canvas_id, c.name as canvas_name
+            SELECT m.id, m.uuid, m.user_id, m.message, m.visibility, m.created_at, m.canvas_id, c.name as canvas_name
             FROM canvas_chat_messages m
             LEFT JOIN canvases c ON m.canvas_id = c.id
             ORDER BY m.id DESC
@@ -1226,6 +1226,58 @@ class AdminServices {
                 'total_items' => $totalItems,
                 'total_pages' => $totalPages
             ]
+        ];
+    }
+
+    public function updateMessageVisibility(array $data) {
+        $this->requirePermission('view_logs'); // Required permission for this action
+        
+        $messageUuid = $data['uuid'] ?? null;
+        $visibility = $data['visibility'] ?? 'visible';
+        $deletedBy = $data['deleted_by'] ?? null;
+        $deleteReason = $data['delete_reason'] ?? null;
+        
+        if (!$messageUuid) {
+            throw new \Exception("UUID de mensaje requerido.");
+        }
+        
+        if (!in_array($visibility, ['visible', 'under_review', 'deleted'])) {
+            throw new \Exception("Visibilidad no válida.");
+        }
+
+        if ($visibility !== 'deleted') {
+            $deletedBy = null;
+            $deleteReason = null;
+        } else {
+            if (!in_array($deletedBy, ['user', 'admin'])) {
+                $deletedBy = null;
+            }
+            if ($deletedBy !== 'admin') {
+                $deleteReason = null;
+            }
+        }
+        
+        $dbManager = new DatabaseManager();
+        $pdoCanvases = $dbManager->getConnection(DB::CONN_CANVASES);
+        
+        $stmt = $pdoCanvases->prepare("
+            UPDATE canvas_chat_messages 
+            SET visibility = :visibility, 
+                deleted_by = :deleted_by, 
+                delete_reason = :delete_reason 
+            WHERE uuid = :uuid
+        ");
+        
+        $stmt->execute([
+            ':visibility' => $visibility,
+            ':deleted_by' => $deletedBy,
+            ':delete_reason' => $deleteReason,
+            ':uuid' => $messageUuid
+        ]);
+        
+        return [
+            'success' => true,
+            'message' => 'Visibilidad actualizada correctamente.'
         ];
     }
 }

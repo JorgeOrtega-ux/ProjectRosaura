@@ -78,15 +78,15 @@ class HomeController {
         if (!carousel || !leftBtn || !rightBtn) return;
         
         if (carousel.scrollLeft > 0) {
-            leftBtn.style.display = 'flex';
+            leftBtn.classList.remove('disabled');
         } else {
-            leftBtn.style.display = 'none';
+            leftBtn.classList.add('disabled');
         }
         
         if (carousel.scrollWidth > carousel.clientWidth && Math.ceil(carousel.scrollLeft + carousel.clientWidth) < carousel.scrollWidth) {
-            rightBtn.style.display = 'flex';
+            rightBtn.classList.remove('disabled');
         } else {
-            rightBtn.style.display = 'none';
+            rightBtn.classList.add('disabled');
         }
     }
 

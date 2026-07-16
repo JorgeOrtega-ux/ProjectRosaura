@@ -225,12 +225,15 @@ FLUSH PRIVILEGES;
 
 CREATE TABLE IF NOT EXISTS `canvas_chat_messages` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `uuid` VARCHAR(36) NOT NULL UNIQUE,
     `canvas_id` INT NOT NULL,
     `user_id` INT NOT NULL,
     `message` TEXT NOT NULL,
     `attachments` JSON DEFAULT NULL,
     `file_size` BIGINT(20) NOT NULL DEFAULT 0,
     `visibility` ENUM('visible','under_review','deleted') NOT NULL DEFAULT 'visible',
+    `deleted_by` VARCHAR(50) DEFAULT NULL,
+    `delete_reason` TEXT DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX (`canvas_id`),
     INDEX (`created_at`),

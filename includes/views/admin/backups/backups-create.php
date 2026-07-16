@@ -51,46 +51,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                     </label>
                                 </div>
                             </div>
-
-                            <hr class="component-divider">
-
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                                        <span class="material-symbols-rounded">folder_shared</span>
-                                    </div>
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('backup_uploaded_avatars_title'); ?></h2>
-                                        <p class="component-card__description"><?php echo __('backup_uploaded_avatars_desc'); ?></p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" data-ref="cb-module-uploaded">
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <hr class="component-divider">
-
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                                        <span class="material-symbols-rounded">folder_special</span>
-                                    </div>
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('backup_default_avatars_title'); ?></h2>
-                                        <p class="component-card__description"><?php echo __('backup_default_avatars_desc'); ?></p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" data-ref="cb-module-default">
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>

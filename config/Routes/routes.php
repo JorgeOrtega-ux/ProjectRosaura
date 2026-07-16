@@ -59,6 +59,7 @@ return [
     '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => ['access_admin_panel'], 'requires_2fa' => false],
     '/admin/dashboard' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => ['access_admin_panel'], 'requires_2fa' => false],
     '/admin/messages' => ['view' => 'admin/messages/manage-messages.php', 'auth' => true, 'permissions' => ['view_logs'], 'requires_2fa' => false],
+    '/admin/messages/visibility/:uuid' => ['view' => 'admin/messages/edit-visibility.php', 'auth' => true, 'permissions' => ['view_logs'], 'requires_2fa' => false],
     '/admin/manage-users' => ['view' => 'admin/users/manage-users.php', 'auth' => true, 'permissions' => ['view_users'], 'requires_2fa' => false],
     '/admin/edit-user' => ['view' => 'admin/users/edit-user.php', 'auth' => true, 'permissions' => ['edit_users'], 'requires_2fa' => false],
     '/admin/edit-status' => ['view' => 'admin/users/edit-status.php', 'auth' => true, 'permissions' => ['moderate_users'], 'requires_2fa' => false],

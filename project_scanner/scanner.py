@@ -48,8 +48,9 @@ def get_code_from_redis(email, code_type):
         "redis-cli", "-a", redis_pass, "GET", f"vercode:ident:{email}:{code_type}"
     ]
     try:
-        id_res = subprocess.check_output(cmd1, stderr=subprocess.STDOUT).decode('utf-8').strip()
-        id_res = id_res.split('\n')[-1].strip()
+        id_res = subprocess.check_output(cmd1).decode('utf-8').strip()
+        if 'Warning:' in id_res:
+            id_res = id_res.split('\n')[-1].strip()
         
         if id_res == "(nil)" or not id_res:
             return None
@@ -58,8 +59,9 @@ def get_code_from_redis(email, code_type):
             "docker", "exec", "-i", "rosaura_redis",
             "redis-cli", "-a", redis_pass, "GET", f"vercode:id:{id_res}"
         ]
-        json_res = subprocess.check_output(cmd2, stderr=subprocess.STDOUT).decode('utf-8').strip()
-        json_res = json_res.split('\n')[-1].strip()
+        json_res = subprocess.check_output(cmd2).decode('utf-8').strip()
+        if 'Warning:' in json_res:
+            json_res = json_res.split('\n')[-1].strip()
 
         if json_res and json_res != "(nil)":
             data = json.loads(json_res)

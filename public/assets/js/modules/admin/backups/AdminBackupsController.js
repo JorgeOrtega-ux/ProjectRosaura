@@ -149,7 +149,7 @@ class AdminBackupsController {
             else window.location.href = url;
         } finally {
             if (tableContainer) {
-                .classList.remove('disabled-interactive');
+                tableContainer.classList.remove('disabled-interactive');
             }
         }
     }

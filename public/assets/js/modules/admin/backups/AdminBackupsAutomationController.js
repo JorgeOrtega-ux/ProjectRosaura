@@ -10,9 +10,7 @@ class AdminBackupsAutomationController {
         this.selectedState = {}; 
         this.expandedAccordions = {}; 
         this.selectedModules = {
-            db: true,
-            avatars_uploaded: false,
-            avatars_default: false
+            db: true
         };
         this.abortController = null;
         this.freqMap = {
@@ -64,10 +62,6 @@ class AdminBackupsAutomationController {
             const autoFreq = freqTextNode ? parseInt(freqTextNode.getAttribute('data-val')) : 24;
             const retentionNode = document.querySelector('[data-ref="val_auto_backup_retention_count"]');
             const autoRetention = retentionNode ? parseInt(retentionNode.getAttribute('data-val')) : 5;
-            const modUp = document.querySelector('[data-ref="auto-module-uploaded"]');
-            const modDef = document.querySelector('[data-ref="auto-module-default"]');
-            this.selectedModules.avatars_uploaded = modUp ? modUp.checked : false;
-            this.selectedModules.avatars_default = modDef ? modDef.checked : false;
             this.selectedState = {};
             for (const dbName in this.availableSchema) {
                 this.selectedState[dbName] = [];
@@ -128,9 +122,6 @@ class AdminBackupsAutomationController {
             this.checkForChanges();
         }
         if (e.target && e.target.getAttribute('data-action') === 'toggleAutoModule') {
-            const ref = e.target.getAttribute('data-ref');
-            if (ref === 'auto-module-uploaded') this.selectedModules.avatars_uploaded = e.target.checked;
-            if (ref === 'auto-module-default') this.selectedModules.avatars_default = e.target.checked;
             this.syncSchemaState();
         }
         if (e.target && e.target.classList.contains('auto-schema-db-cb')) {
@@ -176,10 +167,10 @@ class AdminBackupsAutomationController {
             const badge = document.querySelector(`[data-badge="${dbName}"]`);
             if (badge) {
                 if (!isExpanded && selectedCount > 0) {
-                    badge.classList.remove('disabled'); .classList.add('active');
+                    badge.classList.remove('disabled'); badge.classList.add('active');
                     badge.textContent = `${selectedCount}/${totalCount} seleccionadas`;
                 } else {
-                    .classList.remove('active'); .classList.add('disabled');
+                    badge.classList.remove('active'); badge.classList.add('disabled');
                 }
             }
         }
