@@ -107,7 +107,11 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <base href="<?php echo APP_URL; ?>/">
+    <?php
+    $appPath = parse_url(APP_URL, PHP_URL_PATH) ?? '';
+    $appPath = rtrim($appPath, '/');
+    ?>
+    <base href="<?php echo $appPath; ?>/">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken ?? '', ENT_QUOTES, 'UTF-8'); ?>">
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
@@ -122,7 +126,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
     <script>
-        window.AppBasePath = "<?php echo APP_URL; ?>";
+        window.AppBasePath = "<?php echo $appPath; ?>";
         window.AppName = "<?php echo APP_NAME; ?>";
         window.AppRouteTitles = <?php echo json_encode($routeTitles); ?>;
         window.AppSystemDegraded = <?php echo $isDegraded ? 'true' : 'false'; ?>;
