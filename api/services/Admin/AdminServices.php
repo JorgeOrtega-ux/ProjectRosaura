@@ -1153,22 +1153,59 @@ class AdminServices {
         $pvData = $formatDataset($pageviews, $labels);
         $loginData = $formatDataset($logins, $labels);
 
+        $loginFailedData = $formatDataset($this->telemetryRepository->getAuthEventsOverTime($start, $end, 'login_failed'), $labels);
+
         $totalRegs = array_sum($regData);
         $totalPv = array_sum($pvData);
         $totalLogins = array_sum($loginData);
+
+        // Fetch extra metrics
+        $dbManager = new \App\Config\Database\DatabaseManager();
+        $pdoCanvases = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
+        $pdoIdentity = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+        $pdoTelemetry = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_TELEMETRY);
+        
+        $totalMessages = 0;
+        try { $totalMessages = (int)$pdoCanvases->query("SELECT COUNT(*) FROM canvas_chat_messages")->fetchColumn(); } catch (\Exception $e) {}
+
+        $totalCanvases = 0;
+        try { $totalCanvases = (int)$pdoCanvases->query("SELECT COUNT(*) FROM " . \App\Core\System\DatabaseConstants::TBL_CANVASES)->fetchColumn(); } catch (\Exception $e) {}
+
+        $totalBanned = 0;
+        try { $totalBanned = (int)$pdoIdentity->query("SELECT COUNT(*) FROM " . \App\Core\System\DatabaseConstants::TBL_USERS . " WHERE is_suspended = 1")->fetchColumn(); } catch (\Exception $e) {}
+
+        $avgLatency = 0.0;
+        try { 
+            $avgLatency = (float)$pdoTelemetry->query("SELECT AVG(latency_ms) FROM " . \App\Core\System\DatabaseConstants::TBL_TELEMETRY_API_LATENCY)->fetchColumn(); 
+            $avgLatency = round($avgLatency, 2);
+        } catch (\Exception $e) {}
+
+        $privacyCounts = ['public' => 0, 'private' => 0, 'unlisted' => 0];
+        try {
+            $privacyData = $pdoCanvases->query("SELECT privacy, COUNT(*) as count FROM " . \App\Core\System\DatabaseConstants::TBL_CANVASES . " GROUP BY privacy")->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($privacyData as $row) {
+                $privacyCounts[$row['privacy']] = (int)$row['count'];
+            }
+        } catch (\Exception $e) {}
 
         return [
             'success' => true,
             'summary' => [
                 'new_users' => $totalRegs,
                 'pageviews' => $totalPv,
-                'logins' => $totalLogins
+                'logins' => $totalLogins,
+                'messages' => $totalMessages,
+                'canvases' => $totalCanvases,
+                'banned_users' => $totalBanned,
+                'avg_latency' => $avgLatency
             ],
             'charts' => [
                 'labels' => $labels,
                 'registrations' => $regData,
                 'pageviews' => $pvData,
-                'logins' => $loginData
+                'logins' => $loginData,
+                'login_fails' => $loginFailedData,
+                'privacy' => $privacyCounts
             ]
         ];
     }

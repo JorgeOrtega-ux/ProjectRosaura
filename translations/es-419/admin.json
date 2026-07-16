@@ -383,5 +383,17 @@
             "name": "Eliminar usuarios",
             "desc": "Puede eliminar cuentas de usuario permanentemente."
         }
-    }
+    },
+    "admin_dashboard_detailed_metrics": "Métricas Detalladas",
+    "admin_dashboard_avg_latency": "Latencia Promedio",
+    "admin_dashboard_total_messages": "Mensajes Totales",
+    "admin_dashboard_total_canvases": "Lienzos Totales",
+    "admin_dashboard_suspended_users": "Usuarios Suspendidos",
+    "admin_dashboard_ad_revenue": "Ingresos por Anuncios",
+    "admin_dashboard_requires_api": "Requiere API",
+    "admin_dashboard_system_version": "Versión del Sistema",
+    "admin_dashboard_global_activity": "Actividad Global",
+    "admin_dashboard_new_registrations": "Nuevos Registros",
+    "admin_dashboard_access_errors": "Errores de Acceso",
+    "admin_dashboard_login_fails": "Logins Fallidos"
 }
