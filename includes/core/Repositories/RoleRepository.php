@@ -356,6 +356,15 @@ class RoleRepository implements RoleRepositoryInterface {
                 $insertStmt = $this->pdo->prepare("INSERT INTO {$tblRolePerms} (role_id, permission_id) VALUES {$placeholders}");
                 $insertStmt->execute($values);
             }
+
+            $tblUserRoles = DB::TBL_USER_ROLES;
+            $userStmt = $this->pdo->prepare("SELECT user_id FROM {$tblUserRoles} WHERE role_id = ?");
+            $userStmt->execute([$roleId]);
+            $affectedUsers = $userStmt->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($affectedUsers as $uid) {
+                $this->invalidateUserCache($uid);
+            }
+
             $this->pdo->commit();
             $this->invalidateRoleCache($roleId);
 

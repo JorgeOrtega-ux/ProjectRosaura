@@ -15,10 +15,12 @@ use App\Config\Database\RedisCache;
 class CanvasRepository implements CanvasRepositoryInterface {
     private $db;
     private TypesenseManager $typesenseManager;
+    private $redisCache;
     private $redisClient;
     public function __construct(DatabaseManager $databaseManager, TypesenseManager $typesenseManager, RedisCache $redisCache = null) {
         $this->db = $databaseManager->getConnection(DB::CONN_CANVASES);
         $this->typesenseManager = $typesenseManager;
+        $this->redisCache = $redisCache;
         $this->redisClient = $redisCache ? $redisCache->getClient() : null;
     }
 
@@ -105,6 +107,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             if ($stmt->rowCount() > 0) {
                 $stmtUpdate = $this->db->prepare("UPDATE " . DB::TBL_CANVASES . " SET members_count = members_count + 1 WHERE id = :cid");
                 $stmtUpdate->execute([':cid' => $canvasId]);
+                $this->invalidateCanvasCache($canvasId);
             }
             
             $this->assignMemberRole($canvasId, $userId, $roleId);
@@ -130,42 +133,51 @@ class CanvasRepository implements CanvasRepositoryInterface {
             }
         }
 
-        $orderClause = "ORDER BY c.created_at DESC";
-        if ($sort === 'oldest') {
-            $orderClause = "ORDER BY c.created_at ASC";
-        } elseif ($sort === 'members') {
-            $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
+        $fetchClosure = function() use ($limit, $currentUserId, $sort, $offset) {
+            $orderClause = "ORDER BY c.created_at DESC";
+            if ($sort === 'oldest') {
+                $orderClause = "ORDER BY c.created_at ASC";
+            } elseif ($sort === 'members') {
+                $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
+            }
+
+            $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, c.favorites_count,
+                           CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
+                           c.members_count
+                    FROM " . DB::TBL_CANVASES . " c
+                    LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
+                    WHERE c.privacy = 'public' AND c.scope_type = 'personal' AND c.is_locked = 0
+                    $orderClause 
+                    LIMIT :limit OFFSET :offset";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':current_user_id', $currentUserId ?? 0, PDO::PARAM_INT);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            
+            $results = array_map(function($canvas) {
+                $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
+                return $canvas;
+            }, $results);
+
+            return array_map([$this, 'appendSnapshotUrl'], $results);
+        };
+
+        if ($cacheKey && $this->redisCache) {
+            return $this->redisCache->executeWithLock("lock_public_canvases_{$sort}_{$limit}_{$offset}", 5, function() use ($cacheKey, $fetchClosure) {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached) return json_decode($cached, true);
+                
+                $results = $fetchClosure();
+                $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($results));
+                return $results;
+            });
         }
 
-        $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, c.favorites_count,
-                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                       c.members_count
-                FROM " . DB::TBL_CANVASES . " c
-                LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
-                WHERE c.privacy = 'public' AND c.scope_type = 'personal' AND c.is_locked = 0
-                $orderClause 
-                LIMIT :limit OFFSET :offset";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':current_user_id', $currentUserId ?? 0, PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $stmt->execute();
-        
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
-        $results = array_map(function($canvas) {
-            $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
-            return $canvas;
-        }, $results);
-
-        $results = array_map([$this, 'appendSnapshotUrl'], $results);
-        
-        if ($cacheKey && $this->redisClient) {
-            $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($results));
-        }
-        
-        return $results;
+        return $fetchClosure();
     }
 
     public function getHomeFeed(?int $userId, string $tagFilter = 'all', int $limit = 20, int $offset = 0): array {
@@ -191,24 +203,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         $whereSql = implode(' AND ', $whereConditions);
 
-        if ($userId) {
-            $orderSql = "ORDER BY 
-                CASE 
-                    WHEN c.scope_type = 'global' THEN 1
-                    WHEN c.owner_id = :current_user_id_o1 THEN 2
-                    WHEN cm_feed.canvas_id IS NOT NULL THEN 3
-                    ELSE 4
-                END ASC,
-                c.created_at DESC";
-            $params[':current_user_id_o1'] = $userIdParam;
-        } else {
-            $orderSql = "ORDER BY 
-                CASE 
-                    WHEN c.scope_type = 'global' THEN 1
-                    ELSE 4
-                END ASC,
-                c.created_at DESC";
-        }
+        $orderSql = "ORDER BY c.created_at DESC";
         
         $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, c.favorites_count, c.tags,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
@@ -257,42 +252,51 @@ class CanvasRepository implements CanvasRepositoryInterface {
             }
         }
 
-        $orderClause = "ORDER BY c.created_at DESC";
-        if ($sort === 'oldest') {
-            $orderClause = "ORDER BY c.created_at ASC";
-        } elseif ($sort === 'members') {
-            $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
-        }
+        $fetchClosure = function() use ($limit, $currentUserId, $sort, $offset) {
+            $orderClause = "ORDER BY c.created_at DESC";
+            if ($sort === 'oldest') {
+                $orderClause = "ORDER BY c.created_at ASC";
+            } elseif ($sort === 'members') {
+                $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
+            }
 
-        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.size, c.palette_id, c.scope_type, c.scope_ref_1, c.scope_ref_2, c.scope_ref_3, c.favorites_count,
-                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                       c.members_count
-                FROM " . DB::TBL_CANVASES . " c
-                LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
-                WHERE c.owner_id IS NULL AND c.scope_type != 'personal' AND c.is_locked = 0
-                $orderClause
-                LIMIT :limit OFFSET :offset";
+            $sql = "SELECT c.id, c.uuid, c.name, c.description, c.size, c.palette_id, c.scope_type, c.scope_ref_1, c.scope_ref_2, c.scope_ref_3, c.favorites_count,
+                           CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
+                           c.members_count
+                    FROM " . DB::TBL_CANVASES . " c
+                    LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
+                    WHERE c.owner_id IS NULL AND c.scope_type != 'personal' AND c.is_locked = 0
+                    $orderClause
+                    LIMIT :limit OFFSET :offset";
+                    
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':current_user_id', $currentUserId ?? 0, PDO::PARAM_INT);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            
+            $results = array_map(function($canvas) {
+                $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
+                return $canvas;
+            }, $results);
+
+            return array_map([$this, 'appendSnapshotUrl'], $results);
+        };
+
+        if ($cacheKey && $this->redisCache) {
+            return $this->redisCache->executeWithLock("lock_official_canvases_{$sort}_{$limit}_{$offset}", 5, function() use ($cacheKey, $fetchClosure) {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached) return json_decode($cached, true);
                 
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':current_user_id', $currentUserId ?? 0, PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $stmt->execute();
-        
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
-        $results = array_map(function($canvas) {
-            $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
-            return $canvas;
-        }, $results);
-
-        $results = array_map([$this, 'appendSnapshotUrl'], $results);
-
-        if ($cacheKey && $this->redisClient) {
-            $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($results));
+                $results = $fetchClosure();
+                $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($results));
+                return $results;
+            });
         }
 
-        return $results;
+        return $fetchClosure();
     }
 
     public function getUserAndJoinedCanvases(int $userId, int $limit = 50, string $filter = 'all', int $offset = 0): array {

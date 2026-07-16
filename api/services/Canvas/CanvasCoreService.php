@@ -700,12 +700,11 @@ class CanvasCoreService {
                     $newStateRaw = str_repeat(chr(255), $newTotal); 
 
                     if (strlen($stateRaw) == ($oldW * $oldH)) {
-                        for ($y = 0; $y < min($oldH, $newH); $y++) {
-                            for ($x = 0; $x < min($oldW, $newW); $x++) {
-                                $oldIdx = ($y * $oldW) + $x;
-                                $newIdx = ($y * $newW) + $x;
-                                $newStateRaw[$newIdx] = $stateRaw[$oldIdx];
-                            }
+                        $minH = min($oldH, $newH);
+                        $minW = min($oldW, $newW);
+                        for ($y = 0; $y < $minH; $y++) {
+                            $rowBytes = substr($stateRaw, $y * $oldW, $minW);
+                            $newStateRaw = substr_replace($newStateRaw, $rowBytes, $y * $newW, $minW);
                         }
                     } else {
                         
