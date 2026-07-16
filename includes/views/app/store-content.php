@@ -63,7 +63,7 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
         <?php endif; ?>
     </div>
     <div class="component-store-disclaimer">
-        Al adquirir contenido o ventajas, aceptas que <strong>no hay reembolsos</strong> bajo ninguna circunstancia y que la compra es de carácter final. Asegúrate de revisar tu selección antes de canjear tus monedas.
+        <?php echo __('store_content_disclaimer'); ?>
     </div>
     </div>
 </div>

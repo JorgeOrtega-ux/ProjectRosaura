@@ -566,6 +566,8 @@
     "store_content_pixel_protection_25_desc": "Otorga protección contra sobrescritura para un máximo de 25 píxeles en un lienzo oficial.",
     "store_content_elite_eraser_25_name": "Borrador Élite",
     "store_content_elite_eraser_25_desc": "Permite sobrescribir y eliminar la protección de hasta 25 píxeles protegidos por otros usuarios.",
+    "store_coins_disclaimer": "Al realizar una compra, aceptas que <strong>no hay reembolsos</strong> bajo ninguna circunstancia y que la adquisición de monedas es de carácter final. Asegúrate de revisar tu selección antes de proceder con el pago.",
+    "store_content_disclaimer": "Al adquirir contenido o ventajas, aceptas que <strong>no hay reembolsos</strong> bajo ninguna circunstancia y que la compra es de carácter final. Asegúrate de revisar tu selección antes de canjear tus monedas.",
     "tag_fun": "Divertido",
     "tag_tension": "Tensión",
     "tag_action": "Acción",

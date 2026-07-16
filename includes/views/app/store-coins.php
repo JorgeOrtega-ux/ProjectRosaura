@@ -59,7 +59,7 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
         <?php endif; ?>
     </div>
     <div class="component-store-disclaimer">
-        Al realizar una compra, aceptas que <strong>no hay reembolsos</strong> bajo ninguna circunstancia y que la adquisición de monedas es de carácter final. Asegúrate de revisar tu selección antes de proceder con el pago.
+        <?php echo __('store_coins_disclaimer'); ?>
     </div>
     </div>
 </div>
