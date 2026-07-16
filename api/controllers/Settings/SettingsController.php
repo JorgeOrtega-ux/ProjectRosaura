@@ -63,6 +63,11 @@ class SettingsController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
+    public function set_flag($input) {
+        try { return $this->settingsServices->setFlag($input); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
     public function verify_current_password($input) {
         try { return $this->settingsServices->verifyCurrentPassword($input); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }

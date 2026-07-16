@@ -371,6 +371,34 @@ class SettingsServices
         return ['success' => false, 'message' => __('error.update_failed')];
     }
 
+    public function setFlag($data)
+    {
+        if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => __('auth.session_expired')];
+
+        $userId = $this->sessionManager->get('user_id');
+        $flagKey = trim($data['flag_key'] ?? '');
+
+        if (empty($flagKey) || strlen($flagKey) > 100) {
+            return ['success' => false, 'message' => __('validation.invalid_input')];
+        }
+
+        if ($this->userRepository->setFlag($userId, $flagKey)) {
+            $accounts = $this->sessionManager->getLinkedAccounts();
+            if (isset($accounts[$userId])) {
+                if (!isset($accounts[$userId]['user_flags'])) {
+                    $accounts[$userId]['user_flags'] = [];
+                }
+                if (!in_array($flagKey, $accounts[$userId]['user_flags'])) {
+                    $accounts[$userId]['user_flags'][] = $flagKey;
+                }
+                $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+            }
+            return ['success' => true, 'message' => __('settings.preference_updated')];
+        }
+
+        return ['success' => false, 'message' => __('error.update_failed')];
+    }
+
     public function verifyCurrentPassword($data)
     {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => __('auth.session_expired')];

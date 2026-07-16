@@ -106,6 +106,11 @@ return [
         'action' => 'update_preferences',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_SET_UPDATE_PREFS, 'max' => RL::MAX_20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
+    'settings.set_flag' => [
+        'controller' => 'App\Api\Controllers\Settings\SettingsController',
+        'action' => 'set_flag',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'set_set_flag', 'max' => RL::MAX_20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
     'settings.verify_current_password' => [
         'controller' => 'App\Api\Controllers\Settings\SettingsController',
         'action' => 'verify_current_password',

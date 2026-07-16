@@ -126,7 +126,8 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         window.AppName = "<?php echo APP_NAME; ?>";
         window.AppRouteTitles = <?php echo json_encode($routeTitles); ?>;
         window.AppSystemDegraded = <?php echo $isDegraded ? 'true' : 'false'; ?>;
-        window.AppUserPrefs = <?php echo (!$isDegraded && $isLoggedIn && isset($_SESSION['user_prefs'])) ? json_encode($_SESSION['user_prefs']) : 'null'; ?>;
+        window.AppUserPrefs = <?php echo (!$isDegraded && $isLoggedIn && isset($_SESSION['accounts'][$activeAccountId]['user_prefs'])) ? json_encode($_SESSION['accounts'][$activeAccountId]['user_prefs']) : 'null'; ?>;
+        window.AppUserFlags = <?php echo (!$isDegraded && $isLoggedIn && isset($_SESSION['accounts'][$activeAccountId]['user_flags'])) ? json_encode($_SESSION['accounts'][$activeAccountId]['user_flags']) : '[]'; ?>;
         window.AppServerConfig = <?php echo isset($serverConfig) && !empty($serverConfig) ? json_encode($serverConfig) : '{}'; ?>;
         window.AppTurnstileSiteKey = "<?php echo \App\Core\Helpers\EnvLoader::get('TURNSTILE_SITE_KEY', ''); ?>";
         window.AppTranslations = <?php echo json_encode(\App\Core\System\Translator::getAll()); ?>;
@@ -139,6 +140,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
             subscription_tier: <?php echo $subscriptionTier; ?>
         };
         window.APP_LIMITS = <?php echo json_encode($planLimits); ?>;
+        window.APP_PRICES = <?php echo json_encode(\App\Core\System\SubscriptionPlanConstants::getTierPrices()); ?>;
 
 
         window.APP_CONFIG = {

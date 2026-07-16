@@ -293,6 +293,17 @@ class UserRepository implements UserRepositoryInterface {
         }
     }
 
+    public function setFlag(int $userId, string $flagKey): bool {
+        $tblFlags = DB::TBL_USER_FLAGS;
+        try {
+            $stmt = $this->pdo->prepare("INSERT IGNORE INTO {$tblFlags} (user_id, flag_key) VALUES (?, ?)");
+            return $stmt->execute([$userId, $flagKey]);
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'flag_key' => $flagKey, 'exception' => $e]);
+            return false;
+        }
+    }
+
     public function scheduleDeletion(int $userId, string $date): bool {
         $tblUsers = DB::TBL_USERS;
         try {

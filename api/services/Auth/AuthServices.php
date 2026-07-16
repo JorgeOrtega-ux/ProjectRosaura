@@ -210,6 +210,7 @@ class AuthServices {
             'user_permissions' => $permissions,
             'user_pic' => \App\Core\Helpers\Utils::getS3PublicUrl($user['profile_picture']),
             'user_prefs' => $userPrefs,
+            'user_flags' => $this->prefsManager->getUserFlags($user['id']),
             'user_2fa' => $user['two_factor_enabled'] ?? 0,
             'user_asn' => $asn,
             'subscription_tier' => (int)($user['subscription_tier'] ?? 0)

@@ -59,5 +59,22 @@ class SubscriptionPlanConstants {
         $limits = self::getTierLimits($tier);
         return isset($limits[$featureKey]) && $limits[$featureKey] === true;
     }
+
+    public static function getTierPrices(): array {
+        return [
+            self::TIER_BASIC => [
+                'monthly' => 0.00,
+                'yearly' => 0.00
+            ],
+            self::TIER_PRO => [
+                'monthly' => 9.99,
+                'yearly' => 95.99
+            ],
+            self::TIER_ADVANCED => [
+                'monthly' => 19.99,
+                'yearly' => 191.99
+            ]
+        ];
+    }
 }
 ?>

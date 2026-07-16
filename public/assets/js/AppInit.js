@@ -176,8 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const showWelcomeFlow = async () => {
-        if (!window.dialogSystem || !window.AppUserPrefs) return;
-        if (window.AppUserPrefs.has_seen_welcome_modal == 1 || window.AppUserPrefs.has_seen_welcome_modal === '1' || window.AppUserPrefs.has_seen_welcome_modal === true) {
+        if (!window.dialogSystem || !window.AppUserFlags) return;
+        if (window.AppUserFlags.includes('welcome_modal_seen')) {
             return;
         }
 
@@ -187,12 +187,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             try {
                 const api = new ApiService();
-                const res = await api.post(ApiRoutes.Settings.UpdatePreferences, { key: 'has_seen_welcome_modal', value: 1 });
+                const res = await api.post(ApiRoutes.Settings.SetFlag, { flag_key: 'welcome_modal_seen' });
                 if (res && res.success) {
-                    window.AppUserPrefs.has_seen_welcome_modal = 1;
+                    window.AppUserFlags.push('welcome_modal_seen');
                 }
             } catch (e) {
-                console.error('Failed to save preference for welcome modal', e);
+                console.error('Failed to save flag for welcome modal', e);
             }
         }
     };

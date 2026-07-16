@@ -33,6 +33,7 @@ export const ApiRoutes = {
         VerifyEmailCode: 'settings.verify_email_code',
         UpdateEmail: 'settings.update_email',
         UpdatePreferences: 'settings.update_preferences',
+        SetFlag: 'settings.set_flag',
         VerifyCurrentPassword: 'settings.verify_current_password',
         UpdatePassword: 'settings.update_password',
         DeleteAccount: 'settings.delete_account',

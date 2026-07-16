@@ -186,6 +186,7 @@ $comparisonRows = [
         <div class="component-flex-center-gap">
             
             <?php
+            $prices = SubscriptionPlanConstants::getTierPrices();
             $plans = [
                 [
                     'tier'       => 0,
@@ -193,8 +194,8 @@ $comparisonRows = [
                     'desc_key'   => 'premium_desc_basic',
                     'css_class'  => '',
                     'badge'      => null,
-                    'monthly'    => 0,
-                    'yearly'     => 0,
+                    'monthly'    => $prices[0]['monthly'],
+                    'yearly'     => $prices[0]['yearly'],
                     'features'   => $cardFeaturesBasic,
                     'btn_class'  => 'component-button component-button--full component-button--h45',
                     'btn_adv'    => false,
@@ -205,8 +206,8 @@ $comparisonRows = [
                     'desc_key'   => 'premium_desc_pro',
                     'css_class'  => 'component-card--featured',
                     'badge'      => ['key' => 'premium_badge_popular', 'class' => 'component-badge component-badge--primary component-badge--top-center'],
-                    'monthly'    => 15,
-                    'yearly'     => 144,
+                    'monthly'    => $prices[1]['monthly'],
+                    'yearly'     => $prices[1]['yearly'],
                     'features'   => $cardFeaturesPro,
                     'btn_class'  => 'component-button component-button--dark component-button--full component-button--h45',
                     'btn_adv'    => false,
@@ -217,8 +218,8 @@ $comparisonRows = [
                     'desc_key'   => 'premium_desc_advanced',
                     'css_class'  => '',
                     'badge'      => ['key' => 'premium_badge_top', 'class' => 'component-badge component-badge--warning component-badge--top-center'],
-                    'monthly'    => 35,
-                    'yearly'     => 336,
+                    'monthly'    => $prices[2]['monthly'],
+                    'yearly'     => $prices[2]['yearly'],
                     'features'   => $cardFeaturesAdvanced,
                     'btn_class'  => 'component-button component-button--dark component-button--full component-button--h45',
                     'btn_adv'    => false,

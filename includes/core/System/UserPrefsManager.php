@@ -46,5 +46,13 @@ class UserPrefsManager implements UserPrefsManagerInterface {
         
         return $default;
     }
+
+    public function getUserFlags($userId): array {
+        $tblFlags = DB::TBL_USER_FLAGS;
+        $stmt = $this->pdo->prepare("SELECT flag_key FROM {$tblFlags} WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        $flags = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        return $flags ?: [];
+    }
 }
 ?>

@@ -96,6 +96,8 @@ export class PremiumController {
                         ? periodEl.getAttribute('data-period-yearly') 
                         : periodEl.getAttribute('data-period-monthly');
                         
+                    priceEl.style.opacity = '1';
+                    periodEl.style.opacity = '1';
                     priceEl.classList.remove('disabled-interactive');
                     periodEl.classList.remove('disabled-interactive');
                 }, 150);

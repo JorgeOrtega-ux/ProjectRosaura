@@ -21,6 +21,7 @@ class DatabaseConstants {
     public const TBL_TELEMETRY_PAGEVIEWS     = 'pageviews';
     public const TBL_TELEMETRY_CANVAS        = 'canvas_interactions';
     public const TBL_TELEMETRY_AUTH_EVENTS   = 'auth_events';
+    public const TBL_USER_FLAGS             = 'user_flags';
     public const TBL_CANVASES                   = 'canvases';
     public const TBL_CANVAS_MEMBERS             = 'canvas_members';
     public const TBL_CANVAS_SNAPSHOTS_HISTORY   = 'canvas_snapshots_history';
@@ -50,7 +51,7 @@ class DatabaseConstants {
     public const THEME_SYSTEM = 'system';
     public const THEME_LIGHT  = 'light';
     public const THEME_DARK   = 'dark';
-    public const ALLOWED_PREF_KEYS = ['language', 'open_links_new_tab', 'theme', 'extended_alerts', 'allow_telemetry', 'accepted_store_terms', 'accepted_content_store_terms', 'has_seen_welcome_modal'];
+    public const ALLOWED_PREF_KEYS = ['language', 'open_links_new_tab', 'theme', 'extended_alerts', 'allow_telemetry', 'accepted_store_terms', 'accepted_content_store_terms'];
     public const VERIFY_TYPE_ACTIVATION = 'account_activation';
     public const VERIFY_TYPE_PASSWORD = 'password_reset';
     public const PRIVACY_PUBLIC   = 'public';

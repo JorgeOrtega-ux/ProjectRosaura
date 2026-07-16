@@ -40,16 +40,17 @@ export class DialogSystem {
         document.removeEventListener('pointerup', this.handlePointerUpBound);
         document.removeEventListener('pointercancel', this.handlePointerUpBound);
         
-        const container = document.getElementById('dialog-container');
+        const container = document.querySelector('.modal-container[data-type="modal"]');
         if (container) container.remove();
         this.initialized = false;
     }
 
     _getContainer() {
-        let container = document.getElementById('dialog-container');
+        let container = document.querySelector('.modal-container[data-type="modal"]');
         if (!container) {
             container = document.createElement('div');
-            container.id = 'dialog-container';
+            container.className = 'modal-container';
+            container.setAttribute('data-type', 'modal');
             document.body.appendChild(container);
         }
         return container;
@@ -202,7 +203,7 @@ export class DialogSystem {
                 overlayToRemove.remove();
             }
             
-            const container = document.getElementById('dialog-container');
+            const container = document.querySelector('.modal-container[data-type="modal"]');
             if (container && container.childNodes.length === 0 && container.parentNode) {
                 container.remove();
             }

@@ -56,77 +56,81 @@ export const DialogTemplates = {
                     <div class="step-modal-content">
                         <!-- Step 1 -->
                         <div class="step-modal-step active" id="welcome-step-1">
-                            <h2 class="component-modal-title">¡Te damos la bienvenida!</h2>
+                            <h2 class="component-modal-title">${window.__('welcome_modal_step1_title') || '¡Te damos la bienvenida!'}</h2>
                             <p class="component-modal-desc step-modal-desc">
-                                Descubre todas las herramientas que hemos preparado para ayudarte a gestionar tus proyectos y flujos de trabajo de forma rápida y sencilla.
+                                ${window.__('welcome_modal_step1_desc')}
                             </p>
                             
                             <div class="step-modal-dots">
                                 <div class="step-modal-dot active"></div>
-                                <div class="step-modal-dot"></div>
-                                <div class="step-modal-dot"></div>
+                                <div class="step-modal-dot" onclick="document.getElementById('welcome-step-1').classList.remove('active'); document.getElementById('welcome-step-2').classList.add('active');"></div>
+                                <div class="step-modal-dot" onclick="document.getElementById('welcome-step-1').classList.remove('active'); document.getElementById('welcome-step-3').classList.add('active');"></div>
                             </div>
 
                             <div class="step-modal-actions">
                                 <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="document.getElementById('welcome-step-1').classList.remove('active'); document.getElementById('welcome-step-2').classList.add('active');">
-                                    Siguiente
+                                    ${window.__('welcome_modal_btn_next') || 'Siguiente'}
                                 </button>
                             </div>
                         </div>
 
                         <!-- Step 2 -->
                         <div class="step-modal-step" id="welcome-step-2">
-                            <h2 class="component-modal-title">Colaboración en tiempo real</h2>
+                            <h2 class="component-modal-title">${window.__('welcome_modal_step2_title')}</h2>
                             <p class="component-modal-desc step-modal-desc">
-                                Invita a tu equipo y trabajen juntos en vivo. Comparte ideas, diseña y toma decisiones importantes en el mismo lienzo sin interrupciones.
+                                ${window.__('welcome_modal_step2_desc')}
                             </p>
                             
                             <div class="step-modal-dots">
-                                <div class="step-modal-dot"></div>
+                                <div class="step-modal-dot" onclick="document.getElementById('welcome-step-2').classList.remove('active'); document.getElementById('welcome-step-1').classList.add('active');"></div>
                                 <div class="step-modal-dot active"></div>
-                                <div class="step-modal-dot"></div>
+                                <div class="step-modal-dot" onclick="document.getElementById('welcome-step-2').classList.remove('active'); document.getElementById('welcome-step-3').classList.add('active');"></div>
                             </div>
 
                             <div class="step-modal-actions">
                                 <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="document.getElementById('welcome-step-2').classList.remove('active'); document.getElementById('welcome-step-3').classList.add('active');">
-                                    Siguiente
+                                    ${window.__('welcome_modal_btn_next') || 'Siguiente'}
                                 </button>
                             </div>
                         </div>
 
                         <!-- Step 3 -->
                         <div class="step-modal-step" id="welcome-step-3">
-                            <h2 class="component-modal-title">Potencia tu cuenta</h2>
+                            <h2 class="component-modal-title">${window.__('welcome_modal_step3_title')}</h2>
                             <p class="component-modal-desc step-modal-desc" style="margin-bottom: 12px; flex: none;">
-                                Sube de nivel y desbloquea funciones exclusivas para ti o tu equipo.
+                                ${window.__('welcome_modal_step3_desc')}
                             </p>
                             
-                            <div style="display: flex; gap: 12px; margin-bottom: 24px; flex: 1; align-items: stretch;">
-                                <div style="flex: 1; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; text-align: center; cursor: pointer; transition: border-color 0.2s ease; display: flex; flex-direction: column; justify-content: center;"
+                            <div style="display: flex; gap: 12px; margin-bottom: 8px; flex: 1; align-items: stretch;">
+                                <div style="flex: 1; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; text-align: left; cursor: pointer; transition: border-color 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;"
                                      onmouseover="this.style.borderColor='var(--text-primary)'"
                                      onmouseout="this.style.borderColor='var(--border-color)'"
                                      onclick="if(window.spaRouter){window.spaRouter.navigate('/premium');}else{window.location.href='/premium';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
-                                    <h4 style="margin: 0 0 8px 0; font-size: 15px; color: var(--text-primary);">Plan Pro</h4>
-                                    <div style="font-size: 18px; font-weight: bold; color: var(--text-primary);">$9.99<span style="font-size: 12px; color: var(--text-secondary); font-weight: normal;">/mes</span></div>
+                                    <h4 style="margin: 0 0 8px 0; font-size: 15px; color: var(--text-primary);">${window.__('premium_plan_pro')}</h4>
+                                    <div style="font-size: 18px; font-weight: bold; color: var(--text-primary);">$${window.APP_PRICES ? window.APP_PRICES[1].monthly : '9.99'}<span style="font-size: 12px; color: var(--text-secondary); font-weight: normal;">${window.__('premium_period_month')}</span></div>
                                 </div>
-                                <div style="flex: 1; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; text-align: center; cursor: pointer; transition: border-color 0.2s ease; display: flex; flex-direction: column; justify-content: center;"
+                                <div style="flex: 1; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; text-align: left; cursor: pointer; transition: border-color 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;"
                                      onmouseover="this.style.borderColor='var(--text-primary)'"
                                      onmouseout="this.style.borderColor='var(--border-color)'"
                                      onclick="if(window.spaRouter){window.spaRouter.navigate('/premium');}else{window.location.href='/premium';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
-                                    <h4 style="margin: 0 0 8px 0; font-size: 15px; color: var(--text-primary);">Plan Advanced</h4>
-                                    <div style="font-size: 18px; font-weight: bold; color: var(--text-primary);">$19.99<span style="font-size: 12px; color: var(--text-secondary); font-weight: normal;">/mes</span></div>
+                                    <h4 style="margin: 0 0 8px 0; font-size: 15px; color: var(--text-primary);">${window.__('premium_plan_advanced')}</h4>
+                                    <div style="font-size: 18px; font-weight: bold; color: var(--text-primary);">$${window.APP_PRICES ? window.APP_PRICES[2].monthly : '19.99'}<span style="font-size: 12px; color: var(--text-secondary); font-weight: normal;">${window.__('premium_period_month')}</span></div>
                                 </div>
                             </div>
                             
+                            <p style="font-size: 11px; color: var(--text-secondary); text-align: center; margin-top: 0; margin-bottom: 16px;">
+                                ${window.__('premium_monthly_disclaimer')}
+                            </p>
+                            
                             <div class="step-modal-dots">
-                                <div class="step-modal-dot"></div>
-                                <div class="step-modal-dot"></div>
+                                <div class="step-modal-dot" onclick="document.getElementById('welcome-step-3').classList.remove('active'); document.getElementById('welcome-step-1').classList.add('active');"></div>
+                                <div class="step-modal-dot" onclick="document.getElementById('welcome-step-3').classList.remove('active'); document.getElementById('welcome-step-2').classList.add('active');"></div>
                                 <div class="step-modal-dot active"></div>
                             </div>
 
                             <div class="step-modal-actions">
                                 <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="finish">
-                                    Terminar
+                                    ${window.__('welcome_modal_btn_finish') || 'Terminar'}
                                 </button>
                             </div>
                         </div>

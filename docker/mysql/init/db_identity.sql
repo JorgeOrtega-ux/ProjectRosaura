@@ -203,11 +203,19 @@ CREATE TABLE IF NOT EXISTS user_preferences (
   theme ENUM('system', 'light', 'dark') DEFAULT 'system',
   extended_alerts TINYINT(1) DEFAULT 0,
   allow_telemetry TINYINT(1) DEFAULT 1,
-  has_seen_welcome_modal TINYINT(1) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY (user_id),
   CONSTRAINT fk_user_preferences FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `user_flags` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT(11) NOT NULL,
+  `flag_key` VARCHAR(100) NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `unique_user_flag` (`user_id`, `flag_key`),
+  CONSTRAINT `fk_user_flags_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS auth_tokens (

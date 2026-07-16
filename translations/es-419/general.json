@@ -580,5 +580,14 @@
     "tag_fantasy": "Fantasía",
     "canvas_tags_title": "Etiquetas del Lienzo",
     "canvas_tags_desc": "Selecciona hasta 8 etiquetas que describan mejor tu lienzo.",
-    "ph_select_tags": "Seleccionar etiquetas..."
+    "ph_select_tags": "Seleccionar etiquetas...",
+    "welcome_modal_step1_title": "¡Te damos la bienvenida!",
+    "welcome_modal_step1_desc": "Descubre todas las herramientas que hemos preparado para ayudarte a gestionar tus proyectos y flujos de trabajo de forma rápida y sencilla.",
+    "welcome_modal_step2_title": "Colaboración en tiempo real",
+    "welcome_modal_step2_desc": "Invita a tu equipo y trabajen juntos en vivo. Comparte ideas, diseña y toma decisiones importantes en el mismo lienzo sin interrupciones.",
+    "welcome_modal_step3_title": "Potencia tu cuenta",
+    "welcome_modal_step3_desc": "Sube de nivel y desbloquea funciones exclusivas para ti o tu equipo.",
+    "welcome_modal_btn_next": "Siguiente",
+    "welcome_modal_btn_finish": "Terminar",
+    "premium_monthly_disclaimer": "Te enviaremos un recordatorio cuando esté por finalizar tu suscripción."
 }
