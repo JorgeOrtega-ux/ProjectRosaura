@@ -1172,4 +1172,60 @@ class AdminServices {
             ]
         ];
     }
+
+    public function getAllMessages($page = 1, $limit = 50) {
+        $this->requirePermission('view_logs'); // Usamos view_logs o rol de admin genérico
+
+        $offset = ($page - 1) * $limit;
+        
+        $dbManager = new DatabaseManager();
+        $pdoCanvases = $dbManager->getConnection(DB::CONN_CANVASES);
+        $pdoIdentity = $dbManager->getConnection(DB::CONN_IDENTITY);
+        
+        $countStmt = $pdoCanvases->query("SELECT COUNT(*) FROM canvas_chat_messages");
+        $totalItems = $countStmt->fetchColumn();
+        
+        $totalPages = ceil($totalItems / $limit);
+
+        $stmt = $pdoCanvases->prepare("
+            SELECT m.id, m.user_id, m.message, m.visibility, m.created_at, m.canvas_id, c.name as canvas_name
+            FROM canvas_chat_messages m
+            LEFT JOIN canvases c ON m.canvas_id = c.id
+            ORDER BY m.id DESC
+            LIMIT ? OFFSET ?
+        ");
+        $stmt->bindValue(1, $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(2, $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $messages = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        if (!empty($messages)) {
+            $userIds = array_values(array_unique(array_column($messages, 'user_id')));
+            $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+            $userStmt = $pdoIdentity->prepare("SELECT id, username FROM users WHERE id IN ($placeholders)");
+            $userStmt->execute($userIds);
+            $usersMap = [];
+            while ($row = $userStmt->fetch(\PDO::FETCH_ASSOC)) {
+                $usersMap[$row['id']] = $row['username'];
+            }
+            
+            foreach ($messages as &$msg) {
+                $uid = $msg['user_id'];
+                $msg['username'] = $usersMap[$uid] ?? __('default_user');
+            }
+            unset($msg);
+        }
+        
+        return [
+            'success' => true,
+            'messages' => $messages,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_items' => $totalItems,
+                'total_pages' => $totalPages
+            ]
+        ];
+    }
 }

@@ -163,6 +163,11 @@ return [
         'action' => 'revoke_all_devices',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_DEV_REVOKE_ALL, 'max' => RL::MAX_5, 'time' => RL::TIME_15, 'identifier' => RL::ID_USER_ID]]
     ],
+    'admin.get_messages' => [
+        'controller' => 'App\Api\Controllers\Admin\AdminController',
+        'action' => 'getMessages',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_get_messages', 'max' => 60, 'time' => 1, 'identifier' => 'user_id']]
+    ],
 
     'admin.get_dashboard_metrics' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',

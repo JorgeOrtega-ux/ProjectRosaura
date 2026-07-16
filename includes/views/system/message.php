@@ -72,13 +72,3 @@ switch ($type) {
 
     </div>
 </div>
-
-
-
-
-
-
-
-
-
-Una cosa quiero que en panel de administracion agregues un btn en la seccion de dashboard en el top que diga algo como gestionar mensajes, en esa nueva seccion se me mostrara en forma de tabla todos los mensajes que se han enviado en todos los chats de los lienzos, mostrando de que, mensaje, quien lo envio, nombre del lienzo, fecha y hora, estado (si esta visible o eliminado o en revision) tambien quiero que al seleccionar algun mensaje en el top se generen btns de que para marcar como revision, marcar como eliminado, hacer visible, por ahora solo eso

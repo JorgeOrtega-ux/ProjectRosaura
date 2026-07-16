@@ -149,7 +149,16 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
             $sql = "UPDATE {$tblServerConfig} SET " . implode(', ', $fields) . " WHERE id = 1";
             $stmt = $this->pdo->prepare($sql);
             
-            $result = $stmt->execute($values);
+            try {
+                $result = $stmt->execute($values);
+            } catch (\PDOException $e) {
+                if (strpos($e->getMessage(), 'verification_code_expiration_minutes') !== false) {
+                    $this->pdo->exec("ALTER TABLE {$tblServerConfig} ADD COLUMN verification_code_expiration_minutes INT NOT NULL DEFAULT 15");
+                    $result = $stmt->execute($values);
+                } else {
+                    throw $e;
+                }
+            }
 
             if ($result) {
                 try {

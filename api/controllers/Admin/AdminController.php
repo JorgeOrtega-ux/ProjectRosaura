@@ -339,4 +339,17 @@ class AdminController extends BaseController {
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
+
+    public function getMessages() {
+        try {
+            $page = (int)($this->request['page'] ?? 1);
+            $limit = (int)($this->request['limit'] ?? 50);
+            
+            if ($page < 1) $page = 1;
+            if ($limit < 1 || $limit > 100) $limit = 50;
+
+            return $this->adminServices->getAllMessages($page, $limit);
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
 }
