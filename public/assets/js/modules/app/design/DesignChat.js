@@ -761,8 +761,8 @@ export class DesignChat {
                 }
                 let fallbackUrl = (window.AppBasePath || '') + '/public/assets/img/fallbacks/canvas-default.png';
                 attachmentsHtml += `
-                <div class="chat-attachment-item" data-action="openChatImageViewer" data-message-id="${msg.id}" data-index="${i}" data-canvas-uuid="${extractedUuid}">
-                    <img src="${url}" loading="lazy" onerror="this.src='${fallbackUrl}'" />
+                <div class="chat-attachment-item component-skeleton" data-action="openChatImageViewer" data-message-id="${msg.id}" data-index="${i}" data-canvas-uuid="${extractedUuid}">
+                    <img src="${url}" loading="lazy" onerror="this.src='${fallbackUrl}'; this.parentElement.classList.remove('component-skeleton');" onload="this.parentElement.classList.remove('component-skeleton')" />
                     ${overlay}
                 </div>
                 `;

@@ -707,7 +707,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     public function getUserStorageUsed(int $userId): float {
         // Obtenemos el almacenamiento del Identity DB
         $dbManager = new DatabaseManager();
-        $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager));
+        $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager, new \App\Config\Database\RedisCache()));
         return $userRepo->getStorageUsed($userId);
     }
 
@@ -959,7 +959,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         if ($fileSize > 0) {
             $dbManager = new DatabaseManager();
-            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager));
+            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager, new \App\Config\Database\RedisCache()));
             $userRepo->updateStorageUsed($userId, $fileSize);
         }
 
@@ -995,7 +995,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         if ($result && $fileSize > 0) {
             $dbManager = new DatabaseManager();
-            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager));
+            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager, new \App\Config\Database\RedisCache()));
             $userRepo->updateStorageUsed($userId, -$fileSize);
         }
 

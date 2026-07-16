@@ -279,7 +279,7 @@ class ChatServices
 
         if ($totalSize > 0) {
             $dbManager = new DatabaseManager();
-            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager));
+            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager, new \App\Config\Database\RedisCache()));
             $userRepo->updateStorageUsed($userId, $totalSize);
         }
 

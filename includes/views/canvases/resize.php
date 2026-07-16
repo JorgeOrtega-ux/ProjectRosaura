@@ -65,8 +65,8 @@ if ($row) {
 $ownerTier = 0;
 if ($canvas['owner_id'] !== null) {
     try {
-        $dbIdentityManager = new \App\Core\Database\DatabaseManager();
-        $roleRepo = new \App\Core\Repositories\RoleRepository($dbIdentityManager);
+        $dbIdentityManager = new \App\Config\Database\DatabaseManager();
+        $roleRepo = new \App\Core\Repositories\RoleRepository($dbIdentityManager, new \App\Config\Database\RedisCache());
         $userRepo = new \App\Core\Repositories\UserRepository($dbIdentityManager, $roleRepo);
         $uRow = $userRepo->findById($canvas['owner_id']);
         if ($uRow) {

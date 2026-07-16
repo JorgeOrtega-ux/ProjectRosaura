@@ -95,8 +95,8 @@ if (!empty($canvasUuid)) {
             try {
                 if (isset($canvas['owner_id']) && $canvas['owner_id']) {
                     try {
-                        $dbIdentityManager = new \App\Core\Database\DatabaseManager();
-                        $roleRepo = new \App\Core\Repositories\RoleRepository($dbIdentityManager);
+                        $dbIdentityManager = new \App\Config\Database\DatabaseManager();
+                        $roleRepo = new \App\Core\Repositories\RoleRepository($dbIdentityManager, new \App\Config\Database\RedisCache());
                         $userRepo = new \App\Core\Repositories\UserRepository($dbIdentityManager, $roleRepo);
                         $uRow = $userRepo->findById($canvas['owner_id']);
                         $ownerTier = $uRow ? (int)$uRow['subscription_tier'] : 0;
