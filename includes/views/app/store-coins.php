@@ -11,8 +11,6 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
     }
 }
 
-$userPrefs = $_SESSION['user_prefs'] ?? [];
-$acceptedStoreTerms = !empty($userPrefs['accepted_store_terms']);
 ?>
 <div class="view-content" data-ref="store-coins-wrapper">
     <div class="component-wrapper component-wrapper--full no-padding">
@@ -60,7 +58,8 @@ $acceptedStoreTerms = !empty($userPrefs['accepted_store_terms']);
         </div>
         <?php endif; ?>
     </div>
+    <div class="component-store-disclaimer">
+        Al realizar una compra, aceptas que <strong>no hay reembolsos</strong> bajo ninguna circunstancia y que la adquisición de monedas es de carácter final. Asegúrate de revisar tu selección antes de proceder con el pago.
+    </div>
     </div>
 </div>
-
-<div id="store-coins-data" data-accepted="<?= $acceptedStoreTerms ? 'true' : 'false' ?>" class="component-d-none"></div>

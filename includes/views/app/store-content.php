@@ -10,9 +10,6 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
         $contentPackages = [];
     }
 }
-
-$userPrefs = $_SESSION['user_prefs'] ?? [];
-$acceptedContentTerms = !empty($userPrefs['accepted_content_store_terms']);
 ?>
 <div class="view-content" data-ref="store-content-wrapper">
     <div class="component-wrapper component-wrapper--full no-padding">
@@ -65,7 +62,8 @@ $acceptedContentTerms = !empty($userPrefs['accepted_content_store_terms']);
         </div>
         <?php endif; ?>
     </div>
+    <div class="component-store-disclaimer">
+        Al adquirir contenido o ventajas, aceptas que <strong>no hay reembolsos</strong> bajo ninguna circunstancia y que la compra es de carácter final. Asegúrate de revisar tu selección antes de canjear tus monedas.
+    </div>
     </div>
 </div>
-
-<div id="store-content-data" data-accepted="<?= $acceptedContentTerms ? 'true' : 'false' ?>" class="component-d-none"></div>

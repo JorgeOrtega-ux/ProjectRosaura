@@ -26,7 +26,7 @@ class UserPrefsManager implements UserPrefsManagerInterface {
             $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
             $assignedLang = Utils::getClosestLanguage($acceptLang);
             $themeSystem = DB::THEME_SYSTEM;
-            $insPref = $this->pdo->prepare("INSERT INTO {$tblUserPrefs} (user_id, language, open_links_new_tab, theme, extended_alerts, allow_telemetry, accepted_store_terms, accepted_content_store_terms) VALUES (?, ?, 1, ?, 0, 1, 0, 0)");
+            $insPref = $this->pdo->prepare("INSERT INTO {$tblUserPrefs} (user_id, language, open_links_new_tab, theme, extended_alerts, allow_telemetry) VALUES (?, ?, 1, ?, 0, 1)");
             $insPref->execute([$userId, $assignedLang, $themeSystem]);
             
             $stmtPref->execute([$userId]);
@@ -34,6 +34,7 @@ class UserPrefsManager implements UserPrefsManagerInterface {
         }
         return $userPrefs;
     }
+
     public function getPreference($userId, string $key, $default = null) {
         $prefs = $this->ensureDefaultPreferences($userId);
         

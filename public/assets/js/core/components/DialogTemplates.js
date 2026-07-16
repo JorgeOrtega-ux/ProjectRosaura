@@ -136,50 +136,6 @@ export const DialogTemplates = {
         }
     },
 
-    modalStoreTerms: {
-        build: () => `
-            <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header">
-                <h2 class="component-modal-title">${window.__('purchase_conditions')}</h2>
-                <p class="component-modal-desc">
-                    ${window.__('usd_warning')} ${window.__('no_refunds_digital_goods')}
-                </p>
-            </div>
-            <div class="component-modal-body">
-                <label class="component-checkbox" style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; margin-bottom: 24px;">
-                    <input type="checkbox" id="checkAcceptStoreTerms" style="margin-top: 4px;">
-                    <span style="font-size: 14px; color: var(--text-primary);">${window.__('accept_usd_no_refunds')}</span>
-                </label>
-            </div>
-            <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${window.__('cancel')}</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${window.__('confirm_and_continue')}</button>
-            </div>
-        `
-    },
-
-    modalContentStoreTerms: {
-        build: () => `
-            <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header">
-                <h2 class="component-modal-title">${window.__('terms_of_use')}</h2>
-                <p class="component-modal-desc">
-                    ${window.__('items_only_selected_canvases')} ${window.__('perks_may_be_disabled_by_admin')}
-                </p>
-            </div>
-            <div class="component-modal-body">
-                <label class="component-checkbox" style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; margin-bottom: 24px;">
-                    <input type="checkbox" id="checkAcceptContentTerms" style="margin-top: 4px;">
-                    <span style="font-size: 14px; color: var(--text-primary);">${window.__('understand_perks_disabled')}</span>
-                </label>
-            </div>
-            <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${window.__('cancel')}</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${window.__('confirm_and_continue')}</button>
-            </div>
-        `
-    },
-
     activate2FADialog: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>

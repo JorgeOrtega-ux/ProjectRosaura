@@ -36,34 +36,6 @@ export class StoreController {
 
     async handleBuyPerk(btn) {
         if (btn.dataset.loading === 'true') return;
-        const dataEl = document.getElementById('store-content-data');
-        if (dataEl && dataEl.getAttribute('data-accepted') !== 'true') {
-            const result = await window.dialogSystem.show('modalContentStoreTerms');
-            if (result && result.confirmed) {
-                if (!result.data || !result.data.checkAcceptContentTerms) {
-                    showMessage(window.__('err_accept_conditions'), 'error');
-                    return;
-                }
-                setButtonLoading(btn, window.__('saving') + '...');
-                try {
-                    const res = await this.api.post(ApiRoutes.Settings.UpdatePreferences, { key: 'accepted_content_store_terms', value: 1 });
-                    if (res && res.success) {
-                        dataEl.setAttribute('data-accepted', 'true');
-                        restoreButton(btn);
-                        return this.handleBuyPerk(btn);
-                    } else {
-                        showMessage(res?.message || window.__('err_save_preference'), 'error');
-                        restoreButton(btn);
-                        return;
-                    }
-                } catch (e) {
-                    showMessage(window.__('err_network'), 'error');
-                    restoreButton(btn);
-                    return;
-                }
-            }
-            return;
-        }
 
         const perkId = btn.getAttribute('data-perkid');
         if (!perkId) return;
@@ -91,34 +63,6 @@ export class StoreController {
 
     async handleBuyCoins(btn) {
         if (btn.dataset.loading === 'true') return;
-        const dataEl = document.getElementById('store-coins-data');
-        if (dataEl && dataEl.getAttribute('data-accepted') !== 'true') {
-            const result = await window.dialogSystem.show('modalStoreTerms');
-            if (result && result.confirmed) {
-                if (!result.data || !result.data.checkAcceptStoreTerms) {
-                    showMessage(window.__('err_accept_conditions'), 'error');
-                    return;
-                }
-                setButtonLoading(btn, window.__('saving') + '...');
-                try {
-                    const res = await this.api.post(ApiRoutes.Settings.UpdatePreferences, { key: 'accepted_store_terms', value: 1 });
-                    if (res && res.success) {
-                        dataEl.setAttribute('data-accepted', 'true');
-                        restoreButton(btn);
-                        return this.handleBuyCoins(btn);
-                    } else {
-                        showMessage(res?.message || window.__('err_save_preference'), 'error');
-                        restoreButton(btn);
-                        return;
-                    }
-                } catch (e) {
-                    showMessage(window.__('err_network'), 'error');
-                    restoreButton(btn);
-                    return;
-                }
-            }
-            return;
-        }
 
         const amount = parseInt(btn.getAttribute('data-amount'));
         if (!amount) return;

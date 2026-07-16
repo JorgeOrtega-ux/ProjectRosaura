@@ -203,8 +203,6 @@ CREATE TABLE IF NOT EXISTS user_preferences (
   theme ENUM('system', 'light', 'dark') DEFAULT 'system',
   extended_alerts TINYINT(1) DEFAULT 0,
   allow_telemetry TINYINT(1) DEFAULT 1,
-  accepted_store_terms TINYINT(1) DEFAULT 0,
-  accepted_content_store_terms TINYINT(1) DEFAULT 0,
   has_seen_welcome_modal TINYINT(1) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
