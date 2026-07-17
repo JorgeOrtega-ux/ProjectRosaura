@@ -75,6 +75,14 @@ class AuthController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
+    public function google_login($input) {
+        $safeInput = [
+            'credential' => $input['credential'] ?? null
+        ];
+        try { return $this->authServices->googleLogin($safeInput); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
     public function login_verify_2fa($input) {
         $captcha = $this->validateCaptcha($input);
         if (!$captcha['success']) return $captcha;

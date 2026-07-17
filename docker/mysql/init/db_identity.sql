@@ -91,12 +91,14 @@ CREATE TABLE IF NOT EXISTS `users` (
   `two_factor_recovery_codes` text DEFAULT NULL,
   `deletion_scheduled_at` datetime DEFAULT NULL,
   `profile_picture` varchar(255) NOT NULL,
+  `google_id` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `storage_used_bytes` bigint(20) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
   UNIQUE KEY `email` (`email`),
-  UNIQUE KEY `username` (`username`)
+  UNIQUE KEY `username` (`username`),
+  UNIQUE KEY `google_id` (`google_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `user_roles` (

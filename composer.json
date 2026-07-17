@@ -10,7 +10,8 @@
         "typesense/typesense-php": "^4.9",
         "symfony/http-client": "^7.4",
         "stripe/stripe-php": "^20.3",
-        "aws/aws-sdk-php": "^3.388"
+        "aws/aws-sdk-php": "^3.388",
+        "google/apiclient": "^2.15"
     },
    "autoload": {
         "psr-4": {

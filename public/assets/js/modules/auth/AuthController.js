@@ -23,6 +23,14 @@ class AuthController {
         this.bindEvents();
         this._renderTurnstile();
 
+        const customGoogleBtns = document.querySelectorAll('[data-action="customGoogleLogin"]');
+        customGoogleBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.triggerGoogleOAuth();
+            });
+        });
+
         if (window.location.pathname.includes('/register/verification-account')) {
             const resendBtn = document.querySelector('[data-ref="btn-resend-register-code"]');
             const defaultText = __('btn_resend_code');
@@ -368,6 +376,41 @@ class AuthController {
             } else {
                 this.showError(result.message || window.__('err_login_limit'));
             }
+        }
+    }
+
+    triggerGoogleOAuth() {
+        if (!window.google) return;
+        
+        const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: window.GOOGLE_CLIENT_ID || '',
+            scope: 'openid email profile',
+            callback: (response) => {
+                if (response.access_token) {
+                    this.handleGoogleLogin(response.access_token);
+                }
+            }
+        });
+        client.requestAccessToken();
+    }
+
+    async handleGoogleLogin(credential) {
+        this.clearMessages();
+        const data = { credential: credential };
+        const result = await this.api.post('auth.google', data, this.abortController?.signal);
+
+        if (result.aborted) return;
+
+        if (result.success) {
+            if (result.requires_2fa) {
+                sessionStorage.setItem('temp_auth_token', result.temp_auth_token);
+                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/login/two-factor');
+                else window.location.href = this.basePath + '/login/two-factor';
+            } else {
+                window.location.href = this.basePath + '/';
+            }
+        } else {
+            this.showError(result.message || 'Google Login failed');
         }
     }
 

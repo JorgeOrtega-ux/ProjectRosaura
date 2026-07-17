@@ -658,6 +658,132 @@ class AuthServices {
         return ['success' => false, 'message' => __('auth.incorrect_credentials')];
     }
 
+    public function googleLogin($data) {
+        $credential = $data['credential'] ?? null;
+        if (empty($credential)) return ['success' => false, 'message' => __('validation.missing_fields')];
+
+        $clientId = $_ENV['GOOGLE_CLIENT_ID'] ?? getenv('GOOGLE_CLIENT_ID');
+        if (empty($clientId)) return ['success' => false, 'message' => __('error.internal_server_error')];
+
+        try {
+            $userInfoUrl = 'https://www.googleapis.com/oauth2/v3/userinfo';
+            $context = stream_context_create([
+                'http' => [
+                    'header' => "Authorization: Bearer {$credential}\r\n"
+                ]
+            ]);
+            $response = @file_get_contents($userInfoUrl, false, $context);
+            if ($response === false) {
+                return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
+            }
+            $payload = json_decode($response, true);
+        } catch (\Exception $e) {
+            Logger::error("Google token verification failed", ['exception' => $e]);
+            return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
+        }
+
+        if (!$payload || !isset($payload['sub'])) {
+            return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
+        }
+
+        $googleId = $payload['sub'];
+        $email = $payload['email'];
+        $name = $payload['name'] ?? 'User';
+
+        $user = $this->userRepository->findByGoogleId($googleId);
+
+        if (!$user) {
+            $user = $this->userRepository->findByEmail($email);
+            if ($user) {
+                $this->userRepository->updateGoogleId($user['id'], $googleId);
+            } else {
+                $uuid = Utils::generateUUID();
+                $username = Utils::sanitizeText($name);
+                $username = preg_replace('/[^a-zA-Z0-9_]/', '', $username);
+                $username = strtolower(substr($username, 0, 15));
+                if (strlen($username) < 3) $username .= rand(100, 999);
+                while ($this->userRepository->findByUsername($username)) {
+                    $username .= rand(10, 99);
+                }
+
+                $profilePic = Utils::generateProfilePicture($username, $uuid);
+                $defaultRoleId = (int)($this->config['default_user_role_id'] ?? SecurityConstants::DEFAULT_USER_ROLE_ID);
+                $randomPassword = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
+
+                $newUserId = $this->userRepository->createUser([
+                    'uuid' => $uuid,
+                    'username' => $username,
+                    'email' => $email,
+                    'password' => $randomPassword,
+                    'profile_picture' => $profilePic,
+                    'google_id' => $googleId,
+                    'roles' => [$defaultRoleId]
+                ]);
+
+                if ($newUserId > 0) {
+                    $user = $this->userRepository->findById($newUserId);
+                    $this->telemetryServices->logAuthEvent([
+                        'event_type' => 'google_register_success',
+                        'user_uuid' => $user['uuid'],
+                        'ip_address' => Utils::getIpAddress()
+                    ]);
+                } else {
+                    return ['success' => false, 'message' => __('error.database')];
+                }
+            }
+        }
+
+        $ipAddress = Utils::getIpAddress();
+        
+        if (!empty($user['deletion_scheduled_at']) && strtotime($user['deletion_scheduled_at']) <= time()) {
+            return ['success' => false, 'status' => 'deleted', 'message' => __('auth.account_deleted')];
+        } else if (!empty($user['deletion_scheduled_at'])) {
+            $tempToken = bin2hex(random_bytes(16));
+            $pendingDeletion = $this->sessionManager->get(SessionConstants::KEY_PENDING_DELETION, []);
+            $pendingDeletion[$tempToken] = $user['id'];
+            $this->sessionManager->set(SessionConstants::KEY_PENDING_DELETION, $pendingDeletion);
+            return [
+                'success' => false, 'status' => 'pending_deletion', 'requires_action' => 'cancel_deletion',
+                'temp_auth_token' => $tempToken, 'scheduled_at' => $user['deletion_scheduled_at'], 'message' => __('auth.account_pending_deletion')
+            ];
+        }
+
+        if (isset($user['is_suspended']) && $user['is_suspended'] == 1) {
+            if ($user['suspension_type'] === DatabaseConstants::SUSPENSION_TEMP && $user['suspension_end_date'] && strtotime($user['suspension_end_date']) <= time()) {
+                $this->userRepository->liftSuspension($user['id']);
+                $user['is_suspended'] = 0;
+            } else {
+                return ['success' => false, 'status' => 'suspended', 'message' => __('auth.account_suspended')];
+            }
+        }
+
+        if (!empty($user['two_factor_enabled'])) {
+            $tempToken = bin2hex(random_bytes(16));
+            $pending2fa = $this->sessionManager->get(SessionConstants::KEY_PENDING_2FA, []);
+            $pending2fa[$tempToken] = $user['id'];
+            $this->sessionManager->set(SessionConstants::KEY_PENDING_2FA, $pending2fa);
+            return ['success' => true, 'requires_2fa' => true, 'temp_auth_token' => $tempToken, 'message' => __('auth.requires_2fa')];
+        }
+
+        $redisCache = new RedisCache();
+        $lockName = "session_pool_login_" . $user['id'];
+        return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user, $ipAddress) {
+            if (!$this->setAuthSession($user)) {
+                return ['success' => false, 'message' => __('auth.max_accounts_reached')];
+            }
+            if (method_exists($this->sessionManager, 'restoreAccountInPool')) {
+                $this->sessionManager->restoreAccountInPool($user['id']);
+            }
+            $this->createRememberToken($user['id']);
+            $this->telemetryServices->logAuthEvent([
+                'event_type' => 'google_login_success',
+                'user_uuid' => $user['uuid'],
+                'ip_address' => $ipAddress
+            ]);
+            return ['success' => true, 'requires_2fa' => false, 'message' => __('auth.login_success')];
+        });
+    }
+
     public function cancelAccountDeletion($data) {
         $tempToken = trim($data['temp_auth_token'] ?? '');
         $rememberDevice = !empty($data['remember_device']);

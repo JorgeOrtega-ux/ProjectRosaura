@@ -168,6 +168,23 @@ class UserRepository implements UserRepositoryInterface {
         return $this->getUserWithDetails('email', $email);
     }
 
+    public function findByGoogleId(string $googleId): ?array {
+        return $this->getUserWithDetails('google_id', $googleId);
+    }
+
+    public function updateGoogleId(int $id, string $googleId): bool {
+        $tblUsers = DB::TBL_USERS;
+        try {
+            $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET google_id = ? WHERE id = ?");
+            $res = $stmt->execute([$googleId, $id]);
+            if ($res) $this->invalidateProfileCache($id);
+            return $res;
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'google_id' => $googleId, 'exception' => $e]);
+            return false;
+        }
+    }
+
     public function findByUsername(string $username): ?array {
         $tblUsers = DB::TBL_USERS;
         try {
@@ -189,13 +206,14 @@ class UserRepository implements UserRepositoryInterface {
         try {
             $this->pdo->beginTransaction();
             
-            $stmtUser = $this->pdo->prepare("INSERT INTO {$tblUsers} (uuid, username, email, password, profile_picture) VALUES (?, ?, ?, ?, ?)");
+            $stmtUser = $this->pdo->prepare("INSERT INTO {$tblUsers} (uuid, username, email, password, profile_picture, google_id) VALUES (?, ?, ?, ?, ?, ?)");
             $stmtUser->execute([
                 $data['uuid'], 
                 $data['username'], 
                 $data['email'], 
                 $data['password'], 
-                $data['profile_picture']
+                $data['profile_picture'],
+                $data['google_id'] ?? null
             ]);
             $userId = (int) $this->pdo->lastInsertId();
 
