@@ -196,46 +196,18 @@ export const DesignSetup = {
     hydrateCanvasState(base64String) {
         try {
             const binaryString = atob(base64String);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-            
             const imageData = this.offscreenCtx.createImageData(this.boardWidth, this.boardHeight);
-            const paletteColors = getPaletteById(this.canvasPaletteId).colors;
             
-            for (let i = 0; i < bytes.length; i++) {
-                const colorIndex = bytes[i];
-                const dataIdx = i * 4;
-
-                if (colorIndex === 255) {
-                    imageData.data[dataIdx] = 0;     
-                    imageData.data[dataIdx + 1] = 0; 
-                    imageData.data[dataIdx + 2] = 0; 
-                    imageData.data[dataIdx + 3] = 0; 
-                } else {
-                    let hex = '#FFFFFF';
-                    if (paletteColors[colorIndex] && paletteColors[colorIndex].hex) {
-                        hex = paletteColors[colorIndex].hex;
-                    } else if (window.APP_PALETTES && window.APP_PALETTES['default'] && window.APP_PALETTES['default'].colors[colorIndex]) {
-                        hex = window.APP_PALETTES['default'].colors[colorIndex].hex;
-                    }
-                    
-                    const r = parseInt(hex.slice(1, 3), 16);
-                    const g = parseInt(hex.slice(3, 5), 16);
-                    const b = parseInt(hex.slice(5, 7), 16);
-                    
-                    imageData.data[dataIdx] = r;
-                    imageData.data[dataIdx + 1] = g;
-                    imageData.data[dataIdx + 2] = b;
-                    imageData.data[dataIdx + 3] = 255; 
-                }
+            const totalBytes = Math.min(binaryString.length, imageData.data.length);
+            for (let i = 0; i < totalBytes; i++) {
+                imageData.data[i] = binaryString.charCodeAt(i);
             }
             
             this.offscreenCtx.putImageData(imageData, 0, 0);
             this.requestRender();
 
         } catch (e) {
+            console.error("Error hydrating canvas state:", e);
         }
     },
 

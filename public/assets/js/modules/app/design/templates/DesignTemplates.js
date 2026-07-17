@@ -285,6 +285,56 @@ export const DesignTemplates = {
         this.updateTemplateUI();
     },
 
+    _compressTemplateImage(file) {
+        if (!file.type.startsWith('image/')) return Promise.resolve(file);
+
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_SIZE = 1920;
+
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            });
+                            resolve(newFile);
+                        } else {
+                            resolve(file);
+                        }
+                    }, 'image/jpeg', 0.85);
+                };
+                img.onerror = () => resolve(file);
+            };
+            reader.onerror = () => resolve(file);
+        });
+    },
+
     async handleFileUpload(e) {
         if (this.isSpectator || this.timelapseActive || this.isResetLocked) return;
         const file = e.target.files[0];
@@ -296,8 +346,10 @@ export const DesignTemplates = {
             btnUpload.innerHTML = `<span class="material-symbols-rounded icon-spin-slow">autorenew</span> ${window.__('uploading')}...`;
         }
 
+        const compressedFile = await this._compressTemplateImage(file);
+
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', compressedFile);
 
         try {
             const response = await this.api.postForm(ApiRoutes.Canvases.UploadTemplate, formData, this.abortController.signal);

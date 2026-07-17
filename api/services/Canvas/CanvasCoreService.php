@@ -366,7 +366,8 @@ class CanvasCoreService {
 
             if (!$stateRaw) {
                 $totalPixels = $width * $height;
-                $stateRaw = str_repeat(chr(255), $totalPixels); 
+                // 4 bytes per pixel (RGBA transparent)
+                $stateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $totalPixels); 
                 
                 if ($redis) {
                     try {
@@ -697,18 +698,18 @@ class CanvasCoreService {
                     $newH = isset($newParts[1]) ? (int)$newParts[1] : $newW;
 
                     $newTotal = $newW * $newH;
-                    $newStateRaw = str_repeat(chr(255), $newTotal); 
+                    // 4 bytes per pixel (RGBA transparent)
+                    $newStateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $newTotal); 
 
-                    if (strlen($stateRaw) == ($oldW * $oldH)) {
+                    if (strlen($stateRaw) == ($oldW * $oldH * 4)) {
                         $minH = min($oldH, $newH);
                         $minW = min($oldW, $newW);
                         for ($y = 0; $y < $minH; $y++) {
-                            $rowBytes = substr($stateRaw, $y * $oldW, $minW);
-                            $newStateRaw = substr_replace($newStateRaw, $rowBytes, $y * $newW, $minW);
+                            $rowBytes = substr($stateRaw, ($y * $oldW) * 4, $minW * 4);
+                            $newStateRaw = substr_replace($newStateRaw, $rowBytes, ($y * $newW) * 4, $minW * 4);
                         }
                     } else {
-                        
-                        $newStateRaw = str_repeat(chr(255), $newTotal);
+                        $newStateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $newTotal);
                     }
 
                     $this->canvasRepository->saveSnapshot($canvasId, $newStateRaw);

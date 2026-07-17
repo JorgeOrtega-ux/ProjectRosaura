@@ -91,23 +91,27 @@ def process_resize_task(r, db, task_data):
             raise ValueError(f"Binary state not found for canvas {canvas_id}.")
 
         actual_len = len(old_state)
-        expected_size = old_w * old_h
+        expected_size = old_w * old_h * 4
 
         if actual_len != expected_size:
             logging.warning(f"DesincronizaciÃ³n detectada. Metadata esperaba {expected_size} bytes, Redis tiene {actual_len} bytes.")
-            real_old_size = int(math.sqrt(actual_len))
+            real_old_size = int(math.sqrt(actual_len // 4))
             logging.warning(f"Auto-correcting base size to {real_old_size}x{real_old_size} for correct processing.")
             old_w, old_h = real_old_size, real_old_size
 
-        new_state = bytearray([255] * (new_w * new_h))
+        new_state = bytearray([0, 0, 0, 0] * (new_w * new_h))
         limit_x = min(old_w, new_w)
         limit_y = min(old_h, new_h)
         
         for y in range(limit_y):
             for x in range(limit_x):
-                old_idx = (y * old_w) + x
-                new_idx = (y * new_w) + x
-                new_state[new_idx] = old_state[old_idx]
+                old_idx = ((y * old_w) + x) * 4
+                new_idx = ((y * new_w) + x) * 4
+                if old_idx + 3 < len(old_state) and new_idx + 3 < len(new_state):
+                    new_state[new_idx] = old_state[old_idx]
+                    new_state[new_idx+1] = old_state[old_idx+1]
+                    new_state[new_idx+2] = old_state[old_idx+2]
+                    new_state[new_idx+3] = old_state[old_idx+3]
 
         new_state_bytes = bytes(new_state)
         r.set(state_key, new_state_bytes)
@@ -198,7 +202,7 @@ def process_reset_task(r, db, task_data):
                 logging.warning(f"Timeout waiting for HQ snapshot of canvas {canvas_id}.")
 
         size_w, size_h = parse_size(canvas_size)
-        empty_state = bytes([255] * (size_w * size_h))
+        empty_state = bytes([0, 0, 0, 0] * (size_w * size_h))
         compressed_empty = zlib.compress(empty_state)
         
         with db.cursor() as cursor:
@@ -416,19 +420,23 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         raw_bytes = decompress(compressed_data)
         
         width, height = parse_size(size_str)
-        expected_size = width * height
+        expected_size = width * height * 4
         
         if len(raw_bytes) < expected_size:
-            raw_bytes += bytes([255] * (expected_size - len(raw_bytes)))
+            raw_bytes += bytes([0, 0, 0, 0] * ((expected_size - len(raw_bytes)) // 4))
             
-        img = Image.new('RGBA', (width, height), color=(255, 255, 255, 255))
+        img = Image.new('RGBA', (width, height), color=(0, 0, 0, 0))
         pixels = img.load()
         
-        for i in range(expected_size):
-            byte_val = raw_bytes[i]
-            x = i % width
-            y = i // width
-            pixels[x, y] = get_color(palette_id, byte_val)
+        for y in range(height):
+            for x in range(width):
+                idx = (y * width + x) * 4
+                if idx + 3 < len(raw_bytes):
+                    r_c = raw_bytes[idx]
+                    g_c = raw_bytes[idx+1]
+                    b_c = raw_bytes[idx+2]
+                    a_c = raw_bytes[idx+3]
+                    pixels[x, y] = (r_c, g_c, b_c, a_c)
             
         scale_w = THUMBNAIL_MAX_SIZE / width
         scale_h = THUMBNAIL_MAX_SIZE / height

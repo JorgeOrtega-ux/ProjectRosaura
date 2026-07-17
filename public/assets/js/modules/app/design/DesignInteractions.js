@@ -923,12 +923,8 @@ export const DesignInteractions = {
             return;
         }
 
-        const paletteObj = getPaletteById(this.canvasPaletteId);
-        let colorIndex = 0;
-        if (paletteObj && paletteObj.colors) {
-            const idx = paletteObj.colors.findIndex(c => c.hex.toLowerCase() === this.currentColor.toLowerCase());
-            if (idx !== -1) colorIndex = idx;
-        }
+        // Se envía el color hexadecimal directamente
+        let colorHex = this.currentColor;
 
         let validPixels = [];
         let hitProtected = false;
@@ -982,7 +978,7 @@ export const DesignInteractions = {
                     type: msgType,
                     x: p.x,
                     y: p.y,
-                    color: colorIndex,
+                    color: colorHex,
                     width: this.boardWidth,
                     userId: window.activeUserId || null 
                 });

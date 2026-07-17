@@ -95,15 +95,12 @@ export const DesignNetwork = {
                 if (data.type === 'pixel') {
                     const pX = parseInt(data.x, 10);
                     const pY = parseInt(data.y, 10);
-                    const cIdx = parseInt(data.color, 10);
+                    const colorData = data.color;
                     
-                    if (cIdx === 255) {
+                    if (colorData === 'transparent' || colorData === 255) {
                         this.offscreenCtx.clearRect(pX, pY, 1, 1);
                     } else {
-                        const paletteObj = getPaletteById(this.canvasPaletteId);
-                        const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx].hex : '#000000';
-                        
-                        this.offscreenCtx.fillStyle = hexColor;
+                        this.offscreenCtx.fillStyle = colorData;
                         this.offscreenCtx.clearRect(pX, pY, 1, 1);
                         this.offscreenCtx.fillRect(pX, pY, 1, 1);
                     }
@@ -143,15 +140,12 @@ export const DesignNetwork = {
                     if (data.x !== undefined && data.y !== undefined && data.color !== undefined) {
                         const pX = parseInt(data.x, 10);
                         const pY = parseInt(data.y, 10);
-                        const cIdx = parseInt(data.color, 10);
+                        const colorData = data.color;
                         
-                        if (cIdx === 255) {
+                        if (colorData === 'transparent' || colorData === 255) {
                             this.offscreenCtx.clearRect(pX, pY, 1, 1);
                         } else {
-                            const paletteObj = getPaletteById(this.canvasPaletteId);
-                            const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx].hex : '#000000';
-                            
-                            this.offscreenCtx.fillStyle = hexColor;
+                            this.offscreenCtx.fillStyle = colorData;
                             this.offscreenCtx.clearRect(pX, pY, 1, 1);
                             this.offscreenCtx.fillRect(pX, pY, 1, 1);
                         }

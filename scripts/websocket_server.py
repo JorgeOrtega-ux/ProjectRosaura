@@ -422,10 +422,21 @@ async def handler(websocket):
                     width = int(data.get("width", 64))
                     user_id = WS_META[websocket].get('user_id')
                     
-                    raw_color = data.get("color", 0)
-                    try:
-                        color_index = int(raw_color)
-                    except ValueError:
+                    raw_color = data.get("color", "transparent")
+                    color_bytes = b'\x00\x00\x00\x00'
+                    color_hex = "transparent"
+                    
+                    if isinstance(raw_color, str) and raw_color.startswith("#") and len(raw_color) == 7:
+                        try:
+                            r_c = int(raw_color[1:3], 16)
+                            g_c = int(raw_color[3:5], 16)
+                            b_c = int(raw_color[5:7], 16)
+                            color_bytes = bytes([r_c, g_c, b_c, 255])
+                            color_hex = raw_color.lower()
+                        except ValueError:
+                            continue
+                    elif raw_color != "transparent":
+                        # Invalid format, ignore
                         continue
 
                     raw_config = await r.hgetall(config_key)
@@ -455,8 +466,13 @@ async def handler(websocket):
                         if protected_by:
                             print(f"[DEBUG PY] Pixel {x},{y} protected by user {protected_by.decode('utf-8')}")
                             redis_state_key = f"canvas:{canvas_id}:state"
-                            orig_color = await r.getrange(redis_state_key, offset, offset)
-                            orig_c_index = orig_color[0] if orig_color else 255
+                            byte_offset = offset * 4
+                            orig_color = await r.getrange(redis_state_key, byte_offset, byte_offset + 3)
+                            
+                            orig_c_hex = "transparent"
+                            if orig_color and len(orig_color) == 4:
+                                if orig_color[3] != 0:
+                                    orig_c_hex = f"#{orig_color[0]:02x}{orig_color[1]:02x}{orig_color[2]:02x}"
                             
                             balance, last_t, user_key, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
                             user_no_cooldown_key = f"user:{user_id}:perk:no_cooldown"
@@ -474,7 +490,7 @@ async def handler(websocket):
                                 "message": "err_pixel_protected",
                                 "x": x,
                                 "y": y,
-                                "color": orig_c_index,
+                                "color": orig_c_hex,
                                 "balance": int(balance),
                                 "max_batch": config_batch,
                                 "cooldown_sec": config_sec,
@@ -514,27 +530,27 @@ async def handler(websocket):
                                 "cooldown_sec": config_sec,
                                 "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0,
                                 "perk_no_cooldown": bool(is_no_cooldown),
-                                "perk_protection_left": protection_left - 1 if (0 <= color_index <= 255 and protection_left > 0) else protection_left,
+                                "perk_protection_left": protection_left - 1 if (color_hex != "transparent" and protection_left > 0) else protection_left,
                                 "perk_eraser_left": eraser_left
                             })
                             print(f"[DEBUG PY] Confirming pixel. Msg: {confirm_msg}")
                             await websocket.send(confirm_msg)
 
-                            if 0 <= color_index <= 255:
-                                redis_state_key = f"canvas:{canvas_id}:state"
-                                await r.setrange(redis_state_key, offset, bytes([color_index]))
-                                
-                                stream_key = f"canvas:{canvas_id}:stream"
-                                event_dict = {
-                                    "u": str(user_id),
-                                    "x": str(x),
-                                    "y": str(y),
-                                    "c": str(color_index)
-                                }
-                                await r.xadd(stream_key, event_dict)
+                            redis_state_key = f"canvas:{canvas_id}:state"
+                            byte_offset = offset * 4
+                            await r.setrange(redis_state_key, byte_offset, color_bytes)
+                            
+                            stream_key = f"canvas:{canvas_id}:stream"
+                            event_dict = {
+                                "u": str(user_id),
+                                "x": str(x),
+                                "y": str(y),
+                                "c": color_hex
+                            }
+                            await r.xadd(stream_key, event_dict)
 
-                                clients_in_room = ROOMS.get(canvas_id, set())
-                                if len(clients_in_room) > 1:
+                            clients_in_room = ROOMS.get(canvas_id, set())
+                            if len(clients_in_room) > 1:
                                     tasks = [
                                         asyncio.create_task(client.send(message))
                                         for client in clients_in_room if client != websocket
@@ -664,14 +680,15 @@ async def handler(websocket):
                             await r.delete(protected_key)
                             
                             redis_state_key = f"canvas:{canvas_id}:state"
-                            await r.setrange(redis_state_key, offset, bytes([255]))
+                            byte_offset = offset * 4
+                            await r.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00')
                             
                             stream_key = f"canvas:{canvas_id}:stream"
                             event_dict = {
                                 "u": str(user_id),
                                 "x": str(x),
                                 "y": str(y),
-                                "c": "255"
+                                "c": "transparent"
                             }
                             await r.xadd(stream_key, event_dict)
 
@@ -699,7 +716,7 @@ async def handler(websocket):
                                     "type": "pixel",
                                     "x": x,
                                     "y": y,
-                                    "color": 255
+                                    "color": "transparent"
                                 })
                                 tasks = [
                                     asyncio.create_task(client.send(broadcast_msg))
