@@ -266,7 +266,7 @@ async def handler(websocket):
                 message_count = 0
             
             message_count += 1
-            if message_count > 15:
+            if message_count > 200:
                 print(f"[!] Spam detected (UserId: {ticket_user_id}). Disconnecting WS.")
                 await websocket.close(code=1008, reason="Rate limit exceeded")
                 return

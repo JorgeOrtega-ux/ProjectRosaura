@@ -222,6 +222,172 @@ def run_auth_tests(target_url="http://localhost"):
     print(f"{Colors.GREEN}{Colors.BOLD}[OK] Todas las pruebas de Autenticación pasaron exitosamente.{Colors.ENDC}")
     print(f"{Colors.HEADER}======================================={Colors.ENDC}\n")
 
+    img_width, img_height = img.size
+    print(f"[+] Imagen original: {img_width}x{img_height}")
+
+    if start_x + img_width > canvas_width or start_y + img_height > canvas_height:
+        print(f"{Colors.WARNING}[!] La imagen ({img_width}x{img_height}) excede los límites del canvas ({canvas_width}x{canvas_height}) en las coordenadas ({start_x}, {start_y}).{Colors.ENDC}")
+        resp = input("¿Deseas redimensionarla para que encaje automáticamente manteniendo la proporción? (s/n): ").strip().lower()
+        if resp == 's':
+            max_w = canvas_width - start_x
+            max_h = canvas_height - start_y
+            ratio = min(max_w / img_width, max_h / img_height)
+            new_w = max(1, int(img_width * ratio))
+            new_h = max(1, int(img_height * ratio))
+            print(f"[*] Redimensionando imagen a {new_w}x{new_h}...")
+            # En versiones antiguas de Pillow es Image.ANTIALIAS, en nuevas es Image.Resampling.LANCZOS
+            resample_filter = getattr(Image, 'Resampling', Image).LANCZOS
+            img = img.resize((new_w, new_h), resample_filter)
+            img_width, img_height = img.size
+        else:
+            print(f"{Colors.FAIL}[-] Operación cancelada.{Colors.ENDC}")
+            return
+
+    def hex_to_rgb(hex_str):
+        hex_str = hex_str.lstrip('#')
+        if len(hex_str) == 3:
+            hex_str = ''.join(c + c for c in hex_str)
+        return tuple(int(hex_str[i:i+2], 16) for i in (0, 2, 4))
+
+    # Pre-calcular colores RGB de la paleta
+    palette_rgb = [(i, hex_to_rgb(c['hex'])) for i, c in enumerate(palette_colors)]
+    color_cache = {}
+
+    def get_closest_color_index(rgb):
+        if rgb in color_cache:
+            return color_cache[rgb]
+        min_dist = float('inf')
+        closest_idx = 0
+        for i, c_rgb in palette_rgb:
+            dist = (rgb[0] - c_rgb[0])**2 + (rgb[1] - c_rgb[1])**2 + (rgb[2] - c_rgb[2])**2
+            if dist < min_dist:
+                min_dist = dist
+                closest_idx = i
+        color_cache[rgb] = closest_idx
+        return closest_idx
+
+    pixels_to_draw = []
+    print("[*] Mapeando colores a la paleta... esto puede tomar unos segundos.")
+    for y in range(img_height):
+        for x in range(img_width):
+            r, g, b, a = img.getpixel((x, y))
+            if a < 128:
+                continue
+            c_idx = get_closest_color_index((r, g, b))
+            pixels_to_draw.append((start_x + x, start_y + y, c_idx))
+    
+    total_pixels = len(pixels_to_draw)
+    print(f"[+] Se procesaron {total_pixels} píxeles a dibujar.")
+
+    print("[*] Solicitando ticket WebSocket...")
+    res_ticket = api_request("canvases.get_ws_ticket", {"id": numeric_id})
+    if not res_ticket.get('success'):
+        print(f"{Colors.FAIL}[-] Error solicitando ticket: {res_ticket}{Colors.ENDC}")
+        return
+
+    ticket = None
+    if 'data' in res_ticket and 'ticket' in res_ticket['data']:
+        ticket = res_ticket['data']['ticket']
+    
+    if not ticket:
+        print(f"{Colors.FAIL}[-] Error: No se recibió un ticket en la respuesta. {res_ticket}{Colors.ENDC}")
+        return
+
+    ws_url = target_url.replace("http", "ws").replace("https", "wss")
+    from urllib.parse import urlparse
+    parsed = urlparse(ws_url)
+    ws_url = f"{parsed.scheme}://{parsed.hostname}:8765/canvas/{numeric_id}?ticket={urllib.parse.quote(ticket)}"
+    
+    print(f"[*] Conectando a WebSocket: {ws_url}...")
+    ws = websocket.WebSocket()
+    try:
+        ws.connect(ws_url, origin=target_url)
+    except Exception as e:
+        print(f"{Colors.FAIL}[-] Error de conexión WS: {e}{Colors.ENDC}")
+        return
+    print(f"{Colors.GREEN}[+] Conectado a WebSocket.{Colors.ENDC}")
+
+    placed_count = 0
+    total_pixels = len(pixels_to_draw)
+    balance = cooldown_batch
+    
+    for px, py, pcolor in pixels_to_draw:
+        while balance <= 0:
+            print(f"\r[*] Cooldown alcanzado. Esperando {cooldown_sec} segundos...    ", end="")
+            time.sleep(cooldown_sec)
+            balance += cooldown_batch 
+
+        msg = {
+            "type": "pixel",
+            "x": px,
+            "y": py,
+            "color": pcolor,
+            "width": canvas_width,
+            "userId": user_id
+        }
+        try:
+            ws.send(json.dumps(msg))
+            placed_count += 1
+            balance -= 1
+            print(f"\r[+] Dibujado ({px}, {py}) con color_idx {pcolor}. Progreso: {placed_count}/{total_pixels}  ", end="")
+            # Throttling preventivo para no activar el anti-spam del servidor (>200 msg/s)
+            time.sleep(0.01)
+        except Exception as e:
+            print(f"\n{Colors.FAIL}[-] Error enviando pixel: {e}{Colors.ENDC}")
+            break
+        
+        try:
+            ws.settimeout(0.2)
+            resp = ws.recv()
+            if resp:
+                data = json.loads(resp)
+                if data.get('type') == 'error':
+                    print(f"\n{Colors.WARNING}[!] Servidor devolvió error: {data.get('message')}. Pausando un momento...{Colors.ENDC}")
+                    time.sleep(cooldown_sec)
+        except websocket.WebSocketTimeoutException:
+            pass
+        except Exception as e:
+            pass
+
+    ws.close()
+    print(f"\n{Colors.GREEN}{Colors.BOLD}✅ Bot Painter finalizó exitosamente. Se dibujaron {placed_count} píxeles.{Colors.ENDC}")
+
+def run_admin_image_injector():
+    print(f"\n{Colors.HEADER}{Colors.BOLD}Inyector Instantáneo de Imágenes (Admin Bypass){Colors.ENDC}")
+    image_path = input("Ruta de la imagen (ej: public/1.png): ").strip()
+    canvas_id = input("ID numérico del Canvas (ej: 1): ").strip()
+    x = input("Coordenada X (Enter para 0): ").strip() or "0"
+    y = input("Coordenada Y (Enter para 0): ").strip() or "0"
+    
+    import os
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.abspath(os.path.join(script_dir, '..'))
+    abs_input = os.path.abspath(os.path.join(script_dir, image_path))
+    
+    try:
+        rel_path = os.path.relpath(abs_input, project_root)
+    except ValueError:
+        rel_path = image_path
+        
+    rel_path = rel_path.replace('\\', '/')
+    if rel_path.startswith('../') or rel_path.startswith('..\\'):
+        docker_image_path = "/app/" + os.path.basename(abs_input)
+    else:
+        docker_image_path = "/app/" + rel_path
+        
+    cmd = [
+        "docker", "exec", "-it", "rosaura_worker_canvas_jobs", 
+        "python", "/app/scripts/admin_draw_image.py",
+        docker_image_path, canvas_id, "--x", x, "--y", y
+    ]
+    
+    print(f"[*] Ejecutando Inyector...")
+    try:
+        import subprocess
+        subprocess.run(cmd)
+    except Exception as e:
+        print(f"{Colors.FAIL}[-] Error ejecutando docker: {e}{Colors.ENDC}")
+
 def load_words(filepath):
     """Carga las palabras del archivo txt"""
     with open(filepath, 'r', encoding='utf-8') as f:
@@ -260,9 +426,10 @@ def main():
     print("2 - Identificar estilos inline (style=\"...\") en archivos PHP")
     print("3 - Identificar código de depuración (console.log, var_dump, etc.)")
     print("4 - Ejecutar pruebas automatizadas de Autenticación (Login, Registro, 2FA, Reset Password)")
-    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3 o 4: {Colors.ENDC}").strip()
+    print("5 - Inyectar Imagen Instantáneamente (Saltar Límites, uso exclusivo de Admin)")
+    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4 o 5: {Colors.ENDC}").strip()
 
-    if choice not in ('1', '2', '3', '4'):
+    if choice not in ('1', '2', '3', '4', '5'):
         print(f"{Colors.FAIL}Opción no válida. Saliendo.{Colors.ENDC}")
         return
 
@@ -272,6 +439,10 @@ def main():
 
     if choice == '4':
         run_auth_tests()
+        return
+        
+    if choice == '5':
+        run_admin_image_injector()
         return
 
     if choice == '1':
