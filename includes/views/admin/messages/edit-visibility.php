@@ -7,11 +7,6 @@ use App\Core\System\DatabaseConstants as DB;
 $userPerms = $_SESSION['user_permissions'] ?? [];
 $canManageMessages = in_array('view_logs', $userPerms) || true;
 
-if (!$canManageMessages) {
-    header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/messages");
-    exit;
-}
-
 $messageUuid = $_GET['uuid'] ?? null;
 if (!$messageUuid) {
     header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/messages");

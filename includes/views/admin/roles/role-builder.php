@@ -1,19 +1,16 @@
-<?php
+<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
-$userPermissions = $_SESSION['user_permissions'] ?? [];
-if (!in_array(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE, $userPermissions)) {
-    header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/manage-roles");
-    exit;
-}
 
 $db = new DatabaseManager();
 $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
 $tblRoles = DB::TBL_ROLES;
+
+$userPermissions = $_SESSION['user_permissions'] ?? [];
 
 $isEdit = false;
 $roleData = [

@@ -12,7 +12,7 @@ $canAssignRoles = in_array(\App\Core\System\PermissionsConstants::ASSIGN_ROLES, 
 $canDeleteUsers = in_array('delete_users', $userPerms) || $isSuperAdmin;
 $canModerateUsers = count(array_intersect(['moderate_users', 'delete_users'], $userPerms)) > 0;
 $canViewKardex = in_array('view_kardex', $userPerms);
-
+ 
 $limit = 25; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;

@@ -6,12 +6,9 @@ use App\Core\Helpers\Utils;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 
+
 $userPerms = $_SESSION['user_permissions'] ?? [];
 $canManageMessages = in_array('view_logs', $userPerms) || true; // Replace logic if needed
-
-if (!$canManageMessages) {
-    die("Access Denied");
-}
 
 $limit = 25; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -66,7 +63,8 @@ try {
     }
 
 } catch (\PDOException $e) {
-    die("Error MySQL: " . $e->getMessage());
+    echo "<div class='view-content'><p>Error MySQL: " . htmlspecialchars($e->getMessage()) . "</p></div>";
+    return;
 }
 
 try {
