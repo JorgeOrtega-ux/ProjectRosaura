@@ -164,4 +164,66 @@ class CanvasAssetController extends BaseController {
         $result = $this->canvasServices->toggleFavorite($userId, (int)$canvasId);
         return $result;
     }
+
+    public function plazmar_imagen($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+            
+            $perms = $this->session->getPermissions();
+            if (empty($perms) && isset($_SESSION['user_permissions'])) {
+                $perms = $_SESSION['user_permissions'];
+            } elseif (empty($perms) && isset($_SESSION['permissions'])) {
+                $perms = $_SESSION['permissions'];
+            }
+            if (!is_array($perms)) {
+                $perms = [];
+            }
+            
+            $canInject = in_array(\App\Core\System\PermissionsConstants::INJECT_TEMPLATE, $perms) || 
+                         in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms);
+            
+            if (!$canInject) {
+                return $this->respond(['success' => false, 'message' => 'No tienes permiso para plasmar plantillas.']);
+            }
+
+            $canvasUuid = $input['canvas_id'] ?? null;
+            $url = $input['url'] ?? null;
+            $x = $input['x'] ?? 0;
+            $y = $input['y'] ?? 0;
+            
+            if (!$canvasUuid || !$url) {
+                return $this->respond(['success' => false, 'message' => __('err_missing_required_params')]);
+            }
+
+            $dbManager = new \App\Config\Database\DatabaseManager();
+            $pdo = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
+            $stmt = $pdo->prepare("SELECT id FROM canvases WHERE uuid = :uuid");
+            $stmt->execute(['uuid' => $canvasUuid]);
+            $canvasId = $stmt->fetchColumn();
+
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => 'Lienzo no encontrado.']);
+            }
+
+            $redis = (new \App\Config\Database\RedisCache())->getClient();
+            $taskData = [
+                'canvas_id' => (int)$canvasId,
+                'url' => $url,
+                'x' => (int)$x,
+                'y' => (int)$y,
+                'w' => (int)($input['w'] ?? 0),
+                'h' => (int)($input['h'] ?? 0),
+                'angle' => (float)($input['angle'] ?? 0),
+                'timestamp' => time()
+            ];
+            $redis->rpush('queue:canvas_draw_image', json_encode($taskData));
+            
+            return $this->respond(['success' => true, 'message' => 'Imagen encolada correctamente. Por favor espera unos segundos.']);
+            
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
 }

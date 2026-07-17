@@ -601,6 +601,54 @@ def thumbnails_thread():
 
         time.sleep(SYNC_INTERVAL)
 
+import subprocess
+import urllib.parse
+def draw_image_listener_thread():
+    logging.info("Starting Draw Image listener thread...")
+    r = get_redis_client()
+    while True:
+        try:
+            item = r.blpop("queue:canvas_draw_image", timeout=30)
+            if item:
+                _, task_json = item
+                task_data = json.loads(task_json)
+                url = task_data.get('url')
+                canvas_id = task_data.get('canvas_id')
+                x = task_data.get('x', 0)
+                y = task_data.get('y', 0)
+                w = task_data.get('w', 0)
+                h = task_data.get('h', 0)
+                angle = task_data.get('angle', 0)
+                
+                logging.info(f"Received draw_image task for canvas {canvas_id} at {x},{y} w={w} h={h} a={angle}")
+                
+                # S3 setup
+                bucket = os.getenv('AWS_BUCKET', 'rosaura-storage')
+                public_url = os.getenv('AWS_PUBLIC_URL', 'http://localhost:9000').rstrip('/')
+                key = url.replace(f"{public_url}/{bucket}/", "")
+                key = urllib.parse.urlparse(key).path.lstrip('/')
+                
+                s3_client = get_s3_client()
+                
+                import tempfile
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
+                    temp_path = temp_file.name
+                    s3_client.download_file(bucket, key, temp_path)
+                
+                script_path = os.path.join(os.path.dirname(__file__), 'admin_draw_image.py')
+                cmd = ["python", script_path, temp_path, str(canvas_id), "--x", str(x), "--y", str(y), "--w", str(w), "--h", str(h), "--angle", str(angle)]
+                logging.info(f"Executing: {' '.join(cmd)}")
+                
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                logging.info(f"Draw script output: {result.stdout}")
+                if result.stderr:
+                    logging.error(f"Draw script error: {result.stderr}")
+                    
+                os.remove(temp_path)
+                
+        except Exception as e:
+            logging.error(f"Error in Draw Image listener: {e}")
+
 if __name__ == "__main__":
     logging.info("INICIANDO WORKER UNIFICADO DE CANVAS (RESETS, RESIZES, THUMBNAILS)...")
     
@@ -608,6 +656,7 @@ if __name__ == "__main__":
     threading.Thread(target=reset_listener_thread, daemon=True, name="Thread-Reset").start()
     threading.Thread(target=scheduler_thread, daemon=True, name="Thread-Scheduler").start()
     threading.Thread(target=thumbnails_thread, daemon=True, name="Thread-Thumbnails").start()
+    threading.Thread(target=draw_image_listener_thread, daemon=True, name="Thread-DrawImage").start()
     
     while True:
         time.sleep(1)

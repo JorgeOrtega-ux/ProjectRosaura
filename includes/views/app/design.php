@@ -154,6 +154,19 @@ if (!empty($canvasUuid)) {
                 }
             }
         }
+
+        $canInjectTemplate = false;
+        if ($session && method_exists($session, 'getPermissions')) {
+            $perms = $session->getPermissions();
+            if (empty($perms) && isset($_SESSION['user_permissions'])) {
+                $perms = $_SESSION['user_permissions'];
+            } elseif (empty($perms) && isset($_SESSION['permissions'])) {
+                $perms = $_SESSION['permissions'];
+            }
+            if (is_array($perms)) {
+                $canInjectTemplate = in_array(\App\Core\System\PermissionsConstants::INJECT_TEMPLATE, $perms) || in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms);
+            }
+        }
     } catch (Exception $e) {
         \App\Core\System\Logger::error('err_design_view_load', ['exception' => $e->getMessage()]);
     }
@@ -258,6 +271,11 @@ if (!empty($canvasUuid)) {
                     <button class="component-button component-button--icon component-button--h40 disabled" data-action="rotateTemplate" data-ref="btn-template-rotate" data-tooltip="Rotar plantilla 90°" data-position="bottom">
                         <span class="material-symbols-rounded">rotate_right</span>
                     </button>
+                    <?php if (isset($canInjectTemplate) && $canInjectTemplate): ?>
+                    <button class="component-button component-button--icon component-button--h40 component-button--warning disabled" data-action="plazmarTemplate" data-ref="btn-template-plazmar" data-tooltip="Plazmar imagen" data-position="bottom">
+                        <span class="material-symbols-rounded">brush</span>
+                    </button>
+                    <?php endif; ?>
                     <button class="component-button component-button--icon component-button--h40 component-button--danger disabled" data-action="deleteTemplate" data-ref="btn-template-delete" data-tooltip="<?php echo __('tooltip_remove_template'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>

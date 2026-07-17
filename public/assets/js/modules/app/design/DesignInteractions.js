@@ -126,6 +126,16 @@ export const DesignInteractions = {
             }
             return;
         }
+        
+        const btnPlazmar = e.target.closest('[data-action="plazmarTemplate"]');
+        if (btnPlazmar) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof this.plazmarTemplate === 'function') {
+                this.plazmarTemplate();
+            }
+            return;
+        }
 
         const btnDelete = e.target.closest('[data-action="deleteTemplate"]');
         if (btnDelete) {

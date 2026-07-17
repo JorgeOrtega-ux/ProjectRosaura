@@ -13,4 +13,5 @@ class PermissionsConstants {
     public const ASSIGN_ROLES = 'assign_roles';
     public const VIEW_ROLES = 'view_roles';
     public const MANAGE_ROLES_STRUCTURE = 'manage_roles_structure';
+    public const INJECT_TEMPLATE = 'inject_template';
 }

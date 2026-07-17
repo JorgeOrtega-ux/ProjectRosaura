@@ -3516,5 +3516,523 @@
                 "name_key": "color_auto_254"
             }
         ]
+    },
+    "custom_admin_6016f28a": {
+        "name": "Inyector (Lienzo 1)",
+        "colors": [
+            {
+                "hex": "#D5D4D3",
+                "name_key": "color_auto_0"
+            },
+            {
+                "hex": "#C5C3C3",
+                "name_key": "color_auto_1"
+            },
+            {
+                "hex": "#C3C0BD",
+                "name_key": "color_auto_2"
+            },
+            {
+                "hex": "#C2B9B6",
+                "name_key": "color_auto_3"
+            },
+            {
+                "hex": "#C0A59D",
+                "name_key": "color_auto_4"
+            },
+            {
+                "hex": "#BEC0BB",
+                "name_key": "color_auto_5"
+            },
+            {
+                "hex": "#BDC0C2",
+                "name_key": "color_auto_6"
+            },
+            {
+                "hex": "#BCBBC1",
+                "name_key": "color_auto_7"
+            },
+            {
+                "hex": "#443E41",
+                "name_key": "color_auto_8"
+            },
+            {
+                "hex": "#A46A62",
+                "name_key": "color_auto_9"
+            },
+            {
+                "hex": "#B4B3B1",
+                "name_key": "color_auto_10"
+            },
+            {
+                "hex": "#ACA9A7",
+                "name_key": "color_auto_11"
+            },
+            {
+                "hex": "#A5A19C",
+                "name_key": "color_auto_12"
+            },
+            {
+                "hex": "#A48B83",
+                "name_key": "color_auto_13"
+            },
+            {
+                "hex": "#A29C96",
+                "name_key": "color_auto_14"
+            },
+            {
+                "hex": "#3C3D41",
+                "name_key": "color_auto_15"
+            },
+            {
+                "hex": "#A07D79",
+                "name_key": "color_auto_16"
+            },
+            {
+                "hex": "#9EA0A4",
+                "name_key": "color_auto_17"
+            },
+            {
+                "hex": "#9C9CA1",
+                "name_key": "color_auto_18"
+            },
+            {
+                "hex": "#999793",
+                "name_key": "color_auto_19"
+            },
+            {
+                "hex": "#945850",
+                "name_key": "color_auto_20"
+            },
+            {
+                "hex": "#916459",
+                "name_key": "color_auto_21"
+            },
+            {
+                "hex": "#906963",
+                "name_key": "color_auto_22"
+            },
+            {
+                "hex": "#8D8988",
+                "name_key": "color_auto_23"
+            },
+            {
+                "hex": "#A05D54",
+                "name_key": "color_auto_24"
+            },
+            {
+                "hex": "#8B4D45",
+                "name_key": "color_auto_25"
+            },
+            {
+                "hex": "#89847D",
+                "name_key": "color_auto_26"
+            },
+            {
+                "hex": "#84715D",
+                "name_key": "color_auto_27"
+            },
+            {
+                "hex": "#837B78",
+                "name_key": "color_auto_28"
+            },
+            {
+                "hex": "#827D83",
+                "name_key": "color_auto_29"
+            },
+            {
+                "hex": "#7E8086",
+                "name_key": "color_auto_30"
+            },
+            {
+                "hex": "#7C7B82",
+                "name_key": "color_auto_31"
+            },
+            {
+                "hex": "#79503D",
+                "name_key": "color_auto_32"
+            },
+            {
+                "hex": "#787576",
+                "name_key": "color_auto_33"
+            },
+            {
+                "hex": "#79715E",
+                "name_key": "color_auto_34"
+            },
+            {
+                "hex": "#A4645A",
+                "name_key": "color_auto_35"
+            },
+            {
+                "hex": "#704A43",
+                "name_key": "color_auto_36"
+            },
+            {
+                "hex": "#6E4734",
+                "name_key": "color_auto_37"
+            },
+            {
+                "hex": "#6D696A",
+                "name_key": "color_auto_38"
+            },
+            {
+                "hex": "#69615D",
+                "name_key": "color_auto_39"
+            },
+            {
+                "hex": "#675A56",
+                "name_key": "color_auto_40"
+            },
+            {
+                "hex": "#635D63",
+                "name_key": "color_auto_41"
+            },
+            {
+                "hex": "#602F2B",
+                "name_key": "color_auto_42"
+            },
+            {
+                "hex": "#5E6162",
+                "name_key": "color_auto_43"
+            },
+            {
+                "hex": "#5D5B62",
+                "name_key": "color_auto_44"
+            },
+            {
+                "hex": "#673B33",
+                "name_key": "color_auto_45"
+            },
+            {
+                "hex": "#595554",
+                "name_key": "color_auto_46"
+            },
+            {
+                "hex": "#4F2926",
+                "name_key": "color_auto_47"
+            },
+            {
+                "hex": "#4D4947",
+                "name_key": "color_auto_48"
+            },
+            {
+                "hex": "#A2877D",
+                "name_key": "color_auto_49"
+            },
+            {
+                "hex": "#49423D",
+                "name_key": "color_auto_50"
+            },
+            {
+                "hex": "#C2BDC2",
+                "name_key": "color_auto_51"
+            },
+            {
+                "hex": "#47201E",
+                "name_key": "color_auto_52"
+            },
+            {
+                "hex": "#443B38",
+                "name_key": "color_auto_53"
+            },
+            {
+                "hex": "#421C19",
+                "name_key": "color_auto_54"
+            },
+            {
+                "hex": "#231E20",
+                "name_key": "color_auto_55"
+            },
+            {
+                "hex": "#384342",
+                "name_key": "color_auto_56"
+            },
+            {
+                "hex": "#34403D",
+                "name_key": "color_auto_57"
+            },
+            {
+                "hex": "#313836",
+                "name_key": "color_auto_58"
+            },
+            {
+                "hex": "#2D2927",
+                "name_key": "color_auto_59"
+            },
+            {
+                "hex": "#A29EA2",
+                "name_key": "color_auto_60"
+            },
+            {
+                "hex": "#7E807C",
+                "name_key": "color_auto_61"
+            },
+            {
+                "hex": "#29221C",
+                "name_key": "color_auto_62"
+            },
+            {
+                "hex": "#231B16",
+                "name_key": "color_auto_63"
+            },
+            {
+                "hex": "#895F60",
+                "name_key": "color_auto_64"
+            },
+            {
+                "hex": "#1C1D20",
+                "name_key": "color_auto_65"
+            },
+            {
+                "hex": "#1A2825",
+                "name_key": "color_auto_66"
+            },
+            {
+                "hex": "#15211D",
+                "name_key": "color_auto_67"
+            },
+            {
+                "hex": "#131311",
+                "name_key": "color_auto_68"
+            },
+            {
+                "hex": "#9EA09A",
+                "name_key": "color_auto_69"
+            },
+            {
+                "hex": "#84473C",
+                "name_key": "color_auto_70"
+            },
+            {
+                "hex": "#0D0E0C",
+                "name_key": "color_auto_71"
+            },
+            {
+                "hex": "#C3ABA6",
+                "name_key": "color_auto_72"
+            },
+            {
+                "hex": "#5D605C",
+                "name_key": "color_auto_73"
+            }
+        ]
+    },
+    "custom_admin_d683061d": {
+        "name": "Inyector (Lienzo 1)",
+        "colors": [
+            {
+                "hex": "#FDFCFD",
+                "name_key": "color_auto_0"
+            },
+            {
+                "hex": "#20201E",
+                "name_key": "color_auto_1"
+            },
+            {
+                "hex": "#80807F",
+                "name_key": "color_auto_2"
+            },
+            {
+                "hex": "#C0C0BF",
+                "name_key": "color_auto_3"
+            },
+            {
+                "hex": "#E7E8E7",
+                "name_key": "color_auto_4"
+            },
+            {
+                "hex": "#E0DFE0",
+                "name_key": "color_auto_5"
+            },
+            {
+                "hex": "#DFE0DF",
+                "name_key": "color_auto_6"
+            },
+            {
+                "hex": "#DEDEE0",
+                "name_key": "color_auto_7"
+            },
+            {
+                "hex": "#D7D7D8",
+                "name_key": "color_auto_8"
+            },
+            {
+                "hex": "#7E7E80",
+                "name_key": "color_auto_9"
+            },
+            {
+                "hex": "#C8C8C8",
+                "name_key": "color_auto_10"
+            },
+            {
+                "hex": "#1E201E",
+                "name_key": "color_auto_11"
+            },
+            {
+                "hex": "#E0DFDF",
+                "name_key": "color_auto_12"
+            },
+            {
+                "hex": "#C0BEC1",
+                "name_key": "color_auto_13"
+            },
+            {
+                "hex": "#BEC0C0",
+                "name_key": "color_auto_14"
+            },
+            {
+                "hex": "#B7B7B8",
+                "name_key": "color_auto_15"
+            },
+            {
+                "hex": "#A7A7A8",
+                "name_key": "color_auto_16"
+            },
+            {
+                "hex": "#A09EA0",
+                "name_key": "color_auto_17"
+            },
+            {
+                "hex": "#9FA0A0",
+                "name_key": "color_auto_18"
+            },
+            {
+                "hex": "#9E9EA0",
+                "name_key": "color_auto_19"
+            },
+            {
+                "hex": "#939494",
+                "name_key": "color_auto_20"
+            },
+            {
+                "hex": "#8A8A8A",
+                "name_key": "color_auto_21"
+            },
+            {
+                "hex": "#807F80",
+                "name_key": "color_auto_22"
+            },
+            {
+                "hex": "#7E807E",
+                "name_key": "color_auto_23"
+            },
+            {
+                "hex": "#403C3F",
+                "name_key": "color_auto_24"
+            },
+            {
+                "hex": "#757576",
+                "name_key": "color_auto_25"
+            },
+            {
+                "hex": "#6B6A6B",
+                "name_key": "color_auto_26"
+            },
+            {
+                "hex": "#605E61",
+                "name_key": "color_auto_27"
+            },
+            {
+                "hex": "#5F6060",
+                "name_key": "color_auto_28"
+            },
+            {
+                "hex": "#5E5E60",
+                "name_key": "color_auto_29"
+            },
+            {
+                "hex": "#575757",
+                "name_key": "color_auto_30"
+            },
+            {
+                "hex": "#BEBEC0",
+                "name_key": "color_auto_31"
+            },
+            {
+                "hex": "#474748",
+                "name_key": "color_auto_32"
+            },
+            {
+                "hex": "#3E3E40",
+                "name_key": "color_auto_33"
+            },
+            {
+                "hex": "#403E41",
+                "name_key": "color_auto_34"
+            },
+            {
+                "hex": "#3E413E",
+                "name_key": "color_auto_35"
+            },
+            {
+                "hex": "#201E1E",
+                "name_key": "color_auto_36"
+            },
+            {
+                "hex": "#343435",
+                "name_key": "color_auto_37"
+            },
+            {
+                "hex": "#A09E9F",
+                "name_key": "color_auto_38"
+            },
+            {
+                "hex": "#232323",
+                "name_key": "color_auto_39"
+            },
+            {
+                "hex": "#201E20",
+                "name_key": "color_auto_40"
+            },
+            {
+                "hex": "#1E1E20",
+                "name_key": "color_auto_41"
+            },
+            {
+                "hex": "#DFE0E0",
+                "name_key": "color_auto_42"
+            },
+            {
+                "hex": "#171718",
+                "name_key": "color_auto_43"
+            },
+            {
+                "hex": "#BEC0BF",
+                "name_key": "color_auto_44"
+            },
+            {
+                "hex": "#9EA09F",
+                "name_key": "color_auto_45"
+            },
+            {
+                "hex": "#807F7F",
+                "name_key": "color_auto_46"
+            },
+            {
+                "hex": "#7E8080",
+                "name_key": "color_auto_47"
+            },
+            {
+                "hex": "#5E605F",
+                "name_key": "color_auto_48"
+            },
+            {
+                "hex": "#060506",
+                "name_key": "color_auto_49"
+            },
+            {
+                "hex": "#3E4040",
+                "name_key": "color_auto_50"
+            },
+            {
+                "hex": "#E0E1DF",
+                "name_key": "color_auto_51"
+            },
+            {
+                "hex": "#1E2020",
+                "name_key": "color_auto_52"
+            }
+        ]
     }
 }

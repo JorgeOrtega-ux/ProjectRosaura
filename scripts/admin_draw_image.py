@@ -30,6 +30,9 @@ def main():
     parser.add_argument("canvas_id", type=int, help="ID del lienzo (ej. 1)")
     parser.add_argument("--x", type=int, default=0, help="Posicion X inicial (por defecto: 0)")
     parser.add_argument("--y", type=int, default=0, help="Posicion Y inicial (por defecto: 0)")
+    parser.add_argument("--w", type=int, default=0, help="Ancho (opcional)")
+    parser.add_argument("--h", type=int, default=0, help="Alto (opcional)")
+    parser.add_argument("--angle", type=float, default=0, help="Angulo (opcional)")
     args = parser.parse_args()
 
     # DB Connection
@@ -67,8 +70,23 @@ def main():
         print(f"[!] Error abriendo la imagen {args.image_path}: {e}")
         return
 
+    # Resize if specified
+    if args.w > 0 and args.h > 0:
+        img = img.resize((args.w, args.h), Image.Resampling.LANCZOS)
+        
+    # Rotate if specified (using expand=True to preserve all pixels)
+    if args.angle != 0:
+        img = img.rotate(-args.angle, expand=True, resample=Image.Resampling.BICUBIC)
+        # Adjust x and y so the image remains centered where the user placed it
+        new_w, new_h = img.size
+        # The center of the unrotated image was at x + w/2, y + h/2
+        cx = args.x + (args.w / 2.0 if args.w > 0 else img.width / 2.0)
+        cy = args.y + (args.h / 2.0 if args.h > 0 else img.height / 2.0)
+        args.x = int(cx - new_w / 2.0)
+        args.y = int(cy - new_h / 2.0)
+
     img_width, img_height = img.size
-    print(f"[*] Imagen cargada correctamente: {img_width}x{img_height}")
+    print(f"[*] Imagen cargada y procesada: {img_width}x{img_height}")
 
     original_img = img.copy()
     img_rgb = img.convert("RGB")

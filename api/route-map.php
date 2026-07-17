@@ -608,6 +608,11 @@ return [
         'action' => 'delete_template',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_del_tpl', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
+    'canvases.plazmar_imagen' => [
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
+        'action' => 'plazmar_imagen',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_plazmar', 'max' => 5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
 
     'canvas.update_chat_restriction' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasChatRestrictionController',
