@@ -7,6 +7,7 @@ import threading
 from zlib import compress
 import boto3
 import botocore
+import uuid
 
 S3_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
 if not S3_ENDPOINT.startswith("http"):
@@ -197,6 +198,7 @@ def chat_persistence_thread():
                                 try:
                                     msg_data = json.loads(raw_msg.decode('utf-8'))
                                     insert_data.append((
+                                        str(uuid.uuid4()),
                                         msg_data['canvas_id'],
                                         msg_data['user_id'],
                                         msg_data['message'],
@@ -209,8 +211,8 @@ def chat_persistence_thread():
                             
                             if insert_data:
                                 query = """
-                                    INSERT INTO canvas_chat_messages (canvas_id, user_id, message, attachments, file_size, created_at) 
-                                    VALUES (%s, %s, %s, %s, %s, %s)
+                                    INSERT INTO canvas_chat_messages (uuid, canvas_id, user_id, message, attachments, file_size, created_at) 
+                                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                                 """
                                 cursor.executemany(query, insert_data)
                                 db_conn.commit()

@@ -65,9 +65,23 @@ class AdminMessagesController {
     updateSelectionUI() {
         const defaultMode = document.querySelector('[data-ref="header-default-actions"]');
         const selectionMode = document.querySelector('[data-ref="header-selection-actions"]');
+        const editVisBtn = document.querySelector('[data-action="editMessageVisibility"]');
+        
         if (this.selectedMessageId) {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
+            
+            if (editVisBtn) {
+                if (this.selectedMessageId.startsWith('REDIS-')) {
+                    editVisBtn.classList.add('disabled-interactive');
+                    editVisBtn.style.opacity = '0.5';
+                    editVisBtn.style.cursor = 'not-allowed';
+                } else {
+                    editVisBtn.classList.remove('disabled-interactive');
+                    editVisBtn.style.opacity = '';
+                    editVisBtn.style.cursor = '';
+                }
+            }
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');
             if (defaultMode) defaultMode.classList.replace('disabled', 'active');

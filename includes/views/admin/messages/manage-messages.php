@@ -155,8 +155,8 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page 
             </div>
         </div>
 
-        <div class="component-bottom component-bottom--no-padding">
-            <div class="component-table-container">
+        <div class="component-bottom">
+            <div class="component-table-wrapper">
                 <table class="component-table component-table--hoverable">
                     <thead>
                         <tr>

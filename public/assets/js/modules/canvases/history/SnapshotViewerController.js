@@ -163,13 +163,35 @@ class SnapshotViewerController {
 
         const btnRestart = document.querySelector('[data-action="restartTimelapse"]');
         if (btnRestart) {
-            btnRestart.addEventListener('click', async () => {
-                this.pauseTimelapse();
-                this.currentFrame = 0;
-                this.resetCanvasToBlank();
-                
+            btnRestart.addEventListener('click', () => {
+                if (this.timelapseData && this.timelapseData.length > 0) {
+                    this.pauseTimelapse();
+                    this.currentFrame = 0;
+                    this.resetCanvasToBlank();
+                    this.resumeTimelapse();
+                }
                 const bp = document.querySelector('[data-action="toggleTimelapsePlayPause"]');
-                if (bp) bp.innerHTML = '<span class="material-symbols-rounded">play_arrow</span> Play';
+                if (bp) bp.innerHTML = '<span class="material-symbols-rounded">pause</span> Pause';
+            });
+        }
+        
+        const btnDownload = document.getElementById('tl-btn-download');
+        if (btnDownload) {
+            btnDownload.addEventListener('click', () => {
+                if (this.offscreenCanvas) {
+                    try {
+                        const dataUrl = this.offscreenCanvas.toDataURL('image/png', 1.0);
+                        const a = document.createElement('a');
+                        a.href = dataUrl;
+                        a.download = `snapshot_${this.snapshotId || 'highres'}.png`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    } catch (e) {
+                        console.error('[SnapshotViewer] Error downloading snapshot:', e);
+                        showMessage(__('err_download_snapshot') || 'Error downloading image', 'error');
+                    }
+                }
             });
         }
     }
@@ -377,6 +399,7 @@ class SnapshotViewerController {
 
     drawImageOnCanvas(url) {
         const img = new Image();
+        img.crossOrigin = 'anonymous';
         img.onload = () => {
             this.offscreenCtx.imageSmoothingEnabled = false; 
             this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
