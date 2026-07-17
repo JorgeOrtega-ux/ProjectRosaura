@@ -108,6 +108,12 @@ export const DesignSetup = {
             this.removeCanvasBadge('lock-resize', 'left');
         }
 
+        if (this.isPlazmarLocked) {
+            this.setCanvasBadge('lock-plazmar', 'brush', __('badge_stamping') || 'Plazmando...', 'left');
+        } else {
+            this.removeCanvasBadge('lock-plazmar', 'left');
+        }
+
         if (this.isPremiumBlocked) {
             this.setCanvasBadge('lock-premium', 'warning', __('badge_premium_expired'), 'left');
             this.removeCanvasBadge('lock-private', 'left');

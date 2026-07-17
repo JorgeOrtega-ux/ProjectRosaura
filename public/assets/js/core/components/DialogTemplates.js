@@ -789,5 +789,13 @@ export const DialogTemplates = {
             expectedInput: window.__('word_confirm'),
             confirmClass: 'component-button--danger'
         })
+    },
+
+    confirmPlazmarTemplate: {
+        build: () => DialogTemplates.confirmAction.build({
+            titleKey: 'title_confirm_action',
+            descHtml: __('confirm_plazmar_template') || '¿Estás seguro de que deseas plazmar esta plantilla en el lienzo? Esta acción pintará los píxeles de la imagen directamente.',
+            confirmClass: 'component-button--warning'
+        })
     }
 };

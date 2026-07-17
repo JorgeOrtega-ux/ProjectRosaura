@@ -630,29 +630,50 @@ def draw_image_listener_thread():
                 
                 logging.info(f"Received draw_image task for canvas {canvas_id} at {x},{y} w={w} h={h} a={angle}")
                 
-                # S3 setup
-                bucket = os.getenv('AWS_BUCKET', 'rosaura-storage')
-                public_url = os.getenv('AWS_PUBLIC_URL', 'http://localhost:9000').rstrip('/')
-                key = url.replace(f"{public_url}/{bucket}/", "")
-                key = urllib.parse.urlparse(key).path.lstrip('/')
+                # Broadcast lock event so frontend blocks the canvas
+                r.publish("admin:canvas_events", json.dumps({
+                    "type": "canvas_locked_plazmar", "canvas_id": canvas_id
+                }))
                 
-                s3_client = get_s3_client()
-                
-                import tempfile
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
-                    temp_path = temp_file.name
-                    s3_client.download_file(bucket, key, temp_path)
-                
-                script_path = os.path.join(os.path.dirname(__file__), 'admin_draw_image.py')
-                cmd = ["python", script_path, temp_path, str(canvas_id), "--x", str(x), "--y", str(y), "--w", str(w), "--h", str(h), "--angle", str(angle)]
-                logging.info(f"Executing: {' '.join(cmd)}")
-                
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                logging.info(f"Draw script output: {result.stdout}")
-                if result.stderr:
-                    logging.error(f"Draw script error: {result.stderr}")
+                try:
+                    # S3 setup
+                    bucket = os.getenv('AWS_BUCKET', 'rosaura-storage')
+                    public_url = os.getenv('AWS_PUBLIC_URL', 'http://localhost:9000').rstrip('/')
+                    key = url.replace(f"{public_url}/{bucket}/", "")
+                    key = urllib.parse.urlparse(key).path.lstrip('/')
                     
-                os.remove(temp_path)
+                    s3_client = get_s3_client()
+                    
+                    import tempfile
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
+                        temp_path = temp_file.name
+                        s3_client.download_file(bucket, key, temp_path)
+                    
+                    script_path = os.path.join(os.path.dirname(__file__), 'admin_draw_image.py')
+                    cmd = ["python", script_path, temp_path, str(canvas_id), "--x", str(x), "--y", str(y), "--w", str(w), "--h", str(h), "--angle", str(angle)]
+                    logging.info(f"Executing: {' '.join(cmd)}")
+                    
+                    result = subprocess.run(cmd, capture_output=True, text=True)
+                    logging.info(f"Draw script output: {result.stdout}")
+                    if result.stderr:
+                        logging.error(f"Draw script error: {result.stderr}")
+                        
+                    os.remove(temp_path)
+                    
+                    if result.returncode != 0:
+                        raise Exception(f"Draw script exited with code {result.returncode}: {result.stderr}")
+                    
+                    # Broadcast completed event so frontend reloads the canvas state
+                    r.publish("admin:canvas_events", json.dumps({
+                        "type": "canvas_plazmar_completed", "canvas_id": canvas_id
+                    }))
+                    logging.info(f"Canvas plazmar for {canvas_id} completed successfully.")
+                    
+                except Exception as draw_err:
+                    logging.error(f"Error in draw_image processing: {draw_err}")
+                    r.publish("admin:canvas_events", json.dumps({
+                        "type": "canvas_plazmar_error", "canvas_id": canvas_id, "error": str(draw_err)
+                    }))
                 
         except Exception as e:
             logging.error(f"Error in Draw Image listener: {e}")

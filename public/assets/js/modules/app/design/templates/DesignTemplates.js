@@ -1,5 +1,5 @@
 import { ApiRoutes } from '../../../../core/api/ApiRoutes.js';
-import { showMessage } from '../../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../../../core/utils/uiUtils.js';
 
 export const DesignTemplates = {
 
@@ -605,11 +605,16 @@ export const DesignTemplates = {
         if (!this.activeTemplateId) return;
         const tpl = this.templates.find(t => t.id === this.activeTemplateId);
         if (!tpl) return;
-
         if (!this.canvasId) return;
-        
+        if (this.isPlazmarLocked || this.isResetLocked || this.isResizeLocked) return;
+
+        if (window.dialogSystem) {
+            const res = await window.dialogSystem.show('confirmPlazmarTemplate');
+            if (!res.confirmed) return;
+        }
+
         const btn = document.querySelector('[data-ref="btn-template-plazmar"]');
-        if (btn) btn.classList.add('loading');
+        setButtonLoading(btn);
 
         try {
             const res = await this.api.post(ApiRoutes.Canvases.PlazmarImagen, {
@@ -623,15 +628,14 @@ export const DesignTemplates = {
             });
 
             if (res && res.success) {
-                if (typeof showMessage === 'function') showMessage(res.message || 'Imagen plasmada correctamente', 'success');
+                // Success toast & canvas reload will come via WebSocket event
             } else {
-                if (typeof showMessage === 'function') showMessage(res?.message || 'Error al plasmar la imagen', 'error');
+                showMessage(res?.message || __('err_stamp_failed') || 'Error al plazmar la imagen', 'error');
             }
         } catch (err) {
-            console.error('Error al plasmar imagen', err);
-            if (typeof showMessage === 'function') showMessage('Error al plasmar la imagen', 'error');
+            showMessage(__('err_stamp_failed') || 'Error al plazmar la imagen', 'error');
         } finally {
-            if (btn) btn.classList.remove('loading');
+            restoreButton(btn);
         }
     },
 

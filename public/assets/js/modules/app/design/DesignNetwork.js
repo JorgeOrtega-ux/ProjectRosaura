@@ -164,6 +164,15 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_resize_error') {
                     this.handleCanvasResizeError(data);
                 }
+                else if (data.type === 'canvas_locked_plazmar') {
+                    this.handleCanvasLockedPlazmar(data);
+                }
+                else if (data.type === 'canvas_plazmar_completed') {
+                    this.handleCanvasPlazmarCompleted(data);
+                }
+                else if (data.type === 'canvas_plazmar_error') {
+                    this.handleCanvasPlazmarError(data);
+                }
                 else if (data.type === 'canvas_resize_settings_updated') {
                     this.handleResizeSettingsUpdated(data);
                 }
@@ -353,6 +362,76 @@ export const DesignNetwork = {
 
         this.updateLockBadges(); 
         showMessage(data.error, 'error');
+    },
+
+    handleCanvasLockedPlazmar(data) {
+        this.isPlazmarLocked = true;
+
+        if (this.canvas) {
+            this.canvas.classList.add('component-canvas-blur');
+            this.canvas.classList.add('disabled-interactive');
+        }
+
+        this.updateLockBadges();
+
+        this.selectedPixels.clear();
+        this.updateSelectionUI();
+        this.requestRender();
+
+        showMessage(__('info_stamping_template') || 'Plazmando plantilla en el lienzo...', 'warning');
+
+        if (this.plazmarTimeout) clearTimeout(this.plazmarTimeout);
+        this.plazmarTimeout = setTimeout(() => {
+            if (this.isPlazmarLocked) {
+                this.isPlazmarLocked = false;
+                if (this.canvas) {
+                    this.canvas.classList.remove('component-canvas-blur');
+                    this.canvas.classList.remove('disabled-interactive');
+                }
+                this.updateLockBadges();
+                showMessage(__('err_server_timeout') || 'Timeout del servidor', 'error');
+            }
+        }, 60000);
+    },
+
+    async handleCanvasPlazmarCompleted(data) {
+        if (this.plazmarTimeout) clearTimeout(this.plazmarTimeout);
+
+        try {
+            const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
+            if (response.aborted) return;
+
+            if (response.success && response.data && response.data.state_base64) {
+                this.hydrateCanvasState(response.data.state_base64);
+            }
+        } catch (error) {
+        }
+
+        this.isPlazmarLocked = false;
+
+        if (this.canvas && !this.isPrivateBlocked) {
+            this.canvas.classList.remove('component-canvas-blur');
+            this.canvas.classList.remove('disabled-interactive');
+        }
+
+        this.updateLockBadges();
+        this.requestRender();
+
+        showMessage(__('msg_template_stamped') || 'Plantilla plazmada correctamente', 'success');
+    },
+
+    handleCanvasPlazmarError(data) {
+        if (this.plazmarTimeout) clearTimeout(this.plazmarTimeout);
+
+        this.isPlazmarLocked = false;
+
+        if (this.canvas) {
+            this.canvas.classList.remove('component-canvas-blur');
+            this.canvas.classList.remove('disabled-interactive');
+        }
+
+        this.updateLockBadges();
+        showMessage(data.error || __('err_stamp_failed') || 'Error al plazmar la plantilla', 'error');
     },
 
     async startLiveShare() {

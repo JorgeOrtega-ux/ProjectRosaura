@@ -69,6 +69,7 @@ class DesignController {
         
         this.isResetLocked = false; 
         this.isResizeLocked = false;
+        this.isPlazmarLocked = false;
 
         this.cooldownBalance = 5;
         this.cooldownMax = 5;
