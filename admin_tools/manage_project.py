@@ -427,9 +427,10 @@ def main():
     print("3 - Identificar código de depuración (console.log, var_dump, etc.)")
     print("4 - Ejecutar pruebas automatizadas de Autenticación (Login, Registro, 2FA, Reset Password)")
     print("5 - Inyectar Imagen Instantáneamente (Saltar Límites, uso exclusivo de Admin)")
-    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4 o 5: {Colors.ENDC}").strip()
+    print("6 - Prueba de Estrés (Load Testing de WebSocket y Lienzos)")
+    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4, 5 o 6: {Colors.ENDC}").strip()
 
-    if choice not in ('1', '2', '3', '4', '5'):
+    if choice not in ('1', '2', '3', '4', '5', '6'):
         print(f"{Colors.FAIL}Opción no válida. Saliendo.{Colors.ENDC}")
         return
 
@@ -443,6 +444,11 @@ def main():
         
     if choice == '5':
         run_admin_image_injector()
+        return
+
+    if choice == '6':
+        import stress_test
+        stress_test.run_menu()
         return
 
     if choice == '1':
