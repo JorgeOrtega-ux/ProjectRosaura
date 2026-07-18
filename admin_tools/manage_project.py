@@ -12,12 +12,12 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # --- CONFIGURACIÓN ---
-WORDS_FILE = 'word.txt'
+WORDS_FILE = 'data/word.txt'
 TARGET_DIR = '../' 
 
 IGNORE_DIRS = {
     '.git', 'vendor', 'node_modules', 'docker', 'storage', 
-    'public/assets/img', 'translations', 'project_scanner', 'i18scanner'
+    'public/assets/img', 'translations', 'admin_tools', 'i18scanner'
 }
 
 IGNORE_EXTENSIONS = {
@@ -377,7 +377,7 @@ def run_admin_image_injector():
         
     cmd = [
         "docker", "exec", "-it", "rosaura_worker_canvas_jobs", 
-        "python", "/app/scripts/admin_draw_image.py",
+        "python", "/app/admin_tools/image_tools/admin_draw_image.py",
         docker_image_path, canvas_id, "--x", x, "--y", y
     ]
     

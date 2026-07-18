@@ -649,7 +649,7 @@ def draw_image_listener_thread():
                         temp_path = temp_file.name
                         s3_client.download_file(bucket, key, temp_path)
                     
-                    script_path = os.path.join(os.path.dirname(__file__), 'admin_draw_image.py')
+                    script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'admin_tools', 'image_tools', 'admin_draw_image.py'))
                     cmd = ["python", script_path, temp_path, str(canvas_id), "--x", str(x), "--y", str(y), "--w", str(w), "--h", str(h), "--angle", str(angle)]
                     logging.info(f"Executing: {' '.join(cmd)}")
                     
