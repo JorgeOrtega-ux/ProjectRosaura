@@ -23,21 +23,11 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `cooldown_seconds` int(11) NOT NULL DEFAULT 10,
   `favorites_count` int(11) NOT NULL DEFAULT 0,
   `members_count` int(11) NOT NULL DEFAULT 0,
-  `scope_type` enum('personal', 'global', 'country', 'state', 'municipality', 'organization') NOT NULL DEFAULT 'personal',
-  `scope_ref_1` varchar(100) DEFAULT NULL,
-  `scope_ref_2` varchar(100) DEFAULT NULL,
-  `scope_ref_3` varchar(100) DEFAULT NULL,
-  `scope_hash` varchar(64) GENERATED ALWAYS AS (
-      CASE 
-          WHEN scope_type = 'personal' THEN uuid 
-          ELSE MD5(CONCAT_WS('_', scope_type, IFNULL(scope_ref_1, ''), IFNULL(scope_ref_2, ''), IFNULL(scope_ref_3, '')))
-      END
-  ) STORED,
+  `is_official` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
-  UNIQUE KEY `idx_scope_hash` (`scope_hash`),
   INDEX `idx_owner_canvases` (`owner_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 

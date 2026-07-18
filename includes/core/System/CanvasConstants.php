@@ -14,11 +14,4 @@ class CanvasConstants {
     public const PRIVACY_PRIVATE = 'private';
     public const PRIVACY_PUBLIC = 'public';
     public const PRIVACY_UNLISTED = 'unlisted';
-
-    public const SCOPE_PERSONAL = 'personal';
-    public const SCOPE_GLOBAL = 'global';
-    public const SCOPE_COUNTRY = 'country';
-    public const SCOPE_STATE = 'state';
-    public const SCOPE_MUNICIPALITY = 'municipality';
-    public const SCOPE_ORGANIZATION = 'organization';
 }

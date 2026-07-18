@@ -32,8 +32,7 @@ use App\Core\Interfaces\TelemetryRepositoryInterface;
 use App\Core\Repositories\TelemetryRepository;
 use App\Core\Interfaces\CanvasRepositoryInterface;
 use App\Core\Repositories\CanvasRepository;
-use App\Core\Interfaces\LocationRepositoryInterface;
-use App\Core\Repositories\LocationRepository;
+
 use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use App\Core\Repositories\SubscriptionRepository;
 use App\Core\Interfaces\StoreRepositoryInterface;
@@ -67,7 +66,6 @@ class Container implements ContainerInterface {
         
         $this->bindings[TelemetryRepositoryInterface::class] = TelemetryRepository::class;
         $this->bindings[CanvasRepositoryInterface::class] = CanvasRepository::class;
-        $this->bindings[LocationRepositoryInterface::class] = LocationRepository::class;
         $this->bindings[SubscriptionRepositoryInterface::class] = SubscriptionRepository::class;
         $this->bindings[StoreRepositoryInterface::class] = StoreRepository::class;
     }

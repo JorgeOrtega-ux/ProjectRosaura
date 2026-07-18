@@ -37,7 +37,7 @@ DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
 # Canvas Persistence Config
 CANVAS_SYNC_INTERVAL = int(os.getenv("WORKER_TIMELAPSE_SYNC_INTERVAL", 5))
 CANVAS_BATCH_SIZE = int(os.getenv("WORKER_TIMELAPSE_BATCH_SIZE", 5000))
-TIMELAPSE_DIR = os.getenv("TIMELAPSE_DIR", "/app/storage/private/canvases/timelapses")
+
 CONSUMER_GROUP = "timelapse_workers"
 CONSUMER_NAME = "worker-1"
 

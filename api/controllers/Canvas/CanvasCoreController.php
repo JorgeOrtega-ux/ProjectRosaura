@@ -19,18 +19,7 @@ class CanvasCoreController extends BaseController {
     }
 
 
-    private function canManageOfficial(): bool {
-        $perms = [];
-        if (method_exists($this->session, 'getPermissions')) {
-            $perms = $this->session->getPermissions();
-        }
-        if (!is_array($perms)) {
-            $perms = [];
-        }
-        return in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms) || 
-               in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms) ||
-               in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $perms);
-    }
+
 
     private function canCreateOfficial(): bool {
         $perms = [];
@@ -53,7 +42,7 @@ class CanvasCoreController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id')]);
             }
 
-            $result = $this->canvasServices->getCanvas($userId, (int)$canvasId, $this->canManageOfficial());
+            $result = $this->canvasServices->getCanvas($userId, (int)$canvasId);
             
             return $this->respond($result);
 
@@ -91,38 +80,20 @@ class CanvasCoreController extends BaseController {
             $cooldownSeconds = $input['cooldown_seconds'] ?? 10;
 
 
-            $scopeType = $input['scope_type'] ?? 'personal';
-            $scopeRef1 = $input['scope_ref_1'] ?? null;
-            $scopeRef2 = $input['scope_ref_2'] ?? null;
-            $scopeRef3 = $input['scope_ref_3'] ?? null;
-
-            if (empty(trim($name))) {
-                return $this->respond(['success' => false, 'message' => __('err_canvas_name_required')]);
-            }
-
-
-            if ($scopeType === \App\Core\System\CanvasConstants::SCOPE_GLOBAL) {
-                $scopeRef1 = null; 
-                $scopeRef2 = null; 
-                $scopeRef3 = null;
-            } elseif ($scopeType === \App\Core\System\CanvasConstants::SCOPE_COUNTRY && empty($scopeRef1)) {
-                return $this->respond(['success' => false, 'message' => __('err_country_required')]);
-            } elseif ($scopeType === \App\Core\System\CanvasConstants::SCOPE_STATE && (empty($scopeRef1) || empty($scopeRef2))) {
-                return $this->respond(['success' => false, 'message' => __('err_state_required')]);
-            } elseif ($scopeType === \App\Core\System\CanvasConstants::SCOPE_MUNICIPALITY && (empty($scopeRef1) || empty($scopeRef2) || empty($scopeRef3))) {
-                return $this->respond(['success' => false, 'message' => __('err_city_required')]);
-            } elseif ($scopeType === \App\Core\System\CanvasConstants::SCOPE_ORGANIZATION && empty($scopeRef1)) {
-                return $this->respond(['success' => false, 'message' => __('err_org_required')]);
-            }
+            $isOfficial = filter_var($input['is_official'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
             $allowPurchases = isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : 1;
             $allowChat = isset($input['allow_chat']) ? (int)$input['allow_chat'] : 0;
             $tags = isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : [];
 
+            if (empty(trim($name))) {
+                return $this->respond(['success' => false, 'message' => __('err_canvas_name_required')]);
+            }
+
             $result = $this->canvasServices->createCanvas(
                 $userId, $name, $description, $privacy, $requiresApproval, 
                 $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds,
-                $scopeType, $scopeRef1, $scopeRef2, $scopeRef3, $this->canCreateOfficial(),
+                $isOfficial, $this->canCreateOfficial(),
                 $allowPurchases, $allowChat, $tags
             );
 
@@ -167,7 +138,7 @@ class CanvasCoreController extends BaseController {
                 'tags' => isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : []
             ];
 
-            $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data, $this->canManageOfficial());
+            $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data);
             return $this->respond($result);
 
         } catch (\Throwable $e) {
@@ -188,7 +159,7 @@ class CanvasCoreController extends BaseController {
 
             $uuid = $input['id'] ?? $input['uuid'] ?? null;
             if ($uuid && is_string($uuid) && empty($input['canvas_ids'])) {
-                $result = $this->canvasServices->deleteCanvas($userId, $uuid, $this->canManageOfficial());
+                $result = $this->canvasServices->deleteCanvas($userId, $uuid);
                 return $this->respond($result);
             }
 
@@ -224,7 +195,7 @@ class CanvasCoreController extends BaseController {
                 $tag = 'all';
             }
 
-            $result = $this->canvasServices->getHomeFeed($userId, $tag, $limit, $offset, $this->canManageOfficial());
+            $result = $this->canvasServices->getHomeFeed($userId, $tag, $limit, $offset);
             
             return $this->respond($result);
 
@@ -240,7 +211,7 @@ class CanvasCoreController extends BaseController {
             $sort = $input['sort'] ?? 'newest';
             $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
 
-            $result = $this->canvasServices->getPublicCanvases($userId, $limit, $sort, $offset, $this->canManageOfficial());
+            $result = $this->canvasServices->getPublicCanvases($userId, $limit, $sort, $offset);
             
             return $this->respond($result);
         } catch (\Throwable $e) {
@@ -269,7 +240,7 @@ class CanvasCoreController extends BaseController {
             $sort = $input['sort'] ?? 'newest';
             $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
             
-            $result = $this->canvasServices->getOfficialCanvases($userId, $limit, $sort, $offset, $this->canManageOfficial());
+            $result = $this->canvasServices->getOfficialCanvases($userId, $limit, $sort, $offset);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -297,7 +268,7 @@ class CanvasCoreController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_confirm_word_required')]);
             }
 
-            $result = $this->canvasServices->downgradeCanvasToBasic($userId, $uuid, $this->canManageOfficial());
+            $result = $this->canvasServices->downgradeCanvasToBasic($userId, $uuid);
             return $this->respond($result);
 
         } catch (\Throwable $e) {

@@ -100,7 +100,7 @@ class CanvasesManageController {
         const cooldownSecVal = document.querySelector('[data-ref="val_cooldown_seconds"]');
         const limitVal = document.querySelector('[data-ref="val_limit"]');
         
-        const scopeTypeText = document.querySelector('[data-ref="text-scope-type"]');
+        const inputOfficial = document.querySelector('[data-ref="val_is_official"]');
         
         const payload = {
             name: nameInput ? nameInput.value : __('default_canvas_name_new'),
@@ -112,7 +112,7 @@ class CanvasesManageController {
             palette_id: 'default', 
             cooldown_pixels_batch: cooldownBatchVal ? parseInt(cooldownBatchVal.textContent) : 5,
             cooldown_seconds: cooldownSecVal ? parseInt(cooldownSecVal.textContent) : 10,
-            scope_type: (scopeTypeText && !scopeTypeText.textContent.toLowerCase().includes(__('lbl_personal').toLowerCase())) ? 'global' : 'personal'
+            is_official: inputOfficial ? (inputOfficial.checked ? 1 : 0) : 0
         };
 
         setButtonLoading(btn);

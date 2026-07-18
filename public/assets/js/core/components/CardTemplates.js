@@ -20,7 +20,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const onlinePlayers = parseInt(canvas.online_players || 0, 10);
         const membersCount = parseInt(canvas.members_count || 0, 10);
         const likesCount = parseInt(canvas.favorites_count || 0, 10);
-        const isOfficial = canvas.scope_type && canvas.scope_type !== 'personal';
+        const isOfficial = canvas.is_official;
 
         let badgeHtml = '';
         if (isOfficial) {

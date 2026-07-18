@@ -35,35 +35,12 @@ export class DesignChat {
         this.lastTypingSent = 0;
         this.lastIsTyping = false;
         this.myTypingTimeout = null;
-        this.badWords = [];
-        this.loadBadWords();
 
         this.typingContainer = null;
 
         if (this.isChatEnabled && this.chatContainer) {
             this.init();
         }
-    }
-
-    async loadBadWords() {
-        try {
-            const response = await fetch((window.AppBasePath || '') + '/public/assets/json/bad_words.json');
-            if (response.ok) {
-                this.badWords = await response.json();
-            }
-        } catch (e) {
-            
-        }
-    }
-
-    censorText(text) {
-        if (!this.badWords || this.badWords.length === 0) return text;
-        let censored = text;
-        this.badWords.forEach(word => {
-            const regex = new RegExp(`\\b${word}\\b`, 'gi');
-            censored = censored.replace(regex, '*'.repeat(word.length));
-        });
-        return censored;
     }
 
     init() {
@@ -842,7 +819,7 @@ export class DesignChat {
 
         let messageTextHtml = '';
         if (msg.message && msg.message.trim().length > 0) {
-            messageTextHtml = `<div class="chat-message-text">${this.censorText(msg.message)}</div>`;
+            messageTextHtml = `<div class="chat-message-text">${msg.message}</div>`;
         }
 
         el.innerHTML = `

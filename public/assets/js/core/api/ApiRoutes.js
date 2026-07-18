@@ -130,11 +130,7 @@ export const ApiRoutes = {
     Search: {
         Query: 'search.query'
     },
-    Locations: {
-        GetCountries: 'locations.get_countries',
-        GetStates: 'locations.get_states',
-        GetCities: 'locations.get_cities'
-    },
+
     Stripe: {
         CreateCheckout: 'stripe.create_checkout',
         CreateCoinCheckout: 'stripe.create_coin_checkout',

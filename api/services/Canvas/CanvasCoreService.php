@@ -92,7 +92,7 @@ class CanvasCoreService {
             } catch (Exception $e) {}
             
             $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts, $canManageOfficial) {
-                $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id'])) || (empty($canvas['owner_id']) && $canManageOfficial);
+                $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
                 
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
                 
@@ -129,7 +129,7 @@ class CanvasCoreService {
             } catch (Exception $e) {}
             
             $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts, $canManageOfficial) {
-                $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id'])) || (empty($canvas['owner_id']) && $canManageOfficial);
+                $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
                 
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
                 
@@ -168,7 +168,7 @@ class CanvasCoreService {
             } catch (Exception $e) {}
             
             $formattedCanvases = array_map(function($canvas) use ($onlineCounts, $canManageOfficial) {
-                $canvas['is_owner'] = $canManageOfficial;
+                $canvas['is_owner'] = false;
                 $canvas['privacy'] = 'public'; 
                 
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
@@ -210,7 +210,7 @@ class CanvasCoreService {
                     'size' => $canvas['size'],
                     'max_participants' => $canvas['max_participants'],
                     'created_at' => $canvas['created_at'],
-                    'scope_type' => $canvas['scope_type'],
+                    'is_official' => $canvas['is_official'] ?? 0,
                     'is_favorite' => $canvas['is_favorite'],
                     'is_owner' => $canvas['is_owner'],
                     'online_players' => 0, 
@@ -251,7 +251,7 @@ class CanvasCoreService {
                 $canvas['is_favorite'] = false;
             }
             
-            $isOwner = ($userId !== null && $canvas['owner_id'] == $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($userId !== null && $canvas['owner_id'] == $userId);
 
             if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && empty($roles) && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -400,29 +400,18 @@ class CanvasCoreService {
         string $paletteId = 'default', 
         int $cooldownBatch = 5, 
         int $cooldownSeconds = 10,
-        string $scopeType = 'personal',
-        ?string $scopeRef1 = null,
-        ?string $scopeRef2 = null,
-        ?string $scopeRef3 = null,
-        bool $canManageOfficial = false,
+        bool $isOfficial = false,
+        bool $canCreateOfficial = false,
         int $allowPurchases = 1,
         int $allowChat = 0,
         array $tags = []
     ): array {
         try {
-            if ($scopeType !== 'personal' && !$canManageOfficial) {
+            if ($isOfficial && !$canCreateOfficial) {
                 return ['success' => false, 'message' => __('err_cannot_create_official_canvas')];
             }
 
-            if ($scopeType !== 'personal') {
-                $hash = md5($scopeType . '_' . ($scopeRef1) . '_' . ($scopeRef2) . '_' . ($scopeRef3));
-                $existing = $this->canvasRepository->getByScopeHash($hash);
-                if ($existing) {
-                    return ['success' => false, 'message' => __('err_official_canvas_exists'), 'http_code' => 409];
-                }
-            }
-
-            if ($scopeType === \App\Core\System\CanvasConstants::SCOPE_PERSONAL) {
+            if (!$isOfficial) {
                 $user = $this->userRepository->findById($userId);
                 $tier = $user['subscription_tier'] ?? 0;
                 $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
@@ -461,7 +450,7 @@ class CanvasCoreService {
 
             $canvasData = [
                 'uuid'                  => $uuid,
-                'owner_id'              => ($scopeType === \App\Core\System\CanvasConstants::SCOPE_PERSONAL) ? $userId : null,
+                'owner_id'              => $userId,
                 'name'                  => trim($name),
                 'description'           => $description ? trim($description) : null,
                 'privacy'               => $privacy,
@@ -471,10 +460,7 @@ class CanvasCoreService {
                 'max_participants'      => $limit,
                 'cooldown_pixels_batch' => max(1, $cooldownBatch),
                 'cooldown_seconds'      => max(0, $cooldownSeconds),
-                'scope_type'            => $scopeType,
-                'scope_ref_1'           => $scopeRef1,
-                'scope_ref_2'           => $scopeRef2,
-                'scope_ref_3'           => $scopeRef3,
+                'is_official'           => $isOfficial ? 1 : 0,
                 'allow_purchases'       => $allowPurchases,
                 'allow_chat'            => $allowChat,
                 'tags'                  => array_values(array_intersect($tags, [
@@ -491,7 +477,7 @@ class CanvasCoreService {
 
             $this->canvasRepository->addMember($canvasId, $userId, 4);
 
-            if ($scopeType === \App\Core\System\CanvasConstants::SCOPE_PERSONAL) {
+            if (!$isOfficial) {
                 try {
                     $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository);
                     $lockManager->evaluateUserCanvases($userId);
@@ -509,7 +495,7 @@ class CanvasCoreService {
                             'cooldown_seconds' => $canvasData['cooldown_seconds']
                         ]);
 
-                        if ($scopeType !== 'personal') {
+                        if ($isOfficial) {
                             $redis->del(CacheConstants::KEY_OFFICIAL_CANVASES);
                         }
                     }
@@ -535,7 +521,7 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
 
-            $isOwner = ($canvas['owner_id'] == $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] == $userId);
             if (!$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
@@ -626,7 +612,7 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
             
-            $isOwner = ($canvas['owner_id'] == $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] == $userId);
             if (!$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
@@ -742,7 +728,7 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
             
-            $isOwner = ($canvas['owner_id'] == $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] == $userId);
             if (!$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }

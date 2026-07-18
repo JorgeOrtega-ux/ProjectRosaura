@@ -28,9 +28,9 @@ class SearchServices {
             }
             
             if ($currentUserId) {
-                $filter = "(privacy:=public || owner_id:={$currentUserId}) && scope_type:=personal";
+                $filter = "privacy:=public || owner_id:={$currentUserId}";
             } else {
-                $filter = "privacy:=public && scope_type:=personal";
+                $filter = "privacy:=public";
             }
 
             $searchParameters = [
@@ -58,8 +58,8 @@ class SearchServices {
                         'name'         => $doc['name'],
                         'owner_id'     => $doc['owner_id'] ?? null,
                         'privacy'      => $doc['privacy'],
-                        'scope_type'   => $doc['scope_type'],
-                        'is_favorite'  => false, 
+                        'is_official'  => $doc['is_official'] ?? 0,
+                        'is_favorite'  => false,
                         'favorites_count' => 0,
                         'members_count'   => 0,
                         'online_players'  => 0,

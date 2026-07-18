@@ -248,12 +248,14 @@ class ChatServices
 
         $defaultUsername = __('default_user');
         
+        $censoredMessageText = \App\Core\Helpers\Utils::censorText($messageText);
+
         $messageData = [
             'id' => $msgId,
             'user_id' => $userId,
             'username' => $userInfo['username'] ?? $defaultUsername,
             'avatar' => isset($userInfo['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($userInfo['profile_picture']) : null,
-            'message' => htmlspecialchars($messageText, ENT_QUOTES, 'UTF-8'),
+            'message' => htmlspecialchars($censoredMessageText, ENT_QUOTES, 'UTF-8'),
             'attachments' => $safeAttachments,
             'created_at' => date('Y-m-d H:i:s')
         ];
@@ -262,7 +264,7 @@ class ChatServices
             $queuePayload = [
                 'canvas_id' => $canvasId,
                 'user_id' => $userId,
-                'message' => $messageText,
+                'message' => $censoredMessageText,
                 'attachments' => $attachmentsJson,
                 'file_size' => $totalSize,
                 'created_at' => $messageData['created_at'],
@@ -285,7 +287,7 @@ class ChatServices
             $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
         } else {
             $stmtInsert = $this->pdo->prepare("INSERT INTO canvas_chat_messages (canvas_id, user_id, message, attachments, file_size, created_at) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmtInsert->execute([$canvasId, $userId, $messageText, $attachmentsJson, $totalSize, $messageData['created_at']]);
+            $stmtInsert->execute([$canvasId, $userId, $censoredMessageText, $attachmentsJson, $totalSize, $messageData['created_at']]);
             $messageData['id'] = $this->pdo->lastInsertId();
         }
 

@@ -50,8 +50,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function create(array $canvasData): int {
         $sql = "INSERT INTO " . DB::TBL_CANVASES . " 
-                (uuid, owner_id, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, scope_type, scope_ref_1, scope_ref_2, scope_ref_3, allow_purchases, allow_chat, tags) 
-                VALUES (:uuid, :owner_id, :name, :description, :privacy, :requires_approval, :size, :palette_id, :max_participants, :cooldown_pixels_batch, :cooldown_seconds, :scope_type, :scope_ref_1, :scope_ref_2, :scope_ref_3, :allow_purchases, :allow_chat, :tags)";
+                (uuid, owner_id, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, is_official, allow_purchases, allow_chat, tags) 
+                VALUES (:uuid, :owner_id, :name, :description, :privacy, :requires_approval, :size, :palette_id, :max_participants, :cooldown_pixels_batch, :cooldown_seconds, :is_official, :allow_purchases, :allow_chat, :tags)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -66,10 +66,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':max_participants'      => $canvasData['max_participants'],
             ':cooldown_pixels_batch' => $canvasData['cooldown_pixels_batch'],
             ':cooldown_seconds'      => $canvasData['cooldown_seconds'],
-            ':scope_type'            => $canvasData['scope_type'] ?? 'personal',
-            ':scope_ref_1'           => $canvasData['scope_ref_1'] ?? null,
-            ':scope_ref_2'           => $canvasData['scope_ref_2'] ?? null,
-            ':scope_ref_3'           => $canvasData['scope_ref_3'] ?? null,
+            ':is_official'           => $canvasData['is_official'] ?? 0,
             ':allow_purchases'       => $canvasData['allow_purchases'] ?? 1,
             ':allow_chat'            => $canvasData['allow_chat'] ?? 0,
             ':tags'                  => isset($canvasData['tags']) ? json_encode($canvasData['tags']) : null
@@ -85,7 +82,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     'name'       => $canvasData['name'],
                     'owner_id'   => (int)$canvasData['owner_id'],
                     'privacy'    => $canvasData['privacy'],
-                    'scope_type' => $canvasData['scope_type'] ?? 'personal',
+                    'is_official'=> $canvasData['is_official'] ?? 0,
                     'created_at' => time()
                 ];
                 $client->collections['canvases']->documents->create($document);
@@ -141,12 +138,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
             }
 
-            $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, c.favorites_count,
+            $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.is_official, c.favorites_count,
                            CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                            c.members_count
                     FROM " . DB::TBL_CANVASES . " c
                     LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
-                    WHERE c.privacy = 'public' AND c.scope_type = 'personal' AND c.is_locked = 0
+                    WHERE c.privacy = 'public' AND c.is_official = 0 AND c.is_locked = 0
                     $orderClause 
                     LIMIT :limit OFFSET :offset";
             
@@ -198,14 +195,14 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $joinMemberSql = "LEFT JOIN " . DB::TBL_CANVAS_MEMBERS . " cm_feed ON c.id = cm_feed.canvas_id AND cm_feed.user_id = :current_user_id_member";
             $params[':current_user_id_member'] = $userIdParam;
         } else {
-            $whereConditions[] = "(c.privacy = 'public' OR c.scope_type = 'global')";
+            $whereConditions[] = "(c.privacy = 'public' OR c.is_official = 1)";
         }
         
         $whereSql = implode(' AND ', $whereConditions);
 
-        $orderSql = "ORDER BY c.created_at DESC";
+        $orderSql = "ORDER BY c.is_official DESC, c.created_at DESC";
         
-        $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, c.favorites_count, c.tags,
+        $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.is_official, c.favorites_count, c.tags,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
@@ -260,12 +257,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
             }
 
-            $sql = "SELECT c.id, c.uuid, c.name, c.description, c.size, c.palette_id, c.scope_type, c.scope_ref_1, c.scope_ref_2, c.scope_ref_3, c.favorites_count,
+            $sql = "SELECT c.id, c.uuid, c.name, c.description, c.size, c.palette_id, c.is_official, c.favorites_count,
                            CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                            c.members_count
                     FROM " . DB::TBL_CANVASES . " c
                     LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
-                    WHERE c.owner_id IS NULL AND c.scope_type != 'personal' AND c.is_locked = 0
+                    WHERE c.is_official = 1 AND c.is_locked = 0
                     $orderClause
                     LIMIT :limit OFFSET :offset";
                     
@@ -311,7 +308,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $whereClause = "WHERE (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL) AND f.canvas_id IS NOT NULL";
         }
 
-        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type, c.owner_id, c.is_locked, c.locked_reasons, c.favorites_count,
+        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.owner_id, c.is_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count,
                        CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner
@@ -343,7 +340,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
-        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type, c.is_locked, c.locked_reasons, c.favorites_count,
+        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.is_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
@@ -443,13 +440,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $final;
     }
 
-    public function getByScopeHash(string $hash): ?array {
-        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE scope_hash = :hash LIMIT 1";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':hash' => $hash]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ?: null;
-    }
+
 
     public function updateCanvasData(int $id, array $data): bool {
         $sql = "UPDATE " . DB::TBL_CANVASES . " 

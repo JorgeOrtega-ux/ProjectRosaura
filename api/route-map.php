@@ -631,21 +631,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_join_live', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
-    'locations.get_countries' => [
-        'controller' => 'App\Api\Controllers\Location\LocationController',
-        'action' => 'get_countries',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'loc_get_countries', 'max' => 60, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
-    ],
-    'locations.get_states' => [
-        'controller' => 'App\Api\Controllers\Location\LocationController',
-        'action' => 'get_states',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'loc_get_states', 'max' => 60, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
-    ],
-    'locations.get_cities' => [
-        'controller' => 'App\Api\Controllers\Location\LocationController',
-        'action' => 'get_cities',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'loc_get_cities', 'max' => 60, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
-    ],
 
     'telemetry.collect' => [
         'controller' => 'App\Api\Controllers\Telemetry\TelemetryController',

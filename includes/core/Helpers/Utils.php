@@ -512,4 +512,25 @@ class Utils {
         if (!is_numeric($number)) return '0';
         return number_format((float)$number, $decimals);
     }
+
+    public static function censorText($text) {
+        if (empty($text)) return $text;
+        static $badWords = null;
+        if ($badWords === null) {
+            $path = __DIR__ . '/bad_words.php';
+            if (file_exists($path)) {
+                $badWords = require $path;
+            } else {
+                $badWords = [];
+            }
+        }
+        if (empty($badWords)) return $text;
+
+        foreach ($badWords as $word) {
+            $pattern = '/\b' . preg_quote($word, '/') . '\b/iu';
+            $replacement = str_repeat('*', mb_strlen($word));
+            $text = preg_replace($pattern, $replacement, $text);
+        }
+        return $text;
+    }
 }

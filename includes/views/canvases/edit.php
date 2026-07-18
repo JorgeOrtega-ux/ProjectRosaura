@@ -46,6 +46,11 @@ if ($canvasUuid) {
             $cLimit = (int)($canvasData['max_participants'] ?? 10);
             $cAllowPurchases = (int)($canvasData['allow_purchases'] ?? 1);
             $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
+            
+$userPerms = $_SESSION['user_permissions'] ?? [];
+$canCreateOfficial = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPerms) || in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
+$cOfficial = (bool)($canvasData['is_official'] ?? 0);
+
             $cTags = [];
             if (!empty($canvasData['tags'])) {
                 $cTags = json_decode($canvasData['tags'], true) ?? [];
@@ -77,9 +82,43 @@ if (!$canvasId) {
     <div class="component-viewport">
         <div class="component-wrapper">
             <div class="component-bottom">
-                
-                <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--stateful">
+
+                <div class="component-card--grouped component-accordion active">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">info</span>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_accordion_general_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_accordion_general_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
+                    </div>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <?php if ($canCreateOfficial): ?>
+                            <div class="component-group-item component-group-item--wrap">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('canvas_is_official_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('canvas_is_official_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" data-ref="val_is_official" "<?php echo ($cOfficial ?? false) ? 'checked' : ''; ?>">
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <hr class="component-divider">
+                            <?php endif; ?>
+
+                            <div class="component-group-item component-group-item--stateful">
                         
                         <div class="active component-state-box" data-state="canvasname-view">
                             <div class="component-card__content">
@@ -110,10 +149,8 @@ if (!$canvasId) {
                             </div>
                         </div>
                     </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_desc_title'); ?></h2>
@@ -126,68 +163,8 @@ if (!$canvasId) {
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--stacked" data-tooltip="<?php echo __('canvas_size_locked_tooltip'); ?>" data-position="top">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">
-                                    <?php echo __('canvas_size_title'); ?> 
-                                    <span class="material-symbols-rounded">lock</span>
-                                </h2>
-                                <p class="component-card__description"><?php echo __('canvas_size_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger">
-                                    <span class="material-symbols-rounded">crop_square</span>
-                                    <span class="component-dropdown-text" data-ref="text-size"><?php echo $cSize; ?></span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_privacy_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_privacy_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownPrivacy">
-                                    <span class="material-symbols-rounded" data-ref="icon-privacy"><?php echo $cPrivacy === 'public' ? 'public' : 'lock'; ?></span>
-                                    <span class="component-dropdown-text" data-ref="text-privacy"><?php echo $cPrivacy === 'public' ? __('canvas_privacy_public') : __('canvas_privacy_private'); ?></span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownPrivacy">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
-                                            <div class="component-menu-link <?php echo $cPrivacy === 'public' ? 'active' : ''; ?>" data-action="selectValue" data-type="privacy" data-value="public" data-label="canvas_privacy_public" data-icon="public">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_privacy_public'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link <?php echo $cPrivacy === 'private' ? 'active' : ''; ?>" data-action="selectValue" data-type="privacy" data-value="private" data-label="canvas_privacy_private" data-icon="lock">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_privacy_private'); ?></span></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_tags_title'); ?></h2>
@@ -223,10 +200,83 @@ if (!$canvasId) {
                             </div>
                         </div>
                     </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <hr class="component-divider">
 
-                    <div class="component-group-item component-group-item--stacked">
+                <div class="component-card--grouped component-accordion ">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">settings</span>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_accordion_config_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_accordion_config_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
+                    </div>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <div class="component-group-item component-group-item--stacked" data-tooltip="<?php echo __('canvas_size_locked_tooltip'); ?>" data-position="top">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">
+                                    <?php echo __('canvas_size_title'); ?> 
+                                    <span class="material-symbols-rounded">lock</span>
+                                </h2>
+                                <p class="component-card__description"><?php echo __('canvas_size_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger">
+                                    <span class="material-symbols-rounded">crop_square</span>
+                                    <span class="component-dropdown-text" data-ref="text-size"><?php echo $cSize; ?></span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_privacy_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_privacy_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownPrivacy">
+                                    <span class="material-symbols-rounded" data-ref="icon-privacy"><?php echo $cPrivacy === 'public' ? 'public' : 'lock'; ?></span>
+                                    <span class="component-dropdown-text" data-ref="text-privacy"><?php echo $cPrivacy === 'public' ? __('canvas_privacy_public') : __('canvas_privacy_private'); ?></span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownPrivacy">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            <div class="component-menu-link <?php echo $cPrivacy === 'public' ? 'active' : ''; ?>" data-action="selectValue" data-type="privacy" data-value="public" data-label="canvas_privacy_public" data-icon="public">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_privacy_public'); ?></span></div>
+                                            </div>
+                                            <div class="component-menu-link <?php echo $cPrivacy === 'private' ? 'active' : ''; ?>" data-action="selectValue" data-type="privacy" data-value="private" data-label="canvas_privacy_private" data-icon="lock">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_privacy_private'); ?></span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_approval_title'); ?></h2>
@@ -258,10 +308,119 @@ if (!$canvasId) {
                             </div>
                         </div>
                     </div>
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_batch_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_cooldown_batch_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-inline-control component-inline-control--fixed">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="-5" data-min="1">
+                                        <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="-1" data-min="1">
+                                        <span class="material-symbols-rounded">chevron_left</span>
+                                    </button>
+                                </div>
+                                <div class="component-inline-control__center" data-ref="val_cooldown_batch" data-val="<?php echo $cBatch; ?>"><?php echo $cBatch; ?></div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="1" data-max="100">
+                                        <span class="material-symbols-rounded">chevron_right</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="5" data-max="100">
+                                        <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_seconds_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_cooldown_seconds_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-inline-control component-inline-control--fixed">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="-10" data-min="0">
+                                        <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="-1" data-min="0">
+                                        <span class="material-symbols-rounded">chevron_left</span>
+                                    </button>
+                                </div>
+                                <div class="component-inline-control__center" data-ref="val_cooldown_seconds" data-val="<?php echo $cCooldown; ?>"><?php echo $cCooldown; ?></div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="1" data-max="3600">
+                                        <span class="material-symbols-rounded">chevron_right</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="10" data-max="3600">
+                                        <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_limit_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_limit_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-inline-control component-inline-control--fixed">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="-50" data-min="10">
+                                        <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="-10" data-min="10">
+                                        <span class="material-symbols-rounded">chevron_left</span>
+                                    </button>
+                                </div>
+                                <div class="component-inline-control__center" data-ref="val_limit" data-val="<?php echo $cLimit; ?>"><?php echo $cLimit; ?></div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="10" data-max="<?php echo $maxMembers; ?>">
+                                        <span class="material-symbols-rounded">chevron_right</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="50" data-max="<?php echo $maxMembers; ?>">
+                                        <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <hr class="component-divider">
 
-                    <div class="component-group-item component-group-item--stacked">
+                <div class="component-card--grouped component-accordion ">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">extension</span>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_accordion_features_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_accordion_features_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
+                    </div>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_palette_title'); ?></h2>
@@ -293,108 +452,8 @@ if (!$canvasId) {
                             </div>
                         </div>
                     </div>
-
-
-                </div>
-
-                <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_batch_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_cooldown_batch_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-inline-control component-inline-control--fixed">
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="-5" data-min="1">
-                                        <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="-1" data-min="1">
-                                        <span class="material-symbols-rounded">chevron_left</span>
-                                    </button>
-                                </div>
-                                <div class="component-inline-control__center" data-ref="val_cooldown_batch" data-val="<?php echo $cBatch; ?>"><?php echo $cBatch; ?></div>
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="1" data-max="100">
-                                        <span class="material-symbols-rounded">chevron_right</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="5" data-max="100">
-                                        <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_seconds_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_cooldown_seconds_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-inline-control component-inline-control--fixed">
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="-10" data-min="0">
-                                        <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="-1" data-min="0">
-                                        <span class="material-symbols-rounded">chevron_left</span>
-                                    </button>
-                                </div>
-                                <div class="component-inline-control__center" data-ref="val_cooldown_seconds" data-val="<?php echo $cCooldown; ?>"><?php echo $cCooldown; ?></div>
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="1" data-max="3600">
-                                        <span class="material-symbols-rounded">chevron_right</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="10" data-max="3600">
-                                        <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_limit_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_limit_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-inline-control component-inline-control--fixed">
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="-50" data-min="10">
-                                        <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="-10" data-min="10">
-                                        <span class="material-symbols-rounded">chevron_left</span>
-                                    </button>
-                                </div>
-                                <div class="component-inline-control__center" data-ref="val_limit" data-val="<?php echo $cLimit; ?>"><?php echo $cLimit; ?></div>
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="10" data-max="<?php echo $maxMembers; ?>">
-                                        <span class="material-symbols-rounded">chevron_right</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="50" data-max="<?php echo $maxMembers; ?>">
-                                        <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--wrap">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--wrap">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('lbl_allow_purchases'); ?></h2>
@@ -408,13 +467,8 @@ if (!$canvasId) {
                             </label>
                         </div>
                     </div>
-                    
-                    <hr class="component-divider">
-
-                    <?php 
-                    $hasLiveChat = SubscriptionPlanConstants::hasFeature($tier, 'allow_live_chat');
-                    ?>
-                    <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interactive' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_premium_advanced')) . '" data-position="top"'; ?>>
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interactive' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_premium_advanced')) . '" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
@@ -431,10 +485,11 @@ if (!$canvasId) {
                             </label>
                         </div>
                     </div>
-
+                        </div>
+                    </div>
                 </div>
 
-            </div>
+                            </div>
         </div>
     </div>
 </div>

@@ -1766,6 +1766,7 @@ html.dark-theme .component-menu-header.shadow {
 
 .component-accordion.active > .component-accordion-body > .component-accordion-content {
     opacity: 1;
+    overflow: visible;
 }
 
 .component-toggle-switch {

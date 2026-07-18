@@ -20,7 +20,6 @@ interface CanvasRepositoryInterface {
     public function updateRequestStatus(int $requestId, string $status): bool;
     public function getPendingRequests(int $canvasId): array;
     public function getById(int $id): ?array;
-    public function getByScopeHash(string $hash): ?array;
     public function getMemberRoles(int $canvasId, int $userId): array;
     public function hasCanvasPermission(int $canvasId, int $userId, string $permission): bool;
     public function assignMemberRole(int $canvasId, int $userId, int $roleId): bool;

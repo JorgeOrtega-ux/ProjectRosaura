@@ -26,15 +26,15 @@ $pdo = $db->getConnection($connName);
 
 $tblCanvases = defined('App\Core\System\DatabaseConstants::TBL_CANVASES') ? App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
 if ($isAdmin) {
-    $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid OR (owner_id IS NULL AND scope_type != 'personal')";
-    $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, scope_type, favorites_count 
+    $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid OR is_official = 1";
+    $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, is_official, favorites_count 
                   FROM {$tblCanvases} 
-                  WHERE owner_id = :uid OR (owner_id IS NULL AND scope_type != 'personal')
+                  WHERE owner_id = :uid OR is_official = 1
                   ORDER BY id DESC 
                   LIMIT $limit OFFSET $offset";
 } else {
     $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid";
-    $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, scope_type, favorites_count 
+    $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, is_official, favorites_count 
                   FROM {$tblCanvases} 
                   WHERE owner_id = :uid 
                   ORDER BY id DESC 
@@ -178,7 +178,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                     <td>
                                         <div class="component-badge component-badge--sm">
                                             <span class="material-symbols-rounded">category</span>
-                                            <span class="search-target"><?php echo htmlspecialchars(ucfirst($canvas['scope_type'] ?? 'personal')); ?></span>
+                                            <span class="search-target"><?php echo !empty($canvas['is_official']) ? __('canvas_official') : __('canvas_personal'); ?></span>
                                         </div>
                                     </td>
                                     <td>

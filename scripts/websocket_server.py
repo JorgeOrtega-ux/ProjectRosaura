@@ -551,13 +551,13 @@ async def handler(websocket):
 
                             clients_in_room = ROOMS.get(canvas_id, set())
                             if len(clients_in_room) > 1:
-                                    tasks = [
-                                        asyncio.create_task(client.send(message))
-                                        for client in clients_in_room if client != websocket
-                                    ]
-                                    if tasks:
-                                        await asyncio.gather(*tasks)
-                                await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": message}))
+                                tasks = [
+                                    asyncio.create_task(client.send(message))
+                                    for client in clients_in_room if client != websocket
+                                ]
+                                if tasks:
+                                    await asyncio.gather(*tasks)
+                            await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": message}))
 
                         else:
                             print(f"[DEBUG PY] Cooldown active. Insufficient pixels for {user_id}.")

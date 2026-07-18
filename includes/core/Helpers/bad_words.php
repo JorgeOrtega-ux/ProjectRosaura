@@ -1,4 +1,6 @@
-[
+<?php
+
+return [
   "puta",
   "puto",
   "mierda",
@@ -22,4 +24,4 @@
   "idiota",
   "estupido",
   "estúpido"
-]
+];

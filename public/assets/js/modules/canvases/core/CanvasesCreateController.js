@@ -36,10 +36,7 @@ class CanvasesCreateController {
             limit: 10,
             cooldown_pixels_batch: 5,
             cooldown_seconds: 10,
-            scope_type: 'personal',
-            scope_country: null,
-            scope_state: null,
-            scope_city: null
+            is_official: 0
         };
 
         this.countriesLoaded = false;
@@ -74,16 +71,16 @@ class CanvasesCreateController {
             hasPerm = p.includes('canvases.create_official') || p.includes('access_admin_panel');
         }
 
-        const scopeTrigger = document.querySelector('[data-target="dropdownScopeType"]');
-        if (scopeTrigger) {
+        const officialToggle = document.querySelector('[data-ref="val_is_official"]');
+        if (officialToggle) {
             if (hasPerm) {
-                scopeTrigger.classList.remove('disabled-interactive');
+                officialToggle.disabled = false;
             } else {
-                scopeTrigger.classList.add('disabled-interactive');
+                officialToggle.disabled = true;
             }
         }
         
-        this.handleScopeTypeChange('personal');
+        this.updateSizesAvailability(false);
     }
 
     setupDefaultValues() {
@@ -225,6 +222,7 @@ class CanvasesCreateController {
         } else if (action === 'createCanvas') {
             e.preventDefault();
             this.submitCanvas(actionBtn);
+
         } else if (action === 'navigateCustomPalette') {
             if (window.spaRouter) {
                 window.spaRouter.navigate(`${this.basePath}/canvases/palettes/create`);
@@ -234,47 +232,7 @@ class CanvasesCreateController {
         }
     }
 
-    handleScopeTypeChange(type) {
-        this.formState.scope_type = type;
-        
-        const refsToHide = [
-            'scope-divider-main',
-            'scope-divider-country', 'scope-section-country',
-            'scope-divider-state', 'scope-section-state',
-            'scope-divider-city', 'scope-section-city',
-            'scope-divider-org', 'scope-section-org'
-        ];
-        
-        refsToHide.forEach(ref => {
-            const el = document.querySelector(`[data-ref="${ref}"]`);
-            if (el) el.classList.add('disabled');
-        });
-
-        if (type === 'organization') {
-            document.querySelector('[data-ref="scope-divider-main"]')?.classList.remove('disabled');
-            document.querySelector('[data-ref="scope-divider-org"]')?.classList.remove('disabled');
-            document.querySelector('[data-ref="scope-section-org"]')?.classList.remove('disabled');
-        } else if (['country', 'state', 'municipality'].includes(type)) {
-            document.querySelector('[data-ref="scope-divider-main"]')?.classList.remove('disabled');
-            document.querySelector('[data-ref="scope-divider-country"]')?.classList.remove('disabled');
-            document.querySelector('[data-ref="scope-section-country"]')?.classList.remove('disabled');
-            
-            this.loadCountries();
-
-            if (['state', 'municipality'].includes(type)) {
-                document.querySelector('[data-ref="scope-divider-state"]')?.classList.remove('disabled');
-                document.querySelector('[data-ref="scope-section-state"]')?.classList.remove('disabled');
-            }
-            if (type === 'municipality') {
-                document.querySelector('[data-ref="scope-divider-city"]')?.classList.remove('disabled');
-                document.querySelector('[data-ref="scope-section-city"]')?.classList.remove('disabled');
-            }
-        }
-
-        this.updateSizesAvailability(type);
-    }
-
-    updateSizesAvailability(scopeType) {
+    updateSizesAvailability(isOfficial) {
         const wrapper = document.querySelector('[data-ref="canvas-create-wrapper"]');
         if (!wrapper) return;
         
@@ -283,7 +241,7 @@ class CanvasesCreateController {
         
         sizeLinks.forEach(link => {
             const requiredTier = parseInt(link.getAttribute('data-tier') || '0', 10);
-            const isAllowed = (scopeType !== 'personal') || (userTier >= requiredTier);
+            const isAllowed = isOfficial || (userTier >= requiredTier);
             
             if (isAllowed) {
                 link.classList.remove('disabled-interactive');
@@ -322,109 +280,7 @@ class CanvasesCreateController {
         }
     }
 
-    async loadCountries() {
-        if (this.countriesLoaded) return;
-        
-        const listContainer = document.querySelector('[data-ref="list-scope-country"]');
-        if (!listContainer) return;
-        
-        try {
-            listContainer.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('lbl_loading')}</span></div></div>`;
-            
-            const result = await this.api.post(ApiRoutes.Locations.GetCountries, {}, this.abortController.signal);
-            if (result && result.success) {
-                listContainer.innerHTML = ''; 
-                result.data.forEach(country => {
-                    const html = `
-                        <div class="component-menu-link" data-action="selectValue" data-type="scope_country" data-value="${country.id}" data-label="${country.name}" data-icon="flag">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">flag</span></div>
-                            <div class="component-menu-link-text"><span>${country.name}</span></div>
-                        </div>
-                    `;
-                    listContainer.insertAdjacentHTML('beforeend', html);
-                });
-                this.countriesLoaded = true;
-            } else {
-                listContainer.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('err_default')}</span></div></div>`;
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {} 
-        }
-    }
 
-    async handleCountryChange(countryId) {
-        this.formState.scope_country = countryId;
-        this.formState.scope_state = null;
-        this.formState.scope_city = null;
-        
-        const stateText = document.querySelector('[data-ref="text-scope-state"]');
-        if (stateText) stateText.textContent = window.__('canvas_scope_state_placeholder');
-        
-        const cityText = document.querySelector('[data-ref="text-scope-city"]');
-        if (cityText) cityText.textContent = window.__('canvas_scope_city_placeholder');
-        
-        const listState = document.querySelector('[data-ref="list-scope-state"]');
-        const listCity = document.querySelector('[data-ref="list-scope-city"]');
-        
-        if (listCity) listCity.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('lbl_loading')}</span></div></div>`;
-
-        if (!countryId || !listState) return;
-
-        try {
-            listState.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('lbl_loading')}</span></div></div>`;
-            
-            const result = await this.api.post(ApiRoutes.Locations.GetStates, { id: countryId }, this.abortController.signal);
-            if (result && result.success) {
-                listState.innerHTML = '';
-                result.data.forEach(state => {
-                    const html = `
-                        <div class="component-menu-link" data-action="selectValue" data-type="scope_state" data-value="${state.id}" data-label="${state.name}" data-icon="map">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">map</span></div>
-                            <div class="component-menu-link-text"><span>${state.name}</span></div>
-                        </div>
-                    `;
-                    listState.insertAdjacentHTML('beforeend', html);
-                });
-            } else {
-                listState.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('err_default')}</span></div></div>`;
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {}
-        }
-    }
-
-    async handleStateChange(stateId) {
-        this.formState.scope_state = stateId;
-        this.formState.scope_city = null;
-        
-        const cityText = document.querySelector('[data-ref="text-scope-city"]');
-        if (cityText) cityText.textContent = window.__('canvas_scope_city_placeholder');
-        
-        const listCity = document.querySelector('[data-ref="list-scope-city"]');
-        if (!stateId || !listCity) return;
-
-        try {
-            listCity.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('lbl_loading')}</span></div></div>`;
-            
-            const result = await this.api.post(ApiRoutes.Locations.GetCities, { id: stateId }, this.abortController.signal);
-            if (result && result.success) {
-                listCity.innerHTML = '';
-                result.data.forEach(city => {
-                    const html = `
-                        <div class="component-menu-link" data-action="selectValue" data-type="scope_city" data-value="${city.id}" data-label="${city.name}" data-icon="location_city">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">location_city</span></div>
-                            <div class="component-menu-link-text"><span>${city.name}</span></div>
-                        </div>
-                    `;
-                    listCity.insertAdjacentHTML('beforeend', html);
-                });
-            } else {
-                listCity.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('err_default')}</span></div></div>`;
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {}
-        }
-    }
 
     saveCanvasName(btn) {
         const container = btn.closest('.component-group-item--stateful');
@@ -482,14 +338,6 @@ class CanvasesCreateController {
 
         this.formState[type] = value;
 
-        if (type === 'scope_type') {
-            this.handleScopeTypeChange(value);
-        } else if (type === 'scope_country') {
-            this.handleCountryChange(value);
-        } else if (type === 'scope_state') {
-            this.handleStateChange(value);
-        }
-
         const menu = optionBtn.closest('.component-menu-list');
         if (menu) {
             menu.querySelectorAll('.component-menu-link').forEach(el => el.classList.remove('active'));
@@ -500,8 +348,7 @@ class CanvasesCreateController {
         if (dropdownWrapper) {
             const triggerText = dropdownWrapper.querySelector('.component-dropdown-text');
             if (triggerText) {
-                const isDirectText = type.startsWith('scope_') && type !== 'scope_type';
-                triggerText.textContent = isDirectText ? label : window.__(label);
+                triggerText.textContent = window.__(label);
             }
 
             if (icon) {
@@ -658,29 +505,9 @@ class CanvasesCreateController {
             this.formState.allow_chat = inputChat.checked ? 1 : 0;
         }
 
-        const scopeSection = document.querySelector('[data-ref="scope-section"]');
-        if (scopeSection && !scopeSection.classList.contains('disabled')) {
-            const scopeType = this.formState.scope_type;
-
-            if (scopeType === 'organization') {
-                const orgEl = document.querySelector('[data-ref="input-scope-organization"]');
-                this.formState.scope_ref_1 = orgEl ? orgEl.value.trim() : null;
-                this.formState.scope_ref_2 = null;
-                this.formState.scope_ref_3 = null;
-            } else if (scopeType !== 'personal' && scopeType !== 'global') {
-                this.formState.scope_ref_1 = this.formState.scope_country || null;
-                this.formState.scope_ref_2 = this.formState.scope_state || null;
-                this.formState.scope_ref_3 = this.formState.scope_city || null;
-            } else {
-                this.formState.scope_ref_1 = null;
-                this.formState.scope_ref_2 = null;
-                this.formState.scope_ref_3 = null;
-            }
-        } else {
-            this.formState.scope_type = 'personal';
-            this.formState.scope_ref_1 = null;
-            this.formState.scope_ref_2 = null;
-            this.formState.scope_ref_3 = null;
+        const inputOfficial = document.querySelector('[data-ref="val_is_official"]');
+        if (inputOfficial) {
+            this.formState.is_official = inputOfficial.checked ? 1 : 0;
         }
 
         setButtonLoading(btn);
