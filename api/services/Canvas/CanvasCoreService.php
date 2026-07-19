@@ -586,6 +586,13 @@ class CanvasCoreService {
                 $data['tags'] = null;
             }
 
+            if (isset($data['is_official'])) {
+                if ($data['is_official'] && !$canManageOfficial) {
+                    return ['success' => false, 'message' => __('err_cannot_create_official_canvas')];
+                }
+                $data['is_official'] = $data['is_official'] ? 1 : 0;
+            }
+
             $updated = $this->canvasRepository->updateCanvasData($canvasId, $data);
 
             if ($updated) {

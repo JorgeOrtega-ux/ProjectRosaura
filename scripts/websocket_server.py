@@ -9,14 +9,35 @@ import redis.asyncio as redis
 import mysql.connector
 import zlib
 
+from mysql.connector import pooling
+
+# Global connection pool for chunks
+DB_POOL = None
+
+def get_db_pool():
+    global DB_POOL
+    if DB_POOL is None:
+        try:
+            DB_POOL = pooling.MySQLConnectionPool(
+                pool_name="chunk_pool",
+                pool_size=32,
+                pool_reset_session=True,
+                host=os.getenv("DB_HOST", "db"),
+                user=os.getenv("DB_USER", "system_web_executor"),
+                password=os.getenv("DB_PASS", "secret"),
+                database=os.getenv("DB_CANVASES_NAME", "db_canvases")
+            )
+        except Exception as e:
+            print(f"[!] Error creating DB pool: {e}")
+    return DB_POOL
+
 def fetch_chunk_from_db(canvas_id, cx, cy):
     try:
-        db = mysql.connector.connect(
-            host=os.getenv("DB_HOST", "db"),
-            user=os.getenv("DB_USER", "system_web_executor"),
-            password=os.getenv("DB_PASS", "secret"),
-            database=os.getenv("DB_CANVASES_NAME", "db_canvases")
-        )
+        pool = get_db_pool()
+        if not pool:
+            return None
+            
+        db = pool.get_connection()
         cursor = db.cursor()
         cursor.execute("SELECT chunk_data FROM canvas_infinite_chunks WHERE canvas_id = %s AND chunk_x = %s AND chunk_y = %s LIMIT 1", (canvas_id, cx, cy))
         row = cursor.fetchone()
@@ -909,6 +930,8 @@ async def handler(websocket):
                                             redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
                                             byte_offset = ((local_y * 512) + local_x_start) * 4
                                             pipeline.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00' * pixels_to_write)
+                                            pipeline.sadd(f"canvas:{canvas_id}:dirty_chunks", f"{chunk_x}:{chunk_y}")
+
                                             
                                             current_x += pixels_to_write
                                 
@@ -947,6 +970,8 @@ async def handler(websocket):
                 elif data.get("type") == "request_chunks":
                     import base64
                     chunks = data.get("chunks", [])
+                    if isinstance(chunks, list):
+                        chunks = chunks[:30] # Limit to 30 chunks per request
                     for c in chunks:
                         cx = c.get("x")
                         cy = c.get("y")

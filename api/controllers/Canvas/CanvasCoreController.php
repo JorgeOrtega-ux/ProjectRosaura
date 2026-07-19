@@ -135,10 +135,11 @@ class CanvasCoreController extends BaseController {
                 'cooldown_seconds' => $input['cooldown_seconds'] ?? null,
                 'allow_purchases' => isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : null,
                 'allow_chat' => isset($input['allow_chat']) ? (int)$input['allow_chat'] : null,
-                'tags' => isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : []
+                'tags' => isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : [],
+                'is_official' => isset($input['is_official']) ? filter_var($input['is_official'], FILTER_VALIDATE_BOOLEAN) : null
             ];
 
-            $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data);
+            $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data, $this->canCreateOfficial());
             return $this->respond($result);
 
         } catch (\Throwable $e) {

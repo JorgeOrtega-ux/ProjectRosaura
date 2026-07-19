@@ -423,19 +423,19 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         
         if is_infinite:
             cursor = db_conn.cursor(dictionary=True) if hasattr(db_conn, 'cursor') and hasattr(db_conn.cursor(), 'dictionary') else db_conn.cursor()
-            cursor.execute("SELECT chunk_x, chunk_y, chunk_data FROM canvas_infinite_chunks WHERE canvas_id = %s", (canvas_id,))
-            chunks = cursor.fetchall()
-            cursor.close()
+            # Fetch ONLY coordinates to avoid OOM
+            cursor.execute("SELECT chunk_x, chunk_y FROM canvas_infinite_chunks WHERE canvas_id = %s", (canvas_id,))
+            coords = cursor.fetchall()
             
             target_width, target_height = 1024, 1024
             img = Image.new('RGBA', (target_width, target_height), color=(0, 0, 0, 0))
             pixels = img.load()
             
-            if chunks:
-                if isinstance(chunks[0], dict):
-                    chunk_coords = set((c['chunk_x'], c['chunk_y']) for c in chunks)
+            if coords:
+                if isinstance(coords[0], dict):
+                    chunk_coords = set((c['chunk_x'], c['chunk_y']) for c in coords)
                 else:
-                    chunk_coords = set((c[0], c[1]) for c in chunks)
+                    chunk_coords = set((c[0], c[1]) for c in coords)
                 
                 best_start_x = 0
                 best_start_y = 0
@@ -455,6 +455,20 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                 start_x_chunk = best_start_x
                 start_y_chunk = best_start_y
                 
+                # Fetch only the required chunks
+                chunks_to_fetch = []
+                for dx in range(2):
+                    for dy in range(2):
+                        chunks_to_fetch.append((start_x_chunk + dx, start_y_chunk + dy))
+                
+                query_conds = " OR ".join(["(chunk_x = %s AND chunk_y = %s)"] * len(chunks_to_fetch))
+                params = [canvas_id]
+                for cx, cy in chunks_to_fetch:
+                    params.extend([cx, cy])
+                
+                cursor.execute(f"SELECT chunk_x, chunk_y, chunk_data FROM canvas_infinite_chunks WHERE canvas_id = %s AND ({query_conds})", tuple(params))
+                chunks = cursor.fetchall()
+                
                 for c in chunks:
                     cx = c['chunk_x'] if isinstance(c, dict) else c[0]
                     cy = c['chunk_y'] if isinstance(c, dict) else c[1]
@@ -464,6 +478,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                         raw_chunk = decompress(cdata)
                         offset_px_x = (cx - start_x_chunk) * 512
                         offset_px_y = (cy - start_y_chunk) * 512
+
                         
                         for py in range(512):
                             for px in range(512):

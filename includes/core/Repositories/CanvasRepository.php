@@ -455,10 +455,15 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     allow_purchases = :allow_purchases,
                     allow_chat = :allow_chat,
                     tags = :tags
-                WHERE id = :id";
+                ";
+
+        if (isset($data['is_official'])) {
+            $sql .= ", is_official = :is_official";
+        }
+        $sql .= " WHERE id = :id";
         
         $stmt = $this->db->prepare($sql);
-        $success = $stmt->execute([
+        $params = [
             ':name'                  => $data['name'],
             ':description'           => $data['description'],
             ':privacy'               => $data['privacy'],
@@ -471,7 +476,11 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':allow_chat'            => $data['allow_chat'] ?? 0,
             ':tags'                  => isset($data['tags']) ? json_encode($data['tags']) : null,
             ':id'                    => $id
-        ]);
+        ];
+        if (isset($data['is_official'])) {
+            $params[':is_official'] = $data['is_official'];
+        }
+        $success = $stmt->execute($params);
         if ($success) {
             $this->invalidateCanvasCache($id);
             $client = $this->typesenseManager->getClient();
@@ -481,6 +490,9 @@ class CanvasRepository implements CanvasRepositoryInterface {
                         'name'    => $data['name'],
                         'privacy' => $data['privacy']
                     ];
+                    if (isset($data['is_official'])) {
+                        $document['is_official'] = $data['is_official'];
+                    }
                     $client->collections['canvases']->documents[(string)$id]->update($document);
                 } catch (Exception $e) {
                     Logger::error("Typesense Update Error (Canvas ID {$id}): " . $e->getMessage());
