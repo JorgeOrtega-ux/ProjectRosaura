@@ -26,30 +26,30 @@ function buildCardFeatures(array $limits): array {
     if ($limits['max_canvases'] === -1) {
         $core[] = [
             'icon' => 'check',
-            'title' => 'Lienzos ilimitados',
-            'desc' => 'Obtén límites de uso sin restricciones para todos tus proyectos.'
+            'title' => __('premium_feat_unlimited_canvases_title'),
+            'desc' => __('premium_feat_unlimited_canvases_desc')
         ];
     } else {
         $core[] = [
             'icon' => 'check',
-            'title' => 'Límites de uso ampliados',
-            'desc' => 'Obtén ' . $limits['max_canvases'] . ' lienzos y mayor capacidad de almacenamiento.'
+            'title' => __('premium_feat_expanded_limits_title'),
+            'desc' => __('premium_feat_expanded_limits_desc', ['canvases' => $limits['max_canvases']])
         ];
     }
 
     if ($limits['live_templates']) {
         $core[] = [
             'icon' => 'check',
-            'title' => 'Colaboración en vivo',
-            'desc' => 'Invita hasta ' . number_format($limits['max_members_per_canvas']) . ' miembros a colaborar en tiempo real.'
+            'title' => __('premium_feat_live_collab_title'),
+            'desc' => __('premium_feat_live_collab_desc', ['members' => number_format($limits['max_members_per_canvas'])])
         ];
     }
 
     if ($limits['allow_live_chat']) {
         $core[] = [
             'icon' => 'check',
-            'title' => 'Chat en vivo',
-            'desc' => 'Comunícate con tu equipo directamente en la plataforma.'
+            'title' => __('premium_feat_live_chat_title'),
+            'desc' => __('premium_feat_live_chat_desc')
         ];
     }
 
@@ -57,21 +57,21 @@ function buildCardFeatures(array $limits): array {
     if ($limits['custom_palettes'] && $limits['advanced_roles']) {
         $advanced[] = [
             'icon' => 'palette',
-            'title' => 'Herramientas Profesionales',
-            'desc' => 'Crea paletas personalizadas y gestiona roles avanzados.'
+            'title' => __('premium_feat_pro_tools_title'),
+            'desc' => __('premium_feat_pro_tools_desc')
         ];
     } elseif ($limits['extended_palettes']) {
         $advanced[] = [
             'icon' => 'palette',
-            'title' => 'Paletas ampliadas',
-            'desc' => 'Mayor variedad de colores predefinidos para tus diseños.'
+            'title' => __('premium_feat_extended_palettes_title'),
+            'desc' => __('premium_feat_extended_palettes_desc')
         ];
     }
 
     $advanced[] = [
         'icon' => 'folder_open',
-        'title' => 'Gestión de recursos',
-        'desc' => 'Acceso a un panel de control con opciones ampliadas.'
+        'title' => __('premium_feat_resource_mgmt_title'),
+        'desc' => __('premium_feat_resource_mgmt_desc')
     ];
 
     return ['core' => $core, 'advanced' => $advanced];
@@ -90,7 +90,7 @@ $plans = [
         'old_price'  => 'USD ' . ($prices[1]['monthly'] * 1.5), 
         'monthly'    => $prices[1]['monthly'],
         'yearly'     => $prices[1]['yearly'],
-        'btn_text'   => 'Obtener Pro',
+        'btn_text'   => __('btn_get_pro'),
         'features'   => $cardFeaturesPro,
         'css_class'  => 'component-card--featured',
         'is_recommended' => true,
@@ -103,7 +103,7 @@ $plans = [
         'old_price'  => 'USD ' . ($prices[2]['monthly'] * 1.5),
         'monthly'    => $prices[2]['monthly'],
         'yearly'     => $prices[2]['yearly'],
-        'btn_text'   => 'Obtener Advanced',
+        'btn_text'   => __('btn_get_advanced'),
         'features'   => $cardFeaturesAdvanced,
         'css_class'  => '',
         'is_recommended' => false,
@@ -113,10 +113,10 @@ $plans = [
         'tier'       => 3,
         'title'      => 'Ultra',
         'storage'    => formatStoragePremium($tierUltra['max_storage_mb']),
-        'old_price'  => 'Desde', 
+        'old_price'  => __('lbl_from'), 
         'monthly'    => $prices[3]['monthly'],
         'yearly'     => $prices[3]['yearly'],
-        'btn_text'   => 'Obtener Ultra',
+        'btn_text'   => __('btn_get_ultra'),
         'features'   => $cardFeaturesUltra,
         'css_class'  => '',
         'is_recommended' => false,
@@ -128,22 +128,20 @@ $plans = [
     <div class="component-wrapper component-wrapper--full component-max-w-1200">
         
         <div class="component-page-header">
-            <h1 class="component-page-title">Actualiza para obtener más acceso a <span class="component-text-primary">Premium</span></h1>
-            <p class="component-page-description">Cancela cuando quieras. Al suscribirte, aceptas las condiciones de nuestro servicio.</p>
+            <h1 class="component-page-title"><?php echo __('premium_page_title'); ?></h1>
+            <p class="component-page-description"><?php echo __('premium_page_desc'); ?></p>
         </div>
 
         <div class="component-toggle-group" id="billingToggle">
             <div class="component-toggle-group__wrapper">
-                <button type="button" class="component-button component-button--dark component-button--rounded-pill component-toggle-group__button" id="lblMonthly">Mensual</button>
-                <button type="button" class="component-button component-button--ghost component-button--rounded-pill component-toggle-group__button component-text-notice--muted" id="lblYearly">Anual</button>
+                <button type="button" class="component-button component-button--dark component-button--rounded-pill component-toggle-group__button" id="lblMonthly"><?php echo __('lbl_monthly'); ?></button>
+                <button type="button" class="component-button component-button--ghost component-button--rounded-pill component-toggle-group__button component-text-notice--muted" id="lblYearly"><?php echo __('lbl_yearly'); ?></button>
             </div>
-            <!-- Using HTML hidden attribute instead of CSS class to guarantee it stays invisible without inline styles -->
             <input type="checkbox" id="billingCheckboxToggle" autocomplete="off" hidden>
         </div>
         
-        <p class="component-discount-note">Ahorra 20% con el pago anual</p>
+        <p class="component-discount-note"><?php echo __('premium_discount_note'); ?></p>
 
-        <!-- Cards flex container -->
         <div class="component-flex-center-gap component-flex-wrap">
             
             <?php foreach ($plans as $plan): 
@@ -153,7 +151,7 @@ $plans = [
                 
                 <div class="component-card__header">
                     <?php if ($plan['is_recommended']): ?>
-                        <div class="component-badge component-badge--primary component-badge--top-center">Recomendado</div>
+                        <div class="component-badge component-badge--primary component-badge--top-center"><?php echo __('badge_recommended'); ?></div>
                     <?php endif; ?>
                     
                     <div class="component-card__brand">
@@ -166,7 +164,7 @@ $plans = [
                     <div class="component-card__storage-badge-wrapper">
                         <span class="component-badge component-badge--sm">
                             <span class="material-symbols-rounded component-badge__icon component-icon-sm">cloud</span>
-                            <span><?php echo $plan['storage']; ?> de almacenamiento</span>
+                            <span><?php echo $plan['storage']; ?> <?php echo __('lbl_storage'); ?></span>
                         </span>
                     </div>
 
@@ -185,9 +183,9 @@ $plans = [
                     
                     <div class="component-card__action">
                         <?php if ($tier === $planTier): ?>
-                            <div class="component-button component-button--rounded-pill component-button--full component-button--h45 disabled-interactive component-cursor-pointer component-text-center">Tu Plan Actual</div>
+                            <div class="component-button component-button--rounded-pill component-button--full component-button--h45 disabled-interactive component-cursor-pointer component-text-center"><?php echo __('btn_current_plan'); ?></div>
                         <?php elseif ($planTier < $tier): ?>
-                            <div class="component-button component-button--rounded-pill component-button--full component-button--h45 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="<?php echo $planTier; ?>">Bajar de nivel</div>
+                            <div class="component-button component-button--rounded-pill component-button--full component-button--h45 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="<?php echo $planTier; ?>"><?php echo __('btn_downgrade'); ?></div>
                         <?php else: ?>
                             <div class="<?php echo $plan['btn_class']; ?> component-cursor-pointer component-text-center" data-action="subscribe" data-tier="<?php echo $planTier; ?>"><?php echo $plan['btn_text']; ?></div>
                         <?php endif; ?>
@@ -209,7 +207,7 @@ $plans = [
                     
                     <?php if (!empty($plan['features']['advanced'])): ?>
                         <hr class="component-card__divider">
-                        <div class="component-card__features-title">Incluye mayor nivel de acceso a las herramientas y más</div>
+                        <div class="component-card__features-title"><?php echo __('premium_includes_more_tools'); ?></div>
                         <ul class="component-card__features-list">
                             <?php foreach ($plan['features']['advanced'] as $feat): ?>
                             <li class="component-card__feature-item">

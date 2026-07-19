@@ -276,7 +276,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/manage-users?page=' . ($p
                                     $validUserPic = Utils::getValidImage($user['profile_picture'], 'avatar');
                                     
                                     $roleIds = $user['role_ids'] ?? '1';
-                                    $roleNamesStr = $user['role_names'] ?? 'User';
+                                    $roleNamesStr = $user['role_names'] ?? __('user');
                                     $roleNamesArray = explode(',', $roleNamesStr);
                                     
                                     $roleColorRaw = !empty($user['role_color']) ? $user['role_color'] : '#6b7280';

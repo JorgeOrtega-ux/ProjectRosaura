@@ -12,8 +12,8 @@ if (!empty($serverConfig['max_avatar_size_mb']) && is_numeric($serverConfig['max
 
 $isLoggedIn = isset($_SESSION['user_id']);
 $userId = $_SESSION['user_id'] ?? 0;
-$userName = $_SESSION['user_name'] ?? __('default_user_name');
-$userEmail = $_SESSION['user_email'] ?? __('default_user_email');
+$userName = $_SESSION['user_name'] ?? __('user');
+$userEmail = $_SESSION['user_email'] ?? '';
 $userRoleColorRaw = $_SESSION['user_role_color'] ?? '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
 $activeRoleBg = 'var(--text-muted)';
 

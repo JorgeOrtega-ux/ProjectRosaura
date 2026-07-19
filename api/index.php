@@ -144,7 +144,7 @@ try {
                 }
             }
             
-            $sessionManager->set('user_role', $liveUser['role_name'] ?? 'User');
+            $sessionManager->set('user_role', $liveUser['role_name'] ?? '');
         }
     } elseif (isset($_COOKIE['remember_tokens']) || isset($_COOKIE['remember_token'])) {
         $authService->autoLogin(); 

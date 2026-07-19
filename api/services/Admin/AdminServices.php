@@ -1249,7 +1249,7 @@ class AdminServices {
             
             foreach ($messages as &$msg) {
                 $uid = $msg['user_id'];
-                $msg['username'] = $usersMap[$uid] ?? __('default_user');
+                $msg['username'] = $usersMap[$uid] ?? __('user');
             }
             unset($msg);
         }

@@ -268,11 +268,11 @@ if (!empty($canvasUuid)) {
                     <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleTemplateLock" data-ref="btn-template-lock" data-tooltip="<?php echo __('tooltip_toggle_lock'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">lock_open</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="rotateTemplate" data-ref="btn-template-rotate" data-tooltip="Rotar plantilla 90°" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="rotateTemplate" data-ref="btn-template-rotate" data-tooltip="<?php echo __('tooltip_rotate_template'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">rotate_right</span>
                     </button>
                     <?php if (isset($canInjectTemplate) && $canInjectTemplate): ?>
-                    <button class="component-button component-button--icon component-button--h40 component-button--warning disabled" data-action="plazmarTemplate" data-ref="btn-template-plazmar" data-tooltip="Plazmar imagen" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--warning disabled" data-action="plazmarTemplate" data-ref="btn-template-plazmar" data-tooltip="<?php echo __('tooltip_plazmar_template'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">brush</span>
                     </button>
                     <?php endif; ?>

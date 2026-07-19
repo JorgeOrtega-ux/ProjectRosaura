@@ -4,7 +4,7 @@ if (!isset($canvasAllowChat) || $canvasAllowChat != '1') {
     return;
 }
 
-$chatUsername = __('user') ?: 'User';
+$chatUsername = __('user');
 if (isset($userId) && isset($_SESSION['accounts'][$userId]['user_name'])) {
     $chatUsername = $_SESSION['accounts'][$userId]['user_name'];
 }

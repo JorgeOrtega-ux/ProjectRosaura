@@ -694,7 +694,7 @@ class AuthServices {
 
         $googleId = $payload['sub'];
         $email = $payload['email'];
-        $name = $payload['name'] ?? 'User';
+        $name = $payload['name'] ?? __('user');
 
         $user = $this->userRepository->findByGoogleId($googleId);
 

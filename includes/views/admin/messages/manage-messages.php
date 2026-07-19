@@ -110,7 +110,7 @@ if (!empty($messages)) {
     
     foreach ($messages as &$msg) {
         $uid = $msg['user_id'];
-        $msg['username'] = $usersMap[$uid] ?? 'Usuario Desconocido';
+        $msg['username'] = $usersMap[$uid] ?? __('user');
     }
     unset($msg);
 }

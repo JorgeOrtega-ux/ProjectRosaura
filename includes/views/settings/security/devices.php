@@ -75,7 +75,7 @@ function parseUserAgentPHP($ua) {
                                 <?php if ($isCurrent): ?>
                                     <div class="component-badge component-badge--sm component-badge--success">
                                         <span class="material-symbols-rounded component-icon--sm">verified</span>
-                                        <?php echo __('device_current') ?: 'Current Session'; ?>
+                                        <?php echo __('device_current'); ?>
                                     </div>
                                 <?php else: ?>
                                     <button class="component-button component-button--danger component-button--h36" data-action="revokeDevice" data-id="<?php echo $device['id']; ?>">
@@ -99,7 +99,7 @@ function parseUserAgentPHP($ua) {
                             </div>
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('btn_revoke_all'); ?></h2>
-                                <p class="component-card__description"><?php echo __('devices_revoke_all_desc') ?: 'Revoke all your active sessions on other devices to keep your account secure.'; ?></p>
+                                <p class="component-card__description"><?php echo __('desc_revoke_devices'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">

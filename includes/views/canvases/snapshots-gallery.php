@@ -153,7 +153,7 @@ if ($error) {
                                 <?php if ($snapshot['privacy'] === 'private'): ?>
                                 <div class="component-badge component-badge--danger">
                                     <span class="material-symbols-rounded">lock</span>
-                                    <span>Privado</span>
+                                    <span><?php echo __('canvas_privacy_private'); ?></span>
                                 </div>
                                 <?php endif; ?>
                             </div>

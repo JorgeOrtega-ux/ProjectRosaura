@@ -56,7 +56,7 @@ $parseRoleColor = function($roleColorRaw) {
                         <img src="<?php echo htmlspecialchars($activeAccPic); ?>" alt="<?php echo __('alt_avatar'); ?>" onerror="this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'">
                     </div>
                     <div class="component-account-info">
-                        <span class="component-account-name"><?php echo htmlspecialchars($activeAcc['user_name'] ?? __('user_default_name')); ?></span>
+                        <span class="component-account-name"><?php echo htmlspecialchars($activeAcc['user_name'] ?? __('user')); ?></span>
                         <span class="component-account-email"><?php echo htmlspecialchars($activeAcc['user_email'] ?? ''); ?></span>
                     </div>
                     <span class="material-symbols-rounded">navigate_next</span>
@@ -132,7 +132,7 @@ $parseRoleColor = function($roleColorRaw) {
                         <img src="<?php echo htmlspecialchars($accPic); ?>" alt="<?php echo __('alt_avatar'); ?>" onerror="this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'">
                     </div>
                     <div class="component-account-info">
-                        <span class="component-account-name"><?php echo htmlspecialchars($acc['user_name'] ?? __('user_default_name')); ?></span>
+                        <span class="component-account-name"><?php echo htmlspecialchars($acc['user_name'] ?? __('user')); ?></span>
                         <span class="component-account-email"><?php echo htmlspecialchars($acc['user_email'] ?? ''); ?></span>
                     </div>
                     <?php if($isActive): ?>

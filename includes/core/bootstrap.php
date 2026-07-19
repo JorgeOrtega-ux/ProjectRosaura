@@ -174,7 +174,7 @@ try {
             $accounts = $sessionManager->get(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, []);
             if (isset($accounts[$activeId])) {
                 $accounts[$activeId]['user_role_id'] = $liveUser['role_id'] ?? null;
-                $accounts[$activeId]['user_role_name'] = $liveUser['role_name'] ?? 'User';
+                $accounts[$activeId]['user_role_name'] = $liveUser['role_name'] ?? __('user');
                 $accounts[$activeId]['user_role_color'] = $liveUser['role_color'] ?? '#808080';
                 $accounts[$activeId]['user_permissions'] = $permissions;
                 $accounts[$activeId]['user_pic'] = $liveUser['profile_picture'] ?? null;

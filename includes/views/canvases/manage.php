@@ -150,7 +150,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                     <thead>
                         <tr>
                             <th><?php echo __('table_header_canvas_name'); ?></th>
-                            <th>Tipo</th>
+                            <th><?php echo __('table_header_type'); ?></th>
                             <th><?php echo __('table_header_privacy'); ?></th>
                             <th><?php echo __('table_header_size'); ?></th>
                             <th><?php echo __('table_header_limit'); ?></th>
