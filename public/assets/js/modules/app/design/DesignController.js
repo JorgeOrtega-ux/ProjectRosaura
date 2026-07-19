@@ -275,6 +275,21 @@ class DesignController {
                             <span class="material-symbols-rounded">ink_eraser</span>
                             <span>${this.perkEraserLeft}/${maxEraser}</span>
                         `;
+                    } else if (this.interactionMode === 'bombing' && this.activeBomb) {
+                        const icons = {
+                            'pixel_misil_1': 'rocket_launch',
+                            'bomba_pixel_1': 'bomb',
+                            'bomba_atomica_1': 'crisis_alert',
+                            'bomba_racimo_1': 'scatter_plot',
+                            'lluvia_meteoritos_1': 'storm'
+                        };
+                        const icon = icons[this.activeBomb] || 'bomb';
+                        const targetMax = this.activeBomb === 'bomba_racimo_1' ? 5 : 1;
+                        const currentSel = this.selectedPixels ? this.selectedPixels.size : 0;
+                        newHtml = `
+                            <span class="material-symbols-rounded">${icon}</span>
+                            <span>${currentSel}/${targetMax}</span>
+                        `;
                     } else {
                         const rText = remaining > 0 ? `${Math.ceil(remaining)}s` : '0s';
                         newHtml = `

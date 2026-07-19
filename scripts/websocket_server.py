@@ -51,6 +51,38 @@ def fetch_chunk_from_db(canvas_id, cx, cy):
         print(f"[!] Error fetching chunk {cx},{cy} from MySQL for canvas {canvas_id}: {e}")
         return None
 
+def consume_user_perk(user_id, perk_id):
+    try:
+        pool = get_db_pool()
+        if not pool:
+            print("[!] consume_user_perk: DB pool is unavailable")
+            return False
+        db = pool.get_connection()
+        cursor = db.cursor()
+        identity_db = os.getenv("DB_IDENTITY_NAME") or "db_identity"
+        
+        query_sel = f"SELECT id FROM `{identity_db}`.`user_perks` WHERE user_id = %s AND perk_id = %s AND is_used = 0 ORDER BY created_at ASC LIMIT 1"
+        cursor.execute(query_sel, (user_id, perk_id))
+        row = cursor.fetchone()
+        
+        if row:
+            perk_row_id = row[0]
+            query_upd = f"UPDATE `{identity_db}`.`user_perks` SET is_used = 1, used_at = NOW() WHERE id = %s AND is_used = 0"
+            cursor.execute(query_upd, (perk_row_id,))
+            db.commit()
+            affected = cursor.rowcount
+            cursor.close()
+            db.close()
+            return affected > 0
+            
+        cursor.close()
+        db.close()
+        print(f"[!] consume_user_perk: No unused perk found for user_id={user_id}, perk_id={perk_id} in {identity_db}.user_perks")
+        return False
+    except Exception as e:
+        print(f"[!] Error consuming perk {perk_id} for user {user_id}: {e}")
+        return False
+
 NODE_ID = str(uuid.uuid4())
 ROOMS = {}
 LIVE_ROOMS = {} # Para las sesiones live share: { code: set(websockets) }
@@ -214,7 +246,8 @@ async def sync_online_counts():
         await asyncio.sleep(5)
 
 async def handler(websocket):
-    origin = websocket.request.headers.get("Origin")    app_url = os.getenv("APP_URL").rstrip("/") if os.getenv("APP_URL") else ""
+    origin = websocket.request.headers.get("Origin")
+    app_url = os.getenv("APP_URL").rstrip("/") if os.getenv("APP_URL") else ""
     if origin and origin != app_url and origin != app_url.replace("http://", "https://"):
         print(f"[!] Connection rejected by CORS: Origin '{origin}' does not match '{app_url}'")
         await websocket.close(code=1008, reason="CORS policy violation")
@@ -260,8 +293,8 @@ async def handler(websocket):
         await websocket.close(code=1008, reason="Corrupt ticket data.")
         return
 
-    MAX_CONNECTIONS = int(os.getenv("WS_MAX_CONNECTIONS"))
-    QOS_THRESHOLD = int(os.getenv("WS_QOS_THRESHOLD"))
+    MAX_CONNECTIONS = int(os.getenv("WS_MAX_CONNECTIONS") or 1000)
+    QOS_THRESHOLD = int(os.getenv("WS_QOS_THRESHOLD") or 800)
 
     if len(WS_META) >= QOS_THRESHOLD:
         if user_type == 'guest':
@@ -333,13 +366,6 @@ async def handler(websocket):
                         protection_left = int(protection_left) if protection_left else 0
                         eraser_left = await r.get(f"user:{user_id}:perk:eraser")
                         eraser_left = int(eraser_left) if eraser_left else 0
-                        
-                        active_bomb = None
-                        for b_id in ['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1']:
-                            val = await r.get(f"user:{user_id}:perk:{b_id}")
-                            if val and int(val) > 0:
-                                active_bomb = b_id
-                                break
                     else:
                         print(f"[DEBUG PY] Unidentified user, returning default max batch.")
                         balance = config_batch
@@ -347,7 +373,6 @@ async def handler(websocket):
                         is_no_cooldown = 0
                         protection_left = 0
                         eraser_left = 0
-                        active_bomb = None
                         
                     init_msg = json.dumps({
                         "type": "init_cooldown",
@@ -358,8 +383,7 @@ async def handler(websocket):
                         "next_replenish_in": next_in,
                         "perk_no_cooldown": bool(is_no_cooldown),
                         "perk_protection_left": protection_left,
-                        "perk_eraser_left": eraser_left,
-                        "perk_bomb_ready": active_bomb
+                        "perk_eraser_left": eraser_left
                     })
                     print(f"[DEBUG PY] Sending INIT response to front: {init_msg}")
                     await websocket.send(init_msg)
@@ -668,56 +692,66 @@ async def handler(websocket):
                         protection_left = await r.get(user_protection_key)
                         protection_left = int(protection_left) if protection_left else 0
                         
-                        if protection_left > 0:
-                            if width == 0:
-                                offset = f"{x},{y}"
+                        if protection_left <= 0:
+                            has_pkg = await asyncio.to_thread(consume_user_perk, user_id, "pixel_protection_25")
+                            if has_pkg:
+                                protection_left = 25
+                                perks_conf = get_perks_config()
+                                prot_duration = perks_conf.get('pixel_protection_25', {}).get('duration_seconds', 86400)
+                                await r.setex(user_protection_key, prot_duration, "25")
                             else:
-                                offset = (y * width) + x
-                            protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
-                            
-                            protected_by = await r.get(protected_key)
-                            if protected_by:
                                 error_msg = json.dumps({
                                     "type": "pixel_protected_error",
-                                    "message": "Este pÃ­xel ya estÃ¡ protegido",
-                                    "perk_protection_left": protection_left
+                                    "message": "err_no_protection_uses",
+                                    "perk_protection_left": 0
                                 })
                                 await websocket.send(error_msg)
                                 continue
 
-                            await r.decr(user_protection_key)
-                            perks_conf = get_perks_config()
-                            prot_duration = perks_conf.get('pixel_protection_25', {}).get('duration_seconds', 86400)
-                            await r.setex(protected_key, prot_duration, str(user_id))
-                            
-                            zset_key = f"canvas:{canvas_id}:protected_zset"
-                            expire_at = int(time.time()) + prot_duration
-                            await r.zadd(zset_key, {str(offset): expire_at})
-                            
-                            confirm_msg = json.dumps({
-                                "type": "pixel_confirm",
-                                "perk_protection_left": protection_left - 1
-                            })
-                            await websocket.send(confirm_msg)
-                            
-                            broadcast_msg = json.dumps({
-                                "type": "pixel_protected_broadcast",
-                                "offset": offset,
-                                "x": x,
-                                "y": y
-                            })
-                            clients_in_room = ROOMS.get(canvas_id, set())
-                            if len(clients_in_room) > 0:
-                                tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
-                                await asyncio.gather(*tasks)
-                            await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
+                        if width == 0:
+                            offset = f"{x},{y}"
                         else:
+                            offset = (y * width) + x
+                        protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
+                        
+                        protected_by = await r.get(protected_key)
+                        if protected_by:
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
-                                "message": "err_no_protection_uses",
-                                "perk_protection_left": 0
+                                "message": "Este píxel ya está protegido",
+                                "perk_protection_left": protection_left
                             })
                             await websocket.send(error_msg)
+                            continue
+
+                        await r.decr(user_protection_key)
+                        if (protection_left - 1) <= 0:
+                            await r.delete(user_protection_key)
+                        perks_conf = get_perks_config()
+                        prot_duration = perks_conf.get('pixel_protection_25', {}).get('duration_seconds', 86400)
+                        await r.setex(protected_key, prot_duration, str(user_id))
+                        
+                        zset_key = f"canvas:{canvas_id}:protected_zset"
+                        expire_at = int(time.time()) + prot_duration
+                        await r.zadd(zset_key, {str(offset): expire_at})
+                        
+                        confirm_msg = json.dumps({
+                            "type": "pixel_confirm",
+                            "perk_protection_left": max(0, protection_left - 1)
+                        })
+                        await websocket.send(confirm_msg)
+                        
+                        broadcast_msg = json.dumps({
+                            "type": "pixel_protected_broadcast",
+                            "offset": offset,
+                            "x": x,
+                            "y": y
+                        })
+                        clients_in_room = ROOMS.get(canvas_id, set())
+                        if len(clients_in_room) > 0:
+                            tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
+                            await asyncio.gather(*tasks)
+                        await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
 
                 elif data.get("type") == "erase_pixel":
                     x = int(data.get("x", 0))
@@ -736,89 +770,99 @@ async def handler(websocket):
                         eraser_left = await r.get(user_eraser_key)
                         eraser_left = int(eraser_left) if eraser_left else 0
                         
-                        if eraser_left > 0:
-                            if width == 0:
-                                offset = f"{x},{y}"
+                        if eraser_left <= 0:
+                            has_pkg = await asyncio.to_thread(consume_user_perk, user_id, "elite_eraser_25")
+                            if has_pkg:
+                                eraser_left = 25
+                                perks_conf = get_perks_config()
+                                eraser_duration = perks_conf.get('elite_eraser_25', {}).get('duration_seconds', 86400)
+                                await r.setex(user_eraser_key, eraser_duration, "25")
                             else:
-                                offset = (y * width) + x
-                            protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
-                            
-                            protected_by = await r.get(protected_key)
-                            
-                            if not protected_by:
                                 error_msg = json.dumps({
                                     "type": "pixel_protected_error",
-                                    "message": "err_pixel_not_protected",
-                                    "perk_eraser_left": eraser_left
+                                    "message": "err_no_eraser_uses",
+                                    "perk_eraser_left": 0
                                 })
                                 await websocket.send(error_msg)
                                 continue
-                                
-                            await r.decr(user_eraser_key)
-                            await r.delete(protected_key)
-                            
-                            if width == 0:
-                                chunk_x = x // 512
-                                chunk_y = y // 512
-                                local_x = x % 512
-                                local_y = y % 512
-                                redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
-                                byte_offset = ((local_y * 512) + local_x) * 4
-                            else:
-                                redis_state_key = f"canvas:{canvas_id}:state"
-                                byte_offset = (y * width + x) * 4
-                            
-                            await r.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00')
-                            
-                            stream_key = f"canvas:{canvas_id}:stream"
-                            event_dict = {
-                                "u": str(user_id),
-                                "x": str(x),
-                                "y": str(y),
-                                "c": "transparent"
-                            }
-                            await r.xadd(stream_key, event_dict)
 
-                            confirm_msg = json.dumps({
-                                "type": "pixel_confirm",
-                                "perk_eraser_left": eraser_left - 1
-                            })
-                            await websocket.send(confirm_msg)
-                            
-                            broadcast_msg = json.dumps({
-                                "type": "pixel_unprotected_broadcast",
-                                "offset": offset,
-                                "x": x,
-                                "y": y
-                            })
-                            clients_in_room = ROOMS.get(canvas_id, set())
-                            if len(clients_in_room) > 0:
-                                tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
-                                await asyncio.gather(*tasks)
-                            await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
-
-                            clients_in_room = ROOMS.get(canvas_id, set())
-                            if len(clients_in_room) > 1:
-                                broadcast_msg = json.dumps({
-                                    "type": "pixel",
-                                    "x": x,
-                                    "y": y,
-                                    "color": "transparent"
-                                })
-                                tasks = [
-                                    asyncio.create_task(client.send(broadcast_msg))
-                                    for client in clients_in_room if client != websocket
-                                ]
-                                if tasks:
-                                    await asyncio.gather(*tasks)
-                                await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
+                        if width == 0:
+                            offset = f"{x},{y}"
                         else:
+                            offset = (y * width) + x
+                        protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
+                        
+                        protected_by = await r.get(protected_key)
+                        
+                        if not protected_by:
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
-                                "message": "err_no_eraser_uses",
-                                "perk_eraser_left": 0
+                                "message": "err_pixel_not_protected",
+                                "perk_eraser_left": eraser_left
                             })
                             await websocket.send(error_msg)
+                            continue
+                            
+                        await r.decr(user_eraser_key)
+                        if (eraser_left - 1) <= 0:
+                            await r.delete(user_eraser_key)
+                        await r.delete(protected_key)
+                        
+                        if width == 0:
+                            chunk_x = x // 512
+                            chunk_y = y // 512
+                            local_x = x % 512
+                            local_y = y % 512
+                            redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
+                            byte_offset = ((local_y * 512) + local_x) * 4
+                        else:
+                            redis_state_key = f"canvas:{canvas_id}:state"
+                            byte_offset = (y * width + x) * 4
+                        
+                        await r.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00')
+                        
+                        stream_key = f"canvas:{canvas_id}:stream"
+                        event_dict = {
+                            "u": str(user_id),
+                            "x": str(x),
+                            "y": str(y),
+                            "c": "transparent"
+                        }
+                        await r.xadd(stream_key, event_dict)
+
+                        confirm_msg = json.dumps({
+                            "type": "pixel_confirm",
+                            "perk_eraser_left": max(0, eraser_left - 1)
+                        })
+                        await websocket.send(confirm_msg)
+                        
+                        broadcast_msg = json.dumps({
+                            "type": "pixel_unprotected_broadcast",
+                            "offset": offset,
+                            "x": x,
+                            "y": y
+                        })
+                        clients_in_room = ROOMS.get(canvas_id, set())
+                        if len(clients_in_room) > 0:
+                            tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
+                            await asyncio.gather(*tasks)
+                        await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
+
+                        clients_in_room = ROOMS.get(canvas_id, set())
+                        if len(clients_in_room) > 1:
+                            broadcast_msg = json.dumps({
+                                "type": "pixel",
+                                "x": x,
+                                "y": y,
+                                "color": "transparent"
+                            })
+                            tasks = [
+                                asyncio.create_task(client.send(broadcast_msg))
+                                for client in clients_in_room if client != websocket
+                            ]
+                            if tasks:
+                                await asyncio.gather(*tasks)
+                            await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
 
                 elif data.get("type") == "bomb_pixel":
                     cx = int(data.get("x", 0))
@@ -834,11 +878,9 @@ async def handler(websocket):
                         USER_LOCKS[user_id] = asyncio.Lock()
 
                     async with USER_LOCKS[user_id]:
-                        user_bomb_key = f"user:{user_id}:perk:{perk}"
-                        bombs_left = await r.get(user_bomb_key)
-                        bombs_left = int(bombs_left) if bombs_left else 0
+                        has_perk = await asyncio.to_thread(consume_user_perk, user_id, perk)
                         
-                        if bombs_left > 0:
+                        if has_perk:
                             # Leer radio dinámico de la configuración o usar defaults
                             perks_cfg = get_perks_config()
                             perk_data = perks_cfg.get(perk, {})
@@ -865,11 +907,6 @@ async def handler(websocket):
                                     elif perk == 'bomba_pixel_1': radius = base_bomb
                                     elif perk == 'bomba_racimo_1': radius = base_racimo
                                     else: radius = base_nuke
-                            
-                            if bombs_left <= 1:
-                                await r.delete(user_bomb_key)
-                            else:
-                                await r.decr(user_bomb_key)
                                 
                             confirm_msg = json.dumps({"type": "pixel_confirm"})
                             await websocket.send(confirm_msg)
@@ -1032,6 +1069,12 @@ async def handler(websocket):
 
                             else:
                                 asyncio.create_task(execute_explosion(cx, cy, radius, 0))
+                        else:
+                            error_msg = json.dumps({
+                                "type": "pixel_protected_error",
+                                "message": "err_perk_not_owned"
+                            })
+                            await websocket.send(error_msg)
 
                 elif data.get("type") == "request_chunks":
                     import base64
