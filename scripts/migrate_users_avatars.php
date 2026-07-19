@@ -7,10 +7,10 @@ define('ROOT_PATH', dirname(__DIR__));
 use App\Core\Helpers\Utils;
 
 try {
-    $host = $_ENV['DB_HOST'] ?? 'db';
-    $dbname = $_ENV['DB_IDENTITY_NAME'] ?? 'rosaura_identity';
-    $user = $_ENV['DB_USER'] ?? 'root';
-    $pass = $_ENV['DB_PASS'] ?? '';
+    $host = $_ENV['DB_HOST'];
+    $dbname = $_ENV['DB_IDENTITY_NAME'];
+    $user = $_ENV['DB_USER'];
+    $pass = $_ENV['DB_PASS'];
     
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

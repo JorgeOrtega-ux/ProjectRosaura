@@ -70,7 +70,7 @@ export class CanvasCardInteractions {
             } else {
                 btn.classList.remove('is-favorite');
             }
-            showMessage(res.message || (window.__('err_default')), 'error');
+            showMessage(res.message || window.__('err_default'), 'error');
         }
     }
 
@@ -182,7 +182,7 @@ export class CanvasCardInteractions {
                 
                 const confirmRes = await window.dialogSystem.show('confirmActionModal', {
                     title: window.__('downgrade_basic_title'),
-                    message: window.__('downgrade_basic_message') || 'IRREVERSIBLE action. Type CONFIRM to proceed.',
+                    message: window.__('downgrade_basic_message'),
                     inputPlaceholder: 'CONFIRM',
                     expectedInput: 'CONFIRM'
                 });
@@ -192,16 +192,15 @@ export class CanvasCardInteractions {
                     if (userInput === 'CONFIRM') {
                         confirmed = true;
                     } else {
-                        showMessage(window.__('must_type_confirm') || 'Must type CONFIRM', 'error');
+                        showMessage(window.__('must_type_confirm'), 'error');
                     }
                 }
             } catch(e) {
-                
-                const ans = prompt("Type CONFIRM to downgrade. IRREVERSIBLE.");
+                const ans = prompt(window.__('downgrade_basic_prompt'));
                 if (ans === 'CONFIRM') confirmed = true;
             }
         } else {
-            const ans = prompt(window.__('downgrade_basic_prompt') || "Type CONFIRM to downgrade.");
+            const ans = prompt(window.__('downgrade_basic_prompt'));
             if (ans === 'CONFIRM') confirmed = true;
         }
 

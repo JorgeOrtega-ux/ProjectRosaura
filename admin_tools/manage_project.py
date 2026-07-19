@@ -42,7 +42,7 @@ def random_string(length=10):
     return ''.join(random.choice(letters) for _ in range(length))
 
 def get_code_from_redis(email, code_type):
-    redis_pass = "8f4e2d1c9b7a5f6e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"
+    redis_pass = os.getenv("REDIS_PASS")
     cmd1 = [
         "docker", "exec", "-i", "rosaura_redis",
         "redis-cli", "-a", redis_pass, "GET", f"vercode:ident:{email}:{code_type}"
@@ -68,30 +68,29 @@ def get_code_from_redis(email, code_type):
             return data.get('code')
         return None
     except Exception as e:
-        print(f"{Colors.FAIL}Error ejecutando Redis: {e}{Colors.ENDC}")
+        print(f"{Colors.FAIL}Error executing Redis: {e}{Colors.ENDC}")
         return None
 
 def run_auth_tests(target_url="http://localhost"):
-    print(f"\n{Colors.HEADER}{Colors.BOLD}Iniciando Pruebas Automatizadas de Autenticación{Colors.ENDC}")
-    print(f"Objetivo: {target_url}\n")
+    print(f"\n{Colors.HEADER}{Colors.BOLD}Starting Automated Authentication Tests{Colors.ENDC}")
+    print(f"Target: {target_url}\n")
     
     cj = CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
     
     csrf_token = ""
-    # 1. Obtener CSRF Token
     try:
-        print(f"[*] Obteniendo CSRF Token de {target_url}/ ...")
+        print(f"[*] Fetching CSRF Token from {target_url}/ ...")
         resp = opener.open(target_url + "/")
         html = resp.read().decode('utf-8')
         match = re.search(r'<meta name="csrf-token" content="([^"]+)">', html)
         if match:
             csrf_token = match.group(1)
-            print(f"{Colors.GREEN}[+] CSRF Token obtenido.{Colors.ENDC}")
+            print(f"{Colors.GREEN}[+] CSRF Token obtained.{Colors.ENDC}")
         else:
-            print(f"{Colors.WARNING}[!] No se pudo encontrar el meta tag csrf-token.{Colors.ENDC}")
+            print(f"{Colors.WARNING}[!] Could not find csrf-token meta tag.{Colors.ENDC}")
     except Exception as e:
-        print(f"{Colors.FAIL}[-] Error al obtener la página de inicio: {e}{Colors.ENDC}")
+        print(f"{Colors.FAIL}[-] Error fetching home page: {e}{Colors.ENDC}")
         return
 
     def api_request(route, payload):
@@ -466,18 +465,18 @@ def main():
         escaped_words = [re.escape(w) for w in words_to_search]
         pattern_string = r'(?<![\w\-])(' + '|'.join(escaped_words) + r')(?![\w\-])'
         search_pattern = re.compile(pattern_string, re.IGNORECASE)
-        print(f"{Colors.HEADER}{Colors.BOLD}Iniciando escaneo avanzado de Internacionalización...{Colors.ENDC}")
-        print(f"Buscando {Colors.BLUE}{len(words_to_search)}{Colors.ENDC} palabras clave.")
-        report_title = "Reporte de Escaneo de Internacionalización"
+        print(f"{Colors.HEADER}{Colors.BOLD}Starting advanced i18n scan...{Colors.ENDC}")
+        print(f"Searching for {Colors.BLUE}{len(words_to_search)}{Colors.ENDC} keywords.")
+        report_title = "Internationalization Scan Report"
     elif choice == '2':
         search_pattern = re.compile(r'\sstyle\s*=\s*["\'][^"\']*["\']', re.IGNORECASE)
-        print(f"{Colors.HEADER}{Colors.BOLD}Iniciando búsqueda de estilos inline en archivos PHP y JS...{Colors.ENDC}")
-        report_title = "Reporte de Estilos Inline"
+        print(f"{Colors.HEADER}{Colors.BOLD}Starting inline style search in PHP and JS files...{Colors.ENDC}")
+        report_title = "Inline Styles Report"
     else:
         debug_funcs = [r'console\.log\(', r'print_r\(', r'var_dump\(', r'die\(', r'exit\(']
         search_pattern = re.compile('(' + '|'.join(debug_funcs) + ')', re.IGNORECASE)
-        print(f"{Colors.HEADER}{Colors.BOLD}Iniciando búsqueda de funciones de depuración olvidadas...{Colors.ENDC}")
-        report_title = "Reporte de Código de Depuración"
+        print(f"{Colors.HEADER}{Colors.BOLD}Starting debug functions search...{Colors.ENDC}")
+        report_title = "Debug Code Report"
 
     files_to_scan = get_files_to_scan(target_path)
     if choice == '2':
@@ -485,7 +484,7 @@ def main():
     elif choice == '3':
         files_to_scan = [f for f in files_to_scan if f.lower().endswith(('.php', '.js', '.ts', '.vue'))]
 
-    print(f"Archivos a escanear: {Colors.BLUE}{len(files_to_scan)}{Colors.ENDC} en {target_path}\n")
+    print(f"Files to scan: {Colors.BLUE}{len(files_to_scan)}{Colors.ENDC} in {target_path}\n")
 
     found_issues = 0
     results_by_file = {}

@@ -38,7 +38,7 @@ class StripeServices {
 
         $prices = [];
         foreach ($packages as $amount => $pkg) {
-            $prices[$amount] = $_ENV[$pkg['stripe_env_key']] ?? $pkg['default_price_id'];
+            $prices[$amount] = $_ENV[$pkg['stripe_env_key']];
         }
         return $prices;
     }
@@ -47,7 +47,7 @@ class StripeServices {
         $map = [];
         foreach (self::PRICE_MAP as $tier => $periods) {
             foreach ($periods as $period => $envKey) {
-                $priceId = $_ENV[$envKey] ?? null;
+                $priceId = $_ENV[$envKey];
                 if ($priceId) {
                     $map[$priceId] = ['tier' => $tier, 'period' => $period];
                 }

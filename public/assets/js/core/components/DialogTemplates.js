@@ -23,11 +23,11 @@ export const DialogTemplates = {
                 <div class="component-modal-body">
                     <div class="component-card--grouped">
                         <div class="component-group-item">
-                            <span class="component-text-secondary">${window.__('current_level') || 'Current Tier'}</span>
+                            <span class="component-text-secondary">${window.__('current_level')}</span>
                             <strong class="component-text-accent">${tierName}</strong>
                         </div>
                         <div class="component-group-item">
-                            <span class="component-text-secondary">${window.__('next_renewal') || 'Next Renewal'}</span>
+                            <span class="component-text-secondary">${window.__('next_renewal')}</span>
                             <strong>${endDate}</strong>
                         </div>
                     </div>
@@ -36,7 +36,7 @@ export const DialogTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="window.location.reload()">
-                        ${window.__('start_exploring') || 'Start Exploring!'}
+                        ${window.__('start_exploring')}
                     </button>
                 </div>
             `;
@@ -54,9 +54,8 @@ export const DialogTemplates = {
                     </div>
                     
                     <div class="step-modal-content">
-                        <!-- Step 1 -->
                         <div class="step-modal-step active" id="welcome-step-1">
-                            <h2 class="component-modal-title">${window.__('welcome_modal_step1_title') || '¡Te damos la bienvenida!'}</h2>
+                            <h2 class="component-modal-title">${window.__('welcome_modal_step1_title')}</h2>
                             <p class="component-modal-desc step-modal-desc">
                                 ${window.__('welcome_modal_step1_desc')}
                             </p>
@@ -703,8 +702,8 @@ export const DialogTemplates = {
             <div class="component-modal-header component-modal-header--with-icon">
                 <span class="material-symbols-rounded">gavel</span>
                 <div class="component-modal-header-text">
-                    <h3 class="component-modal-title">${window.__('terms_and_conditions') || 'Terms and Conditions'}</h3>
-                    <p class="component-modal-desc">${window.__('please_accept_rules') || 'Please accept the community rules before joining.'}</p>
+                    <h3 class="component-modal-title">${window.__('terms_and_conditions')}</h3>
+                    <p class="component-modal-desc">${window.__('please_accept_rules')}</p>
                 </div>
             </div>
             <div class="component-modal-body">
@@ -712,8 +711,8 @@ export const DialogTemplates = {
                     <div class="component-group-item component-group-item--wrap">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title">${window.__('accept_community_rules') || 'Accept Community Rules'}</h2>
-                                <p class="component-card__description">${window.__('acknowledge_private_canvas_rules') || 'I acknowledge that the platform has no control over what happens inside this private canvas and I commit to not breaking the rules.'}</p>
+                                <h2 class="component-card__title">${window.__('accept_community_rules')}</h2>
+                                <p class="component-card__description">${window.__('acknowledge_private_canvas_rules')}</p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -727,7 +726,7 @@ export const DialogTemplates = {
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--dark component-button--h45 component-button--full" data-modal-action="confirm">${window.__('join_canvas') || 'Join Canvas'}</button>
+                <button class="component-button component-button--dark component-button--h45 component-button--full" data-modal-action="confirm">${window.__('join_canvas')}</button>
             </div>
         `
     },
@@ -790,7 +789,7 @@ export const DialogTemplates = {
     confirmPlazmarTemplate: {
         build: () => DialogTemplates.confirmAction.build({
             titleKey: 'title_confirm_action',
-            descHtml: __('confirm_plazmar_template') || '¿Estás seguro de que deseas plazmar esta plantilla en el lienzo? Esta acción pintará los píxeles de la imagen directamente.',
+            descHtml: __('confirm_plazmar_template'),
             confirmClass: 'component-button--warning'
         })
     }

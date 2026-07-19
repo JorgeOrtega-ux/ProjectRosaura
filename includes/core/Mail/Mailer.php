@@ -30,8 +30,8 @@ class Mailer {
         $this->mail->Port       = (int)$_ENV['SMTP_PORT'];
         $this->mail->CharSet    = 'UTF-8';
 
-        $fromEmail = $_ENV['SMTP_FROM_EMAIL'] ?? $_ENV['SMTP_USER'];
-        $fromName  = trim($_ENV['SMTP_FROM_NAME'] ?? '"Project Rosaura"', '"\'');
+        $fromEmail = $_ENV['SMTP_FROM_EMAIL'];
+        $fromName  = trim($_ENV['SMTP_FROM_NAME'], '"\'');
         
         $this->mail->setFrom($fromEmail, $fromName);
     }

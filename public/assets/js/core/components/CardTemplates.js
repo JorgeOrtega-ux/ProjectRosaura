@@ -101,7 +101,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
     },
 
     snapshotCard: (snapshot, config = {}) => {
-        const canvasName = escapeHTML(config.canvasName || window.__('canvas') || 'Canvas');
+        const canvasName = escapeHTML(config.canvasName || window.__('canvas'));
         const basePath = config.basePath || '';
         const snapshotUuid = escapeHTML(snapshot.snapshot_uuid);
         const date = escapeHTML(snapshot.date);
@@ -116,7 +116,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             privateBadge = `
                 <div class="component-gallery-badge component-badge--danger component-badge--private">
                     <span class="material-symbols-rounded component-icon--14">lock</span>
-                    <span>${window.__('private') || 'Private'}</span>
+                    <span>${window.__('private')}</span>
                 </div>
             `;
         }

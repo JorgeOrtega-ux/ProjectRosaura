@@ -62,40 +62,40 @@ class Logger:
     @staticmethod
     def critical(message): Logger.write('critical', message, 'worker')
 
-DB_HOST = os.getenv('DB_HOST', 'db')
-DB_USER = os.getenv('DB_USER', 'root')
-DB_PASS = os.getenv('DB_PASS', 'root')
-DB_NAME = os.getenv('DB_NAME', 'db_identity')
+DB_HOST = os.getenv('DB_HOST')
+DB_USER = os.getenv('DB_USER')
+DB_PASS = os.getenv('DB_PASS')
+DB_NAME = os.getenv('DB_NAME')
 
-DB_TEL_HOST = os.getenv('DB_TELEMETRY_HOST', 'db')
-DB_TEL_NAME = os.getenv('DB_TELEMETRY_NAME', 'db_telemetry')
-DB_TEL_USER = os.getenv('DB_TELEMETRY_USER', 'system_web_executor')
-DB_TEL_PASS = os.getenv('DB_TELEMETRY_PASSWORD', 'secret')
+DB_TEL_HOST = os.getenv('DB_TELEMETRY_HOST')
+DB_TEL_NAME = os.getenv('DB_TELEMETRY_NAME')
+DB_TEL_USER = os.getenv('DB_TELEMETRY_USER')
+DB_TEL_PASS = os.getenv('DB_TELEMETRY_PASSWORD')
 
-REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
-REDIS_PASS = os.getenv('REDIS_PASS', None)
+REDIS_HOST = os.getenv('REDIS_HOST')
+REDIS_PORT = int(os.getenv('REDIS_PORT')) if os.getenv('REDIS_PORT') else None
+REDIS_PASS = os.getenv('REDIS_PASS')
 
-S3_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
-if not S3_ENDPOINT.startswith("http"):
+S3_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+if S3_ENDPOINT and not S3_ENDPOINT.startswith("http"):
     S3_ENDPOINT = "http://" + S3_ENDPOINT + ":9000"
     
-S3_BUCKET = os.getenv("MINIO_BUCKET", "rosaura-storage")
+S3_BUCKET = os.getenv("MINIO_BUCKET")
 s3 = boto3.client('s3',
     endpoint_url=S3_ENDPOINT,
-    aws_access_key_id=os.getenv("MINIO_ROOT_USER", "admin"),
-    aws_secret_access_key=os.getenv("MINIO_ROOT_PASSWORD", "password")
+    aws_access_key_id=os.getenv("MINIO_ROOT_USER"),
+    aws_secret_access_key=os.getenv("MINIO_ROOT_PASSWORD")
 )
-APP_ROOT_PATH = os.getenv('APP_ROOT_PATH', '/app')
+APP_ROOT_PATH = os.getenv('APP_ROOT_PATH')
 QUEUE_ACCOUNT_DELETION = 'queue:account_deletion'
 QUEUE_EMAILS = 'queue:emails'
 
-SMTP_HOST = os.getenv('SMTP_HOST', '')
-SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
-SMTP_USER = os.getenv('SMTP_USER', '')
-SMTP_PASS = os.getenv('SMTP_PASS', '')
-SMTP_FROM_EMAIL = os.getenv('SMTP_FROM_EMAIL', '')
-SMTP_FROM_NAME = os.getenv('SMTP_FROM_NAME', 'Project Rosaura')
+SMTP_HOST = os.getenv('SMTP_HOST')
+SMTP_PORT = int(os.getenv('SMTP_PORT')) if os.getenv('SMTP_PORT') else None
+SMTP_USER = os.getenv('SMTP_USER')
+SMTP_PASS = os.getenv('SMTP_PASS')
+SMTP_FROM_EMAIL = os.getenv('SMTP_FROM_EMAIL')
+SMTP_FROM_NAME = os.getenv('SMTP_FROM_NAME')
 
 def get_db_connection():
     return mysql.connector.connect(
@@ -649,9 +649,9 @@ class Logger:
     @staticmethod
     def critical(message): Logger.write('critical', message, 'worker')
 
-REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
-REDIS_PASSWORD = os.getenv('REDIS_PASS', None)
+REDIS_HOST = os.getenv('REDIS_HOST')
+REDIS_PORT = int(os.getenv('REDIS_PORT')) if os.getenv('REDIS_PORT') else None
+REDIS_PASSWORD = os.getenv('REDIS_PASS')
 
 QUEUES = {
     'telemetry_api_latency': 'api_latency',
@@ -799,12 +799,12 @@ def telemetry_thread():
 logger = logging.getLogger('TypesenseSync')
 load_dotenv()
 
-TS_HOST = os.environ.get('TYPESENSE_HOST', 'typesense')
-TS_PORT = os.environ.get('TYPESENSE_PORT', '8108')
-TS_PROTOCOL = os.environ.get('TYPESENSE_PROTOCOL', 'http')
-TS_API_KEY = os.environ.get('TYPESENSE_API_KEY', '')
+TS_HOST = os.environ.get('TYPESENSE_HOST')
+TS_PORT = os.environ.get('TYPESENSE_PORT')
+TS_PROTOCOL = os.environ.get('TYPESENSE_PROTOCOL')
+TS_API_KEY = os.environ.get('TYPESENSE_API_KEY')
 
-TS_SYNC_INTERVAL = int(os.environ.get('TYPESENSE_SYNC_INTERVAL', 60))
+TS_SYNC_INTERVAL = int(os.environ.get('TYPESENSE_SYNC_INTERVAL'))
 
 def typesense_thread():
     if not TS_API_KEY:
@@ -848,7 +848,7 @@ def typesense_thread():
 
     while True:
         try:
-            db_canvases = os.getenv('DB_CANVASES_NAME', 'db_canvases')
+            db_canvases = os.getenv('DB_CANVASES_NAME')
             connection = pymysql.connect(
                 host=DB_HOST,
                 user=DB_USER,

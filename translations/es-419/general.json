@@ -613,5 +613,12 @@
     "err_missing_required_params":  "Faltan parÃ¡metros requeridos.",
     "err_palette_create_failed":  "Error al crear la paleta.",
     "err_palette_delete_failed":  "Error al eliminar la paleta.",
-    "premium_disclaimer":  "\u003csup\u003e1\u003c/sup\u003e Se pueden aplicar restricciones en cuanto al límite de edad (más de 18 años), la disponibilidad de idiomas y los requisitos del sistema, entre otras. Al realizar una compra, aceptas que \u003cstrong\u003eno hay reembolsos\u003c/strong\u003e bajo ninguna circunstancia. \u003cbr\u003e \u003csup\u003e2\u003c/sup\u003e Todas las cuentas de Google incluyen almacenamiento, que cuentan como parte del almacenamiento total que se ofrece en planes Premium. Todos los precios están expresados en moneda estadounidense (USD)."
+    "downgrade_basic_message":  "Acción IRREVERSIBLE. Escribe CONFIRM para proceder.",
+    "must_type_confirm":  "Debes escribir CONFIRM",
+    "downgrade_basic_prompt":  "Escribe CONFIRM para cambiar al plan básico.",
+    "err_get_data_failed":  "Error al obtener datos.",
+    "err_backup_id_missing":  "ID de copia de seguridad faltante.",
+    "msg_initiating_lockdown":  "Iniciando protocolo de bloqueo...",
+    "success_db_restored":  "Base de datos restaurada exitosamente.",
+    "premium_disclaimer":  "<sup>1</sup> Se pueden aplicar restricciones en cuanto al límite de edad (más de 18 años), la disponibilidad de idiomas y los requisitos del sistema, entre otras. Al realizar una compra, aceptas que <strong>no hay reembolsos</strong> bajo ninguna circunstancia. <br> <sup>2</sup> Todas las cuentas de Google incluyen almacenamiento, que cuentan como parte del almacenamiento total que se ofrece en planes Premium. Todos los precios están expresados en moneda estadounidense (USD)."
 }

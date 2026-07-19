@@ -29,7 +29,7 @@ def get_s3_client():
         return None
     key = os.environ.get('AWS_ACCESS_KEY_ID')
     secret = os.environ.get('AWS_SECRET_ACCESS_KEY')
-    region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+    region = os.environ.get('AWS_DEFAULT_REGION')
     endpoint = os.environ.get('AWS_ENDPOINT')
     
     if not key or not secret:
@@ -76,7 +76,7 @@ def generate_fallback_image(char_to_draw, hex_color, script_dir):
 
 def check_and_generate(category, chars, colors, base_dir, force_regenerate):
     s3_client = get_s3_client()
-    bucket = os.environ.get('AWS_BUCKET', 'rosaura-storage')
+    bucket = os.environ.get('AWS_BUCKET')
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
     for folder_name, char_to_draw in chars.items():

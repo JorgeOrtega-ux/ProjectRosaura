@@ -5,7 +5,7 @@ $userPermissions = $_SESSION['user_permissions'] ?? [];
 
 $canManageRoles = in_array(\App\Core\System\PermissionsConstants::VIEW_ROLES, $userPermissions);
 $canViewLogs = in_array('view_logs', $userPermissions);
-$canManageMessages = true; // Por ahora todos los admins
+$canManageMessages = true; // All admins currently
 
 ?>
 <script src="<?php echo APP_URL; ?>/assets/js/vendor/chart.js"></script>
@@ -156,7 +156,7 @@ $canManageMessages = true; // Por ahora todos los admins
                     </div>
                     <div class="component-stat-card__content">
                         <span class="component-stat-card__title"><?php echo __('admin_dashboard_system_version'); ?></span>
-                        <span class="component-stat-card__value">v<?php echo $_ENV['APP_VERSION'] ?? '1.0.0'; ?></span>
+                        <span class="component-stat-card__value">v<?php echo $_ENV['APP_VERSION']; ?></span>
                     </div>
                 </div>
             </div>

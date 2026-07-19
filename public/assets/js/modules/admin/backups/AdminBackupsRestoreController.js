@@ -55,14 +55,14 @@ class AdminBackupsRestoreController {
         const urlParams = new URLSearchParams(window.location.search);
         const backupId = urlParams.get('id');
         if (!backupId) {
-            showMessage(typeof window.__ === 'function' ? window.__('err_backup_id_missing') : 'ID de backup faltante', 'error');
+            showMessage(window.__('err_backup_id_missing'), 'error');
             return;
         }
         const resultDialog = await window.dialogSystem.show('verifyPasswordRestoreBackup');
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
         if (!password) {
-            showMessage(typeof window.__ === 'function' ? window.__('err_password_authorize_restore') : 'err_admin_password_required', 'error');
+            showMessage(window.__('err_password_authorize_restore'), 'error');
             return;
         }
         if (this.isRestoring) return;
@@ -70,7 +70,7 @@ class AdminBackupsRestoreController {
         const originalText = btn.innerHTML;
         btn.innerHTML = '<span class="material-symbols-rounded spin-icon">autorenew</span>';
         btn.classList.add('disabled-interaction');
-        showMessage('Initiating lockdown protocol...', 'success');
+        showMessage(window.__('msg_initiating_lockdown'), 'success');
         const res = await this.api.post(ApiRoutes.Admin.RestoreBackup, { backup_id: backupId, password: password }, this.abortController.signal);
         if (res.aborted) return;
         if (res.success && res.job_id) {
@@ -89,7 +89,7 @@ class AdminBackupsRestoreController {
                 if (res.status === 'finished') {
                     clearInterval(this.pollInterval);
                     this.resetRestoreUI(btn, originalText);
-                    showMessage(typeof window.__ === 'function' ? window.__('success_db_restored') : 'Restaurado', 'success');
+                    showMessage(window.__('success_db_restored'), 'success');
                     window.location.href = this.basePath + '/login';
                 } else if (res.status === 'restoring') {
                 }

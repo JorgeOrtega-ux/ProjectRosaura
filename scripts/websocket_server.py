@@ -22,10 +22,10 @@ def get_db_pool():
                 pool_name="chunk_pool",
                 pool_size=32,
                 pool_reset_session=True,
-                host=os.getenv("DB_HOST", "db"),
-                user=os.getenv("DB_USER", "system_web_executor"),
-                password=os.getenv("DB_PASS", "secret"),
-                database=os.getenv("DB_CANVASES_NAME", "db_canvases")
+                host=os.getenv("DB_HOST"),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASS"),
+                database=os.getenv("DB_CANVASES_NAME")
             )
         except Exception as e:
             print(f"[!] Error creating DB pool: {e}")
@@ -77,9 +77,9 @@ def get_perks_config():
 async def get_redis_client():
     global REDIS_CLIENT
     if REDIS_CLIENT is None:
-        redis_host = os.getenv("REDIS_HOST", "redis")
-        redis_port = int(os.getenv("REDIS_PORT", 6379))
-        redis_pass = os.getenv("REDIS_PASS", None)
+        redis_host = os.getenv("REDIS_HOST")
+        redis_port = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else None
+        redis_pass = os.getenv("REDIS_PASS")
         
         print(f"[DEBUG REDIS] Connecting to redis on {redis_host}:{redis_port}")
         REDIS_CLIENT = redis.Redis(
@@ -214,8 +214,7 @@ async def sync_online_counts():
         await asyncio.sleep(5)
 
 async def handler(websocket):
-    origin = websocket.request.headers.get("Origin")
-    app_url = os.getenv("APP_URL", "http://localhost").rstrip("/")
+    origin = websocket.request.headers.get("Origin")    app_url = os.getenv("APP_URL").rstrip("/") if os.getenv("APP_URL") else ""
     if origin and origin != app_url and origin != app_url.replace("http://", "https://"):
         print(f"[!] Connection rejected by CORS: Origin '{origin}' does not match '{app_url}'")
         await websocket.close(code=1008, reason="CORS policy violation")
@@ -226,7 +225,7 @@ async def handler(websocket):
     path_parts = parsed_path.path.strip("/").split("/")
 
     if len(path_parts) != 2 or path_parts[0] != "canvas":
-        await websocket.close(code=1008, reason="Ruta invÃ¡lida. Utilice el formato: /canvas/<canvas_id>")
+        await websocket.close(code=1008, reason="Invalid path format. Use: /canvas/<canvas_id>")
         return
 
     canvas_id = path_parts[1]
@@ -258,30 +257,28 @@ async def handler(websocket):
         ticket_user_id = ticket_data.get('user_id')
     except Exception as e:
         print(f"[DEBUG WS] Error parsing Redis ticket: {e}")
-        await websocket.close(code=1008, reason="Datos de ticket corruptos.")
+        await websocket.close(code=1008, reason="Corrupt ticket data.")
         return
 
-    MAX_CONNECTIONS = int(os.getenv("WS_MAX_CONNECTIONS", 10000))
-    QOS_THRESHOLD = int(os.getenv("WS_QOS_THRESHOLD", 9000))
+    MAX_CONNECTIONS = int(os.getenv("WS_MAX_CONNECTIONS"))
+    QOS_THRESHOLD = int(os.getenv("WS_QOS_THRESHOLD"))
 
     if len(WS_META) >= QOS_THRESHOLD:
         if user_type == 'guest':
             if len(WS_META) >= MAX_CONNECTIONS:
                 print(f"[QoS] Server full. Blocking Guest connection.")
-                await websocket.close(code=4001, reason="Servidor lleno. Prioridad a usuarios registrados.")
+                await websocket.close(code=4001, reason="Server full. Registered users prioritized.")
                 return
         else:
-            guest_to_evict = next((ws for ws, meta in WS_META.items() if meta['type'] == 'guest'), None)
-            if guest_to_evict:
-                print(f"[QoS] Evicting a Guest to make way for a Registered user (ID: {ticket_user_id})")
-                try:
-                    await guest_to_evict.close(code=4001, reason="Desalojado for QoS para dar prioridad a usuarios registrados.")
-                except:
-                    pass
-            elif len(WS_META) >= MAX_CONNECTIONS:
-                print(f"[QoS] Server completely saturated with authenticated accounts.")
-                await websocket.close(code=1013, reason="Servidor absolutamente lleno.")
-                return
+            if len(WS_META) >= MAX_CONNECTIONS:
+                guest_to_evict = next((ws for ws, meta in WS_META.items() if meta.get('type') == 'guest'), None)
+                if guest_to_evict:
+                    print(f"[QoS] Evicting guest connection to prioritize user {ticket_user_id}")
+                    await guest_to_evict.close(code=4001, reason="Evicted for QoS to prioritize registered users.")
+                else:
+                    print(f"[QoS] Server full with only registered users. Connection blocked.")
+                    await websocket.close(code=1013, reason="Server at maximum capacity.")
+                    return
 
     if canvas_id not in ROOMS:
         ROOMS[canvas_id] = set()
@@ -1138,8 +1135,8 @@ async def handler(websocket):
                     print(f"[-] User lock for {user_id} garbage collected.")
 
 async def main():
-    host = os.getenv("WS_HOST", "0.0.0.0")
-    port = int(os.getenv("WS_PORT", 8765))
+    host = os.getenv("WS_HOST")
+    port = int(os.getenv("WS_PORT")) if os.getenv("WS_PORT") else None
     
     print(f"Starting WebSocket server on ws://{host}:{port}")
     

@@ -143,41 +143,41 @@ def main():
     args = parser.parse_args()
 
     # DB Connection
-    DB_HOST = os.getenv("DB_HOST", "db")
-    DB_USER = os.getenv("DB_USER", "system_web_executor")
-    DB_PASS = os.getenv("DB_PASS", "secret")
-    DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
+    DB_HOST = os.getenv("DB_HOST")
+    DB_USER = os.getenv("DB_USER")
+    DB_PASS = os.getenv("DB_PASS")
+    DB_NAME = os.getenv("DB_CANVASES_NAME")
 
-    print("[*] Conectando a MySQL para obtener informacion del lienzo...")
+    print("[*] Connecting to MySQL to fetch canvas information...")
     try:
         db = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
         cursor = db.cursor(dictionary=True)
     except Exception as e:
-        print(f"[!] Error de conexion MySQL: {e}")
+        print(f"[!] MySQL connection error: {e}")
         return
 
     cursor.execute("SELECT size FROM canvases WHERE id = %s", (args.canvas_id,))
     canvas_row = cursor.fetchone()
     if not canvas_row:
-        print(f"[!] El lienzo con ID {args.canvas_id} no existe.")
+        print(f"[!] Canvas with ID {args.canvas_id} does not exist.")
         return
 
     size_str = canvas_row.get('size', '100x100')
     is_infinite = (size_str.strip().lower() == 'infinite')
     
     if is_infinite:
-        print(f"[*] Lienzo ID {args.canvas_id}: INFINITO (chunks de {CHUNK_SIZE}x{CHUNK_SIZE})")
+        print(f"[*] Canvas ID {args.canvas_id}: INFINITE (chunks of {CHUNK_SIZE}x{CHUNK_SIZE})")
     else:
         try:
             width, height = map(int, size_str.split('x'))
         except Exception:
             width, height = 100, 100
-        print(f"[*] Lienzo ID {args.canvas_id}: {width}x{height}.")
+        print(f"[*] Canvas ID {args.canvas_id}: {width}x{height}.")
 
     try:
         img = Image.open(args.image_path).convert("RGBA")
     except Exception as e:
-        print(f"[!] Error abriendo la imagen {args.image_path}: {e}")
+        print(f"[!] Error opening image {args.image_path}: {e}")
         return
 
     # Resize if specified
@@ -195,14 +195,14 @@ def main():
         args.y = int(cy - new_h / 2.0)
 
     img_width, img_height = img.size
-    print(f"[*] Imagen cargada y procesada: {img_width}x{img_height}")
+    print(f"[*] Image loaded and processed: {img_width}x{img_height}")
 
     # Redis Connection
-    REDIS_HOST = os.getenv("REDIS_HOST", "redis")
-    REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-    REDIS_PASS = os.getenv("REDIS_PASS", None)
+    REDIS_HOST = os.getenv("REDIS_HOST")
+    REDIS_PORT = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else None
+    REDIS_PASS = os.getenv("REDIS_PASS")
     
-    print("[*] Conectando a Redis...")
+    print("[*] Connecting to Redis...")
     r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS, db=0)
 
     if is_infinite:

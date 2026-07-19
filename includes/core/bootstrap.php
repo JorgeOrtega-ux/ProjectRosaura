@@ -9,7 +9,7 @@ require_once ROOT_PATH . '/vendor/autoload.php';
 
 \App\Core\Helpers\EnvLoader::load(ROOT_PATH . '/.env');
 
-$s3Host = $_ENV['AWS_PUBLIC_URL'] ?? 'http://localhost:9000';
+$s3Host = $_ENV['AWS_PUBLIC_URL'];
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://challenges.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com {$s3Host}; connect-src 'self' {$s3Host} https://unpkg.com https://cdn.jsdelivr.net https://accounts.google.com ws: wss:; frame-src 'self' https://challenges.cloudflare.com https://accounts.google.com; frame-ancestors 'none';");
 
 
@@ -17,9 +17,9 @@ if (!isset($_ENV['APP_URL'])) {
     die("Critical Failure: APP_URL is not defined in the environment.");
 }
 define('APP_URL', rtrim($_ENV['APP_URL'], '/'));
-define('APP_NAME', $_ENV['APP_NAME'] ?? 'ProjectRosaura');
+define('APP_NAME', $_ENV['APP_NAME']);
 
-$appTimezone = $_ENV['APP_TIMEZONE'] ?? 'UTC';
+$appTimezone = $_ENV['APP_TIMEZONE'];
 date_default_timezone_set($appTimezone);
 
 $redisClient = null;
@@ -31,8 +31,8 @@ try {
         $redisClient = new \Predis\Client($redisParams);
         $redisClient->ping(); 
         
-        $redisHost = getenv('REDIS_HOST') ?: '127.0.0.1';
-        $redisPass = getenv('REDIS_PASS') ?: '';
+        $redisHost = getenv('REDIS_HOST');
+        $redisPass = getenv('REDIS_PASS');
         ini_set('session.save_handler', 'redis');
         $redisPath = "tcp://$redisHost:6379" . (!empty($redisPass) ? "?auth=$redisPass" : "");
         ini_set('session.save_path', $redisPath);
@@ -96,7 +96,8 @@ function render_fatal_error_view() {
     }
 
     if ($isJsonReq) {
-        echo json_encode(['success' => false, 'message' => 'Error interno o de conexión.']);
+        $msg = function_exists('__') ? __('err_internal_server_error') : 'Internal Server Error';
+        echo json_encode(['success' => false, 'message_key' => 'err_internal_server_error', 'message' => $msg]);
         exit;
     }
     echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Internal Error - ' . htmlspecialchars(APP_NAME) . '</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" /><link rel="stylesheet" type="text/css" href="' . APP_URL . '/public/assets/css/root.css"><link rel="stylesheet" type="text/css" href="' . APP_URL . '/public/assets/css/styles.css"><link rel="stylesheet" type="text/css" href="' . APP_URL . '/public/assets/css/components/components.css"></head><body><div class="view-content"><div class="component-message-layout"><div class="component-message-box"><div class="component-message-icon-wrapper"><span class="material-symbols-rounded component-message-icon">gpp_bad</span></div><h1 class="component-message-title">Internal Server Error</h1><p class="component-message-desc">Sorry, we couldn\'t load this section due to connection issues.</p><br><a href="' . APP_URL . '/" class="component-button component-button--dark component-button--h45">Reload</a></div></div></div></body></html>';

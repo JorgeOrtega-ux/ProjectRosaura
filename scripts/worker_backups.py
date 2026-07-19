@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sys
 import glob
 import time
@@ -27,10 +27,11 @@ MAINTENANCE_FILE = os.path.join(BASE_DIR, 'storage', 'private', 'system', '.main
 
 load_dotenv(dotenv_path=ENV_PATH)
 
-APP_TIMEZONE = os.getenv('APP_TIMEZONE', 'UTC')
-os.environ['TZ'] = APP_TIMEZONE
-if hasattr(time, 'tzset'):
-    time.tzset()
+APP_TIMEZONE = os.getenv('APP_TIMEZONE')
+if APP_TIMEZONE:
+    os.environ['TZ'] = APP_TIMEZONE
+    if hasattr(time, 'tzset'):
+        time.tzset()
 
 class Logger:
     @staticmethod
@@ -82,12 +83,12 @@ def get_required_env(var_name):
 try:
     DB_HOST = get_required_env('DB_HOST')
     DB_USER = get_required_env('DB_USER')
-    DB_PASS = os.getenv('DB_PASS', '') 
+    DB_PASS = os.getenv('DB_PASS')
     DB_IDENTITY_NAME = get_required_env('DB_IDENTITY_NAME')
     DATABASES_TO_BACKUP = [DB_IDENTITY_NAME]
     REDIS_HOST = get_required_env('REDIS_HOST')
     REDIS_PORT = int(get_required_env('REDIS_PORT'))
-    REDIS_PASS = os.getenv('REDIS_PASS', '')
+    REDIS_PASS = os.getenv('REDIS_PASS')
     BACKUP_ENCRYPTION_KEY = get_required_env('BACKUP_ENCRYPTION_KEY')
 except ValueError as e:
     Logger.critical(str(e))

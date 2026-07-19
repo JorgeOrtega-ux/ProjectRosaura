@@ -21,10 +21,10 @@ class DatabaseManager {
 
         $host = $_ENV['DB_HOST'];
         $user = $_ENV['DB_USER'];
-        $pass = $_ENV['DB_PASS'] ?? ''; 
+        $pass = $_ENV['DB_PASS']; 
         
         $envVarName = 'DB_' . strtoupper($connectionName) . '_NAME';
-        $dbname = $_ENV[$envVarName] ?? $_ENV['DB_IDENTITY_NAME'] ?? null;
+        $dbname = $_ENV[$envVarName];
 
         if (!$dbname) {
             throw new Exception('err_db_name_missing');
@@ -41,7 +41,7 @@ class DatabaseManager {
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
             
-            $appTimezone = $_ENV['APP_TIMEZONE'] ?? 'UTC';
+            $appTimezone = $_ENV['APP_TIMEZONE'];
             $offset = (new \DateTime('now', new \DateTimeZone($appTimezone)))->format('P');
             $pdo->exec("SET time_zone = '{$offset}';");
             
@@ -66,7 +66,7 @@ class DatabaseManager {
 
         $host = $_ENV['DB_HOST'];
         $user = $_ENV['DB_USER'];
-        $pass = $_ENV['DB_PASS'] ?? '';
+        $pass = $_ENV['DB_PASS'];
         
         $connectionKey = $host . '_global';
 
@@ -79,7 +79,7 @@ class DatabaseManager {
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
             
-            $appTimezone = $_ENV['APP_TIMEZONE'] ?? 'UTC';
+            $appTimezone = $_ENV['APP_TIMEZONE'];
             $offset = (new \DateTime('now', new \DateTimeZone($appTimezone)))->format('P');
             $pdo->exec("SET time_zone = '{$offset}';");
             

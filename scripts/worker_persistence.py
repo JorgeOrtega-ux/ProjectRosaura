@@ -9,12 +9,12 @@ import boto3
 import botocore
 import uuid
 
-S3_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
-if not S3_ENDPOINT.startswith("http"):
+S3_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+if S3_ENDPOINT and not S3_ENDPOINT.startswith("http"):
     S3_ENDPOINT = "http://" + S3_ENDPOINT + ":9000"
-S3_ACCESS_KEY = os.getenv("MINIO_ROOT_USER", "admin")
-S3_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD", "password")
-S3_BUCKET = os.getenv("MINIO_BUCKET", "rosaura-storage")
+S3_ACCESS_KEY = os.getenv("MINIO_ROOT_USER")
+S3_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD")
+S3_BUCKET = os.getenv("MINIO_BUCKET")
 
 def get_s3_client():
     return boto3.client(
@@ -25,25 +25,25 @@ def get_s3_client():
         region_name='us-east-1'
     )
 
-REDIS_HOST = os.getenv("REDIS_HOST", "redis")
-REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-REDIS_PASS = os.getenv("REDIS_PASS", None)
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else None
+REDIS_PASS = os.getenv("REDIS_PASS")
 
-DB_HOST = os.getenv("DB_HOST", "db")
-DB_USER = os.getenv("DB_USER", "system_web_executor")
-DB_PASS = os.getenv("DB_PASS", "secret")
-DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
+DB_HOST = os.getenv("DB_HOST")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+DB_NAME = os.getenv("DB_CANVASES_NAME")
 
 # Canvas Persistence Config
-CANVAS_SYNC_INTERVAL = int(os.getenv("WORKER_TIMELAPSE_SYNC_INTERVAL", 5))
-CANVAS_BATCH_SIZE = int(os.getenv("WORKER_TIMELAPSE_BATCH_SIZE", 5000))
+CANVAS_SYNC_INTERVAL = int(os.getenv("WORKER_TIMELAPSE_SYNC_INTERVAL")) if os.getenv("WORKER_TIMELAPSE_SYNC_INTERVAL") else 5
+CANVAS_BATCH_SIZE = int(os.getenv("WORKER_TIMELAPSE_BATCH_SIZE")) if os.getenv("WORKER_TIMELAPSE_BATCH_SIZE") else 5000
 
 CONSUMER_GROUP = "timelapse_workers"
 CONSUMER_NAME = "worker-1"
 
 # Chat Persistence Config
-CHAT_SYNC_INTERVAL = int(os.getenv("WORKER_CHAT_SYNC_INTERVAL", 2))
-CHAT_BATCH_SIZE = int(os.getenv("WORKER_CHAT_BATCH_SIZE", 50))
+CHAT_SYNC_INTERVAL = int(os.getenv("WORKER_CHAT_SYNC_INTERVAL")) if os.getenv("WORKER_CHAT_SYNC_INTERVAL") else 2
+CHAT_BATCH_SIZE = int(os.getenv("WORKER_CHAT_BATCH_SIZE")) if os.getenv("WORKER_CHAT_BATCH_SIZE") else 50
 
 def get_db_connection():
     try:

@@ -65,8 +65,8 @@ try {
         $redisClient = new \Predis\Client($redisParams);
         $redisClient->ping(); 
         
-        $redisHostNative = getenv('REDIS_HOST') ?: '127.0.0.1';
-        $redisPassNative = getenv('REDIS_PASS') ?: '';
+        $redisHostNative = getenv('REDIS_HOST');
+        $redisPassNative = getenv('REDIS_PASS');
         ini_set('session.save_handler', 'redis');
         $redisPath = "tcp://$redisHostNative:6379" . (!empty($redisPassNative) ? "?auth=$redisPassNative" : "");
         ini_set('session.save_path', $redisPath);

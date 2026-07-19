@@ -244,7 +244,7 @@ export const DesignSetup = {
 
         try {
             if (!base64String) {
-                console.log(`[Chunk] ⬜ Chunk (${chunkX},${chunkY}) vacío — sin datos en servidor`);
+                console.log(`[Chunk] Empty chunk (${chunkX},${chunkY}) - no server data`);
                 return;
             }
             const binaryString = atob(base64String);
@@ -256,10 +256,10 @@ export const DesignSetup = {
             }
             
             ctx.putImageData(imageData, 0, 0);
-            console.log(`[Chunk] ✅ Chunk (${chunkX},${chunkY}) hidratado — ${totalBytes} bytes`);
+            console.log(`[Chunk] Chunk (${chunkX},${chunkY}) hydrated - ${totalBytes} bytes`);
             this.requestRender();
         } catch (e) {
-            console.error(`[Chunk] ❌ Error hidratando chunk (${chunkX},${chunkY}):`, e);
+            console.error(`[Chunk] Error hydrating chunk (${chunkX},${chunkY}):`, e);
         }
     },
 
@@ -288,7 +288,7 @@ export const DesignSetup = {
             
             if (requested.length > 0) {
                 const chunkKeys = requested.map(c => `(${c.x},${c.y})`);
-                console.log(`[Chunk] 📡 Solicitando ${requested.length} chunk(s): ${chunkKeys.join(', ')}`);
+                console.log(`[Chunk] Requesting ${requested.length} chunk(s): ${chunkKeys.join(', ')}`);
                 this.wsManager.send({
                     type: 'request_chunks',
                     chunks: requested

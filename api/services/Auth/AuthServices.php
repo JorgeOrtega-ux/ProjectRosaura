@@ -668,7 +668,7 @@ class AuthServices {
         $credential = $data['credential'] ?? null;
         if (empty($credential)) return ['success' => false, 'message' => __('validation.missing_fields')];
 
-        $clientId = $_ENV['GOOGLE_CLIENT_ID'] ?? getenv('GOOGLE_CLIENT_ID');
+        $clientId = $_ENV['GOOGLE_CLIENT_ID'];
         if (empty($clientId)) return ['success' => false, 'message' => __('error.internal_server_error')];
 
         try {

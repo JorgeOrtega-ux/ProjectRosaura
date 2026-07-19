@@ -17,12 +17,12 @@ from datetime import datetime
 import boto3
 import io
 
-S3_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
-if not S3_ENDPOINT.startswith("http"):
+S3_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+if S3_ENDPOINT and not S3_ENDPOINT.startswith("http"):
     S3_ENDPOINT = "http://" + S3_ENDPOINT + ":9000"
-S3_ACCESS_KEY = os.getenv("MINIO_ROOT_USER", "admin")
-S3_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD", "password")
-S3_BUCKET = os.getenv("MINIO_BUCKET", "rosaura-storage")
+S3_ACCESS_KEY = os.getenv("MINIO_ROOT_USER")
+S3_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD")
+S3_BUCKET = os.getenv("MINIO_BUCKET")
 
 def get_s3_client():
     return boto3.client(
@@ -35,23 +35,23 @@ def get_s3_client():
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(threadName)s] %(levelname)s: %(message)s')
 
-DB_HOST = os.getenv("DB_HOST", "db")
-DB_PORT = int(os.getenv("DB_PORT", 3306))
-DB_USER = os.getenv("DB_USER", "system_web_executor")
-DB_PASS = os.getenv("DB_PASS", "")
-DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
-DB_IDENTITY_NAME = os.getenv("DB_IDENTITY_NAME", "db_identity")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = int(os.getenv("DB_PORT")) if os.getenv("DB_PORT") else None
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+DB_NAME = os.getenv("DB_CANVASES_NAME")
+DB_IDENTITY_NAME = os.getenv("DB_IDENTITY_NAME")
 
-REDIS_HOST = os.getenv("REDIS_HOST", "redis")
-REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-REDIS_PASS = os.getenv("REDIS_PASS", None)
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else None
+REDIS_PASS = os.getenv("REDIS_PASS")
 
-SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR", "/app/storage/public/snapshots")
-SYNC_INTERVAL = int(os.getenv("WORKER_RESETS_SYNC_INTERVAL", 10))
-THUMBNAILS_DIR = os.getenv("THUMBNAILS_DIR", "/app/storage/public/thumbnails")
-ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR", "/app/storage/public/snapshots_archive")
+SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR")
+SYNC_INTERVAL = int(os.getenv("WORKER_RESETS_SYNC_INTERVAL"))
+THUMBNAILS_DIR = os.getenv("THUMBNAILS_DIR")
+ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR")
 
-SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR", 10))
+SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR"))
 
 def get_redis_client():
     return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS)
@@ -345,10 +345,10 @@ def scheduler_thread():
         time.sleep(SYNC_INTERVAL)
 
 
-THUMBNAIL_MAX_SIZE = int(os.getenv("THUMBNAIL_MAX_SIZE", 512)) # Max pÃƒÂ­xeles para tarjetas web
-ARCHIVE_MAX_SIZE = int(os.getenv("ARCHIVE_MAX_SIZE", 4096))    # Max pÃƒÂ­xeles para histÃƒÂ³ricos
+THUMBNAIL_MAX_SIZE = int(os.getenv("THUMBNAIL_MAX_SIZE"))
+ARCHIVE_MAX_SIZE = int(os.getenv("ARCHIVE_MAX_SIZE"))
 
-PALETTES_FILE_PATH = os.getenv("PALETTES_FILE_PATH", "/app/public/assets/data/palettes.json")
+PALETTES_FILE_PATH = os.getenv("PALETTES_FILE_PATH")
 APP_PALETTES = {}
 
 def load_palettes():
@@ -770,8 +770,8 @@ def draw_image_listener_thread():
                 
                 try:
                     # S3 setup
-                    bucket = os.getenv('AWS_BUCKET', 'rosaura-storage')
-                    public_url = os.getenv('AWS_PUBLIC_URL', 'http://localhost:9000').rstrip('/')
+                    bucket = os.getenv('AWS_BUCKET')
+                    public_url = os.getenv('AWS_PUBLIC_URL').rstrip('/') if os.getenv('AWS_PUBLIC_URL') else ''
                     key = url.replace(f"{public_url}/{bucket}/", "")
                     key = urllib.parse.urlparse(key).path.lstrip('/')
                     

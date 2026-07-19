@@ -29,17 +29,17 @@ class EnvLoader {
             }
         }
     }
-    public static function get(string $key, $default = null) {
+    public static function get(string $key) {
         $value = getenv($key);
         if ($value === false) {
-            return $_ENV[$key] ?? ($_SERVER[$key] ?? $default);
+            return $_ENV[$key] ?? ($_SERVER[$key] ?? null);
         }
         return $value;
     }
     public static function require(array $keys): void {
         foreach ($keys as $key) {
             if (self::get($key) === null) {
-                throw new \Exception("Falta la variable de entorno obligatoria: {$key}");
+                throw new \Exception("Missing required environment variable: {$key}");
             }
         }
     }

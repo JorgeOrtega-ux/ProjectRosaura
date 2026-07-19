@@ -4,10 +4,10 @@ import mysql.connector
 try:
     print("Connecting to DB...")
     db = mysql.connector.connect(
-        host='db',
-        user=os.getenv('DB_USER', 'system_web_executor'),
-        password=os.getenv('DB_PASS', 'secret'),
-        database=os.getenv('DB_CANVASES_NAME', 'db_canvases')
+        host=os.getenv('DB_HOST'),
+        user=os.getenv('DB_USER'),
+        password=os.getenv('DB_PASS'),
+        database=os.getenv('DB_CANVASES_NAME')
     )
     cursor = db.cursor()
     print("Executing CREATE TABLE...")
