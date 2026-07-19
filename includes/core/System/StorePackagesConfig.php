@@ -114,7 +114,23 @@ class StorePackagesConfig {
                 'name' => __('store_content_bomba_atomica_1_name'),
                 'description' => __('store_content_bomba_atomica_1_desc'),
                 'price_coins' => 25000,
-                'icon' => 'warning',
+                'icon' => 'crisis_alert',
+                'is_single_use' => true,
+            ],
+            'bomba_racimo_1' => [
+                'id' => 'bomba_racimo_1',
+                'name' => 'Ataque de Racimo',
+                'description' => 'Dispara 5 explosiones en zonas estratégicas.',
+                'price_coins' => 15000,
+                'icon' => 'scatter_plot',
+                'is_single_use' => true,
+            ],
+            'lluvia_meteoritos_1' => [
+                'id' => 'lluvia_meteoritos_1',
+                'name' => 'Lluvia de Meteoritos',
+                'description' => 'Provoca 20 explosiones masivas en un área gigante.',
+                'price_coins' => 45000,
+                'icon' => 'storm',
                 'is_single_use' => true,
             ]
         ];

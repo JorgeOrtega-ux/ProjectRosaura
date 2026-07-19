@@ -504,7 +504,7 @@ class SnapshotViewerController {
             maxRadius: r,
             perkId: perkId,
             startTime: Date.now(),
-            duration: perkId === 'bomba_atomica_1' ? 1500 : (perkId === 'bomba_pixel_1' ? 800 : 400) 
+            duration: perkId === 'bomba_atomica_1' ? 1500 : (['bomba_pixel_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId) ? 800 : 400) 
         });
         
         if (perkId === 'bomba_atomica_1') {
@@ -828,7 +828,7 @@ class SnapshotViewerController {
                     this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.5})`; 
                     this.ctx.fill();
                     this.ctx.stroke();
-                } else if (exp.perkId === 'bomba_pixel_1') {
+                } else if (['bomba_pixel_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(exp.perkId)) {
                     const radius1 = exp.maxRadius * (1 + 1.5 * progress);
                     const radius2 = exp.maxRadius * (0.5 + 1 * progress);
                     

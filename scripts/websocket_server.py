@@ -853,12 +853,21 @@ async def handler(websocket):
                             else:
                                 # Fallback robusto en caso de que el tamaño de lienzo sea diferente a los estándar
                                 if width == 0:
-                                    radius = 5 if perk == 'pixel_misil_1' else (15 if perk == 'bomba_pixel_1' else 50)
+                                    if perk == 'pixel_misil_1': radius = 5
+                                    elif perk == 'bomba_pixel_1': radius = 15
+                                    elif perk == 'bomba_racimo_1': radius = 20
+                                    elif perk == 'lluvia_meteoritos_1': radius = 10
+                                    else: radius = 50
                                 else:
                                     base_nuke = max(10, int(width * 0.23))
+                                    base_racimo = max(6, int(width * 0.12))
                                     base_bomb = max(4, int(width * 0.08))
                                     base_misil = max(2, int(width * 0.03))
-                                    radius = base_misil if perk == 'pixel_misil_1' else (base_bomb if perk == 'bomba_pixel_1' else base_nuke)
+                                    
+                                    if perk == 'pixel_misil_1' or perk == 'lluvia_meteoritos_1': radius = base_misil
+                                    elif perk == 'bomba_pixel_1': radius = base_bomb
+                                    elif perk == 'bomba_racimo_1': radius = base_racimo
+                                    else: radius = base_nuke
                             
                             if bombs_left <= 1:
                                 await r.delete(user_bomb_key)
@@ -868,7 +877,7 @@ async def handler(websocket):
                             confirm_msg = json.dumps({"type": "pixel_confirm"})
                             await websocket.send(confirm_msg)
                             
-                            async def execute_explosion(delay=0):
+                            async def execute_explosion(ex, ey, eradius, delay=0):
                                 if delay > 0:
                                     await asyncio.sleep(delay)
                                     
@@ -889,7 +898,7 @@ async def handler(websocket):
                                         off_int = int(offset_str)
                                         px = off_int % width
                                         py = off_int // width
-                                    if (px - cx)**2 + (py - cy)**2 <= radius**2:
+                                    if (px - ex)**2 + (py - ey)**2 <= eradius**2:
                                         protected_key = f"canvas:{canvas_id}:protected_pixels:{offset_str}"
                                         pipeline.delete(protected_key)
                                         to_remove_protected.append(offset_bytes)
@@ -898,12 +907,12 @@ async def handler(websocket):
                                     pipeline.zrem(zset_key, *to_remove_protected)
 
                                 import math
-                                for iy in range(cy - radius, cy + radius + 1):
-                                    dy = iy - cy
-                                    if abs(dy) > radius: continue
-                                    dx = int(math.sqrt(radius**2 - dy**2))
-                                    x_start = cx - dx
-                                    x_end = cx + dx
+                                for iy in range(ey - eradius, ey + eradius + 1):
+                                    dy = iy - ey
+                                    if abs(dy) > eradius: continue
+                                    dx = int(math.sqrt(eradius**2 - dy**2))
+                                    x_start = ex - dx
+                                    x_end = ex + dx
                                     
                                     if width != 0:
                                         if iy < 0: continue
@@ -939,9 +948,9 @@ async def handler(websocket):
                                 
                                 broadcast_msg = json.dumps({
                                     "type": "bomb_pixel",
-                                    "x": cx,
-                                    "y": cy,
-                                    "r": radius,
+                                    "x": ex,
+                                    "y": ey,
+                                    "r": eradius,
                                     "perk": perk
                                 })
                                 clients_in_room = ROOMS.get(canvas_id, set())
@@ -953,29 +962,79 @@ async def handler(websocket):
                                 stream_key = f"canvas:{canvas_id}:stream"
                                 event_dict = {
                                     "type": "bomb_pixel",
-                                    "x": str(cx),
-                                    "y": str(cy),
-                                    "r": str(radius),
+                                    "x": str(ex),
+                                    "y": str(ey),
+                                    "r": str(eradius),
                                     "perk": str(perk)
                                 }
                                 await r.xadd(stream_key, event_dict)
 
-                            if perk == 'bomba_atomica_1':
+                            targets = data.get("targets")
+                            if not targets:
+                                targets = [{"x": cx, "y": cy}]
+
+                            if perk == 'lluvia_meteoritos_1':
+                                import random
+                                new_targets = []
+                                for _ in range(20):
+                                    if width == 0:
+                                        rx = cx + random.randint(-200, 200)
+                                        ry = cy + random.randint(-200, 200)
+                                    else:
+                                        rx = max(0, min(width - 1, cx + random.randint(-int(width/2), int(width/2))))
+                                        ry = max(0, min(width - 1, cy + random.randint(-int(width/2), int(width/2))))
+                                    new_targets.append({"x": rx, "y": ry, "delay": random.uniform(2, 7)})
+                                
+                                clients_in_room = ROOMS.get(canvas_id, set())
+                                for t in new_targets:
+                                    warning_msg = json.dumps({
+                                        "type": "nuclear_warning",
+                                        "x": t["x"],
+                                        "y": t["y"],
+                                        "duration": t["delay"],
+                                        "perk": perk
+                                    })
+                                    if len(clients_in_room) > 0:
+                                        tasks = [asyncio.create_task(client.send(warning_msg)) for client in clients_in_room]
+                                        await asyncio.gather(*tasks)
+                                    await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": warning_msg}))
+                                    asyncio.create_task(execute_explosion(t["x"], t["y"], radius, t["delay"]))
+
+                            elif perk == 'bomba_racimo_1':
+                                clients_in_room = ROOMS.get(canvas_id, set())
+                                for t in targets:
+                                    tx = int(t.get("x", 0))
+                                    ty = int(t.get("y", 0))
+                                    warning_msg = json.dumps({
+                                        "type": "nuclear_warning",
+                                        "x": tx,
+                                        "y": ty,
+                                        "duration": 5,
+                                        "perk": perk
+                                    })
+                                    if len(clients_in_room) > 0:
+                                        tasks = [asyncio.create_task(client.send(warning_msg)) for client in clients_in_room]
+                                        await asyncio.gather(*tasks)
+                                    await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": warning_msg}))
+                                    asyncio.create_task(execute_explosion(tx, ty, radius, 5))
+
+                            elif perk == 'bomba_atomica_1':
                                 warning_msg = json.dumps({
                                     "type": "nuclear_warning",
                                     "x": cx,
                                     "y": cy,
-                                    "duration": 10
+                                    "duration": 10,
+                                    "perk": perk
                                 })
                                 clients_in_room = ROOMS.get(canvas_id, set())
                                 if len(clients_in_room) > 0:
                                     tasks = [asyncio.create_task(client.send(warning_msg)) for client in clients_in_room]
                                     await asyncio.gather(*tasks)
                                 await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": warning_msg}))
-                                
-                                asyncio.create_task(execute_explosion(delay=10))
+                                asyncio.create_task(execute_explosion(cx, cy, radius, 10))
+
                             else:
-                                await execute_explosion(delay=0)
+                                asyncio.create_task(execute_explosion(cx, cy, radius, 0))
 
                 elif data.get("type") == "request_chunks":
                     import base64

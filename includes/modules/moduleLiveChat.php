@@ -19,9 +19,14 @@ $maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
     <div class="component-menu component-menu--w335 component-menu--chat component-menu--h-full component-menu--no-padding disabled" data-ref="menu-chat">
         
         <div class="component-menu-header">
-            <div class="component-menu-header-box">
-                <span class="material-symbols-rounded">chat</span>
-                <span class="component-menu-header-title"><?php echo __('chat_live'); ?></span>
+            <div class="component-menu-header-box" style="justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-rounded">chat</span>
+                    <span class="component-menu-header-title"><?php echo __('chat_live'); ?></span>
+                </div>
+                <button class="component-button component-button--icon component-button--h34 hide-on-desktop" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
             </div>
         </div>
         

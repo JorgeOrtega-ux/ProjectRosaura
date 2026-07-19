@@ -24,7 +24,10 @@ export const DesignInteractions = {
         if (this.perkNoCooldown) return Infinity;
         if (this.interactionMode === 'protecting') return this.perkProtectionLeft || 0;
         if (this.interactionMode === 'erasing') return this.perkEraserLeft || 0;
-        if (this.interactionMode === 'bombing') return 1;
+        if (this.interactionMode === 'bombing') {
+            if (this.activeBomb === 'bomba_racimo_1') return 5;
+            return 1;
+        }
         return Math.floor(this.cooldownBalance);
     },
 
@@ -975,6 +978,10 @@ export const DesignInteractions = {
                     this.txtPlacePixels.textContent = `Lanzar Bomba`;
                 } else if (this.activeBomb === 'bomba_atomica_1') {
                     this.txtPlacePixels.textContent = `Lanzar Nuclear`;
+                } else if (this.activeBomb === 'bomba_racimo_1') {
+                    this.txtPlacePixels.textContent = `Ataque de Racimo`;
+                } else if (this.activeBomb === 'lluvia_meteoritos_1') {
+                    this.txtPlacePixels.textContent = `Lluvia de Meteoritos`;
                 } else {
                     this.txtPlacePixels.textContent = `Lanzar`;
                 }
@@ -1006,17 +1013,37 @@ export const DesignInteractions = {
         }
 
         if (this.interactionMode === 'bombing') {
-            const p = Array.from(this.selectedPixels)[0];
-            const [x, y] = p.split(',').map(Number);
-            if (this.wsManager) {
-                this.wsManager.send({
-                    type: 'bomb_pixel',
-                    x: x,
-                    y: y,
-                    perk: this.activeBomb,
-                    width: this.boardWidth,
-                    userId: window.activeUserId || null
+            if (this.activeBomb === 'bomba_racimo_1') {
+                if (this.selectedPixels.size < 5) {
+                    if (typeof showMessage === 'function') showMessage('Selecciona 5 puntos para el racimo', 'warning');
+                    return;
+                }
+                const targets = Array.from(this.selectedPixels).map(p => {
+                    const [x, y] = p.split(',').map(Number);
+                    return { x, y };
                 });
+                if (this.wsManager) {
+                    this.wsManager.send({
+                        type: 'bomb_pixel',
+                        targets: targets,
+                        perk: this.activeBomb,
+                        width: this.boardWidth,
+                        userId: window.activeUserId || null
+                    });
+                }
+            } else {
+                const p = Array.from(this.selectedPixels)[0];
+                const [x, y] = p.split(',').map(Number);
+                if (this.wsManager) {
+                    this.wsManager.send({
+                        type: 'bomb_pixel',
+                        x: x,
+                        y: y,
+                        perk: this.activeBomb,
+                        width: this.boardWidth,
+                        userId: window.activeUserId || null
+                    });
+                }
             }
             this.interactionMode = 'normal';
             this.activeBomb = null;
@@ -1162,7 +1189,8 @@ export const DesignInteractions = {
             duration: perkId === 'bomba_atomica_1' ? 1500 : (perkId === 'bomba_pixel_1' ? 800 : 400) 
         });
         
-        if (perkId === 'bomba_atomica_1') {
+        const isHeavyExplosion = ['bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId);
+        if (isHeavyExplosion) {
             if (!document.getElementById('nuclear-style')) {
                 const style = document.createElement('style');
                 style.id = 'nuclear-style';
@@ -1189,26 +1217,31 @@ export const DesignInteractions = {
             
             if (this.canvas) {
                 this.canvas.classList.add('nuclear-shake');
+                const shakeDuration = perkId === 'bomba_atomica_1' ? 1000 : 600;
                 setTimeout(() => {
                     this.canvas.classList.remove('nuclear-shake');
-                }, 1000);
+                }, shakeDuration);
             }
             
-            const flash = document.createElement('div');
-            flash.style.position = 'fixed';
-            flash.style.top = '0';
-            flash.style.left = '0';
-            flash.style.width = '100vw';
-            flash.style.height = '100vh';
-            flash.style.backgroundColor = 'white';
-            flash.style.zIndex = '999999';
-            flash.style.pointerEvents = 'none';
-            flash.style.transition = 'opacity 1.5s ease-out';
-            document.body.appendChild(flash);
-            
-            flash.offsetHeight;
-            flash.style.opacity = '0';
-            setTimeout(() => flash.remove(), 1500);
+            if (perkId === 'bomba_atomica_1' || perkId === 'bomba_racimo_1') {
+                const flash = document.createElement('div');
+                flash.style.position = 'fixed';
+                flash.style.top = '0';
+                flash.style.left = '0';
+                flash.style.width = '100vw';
+                flash.style.height = '100vh';
+                flash.style.backgroundColor = 'white';
+                flash.style.zIndex = '999999';
+                flash.style.pointerEvents = 'none';
+                
+                const flashDuration = perkId === 'bomba_atomica_1' ? '1.5s' : '0.6s';
+                flash.style.transition = `opacity ${flashDuration} ease-out`;
+                document.body.appendChild(flash);
+                
+                flash.offsetHeight;
+                flash.style.opacity = '0';
+                setTimeout(() => flash.remove(), perkId === 'bomba_atomica_1' ? 1500 : 600);
+            }
         }
         
         if (!this.isExplosionLoopRunning) {
@@ -1232,6 +1265,7 @@ export const DesignInteractions = {
             x: parseInt(data.x, 10),
             y: parseInt(data.y, 10),
             duration: parseInt(data.duration, 10),
+            perk: data.perk || 'bomba_atomica_1',
             startTime: Date.now(),
             endTime: Date.now() + (parseInt(data.duration, 10) * 1000)
         };
@@ -1256,8 +1290,7 @@ export const DesignInteractions = {
         badge.className = 'component-badge';
         badge.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
         badge.style.color = '#fff';
-        badge.style.border = '2px solid #b91c1c';
-        badge.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.5)';
+        badge.style.border = '1px solid var(--color-error)';
         badge.style.animation = 'pulse 1s infinite';
         badge.style.cursor = 'pointer';
         badge.title = 'Haz clic para ver dónde caerá';
@@ -1272,10 +1305,17 @@ export const DesignInteractions = {
                 if (typeof showMessage === 'function') showMessage('Cámara centrada en el objetivo', 'info');
             }
         });
-        
+
+        const getWarningDetails = (perk) => {
+            if (perk === 'bomba_racimo_1') return { icon: 'scatter_plot', text: '¡Ataque de Racimo en Camino!' };
+            if (perk === 'lluvia_meteoritos_1') return { icon: 'storm', text: '¡Meteorito en Camino!' };
+            return { icon: 'crisis_alert', text: '¡Bomba Nuclear en Camino!' };
+        };
+
         const updateText = () => {
             const remaining = Math.max(0, Math.ceil((warning.endTime - Date.now()) / 1000));
-            badge.innerHTML = `<span class="material-symbols-rounded" style="color:#fff;">crisis_alert</span><span style="font-weight:bold;">¡Bomba Nuclear en Camino! (${remaining}s)</span>`;
+            const details = getWarningDetails(warning.perk);
+            badge.innerHTML = `<span class="material-symbols-rounded" style="color:#fff;">${details.icon}</span><span style="font-weight:bold;">${details.text} (${remaining}s)</span>`;
         };
 
         updateText();
@@ -1286,7 +1326,8 @@ export const DesignInteractions = {
                 this.requestRender();
                 
                 const remaining = Math.max(0, Math.ceil((warning.endTime - Date.now()) / 1000));
-                badge.innerHTML = `<span class="material-symbols-rounded" style="color:#fff;">crisis_alert</span><span style="font-weight:bold;">¡Bomba Nuclear en Camino! (${remaining}s)</span>`;
+                const details = getWarningDetails(warning.perk);
+                badge.innerHTML = `<span class="material-symbols-rounded" style="color:#fff;">${details.icon}</span><span style="font-weight:bold;">${details.text} (${remaining}s)</span>`;
                 
                 if (Date.now() >= warning.endTime) {
                     badge.remove();
@@ -1334,7 +1375,7 @@ export const DesignInteractions = {
             return;
         }
 
-        if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(perkId)) {
+        if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId)) {
             if (this.perkBombReady && this.perkBombReady !== perkId && this.inventoryPerks) {
                 const oldBomb = this.inventoryPerks.find(p => p.perk_id === this.perkBombReady);
                 if (oldBomb) oldBomb.count = parseInt(oldBomb.count, 10) + 1;
@@ -1363,7 +1404,7 @@ export const DesignInteractions = {
             }
             
             if (result && result.success) {
-                if (typeof showMessage === 'function' && !['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(result.perk_id)) {
+                if (typeof showMessage === 'function' && !['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(result.perk_id)) {
                     showMessage(window.__('msg_perk_activated_success') || 'Perk successfully activated', 'success');
                 }
 
@@ -1379,7 +1420,7 @@ export const DesignInteractions = {
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                     this.updateSelectionUI();
                     showMessage(window.__('msg_elite_eraser_active'), 'info');
-                } else if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(result.perk_id)) {
+                } else if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(result.perk_id)) {
                     this.perkBombReady = result.perk_id;
                     if (this.interactionMode !== 'bombing') {
                         this.interactionMode = 'bombing';
@@ -1392,7 +1433,7 @@ export const DesignInteractions = {
                 this.loadUserPerks(); 
             } else {
                 if (typeof showMessage === 'function') showMessage(result?.message_key || window.__('err_activate_perk'), 'error');
-                if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(perkId)) {
+                if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId)) {
                     this.perkBombReady = null;
                     this.interactionMode = 'normal';
                     this.activeBomb = null;
@@ -1404,7 +1445,7 @@ export const DesignInteractions = {
             if (btn) btn.classList.remove('loading');
             this.isActivatingPerk = false;
             
-            if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(perkId)) {
+            if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId)) {
                 this.perkBombReady = null;
                 this.interactionMode = 'normal';
                 this.activeBomb = null;
@@ -1421,7 +1462,7 @@ export const DesignInteractions = {
 
         badgesRight.innerHTML = ''; 
 
-        const PERK_ORDER = ['no_cooldown_10s', 'pixel_protection_25', 'elite_eraser_25', 'pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'];
+        const PERK_ORDER = ['no_cooldown_10s', 'pixel_protection_25', 'elite_eraser_25', 'pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'];
 
         const titles = {
             'no_cooldown_10s': 'Sin Enfriamiento',
@@ -1429,7 +1470,9 @@ export const DesignInteractions = {
             'elite_eraser_25': window.__('perk_elite_eraser') || 'Borrador',
             'pixel_misil_1': 'Píxel Misil',
             'bomba_pixel_1': 'Bomba Píxel',
-            'bomba_atomica_1': 'Bomba Atómica'
+            'bomba_atomica_1': 'Bomba Atómica',
+            'bomba_racimo_1': 'Racimo',
+            'lluvia_meteoritos_1': 'Meteoritos'
         };
         const icons = {
             'no_cooldown_10s': 'bolt',
@@ -1437,7 +1480,9 @@ export const DesignInteractions = {
             'elite_eraser_25': 'ink_eraser',
             'pixel_misil_1': 'rocket_launch',
             'bomba_pixel_1': 'bomb',
-            'bomba_atomica_1': 'crisis_alert'
+            'bomba_atomica_1': 'crisis_alert',
+            'bomba_racimo_1': 'scatter_plot',
+            'lluvia_meteoritos_1': 'storm'
         };
 
         PERK_ORDER.forEach(perkId => {
@@ -1502,7 +1547,7 @@ export const DesignInteractions = {
                     if (typeof showMessage === 'function') showMessage(this.interactionMode === 'erasing' ? (window.__('msg_eraser_mode_on') || 'Eraser mode activated') : (window.__('msg_eraser_mode_off') || 'Eraser mode deactivated'), 'info');
                 };
             }
-            else if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(perkId)) {
+            else if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId)) {
                 const isLoadedInRedis = this.perkBombReady === perkId;
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 
@@ -1513,7 +1558,11 @@ export const DesignInteractions = {
                 
                 if (isActive) {
                     isToggledOn = true;
-                    const shortLabel = perkId === 'pixel_misil_1' ? 'Misil' : (perkId === 'bomba_pixel_1' ? 'Bomba' : 'B. Atómica');
+                    let shortLabel = 'B. Atómica';
+                    if (perkId === 'pixel_misil_1') shortLabel = 'Misil';
+                    else if (perkId === 'bomba_pixel_1') shortLabel = 'Bomba';
+                    else if (perkId === 'bomba_racimo_1') shortLabel = 'Racimo';
+                    else if (perkId === 'lluvia_meteoritos_1') shortLabel = 'Meteoritos';
                     activeHtml = `<span class="material-symbols-rounded" style="color:var(--color-danger);">${icon}</span><span>${shortLabel} (Activa)</span>`;
                     clickHandler = () => {
                         this.interactionMode = 'normal';
@@ -1548,8 +1597,8 @@ export const DesignInteractions = {
                 badge.style.cursor = 'pointer';
                 badge.innerHTML = activeHtml;
                 if (isToggledOn) {
-                    if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(perkId)) {
-                        badge.style.border = '1px solid var(--color-danger)';
+                    if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId)) {
+                        badge.style.border = '1px solid var(--color-error)';
                         badge.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
                     } else {
                         badge.style.border = '1px solid var(--color-success)';

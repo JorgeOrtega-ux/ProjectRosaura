@@ -423,7 +423,7 @@ def main():
     print(f"{Colors.HEADER}{Colors.BOLD}Herramienta de Análisis del Proyecto{Colors.ENDC}")
     print("Selecciona el tipo de análisis:")
     print("1 - Identificar textos hardcodeados (Internacionalización)")
-    print("2 - Identificar estilos inline (style=\"...\") en archivos PHP")
+    print("2 - Identificar estilos inline (style=\"...\") en archivos PHP y JS")
     print("3 - Identificar código de depuración (console.log, var_dump, etc.)")
     print("4 - Ejecutar pruebas automatizadas de Autenticación (Login, Registro, 2FA, Reset Password)")
     print("5 - Inyectar Imagen Instantáneamente (Saltar Límites, uso exclusivo de Admin)")
@@ -471,7 +471,7 @@ def main():
         report_title = "Reporte de Escaneo de Internacionalización"
     elif choice == '2':
         search_pattern = re.compile(r'\sstyle\s*=\s*["\'][^"\']*["\']', re.IGNORECASE)
-        print(f"{Colors.HEADER}{Colors.BOLD}Iniciando búsqueda de estilos inline en archivos PHP...{Colors.ENDC}")
+        print(f"{Colors.HEADER}{Colors.BOLD}Iniciando búsqueda de estilos inline en archivos PHP y JS...{Colors.ENDC}")
         report_title = "Reporte de Estilos Inline"
     else:
         debug_funcs = [r'console\.log\(', r'print_r\(', r'var_dump\(', r'die\(', r'exit\(']
@@ -481,7 +481,7 @@ def main():
 
     files_to_scan = get_files_to_scan(target_path)
     if choice == '2':
-        files_to_scan = [f for f in files_to_scan if f.lower().endswith('.php') and 'emailtemplates.php' not in f.lower()]
+        files_to_scan = [f for f in files_to_scan if f.lower().endswith(('.php', '.js')) and 'emailtemplates.php' not in f.lower()]
     elif choice == '3':
         files_to_scan = [f for f in files_to_scan if f.lower().endswith(('.php', '.js', '.ts', '.vue'))]
 

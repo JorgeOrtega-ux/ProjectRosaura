@@ -257,7 +257,7 @@ export const DesignRender = {
                     this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.5})`; 
                     this.ctx.fill();
                     this.ctx.stroke();
-                } else if (exp.perkId === 'bomba_pixel_1') {
+                } else if (['bomba_pixel_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(exp.perkId)) {
                     // Bomba Pixel (r=4) - Double Ring + Red puff
                     const radius1 = exp.maxRadius * (1 + 1.5 * progress);
                     const radius2 = exp.maxRadius * (0.5 + 1 * progress);
