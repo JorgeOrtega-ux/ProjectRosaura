@@ -93,14 +93,6 @@ export const DesignRender = {
         this.ctx.imageSmoothingEnabled = false;
         
         if (this.isInfinite) {
-            if (this.chunks) {
-                this.chunks.forEach((chunkCanvas, key) => {
-                    if (!chunkCanvas) return;
-                    const [cx, cy] = key.split(',').map(Number);
-                    this.ctx.drawImage(chunkCanvas, cx * 512, cy * 512);
-                });
-            }
-
             if (this.transform.scale >= 4) {
                 this.ctx.lineWidth = 1 / this.transform.scale;
                 this.ctx.strokeStyle = gridColor; 
@@ -121,6 +113,14 @@ export const DesignRender = {
                     this.ctx.lineTo(endX, y);
                 }
                 this.ctx.stroke();
+            }
+
+            if (this.chunks) {
+                this.chunks.forEach((chunkCanvas, key) => {
+                    if (!chunkCanvas) return;
+                    const [cx, cy] = key.split(',').map(Number);
+                    this.ctx.drawImage(chunkCanvas, cx * 512, cy * 512);
+                });
             }
         } else {
             this.ctx.fillStyle = '#FFFFFF';

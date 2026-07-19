@@ -85,6 +85,14 @@ export const DesignNetwork = {
             
             this.wsManager.on('open', () => {
                 this.wsManager.send({ type: 'init', userId: uid });
+                if (this.isInfinite && this.chunks) {
+                    // Flush pending chunks (requested but never received) so they get re-requested
+                    for (const [key, value] of this.chunks) {
+                        if (value === null) {
+                            this.chunks.delete(key);
+                        }
+                    }
+                }
                 if (typeof this.requestChunksForViewport === 'function') {
                     this.requestChunksForViewport();
                 }
@@ -451,14 +459,29 @@ export const DesignNetwork = {
     async handleCanvasPlazmarCompleted(data) {
         if (this.plazmarTimeout) clearTimeout(this.plazmarTimeout);
 
-        try {
-            const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
-            if (response.aborted) return;
-
-            if (response.success && response.data && response.data.state_base64) {
-                this.hydrateCanvasState(response.data.state_base64);
+        if (this.isInfinite) {
+            // Invalidate affected chunks so they get re-fetched from Redis
+            const affectedChunks = data.affected_chunks || [];
+            if (affectedChunks.length > 0 && this.chunks) {
+                for (const c of affectedChunks) {
+                    const key = `${c.x},${c.y}`;
+                    this.chunks.delete(key);
+                }
             }
-        } catch (error) {
+            // Request fresh chunk data for the current viewport
+            if (typeof this.requestChunksForViewport === 'function') {
+                this.requestChunksForViewport();
+            }
+        } else {
+            try {
+                const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
+                if (response.aborted) return;
+
+                if (response.success && response.data && response.data.state_base64) {
+                    this.hydrateCanvasState(response.data.state_base64);
+                }
+            } catch (error) {
+            }
         }
 
         this.isPlazmarLocked = false;

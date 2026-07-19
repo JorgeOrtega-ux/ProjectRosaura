@@ -6,6 +6,29 @@ import time
 import uuid
 from urllib.parse import urlparse, parse_qs
 import redis.asyncio as redis
+import mysql.connector
+import zlib
+
+def fetch_chunk_from_db(canvas_id, cx, cy):
+    try:
+        db = mysql.connector.connect(
+            host=os.getenv("DB_HOST", "db"),
+            user=os.getenv("DB_USER", "system_web_executor"),
+            password=os.getenv("DB_PASS", "secret"),
+            database=os.getenv("DB_CANVASES_NAME", "db_canvases")
+        )
+        cursor = db.cursor()
+        cursor.execute("SELECT chunk_data FROM canvas_infinite_chunks WHERE canvas_id = %s AND chunk_x = %s AND chunk_y = %s LIMIT 1", (canvas_id, cx, cy))
+        row = cursor.fetchone()
+        cursor.close()
+        db.close()
+        
+        if row and row[0]:
+            return zlib.decompress(row[0])
+        return None
+    except Exception as e:
+        print(f"[!] Error fetching chunk {cx},{cy} from MySQL for canvas {canvas_id}: {e}")
+        return None
 
 NODE_ID = str(uuid.uuid4())
 ROOMS = {}
@@ -779,6 +802,15 @@ async def handler(websocket):
                         if cx is not None and cy is not None:
                             chunk_key = f"canvas:{canvas_id}:chunk:{cx}:{cy}"
                             chunk_data = await r.get(chunk_key)
+                            
+                            # Lazy load from DB if not in Redis
+                            if not chunk_data:
+                                db_chunk = await asyncio.to_thread(fetch_chunk_from_db, canvas_id, cx, cy)
+                                if db_chunk:
+                                    chunk_data = db_chunk
+                                    # Cache it back in Redis for next time
+                                    await r.set(chunk_key, chunk_data)
+
                             b64_data = ""
                             if chunk_data:
                                 b64_data = base64.b64encode(chunk_data).decode('utf-8')

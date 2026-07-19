@@ -144,6 +144,19 @@ def canvas_persistence_thread():
         if db_conn:
             cursor = db_conn.cursor()
             try:
+                # Ensure infinite chunks table exists
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS canvas_infinite_chunks (
+                        canvas_id int(11) NOT NULL,
+                        chunk_x int(11) NOT NULL,
+                        chunk_y int(11) NOT NULL,
+                        chunk_data LONGBLOB NOT NULL,
+                        last_updated timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+                        PRIMARY KEY (canvas_id, chunk_x, chunk_y),
+                        CONSTRAINT fk_infinite_chunk_canvas FOREIGN KEY (canvas_id) REFERENCES canvases (id) ON DELETE CASCADE
+                    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci
+                """)
+                
                 dirty_canvases_bytes = r.smembers("canvases:dirty_states")
                 if dirty_canvases_bytes:
                     r.delete("canvases:dirty_states")
@@ -152,6 +165,7 @@ def canvas_persistence_thread():
                         state_key = f"canvas:{canvas_id_str}:state"
                         canvas_bytes = r.get(state_key)
                         if canvas_bytes:
+                            # Finite canvas persistence
                             compressed_data = compress(canvas_bytes)
                             query = """
                                 INSERT INTO canvas_snapshots (canvas_id, snapshot_data) 
@@ -160,6 +174,26 @@ def canvas_persistence_thread():
                             """
                             cursor.execute(query, (canvas_id_str, compressed_data))
                             r.sadd("canvases:pending_snapshots", canvas_id_str)
+                        else:
+                            # Try finding chunks for infinite canvas
+                            chunk_keys = r.keys(f"canvas:{canvas_id_str}:chunk:*")
+                            if chunk_keys:
+                                for chunk_key_bytes in chunk_keys:
+                                    chunk_key = chunk_key_bytes.decode('utf-8')
+                                    # Formato: canvas:ID:chunk:X:Y
+                                    parts = chunk_key.split(':')
+                                    if len(parts) >= 5:
+                                        cx = int(parts[3])
+                                        cy = int(parts[4])
+                                        chunk_data = r.get(chunk_key)
+                                        if chunk_data:
+                                            compressed_chunk = compress(chunk_data)
+                                            query_chunk = """
+                                                INSERT INTO canvas_infinite_chunks (canvas_id, chunk_x, chunk_y, chunk_data) 
+                                                VALUES (%s, %s, %s, %s)
+                                                ON DUPLICATE KEY UPDATE chunk_data = VALUES(chunk_data), last_updated = CURRENT_TIMESTAMP
+                                            """
+                                            cursor.execute(query_chunk, (canvas_id_str, cx, cy, compressed_chunk))
                 db_conn.commit()
             except Exception as e:
                 print(f"[!] Error saving Snapshots to DB: {e}")

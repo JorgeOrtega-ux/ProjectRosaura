@@ -663,11 +663,23 @@ def draw_image_listener_thread():
                     if result.returncode != 0:
                         raise Exception(f"Draw script exited with code {result.returncode}: {result.stderr}")
                     
+                    # Parse affected chunks from the draw script's stdout
+                    affected_chunks = []
+                    for line in result.stdout.strip().split('\n'):
+                        line = line.strip()
+                        if line.startswith('{"affected_chunks"'):
+                            try:
+                                parsed = json.loads(line)
+                                affected_chunks = parsed.get('affected_chunks', [])
+                            except json.JSONDecodeError:
+                                pass
+                    
                     # Broadcast completed event so frontend reloads the canvas state
                     r.publish("admin:canvas_events", json.dumps({
-                        "type": "canvas_plazmar_completed", "canvas_id": canvas_id
+                        "type": "canvas_plazmar_completed", "canvas_id": canvas_id,
+                        "affected_chunks": affected_chunks
                     }))
-                    logging.info(f"Canvas plazmar for {canvas_id} completed successfully.")
+                    logging.info(f"Canvas plazmar for {canvas_id} completed successfully. Affected chunks: {len(affected_chunks)}")
                     
                 except Exception as draw_err:
                     logging.error(f"Error in draw_image processing: {draw_err}")
