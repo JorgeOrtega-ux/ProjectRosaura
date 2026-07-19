@@ -24,7 +24,7 @@ class ProfileController {
         this.bindEvents();
 
         const imgEl = document.querySelector('[data-ref="profile-avatar-img"]');
-        if (imgEl && imgEl.src.includes('/default/')) {
+        if (imgEl && imgEl.getAttribute('data-is-default') === 'true') {
             this.isDefaultAvatar = true;
         }
     }

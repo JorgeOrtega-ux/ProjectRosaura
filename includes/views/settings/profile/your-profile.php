@@ -50,7 +50,7 @@ if ($isLoggedIn) {
 $rawUserPic = $_SESSION['user_pic'] ?? '';
 $userPic = \App\Core\Helpers\Utils::getValidImage($rawUserPic, 'avatar');
 $formattedAvatar = htmlspecialchars($userPic);
-$isDefaultAvatar = strpos($userPic, '/default/') !== false || strpos($userPic, 'fallbacks/avatar-default.png') !== false;
+$isDefaultAvatar = strpos($userPic, 'profilePictures/default/') !== false || strpos($userPic, 'fallbacks/avatar-default.png') !== false;
 $userPrefs = $_SESSION['user_prefs'] ?? [];
 $prefLang = $userPrefs['language'] ?? ($_COOKIE['pr_language'] ?? 'es-419');
 $prefOpenLinks = isset($userPrefs['open_links_new_tab']) ? (int)$userPrefs['open_links_new_tab'] : 1;
@@ -90,6 +90,7 @@ $subscriptionPlanLabel = match ($subscriptionTier) {
                                  alt="<?php echo __('alt_avatar'); ?>" 
                                  data-ref="profile-avatar-img" 
                                  data-original-src="<?php echo htmlspecialchars($formattedAvatar); ?>"
+                                 data-is-default="<?php echo $isDefaultAvatar ? 'true' : 'false'; ?>"
                                  onerror="this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'">
                             <div class="component-avatar__overlay" data-ref="profile-avatar-overlay">
                                 <span class="material-symbols-rounded">photo_camera</span>

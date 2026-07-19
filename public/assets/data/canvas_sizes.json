@@ -13,5 +13,5 @@
     "512x256": { "label": "512x256", "icon": "aspect_ratio", "tier": 1 },
     "1024x512": { "label": "1024x512", "icon": "aspect_ratio", "tier": 2 },
     "2048x1024": { "label": "2048x1024", "icon": "aspect_ratio", "tier": 2 },
-    "infinite": { "label": "Infinito", "icon": "all_out", "tier": 3 }
+    "infinite": { "label": "Sin límites", "icon": "all_out", "tier": 3 }
 }

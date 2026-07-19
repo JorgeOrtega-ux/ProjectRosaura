@@ -108,7 +108,7 @@ class SettingsServices
         $userId = $this->sessionManager->get('user_id');
         $oldPic = $this->sessionManager->get('user_pic', '');
 
-        if (strpos($oldPic, '/default/') !== false) {
+        if (strpos($oldPic, 'profilePictures/default/') !== false) {
             return ['success' => false, 'message' => __('settings.avatar_already_default')];
         }
 

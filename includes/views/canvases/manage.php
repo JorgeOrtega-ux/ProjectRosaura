@@ -193,7 +193,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                             <span class="search-target"><?php 
                                                 $sizeVal = $canvas['size'] ?? '0';
                                                 if ($sizeVal === 'infinite') {
-                                                    echo 'Infinito';
+                                                    echo 'Sin límites';
                                                 } else {
                                                     echo htmlspecialchars(strpos($sizeVal, 'x') !== false ? $sizeVal : $sizeVal . 'x' . $sizeVal);
                                                 }

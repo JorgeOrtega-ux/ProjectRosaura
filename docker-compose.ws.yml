@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  websocket_node:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_websocket_node
+    restart: always
+    network_mode: "host" # Maximiza el rendimiento de red (recomendado para alta carga de WS en VPS dedicados)
+    command: python -u scripts/websocket_server.py
+    env_file:
+      - .env.ws
