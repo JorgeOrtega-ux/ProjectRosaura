@@ -115,7 +115,7 @@ class CanvasRequestsController {
                         </div>
                     </td>
                     <td>
-                        <div class="component-badge component-badge--sm" style="background-color: rgba(245, 158, 11, 0.1); color: #d97706;">
+                        <div class="component-badge component-badge--sm component-badge--warning">
                             <span class="material-symbols-rounded">pending</span>
                             <span>${__('lbl_pending')}</span>
                         </div>
@@ -146,14 +146,14 @@ class CanvasRequestsController {
     getSkeletonHTML() {
         return `
             <tr>
-                <td><div class="skeleton-box" style="height: 28px; width: 60%; border-radius: 6px;"></div></td>
-                <td><div class="skeleton-box" style="height: 28px; width: 40%; border-radius: 6px;"></div></td>
-                <td><div class="skeleton-box" style="height: 28px; width: 30%; border-radius: 6px;"></div></td>
+                <td><div class="component-skeleton component-skeleton--text-short"></div></td>
+                <td><div class="component-skeleton component-skeleton--text-short"></div></td>
+                <td><div class="component-skeleton component-skeleton--text-short"></div></td>
             </tr>
             <tr>
-                <td><div class="skeleton-box" style="height: 28px; width: 50%; border-radius: 6px;"></div></td>
-                <td><div class="skeleton-box" style="height: 28px; width: 40%; border-radius: 6px;"></div></td>
-                <td><div class="skeleton-box" style="height: 28px; width: 30%; border-radius: 6px;"></div></td>
+                <td><div class="component-skeleton component-skeleton--text-short"></div></td>
+                <td><div class="component-skeleton component-skeleton--text-short"></div></td>
+                <td><div class="component-skeleton component-skeleton--text-short"></div></td>
             </tr>
         `;
     }

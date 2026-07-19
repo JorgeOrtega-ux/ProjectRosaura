@@ -142,7 +142,7 @@ class SnapshotViewerController {
             btnPlayPause.addEventListener('click', async () => {
                 
                 if (!this.timelapseData) {
-                    btnPlayPause.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">sync</span> Loading...';
+                    btnPlayPause.innerHTML = '<span class="material-symbols-rounded spin-icon">sync</span> Loading...';
                     console.time('fetchTimelapseData');
                     console.log('[SnapshotViewer] Starting fetchTimelapseData at', performance.now());
                     const ok = await this.fetchTimelapseData();

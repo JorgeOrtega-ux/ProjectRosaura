@@ -356,11 +356,11 @@ class AuthController {
                             <p class="component-form-desc">${window.__('account_scheduled_deletion').replace(':date', `<strong>${new Date(result.scheduled_at).toLocaleDateString()}</strong>`)}</p>
                         </div>
                         <div class="component-form-body">
-                            <p style="margin-bottom: 24px; font-size: 14px; color: var(--color-text-primary); text-align: center;">${window.__('cancel_deletion_prompt')}</p>
+                            <p class="component-form-desc">${window.__('cancel_deletion_prompt')}</p>
                             <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="cancelAccountDeletion" data-token="${result.temp_auth_token}">${window.__('yes_cancel_deletion')}</button>
                             
-                            <div class="component-link-container component-link-container--center" style="margin-top: 16px;">
-                                <span class="component-link" data-action="continueAccountDeletion" style="cursor: pointer;">${window.__('no_keep_deletion')}</span>
+                            <div class="component-link-container component-link-container--center">
+                                <span class="component-link" data-action="continueAccountDeletion">${window.__('no_keep_deletion')}</span>
                             </div>
                         </div>
                     `;

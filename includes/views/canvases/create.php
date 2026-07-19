@@ -110,20 +110,6 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                             <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_desc_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_desc_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-input-group component-input-group--h34">
-                                <input type="text" data-ref="input-canvas-desc" class="component-input-field component-input-field--simple" placeholder="<?php echo __('ph_canvas_desc'); ?>">
-                            </div>
-                        </div>
-                    </div>
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_tags_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('canvas_tags_desc'); ?></p>
                             </div>

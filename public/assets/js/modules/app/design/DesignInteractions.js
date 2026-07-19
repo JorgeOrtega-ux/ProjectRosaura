@@ -1315,7 +1315,7 @@ export const DesignInteractions = {
         const updateText = () => {
             const remaining = Math.max(0, Math.ceil((warning.endTime - Date.now()) / 1000));
             const details = getWarningDetails(warning.perk);
-            badge.innerHTML = `<span class="material-symbols-rounded" style="color:#fff;">${details.icon}</span><span style="font-weight:bold;">${details.text} (${remaining}s)</span>`;
+            badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
         };
 
         updateText();
@@ -1327,7 +1327,7 @@ export const DesignInteractions = {
                 
                 const remaining = Math.max(0, Math.ceil((warning.endTime - Date.now()) / 1000));
                 const details = getWarningDetails(warning.perk);
-                badge.innerHTML = `<span class="material-symbols-rounded" style="color:#fff;">${details.icon}</span><span style="font-weight:bold;">${details.text} (${remaining}s)</span>`;
+                badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
                 
                 if (Date.now() >= warning.endTime) {
                     badge.remove();
@@ -1496,14 +1496,14 @@ export const DesignInteractions = {
                 isActive = true;
                 if (this.perkNoCooldown) {
                     isToggledOn = true;
-                    activeHtml = `<span class="material-symbols-rounded" style="color:var(--color-success);">${icon}</span><span>${window.__('badge_no_cooldown') || 'No Cooldown'}</span>`;
+                    activeHtml = `<span class="material-symbols-rounded component-text-success">${icon}</span><span>${window.__('badge_no_cooldown') || 'No Cooldown'}</span>`;
                 } else {
-                    activeHtml = `<span class="material-symbols-rounded" style="color:var(--color-primary);">${icon}</span><span>${window.__('badge_activate_no_cooldown') || 'Activate No Cooldown'}</span>`;
+                    activeHtml = `<span class="material-symbols-rounded component-text-accent">${icon}</span><span>${window.__('badge_activate_no_cooldown') || 'Activate No Cooldown'}</span>`;
                 }
                 clickHandler = async (e) => {
                     if (this.perkNoCooldownReady && !this.perkNoCooldown) {
                         const el = e.currentTarget;
-                        el.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-primary);">hourglass_empty</span><span>${window.__('activating') || 'Activating...'}</span>`;
+                        el.innerHTML = `<span class="material-symbols-rounded component-text-accent">hourglass_empty</span><span>${window.__('activating') || 'Activating...'}</span>`;
                         try {
                             const result = await this.api.post('store.activate_perk', { perk_id: 'no_cooldown_10s' });
                             if (result && result.success) {
@@ -1526,8 +1526,8 @@ export const DesignInteractions = {
             else if (perkId === 'pixel_protection_25' && this.perkProtectionLeft > 0) {
                 isActive = true;
                 isToggledOn = this.interactionMode === 'protecting';
-                const color = isToggledOn ? 'var(--color-success)' : 'currentColor';
-                activeHtml = `<span class="material-symbols-rounded" style="color:${color};">${icon}</span><span>${window.__('badge_protection') || 'Protection'}: ${this.perkProtectionLeft}</span>`;
+                const colorClass = isToggledOn ? 'component-text-success' : '';
+                activeHtml = `<span class="material-symbols-rounded ${colorClass}">${icon}</span><span>${window.__('badge_protection') || 'Protection'}: ${this.perkProtectionLeft}</span>`;
                 clickHandler = () => {
                     this.interactionMode = this.interactionMode === 'protecting' ? 'normal' : 'protecting';
                     this.updateSelectionUI();
@@ -1538,8 +1538,8 @@ export const DesignInteractions = {
             else if (perkId === 'elite_eraser_25' && this.perkEraserLeft > 0) {
                 isActive = true;
                 isToggledOn = this.interactionMode === 'erasing';
-                const color = isToggledOn ? 'var(--color-success)' : 'var(--color-danger)';
-                activeHtml = `<span class="material-symbols-rounded" style="color:${color};">${icon}</span><span>${window.__('badge_eraser') || 'Eraser'}: ${this.perkEraserLeft}</span>`;
+                const colorClass = isToggledOn ? 'component-text-success' : 'component-text-danger';
+                activeHtml = `<span class="material-symbols-rounded ${colorClass}">${icon}</span><span>${window.__('badge_eraser') || 'Eraser'}: ${this.perkEraserLeft}</span>`;
                 clickHandler = () => {
                     this.interactionMode = this.interactionMode === 'erasing' ? 'normal' : 'erasing';
                     this.updateSelectionUI();
@@ -1563,7 +1563,7 @@ export const DesignInteractions = {
                     else if (perkId === 'bomba_pixel_1') shortLabel = 'Bomba';
                     else if (perkId === 'bomba_racimo_1') shortLabel = 'Racimo';
                     else if (perkId === 'lluvia_meteoritos_1') shortLabel = 'Meteoritos';
-                    activeHtml = `<span class="material-symbols-rounded" style="color:var(--color-danger);">${icon}</span><span>${shortLabel} (Activa)</span>`;
+                    activeHtml = `<span class="material-symbols-rounded component-text-danger">${icon}</span><span>${shortLabel} (Activa)</span>`;
                     clickHandler = () => {
                         this.interactionMode = 'normal';
                         this.activeBomb = null;
@@ -1574,7 +1574,7 @@ export const DesignInteractions = {
                     isActive = true; 
                     isToggledOn = false;
                     const titleText = titles[perkId] || perkId;
-                    activeHtml = `<span class="material-symbols-rounded" style="color:var(--text-secondary);">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    activeHtml = `<span class="material-symbols-rounded component-text-secondary">${icon}</span><span>${titleText} (${totalAmount})</span>`;
                     clickHandler = (e) => {
                         if (isLoadedInRedis) {
                             this.interactionMode = 'bombing';

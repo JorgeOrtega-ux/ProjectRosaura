@@ -162,7 +162,7 @@ class HomeController {
             
             let skeletonCards = '';
             for (let i = 0; i < 12; i++) {
-                skeletonCards += `<div class="component-skeleton" style="width: 100%; aspect-ratio: 2/1; border-radius: 12px;"></div>`;
+                skeletonCards += `<div class="component-skeleton component-skeleton--card"></div>`;
             }
             this.contentArea.innerHTML = `<div class="component-grid" data-ref="home-all-canvases">${skeletonCards}</div>`;
             
@@ -202,7 +202,7 @@ class HomeController {
 
         this.isLoadingMore = true;
         if (isLoadMore && this.contentArea) {
-            const loaderHtml = '<div class="infinite-scroll-loader" style="text-align:center; padding: 20px;"><div class="component-loader"></div></div>';
+            const loaderHtml = '<div class="infinite-scroll-loader"><div class="component-loader"></div></div>';
             this.contentArea.insertAdjacentHTML('beforeend', loaderHtml);
         }
 
@@ -237,10 +237,10 @@ class HomeController {
         } else if (!isLoadMore) {
             const msgEmpty = window.__ ? window.__('msg_home_empty') || window.__('msg_home_empty') : window.__('msg_home_empty');
             const emptyHtml = `
-                <div class="component-empty-state" data-ref="empty-state-rendered" style="padding: 40px 20px;">
+                <div class="component-empty-state" data-ref="empty-state-rendered">
                     <span class="material-symbols-rounded component-empty-state-icon">dashboard_customize</span>
-                    <p class="component-empty-state-text" style="font-size: 1.1rem; max-width: 400px; margin: 0 auto;">${msgEmpty}</p>
-                    <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    <p class="component-empty-state-text">${msgEmpty}</p>
+                    <div class="component-card__actions">
                         <a href="${this.basePath}/canvases/manage" class="component-button component-button--brand" data-nav="${this.basePath}/canvases/manage">
                             <span class="material-symbols-rounded">add</span> ${window.__('create')}
                         </a>

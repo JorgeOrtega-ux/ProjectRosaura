@@ -43,8 +43,8 @@
         </div>
         
         <div class="component-menu-bottom">
-            <div style="display: flex; gap: 8px; padding: 16px;">
-                <button class="component-button component-button--primary component-button--h40" data-action="toggleTimelapsePlayPause" data-ref="btn-timelapse-play-pause" style="flex: 1;">
+            <div class="component-menu-bottom-actions">
+                <button class="component-button component-button--primary component-button--h40 component-button--flex-1" data-action="toggleTimelapsePlayPause" data-ref="btn-timelapse-play-pause">
                     <span class="material-symbols-rounded">pause</span> Pause
                 </button>
 

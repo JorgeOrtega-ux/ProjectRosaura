@@ -379,10 +379,7 @@ export class DesignChat {
             
             this.topLoader = document.createElement('div');
             this.topLoader.className = 'chat-top-loader';
-            this.topLoader.style.textAlign = 'center';
-            this.topLoader.style.padding = '12px';
-            this.topLoader.style.color = 'var(--text-secondary)';
-            this.topLoader.innerHTML = '<span class="material-symbols-rounded icon-spin-slow" style="font-size: 20px;">sync</span>';
+            this.topLoader.innerHTML = '<span class="material-symbols-rounded icon-spin-slow component-icon--20">sync</span>';
             this.chatContainer.insertBefore(this.topLoader, this.chatContainer.firstChild);
             loaderStartTime = Date.now();
         }
@@ -740,9 +737,9 @@ export class DesignChat {
 
         const uniqueId = 'msg-menu-' + msg.id;
 
-        const menuBtn = `<div class="component-dropdown-wrapper component-dropdown-wrapper--fit chat-msg-actions" style="margin-left: auto;">
-            <button class="component-button component-button--icon" style="width: 24px; height: 24px; padding: 0; background: transparent; border: none;" data-action="toggleChatDropdown" data-target="${uniqueId}">
-                <span class="material-symbols-rounded" style="font-size: 18px; color: var(--text-secondary);">more_vert</span>
+        const menuBtn = `<div class="component-dropdown-wrapper component-dropdown-wrapper--fit chat-msg-actions chat-msg-actions--ml-auto">
+            <button class="component-button component-button--icon component-button--icon-sm-ghost" data-action="toggleChatDropdown" data-target="${uniqueId}">
+                <span class="material-symbols-rounded component-icon--18 component-text-secondary">more_vert</span>
             </button>
             <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed chat-dropdown-module disabled" data-module="${uniqueId}">
                 <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="${uniqueId}-options">
@@ -759,20 +756,20 @@ export class DesignChat {
                         ${(!isMine && this.canModerateChat) ? `
                         <div class="component-menu-link" data-action="chatRestrictUser" data-user-id="${msg.user_id}">
                             <div class="component-menu-link-icon">
-                                <span class="material-symbols-rounded" style="color: var(--warning-color, #f39c12);">block</span>
+                                <span class="material-symbols-rounded component-text-warning">block</span>
                             </div>
                             <div class="component-menu-link-text">
-                                <span style="color: var(--warning-color, #f39c12);">Restringir chat</span>
+                                <span class="component-text-warning">Restringir chat</span>
                             </div>
                         </div>
                         ` : ''}
                         ${isMine ? `
                         <div class="component-menu-link" data-action="chatDeleteMessage" data-id="${msg.id}">
                             <div class="component-menu-link-icon">
-                                <span class="material-symbols-rounded" style="color: var(--danger-color);">delete</span>
+                                <span class="material-symbols-rounded component-text-danger">delete</span>
                             </div>
                             <div class="component-menu-link-text">
-                                <span style="color: var(--danger-color);">${window.__('delete') || 'Delete'}</span>
+                                <span class="component-text-danger">${window.__('delete') || 'Delete'}</span>
                             </div>
                         </div>
                         ` : ''}
@@ -834,10 +831,10 @@ export class DesignChat {
         el.innerHTML = `
             ${avatarStr}
             <div class="chat-message-bubble">
-                <div class="chat-message-header" style="align-items: center;">
-                    <div style="display: flex; gap: 8px; align-items: center;">
+                <div class="chat-message-header">
+                    <div class="chat-header-title-box">
                         <strong class="chat-message-username">${msg.username}</strong>
-                        <span style="color: var(--text-secondary); font-size: 10px;">•</span>
+                        <span class="component-text-secondary">•</span>
                         <span class="chat-message-time">${time}</span>
                     </div>
                     ${menuBtn}

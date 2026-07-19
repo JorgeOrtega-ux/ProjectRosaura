@@ -90,8 +90,6 @@ class CanvasesManageController {
 
     async createCanvas(btn) {
         const nameInput = document.querySelector('[data-ref="input-canvasname"]');
-        const descInput = document.querySelector('[data-ref="input-canvas-desc"]');
-        
         const privacyText = document.querySelector('[data-ref="text-privacy"]');
         const sizeText = document.querySelector('[data-ref="text-size"]');
         const approvalText = document.querySelector('[data-ref="text-approval"]');
@@ -99,12 +97,10 @@ class CanvasesManageController {
         const cooldownBatchVal = document.querySelector('[data-ref="val_cooldown_batch"]');
         const cooldownSecVal = document.querySelector('[data-ref="val_cooldown_seconds"]');
         const limitVal = document.querySelector('[data-ref="val_limit"]');
-        
         const inputOfficial = document.querySelector('[data-ref="val_is_official"]');
-        
+
         const payload = {
             name: nameInput ? nameInput.value : __('default_canvas_name_new'),
-            description: descInput ? descInput.value : '',
             privacy: (privacyText && privacyText.textContent.toLowerCase().includes(__('lbl_public').toLowerCase())) ? 'public' : 'private',
             requires_approval: (approvalText && approvalText.textContent.toLowerCase().includes(__('lbl_true').toLowerCase())),
             size: sizeText ? sizeText.textContent.trim() : '64x64',

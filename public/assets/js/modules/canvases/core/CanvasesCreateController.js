@@ -29,7 +29,6 @@ class CanvasesCreateController {
         
         this.formState = {
             name: '',
-            description: '',
             size: '64',
             privacy: 'private',
             palette_id: 'default',
@@ -128,18 +127,6 @@ class CanvasesCreateController {
                 btn.title = window.__('tooltip_upgrade_palette');
             }
 
-            let colorsHtml = `<div style="display:flex; align-items:center;">`;
-            const totalColors = palette.colors.length;
-            const colorsToShow = Math.min(totalColors, 4);
-            for (let i = 0; i < colorsToShow; i++) {
-                colorsHtml += `<span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:${palette.colors[i].hex}; border:1px solid rgba(0,0,0,0.1); margin-right: -6px; position:relative; z-index:${10 - i}; box-sizing: border-box;"></span>`;
-            }
-            if (totalColors > 4) {
-                const remaining = totalColors - 4;
-                colorsHtml += `<span style="display:inline-flex; align-items:center; justify-content:center; padding: 0 4px; height:16px; border-radius:10px; background-color:var(--surface-hover); border:1px solid var(--border-color); font-size:10px; font-weight:600; color:var(--text-primary); margin-left: 10px; z-index:0; box-sizing: border-box;">+${remaining}</span>`;
-            }
-            colorsHtml += `</div>`;
-            
             const lockHtml = isLocked ? `<div class="component-menu-link-icon component-menu-link-icon--premium"><span class="material-symbols-rounded">stars</span></div>` : '';
 
             btn.innerHTML = `
@@ -470,9 +457,6 @@ class CanvasesCreateController {
         if (inputName) {
             this.formState.name = inputName.value.trim();
         }
-
-        const inputDesc = document.querySelector('[data-ref="input-canvas-desc"]');
-        this.formState.description = inputDesc ? inputDesc.value.trim() : '';
         
         const inputBatch = document.querySelector('[data-ref="val_cooldown_batch"]');
         if (inputBatch) {

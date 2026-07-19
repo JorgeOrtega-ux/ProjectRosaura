@@ -12,22 +12,22 @@ export const DialogTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header component-modal-content--centered">
-                    <div class="component-card__icon-container" style="color: var(--accent-primary);">
-                        <span class="material-symbols-rounded" style="font-size: 64px;">stars</span>
+                    <div class="component-card__icon-container component-text-accent">
+                        <span class="material-symbols-rounded component-icon--64">stars</span>
                     </div>
-                    <h2 class="component-modal-title" style="font-size: 24px; font-weight: 600;">${window.__('welcome_to')} ${tierName}!</h2>
-                    <p class="component-modal-desc" style="color: var(--text-secondary); line-height: 1.6;">
+                    <h2 class="component-modal-title">${window.__('welcome_to')} ${tierName}!</h2>
+                    <p class="component-modal-desc component-text-secondary">
                         ${window.__('subscription_activated')}
                     </p>
                 </div>
                 <div class="component-modal-body">
-                    <div style="background: var(--bg-surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                            <span style="color: var(--text-secondary);">${window.__('current_level') || 'Current Tier'}</span>
-                            <strong style="color: var(--accent-primary);">${tierName}</strong>
+                    <div class="component-card--grouped">
+                        <div class="component-group-item">
+                            <span class="component-text-secondary">${window.__('current_level') || 'Current Tier'}</span>
+                            <strong class="component-text-accent">${tierName}</strong>
                         </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--text-secondary);">${window.__('next_renewal') || 'Next Renewal'}</span>
+                        <div class="component-group-item">
+                            <span class="component-text-secondary">${window.__('next_renewal') || 'Next Renewal'}</span>
                             <strong>${endDate}</strong>
                         </div>
                     </div>
@@ -97,28 +97,24 @@ export const DialogTemplates = {
                         <!-- Step 3 -->
                         <div class="step-modal-step" id="welcome-step-3">
                             <h2 class="component-modal-title">${window.__('welcome_modal_step3_title')}</h2>
-                            <p class="component-modal-desc step-modal-desc" style="margin-bottom: 12px; flex: none;">
+                            <p class="component-modal-desc step-modal-desc">
                                 ${window.__('welcome_modal_step3_desc')}
                             </p>
                             
-                            <div style="display: flex; gap: 12px; margin-bottom: 8px; flex: 1; align-items: stretch;">
-                                <div style="flex: 1; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; text-align: left; cursor: pointer; transition: border-color 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;"
-                                     onmouseover="this.style.borderColor='var(--text-primary)'"
-                                     onmouseout="this.style.borderColor='var(--border-color)'"
+                            <div class="component-card-grid">
+                                <div class="component-card--selectable"
                                      onclick="if(window.spaRouter){window.spaRouter.navigate('/premium');}else{window.location.href='/premium';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
-                                    <h4 style="margin: 0 0 8px 0; font-size: 15px; color: var(--text-primary);">${window.__('premium_plan_pro')}</h4>
-                                    <div style="font-size: 18px; font-weight: bold; color: var(--text-primary);">$${window.APP_PRICES ? window.APP_PRICES[1].monthly : '9.99'}<span style="font-size: 12px; color: var(--text-secondary); font-weight: normal;">${window.__('premium_period_month')}</span></div>
+                                    <h4 class="component-card__title">${window.__('premium_plan_pro')}</h4>
+                                    <div class="component-card__price">$${window.APP_PRICES ? window.APP_PRICES[1].monthly : '9.99'}<span class="component-text-secondary">${window.__('premium_period_month')}</span></div>
                                 </div>
-                                <div style="flex: 1; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; text-align: left; cursor: pointer; transition: border-color 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;"
-                                     onmouseover="this.style.borderColor='var(--text-primary)'"
-                                     onmouseout="this.style.borderColor='var(--border-color)'"
+                                <div class="component-card--selectable"
                                      onclick="if(window.spaRouter){window.spaRouter.navigate('/premium');}else{window.location.href='/premium';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
-                                    <h4 style="margin: 0 0 8px 0; font-size: 15px; color: var(--text-primary);">${window.__('premium_plan_advanced')}</h4>
-                                    <div style="font-size: 18px; font-weight: bold; color: var(--text-primary);">$${window.APP_PRICES ? window.APP_PRICES[2].monthly : '19.99'}<span style="font-size: 12px; color: var(--text-secondary); font-weight: normal;">${window.__('premium_period_month')}</span></div>
+                                    <h4 class="component-card__title">${window.__('premium_plan_advanced')}</h4>
+                                    <div class="component-card__price">$${window.APP_PRICES ? window.APP_PRICES[2].monthly : '19.99'}<span class="component-text-secondary">${window.__('premium_period_month')}</span></div>
                                 </div>
                             </div>
                             
-                            <p style="font-size: 11px; color: var(--text-secondary); text-align: center; margin-top: 0; margin-bottom: 16px;">
+                            <p class="component-modal-desc component-text-secondary">
                                 ${window.__('premium_monthly_disclaimer')}
                             </p>
                             
@@ -241,7 +237,7 @@ export const DialogTemplates = {
                 </div>
                 
                 <div class="component-role-color-row">
-                    <p class="component-input-label" style="position: static; flex: 1;">${__('lbl_role_color')}</p>
+                    <p class="component-input-label">${__('lbl_role_color')}</p>
                     <input type="color" data-ref="roleColorInput" value="${data.colorValue || '#808080'}" class="component-role-color-preview">
                     <span class="component-role-color-text" data-ref="roleColorDisplay">${data.colorValue || '#808080'}</span>
                 </div>
@@ -614,9 +610,9 @@ export const DialogTemplates = {
                 </div>
             </div>
             <div class="component-modal-body">
-                <div class="component-form-box component-form-box--full" style="max-width: 100%;">
+                <div class="component-form-box component-form-box--full">
                     <div class="component-input-group">
-                        <input type="text" data-ref="live-join-code-modal" class="component-input-field" placeholder="${__('ph_live_share_code')}" maxlength="9" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/(.{4})(.+)/, '$1-$2').slice(0, 9);" style="text-transform: uppercase;">
+                        <input type="text" data-ref="live-join-code-modal" class="component-input-field" placeholder="${__('ph_live_share_code')}" maxlength="9" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/(.{4})(.+)/, '$1-$2').slice(0, 9);">
                         <label class="component-input-label">${__('lbl_live_share_code')}</label>
                     </div>
                 </div>
@@ -640,13 +636,13 @@ export const DialogTemplates = {
             </div>
             <div class="component-modal-body" data-ref="live-share-modal-body">
                 <div class="live-share-owner-content">
-                    <div class="component-alert-success ${data.isActive ? 'active' : ''}" style="margin-bottom: 12px; display: ${data.isActive ? 'block' : 'none'};" data-ref="live-share-active-alert">
+                    <div class="component-alert-success ${data.isActive ? 'active' : 'disabled'}" data-ref="live-share-active-alert">
                         ${__('txt_live_active')}
                     </div>
                     
                     <div class="live-share-code-display" data-ref="live-share-code">${data.code || '...'}</div>
                     
-                    <div class="live-share-inputs-grid" style="margin-top: 12px;">
+                    <div class="live-share-inputs-grid">
                         <div class="live-share-input-group">
                             <label class="live-share-label">${__('lbl_position_x')}</label>
                             <div class="component-inline-control component-inline-control--fixed">
@@ -677,7 +673,7 @@ export const DialogTemplates = {
                         </div>
                     </div>
                     
-                    <div class="live-share-input-group" style="margin-top: 12px;">
+                    <div class="live-share-input-group">
                         <label class="live-share-label live-share-label--flex">${__('lbl_opacity')}</label>
                         <div class="component-inline-control component-inline-control--fixed">
                             <div class="component-inline-control__group">
@@ -693,10 +689,10 @@ export const DialogTemplates = {
                     </div>
                 </div>
             </div>
-            <div class="component-modal-actions" style="margin-top: 8px;">
+            <div class="component-modal-actions">
                 <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_close')}</button>
-                <button class="component-button component-button--danger component-button--h45 component-button--full" data-action="stopLive" style="display: ${data.isActive ? 'flex' : 'none'};">${__('btn_stop_live')}</button>
-                <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="startLive" style="display: ${data.isActive ? 'none' : 'flex'};">${__('btn_start_live')}</button>
+                <button class="component-button component-button--danger component-button--h45 component-button--full ${data.isActive ? 'active' : 'disabled'}" data-action="stopLive">${__('btn_stop_live')}</button>
+                <button class="component-button component-button--dark component-button--h45 component-button--full ${data.isActive ? 'disabled' : 'active'}" data-action="startLive">${__('btn_start_live')}</button>
             </div>
         `
     },
@@ -752,26 +748,26 @@ export const DialogTemplates = {
                 <p class="component-modal-desc">${__('report_desc')}</p>
             </div>
             <div class="component-modal-body">
-                <div class="component-radio-group" style="display: flex; flex-direction: column; gap: 8px;">
-                    <label class="component-radio-option" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border: 1px solid var(--border-color, rgba(255,255,255,0.08));">
-                        <input type="radio" name="report_reason" value="spam" data-ref="report_reason" style="accent-color: var(--accent-primary, #3b82f6); width: 18px; height: 18px; cursor: pointer;" onchange="document.getElementById('report_other_textarea').style.display='none'">
-                        <span style="font-size: 14px;">${__('report_spam')}</span>
+                <div class="component-radio-group">
+                    <label class="component-radio-option">
+                        <input type="radio" name="report_reason" value="spam" data-ref="report_reason" onchange="document.getElementById('report_other_textarea').classList.add('disabled')">
+                        <span>${__('report_spam')}</span>
                     </label>
-                    <label class="component-radio-option" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border: 1px solid var(--border-color, rgba(255,255,255,0.08));">
-                        <input type="radio" name="report_reason" value="offensive" data-ref="report_reason" style="accent-color: var(--accent-primary, #3b82f6); width: 18px; height: 18px; cursor: pointer;" onchange="document.getElementById('report_other_textarea').style.display='none'">
-                        <span style="font-size: 14px;">${__('report_offensive')}</span>
+                    <label class="component-radio-option">
+                        <input type="radio" name="report_reason" value="offensive" data-ref="report_reason" onchange="document.getElementById('report_other_textarea').classList.add('disabled')">
+                        <span>${__('report_offensive')}</span>
                     </label>
-                    <label class="component-radio-option" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border: 1px solid var(--border-color, rgba(255,255,255,0.08));">
-                        <input type="radio" name="report_reason" value="harassment" data-ref="report_reason" style="accent-color: var(--accent-primary, #3b82f6); width: 18px; height: 18px; cursor: pointer;" onchange="document.getElementById('report_other_textarea').style.display='none'">
-                        <span style="font-size: 14px;">${__('report_harassment')}</span>
+                    <label class="component-radio-option">
+                        <input type="radio" name="report_reason" value="harassment" data-ref="report_reason" onchange="document.getElementById('report_other_textarea').classList.add('disabled')">
+                        <span>${__('report_harassment')}</span>
                     </label>
-                    <label class="component-radio-option" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border: 1px solid var(--border-color, rgba(255,255,255,0.08));">
-                        <input type="radio" name="report_reason" value="other" data-ref="report_reason" style="accent-color: var(--accent-primary, #3b82f6); width: 18px; height: 18px; cursor: pointer;" onchange="document.getElementById('report_other_textarea').style.display='block'">
-                        <span style="font-size: 14px;">${__('report_other')}</span>
+                    <label class="component-radio-option">
+                        <input type="radio" name="report_reason" value="other" data-ref="report_reason" onchange="document.getElementById('report_other_textarea').classList.remove('disabled')">
+                        <span>${__('report_other')}</span>
                     </label>
                 </div>
-                <div class="component-input-group" style="margin-top: 12px;">
-                    <textarea id="report_other_textarea" data-ref="report_other_text" class="component-input-field" placeholder="${__('report_other_placeholder')}" rows="3" style="display: none; resize: vertical; min-height: 60px;"></textarea>
+                <div class="component-input-group">
+                    <textarea id="report_other_textarea" data-ref="report_other_text" class="component-input-field disabled" placeholder="${__('report_other_placeholder')}" rows="3"></textarea>
                 </div>
             </div>
             <div class="component-modal-actions">

@@ -162,7 +162,7 @@ $canManageMessages = true; // Por ahora todos los admins
             </div>
 
             <!-- Div de datos para traducciones de JS -->
-            <div id="dashboard-lang-data" style="display: none;"
+            <div id="dashboard-lang-data" class="disabled"
                  data-lbl-activity="<?php echo __('admin_dashboard_global_activity'); ?>"
                  data-lbl-regs="<?php echo __('admin_dashboard_new_registrations'); ?>"
                  data-lbl-errors="<?php echo __('admin_dashboard_access_errors'); ?>"

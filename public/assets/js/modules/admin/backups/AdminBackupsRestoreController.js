@@ -68,7 +68,7 @@ class AdminBackupsRestoreController {
         if (this.isRestoring) return;
         this.isRestoring = true;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-rounded spin-icon" style="color: white;">autorenew</span>';
+        btn.innerHTML = '<span class="material-symbols-rounded spin-icon">autorenew</span>';
         btn.classList.add('disabled-interaction');
         showMessage('Initiating lockdown protocol...', 'success');
         const res = await this.api.post(ApiRoutes.Admin.RestoreBackup, { backup_id: backupId, password: password }, this.abortController.signal);

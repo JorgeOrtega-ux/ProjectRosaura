@@ -28,7 +28,6 @@ class CanvasEditController {
 
         this.state = {
             name: '',
-            description: '',
             privacy: 'private',
             palette_id: 'default',
             max_members: 10,
@@ -70,9 +69,6 @@ class CanvasEditController {
     hydrateStateFromDOM() {
         const nameInput = this.container.querySelector('[data-ref="input-canvasname"]');
         if (nameInput) this.state.name = nameInput.value.trim();
-
-        const descInput = this.container.querySelector('[data-ref="input-canvas-desc"]');
-        if (descInput) this.state.description = descInput.value.trim();
 
         const limitVal = this.container.querySelector('[data-ref="val_limit"]');
         if (limitVal) this.state.max_members = parseInt(limitVal.getAttribute('data-val'), 10) || 10;
@@ -170,18 +166,6 @@ class CanvasEditController {
                 btn.title = window.__('tooltip_upgrade_palette');
             }
 
-            let colorsHtml = `<div style="display:flex; align-items:center;">`;
-            const totalColors = palette.colors.length;
-            const colorsToShow = Math.min(totalColors, 4);
-            for (let i = 0; i < colorsToShow; i++) {
-                colorsHtml += `<span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:${palette.colors[i].hex}; border:1px solid rgba(0,0,0,0.1); margin-right: -6px; position:relative; z-index:${10 - i}; box-sizing: border-box;"></span>`;
-            }
-            if (totalColors > 4) {
-                const remaining = totalColors - 4;
-                colorsHtml += `<span style="display:inline-flex; align-items:center; justify-content:center; padding: 0 4px; height:16px; border-radius:10px; background-color:var(--surface-hover); border:1px solid var(--border-color); font-size:10px; font-weight:600; color:var(--text-primary); margin-left: 10px; z-index:0; box-sizing: border-box;">+${remaining}</span>`;
-            }
-            colorsHtml += `</div>`;
-            
             const lockHtml = isLocked ? `<div class="component-menu-link-icon component-menu-link-icon--premium"><span class="material-symbols-rounded">stars</span></div>` : '';
 
             btn.innerHTML = `
@@ -398,11 +382,6 @@ class CanvasEditController {
             this.state.name = nameInput.value.trim();
         }
 
-        const descInput = this.container.querySelector('[data-ref="input-canvas-desc"]');
-        if (descInput) {
-            this.state.description = descInput.value.trim();
-        }
-
         const inputBatch = this.container.querySelector('[data-ref="val_cooldown_batch"]');
         if (inputBatch) {
             this.state.cooldown_pixels_batch = parseInt(inputBatch.getAttribute('data-val'), 10) || 5;
@@ -438,7 +417,6 @@ class CanvasEditController {
         const payload = {
             id: this.canvasId, 
             name: this.state.name,
-            description: this.state.description,
             privacy: this.state.privacy,
             palette_id: this.state.palette_id,
             max_members: this.state.max_members,

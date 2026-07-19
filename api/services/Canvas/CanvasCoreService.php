@@ -205,7 +205,6 @@ class CanvasCoreService {
                     'id' => $canvas['id'],
                     'uuid' => $canvas['uuid'],
                     'name' => $canvas['name'],
-                    'description' => $canvas['description'],
                     'privacy' => $canvas['privacy'],
                     'size' => $canvas['size'],
                     'max_participants' => $canvas['max_participants'],
@@ -406,7 +405,6 @@ class CanvasCoreService {
     public function createCanvas(
         int $userId, 
         string $name, 
-        ?string $description, 
         string $privacy, 
         bool $requiresApproval = false, 
         string $size = '64x64', 
@@ -466,7 +464,6 @@ class CanvasCoreService {
                 'uuid'                  => $uuid,
                 'owner_id'              => $userId,
                 'name'                  => trim($name),
-                'description'           => $description ? trim($description) : null,
                 'privacy'               => $privacy,
                 'requires_approval'     => $requiresApproval ? 1 : 0,
                 'size'                  => $size,
@@ -662,7 +659,6 @@ class CanvasCoreService {
 
             $updateData = [
                 'name' => $canvas['name'],
-                'description' => $canvas['description'],
                 'privacy' => $canvas['privacy'],
                 'requires_approval' => $canvas['requires_approval'],
                 'palette_id' => 'default',

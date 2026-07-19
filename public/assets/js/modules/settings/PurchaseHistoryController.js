@@ -20,7 +20,6 @@ export class PurchaseHistoryController {
 
     bindEvents() {
         if (!this.container) return;
-
     }
 
     async loadHistory() {
@@ -53,8 +52,8 @@ export class PurchaseHistoryController {
                             <td>${description}</td>
                             <td>${amount}</td>
                             <td>
-                                <span class="${statusClass}" style="display: flex; align-items: center; gap: 4px;">
-                                    <span class="material-symbols-rounded" style="font-size: 16px;">${statusIcon}</span>
+                                <span class="${statusClass}">
+                                    <span class="material-symbols-rounded component-icon--16">${statusIcon}</span>
                                     ${statusText}
                                 </span>
                             </td>
@@ -63,11 +62,19 @@ export class PurchaseHistoryController {
                     this.tbody.insertAdjacentHTML('beforeend', row);
                 });
             } else {
-                
+                this.tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="component-empty-table-cell">
+                            <div class="component-empty-state component-empty-state--table">
+                                <span class="material-symbols-rounded component-empty-state-icon">inbox</span>
+                                <p class="component-empty-state-text">${window.__('no_purchases') || 'No purchase history found.'}</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                
                 this.tbody.innerHTML = `
                     <tr>
                         <td colspan="4" class="component-empty-table-cell">

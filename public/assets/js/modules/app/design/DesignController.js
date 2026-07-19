@@ -243,7 +243,7 @@ class DesignController {
                         if (noCdBadge && this.perkNoCooldownExpires) {
                             const timeRem = Math.max(0, Math.ceil((this.perkNoCooldownExpires - Date.now()) / 1000));
                             if (timeRem > 0) {
-                                noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-primary);">bolt</span><span>Sin Cooldown (${timeRem}s)</span>`;
+                                noCdBadge.innerHTML = `<span class="material-symbols-rounded component-text-accent">bolt</span><span>Sin Cooldown (${timeRem}s)</span>`;
                             } else {
                                 this.perkNoCooldown = false;
                                 if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
@@ -261,7 +261,7 @@ class DesignController {
                             <span>∞/${this.cooldownMax}</span>
                             <span>|</span>
                             <span class="material-symbols-rounded">timer</span>
-                            <span><span class="material-symbols-rounded" style="font-size:16px;">all_inclusive</span></span>
+                            <span><span class="material-symbols-rounded component-icon--16">all_inclusive</span></span>
                         `;
                     } else if (this.interactionMode === 'protecting') {
                         const maxProt = Math.ceil(this.perkProtectionLeft / 25) * 25 || 25;

@@ -63,7 +63,6 @@ class CanvasCoreController extends BaseController {
             }
             
             $name = $input['name'] ?? '';
-            $description = $input['description'] ?? null;
             $privacy = $input['privacy'] ?? \App\Core\System\CanvasConstants::PRIVACY_PRIVATE;
             $requiresApproval = filter_var($input['requires_approval'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $size = $input['size'] ?? '64x64';
@@ -91,7 +90,7 @@ class CanvasCoreController extends BaseController {
             }
 
             $result = $this->canvasServices->createCanvas(
-                $userId, $name, $description, $privacy, $requiresApproval, 
+                $userId, $name, $privacy, $requiresApproval, 
                 $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds,
                 $isOfficial, $this->canCreateOfficial(),
                 $allowPurchases, $allowChat, $tags
@@ -126,7 +125,6 @@ class CanvasCoreController extends BaseController {
             
             $data = [
                 'name' => $input['name'] ?? null,
-                'description' => $input['description'] ?? null,
                 'privacy' => $input['privacy'] ?? null,
                 'requires_approval' => filter_var($input['requires_approval'] ?? false, FILTER_VALIDATE_BOOLEAN),
                 'palette_id' => $input['palette_id'] ?? null,

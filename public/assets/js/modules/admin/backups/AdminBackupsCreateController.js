@@ -110,7 +110,7 @@ class AdminBackupsCreateController {
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <span class="component-badge component-badge--sm" data-badge="${dbName}" style="display: none;"></span>
+                            <span class="component-badge component-badge--sm disabled" data-badge="${dbName}"></span>
                             <div data-action="preventAccordion">
                                 <label class="component-toggle-switch">
                                     <input type="checkbox" class="custom-schema-db-cb" value="${dbName}">

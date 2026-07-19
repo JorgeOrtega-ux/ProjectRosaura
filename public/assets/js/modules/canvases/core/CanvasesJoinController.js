@@ -76,7 +76,7 @@ class CanvasesJoinController {
         if (!btn) return;
         
         const originalText = btn.innerHTML;
-        btn.innerHTML = `<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">autorenew</span> ${__('lbl_validating')}`;
+        btn.innerHTML = `<span class="material-symbols-rounded spin-icon">autorenew</span> ${__('lbl_validating')}`;
         btn.disabled = true;
 
         const termsAccepted = termsCheckbox ? termsCheckbox.checked : false;

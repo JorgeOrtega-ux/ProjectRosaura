@@ -33,7 +33,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                         <span class="material-symbols-rounded">group</span>
                         <span>${formatNumber(membersCount)}</span>
                         <span class="component-badge-divider">|</span>
-                        <span class="material-symbols-rounded" style="color:var(--accent-color)">favorite</span>
+                        <span class="material-symbols-rounded component-text-accent">favorite</span>
                         <span>${formatNumber(likesCount)}</span>
                     </div>
                     <div class="component-badge component-badge--glass">
@@ -51,7 +51,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                     <span class="material-symbols-rounded">group</span>
                     <span>${formatNumber(membersCount)}</span>
                     <span class="component-badge-divider">|</span>
-                    <span class="material-symbols-rounded" style="color:var(--accent-color)">favorite</span>
+                    <span class="material-symbols-rounded component-text-accent">favorite</span>
                     <span>${formatNumber(likesCount)}</span>
                 </div>
             `;
@@ -114,9 +114,9 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         let privateBadge = '';
         if (snapshot.is_private) {
             privateBadge = `
-                <div class="component-gallery-badge component-badge--danger" style="top: 8px; left: 8px; right: auto; padding: 4px 8px; border-radius: 8px; background: rgba(239,68,68,0.9); z-index: 10;">
-                    <span class="material-symbols-rounded" style="font-size: 14px;">lock</span>
-                    <span style="font-size: 12px; font-weight: 600;">${window.__('private') || 'Private'}</span>
+                <div class="component-gallery-badge component-badge--danger component-badge--private">
+                    <span class="material-symbols-rounded component-icon--14">lock</span>
+                    <span>${window.__('private') || 'Private'}</span>
                 </div>
             `;
         }
@@ -130,11 +130,11 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                      loading="lazy" 
                      decoding="async"
                      onerror="this.src='${fallbackImg}'">
-                <div class="component-gallery-badge" style="display: flex; gap: 4px;">
+                <div class="component-gallery-badge">
                     <span class="material-symbols-rounded">history</span>
                     <span>${date}</span>
-                    <span class="component-badge-divider" style="margin: 0 2px;">|</span>
-                    <span class="material-symbols-rounded" style="color:var(--accent-color)">favorite</span>
+                    <span class="component-badge-divider">|</span>
+                    <span class="material-symbols-rounded component-text-accent">favorite</span>
                     <span>${formatNumber(likesCount)}</span>
                 </div>
                 <div data-nav="${viewUrl}" class="component-gallery-link">

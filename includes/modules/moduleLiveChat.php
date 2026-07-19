@@ -19,8 +19,8 @@ $maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
     <div class="component-menu component-menu--w335 component-menu--chat component-menu--h-full component-menu--no-padding disabled" data-ref="menu-chat">
         
         <div class="component-menu-header">
-            <div class="component-menu-header-box" style="justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="component-menu-header-box">
+                <div class="chat-header-title-box">
                     <span class="material-symbols-rounded">chat</span>
                     <span class="component-menu-header-title"><?php echo __('chat_live'); ?></span>
                 </div>
@@ -31,90 +31,90 @@ $maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
         </div>
         
         <div class="component-menu-section-parent component-menu-section-parent--chat">
-                        <div class="component-menu-center component-chat-messages" data-ref="chat-messages-container">
+            <div class="component-menu-center component-chat-messages" data-ref="chat-messages-container">
                 <div class="component-empty-state disabled" data-ref="empty-state-rendered">
                     <span class="material-symbols-rounded component-empty-state-icon">error</span>
                     <p class="component-empty-state-text"><?php echo __('chat_no_messages'); ?></p>
                 </div>
-                <div class="component-loader-center component-loader-center--compact" data-ref="chat-loader" style="justify-content: flex-end; padding: 16px; background: transparent; height: 100%;">
-                    <div style="width: 100%; display: flex; flex-direction: column; gap: 24px; padding-top: auto;">
-                        <div style="display: flex; gap: 12px;">
-                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
-                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; gap: 6px;">
-                                <div class="component-skeleton component-skeleton--text-short" style="width: 25%;"></div>
-                                <div class="component-skeleton component-skeleton--h45" style="border-radius: 12px; border-top-left-radius: 4px; width: 70%;"></div>
+                <div class="component-loader-center component-loader-center--compact component-loader-center--chat" data-ref="chat-loader">
+                    <div class="chat-skeleton-container">
+                        <div class="chat-skeleton-group">
+                            <div class="component-skeleton component-skeleton--avatar"></div>
+                            <div class="chat-skeleton-content">
+                                <div class="component-skeleton component-skeleton--text-short"></div>
+                                <div class="component-skeleton component-skeleton--h45"></div>
                             </div>
                         </div>
                         
-                        <div style="display: flex; gap: 12px; flex-direction: row-reverse;">
-                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
-                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-                                <div class="component-skeleton component-skeleton--text-short" style="width: 35%;"></div>
-                                <div class="component-skeleton component-skeleton--h100" style="border-radius: 12px; border-top-right-radius: 4px; width: 90%;"></div>
+                        <div class="chat-skeleton-group chat-skeleton-group--reverse">
+                            <div class="component-skeleton component-skeleton--avatar"></div>
+                            <div class="chat-skeleton-content chat-skeleton-content--end">
+                                <div class="component-skeleton component-skeleton--text-short"></div>
+                                <div class="component-skeleton component-skeleton--h100"></div>
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 12px;">
-                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
-                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; gap: 6px;">
-                                <div class="component-skeleton component-skeleton--text-short" style="width: 20%;"></div>
-                                <div class="component-skeleton component-skeleton--h40" style="border-radius: 12px; border-top-left-radius: 4px; width: 50%;"></div>
+                        <div class="chat-skeleton-group">
+                            <div class="component-skeleton component-skeleton--avatar"></div>
+                            <div class="chat-skeleton-content">
+                                <div class="component-skeleton component-skeleton--text-short"></div>
+                                <div class="component-skeleton component-skeleton--h40"></div>
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 12px; flex-direction: row-reverse;">
-                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
-                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-                                <div class="component-skeleton component-skeleton--text-short" style="width: 25%;"></div>
-                                <div class="component-skeleton component-skeleton--h45" style="border-radius: 12px; border-top-right-radius: 4px; width: 60%;"></div>
+                        <div class="chat-skeleton-group chat-skeleton-group--reverse">
+                            <div class="component-skeleton component-skeleton--avatar"></div>
+                            <div class="chat-skeleton-content chat-skeleton-content--end">
+                                <div class="component-skeleton component-skeleton--text-short"></div>
+                                <div class="component-skeleton component-skeleton--h45"></div>
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 12px;">
-                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
-                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; gap: 6px;">
-                                <div class="component-skeleton component-skeleton--text-short" style="width: 30%;"></div>
-                                <div class="component-skeleton component-skeleton--h60" style="border-radius: 12px; border-top-left-radius: 4px; width: 80%;"></div>
+                        <div class="chat-skeleton-group">
+                            <div class="component-skeleton component-skeleton--avatar"></div>
+                            <div class="chat-skeleton-content">
+                                <div class="component-skeleton component-skeleton--text-short"></div>
+                                <div class="component-skeleton component-skeleton--h60"></div>
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 12px; flex-direction: row-reverse;">
-                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
-                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-                                <div class="component-skeleton component-skeleton--text-short" style="width: 40%;"></div>
-                                <div class="component-skeleton component-skeleton--h40" style="border-radius: 12px; border-top-right-radius: 4px; width: 75%;"></div>
+                        <div class="chat-skeleton-group chat-skeleton-group--reverse">
+                            <div class="component-skeleton component-skeleton--avatar"></div>
+                            <div class="chat-skeleton-content chat-skeleton-content--end">
+                                <div class="component-skeleton component-skeleton--text-short"></div>
+                                <div class="component-skeleton component-skeleton--h40"></div>
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 12px;">
-                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
-                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; gap: 6px;">
-                                <div class="component-skeleton component-skeleton--text-short" style="width: 25%;"></div>
-                                <div class="component-skeleton component-skeleton--h100" style="border-radius: 12px; border-top-left-radius: 4px; width: 95%;"></div>
+                        <div class="chat-skeleton-group">
+                            <div class="component-skeleton component-skeleton--avatar"></div>
+                            <div class="chat-skeleton-content">
+                                <div class="component-skeleton component-skeleton--text-short"></div>
+                                <div class="component-skeleton component-skeleton--h100"></div>
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 12px; flex-direction: row-reverse;">
-                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
-                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-                                <div class="component-skeleton component-skeleton--text-short" style="width: 20%;"></div>
-                                <div class="component-skeleton component-skeleton--h45" style="border-radius: 12px; border-top-right-radius: 4px; width: 50%;"></div>
+                        <div class="chat-skeleton-group chat-skeleton-group--reverse">
+                            <div class="component-skeleton component-skeleton--avatar"></div>
+                            <div class="chat-skeleton-content chat-skeleton-content--end">
+                                <div class="component-skeleton component-skeleton--text-short"></div>
+                                <div class="component-skeleton component-skeleton--h45"></div>
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 12px;">
-                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
-                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; gap: 6px;">
-                                <div class="component-skeleton component-skeleton--text-short" style="width: 35%;"></div>
-                                <div class="component-skeleton component-skeleton--h60" style="border-radius: 12px; border-top-left-radius: 4px; width: 85%;"></div>
+                        <div class="chat-skeleton-group">
+                            <div class="component-skeleton component-skeleton--avatar"></div>
+                            <div class="chat-skeleton-content">
+                                <div class="component-skeleton component-skeleton--text-short"></div>
+                                <div class="component-skeleton component-skeleton--h60"></div>
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 12px; flex-direction: row-reverse;">
-                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
-                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-                                <div class="component-skeleton component-skeleton--text-short" style="width: 30%;"></div>
-                                <div class="component-skeleton component-skeleton--h40" style="border-radius: 12px; border-top-right-radius: 4px; width: 65%;"></div>
+                        <div class="chat-skeleton-group chat-skeleton-group--reverse">
+                            <div class="component-skeleton component-skeleton--avatar"></div>
+                            <div class="chat-skeleton-content chat-skeleton-content--end">
+                                <div class="component-skeleton component-skeleton--text-short"></div>
+                                <div class="component-skeleton component-skeleton--h40"></div>
                             </div>
                         </div>
                     </div>

@@ -84,7 +84,7 @@ try {
         <div class="component-bottom">
             <canvas data-ref="snapshot-canvas" class="component-canvas-surface"></canvas>
             
-            <div style="position: absolute; top: 1rem; left: 1rem; display: flex; flex-direction: column; gap: 0.5rem; z-index: 10; pointer-events: none;">
+            <div class="snapshot-viewer-overlay">
                 <div class="component-badge">
                     <span class="material-symbols-rounded">my_location</span>
                     <span data-ref="coords-text">- , -</span>
@@ -94,7 +94,7 @@ try {
                     <span class="material-symbols-rounded">history</span> <?php echo __('lbl_historical_mode'); ?>
                 </div>
 
-                <div id="tl-stats-badge" class="component-badge component-badge--dark" style="opacity: 0; transition: opacity 0.3s ease;">
+                <div id="tl-stats-badge" class="component-badge component-badge--dark disabled-interactive">
                     <span class="material-symbols-rounded">analytics</span> 
                     <span id="tl-stats-text">0 / 0 (0%)</span>
                 </div>

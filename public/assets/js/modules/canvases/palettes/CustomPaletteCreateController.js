@@ -107,10 +107,10 @@ class CustomPaletteCreateController {
                                             <div class="component-color-picker__hue-thumb" data-ref="hueThumb"></div>
                                         </div>
                                         <div class="component-input-group component-input-group--h34 component-input-group--color">
-                                            <div class="component-color-swatch" data-ref="hexInputPreview" style="width: 20px; height: 20px; flex-shrink: 0;"></div>
+                                            <div class="component-color-swatch component-color-swatch--sm" data-ref="hexInputPreview"></div>
                                             <input type="text" class="component-input-field component-input-field--mono" data-ref="hexInput" value="#808080" readonly>
                                         </div>
-                                        <div class="component-color-picker__controls" data-ref="controlsContainer" style="justify-content: flex-end;">
+                                        <div class="component-color-picker__controls" data-ref="controlsContainer">
                                             <button type="button" class="component-button component-button--icon component-button--h40 btn-delete-color" data-action="removeColor" data-ref="deleteBtn">
                                                 <span class="material-symbols-rounded">delete</span>
                                             </button>

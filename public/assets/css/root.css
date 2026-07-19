@@ -378,6 +378,8 @@
 
     --action-primary: #111111;
     --action-primary-hover: #333333;
+    --action-primary: #111111;
+    --action-primary-hover: #333333;
     
     --action-danger: #d32f2f;
     --action-danger-bg: #fffaf9;
@@ -388,6 +390,14 @@
     
     --color-error: #d32f2f;
     --color-error-bg: #ffffff;
+
+    --accent-primary: var(--sl-color-blue-500, #3b82f6);
+    --accent-color: var(--sl-color-blue-500, #3b82f6);
+    --color-primary: var(--sl-color-blue-500, #3b82f6);
+    --color-danger: var(--color-error, #d32f2f);
+    --danger-color: var(--color-error, #d32f2f);
+    --color-warning: var(--sl-color-amber-500, #f59e0b);
+    --warning-color: var(--sl-color-amber-500, #f59e0b);
 
     --color-toast-info: #0288d1;
     --color-toast-warning: #ed6c02;

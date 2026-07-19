@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `owner_id` int(11) DEFAULT NULL,
   `name` varchar(100) NOT NULL,
   `tags` json DEFAULT NULL,
-  `description` text DEFAULT NULL,
   `privacy` enum('public', 'private') DEFAULT 'private',
   `requires_approval` tinyint(1) NOT NULL DEFAULT 0,
   `allow_purchases` tinyint(1) NOT NULL DEFAULT 1,

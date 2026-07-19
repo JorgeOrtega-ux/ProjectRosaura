@@ -37,7 +37,6 @@ if ($canvasUuid) {
         if ($canvasData) {
             $canvasId = (int)$canvasData['id'];
             $cName = htmlspecialchars($canvasData['name'] ?? '');
-            $cDesc = htmlspecialchars($canvasData['description'] ?? '');
             $cSize = htmlspecialchars($canvasData['size'] ?? '64');
             $cPrivacy = $canvasData['privacy'] ?? 'private';
             $cApproval = (int)($canvasData['requires_approval'] ?? 0);
@@ -147,20 +146,6 @@ if (!$canvasId) {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_desc_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_desc_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-input-group component-input-group--h34">
-                                <input type="text" data-ref="input-canvas-desc" class="component-input-field component-input-field--simple" placeholder="<?php echo __('ph_canvas_desc'); ?>" value="<?php echo $cDesc; ?>">
                             </div>
                         </div>
                     </div>
