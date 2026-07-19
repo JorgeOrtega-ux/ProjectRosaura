@@ -208,7 +208,8 @@ export const DesignInteractions = {
         const zoomFactor = Math.exp(delta * zoomIntensity);
 
         let newScale = this.transform.scale * zoomFactor;
-        newScale = Math.max(0.05, Math.min(newScale, 40)); 
+        const minScale = this.isInfinite ? 0.2 : 0.05;
+        newScale = Math.max(minScale, Math.min(newScale, 40)); 
 
         this.transform.x = mouseX - (mouseX - this.transform.x) * (newScale / this.transform.scale);
         this.transform.y = mouseY - (mouseY - this.transform.y) * (newScale / this.transform.scale);
@@ -679,7 +680,8 @@ export const DesignInteractions = {
 
             const scaleRatio = currentDistance / this.initialPinchDistance;
             let newScale = this.initialScale * scaleRatio;
-            newScale = Math.max(0.05, Math.min(newScale, 40));
+            const minScale = this.isInfinite ? 0.2 : 0.05;
+            newScale = Math.max(minScale, Math.min(newScale, 40));
 
             this.transform.x = mouseX - (mouseX - this.transform.x) * (newScale / this.transform.scale);
             this.transform.y = mouseY - (mouseY - this.transform.y) * (newScale / this.transform.scale);

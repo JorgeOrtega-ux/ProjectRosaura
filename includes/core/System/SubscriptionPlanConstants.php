@@ -6,8 +6,25 @@ class SubscriptionPlanConstants {
     public const TIER_BASIC = 0;
     public const TIER_PRO = 1;
     public const TIER_ADVANCED = 2;
+    public const TIER_ULTRA = 3;
+
     public static function getTierLimits(int $tier): array {
         switch ($tier) {
+            case self::TIER_ULTRA:
+                return [
+                    'name' => 'Ultra',
+                    'max_canvases' => 20,
+                    'max_snapshots_per_canvas' => -1,
+                    'max_storage_mb' => 2048,
+                    'max_members_per_canvas' => 50000,
+                    'advanced_roles' => true,
+                    'live_templates' => true,
+                    'extended_palettes' => true,
+                    'custom_palettes' => true,
+                    'max_custom_palettes' => 15,
+                    'allow_live_chat' => true
+                ];
+
             case self::TIER_ADVANCED:
                 return [
                     'name' => 'Advanced',
@@ -55,6 +72,7 @@ class SubscriptionPlanConstants {
                 ];
         }
     }
+
     public static function hasFeature(int $tier, string $featureKey): bool {
         $limits = self::getTierLimits($tier);
         return isset($limits[$featureKey]) && $limits[$featureKey] === true;
@@ -73,6 +91,10 @@ class SubscriptionPlanConstants {
             self::TIER_ADVANCED => [
                 'monthly' => 19.99,
                 'yearly' => 191.99
+            ],
+            self::TIER_ULTRA => [
+                'monthly' => 39.99,
+                'yearly' => 383.99
             ]
         ];
     }

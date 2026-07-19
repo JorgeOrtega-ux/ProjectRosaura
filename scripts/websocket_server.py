@@ -902,7 +902,7 @@ async def main():
     asyncio.create_task(sync_events_listener())
     asyncio.create_task(sync_online_counts())
     
-    async with websockets.serve(handler, host, port, max_size=4096):
+    async with websockets.serve(handler, host, port, max_size=524288):
         await asyncio.Future()
 
 if __name__ == "__main__":
