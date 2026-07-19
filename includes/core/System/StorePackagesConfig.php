@@ -95,26 +95,26 @@ class StorePackagesConfig {
             ],
             'pixel_misil_1' => [
                 'id' => 'pixel_misil_1',
-                'name' => 'Pixel Misil',
-                'description' => 'Borra una zona de 5x5 píxeles de un solo impacto.',
+                'name' => __('store_content_pixel_misil_1_name'),
+                'description' => __('store_content_pixel_misil_1_desc'),
                 'price_coins' => 2000,
                 'icon' => 'rocket_launch',
                 'is_single_use' => true,
             ],
             'bomba_pixel_1' => [
                 'id' => 'bomba_pixel_1',
-                'name' => 'Bomba Píxel',
-                'description' => 'Destruye una gran área de 10x10 píxeles al instante.',
+                'name' => __('store_content_bomba_pixel_1_name'),
+                'description' => __('store_content_bomba_pixel_1_desc'),
                 'price_coins' => 5000,
                 'icon' => 'bomb',
                 'is_single_use' => true,
             ],
             'bomba_atomica_1' => [
                 'id' => 'bomba_atomica_1',
-                'name' => 'Bomba Atómica',
-                'description' => 'Aniquila una enorme área de 50x50 píxeles. Úsala con precaución.',
+                'name' => __('store_content_bomba_atomica_1_name'),
+                'description' => __('store_content_bomba_atomica_1_desc'),
                 'price_coins' => 25000,
-                'icon' => 'nuclear_explosion',
+                'icon' => 'warning',
                 'is_single_use' => true,
             ]
         ];
