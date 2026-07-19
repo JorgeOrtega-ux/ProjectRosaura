@@ -428,9 +428,10 @@ def main():
     print("4 - Ejecutar pruebas automatizadas de Autenticación (Login, Registro, 2FA, Reset Password)")
     print("5 - Inyectar Imagen Instantáneamente (Saltar Límites, uso exclusivo de Admin)")
     print("6 - Prueba de Estrés (Load Testing de WebSocket y Lienzos)")
-    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4, 5 o 6: {Colors.ENDC}").strip()
+    print("7 - Verificar y Generar Avatares Predeterminados")
+    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4, 5, 6 o 7: {Colors.ENDC}").strip()
 
-    if choice not in ('1', '2', '3', '4', '5', '6'):
+    if choice not in ('1', '2', '3', '4', '5', '6', '7'):
         print(f"{Colors.FAIL}Opción no válida. Saliendo.{Colors.ENDC}")
         return
 
@@ -449,6 +450,11 @@ def main():
     if choice == '6':
         import stress_test
         stress_test.run_menu()
+        return
+
+    if choice == '7':
+        import check_and_generate_avatars
+        check_and_generate_avatars.run_avatar_generator()
         return
 
     if choice == '1':
