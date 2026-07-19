@@ -39,7 +39,11 @@ export const DesignInteractions = {
             e.preventDefault();
             this.showInventoryPerks = !this.showInventoryPerks;
             if (this.showInventoryPerks) {
-                this.loadUserPerks();
+                if (!this.inventoryPerks) {
+                    this.loadUserPerks();
+                } else {
+                    this.updatePerkBadges();
+                }
             } else {
                 this.updatePerkBadges();
             }
@@ -1147,6 +1151,159 @@ export const DesignInteractions = {
         this.requestRender();
     },
 
+    triggerExplosionEffect(cx, cy, r, perkId) {
+        if (!this.explosions) this.explosions = [];
+        this.explosions.push({
+            x: cx,
+            y: cy,
+            maxRadius: r,
+            perkId: perkId,
+            startTime: Date.now(),
+            duration: perkId === 'bomba_atomica_1' ? 1500 : (perkId === 'bomba_pixel_1' ? 800 : 400) 
+        });
+        
+        if (perkId === 'bomba_atomica_1') {
+            if (!document.getElementById('nuclear-style')) {
+                const style = document.createElement('style');
+                style.id = 'nuclear-style';
+                style.innerHTML = `
+                    @keyframes nuclear-shake {
+                        0% { transform: translate(1px, 1px) rotate(0deg); }
+                        10% { transform: translate(-10px, -4px) rotate(-1deg); }
+                        20% { transform: translate(-6px, 0px) rotate(1deg); }
+                        30% { transform: translate(6px, 4px) rotate(0deg); }
+                        40% { transform: translate(2px, -2px) rotate(1deg); }
+                        50% { transform: translate(-2px, 4px) rotate(-1deg); }
+                        60% { transform: translate(-6px, 2px) rotate(0deg); }
+                        70% { transform: translate(6px, 2px) rotate(-1deg); }
+                        80% { transform: translate(-2px, -2px) rotate(1deg); }
+                        90% { transform: translate(2px, 4px) rotate(0deg); }
+                        100% { transform: translate(2px, -4px) rotate(-1deg); }
+                    }
+                    .nuclear-shake {
+                        animation: nuclear-shake 0.1s infinite !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            if (this.canvas) {
+                this.canvas.classList.add('nuclear-shake');
+                setTimeout(() => {
+                    this.canvas.classList.remove('nuclear-shake');
+                }, 1000);
+            }
+            
+            const flash = document.createElement('div');
+            flash.style.position = 'fixed';
+            flash.style.top = '0';
+            flash.style.left = '0';
+            flash.style.width = '100vw';
+            flash.style.height = '100vh';
+            flash.style.backgroundColor = 'white';
+            flash.style.zIndex = '999999';
+            flash.style.pointerEvents = 'none';
+            flash.style.transition = 'opacity 1.5s ease-out';
+            document.body.appendChild(flash);
+            
+            flash.offsetHeight;
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), 1500);
+        }
+        
+        if (!this.isExplosionLoopRunning) {
+            this.isExplosionLoopRunning = true;
+            const loop = () => {
+                if (this.explosions && this.explosions.length > 0) {
+                    this.explosions = this.explosions.filter(exp => (Date.now() - exp.startTime) < exp.duration);
+                    this.requestRender();
+                    requestAnimationFrame(loop);
+                } else {
+                    this.isExplosionLoopRunning = false;
+                }
+            };
+            requestAnimationFrame(loop);
+        }
+    },
+
+    handleNuclearWarning(data) {
+        if (!this.nuclearWarnings) this.nuclearWarnings = [];
+        const warning = {
+            x: parseInt(data.x, 10),
+            y: parseInt(data.y, 10),
+            duration: parseInt(data.duration, 10),
+            startTime: Date.now(),
+            endTime: Date.now() + (parseInt(data.duration, 10) * 1000)
+        };
+        this.nuclearWarnings.push(warning);
+        
+        let container = document.querySelector('[data-ref="badges-left"]');
+        if (!container) {
+            // Fallback just in case
+            container = document.createElement('div');
+            container.id = 'nuclear-warnings-container';
+            container.style.position = 'fixed';
+            container.style.top = '100px';
+            container.style.left = '20px';
+            container.style.zIndex = '9999';
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            container.style.gap = '10px';
+            document.body.appendChild(container);
+        }
+
+        const badge = document.createElement('div');
+        badge.className = 'component-badge';
+        badge.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
+        badge.style.color = '#fff';
+        badge.style.border = '2px solid #b91c1c';
+        badge.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.5)';
+        badge.style.animation = 'pulse 1s infinite';
+        badge.style.cursor = 'pointer';
+        badge.title = 'Haz clic para ver dónde caerá';
+        
+        badge.addEventListener('click', () => {
+            if (this.canvas) {
+                const rect = this.canvas.getBoundingClientRect();
+                this.transform.x = (rect.width / 2) - (warning.x * this.transform.scale);
+                this.transform.y = (rect.height / 2) - (warning.y * this.transform.scale);
+                if (typeof this.limitBounds === 'function') this.limitBounds();
+                this.requestRender();
+                if (typeof showMessage === 'function') showMessage('Cámara centrada en el objetivo', 'info');
+            }
+        });
+        
+        const updateText = () => {
+            const remaining = Math.max(0, Math.ceil((warning.endTime - Date.now()) / 1000));
+            badge.innerHTML = `<span class="material-symbols-rounded" style="color:#fff;">crisis_alert</span><span style="font-weight:bold;">¡Bomba Nuclear en Camino! (${remaining}s)</span>`;
+        };
+
+        updateText();
+        
+        // Loop continuo para la animación suave del círculo en DesignRender
+        const animateWarning = () => {
+            if (this.nuclearWarnings.includes(warning)) {
+                this.requestRender();
+                
+                const remaining = Math.max(0, Math.ceil((warning.endTime - Date.now()) / 1000));
+                badge.innerHTML = `<span class="material-symbols-rounded" style="color:#fff;">crisis_alert</span><span style="font-weight:bold;">¡Bomba Nuclear en Camino! (${remaining}s)</span>`;
+                
+                if (Date.now() >= warning.endTime) {
+                    badge.remove();
+                    this.nuclearWarnings = this.nuclearWarnings.filter(w => w !== warning);
+                } else {
+                    requestAnimationFrame(animateWarning);
+                }
+            } else {
+                badge.remove();
+            }
+        };
+        
+        requestAnimationFrame(animateWarning);
+        
+        container.appendChild(badge);
+    },
+
     async loadUserPerks() {
         try {
             const result = await this.api.post('store.get_my_perks', {});
@@ -1156,7 +1313,7 @@ export const DesignInteractions = {
                     if (!grouped[p.perk_id]) {
                         grouped[p.perk_id] = { ...p, count: 0 };
                     }
-                    grouped[p.perk_id].count++;
+                    grouped[p.perk_id].count += parseInt(p.count) || 1;
                 });
                 this.inventoryPerks = Object.values(grouped);
                 if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
@@ -1177,13 +1334,38 @@ export const DesignInteractions = {
             return;
         }
 
+        if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(perkId)) {
+            if (this.perkBombReady && this.perkBombReady !== perkId && this.inventoryPerks) {
+                const oldBomb = this.inventoryPerks.find(p => p.perk_id === this.perkBombReady);
+                if (oldBomb) oldBomb.count = parseInt(oldBomb.count, 10) + 1;
+            }
+            if (this.inventoryPerks) {
+                const newBomb = this.inventoryPerks.find(p => p.perk_id === perkId);
+                if (newBomb) newBomb.count = parseInt(newBomb.count, 10) - 1;
+            }
+
+            this.perkBombReady = perkId;
+            this.interactionMode = 'bombing';
+            this.activeBomb = perkId;
+            this.isActivatingPerk = true; 
+            if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+            this.updateSelectionUI();
+            if (typeof showMessage === 'function') showMessage('Ventaja equipada y lista para lanzar. Selecciona tu objetivo.', 'info');
+        }
+
         try {
-            if (btn) btn.classList.add('loading');
+            if (btn && !this.isActivatingPerk) btn.classList.add('loading');
             const result = await this.api.post('store.activate_perk', { perk_id: perkId });
-            if (btn) btn.classList.remove('loading');
+            if (btn && !this.isActivatingPerk) btn.classList.remove('loading');
+            
+            if (this.isActivatingPerk) {
+                this.isActivatingPerk = false; 
+            }
             
             if (result && result.success) {
-                if (typeof showMessage === 'function') showMessage(window.__('msg_perk_activated_success') || 'Perk successfully activated', 'success');
+                if (typeof showMessage === 'function' && !['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(result.perk_id)) {
+                    showMessage(window.__('msg_perk_activated_success') || 'Perk successfully activated', 'success');
+                }
 
                 if (result.perk_id === 'pixel_protection_25') {
                     this.perkProtectionLeft = (this.perkProtectionLeft || 0) + 25;
@@ -1199,20 +1381,36 @@ export const DesignInteractions = {
                     showMessage(window.__('msg_elite_eraser_active'), 'info');
                 } else if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(result.perk_id)) {
                     this.perkBombReady = result.perk_id;
-                    this.interactionMode = 'bombing';
-                    this.activeBomb = result.perk_id;
+                    if (this.interactionMode !== 'bombing') {
+                        this.interactionMode = 'bombing';
+                        this.activeBomb = result.perk_id;
+                    }
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                     this.updateSelectionUI();
-                    showMessage('Ventaja equipada y lista para lanzar. Selecciona tu objetivo.', 'info');
                 }
 
                 this.loadUserPerks(); 
             } else {
                 if (typeof showMessage === 'function') showMessage(result?.message_key || window.__('err_activate_perk'), 'error');
+                if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(perkId)) {
+                    this.perkBombReady = null;
+                    this.interactionMode = 'normal';
+                    this.activeBomb = null;
+                    this.updatePerkBadges();
+                    this.updateSelectionUI();
+                }
             }
         } catch (error) {
             if (btn) btn.classList.remove('loading');
+            this.isActivatingPerk = false;
             
+            if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(perkId)) {
+                this.perkBombReady = null;
+                this.interactionMode = 'normal';
+                this.activeBomb = null;
+                this.updatePerkBadges();
+                this.updateSelectionUI();
+            }
             if (typeof showMessage === 'function') showMessage(window.__('err_server_connection') || 'Error connecting to server', 'error');
         }
     },
@@ -1304,20 +1502,42 @@ export const DesignInteractions = {
                     if (typeof showMessage === 'function') showMessage(this.interactionMode === 'erasing' ? (window.__('msg_eraser_mode_on') || 'Eraser mode activated') : (window.__('msg_eraser_mode_off') || 'Eraser mode deactivated'), 'info');
                 };
             }
-            else if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(perkId) && this.perkBombReady === perkId) {
-                isActive = true;
-                isToggledOn = this.interactionMode === 'bombing';
-                const color = isToggledOn ? 'var(--color-danger)' : 'var(--color-primary)';
-                const stateLabel = isToggledOn ? 'Activa' : 'Lista';
-                const shortLabel = perkId === 'pixel_misil_1' ? 'Misil' : (perkId === 'bomba_pixel_1' ? 'Bomba' : 'B. Atómica');
-                activeHtml = `<span class="material-symbols-rounded" style="color:${color};">${icon}</span><span>${shortLabel} ${stateLabel}</span>`;
-                clickHandler = () => {
-                    this.interactionMode = this.interactionMode === 'bombing' ? 'normal' : 'bombing';
-                    this.activeBomb = this.interactionMode === 'bombing' ? this.perkBombReady : null;
-                    this.updateSelectionUI();
-                    this.updatePerkBadges();
-                    if (typeof showMessage === 'function') showMessage(this.interactionMode === 'bombing' ? 'Modo bombardeo activado. Selecciona un objetivo.' : 'Modo bombardeo desactivado', 'info');
-                };
+            else if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'].includes(perkId)) {
+                const isLoadedInRedis = this.perkBombReady === perkId;
+                const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
+                
+                isActive = (this.activeBomb === perkId && this.interactionMode === 'bombing');
+                
+                const dbAmount = owned ? parseInt(owned.count, 10) : 0;
+                const totalAmount = dbAmount + (isLoadedInRedis ? 1 : 0);
+                
+                if (isActive) {
+                    isToggledOn = true;
+                    const shortLabel = perkId === 'pixel_misil_1' ? 'Misil' : (perkId === 'bomba_pixel_1' ? 'Bomba' : 'B. Atómica');
+                    activeHtml = `<span class="material-symbols-rounded" style="color:var(--color-danger);">${icon}</span><span>${shortLabel} (Activa)</span>`;
+                    clickHandler = () => {
+                        this.interactionMode = 'normal';
+                        this.activeBomb = null;
+                        this.updateSelectionUI();
+                        this.updatePerkBadges();
+                    };
+                } else if (totalAmount > 0 && this.showInventoryPerks) {
+                    isActive = true; 
+                    isToggledOn = false;
+                    const titleText = titles[perkId] || perkId;
+                    activeHtml = `<span class="material-symbols-rounded" style="color:var(--text-secondary);">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    clickHandler = (e) => {
+                        if (isLoadedInRedis) {
+                            this.interactionMode = 'bombing';
+                            this.activeBomb = perkId;
+                            this.updateSelectionUI();
+                            this.updatePerkBadges();
+                            if (typeof showMessage === 'function') showMessage('Ventaja equipada y lista para lanzar.', 'info');
+                        } else {
+                            this.activatePerk(perkId, e.currentTarget);
+                        }
+                    };
+                }
             }
 
             const invItem = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;

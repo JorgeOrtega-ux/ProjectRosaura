@@ -55,6 +55,12 @@ class StoreRepository implements StoreRepositoryInterface {
         return $coins;
     }
 
+    public function hasProcessedStripeSession(string $sessionId): bool {
+        $stmt = $this->db->prepare("SELECT id FROM store_purchases WHERE stripe_checkout_session_id = ? LIMIT 1");
+        $stmt->execute([$sessionId]);
+        return (bool) $stmt->fetch(\PDO::FETCH_ASSOC);
+    }
+
     public function createStorePurchaseRecord(array $data): bool {
         $stmt = $this->db->prepare("
             INSERT INTO store_purchases 
@@ -89,7 +95,7 @@ class StoreRepository implements StoreRepositoryInterface {
 
     public function getUnusedPerks(int $userId): array {
         $stmt = $this->db->prepare("
-            SELECT perk_id, COUNT(*) as amount 
+            SELECT perk_id, COUNT(*) as count 
             FROM user_perks 
             WHERE user_id = ? AND is_used = 0 
             GROUP BY perk_id
@@ -111,9 +117,10 @@ class StoreRepository implements StoreRepositoryInterface {
             $updateStmt = $this->db->prepare("
                 UPDATE user_perks 
                 SET is_used = 1, used_at = NOW() 
-                WHERE id = ?
+                WHERE id = ? AND is_used = 0
             ");
-            return $updateStmt->execute([$row['id']]);
+            $updateStmt->execute([$row['id']]);
+            return $updateStmt->rowCount() > 0;
         }
         return false;
     }
@@ -131,9 +138,10 @@ class StoreRepository implements StoreRepositoryInterface {
             $updateStmt = $this->db->prepare("
                 UPDATE user_perks 
                 SET is_used = 0, used_at = NULL 
-                WHERE id = ?
+                WHERE id = ? AND is_used = 1
             ");
-            return $updateStmt->execute([$row['id']]);
+            $updateStmt->execute([$row['id']]);
+            return $updateStmt->rowCount() > 0;
         }
         return false;
     }

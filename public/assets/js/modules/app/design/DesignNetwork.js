@@ -140,13 +140,24 @@ export const DesignNetwork = {
                     }
                     this.requestRender();
                 } 
+                else if (data.type === 'nuclear_warning') {
+                    if (typeof this.handleNuclearWarning === 'function') {
+                        this.handleNuclearWarning(data);
+                    }
+                }
                 else if (data.type === 'bomb_pixel') {
                     const cX = parseInt(data.x, 10);
                     const cY = parseInt(data.y, 10);
                     const r = parseInt(data.r, 10);
+                    const perkId = data.perk || 'pixel_misil_1';
+                    
+                    if (typeof this.triggerExplosionEffect === 'function') {
+                        this.triggerExplosionEffect(cX, cY, r, perkId);
+                    }
                     
                     for (let x = cX - r; x <= cX + r; x++) {
                         for (let y = cY - r; y <= cY + r; y++) {
+                            if (Math.pow(x - cX, 2) + Math.pow(y - cY, 2) > Math.pow(r, 2)) continue;
                             if (this.isInfinite) {
                                 const chunkX = Math.floor(x / 512);
                                 const chunkY = Math.floor(y / 512);

@@ -40,6 +40,29 @@ class StoreServices {
             return ['success' => false, 'message_key' => 'store.invalid_perk'];
         }
 
+        $idempotencyKey = $input['idempotency_key'] ?? '';
+        $redisClient = null;
+        if (!empty($idempotencyKey)) {
+            try {
+                $redisInstance = new \App\Config\Database\RedisCache();
+                $redisClient = $redisInstance->getClient();
+                $lockKey = "idem:buy_perk:{$userId}:{$idempotencyKey}";
+                // Lock for 1 hour to prevent duplicate clicks
+                if (!$redisClient->setnx($lockKey, "1")) {
+                    Logger::info("Idempotent hit blocked in buyPerk", ['user_id' => $userId, 'key' => $idempotencyKey]);
+                    // Return a fake success so the UI doesn't crash on duplicate clicks
+                    return [
+                        'success' => true,
+                        'message_key' => 'store.perk_purchased',
+                        'new_balance' => $this->storeRepo->getCoins($userId)
+                    ];
+                }
+                $redisClient->expire($lockKey, 3600);
+            } catch (\Throwable $e) {
+                Logger::error("Redis Error en idempotencia: " . $e->getMessage());
+            }
+        }
+
         $price = self::PERK_PRICES[$perkId];
         $currentCoins = $this->storeRepo->getCoins($userId);
 
@@ -143,14 +166,13 @@ class StoreServices {
                 foreach (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'] as $b_id) {
                     $b_key = "user:{$userId}:perk:" . $b_id;
                     if ($redis->exists($b_key) && (int)$redis->get($b_key) > 0) {
-                        // User has an active bomb. We will refund it and remove it.
-                        $this->storeRepo->refundPerk($userId, $b_id);
-                        $redis->del($b_key);
+                        return ['success' => false, 'message_key' => 'err_perk_already_active'];
                     }
                 }
             }
         } catch (\Throwable $e) {
             Logger::error("Redis Error en activatePerk (Check): " . $e->getMessage());
+            return ['success' => false, 'message_key' => 'error.server_error'];
         }
 
         if (!$this->storeRepo->markPerkAsUsed($userId, $perkId)) {
@@ -188,6 +210,9 @@ class StoreServices {
             }
         } catch (\Throwable $e) {
             Logger::error("Redis Error en activatePerk (Set): " . $e->getMessage());
+            // Rollback the perk consumption since Redis failed to assign the benefit
+            $this->storeRepo->refundPerk($userId, $perkId);
+            return ['success' => false, 'message_key' => 'error.server_error'];
         }
 
         Logger::info("User activated perk", [

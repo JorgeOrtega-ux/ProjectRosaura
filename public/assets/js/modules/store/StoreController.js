@@ -43,7 +43,8 @@ export class StoreController {
         setButtonLoading(btn, window.__('loading') + '...');
         
         try {
-            const result = await this.api.post(ApiRoutes.Store.BuyPerk, { perk_id: perkId });
+            const idempotencyKey = crypto.randomUUID();
+            const result = await this.api.post(ApiRoutes.Store.BuyPerk, { perk_id: perkId, idempotency_key: idempotencyKey });
             if (result && result.success) {
                 showMessage(window.__('msg_perk_purchased').replace(':balance', result.new_balance), 'success');
                 this.updateCoinsDisplay(result.new_balance);

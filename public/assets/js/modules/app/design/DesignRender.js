@@ -221,6 +221,84 @@ export const DesignRender = {
             this.ctx.stroke();
         }
 
+        if (this.nuclearWarnings && this.nuclearWarnings.length > 0) {
+            this.nuclearWarnings.forEach(warning => {
+                this.ctx.beginPath();
+                this.ctx.arc(warning.x + 0.5, warning.y + 0.5, 24, 0, 2 * Math.PI);
+                this.ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+                this.ctx.fill();
+                this.ctx.lineWidth = 2 / this.transform.scale;
+                this.ctx.strokeStyle = '#ef4444';
+                this.ctx.stroke();
+
+                const timeRatio = (Date.now() - warning.startTime) / (warning.endTime - warning.startTime);
+                if (timeRatio >= 0 && timeRatio <= 1) {
+                    this.ctx.beginPath();
+                    this.ctx.arc(warning.x + 0.5, warning.y + 0.5, 24 * (1 - timeRatio), 0, 2 * Math.PI);
+                    this.ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
+                    this.ctx.fill();
+                }
+            });
+        }
+        
+        if (this.explosions && this.explosions.length > 0) {
+            this.explosions.forEach(exp => {
+                const elapsed = Date.now() - exp.startTime;
+                const progress = Math.min(1, elapsed / exp.duration);
+                const opacity = 1 - progress;
+                
+                if (exp.perkId === 'bomba_atomica_1') {
+                    // Nuclear Bomb (r=24)
+                    const currentRadius = exp.maxRadius * (1 + 2 * progress); 
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, currentRadius, 0, 2 * Math.PI);
+                    this.ctx.lineWidth = 10 / this.transform.scale;
+                    this.ctx.strokeStyle = `rgba(239, 68, 68, ${opacity})`; 
+                    this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.5})`; 
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                } else if (exp.perkId === 'bomba_pixel_1') {
+                    // Bomba Pixel (r=4) - Double Ring + Red puff
+                    const radius1 = exp.maxRadius * (1 + 1.5 * progress);
+                    const radius2 = exp.maxRadius * (0.5 + 1 * progress);
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, radius1, 0, 2 * Math.PI);
+                    this.ctx.lineWidth = 3 / this.transform.scale;
+                    this.ctx.strokeStyle = `rgba(249, 115, 22, ${opacity})`; // Orange
+                    this.ctx.stroke();
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, radius2, 0, 2 * Math.PI);
+                    this.ctx.lineWidth = 4 / this.transform.scale;
+                    this.ctx.strokeStyle = `rgba(239, 68, 68, ${opacity})`; // Red
+                    this.ctx.fillStyle = `rgba(220, 38, 38, ${opacity * 0.6})`; // Darker red puff
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                } else {
+                    // Pixel Misil (r=2) - Quick expanding cross + white flash
+                    const size = exp.maxRadius * (1 + 3 * progress);
+                    
+                    this.ctx.beginPath();
+                    // Horizontal line
+                    this.ctx.moveTo(exp.x + 0.5 - size, exp.y + 0.5);
+                    this.ctx.lineTo(exp.x + 0.5 + size, exp.y + 0.5);
+                    // Vertical line
+                    this.ctx.moveTo(exp.x + 0.5, exp.y + 0.5 - size);
+                    this.ctx.lineTo(exp.x + 0.5, exp.y + 0.5 + size);
+                    
+                    this.ctx.lineWidth = 3 / this.transform.scale;
+                    this.ctx.strokeStyle = `rgba(6, 182, 212, ${opacity})`; // Sci-fi Cyan
+                    this.ctx.stroke();
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, size * 0.8, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.8})`; // White inner flash
+                    this.ctx.fill();
+                }
+            });
+        }
+
         this.ctx.restore();
     }
 };

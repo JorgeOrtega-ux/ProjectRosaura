@@ -194,81 +194,85 @@ export class DesignChat {
             });
         }
 
-        document.addEventListener('canvas:chat_message', (e) => {
-            const data = e.detail;
-            this.appendMessage(data, true); 
-        });
+        window.currentDesignChatInstance = this;
 
-        document.addEventListener('canvas:chat_typing', (e) => {
-            this.handleTypingEvent(e.detail);
-        });
+        if (!window._designChatGlobalEventsBound) {
+            window._designChatGlobalEventsBound = true;
 
-        document.addEventListener('canvas:chat_message_deleted', (e) => {
-            const { id, visibility } = e.detail;
-            this.updateMessageVisibility(id, visibility || 'deleted');
-        });
+            document.addEventListener('canvas:chat_message', (e) => {
+                if (window.currentDesignChatInstance) window.currentDesignChatInstance.appendMessage(e.detail, true); 
+            });
 
-        document.addEventListener('click', (e) => {
-            const toggleBtn = e.target.closest('[data-action="toggleChatDropdown"]');
-            if (toggleBtn) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                const targetId = toggleBtn.getAttribute('data-target');
-                const dropdown = document.querySelector(`[data-module="${targetId}"]`);
-                
-                if (dropdown) {
+            document.addEventListener('canvas:chat_typing', (e) => {
+                if (window.currentDesignChatInstance) window.currentDesignChatInstance.handleTypingEvent(e.detail);
+            });
+
+            document.addEventListener('canvas:chat_message_deleted', (e) => {
+                const { id, visibility } = e.detail;
+                if (window.currentDesignChatInstance) window.currentDesignChatInstance.updateMessageVisibility(id, visibility || 'deleted');
+            });
+
+            document.addEventListener('click', (e) => {
+                const toggleBtn = e.target.closest('[data-action="toggleChatDropdown"]');
+                if (toggleBtn) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    const targetId = toggleBtn.getAttribute('data-target');
+                    const dropdown = document.querySelector(`[data-module="${targetId}"]`);
                     
-                    document.querySelectorAll('.chat-dropdown-module').forEach(el => {
-                        if (el !== dropdown) {
-                            el.classList.add('disabled');
-                            el.classList.remove('active');
-                        }
-                    });
-                    
-                    if (dropdown.classList.contains('disabled')) {
-                        dropdown.classList.remove('disabled');
-                        dropdown.classList.add('active');
+                    if (dropdown) {
+                        document.querySelectorAll('.chat-dropdown-module').forEach(el => {
+                            if (el !== dropdown) {
+                                el.classList.add('disabled');
+                                el.classList.remove('active');
+                            }
+                        });
+                        
+                        if (dropdown.classList.contains('disabled')) {
+                            dropdown.classList.remove('disabled');
+                            dropdown.classList.add('active');
 
-                        const innerMenu = dropdown.querySelector('.component-menu');
-                        if (innerMenu) {
-                            innerMenu.classList.remove('disabled');
-                            innerMenu.classList.add('active');
+                            const innerMenu = dropdown.querySelector('.component-menu');
+                            if (innerMenu) {
+                                innerMenu.classList.remove('disabled');
+                                innerMenu.classList.add('active');
+                            }
+                        } else {
+                            dropdown.classList.add('disabled');
+                            dropdown.classList.remove('active');
                         }
-                    } else {
-                        dropdown.classList.add('disabled');
-                        dropdown.classList.remove('active');
                     }
                 }
-            }
-        });
+            });
 
-        document.addEventListener('click', (e) => {
-            const attachmentItem = e.target.closest('[data-action="openChatImageViewer"]');
-            if (attachmentItem) {
-                const msgId = attachmentItem.getAttribute('data-message-id');
-                const indexStr = attachmentItem.getAttribute('data-index');
-                const canvasUuid = attachmentItem.getAttribute('data-canvas-uuid');
-                if (msgId && indexStr) {
-                    try {
-                        const index = parseInt(indexStr, 10);
-                        
-                        const msgEl = document.querySelector(`.chat-message[data-message-id="${msgId}"]`);
-                        if (msgEl) {
-                            const imgs = Array.from(msgEl.querySelectorAll('.chat-attachment-item img')).map(img => img.src);
-                            if (imgs.length > 0) {
-                                sessionStorage.setItem('chat_viewer_images_' + msgId, JSON.stringify(imgs));
+            document.addEventListener('click', (e) => {
+                const attachmentItem = e.target.closest('[data-action="openChatImageViewer"]');
+                if (attachmentItem) {
+                    const msgId = attachmentItem.getAttribute('data-message-id');
+                    const indexStr = attachmentItem.getAttribute('data-index');
+                    const canvasUuid = attachmentItem.getAttribute('data-canvas-uuid');
+                    if (msgId && indexStr) {
+                        try {
+                            const index = parseInt(indexStr, 10);
+                            
+                            const msgEl = document.querySelector(`.chat-message[data-message-id="${msgId}"]`);
+                            if (msgEl) {
+                                const imgs = Array.from(msgEl.querySelectorAll('.chat-attachment-item img')).map(img => img.src);
+                                if (imgs.length > 0) {
+                                    sessionStorage.setItem('chat_viewer_images_' + msgId, JSON.stringify(imgs));
+                                }
                             }
-                        }
 
-                        if (window.spaRouter) {
-                            window.spaRouter.navigate(`/canvases/chat-viewer?canvas=${canvasUuid}&msg=${msgId}&idx=${index}`);
-                        } else {
-                            window.location.href = (window.AppBasePath || '') + `/canvases/chat-viewer?canvas=${canvasUuid}&msg=${msgId}&idx=${index}`;
-                        }
-                    } catch(err) {  }
+                            if (window.spaRouter) {
+                                window.spaRouter.navigate(`/canvases/chat-viewer?canvas=${canvasUuid}&msg=${msgId}&idx=${index}`);
+                            } else {
+                                window.location.href = (window.AppBasePath || '') + `/canvases/chat-viewer?canvas=${canvasUuid}&msg=${msgId}&idx=${index}`;
+                            }
+                        } catch(err) {  }
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     handleFileSelection(e) {
@@ -451,8 +455,12 @@ export class DesignChat {
     }
 
     async sendMessage() {
+        if (this.isSending) return;
+        
         const text = this.chatInput.value.trim();
         if (!text && this.selectedFiles.length === 0) return;
+        
+        this.isSending = true;
 
         const searchInput = document.querySelector('.component-search-input');
         if (searchInput) searchInput.classList.add('disabled-interactive');
@@ -508,6 +516,7 @@ export class DesignChat {
                 });
                 this.lastIsTyping = false;
             }
+            this.isSending = false;
         }
     }
 

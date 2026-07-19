@@ -61,10 +61,7 @@ $isFirst = true;
                                     <span class="material-symbols-rounded">info</span> <span><?= __('single_use') ?></span>
                                 </div>
                                 <?php endif; ?>
-                                
-                                <div class="component-badge component-badge--grouped-item component-badge--interactive component-badge--min-w130" data-action="addToCart" data-perkid="<?= $pkg['id'] ?>">
-                                    <span class="material-symbols-rounded">add_shopping_cart</span> <span><?= __('add_to_cart') ?></span>
-                                </div>
+
 
                                 <div class="component-badge component-badge--dark component-badge--grouped-item component-badge--min-w130 btn-buy-perk" data-action="buyPerk" data-perkid="<?= $pkg['id'] ?>">
                                     <span class="price-text">

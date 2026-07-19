@@ -22,20 +22,38 @@
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
-    "radius": 2
+    "radii": {
+      "64": 2,
+      "128": 3,
+      "256": 4,
+      "512": 6,
+      "0": 5
+    }
   },
   "bomba_pixel_1": {
     "id": "bomba_pixel_1",
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
-    "radius": 4
+    "radii": {
+      "64": 5,
+      "128": 8,
+      "256": 12,
+      "512": 20,
+      "0": 15
+    }
   },
   "bomba_atomica_1": {
     "id": "bomba_atomica_1",
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
-    "radius": 24
+    "radii": {
+      "64": 15,
+      "128": 25,
+      "256": 40,
+      "512": 70,
+      "0": 250
+    }
   }
 }

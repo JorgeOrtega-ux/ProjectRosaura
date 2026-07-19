@@ -107,9 +107,13 @@ class ChatServices
                     }
                 }
                 
-                $mysqlIds = array_column($messages, 'id');
-                $filteredRedisMessages = array_filter($redisMessages, function($m) use ($mysqlIds) {
-                    return !in_array($m['id'], $mysqlIds);
+                $mysqlSignatures = array_map(function($m) {
+                    return $m['user_id'] . '_' . md5($m['message'] ?? '') . '_' . $m['created_at'];
+                }, $messages);
+                
+                $filteredRedisMessages = array_filter($redisMessages, function($m) use ($mysqlSignatures) {
+                    $sig = $m['user_id'] . '_' . md5($m['message'] ?? '') . '_' . $m['created_at'];
+                    return !in_array($sig, $mysqlSignatures);
                 });
                 $messages = array_merge($filteredRedisMessages, $messages);
                 // Keep only top 50
@@ -190,7 +194,7 @@ class ChatServices
                 if ($lastMsg === $messageText) {
                     return ['success' => false, 'message' => __('err_chat_duplicate'), 'http_code' => \App\Core\System\HttpConstants::TOO_MANY_REQUESTS];
                 }
-                $this->redis->setex($redisKeyLastMsg, 10, $messageText);
+                $this->redis->setex($redisKeyLastMsg, 3, $messageText);
             }
 }
 

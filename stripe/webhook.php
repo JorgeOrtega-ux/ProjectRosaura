@@ -58,6 +58,11 @@ try {
             $metadata = $session->metadata;
 
             if (isset($metadata->type) && $metadata->type === 'coins') {
+                if ($storeRepo->hasProcessedStripeSession($session->id)) {
+                    Logger::info("Stripe webhook: ignoring duplicate session", ['session_id' => $session->id]);
+                    break;
+                }
+
                 $userId = isset($metadata->user_id) ? (int) $metadata->user_id : 0;
                 $amountCoins = isset($metadata->amount) ? (int) $metadata->amount : 0;
 

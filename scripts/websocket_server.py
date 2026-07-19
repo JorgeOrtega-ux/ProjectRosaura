@@ -318,7 +318,8 @@ async def handler(websocket):
                         
                         active_bomb = None
                         for b_id in ['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1']:
-                            if await r.exists(f"user:{user_id}:perk:{b_id}"):
+                            val = await r.get(f"user:{user_id}:perk:{b_id}")
+                            if val and int(val) > 0:
                                 active_bomb = b_id
                                 break
                     else:
@@ -820,52 +821,128 @@ async def handler(websocket):
                         bombs_left = int(bombs_left) if bombs_left else 0
                         
                         if bombs_left > 0:
-                            radius = 2 if perk == 'pixel_misil_1' else (4 if perk == 'bomba_pixel_1' else 24)
+                            # Leer radio dinámico de la configuración o usar defaults
+                            perks_cfg = get_perks_config()
+                            perk_data = perks_cfg.get(perk, {})
+                            radii_cfg = perk_data.get('radii', {})
                             
-                            await r.decr(user_bomb_key)
+                            w_str = str(width)
+                            if w_str in radii_cfg:
+                                radius = int(radii_cfg[w_str])
+                            else:
+                                # Fallback robusto en caso de que el tamaño de lienzo sea diferente a los estándar
+                                if width == 0:
+                                    radius = 5 if perk == 'pixel_misil_1' else (15 if perk == 'bomba_pixel_1' else 50)
+                                else:
+                                    base_nuke = max(10, int(width * 0.23))
+                                    base_bomb = max(4, int(width * 0.08))
+                                    base_misil = max(2, int(width * 0.03))
+                                    radius = base_misil if perk == 'pixel_misil_1' else (base_bomb if perk == 'bomba_pixel_1' else base_nuke)
                             
-                            pipeline = r.pipeline()
-                            for ix in range(cx - radius, cx + radius + 1):
-                                for iy in range(cy - radius, cy + radius + 1):
-                                    if width == 0:
-                                        offset = f"{ix},{iy}"
-                                    else:
-                                        if ix < 0 or ix >= width or iy < 0:
-                                            continue
-                                        offset = (iy * width) + ix
-                                        
-                                    protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
-                                    pipeline.delete(protected_key)
-                                    
-                                    if width == 0:
-                                        chunk_x = ix // 512
-                                        chunk_y = iy // 512
-                                        local_x = ix % 512
-                                        local_y = iy % 512
-                                        redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
-                                        byte_offset = ((local_y * 512) + local_x) * 4
-                                    else:
-                                        redis_state_key = f"canvas:{canvas_id}:state"
-                                        byte_offset = (iy * width + ix) * 4
-                                        
-                                    pipeline.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00')
-                            
-                            await pipeline.execute()
-                            
+                            if bombs_left <= 1:
+                                await r.delete(user_bomb_key)
+                            else:
+                                await r.decr(user_bomb_key)
+                                
                             confirm_msg = json.dumps({"type": "pixel_confirm"})
                             await websocket.send(confirm_msg)
                             
-                            broadcast_msg = json.dumps({
-                                "type": "bomb_pixel",
-                                "x": cx,
-                                "y": cy,
-                                "r": radius
-                            })
-                            clients_in_room = ROOMS.get(canvas_id, set())
-                            if len(clients_in_room) > 0:
-                                tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
-                                await asyncio.gather(*tasks)
-                            await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
+                            async def execute_explosion(delay=0):
+                                if delay > 0:
+                                    await asyncio.sleep(delay)
+                                    
+                                pipeline = r.pipeline()
+                                pipeline.sadd("canvases:dirty_states", canvas_id)
+                                
+                                zset_key = f"canvas:{canvas_id}:protected_zset"
+                                protected_offsets = await r.zrange(zset_key, 0, -1)
+                                to_remove_protected = []
+                                for offset_bytes in protected_offsets:
+                                    offset_str = offset_bytes.decode('utf-8')
+                                    px, py = 0, 0
+                                    if width == 0:
+                                        if "," in offset_str:
+                                            px, py = map(int, offset_str.split(","))
+                                        else: continue
+                                    else:
+                                        off_int = int(offset_str)
+                                        px = off_int % width
+                                        py = off_int // width
+                                    if (px - cx)**2 + (py - cy)**2 <= radius**2:
+                                        protected_key = f"canvas:{canvas_id}:protected_pixels:{offset_str}"
+                                        pipeline.delete(protected_key)
+                                        to_remove_protected.append(offset_bytes)
+                                
+                                if to_remove_protected:
+                                    pipeline.zrem(zset_key, *to_remove_protected)
+
+                                import math
+                                for iy in range(cy - radius, cy + radius + 1):
+                                    dy = iy - cy
+                                    if abs(dy) > radius: continue
+                                    dx = int(math.sqrt(radius**2 - dy**2))
+                                    x_start = cx - dx
+                                    x_end = cx + dx
+                                    
+                                    if width != 0:
+                                        if iy < 0: continue
+                                        x_start = max(0, x_start)
+                                        x_end = min(width - 1, x_end)
+                                        if x_start > x_end: continue
+                                        
+                                        length = x_end - x_start + 1
+                                        redis_state_key = f"canvas:{canvas_id}:state"
+                                        byte_offset = (iy * width + x_start) * 4
+                                        pipeline.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00' * length)
+                                    else:
+                                        chunk_y = iy // 512
+                                        local_y = iy % 512
+                                        
+                                        current_x = x_start
+                                        while current_x <= x_end:
+                                            chunk_x = current_x // 512
+                                            local_x_start = current_x % 512
+                                            
+                                            pixels_left_in_chunk = 512 - local_x_start
+                                            pixels_to_write = min(x_end - current_x + 1, pixels_left_in_chunk)
+                                            
+                                            redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
+                                            byte_offset = ((local_y * 512) + local_x_start) * 4
+                                            pipeline.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00' * pixels_to_write)
+                                            
+                                            current_x += pixels_to_write
+                                
+                                await pipeline.execute()
+                                
+                                broadcast_msg = json.dumps({
+                                    "type": "bomb_pixel",
+                                    "x": cx,
+                                    "y": cy,
+                                    "r": radius,
+                                    "perk": perk
+                                })
+                                clients_in_room = ROOMS.get(canvas_id, set())
+                                if len(clients_in_room) > 0:
+                                    tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
+                                    await asyncio.gather(*tasks)
+                                await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
+
+                            if perk == 'bomba_atomica_1':
+                                warning_msg = json.dumps({
+                                    "type": "nuclear_warning",
+                                    "x": cx,
+                                    "y": cy,
+                                    "duration": 10
+                                })
+                                clients_in_room = ROOMS.get(canvas_id, set())
+                                if len(clients_in_room) > 0:
+                                    tasks = [asyncio.create_task(client.send(warning_msg)) for client in clients_in_room]
+                                    await asyncio.gather(*tasks)
+                                await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": warning_msg}))
+                                
+                                asyncio.create_task(execute_explosion(delay=10))
+                            else:
+                                await execute_explosion(delay=0)
 
                 elif data.get("type") == "request_chunks":
                     import base64
