@@ -81,7 +81,6 @@ class SnapshotViewerController {
             this.centerBoard(); 
             this.isDataLoaded = true;
             this.requestRender();
-            console.log('[SnapshotViewer] Canvas initialized, dimensions:', this.canvas.width, this.canvas.height);
         }
 
         this.bindEvents();
@@ -143,11 +142,7 @@ class SnapshotViewerController {
                 
                 if (!this.timelapseData) {
                     btnPlayPause.innerHTML = '<span class="material-symbols-rounded spin-icon">sync</span> Loading...';
-                    console.time('fetchTimelapseData');
-                    console.log('[SnapshotViewer] Starting fetchTimelapseData at', performance.now());
                     const ok = await this.fetchTimelapseData();
-                    console.log('[SnapshotViewer] Finished fetchTimelapseData at', performance.now());
-                    console.timeEnd('fetchTimelapseData');
                     if (!ok) {
                         btnPlayPause.innerHTML = '<span class="material-symbols-rounded">play_arrow</span> Play';
                         return;
@@ -195,8 +190,7 @@ class SnapshotViewerController {
                         a.click();
                         document.body.removeChild(a);
                     } catch (e) {
-                        console.error('[SnapshotViewer] Error downloading snapshot:', e);
-                        showMessage(__('err_download_snapshot') || 'Error downloading image', 'error');
+                        showMessage(__('err_download_snapshot'), 'error');
                     }
                 }
             });
@@ -260,11 +254,8 @@ class SnapshotViewerController {
             if (res.ok) {
                 const data = await res.json();
                 this.paletteColors = data[paletteId]?.colors || data['default']?.colors || [];
-            } else {
-                console.warn('[SnapshotViewer] Failed to load palette.json', res.status);
             }
         } catch(e) {
-            console.error('[SnapshotViewer] Error loading palette:', e);
         }
     }
 
@@ -323,7 +314,6 @@ class SnapshotViewerController {
                     return tA - tB;
                 });
                 this.timelapseData = parsed.map(p => JSON.stringify(p));
-                console.log(`[SnapshotViewer] Parsed ${parsed.length} pixels for infinite canvas. min/max will be calculated next.`);
 
                 let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                 for (const p of parsed) {
@@ -424,7 +414,6 @@ class SnapshotViewerController {
 
             this.playAnimationFrameId = requestAnimationFrame(() => this.playLoop());
         } catch (e) {
-            console.error('[SnapshotViewer] Error in playLoop:', e);
             this.playAnimationFrameId = null;
             const btnPlayPause = document.querySelector('[data-action="toggleTimelapsePlayPause"]');
             if (btnPlayPause) btnPlayPause.innerHTML = '<span class="material-symbols-rounded">play_arrow</span> Play';
@@ -485,10 +474,6 @@ class SnapshotViewerController {
             if (!isNaN(colorIndex) && colorIndex !== 255 && this.paletteColors[colorIndex]) {
                 colorHex = this.paletteColors[colorIndex].hex || this.paletteColors[colorIndex];
             }
-        }
-
-        if (this.currentFrame < 5 || this.currentFrame % 500 === 0) {
-            console.log(`[SnapshotViewer] drawSinglePixel frame=${this.currentFrame} x=${pixel.x} y=${pixel.y} c=${pixel.c} mappedHex=${colorHex}`);
         }
 
         this.offscreenCtx.fillStyle = colorHex;

@@ -117,10 +117,10 @@ class CanvasSnapshotsGalleryController {
             
             if (newPrivacy === 'private') {
                 if (iconSpan) iconSpan.textContent = 'visibility';
-                if (textSpan) textSpan.textContent = window.__('make_public') || 'Make public';
+                if (textSpan) textSpan.textContent = window.__('make_public');
             } else {
                 if (iconSpan) iconSpan.textContent = 'visibility_off';
-                if (textSpan) textSpan.textContent = window.__('make_private') || 'Make private';
+                if (textSpan) textSpan.textContent = window.__('make_private');
             }
         } else {
             showMessage(res.message, 'error');
@@ -138,7 +138,7 @@ class CanvasSnapshotsGalleryController {
         if (window.dialogSystem && window.dialogSystem.show) {
             const confirmRes = await window.dialogSystem.show('confirmActionModal', {
                 title: window.__('delete_snapshot'),
-                message: window.__('confirm_delete_snapshot') || 'Are you sure you want to delete this snapshot? This action cannot be undone.'
+                message: window.__('confirm_delete_snapshot')
             });
             if (confirmRes && confirmRes.confirmed) {
                 confirmed = true;

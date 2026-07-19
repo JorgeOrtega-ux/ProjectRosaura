@@ -375,7 +375,7 @@ class CanvasesCreateController {
             if (icon) icon.textContent = 'check_box_outline_blank';
         } else {
             if (this.formState.tags.length >= 8) {
-                showMessage(window.__ ? window.__('msg_max_tags') || 'Puedes seleccionar máximo 8 etiquetas.' : 'Puedes seleccionar máximo 8 etiquetas.', 'warning');
+                showMessage(window.__('msg_max_tags'), 'warning');
                 return;
             }
             this.formState.tags.push(val);

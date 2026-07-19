@@ -158,7 +158,7 @@ class CanvasRolesController {
             });
 
             if (response.success) {
-                showMessage('Rol eliminado', "success");
+                showMessage(response.message, "success");
                 setTimeout(() => {
                     if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage/roles/${this.canvasUuid}`, {forceReload: true});
                     else window.location.reload();

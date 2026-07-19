@@ -156,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
             } catch (error) {
-                console.error('[AppInit] Error loading controller:', error);
             } finally {
                 delete window.importLocks[className];
             }
@@ -183,8 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const result = await window.dialogSystem.show('welcomeUserModal');
         if (result.action === 'finish') {
-            console.log('Welcome flow finished');
-            
             try {
                 const api = new ApiService();
                 const res = await api.post(ApiRoutes.Settings.SetFlag, { flag_key: 'welcome_modal_seen' });
@@ -192,7 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.AppUserFlags.push('welcome_modal_seen');
                 }
             } catch (e) {
-                console.error('Failed to save flag for welcome modal', e);
             }
         }
     };

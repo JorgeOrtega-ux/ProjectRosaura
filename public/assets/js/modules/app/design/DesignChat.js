@@ -24,7 +24,7 @@ export class DesignChat {
         this.isChatEnabled = document.querySelector('.component-wrapper')?.dataset.allowChat === '1';
         this.isFirstRenderScrollPending = true;
         this.currentUserId = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.userId || null;
-        this.currentUsername = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.username || window.__('user') || 'User';
+        this.currentUsername = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.username || window.__('user');
         this.canModerateChat = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.canModerate === '1';
 
         const moduleChat = document.querySelector('[data-module="moduleLiveChat"]');
@@ -484,7 +484,7 @@ export class DesignChat {
             }
 
             if (response.success === false || response.status === 'error') {
-                showMessage(response.message || window.__('err_send_message'), 'error');
+                showMessage(response.message, 'error');
             } else {
                 this.chatInput.value = '';
                 this.selectedFiles = [];
@@ -582,9 +582,9 @@ export class DesignChat {
             });
             
             if (response.success || response.status === 'success') {
-                showMessage(response.message || __('msg_report_success'), 'success');
+                showMessage(response.message, 'success');
             } else {
-                showMessage(response.message || __('err_report_failed'), 'error');
+                showMessage(response.message, 'error');
             }
         } catch (error) {
             showMessage(__('err_report_failed'), 'error');
@@ -614,8 +614,8 @@ export class DesignChat {
             
             const dateFormatted = msgDate.toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'});
             let dateDividerStr = dateFormatted;
-            if (isToday) dateDividerStr = window.__('date_today') || 'Hoy';
-            else if (isYesterday) dateDividerStr = window.__('date_yesterday') || 'Ayer';
+            if (isToday) dateDividerStr = window.__('date_today');
+            else if (isYesterday) dateDividerStr = window.__('date_yesterday');
             el.dataset.dateString = dateDividerStr;
         } else if (originalEl && originalEl.dataset.dateString) {
             el.dataset.dateString = originalEl.dataset.dateString;
@@ -624,10 +624,10 @@ export class DesignChat {
         let icon, text;
         if (visibility === 'under_review') {
             icon = 'visibility_off';
-            text = window.__('msg_chat_under_review') || 'Este mensaje se encuentra en revisión';
+            text = window.__('msg_chat_under_review');
         } else {
             icon = 'delete';
-            text = window.__('msg_chat_deleted') || 'Este mensaje fue eliminado';
+            text = window.__('msg_chat_deleted');
         }
 
         el.innerHTML = `
@@ -717,8 +717,8 @@ export class DesignChat {
         const dateFormatted = msgDate.toLocaleDateString([], {day: '2-digit', month: '2-digit', year: 'numeric'});
 
         let dateDividerStr = dateFormatted;
-        if (isToday) dateDividerStr = window.__('date_today') || 'Hoy';
-        else if (isYesterday) dateDividerStr = window.__('date_yesterday') || 'Ayer';
+        if (isToday) dateDividerStr = window.__('date_today');
+        else if (isYesterday) dateDividerStr = window.__('date_yesterday');
         
         el.dataset.dateString = dateDividerStr;
         
@@ -769,7 +769,7 @@ export class DesignChat {
                                 <span class="material-symbols-rounded component-text-danger">delete</span>
                             </div>
                             <div class="component-menu-link-text">
-                                <span class="component-text-danger">${window.__('delete') || 'Delete'}</span>
+                                <span class="component-text-danger">${window.__('delete')}</span>
                             </div>
                         </div>
                         ` : ''}

@@ -232,7 +232,7 @@ class AdminBackupsAutomationController {
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password']?.trim();
         if (!password) {
-            showMessage(typeof window.__ === 'function' ? window.__('err_admin_password_required') : 'err_admin_password_required', 'error');
+            showMessage(window.__('err_admin_password_required'), 'error');
             return;
         }
         const originalText = setButtonLoading(btn);
@@ -244,7 +244,7 @@ class AdminBackupsAutomationController {
             const response = await this.api.post(ApiRoutes.Admin.UpdateServerConfig, reqData, this.abortController.signal);
             restoreButton(btn, originalText);
             if (response.success) {
-                showMessage(typeof window.__ === 'function' ? window.__('success_config_saved') : 'success_config_saved', 'success');
+                showMessage(window.__('success_config_saved'), 'success');
                 this.initialState = JSON.parse(JSON.stringify(this.state));
                 this.checkForChanges();
             } else {
@@ -252,7 +252,7 @@ class AdminBackupsAutomationController {
             }
         } catch (error) {
             restoreButton(btn, originalText);
-            showMessage(typeof window.__ === 'function' ? window.__('err_save_config') : window.__('err_save'), 'error');
+            showMessage(window.__('err_save_config'), 'error');
         }
     }
 }

@@ -121,7 +121,7 @@ export const DesignSetup = {
         }
 
         if (this.isPlazmarLocked) {
-            this.setCanvasBadge('lock-plazmar', 'brush', __('badge_stamping') || 'Plazmando...', 'left');
+            this.setCanvasBadge('lock-plazmar', 'brush', __('badge_stamping'), 'left');
         } else {
             this.removeCanvasBadge('lock-plazmar', 'left');
         }
@@ -225,7 +225,6 @@ export const DesignSetup = {
             this.requestRender();
 
         } catch (e) {
-            console.error("Error hydrating canvas state:", e);
         }
     },
 
@@ -244,7 +243,6 @@ export const DesignSetup = {
 
         try {
             if (!base64String) {
-                console.log(`[Chunk] Empty chunk (${chunkX},${chunkY}) - no server data`);
                 return;
             }
             const binaryString = atob(base64String);
@@ -256,10 +254,8 @@ export const DesignSetup = {
             }
             
             ctx.putImageData(imageData, 0, 0);
-            console.log(`[Chunk] Chunk (${chunkX},${chunkY}) hydrated - ${totalBytes} bytes`);
             this.requestRender();
         } catch (e) {
-            console.error(`[Chunk] Error hydrating chunk (${chunkX},${chunkY}):`, e);
         }
     },
 
@@ -287,8 +283,6 @@ export const DesignSetup = {
             }
             
             if (requested.length > 0) {
-                const chunkKeys = requested.map(c => `(${c.x},${c.y})`);
-                console.log(`[Chunk] Requesting ${requested.length} chunk(s): ${chunkKeys.join(', ')}`);
                 this.wsManager.send({
                     type: 'request_chunks',
                     chunks: requested

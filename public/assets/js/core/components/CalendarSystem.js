@@ -9,8 +9,16 @@ export class CalendarSystem {
         this.onClear = null;
         this.initialized = false;
         
-        this.monthsStr = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        this.monthsShortStr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        this.monthsStr = [
+            __('month_january'), __('month_february'), __('month_march'), __('month_april'),
+            __('month_may'), __('month_june'), __('month_july'), __('month_august'),
+            __('month_september'), __('month_october'), __('month_november'), __('month_december')
+        ];
+        this.monthsShortStr = [
+            __('month_short_jan'), __('month_short_feb'), __('month_short_mar'), __('month_short_apr'),
+            __('month_short_may'), __('month_short_jun'), __('month_short_jul'), __('month_short_aug'),
+            __('month_short_sep'), __('month_short_oct'), __('month_short_nov'), __('month_short_dec')
+        ];
 
         this.handleClickBound = this.handleClick.bind(this);
         this.handleFocusOutBound = this.handleFocusOut.bind(this);

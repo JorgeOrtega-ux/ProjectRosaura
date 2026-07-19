@@ -68,7 +68,7 @@ export const DialogTemplates = {
 
                             <div class="step-modal-actions">
                                 <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="document.getElementById('welcome-step-1').classList.remove('active'); document.getElementById('welcome-step-2').classList.add('active');">
-                                    ${window.__('welcome_modal_btn_next') || 'Siguiente'}
+                                    ${window.__('welcome_modal_btn_next')}
                                 </button>
                             </div>
                         </div>
@@ -88,7 +88,7 @@ export const DialogTemplates = {
 
                             <div class="step-modal-actions">
                                 <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="document.getElementById('welcome-step-2').classList.remove('active'); document.getElementById('welcome-step-3').classList.add('active');">
-                                    ${window.__('welcome_modal_btn_next') || 'Siguiente'}
+                                    ${window.__('welcome_modal_btn_next')}
                                 </button>
                             </div>
                         </div>
@@ -125,7 +125,7 @@ export const DialogTemplates = {
 
                             <div class="step-modal-actions">
                                 <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="finish">
-                                    ${window.__('welcome_modal_btn_finish') || 'Terminar'}
+                                    ${window.__('welcome_modal_btn_finish')}
                                 </button>
                             </div>
                         </div>
@@ -553,7 +553,7 @@ export const DialogTemplates = {
     verifyPasswordDeleteCanvases: {
         build: (data) => DialogTemplates.verifyPasswordDialog.build({
             titleKey: 'title_verify_delete_canvases',
-            descHtml: __('desc_verify_delete_canvases') ? __('desc_verify_delete_canvases').replace(':count', data.count || 0) : (window.__('default_delete_canvases_desc') ? window.__('default_delete_canvases_desc').replace(':count', data.count || 0) : `Permanently deleting ${data.count || 0} canvases. Enter your password to confirm.`),
+            descHtml: __('desc_verify_delete_canvases').replace(':count', data.count || 0),
             confirmKey: 'btn_delete_canvas'
         })
     },

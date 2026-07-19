@@ -313,13 +313,9 @@ export class ApiService {
         if (signal) fetchOptions.signal = signal;
 
         try {
-            console.time('fetchRequest_' + route);
-            console.log('[ApiService] Fetching text from', route, 'at', performance.now());
             const response = await fetch(this.baseUrl, fetchOptions);
-            console.log('[ApiService] Got headers from', route, 'at', performance.now());
 
             if (!response.ok) {
-                console.timeEnd('fetchRequest_' + route);
                 const handledError = this._handleHttpErrors(response);
                 if (handledError) return handledError;
 
@@ -340,10 +336,7 @@ export class ApiService {
                 }
             }
 
-            console.log('[ApiService] Starting to read response text at', performance.now());
             const text = await response.text();
-            console.log('[ApiService] Finished reading response text at', performance.now());
-            console.timeEnd('fetchRequest_' + route);
             
             return { success: true, data: text };
 

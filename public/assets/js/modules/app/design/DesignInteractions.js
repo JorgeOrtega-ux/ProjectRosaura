@@ -312,7 +312,7 @@ export const DesignInteractions = {
                 if (this.selectedPixels.size < maxBalance) {
                     this.selectedPixels.add(key);
                 } else {
-                    showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance) || 'Limit reached', 'warning');
+                    showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance), 'warning');
                 }
             }
             this.isSelecting = true;
@@ -887,7 +887,7 @@ export const DesignInteractions = {
                             if (this.selectedPixels.size < maxBalance) {
                                 this.selectedPixels.add(key);
                             } else {
-                                showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance) || 'Límite alcanzado', 'warning');
+                                showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance), 'warning');
                             }
                         }
                         this.updateSelectionUI();
@@ -970,7 +970,7 @@ export const DesignInteractions = {
             if (this.interactionMode === 'protecting') {
                 this.txtPlacePixels.textContent = `Proteger (${this.selectedPixels.size})`;
             } else if (this.interactionMode === 'erasing') {
-                this.txtPlacePixels.textContent = `${window.__('erase') || 'Erase'} (${this.selectedPixels.size})`;
+                this.txtPlacePixels.textContent = `${window.__('erase')} (${this.selectedPixels.size})`;
             } else if (this.interactionMode === 'bombing') {
                 if (this.activeBomb === 'pixel_misil_1') {
                     this.txtPlacePixels.textContent = `Lanzar Misil`;
@@ -1008,7 +1008,7 @@ export const DesignInteractions = {
         let maxBalance = this.getMaxBalance();
 
         if (this.selectedPixels.size > maxBalance) {
-            showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance) || 'Límite superado', 'warning');
+            showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance), 'warning');
             return;
         }
 
@@ -1360,7 +1360,6 @@ export const DesignInteractions = {
                 if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
             }
         } catch (error) {
-            console.error('Error loading perks', error);
         }
     },
 
@@ -1370,7 +1369,7 @@ export const DesignInteractions = {
         if (perkId === 'no_cooldown_10s') {
             this.perkNoCooldownReady = true;
             if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-            if (typeof showMessage === 'function') showMessage(window.__('msg_perk_equipped_click_badge') || 'Ventaja equipada. Haz clic en la insignia para usarla.', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_perk_equipped_click_badge'), 'info');
             this.loadUserPerks();
             return;
         }
@@ -1405,7 +1404,7 @@ export const DesignInteractions = {
             
             if (result && result.success) {
                 if (typeof showMessage === 'function' && !['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(result.perk_id)) {
-                    showMessage(window.__('msg_perk_activated_success') || 'Perk successfully activated', 'success');
+                    showMessage(window.__('msg_perk_activated_success'), 'success');
                 }
 
                 if (result.perk_id === 'pixel_protection_25') {
@@ -1452,7 +1451,7 @@ export const DesignInteractions = {
                 this.updatePerkBadges();
                 this.updateSelectionUI();
             }
-            if (typeof showMessage === 'function') showMessage(window.__('err_server_connection') || 'Error connecting to server', 'error');
+            if (typeof showMessage === 'function') showMessage(window.__('err_server_connection'), 'error');
         }
     },
     
@@ -1466,8 +1465,8 @@ export const DesignInteractions = {
 
         const titles = {
             'no_cooldown_10s': 'Sin Enfriamiento',
-            'pixel_protection_25': window.__('perk_pixel_prot') || 'Protección',
-            'elite_eraser_25': window.__('perk_elite_eraser') || 'Borrador',
+            'pixel_protection_25': window.__('perk_pixel_prot'),
+            'elite_eraser_25': window.__('perk_elite_eraser'),
             'pixel_misil_1': 'Píxel Misil',
             'bomba_pixel_1': 'Bomba Píxel',
             'bomba_atomica_1': 'Bomba Atómica',
@@ -1494,23 +1493,25 @@ export const DesignInteractions = {
 
             if (perkId === 'no_cooldown_10s' && (this.perkNoCooldown || this.perkNoCooldownReady)) {
                 isActive = true;
-                if (this.perkNoCooldown) {
-                    isToggledOn = true;
-                    activeHtml = `<span class="material-symbols-rounded component-text-success">${icon}</span><span>${window.__('badge_no_cooldown') || 'No Cooldown'}</span>`;
+                if (this.isNoCooldownActive) {
+                    activeHtml = `<span class="material-symbols-rounded component-text-success">${icon}</span><span>${window.__('badge_no_cooldown')}</span>`;
                 } else {
-                    activeHtml = `<span class="material-symbols-rounded component-text-accent">${icon}</span><span>${window.__('badge_activate_no_cooldown') || 'Activate No Cooldown'}</span>`;
+                    activeHtml = `<span class="material-symbols-rounded component-text-accent">${icon}</span><span>${window.__('badge_activate_no_cooldown')}</span>`;
                 }
                 clickHandler = async (e) => {
                     if (this.perkNoCooldownReady && !this.perkNoCooldown) {
                         const el = e.currentTarget;
-                        el.innerHTML = `<span class="material-symbols-rounded component-text-accent">hourglass_empty</span><span>${window.__('activating') || 'Activating...'}</span>`;
+                        el.innerHTML = `<span class="material-symbols-rounded component-text-accent">hourglass_empty</span><span>${window.__('activating')}</span>`;
                         try {
                             const result = await this.api.post('store.activate_perk', { perk_id: 'no_cooldown_10s' });
                             if (result && result.success) {
                                 this.perkNoCooldownReady = false;
                                 this.perkNoCooldown = true;
                                 this.perkNoCooldownExpires = Date.now() + 10000;
-                                if (typeof showMessage === 'function') showMessage(window.__('msg_no_cooldown_10s_active') || 'No Cooldown activated for 10s!', 'success');
+                                if (!this.hasShownNoCooldownToast) {
+                                    this.hasShownNoCooldownToast = true;
+                                    if (typeof showMessage === 'function') showMessage(window.__('msg_no_cooldown_10s_active'), 'success');
+                                }
                                 this.updatePerkBadges();
                                 this.updateSelectionUI();
                                 this.loadUserPerks();
@@ -1527,7 +1528,7 @@ export const DesignInteractions = {
                 isActive = true;
                 isToggledOn = this.interactionMode === 'protecting';
                 const colorClass = isToggledOn ? 'component-text-success' : '';
-                activeHtml = `<span class="material-symbols-rounded ${colorClass}">${icon}</span><span>${window.__('badge_protection') || 'Protection'}: ${this.perkProtectionLeft}</span>`;
+                activeHtml = `<span class="material-symbols-rounded ${colorClass}">${icon}</span><span>${window.__('badge_protection')}: ${this.perkProtectionLeft}</span>`;
                 clickHandler = () => {
                     this.interactionMode = this.interactionMode === 'protecting' ? 'normal' : 'protecting';
                     this.updateSelectionUI();
@@ -1539,12 +1540,12 @@ export const DesignInteractions = {
                 isActive = true;
                 isToggledOn = this.interactionMode === 'erasing';
                 const colorClass = isToggledOn ? 'component-text-success' : 'component-text-danger';
-                activeHtml = `<span class="material-symbols-rounded ${colorClass}">${icon}</span><span>${window.__('badge_eraser') || 'Eraser'}: ${this.perkEraserLeft}</span>`;
+                activeHtml = `<span class="material-symbols-rounded ${colorClass}">${icon}</span><span>${window.__('badge_eraser')}: ${this.perkEraserLeft}</span>`;
                 clickHandler = () => {
                     this.interactionMode = this.interactionMode === 'erasing' ? 'normal' : 'erasing';
                     this.updateSelectionUI();
                     this.updatePerkBadges();
-                    if (typeof showMessage === 'function') showMessage(this.interactionMode === 'erasing' ? (window.__('msg_eraser_mode_on') || 'Eraser mode activated') : (window.__('msg_eraser_mode_off') || 'Eraser mode deactivated'), 'info');
+                    if (typeof showMessage === 'function') showMessage(this.interactionMode === 'erasing' ? window.__('msg_eraser_mode_on') : window.__('msg_eraser_mode_off'), 'info');
                 };
             }
             else if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId)) {

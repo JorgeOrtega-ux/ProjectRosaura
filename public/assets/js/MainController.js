@@ -562,7 +562,7 @@ export class MainController {
                 btnElement.classList.remove('disabled-interactive');;
                 btnElement.style.pointerEvents = '';
             }
-            this.showToast(result.message || window.__('err_switch_account'), 'error');
+            this.showToast(result.message, 'error');
         }
     }
 
@@ -590,7 +590,7 @@ export class MainController {
         } else {
             spinnerDiv.remove();
             logoutBtn.dataset.loading = 'false';
-            this.showToast(result.message || window.__('err_close_sessions'), 'error');
+            this.showToast(result.message, 'error');
         }
     }
 

@@ -67,7 +67,7 @@ export class PurchaseHistoryController {
                         <td colspan="4" class="component-empty-table-cell">
                             <div class="component-empty-state component-empty-state--table">
                                 <span class="material-symbols-rounded component-empty-state-icon">inbox</span>
-                                <p class="component-empty-state-text">${window.__('no_purchases') || 'No purchase history found.'}</p>
+                                <p class="component-empty-state-text">${window.__('no_purchases')}</p>
                             </div>
                         </td>
                     </tr>

@@ -661,10 +661,10 @@ export const DesignTemplates = {
             if (res && res.success) {
                 // Success toast & canvas reload will come via WebSocket event
             } else {
-                showMessage(res?.message || __('err_stamp_failed') || 'Error al plazmar la imagen', 'error');
+                showMessage(res?.message || __('err_stamp_failed'), 'error');
             }
         } catch (err) {
-            showMessage(__('err_stamp_failed') || 'Error al plazmar la imagen', 'error');
+            showMessage(__('err_stamp_failed'), 'error');
         } finally {
             restoreButton(btn);
         }

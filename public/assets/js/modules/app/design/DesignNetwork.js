@@ -489,7 +489,7 @@ export const DesignNetwork = {
         this.updateSelectionUI();
         this.requestRender();
 
-        showMessage(__('info_stamping_template') || 'Plazmando plantilla en el lienzo...', 'warning');
+        showMessage(__('info_stamping_template'), 'warning');
 
         if (this.plazmarTimeout) clearTimeout(this.plazmarTimeout);
         this.plazmarTimeout = setTimeout(() => {
@@ -500,7 +500,7 @@ export const DesignNetwork = {
                     this.canvas.classList.remove('disabled-interactive');
                 }
                 this.updateLockBadges();
-                showMessage(__('err_server_timeout') || 'Timeout del servidor', 'error');
+                showMessage(__('err_server_timeout'), 'error');
             }
         }, 60000);
     },
@@ -543,7 +543,7 @@ export const DesignNetwork = {
         this.updateLockBadges();
         this.requestRender();
 
-        showMessage(__('msg_template_stamped') || 'Plantilla plazmada correctamente', 'success');
+        showMessage(__('msg_template_stamped'), 'success');
     },
 
     handleCanvasPlazmarError(data) {
@@ -557,7 +557,7 @@ export const DesignNetwork = {
         }
 
         this.updateLockBadges();
-        showMessage(data.error || __('err_stamp_failed') || 'Error al plazmar la plantilla', 'error');
+        showMessage(data.error || __('err_stamp_failed'), 'error');
     },
 
     async startLiveShare() {

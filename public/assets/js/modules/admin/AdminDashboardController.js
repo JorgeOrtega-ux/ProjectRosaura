@@ -34,13 +34,13 @@ export class AdminDashboardController {
         // Cargar traducciones desde el DOM
         const langDataEl = document.getElementById('dashboard-lang-data');
         this.lang = {
-            activity: langDataEl ? langDataEl.getAttribute('data-lbl-activity') : 'Actividad Global',
-            regs: langDataEl ? langDataEl.getAttribute('data-lbl-regs') : 'Nuevos Registros',
-            errors: langDataEl ? langDataEl.getAttribute('data-lbl-errors') : 'Errores de Acceso',
-            pageviews: langDataEl ? langDataEl.getAttribute('data-lbl-pageviews') : 'Visitas',
-            logins: langDataEl ? langDataEl.getAttribute('data-lbl-logins') : 'Logins',
-            newusers: langDataEl ? langDataEl.getAttribute('data-lbl-newusers') : 'Nuevos Usuarios',
-            loginfails: langDataEl ? langDataEl.getAttribute('data-lbl-loginfails') : 'Logins Fallidos'
+            activity: langDataEl && langDataEl.getAttribute('data-lbl-activity') ? langDataEl.getAttribute('data-lbl-activity') : window.__('admin_activity_global'),
+            regs: langDataEl && langDataEl.getAttribute('data-lbl-regs') ? langDataEl.getAttribute('data-lbl-regs') : window.__('admin_new_regs'),
+            errors: langDataEl && langDataEl.getAttribute('data-lbl-errors') ? langDataEl.getAttribute('data-lbl-errors') : window.__('admin_access_errors'),
+            pageviews: langDataEl && langDataEl.getAttribute('data-lbl-pageviews') ? langDataEl.getAttribute('data-lbl-pageviews') : window.__('admin_pageviews'),
+            logins: langDataEl && langDataEl.getAttribute('data-lbl-logins') ? langDataEl.getAttribute('data-lbl-logins') : window.__('admin_logins'),
+            newusers: langDataEl && langDataEl.getAttribute('data-lbl-newusers') ? langDataEl.getAttribute('data-lbl-newusers') : window.__('admin_new_users'),
+            loginfails: langDataEl && langDataEl.getAttribute('data-lbl-loginfails') ? langDataEl.getAttribute('data-lbl-loginfails') : window.__('admin_failed_logins')
         };
     }
     _setLoadingState() {
@@ -60,7 +60,7 @@ export class AdminDashboardController {
                 this.renderChart(response.charts);
             }
         } else {
-            showMessage(response?.message || 'Error al obtener datos', 'error');
+            showMessage(response?.message, 'error');
             this.updateStatsCards({ new_users: 0, logins: 0, pageviews: 0, messages: 0, canvases: 0 });
         }
     }

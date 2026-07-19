@@ -70,7 +70,7 @@ export class CanvasCardInteractions {
             } else {
                 btn.classList.remove('is-favorite');
             }
-            showMessage(res.message || window.__('err_default'), 'error');
+            showMessage(res.message, 'error');
         }
     }
 

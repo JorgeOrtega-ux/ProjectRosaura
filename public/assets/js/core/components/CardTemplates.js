@@ -101,7 +101,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
     },
 
     snapshotCard: (snapshot, config = {}) => {
-        const canvasName = escapeHTML(config.canvasName || window.__('canvas'));
+        const canvasName = escapeHTML(config.canvasName);
         const basePath = config.basePath || '';
         const snapshotUuid = escapeHTML(snapshot.snapshot_uuid);
         const date = escapeHTML(snapshot.date);
@@ -155,7 +155,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
 
     paymentMethodCard: (card) => {
         const brandRaw = card.brand ? card.brand.toLowerCase() : 'unknown';
-        const brand = escapeHTML(card.brand || 'Card').toUpperCase();
+        const brand = escapeHTML(card.brand).toUpperCase();
         const last4 = escapeHTML(card.last4);
         const expMonth = String(card.exp_month).padStart(2, '0');
         const expYear = String(card.exp_year).slice(-2);

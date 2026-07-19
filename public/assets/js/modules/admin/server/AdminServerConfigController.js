@@ -232,7 +232,7 @@ class AdminServerConfigController {
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
         if (!password) {
-            showMessage(typeof window.__ === 'function' ? window.__('err_admin_password_required') : 'err_admin_password_required', 'error');
+            showMessage(window.__('err_admin_password_required'), 'error');
             return;
         }
         setButtonLoading(btn);

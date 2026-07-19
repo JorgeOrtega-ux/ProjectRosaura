@@ -652,7 +652,7 @@ class AuthController {
 
         let defaultText = __('btn_resend_email');
         if (defaultText === 'btn_resend_email') {
-            defaultText = window.__('resend_email') || 'Resend email';
+            defaultText = window.__('resend_email');
         }
 
         if (result.success) {
