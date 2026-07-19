@@ -316,12 +316,25 @@ class CanvasesManageController {
                     if (btn) btn.classList.remove('disabled-interactive');
                 });
 
-                if (btnEdit) btnEdit.setAttribute('data-nav', `${this.basePath}/canvases/edit/${this.selectedCanvasUuid}`);
-                if (btnMembers) btnMembers.setAttribute('data-nav', `${this.basePath}/canvases/members/${this.selectedCanvasUuid}`);
-                if (btnRoles) btnRoles.setAttribute('data-nav', `${this.basePath}/canvases/manage/roles/${this.selectedCanvasUuid}`);
-                if (btnInvites) btnInvites.setAttribute('data-nav', `${this.basePath}/canvases/manage/invites/${this.selectedCanvasUuid}`);
+                let activeUuid = this.selectedCanvasUuid;
+                let activeSize = this.currentCanvasSize;
+
+                if (!activeUuid && this.selectedCanvasIds.size === 1) {
+                    const activeRow = document.querySelector('[data-action="selectCanvas"].selected');
+                    if (activeRow) {
+                        activeUuid = activeRow.getAttribute('data-uuid');
+                        activeSize = activeRow.getAttribute('data-size');
+                        this.selectedCanvasUuid = activeUuid;
+                        this.currentCanvasSize = activeSize;
+                    }
+                }
+
+                if (btnEdit) btnEdit.setAttribute('data-nav', `${this.basePath}/canvases/edit/${activeUuid}`);
+                if (btnMembers) btnMembers.setAttribute('data-nav', `${this.basePath}/canvases/members/${activeUuid}`);
+                if (btnRoles) btnRoles.setAttribute('data-nav', `${this.basePath}/canvases/manage/roles/${activeUuid}`);
+                if (btnInvites) btnInvites.setAttribute('data-nav', `${this.basePath}/canvases/manage/invites/${activeUuid}`);
                 
-                if (this.currentCanvasSize === 'infinite') {
+                if (activeSize === 'infinite') {
                     if (btnResets) {
                         btnResets.classList.add('disabled-interactive');
                         btnResets.setAttribute('data-nav', '');
@@ -335,9 +348,9 @@ class CanvasesManageController {
                         btnResize.setAttribute('data-nav', '');
                     }
                 } else {
-                    if (btnResets) btnResets.setAttribute('data-nav', `${this.basePath}/canvases/manage/resets/${this.selectedCanvasUuid}`);
-                    if (btnSnapshots) btnSnapshots.setAttribute('data-nav', `${this.basePath}/design/s/${this.selectedCanvasUuid}`);
-                    if (btnResize) btnResize.setAttribute('data-nav', `${this.basePath}/canvases/manage/resize/${this.selectedCanvasUuid}`);
+                    if (btnResets) btnResets.setAttribute('data-nav', `${this.basePath}/canvases/manage/resets/${activeUuid}`);
+                    if (btnSnapshots) btnSnapshots.setAttribute('data-nav', `${this.basePath}/design/s/${activeUuid}`);
+                    if (btnResize) btnResize.setAttribute('data-nav', `${this.basePath}/canvases/manage/resize/${activeUuid}`);
                 }
             }
         } else {

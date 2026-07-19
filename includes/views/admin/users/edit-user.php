@@ -14,9 +14,15 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
 
 $isSuperAdmin = isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4;
 
-$targetUserId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if ($targetUserId <= 0) {
-    header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/manage-users");
+$targetUserUuid = isset($_GET['uuid']) ? $_GET['uuid'] : '';
+if (empty($targetUserUuid)) {
+    $redirectUrl = (defined('APP_URL') ? APP_URL : '') . "/admin/manage-users";
+    if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
+        header("X-SPA-Update-URL: " . $redirectUrl);
+        require __DIR__ . '/manage-users.php';
+    } else {
+        header("Location: " . $redirectUrl);
+    }
     exit;
 }
 
@@ -26,12 +32,19 @@ $roleRepo = new RoleRepository($db, $redis);
 $userRepo = new UserRepository($db, $roleRepo);
 $prefsManager = new UserPrefsManager($db);
 
-$user = $userRepo->findById($targetUserId);
+$user = $userRepo->findByUuid($targetUserUuid);
 if (!$user) {
-    header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/manage-users");
+    $redirectUrl = (defined('APP_URL') ? APP_URL : '') . "/admin/manage-users";
+    if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
+        header("X-SPA-Update-URL: " . $redirectUrl);
+        require __DIR__ . '/manage-users.php';
+    } else {
+        header("Location: " . $redirectUrl);
+    }
     exit;
 }
 
+$targetUserId = (int)$user['id'];
 $prefs = $prefsManager->ensureDefaultPreferences($targetUserId);
 
 $roleColorRaw = $user['role_color'] ?? '';

@@ -93,8 +93,8 @@ export class DesignChat {
         }
 
         if (this.chatInput) {
-            this.chatInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
+            this.chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     this.sendMessage();
                 }
@@ -462,8 +462,8 @@ export class DesignChat {
         
         this.isSending = true;
 
-        const searchInput = document.querySelector('.component-search-input');
-        if (searchInput) searchInput.classList.add('disabled-interactive');
+        if (this.btnSend) this.btnSend.classList.add('disabled-interactive');
+        if (this.chatInput) this.chatInput.classList.add('disabled-interactive');
         
         const backupText = text;
         const backupFiles = [...this.selectedFiles];
@@ -497,8 +497,8 @@ export class DesignChat {
         } catch (error) {
             showMessage(window.__('err_send_message'), 'error');
         } finally {
-            const searchInput = document.querySelector('.component-search-input');
-            if (searchInput) searchInput.classList.remove('disabled-interactive');
+            if (this.btnSend) this.btnSend.classList.remove('disabled-interactive');
+            if (this.chatInput) this.chatInput.classList.remove('disabled-interactive');
             
             if (this.chatInput.value.trim().length > 0 || this.selectedFiles.length > 0) {
                 this.btnSend.classList.add('active');

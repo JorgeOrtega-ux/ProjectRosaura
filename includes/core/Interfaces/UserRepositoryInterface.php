@@ -4,6 +4,7 @@ namespace App\Core\Interfaces;
 
 interface UserRepositoryInterface {
     public function findById(int $id): ?array;
+    public function findByUuid(string $uuid): ?array;
     public function findByEmail(string $email): ?array;
     public function findByUsername(string $username): ?array;
     public function createUser(array $data): int;

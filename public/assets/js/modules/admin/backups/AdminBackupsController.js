@@ -299,9 +299,9 @@ class AdminBackupsController {
     prepareRestore(btn) {
         if (!this.selectedBackupId) return;
         if (window.spaRouter) {
-            window.spaRouter.navigate(this.basePath + '/admin/backups/restore?id=' + encodeURIComponent(this.selectedBackupId));
+            window.spaRouter.navigate(this.basePath + '/admin/backups/restore/' + encodeURIComponent(this.selectedBackupId));
         } else {
-            window.location.href = this.basePath + '/admin/backups/restore?id=' + encodeURIComponent(this.selectedBackupId);
+            window.location.href = this.basePath + '/admin/backups/restore/' + encodeURIComponent(this.selectedBackupId);
         }
     }
 }

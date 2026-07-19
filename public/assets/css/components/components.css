@@ -3601,14 +3601,39 @@ input:checked + .component-toggle-slider:before {
     position: absolute;
     top: 4px;
     right: 4px;
-    width: 20px !important;
-    height: 20px !important;
-    min-height: 20px !important;
-    padding: 0;
+    width: 16px !important;
+    height: 16px !important;
+    min-height: 16px !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+    z-index: 2;
+}
+
+.component-library-card__delete:hover {
+    background: #f1f1f1 !important;
+}
+
+.dark-theme .component-library-card__delete {
+    background: #2a2a2a !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4) !important;
+}
+
+.dark-theme .component-library-card__delete:hover {
+    background: #3a3a3a !important;
 }
 
 .component-library-card__delete .material-symbols-rounded {
-    font-size: 12px;
+    font-size: 10px !important;
+    line-height: 1 !important;
 }
 
 .live-share-code-display {
@@ -4015,20 +4040,33 @@ input:checked + .component-toggle-slider:before {
     right: 2px;
     width: 16px;
     height: 16px;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
+    background: #ffffff;
+    color: #000000;
     border: none;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 12px;
     padding: 0;
-    line-height: 1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 2;
+}
+.chat-attachment-preview-card .remove-btn .material-symbols-rounded {
+    font-size: 10px !important;
+    line-height: 1 !important;
 }
 .chat-attachment-preview-card .remove-btn:hover {
-    background: rgba(255, 59, 48, 0.9);
+    background: #f1f1f1;
+}
+
+.dark-theme .chat-attachment-preview-card .remove-btn {
+    background: #2a2a2a;
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+.dark-theme .chat-attachment-preview-card .remove-btn:hover {
+    background: #3a3a3a;
 }
 
 .chat-message-attachments {

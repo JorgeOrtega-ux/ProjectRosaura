@@ -7,9 +7,15 @@ use App\Core\Repositories\UserRepository;
 use App\Core\Repositories\RoleRepository;
 use App\Core\System\DatabaseConstants as DB;
 
-$targetUserId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if ($targetUserId <= 0) {
-    header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/manage-users");
+$targetUserUuid = isset($_GET['uuid']) ? $_GET['uuid'] : '';
+if (empty($targetUserUuid)) {
+    $redirectUrl = (defined('APP_URL') ? APP_URL : '') . "/admin/manage-users";
+    if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
+        header("X-SPA-Update-URL: " . $redirectUrl);
+        require __DIR__ . '/manage-users.php';
+    } else {
+        header("Location: " . $redirectUrl);
+    }
     exit;
 }
 
@@ -17,13 +23,20 @@ $db = new DatabaseManager();
 $redis = new RedisCache();
 $roleRepo = new RoleRepository($db, $redis);
 $userRepo = new UserRepository($db, $roleRepo);
-$user = $userRepo->findById($targetUserId);
+$user = $userRepo->findByUuid($targetUserUuid);
 
 if (!$user) {
-    header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/manage-users");
+    $redirectUrl = (defined('APP_URL') ? APP_URL : '') . "/admin/manage-users";
+    if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
+        header("X-SPA-Update-URL: " . $redirectUrl);
+        require __DIR__ . '/manage-users.php';
+    } else {
+        header("Location: " . $redirectUrl);
+    }
     exit;
 }
 
+$targetUserId = (int)$user['id'];
 $initialState = [
     'isSuspended' => ($user['is_suspended'] == 1) ? '1' : '0',
     'suspensionReason' => '',

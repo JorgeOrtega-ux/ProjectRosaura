@@ -164,6 +164,10 @@ class UserRepository implements UserRepositoryInterface {
         return $this->getUserWithDetails('id', $id);
     }
 
+    public function findByUuid(string $uuid): ?array {
+        return $this->getUserWithDetails('uuid', $uuid);
+    }
+
     public function findByEmail(string $email): ?array {
         return $this->getUserWithDetails('email', $email);
     }

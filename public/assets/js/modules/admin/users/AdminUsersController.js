@@ -177,26 +177,34 @@ class AdminUsersController {
     editSelectedUser() {
         if (this.selectedUserIds.size !== 1) return;
         const id = Array.from(this.selectedUserIds)[0];
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/edit-user?id=${id}`);
-        else window.location.href = `${this.basePath}/admin/edit-user?id=${id}`;
+        const row = document.querySelector(`tr[data-user-id="${id}"]`);
+        const uuid = row ? row.getAttribute('data-user-uuid') : id;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/edit-user/${uuid}`);
+        else window.location.href = `${this.basePath}/admin/edit-user/${uuid}`;
     }
     editSelectedUserRole() {
         if (this.selectedUserIds.size !== 1) return;
         const id = Array.from(this.selectedUserIds)[0];
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/edit-user-role?id=${id}`);
-        else window.location.href = `${this.basePath}/admin/edit-user-role?id=${id}`;
+        const row = document.querySelector(`tr[data-user-id="${id}"]`);
+        const uuid = row ? row.getAttribute('data-user-uuid') : id;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/edit-user-role/${uuid}`);
+        else window.location.href = `${this.basePath}/admin/edit-user-role/${uuid}`;
     }
     editSelectedUserStatus() {
         if (this.selectedUserIds.size !== 1) return;
         const id = Array.from(this.selectedUserIds)[0];
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/edit-status?id=${id}`);
-        else window.location.href = `${this.basePath}/admin/edit-status?id=${id}`;
+        const row = document.querySelector(`tr[data-user-id="${id}"]`);
+        const uuid = row ? row.getAttribute('data-user-uuid') : id;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/edit-status/${uuid}`);
+        else window.location.href = `${this.basePath}/admin/edit-status/${uuid}`;
     }
     viewSelectedUserHistory() {
         if (this.selectedUserIds.size !== 1) return;
         const id = Array.from(this.selectedUserIds)[0];
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/user-history?id=${id}`);
-        else window.location.href = `${this.basePath}/admin/user-history?id=${id}`;
+        const row = document.querySelector(`tr[data-user-id="${id}"]`);
+        const uuid = row ? row.getAttribute('data-user-uuid') : id;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/user-history/${uuid}`);
+        else window.location.href = `${this.basePath}/admin/user-history/${uuid}`;
     }
     async deleteSelectedUsers(btn) {
         if (this.selectedUserIds.size === 0) return;

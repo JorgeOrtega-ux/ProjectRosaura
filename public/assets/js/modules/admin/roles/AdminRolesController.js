@@ -138,17 +138,17 @@ class AdminRolesController {
     navigateToEditRole() {
         if (!this.selectedRoleId) return;
         if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/admin/roles/edit?id=${this.selectedRoleId}`);
+            window.spaRouter.navigate(`${this.basePath}/admin/roles/edit/${this.selectedRoleId}`);
         } else {
-            window.location.href = `${this.basePath}/admin/roles/edit?id=${this.selectedRoleId}`;
+            window.location.href = `${this.basePath}/admin/roles/edit/${this.selectedRoleId}`;
         }
     }
     navigateToEditPermissions() {
         if (!this.selectedRoleId) return;
         if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/admin/roles/permissions?id=${this.selectedRoleId}`);
+            window.spaRouter.navigate(`${this.basePath}/admin/roles/permissions/${this.selectedRoleId}`);
         } else {
-            window.location.href = `${this.basePath}/admin/roles/permissions?id=${this.selectedRoleId}`;
+            window.location.href = `${this.basePath}/admin/roles/permissions/${this.selectedRoleId}`;
         }
     }
     handleRowSelection(target) {

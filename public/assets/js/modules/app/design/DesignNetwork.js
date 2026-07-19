@@ -155,22 +155,36 @@ export const DesignNetwork = {
                         this.triggerExplosionEffect(cX, cY, r, perkId);
                     }
                     
-                    for (let x = cX - r; x <= cX + r; x++) {
-                        for (let y = cY - r; y <= cY + r; y++) {
-                            if (Math.pow(x - cX, 2) + Math.pow(y - cY, 2) > Math.pow(r, 2)) continue;
-                            if (this.isInfinite) {
-                                const chunkX = Math.floor(x / 512);
+                    for (let y = cY - r; y <= cY + r; y++) {
+                        const dy = y - cY;
+                        const dx = Math.floor(Math.sqrt(r * r - dy * dy));
+                        const startX = cX - dx;
+                        const endX = cX + dx;
+                        const width = endX - startX + 1;
+
+                        if (this.isInfinite) {
+                            let currentX = startX;
+                            while (currentX <= endX) {
+                                const chunkX = Math.floor(currentX / 512);
                                 const chunkY = Math.floor(y / 512);
                                 const chunkKey = `${chunkX},${chunkY}`;
-                                let chunkCanvas = this.chunks.get(chunkKey);
-                                if (!chunkCanvas) continue;
-                                const chunkCtx = chunkCanvas.getContext('2d');
-                                const localX = ((x % 512) + 512) % 512;
-                                const localY = ((y % 512) + 512) % 512;
-                                chunkCtx.clearRect(localX, localY, 1, 1);
-                            } else {
-                                this.offscreenCtx.clearRect(x, y, 1, 1);
+                                const chunkCanvas = this.chunks.get(chunkKey);
+                                
+                                const nextChunkBoundaryX = (chunkX + 1) * 512;
+                                const drawEndX = Math.min(endX, nextChunkBoundaryX - 1);
+                                const drawWidth = drawEndX - currentX + 1;
+                                
+                                if (chunkCanvas) {
+                                    const chunkCtx = chunkCanvas.getContext('2d');
+                                    const localX = ((currentX % 512) + 512) % 512;
+                                    const localY = ((y % 512) + 512) % 512;
+                                    chunkCtx.clearRect(localX, localY, drawWidth, 1);
+                                }
+                                
+                                currentX = drawEndX + 1;
                             }
+                        } else {
+                            this.offscreenCtx.clearRect(startX, y, width, 1);
                         }
                     }
                     this.requestRender();

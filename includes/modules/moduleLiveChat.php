@@ -56,6 +56,62 @@ $maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
                                 <div class="component-skeleton component-skeleton--h40" style="border-radius: 12px; border-top-left-radius: 4px; width: 50%;"></div>
                             </div>
                         </div>
+
+                        <div style="display: flex; gap: 12px; flex-direction: row-reverse;">
+                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
+                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                                <div class="component-skeleton component-skeleton--text-short" style="width: 25%;"></div>
+                                <div class="component-skeleton component-skeleton--h45" style="border-radius: 12px; border-top-right-radius: 4px; width: 60%;"></div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px;">
+                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
+                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; gap: 6px;">
+                                <div class="component-skeleton component-skeleton--text-short" style="width: 30%;"></div>
+                                <div class="component-skeleton component-skeleton--h60" style="border-radius: 12px; border-top-left-radius: 4px; width: 80%;"></div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; flex-direction: row-reverse;">
+                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
+                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                                <div class="component-skeleton component-skeleton--text-short" style="width: 40%;"></div>
+                                <div class="component-skeleton component-skeleton--h40" style="border-radius: 12px; border-top-right-radius: 4px; width: 75%;"></div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px;">
+                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
+                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; gap: 6px;">
+                                <div class="component-skeleton component-skeleton--text-short" style="width: 25%;"></div>
+                                <div class="component-skeleton component-skeleton--h100" style="border-radius: 12px; border-top-left-radius: 4px; width: 95%;"></div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; flex-direction: row-reverse;">
+                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
+                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                                <div class="component-skeleton component-skeleton--text-short" style="width: 20%;"></div>
+                                <div class="component-skeleton component-skeleton--h45" style="border-radius: 12px; border-top-right-radius: 4px; width: 50%;"></div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px;">
+                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
+                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; gap: 6px;">
+                                <div class="component-skeleton component-skeleton--text-short" style="width: 35%;"></div>
+                                <div class="component-skeleton component-skeleton--h60" style="border-radius: 12px; border-top-left-radius: 4px; width: 85%;"></div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; flex-direction: row-reverse;">
+                            <div class="component-skeleton component-skeleton--avatar" style="width: 32px; height: 32px;"></div>
+                            <div style="flex: 1; max-width: 80%; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                                <div class="component-skeleton component-skeleton--text-short" style="width: 30%;"></div>
+                                <div class="component-skeleton component-skeleton--h40" style="border-radius: 12px; border-top-right-radius: 4px; width: 65%;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

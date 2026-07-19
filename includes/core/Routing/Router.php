@@ -174,6 +174,76 @@ class Router {
             ];
         }
 
+        if (preg_match('#^/admin/edit-user/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/admin/edit-user/:uuid'] ?? [
+                'view' => 'admin/users/edit-user.php',
+                'auth' => true,
+                'permissions' => ['edit_users'],
+                'requires_2fa' => false
+            ];
+        }
+
+        if (preg_match('#^/admin/edit-status/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/admin/edit-status/:uuid'] ?? [
+                'view' => 'admin/users/edit-status.php',
+                'auth' => true,
+                'permissions' => ['moderate_users'],
+                'requires_2fa' => false
+            ];
+        }
+
+        if (preg_match('#^/admin/user-history/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/admin/user-history/:uuid'] ?? [
+                'view' => 'admin/users/user-history.php',
+                'auth' => true,
+                'permissions' => ['view_kardex'],
+                'requires_2fa' => false
+            ];
+        }
+
+        if (preg_match('#^/admin/edit-user-role/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/admin/edit-user-role/:uuid'] ?? [
+                'view' => 'admin/users/edit-user-role.php',
+                'auth' => true,
+                'permissions' => [\App\Core\System\PermissionsConstants::ASSIGN_ROLES],
+                'requires_2fa' => false
+            ];
+        }
+
+        if (preg_match('#^/admin/roles/edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['id'] = $matches[1];
+            return $this->routes['/admin/roles/edit/:uuid'] ?? [
+                'view' => 'admin/roles/role-builder.php',
+                'auth' => true,
+                'permissions' => [\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE],
+                'requires_2fa' => false
+            ];
+        }
+
+        if (preg_match('#^/admin/roles/permissions/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['id'] = $matches[1];
+            return $this->routes['/admin/roles/permissions/:uuid'] ?? [
+                'view' => 'admin/roles/role-permissions.php',
+                'auth' => true,
+                'permissions' => [\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE],
+                'requires_2fa' => false
+            ];
+        }
+
+        if (preg_match('#^/admin/backups/restore/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['id'] = $matches[1];
+            return $this->routes['/admin/backups/restore/:uuid'] ?? [
+                'view' => 'admin/backups/backups-restore.php',
+                'auth' => true,
+                'permissions' => ['restore_backups'],
+                'requires_2fa' => false
+            ];
+        }
+
         if (!array_key_exists($relativePath, $this->routes)) {
             Logger::warning("Route not found (404)", [
                 'uri' => $requestUri, 
