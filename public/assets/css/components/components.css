@@ -1707,7 +1707,7 @@ html.dark-theme .component-menu-header.shadow {
 }
 
 .component-accordion {
-    overflow: hidden;
+    overflow: visible;
 }
 
 .component-accordion-header {

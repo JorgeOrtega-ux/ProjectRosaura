@@ -182,17 +182,14 @@ class CanvasEditController {
             }
             colorsHtml += `</div>`;
             
-            const lockHtml = isLocked ? `<span class="material-symbols-rounded" style="font-size: 14px; margin-left: 6px; color: #ff8c00;">lock</span>` : '';
+            const lockHtml = isLocked ? `<div class="component-menu-link-icon component-menu-link-icon--premium"><span class="material-symbols-rounded">stars</span></div>` : '';
 
             btn.innerHTML = `
                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
-                <div class="component-menu-link-text" style="display:flex; align-items:center;">
+                <div class="component-menu-link-text">
                     <span>${translatedName}</span>
-                    ${lockHtml}
                 </div>
-                <div class="component-menu-link-icon" style="width: auto; display: flex; align-items: center; margin-left: auto;">
-                    ${colorsHtml}
-                </div>
+                ${lockHtml}
             `;
             container.appendChild(btn);
         });

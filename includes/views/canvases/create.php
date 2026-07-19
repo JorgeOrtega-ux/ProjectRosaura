@@ -208,15 +208,15 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                                                 $isAllowed = ($tier >= $requiredTier);
                                                 $disabledClass = $isAllowed ? '' : 'disabled-interactive';
                                                 $action = $isAllowed ? 'selectValue' : '';
-                                                $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded" data-ref="lock-icon">lock</span>';
+                                                $lockIcon = $isAllowed ? '' : '<div class="component-menu-link-icon component-menu-link-icon--premium"><span class="material-symbols-rounded">stars</span></div>';
                                                 $activeClass = ($val === $defaultSizeKey && $isAllowed) ? 'active' : '';
                                             ?>
                                             <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>" data-action="<?php echo $action; ?>" data-type="size" data-value="<?php echo htmlspecialchars($val); ?>" data-tier="<?php echo $requiredTier; ?>" data-label="<?php echo htmlspecialchars($data['label']); ?>" data-icon="<?php echo htmlspecialchars($data['icon']); ?>" <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '"'; ?>>
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($data['icon']); ?></span></div>
                                                 <div class="component-menu-link-text">
                                                     <span><?php echo htmlspecialchars($data['label']); ?></span>
-                                                    <?php echo $lockIcon; ?>
                                                 </div>
+                                                <?php echo $lockIcon; ?>
                                             </div>
                                             <?php endforeach; ?>
                                         </div>
@@ -456,7 +456,7 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
                                     <?php echo __('lbl_allow_live_chat'); ?>
-                                    <?php if(!$hasLiveChat): ?><span class="material-symbols-rounded">lock</span><?php endif; ?>
+                                    <?php if(!$hasLiveChat): ?><span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Premium</span><?php endif; ?>
                                 </h2>
                                 <p class="component-card__description"><?php echo __('desc_allow_live_chat'); ?></p>
                             </div>

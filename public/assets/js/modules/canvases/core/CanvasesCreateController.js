@@ -140,17 +140,14 @@ class CanvasesCreateController {
             }
             colorsHtml += `</div>`;
             
-            const lockHtml = isLocked ? `<span class="material-symbols-rounded" style="font-size: 14px; margin-left: 6px; color: #ff8c00;">lock</span>` : '';
+            const lockHtml = isLocked ? `<div class="component-menu-link-icon component-menu-link-icon--premium"><span class="material-symbols-rounded">stars</span></div>` : '';
 
             btn.innerHTML = `
                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
-                <div class="component-menu-link-text" style="display:flex; align-items:center;">
+                <div class="component-menu-link-text">
                     <span>${translatedName}</span>
-                    ${lockHtml}
                 </div>
-                <div class="component-menu-link-icon" style="width: auto; display: flex; align-items: center; margin-left: auto;">
-                    ${colorsHtml}
-                </div>
+                ${lockHtml}
             `;
             container.appendChild(btn);
         });
@@ -247,26 +244,18 @@ class CanvasesCreateController {
                 link.classList.remove('disabled-interactive');
                 link.setAttribute('data-action', 'selectValue');
                 link.removeAttribute('title');
-                link.classList.remove('disabled-interactive');
-                const lockIcon = link.querySelector('[data-ref="lock-icon"]');
+                const lockIcon = link.querySelector('.component-menu-link-icon--premium');
                 if (lockIcon) {
-                    lockIcon.classList.remove('active');
-                    lockIcon.classList.add('disabled');
+                    lockIcon.remove();
                 }
             } else {
                 link.classList.add('disabled-interactive');
                 link.setAttribute('data-action', '');
                 link.setAttribute('title', window.__('tooltip_upgrade_required'));
-                link.classList.add('disabled-interactive');
                 
-                let lockIcon = link.querySelector('[data-ref="lock-icon"]');
+                let lockIcon = link.querySelector('.component-menu-link-icon--premium');
                 if (!lockIcon) {
-                    const textContainer = link.querySelector('.component-menu-link-text');
-                    if (textContainer) {
-                        textContainer.insertAdjacentHTML('beforeend', '<span class="material-symbols-rounded" data-ref="lock-icon" style="font-size: 14px; margin-left: 6px; color: #ff8c00;">lock</span>');
-                    }
-                } else {
-                    lockIcon.classList.remove('disabled'); lockIcon.classList.add('active');
+                    link.insertAdjacentHTML('beforeend', '<div class="component-menu-link-icon component-menu-link-icon--premium"><span class="material-symbols-rounded">stars</span></div>');
                 }
             }
         });

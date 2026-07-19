@@ -223,12 +223,12 @@ if (!$canvasId) {
                     </div>
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--stacked" data-tooltip="<?php echo __('canvas_size_locked_tooltip'); ?>" data-position="top">
+                            <div class="component-group-item component-group-item--stacked disabled-interactive" data-tooltip="<?php echo __('canvas_size_locked_tooltip'); ?>" data-position="top">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
                                     <?php echo __('canvas_size_title'); ?> 
-                                    <span class="material-symbols-rounded">lock</span>
+                                    <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">lock</span> No disponible</span>
                                 </h2>
                                 <p class="component-card__description"><?php echo __('canvas_size_desc'); ?></p>
                             </div>
@@ -474,7 +474,7 @@ if (!$canvasId) {
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
                                     <?php echo __('lbl_allow_live_chat'); ?>
-                                    <?php if(!$hasLiveChat): ?><span class="material-symbols-rounded">lock</span><?php endif; ?>
+                                    <?php if(!$hasLiveChat): ?><span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Premium</span><?php endif; ?>
                                 </h2>
                                 <p class="component-card__description"><?php echo __('desc_allow_live_chat'); ?></p>
                             </div>
