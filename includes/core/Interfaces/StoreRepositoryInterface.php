@@ -10,4 +10,5 @@ interface StoreRepositoryInterface {
     public function getUserPerks(int $userId): array;
     public function getUnusedPerks(int $userId): array;
     public function markPerkAsUsed(int $userId, string $perkId): bool;
+    public function refundPerk(int $userId, string $perkId): bool;
 }

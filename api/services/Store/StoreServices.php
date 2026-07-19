@@ -13,7 +13,10 @@ class StoreServices {
     private const PERK_PRICES = [
         'no_cooldown_10s' => 1500,
         'pixel_protection_25' => 3000,
-        'elite_eraser_25' => 5000
+        'elite_eraser_25' => 5000,
+        'pixel_misil_1' => 2000,
+        'bomba_pixel_1' => 5000,
+        'bomba_atomica_1' => 25000
     ];
 
     public function __construct(
@@ -136,6 +139,15 @@ class StoreServices {
                 if ($redis->exists($key) && (int)$redis->get($key) > 0) {
                     return ['success' => false, 'message_key' => 'err_perk_already_active'];
                 }
+            } elseif (in_array($perkId, ['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'])) {
+                foreach (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'] as $b_id) {
+                    $b_key = "user:{$userId}:perk:" . $b_id;
+                    if ($redis->exists($b_key) && (int)$redis->get($b_key) > 0) {
+                        // User has an active bomb. We will refund it and remove it.
+                        $this->storeRepo->refundPerk($userId, $b_id);
+                        $redis->del($b_key);
+                    }
+                }
             }
         } catch (\Throwable $e) {
             Logger::error("Redis Error en activatePerk (Check): " . $e->getMessage());
@@ -166,6 +178,11 @@ class StoreServices {
                     $duration = $perksConfig['elite_eraser_25']['duration_seconds'] ?? 86400;
                     $amount = $perksConfig['elite_eraser_25']['amount'] ?? 25;
                     $key = "user:{$userId}:perk:eraser";
+                    $redis->setex($key, $duration, (string)$amount);
+                } elseif (in_array($perkId, ['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1'])) {
+                    $duration = $perksConfig[$perkId]['duration_seconds'] ?? 86400;
+                    $amount = $perksConfig[$perkId]['amount'] ?? 1;
+                    $key = "user:{$userId}:perk:" . $perkId;
                     $redis->setex($key, $duration, (string)$amount);
                 }
             }

@@ -140,6 +140,30 @@ export const DesignNetwork = {
                     }
                     this.requestRender();
                 } 
+                else if (data.type === 'bomb_pixel') {
+                    const cX = parseInt(data.x, 10);
+                    const cY = parseInt(data.y, 10);
+                    const r = parseInt(data.r, 10);
+                    
+                    for (let x = cX - r; x <= cX + r; x++) {
+                        for (let y = cY - r; y <= cY + r; y++) {
+                            if (this.isInfinite) {
+                                const chunkX = Math.floor(x / 512);
+                                const chunkY = Math.floor(y / 512);
+                                const chunkKey = `${chunkX},${chunkY}`;
+                                let chunkCanvas = this.chunks.get(chunkKey);
+                                if (!chunkCanvas) continue;
+                                const chunkCtx = chunkCanvas.getContext('2d');
+                                const localX = ((x % 512) + 512) % 512;
+                                const localY = ((y % 512) + 512) % 512;
+                                chunkCtx.clearRect(localX, localY, 1, 1);
+                            } else {
+                                this.offscreenCtx.clearRect(x, y, 1, 1);
+                            }
+                        }
+                    }
+                    this.requestRender();
+                }
                 else if (data.type === 'chunk_data') {
                     if (typeof this.hydrateChunk === 'function') {
                         this.hydrateChunk(data.chunk_x, data.chunk_y, data.state_base64);
@@ -786,6 +810,7 @@ export const DesignNetwork = {
         if (data.perk_no_cooldown !== undefined) this.perkNoCooldown = data.perk_no_cooldown;
         if (data.perk_protection_left !== undefined) this.perkProtectionLeft = data.perk_protection_left;
         if (data.perk_eraser_left !== undefined) this.perkEraserLeft = data.perk_eraser_left;
+        if (data.perk_bomb_ready !== undefined) this.perkBombReady = data.perk_bomb_ready;
 
         if (data.type === 'cooldown_error') {
             showMessage(__('err_sync_limit'), 'warning');

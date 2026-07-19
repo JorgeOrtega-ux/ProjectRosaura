@@ -290,7 +290,7 @@ if (!empty($canvasUuid)) {
                     
                     <?php if ($canvasAllowPurchases == '1'): ?>
                     <div class="component-divider-vertical" data-ref="advantages-actions-divider"></div>
-                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-advantages" data-tooltip="<?php echo __('tooltip_active_advantages'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="togglePerksInventory" data-tooltip="<?php echo __('tooltip_active_advantages'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">stars</span>
                     </button>
                     <?php endif; ?>

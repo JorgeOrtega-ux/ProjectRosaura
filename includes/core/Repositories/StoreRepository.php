@@ -105,12 +105,32 @@ class StoreRepository implements StoreRepositoryInterface {
             ORDER BY created_at ASC LIMIT 1
         ");
         $stmt->execute([$userId, $perkId]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if ($row) {
             $updateStmt = $this->db->prepare("
                 UPDATE user_perks 
                 SET is_used = 1, used_at = NOW() 
+                WHERE id = ?
+            ");
+            return $updateStmt->execute([$row['id']]);
+        }
+        return false;
+    }
+
+    public function refundPerk(int $userId, string $perkId): bool {
+        $stmt = $this->db->prepare("
+            SELECT id FROM user_perks 
+            WHERE user_id = ? AND perk_id = ? AND is_used = 1 
+            ORDER BY used_at DESC LIMIT 1
+        ");
+        $stmt->execute([$userId, $perkId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if ($row) {
+            $updateStmt = $this->db->prepare("
+                UPDATE user_perks 
+                SET is_used = 0, used_at = NULL 
                 WHERE id = ?
             ");
             return $updateStmt->execute([$row['id']]);

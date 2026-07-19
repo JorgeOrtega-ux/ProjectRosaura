@@ -315,6 +315,12 @@ async def handler(websocket):
                         protection_left = int(protection_left) if protection_left else 0
                         eraser_left = await r.get(f"user:{user_id}:perk:eraser")
                         eraser_left = int(eraser_left) if eraser_left else 0
+                        
+                        active_bomb = None
+                        for b_id in ['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1']:
+                            if await r.exists(f"user:{user_id}:perk:{b_id}"):
+                                active_bomb = b_id
+                                break
                     else:
                         print(f"[DEBUG PY] Unidentified user, returning default max batch.")
                         balance = config_batch
@@ -322,6 +328,7 @@ async def handler(websocket):
                         is_no_cooldown = 0
                         protection_left = 0
                         eraser_left = 0
+                        active_bomb = None
                         
                     init_msg = json.dumps({
                         "type": "init_cooldown",
@@ -332,7 +339,8 @@ async def handler(websocket):
                         "next_replenish_in": next_in,
                         "perk_no_cooldown": bool(is_no_cooldown),
                         "perk_protection_left": protection_left,
-                        "perk_eraser_left": eraser_left
+                        "perk_eraser_left": eraser_left,
+                        "perk_bomb_ready": active_bomb
                     })
                     print(f"[DEBUG PY] Sending INIT response to front: {init_msg}")
                     await websocket.send(init_msg)
@@ -792,6 +800,72 @@ async def handler(websocket):
                                 "perk_eraser_left": 0
                             })
                             await websocket.send(error_msg)
+
+                elif data.get("type") == "bomb_pixel":
+                    cx = int(data.get("x", 0))
+                    cy = int(data.get("y", 0))
+                    width = int(data.get("width", 64))
+                    perk = data.get("perk")
+                    user_id = WS_META[websocket].get('user_id')
+                    
+                    if not user_id or not perk:
+                        continue
+                        
+                    if user_id not in USER_LOCKS:
+                        USER_LOCKS[user_id] = asyncio.Lock()
+
+                    async with USER_LOCKS[user_id]:
+                        user_bomb_key = f"user:{user_id}:perk:{perk}"
+                        bombs_left = await r.get(user_bomb_key)
+                        bombs_left = int(bombs_left) if bombs_left else 0
+                        
+                        if bombs_left > 0:
+                            radius = 2 if perk == 'pixel_misil_1' else (4 if perk == 'bomba_pixel_1' else 24)
+                            
+                            await r.decr(user_bomb_key)
+                            
+                            pipeline = r.pipeline()
+                            for ix in range(cx - radius, cx + radius + 1):
+                                for iy in range(cy - radius, cy + radius + 1):
+                                    if width == 0:
+                                        offset = f"{ix},{iy}"
+                                    else:
+                                        if ix < 0 or ix >= width or iy < 0:
+                                            continue
+                                        offset = (iy * width) + ix
+                                        
+                                    protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
+                                    pipeline.delete(protected_key)
+                                    
+                                    if width == 0:
+                                        chunk_x = ix // 512
+                                        chunk_y = iy // 512
+                                        local_x = ix % 512
+                                        local_y = iy % 512
+                                        redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
+                                        byte_offset = ((local_y * 512) + local_x) * 4
+                                    else:
+                                        redis_state_key = f"canvas:{canvas_id}:state"
+                                        byte_offset = (iy * width + ix) * 4
+                                        
+                                    pipeline.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00')
+                            
+                            await pipeline.execute()
+                            
+                            confirm_msg = json.dumps({"type": "pixel_confirm"})
+                            await websocket.send(confirm_msg)
+                            
+                            broadcast_msg = json.dumps({
+                                "type": "bomb_pixel",
+                                "x": cx,
+                                "y": cy,
+                                "r": radius
+                            })
+                            clients_in_room = ROOMS.get(canvas_id, set())
+                            if len(clients_in_room) > 0:
+                                tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
+                                await asyncio.gather(*tasks)
+                            await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
 
                 elif data.get("type") == "request_chunks":
                     import base64

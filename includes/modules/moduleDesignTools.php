@@ -182,41 +182,6 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         </div>
     </div>
 
-    <?php if (!isset($canvasAllowPurchases) || $canvasAllowPurchases == '1'): ?>
-    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding disabled" data-ref="menu-advantages">
-        <div class="pill-container"><div class="drag-handle"></div></div>
-        
-        <div class="component-menu-header">
-            <div class="component-menu-header-box">
-                <span class="material-symbols-rounded">stars</span>
-                <span class="component-menu-header-title"><?php echo __('dt_active_advantages'); ?></span>
-            </div>
-        </div>
-        
-        <div class="component-menu-section-parent">
-            <div class="component-menu-top">
-                <div class="component-menu-header-box">
-                    <span class="material-symbols-rounded">inventory_2</span>
-                    <span class="component-menu-header-title"><?php echo __('dt_my_advantages'); ?></span>
-                </div>
-            </div>
 
-            <div class="component-menu-bottom">
-                <div class="component-items-list" data-ref="user-advantages-list">
-                    <div class="component-loader-center component-loader-center--compact">
-                        <div class="component-empty-state-content">
-                            <span class="material-symbols-rounded icon-spin-slow">stars</span><br>
-                            <?php echo __('dt_loading'); ?>
-                        </div>
-                    </div>
-                </div>
-                <div class="component-empty-state disabled" data-ref="empty-state-rendered">
-                    <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                    <p class="component-empty-state-text"><?php echo __('dt_no_advantages'); ?></p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
 
 </div>
