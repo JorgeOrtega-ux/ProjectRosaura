@@ -949,6 +949,16 @@ async def handler(websocket):
                                     tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
                                     await asyncio.gather(*tasks)
                                 await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
+                                
+                                stream_key = f"canvas:{canvas_id}:stream"
+                                event_dict = {
+                                    "type": "bomb_pixel",
+                                    "x": str(cx),
+                                    "y": str(cy),
+                                    "r": str(radius),
+                                    "perk": str(perk)
+                                }
+                                await r.xadd(stream_key, event_dict)
 
                             if perk == 'bomba_atomica_1':
                                 warning_msg = json.dumps({

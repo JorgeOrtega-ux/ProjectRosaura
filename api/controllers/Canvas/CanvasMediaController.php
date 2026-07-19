@@ -119,17 +119,29 @@ class CanvasMediaController extends BaseController {
             }
 
             $s3Key = $result['file_path'];
+            $isInfinite = $result['is_infinite'] ?? false;
             $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
             $s3Client = \App\Core\Helpers\Utils::getS3Client();
             $t2 = microtime(true);
 
-            try {
-                $head = $s3Client->headObject([
-                    'Bucket' => $bucket,
-                    'Key' => $s3Key
-                ]);
-            } catch (\Exception $e) {
-                return $this->respond(['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND]);
+            $chunks = [];
+            if ($isInfinite) {
+                $chunksParam = $input['chunks'] ?? '';
+                if ($chunksParam) {
+                    $chunks = is_array($chunksParam) ? $chunksParam : explode(',', $chunksParam);
+                }
+            }
+
+            $head = null;
+            if (!$isInfinite) {
+                try {
+                    $head = $s3Client->headObject([
+                        'Bucket' => $bucket,
+                        'Key' => $s3Key
+                    ]);
+                } catch (\Exception $e) {
+                    return $this->respond(['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND]);
+                }
             }
             $t3 = microtime(true);
 
@@ -150,21 +162,64 @@ class CanvasMediaController extends BaseController {
 
             header('Content-Type: application/x-ndjson');
             header('Content-Disposition: attachment; filename="snapshot_timelapse_' . $snapshotId . '.jsonl"');
-            header('Content-Length: ' . $head['ContentLength']);
+            if ($head && isset($head['ContentLength'])) {
+                header('Content-Length: ' . $head['ContentLength']);
+            }
             header('Cache-Control: no-cache, must-revalidate');
             header('Pragma: no-cache');
             header('Expires: 0');
             
             flush();
-            $stream = fopen('php://output', 'w');
-            $s3Client->getObject([
-                'Bucket' => $bucket,
-                'Key' => $s3Key,
-                'SaveAs' => $stream
-            ]);
-            if (is_resource($stream)) {
-                fclose($stream);
+            flush();
+            
+            if ($isInfinite) {
+                if (in_array('all', $chunks)) {
+                    $prefix = rtrim($s3Key, '/') . '/';
+                    try {
+                        $objects = $s3Client->listObjectsV2([
+                            'Bucket' => $bucket,
+                            'Prefix' => $prefix
+                        ]);
+                        if (isset($objects['Contents'])) {
+                            foreach ($objects['Contents'] as $obj) {
+                                if (str_ends_with($obj['Key'], '.jsonl')) {
+                                    try {
+                                        $res = $s3Client->getObject([
+                                            'Bucket' => $bucket,
+                                            'Key' => $obj['Key']
+                                        ]);
+                                        echo $res['Body'];
+                                        echo "\n";
+                                    } catch (\Exception $e) {}
+                                }
+                            }
+                        }
+                    } catch (\Exception $e) {}
+                } else {
+                    foreach ($chunks as $chunk) {
+                        $chunk = trim($chunk);
+                        if (!$chunk) continue;
+                        $chunkKey = rtrim($s3Key, '/') . '/' . $chunk . '.jsonl';
+                        try {
+                            $res = $s3Client->getObject([
+                                'Bucket' => $bucket,
+                                'Key' => $chunkKey
+                            ]);
+                            echo $res['Body'];
+                            echo "\n";
+                        } catch (\Exception $e) {
+                            // ignore missing chunks silently
+                        }
+                    }
+                }
+            } else {
+                $res = $s3Client->getObject([
+                    'Bucket' => $bucket,
+                    'Key' => $s3Key
+                ]);
+                echo $res['Body'];
             }
+            
             exit;
 
         } catch (\Throwable $e) {

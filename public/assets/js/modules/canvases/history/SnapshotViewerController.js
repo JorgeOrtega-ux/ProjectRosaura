@@ -44,6 +44,7 @@ class SnapshotViewerController {
         this.handleMouseUpBound = this.handleMouseUp.bind(this);
         this.handleResizeBound = this.handleResize.bind(this);
         this.renderBound = this.render.bind(this);
+        this.explosions = [];
     }
 
     async init() {
@@ -52,9 +53,15 @@ class SnapshotViewerController {
             this.snapshotId = wrapper.getAttribute('data-snapshot-id');
             const sizeStr = wrapper.getAttribute('data-size');
             if (sizeStr) {
-                const parts = sizeStr.toLowerCase().split('x');
-                this.boardWidth = parseInt(parts[0], 10);
-                this.boardHeight = parts.length > 1 ? parseInt(parts[1], 10) : this.boardWidth;
+                if (sizeStr.toLowerCase() === 'infinite') {
+                    this.isInfinite = true;
+                    this.boardWidth = 3000;
+                    this.boardHeight = 3000;
+                } else {
+                    const parts = sizeStr.toLowerCase().split('x');
+                    this.boardWidth = parseInt(parts[0], 10);
+                    this.boardHeight = parts.length > 1 ? parseInt(parts[1], 10) : this.boardWidth;
+                }
             }
         } else {
             const parts = window.location.pathname.split('/');
@@ -216,8 +223,11 @@ class SnapshotViewerController {
             
             if (response.success && response.data) {
                 this.isDataLoaded = true;
-                this.boardWidth = parseInt(response.data.width, 10) || 2000;
-                this.boardHeight = parseInt(response.data.height, 10) || 1000;
+                this.isInfinite = (response.data.size && response.data.size.toLowerCase() === 'infinite');
+                this.boardWidth = parseInt(response.data.width, 10);
+                this.boardHeight = parseInt(response.data.height, 10);
+                if (isNaN(this.boardWidth) || this.boardWidth <= 0) this.boardWidth = this.isInfinite ? 3000 : 2000;
+                if (isNaN(this.boardHeight) || this.boardHeight <= 0) this.boardHeight = this.isInfinite ? 3000 : 1000;
                 this.originalImageUrl = response.data.image_url;
                 
                 this.hasTimelapse = response.data.has_timelapse || false;
@@ -281,7 +291,15 @@ class SnapshotViewerController {
     async fetchTimelapseData() {
         try {
             const endpoint = ApiRoutes.Canvases?.GetSnapshotTimelapse || 'canvases.get_snapshot_timelapse';
-            const response = await this.api.downloadText(endpoint, { id: this.snapshotId });
+            let chunksParam = '';
+            if (this.isInfinite) {
+                chunksParam = 'all';
+            }
+
+            const response = await this.api.downloadText(endpoint, { 
+                id: this.snapshotId,
+                chunks: chunksParam
+            });
 
             if (!response.success) {
                 showMessage(response.message || __('err_download_timelapse'), "error");
@@ -289,7 +307,49 @@ class SnapshotViewerController {
             }
 
             const text = response.data;
-            this.timelapseData = text.trim().split('\n');
+            const lines = text.trim().split('\n').filter(l => l.trim() !== '');
+            
+            // Si es infinito, ordenamos por _id (timestamp)
+            if (this.isInfinite) {
+                const parsed = [];
+                for (const line of lines) {
+                    try {
+                        parsed.push(JSON.parse(line));
+                    } catch(e) {}
+                }
+                parsed.sort((a, b) => {
+                    const tA = a._id ? a._id.split('-')[0] : 0;
+                    const tB = b._id ? b._id.split('-')[0] : 0;
+                    return tA - tB;
+                });
+                this.timelapseData = parsed.map(p => JSON.stringify(p));
+                console.log(`[SnapshotViewer] Parsed ${parsed.length} pixels for infinite canvas. min/max will be calculated next.`);
+
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                for (const p of parsed) {
+                    const px = parseInt(p.x, 10);
+                    const py = parseInt(p.y, 10);
+                    if (px < minX) minX = px;
+                    if (py < minY) minY = py;
+                    if (px > maxX) maxX = px;
+                    if (py > maxY) maxY = py;
+                }
+                
+                if (minX !== Infinity) {
+                    this.infiniteOffsetX = minX;
+                    this.infiniteOffsetY = minY;
+                    this.boardWidth = Math.min(16000, Math.max(1, maxX - minX + 1));
+                    this.boardHeight = Math.min(16000, Math.max(1, maxY - minY + 1));
+                    this.setupCanvas();
+                    this.centerBoard();
+                    this.requestRender();
+                } else {
+                    this.infiniteOffsetX = 0;
+                    this.infiniteOffsetY = 0;
+                }
+            } else {
+                this.timelapseData = lines;
+            }
 
             return true;
         } catch(e) {
@@ -374,11 +434,57 @@ class SnapshotViewerController {
     drawSinglePixel(pixel) {
         if (!pixel) return;
         
-        const colorIndex = parseInt(pixel.c, 10);
-        let colorHex = '#FFFFFF';
+        const offsetX = this.isInfinite ? (this.infiniteOffsetX || 0) : 0;
+        const offsetY = this.isInfinite ? (this.infiniteOffsetY || 0) : 0;
+
+        if (pixel.type === 'bomb_pixel') {
+            const x = parseInt(pixel.x, 10) - offsetX;
+            const y = parseInt(pixel.y, 10) - offsetY;
+            const r = parseInt(pixel.r, 10);
+            
+            // Borrar los pixeles en un circulo (pintarlos de blanco)
+            this.offscreenCtx.save();
+            this.offscreenCtx.beginPath();
+            // Centramos el circulo en el pixel (x + 0.5, y + 0.5)
+            this.offscreenCtx.arc(x + 0.5, y + 0.5, r, 0, 2 * Math.PI);
+            this.offscreenCtx.clip();
+            this.offscreenCtx.fillStyle = '#FFFFFF';
+            this.offscreenCtx.fillRect(x - r - 1, y - r - 1, r * 2 + 2, r * 2 + 2);
+            this.offscreenCtx.restore();
+            
+            this.triggerExplosionEffect(x, y, r, pixel.perk);
+            return;
+        }
         
-        if (colorIndex !== 255 && this.paletteColors[colorIndex]) {
-            colorHex = this.paletteColors[colorIndex].hex || this.paletteColors[colorIndex];
+        if (pixel.type === 'template_plazmar') {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                this.offscreenCtx.save();
+                const x = parseInt(pixel.x, 10) - offsetX;
+                const y = parseInt(pixel.y, 10) - offsetY;
+                const w = parseInt(pixel.w, 10);
+                const h = parseInt(pixel.h, 10);
+                const angle = parseFloat(pixel.angle || 0);
+                
+                this.offscreenCtx.translate(x + w/2, y + h/2);
+                this.offscreenCtx.rotate(angle * Math.PI / 180);
+                this.offscreenCtx.drawImage(img, -w/2, -h/2, w, h);
+                this.offscreenCtx.restore();
+                this.requestRender();
+            };
+            img.src = pixel.image_url;
+            return;
+        }
+
+        let colorHex = '#FFFFFF';
+        if (typeof pixel.c === 'string' && pixel.c.startsWith('#')) {
+            colorHex = pixel.c;
+        } else {
+            const colorIndex = parseInt(pixel.c, 10);
+            if (!isNaN(colorIndex) && colorIndex !== 255 && this.paletteColors[colorIndex]) {
+                colorHex = this.paletteColors[colorIndex].hex || this.paletteColors[colorIndex];
+            }
         }
 
         if (this.currentFrame < 5 || this.currentFrame % 500 === 0) {
@@ -386,7 +492,71 @@ class SnapshotViewerController {
         }
 
         this.offscreenCtx.fillStyle = colorHex;
-        this.offscreenCtx.fillRect(parseInt(pixel.x, 10), parseInt(pixel.y, 10), 1, 1);
+        const x = this.isInfinite ? (parseInt(pixel.x, 10) - (this.infiniteOffsetX || 0)) : parseInt(pixel.x, 10);
+        const y = this.isInfinite ? (parseInt(pixel.y, 10) - (this.infiniteOffsetY || 0)) : parseInt(pixel.y, 10);
+        this.offscreenCtx.fillRect(x, y, 1, 1);
+    }
+
+    triggerExplosionEffect(cx, cy, r, perkId) {
+        this.explosions.push({
+            x: cx,
+            y: cy,
+            maxRadius: r,
+            perkId: perkId,
+            startTime: Date.now(),
+            duration: perkId === 'bomba_atomica_1' ? 1500 : (perkId === 'bomba_pixel_1' ? 800 : 400) 
+        });
+        
+        if (perkId === 'bomba_atomica_1') {
+            if (!document.getElementById('nuclear-style')) {
+                const style = document.createElement('style');
+                style.id = 'nuclear-style';
+                style.innerHTML = `
+                    @keyframes nuclear-shake {
+                        0% { transform: translate(1px, 1px) rotate(0deg); }
+                        10% { transform: translate(-10px, -4px) rotate(-1deg); }
+                        20% { transform: translate(-6px, 0px) rotate(1deg); }
+                        30% { transform: translate(6px, 4px) rotate(0deg); }
+                        40% { transform: translate(2px, -2px) rotate(1deg); }
+                        50% { transform: translate(-2px, 4px) rotate(-1deg); }
+                        60% { transform: translate(-6px, 2px) rotate(0deg); }
+                        70% { transform: translate(6px, 2px) rotate(-1deg); }
+                        80% { transform: translate(-2px, -2px) rotate(1deg); }
+                        90% { transform: translate(2px, 4px) rotate(0deg); }
+                        100% { transform: translate(2px, -4px) rotate(-1deg); }
+                    }
+                    .nuclear-shake {
+                        animation: nuclear-shake 0.1s infinite !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            if (this.canvas) {
+                this.canvas.classList.add('nuclear-shake');
+                setTimeout(() => {
+                    this.canvas.classList.remove('nuclear-shake');
+                }, 1000);
+            }
+            
+            const flash = document.createElement('div');
+            flash.style.position = 'fixed';
+            flash.style.top = '0';
+            flash.style.left = '0';
+            flash.style.width = '100vw';
+            flash.style.height = '100vh';
+            flash.style.backgroundColor = 'white';
+            flash.style.zIndex = '999999';
+            flash.style.pointerEvents = 'none';
+            flash.style.transition = 'opacity 1.5s ease-out';
+            document.body.appendChild(flash);
+            
+            flash.offsetHeight;
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), 1500);
+        }
+        
+        this.requestRender();
     }
 
     setupCanvas() {
@@ -403,7 +573,16 @@ class SnapshotViewerController {
         img.onload = () => {
             this.offscreenCtx.imageSmoothingEnabled = false; 
             this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
-            this.offscreenCtx.drawImage(img, 0, 0, this.boardWidth, this.boardHeight);
+            
+            const dx = this.isInfinite ? (this.infiniteOffsetX || 0) : 0;
+            const dy = this.isInfinite ? (this.infiniteOffsetY || 0) : 0;
+            
+            // If it's infinite, the image drawn here is the full thumbnail we grabbed earlier?
+            // Wait, for infinite we shouldn't draw the snapshot image because it doesn't align with timelapse bounds unless properly mapped.
+            // For now, let's draw it at 0,0 relative to offscreen bounds if it's not infinite.
+            if (!this.isInfinite) {
+                this.offscreenCtx.drawImage(img, 0, 0, this.boardWidth, this.boardHeight);
+            }
             this.requestRender();
         };
         img.onerror = () => {
@@ -436,13 +615,18 @@ class SnapshotViewerController {
         const scaleX = rect.width / this.boardWidth;
         const scaleY = rect.height / this.boardHeight;
         this.transform.scale = Math.min(scaleX, scaleY) * 0.9; 
+        if (this.transform.scale > 5) this.transform.scale = 5;
         
-        this.transform.x = (rect.width - (this.boardWidth * this.transform.scale)) / 2;
-        this.transform.y = (rect.height - (this.boardHeight * this.transform.scale)) / 2;
+        const offsetX = this.isInfinite ? (this.infiniteOffsetX || 0) : 0;
+        const offsetY = this.isInfinite ? (this.infiniteOffsetY || 0) : 0;
+        
+        this.transform.x = (rect.width - (this.boardWidth * this.transform.scale)) / 2 - (offsetX * this.transform.scale);
+        this.transform.y = (rect.height - (this.boardHeight * this.transform.scale)) / 2 - (offsetY * this.transform.scale);
     }
 
     limitBounds() {
         if (!this.canvas) return;
+        if (this.isInfinite) return;
         
         const scaledWidth = this.boardWidth * this.transform.scale;
         const scaledHeight = this.boardHeight * this.transform.scale;
@@ -538,6 +722,10 @@ class SnapshotViewerController {
         const boardX = Math.floor((mouseX - this.transform.x) / this.transform.scale);
         const boardY = Math.floor((mouseY - this.transform.y) / this.transform.scale);
 
+        if (this.isInfinite) {
+            return { x: boardX, y: boardY };
+        }
+        
         if (boardX >= 0 && boardX < this.boardWidth && boardY >= 0 && boardY < this.boardHeight) {
             return { x: boardX, y: boardY };
         }
@@ -592,7 +780,7 @@ class SnapshotViewerController {
         if (!this.ctx || !this.canvas) return;
 
         const isDark = this.isDarkMode();
-        const bgColor = isDark ? '#0e0e11' : '#f5f5fa'; 
+        const bgColor = this.isInfinite ? '#FFFFFF' : (isDark ? '#0e0e11' : '#f5f5fa'); 
         const gridColor = 'rgba(0, 0, 0, 0.15)'; 
 
         this.ctx.fillStyle = bgColor; 
@@ -610,11 +798,74 @@ class SnapshotViewerController {
         
         this.ctx.imageSmoothingEnabled = false;
         
-        this.ctx.fillStyle = '#FFFFFF';
-        this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
+        if (!this.isInfinite) {
+            this.ctx.fillStyle = '#FFFFFF';
+            this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
+        }
 
         if (this.offscreenCanvas) {
-            this.ctx.drawImage(this.offscreenCanvas, 0, 0);
+            const dx = this.isInfinite ? (this.infiniteOffsetX || 0) : 0;
+            const dy = this.isInfinite ? (this.infiniteOffsetY || 0) : 0;
+            this.ctx.drawImage(this.offscreenCanvas, dx, dy);
+        }
+
+        if (this.explosions && this.explosions.length > 0) {
+            let activeExplosions = false;
+            this.explosions.forEach(exp => {
+                const elapsed = Date.now() - exp.startTime;
+                if (elapsed >= exp.duration) return;
+                activeExplosions = true;
+                
+                const progress = Math.min(1, elapsed / exp.duration);
+                const opacity = 1 - progress;
+                
+                if (exp.perkId === 'bomba_atomica_1') {
+                    const currentRadius = exp.maxRadius * (1 + 2 * progress); 
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, currentRadius, 0, 2 * Math.PI);
+                    this.ctx.lineWidth = 10 / this.transform.scale;
+                    this.ctx.strokeStyle = `rgba(239, 68, 68, ${opacity})`; 
+                    this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.5})`; 
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                } else if (exp.perkId === 'bomba_pixel_1') {
+                    const radius1 = exp.maxRadius * (1 + 1.5 * progress);
+                    const radius2 = exp.maxRadius * (0.5 + 1 * progress);
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, radius1, 0, 2 * Math.PI);
+                    this.ctx.lineWidth = 3 / this.transform.scale;
+                    this.ctx.strokeStyle = `rgba(249, 115, 22, ${opacity})`;
+                    this.ctx.stroke();
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, radius2, 0, 2 * Math.PI);
+                    this.ctx.lineWidth = 4 / this.transform.scale;
+                    this.ctx.strokeStyle = `rgba(239, 68, 68, ${opacity})`;
+                    this.ctx.fillStyle = `rgba(220, 38, 38, ${opacity * 0.6})`;
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                } else {
+                    const size = exp.maxRadius * (1 + 3 * progress);
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(exp.x + 0.5 - size, exp.y + 0.5);
+                    this.ctx.lineTo(exp.x + 0.5 + size, exp.y + 0.5);
+                    this.ctx.moveTo(exp.x + 0.5, exp.y + 0.5 - size);
+                    this.ctx.lineTo(exp.x + 0.5, exp.y + 0.5 + size);
+                    
+                    this.ctx.lineWidth = 3 / this.transform.scale;
+                    this.ctx.strokeStyle = `rgba(6, 182, 212, ${opacity})`;
+                    this.ctx.stroke();
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, size * 0.8, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.8})`;
+                    this.ctx.fill();
+                }
+            });
+            this.explosions = this.explosions.filter(exp => (Date.now() - exp.startTime) < exp.duration);
+            if (activeExplosions) this.requestRender();
         }
 
         if (this.transform.scale > 4 && this.showGrid) {
@@ -624,10 +875,10 @@ class SnapshotViewerController {
             
             const rect = this.canvas.getBoundingClientRect();
             
-            const startX = Math.max(0, Math.floor(-this.transform.x / this.transform.scale));
-            const startY = Math.max(0, Math.floor(-this.transform.y / this.transform.scale));
-            const endX = Math.min(this.boardWidth, Math.ceil((rect.width - this.transform.x) / this.transform.scale));
-            const endY = Math.min(this.boardHeight, Math.ceil((rect.height - this.transform.y) / this.transform.scale));
+            const startX = this.isInfinite ? Math.floor(-this.transform.x / this.transform.scale) : Math.max(0, Math.floor(-this.transform.x / this.transform.scale));
+            const startY = this.isInfinite ? Math.floor(-this.transform.y / this.transform.scale) : Math.max(0, Math.floor(-this.transform.y / this.transform.scale));
+            const endX = this.isInfinite ? Math.ceil((rect.width - this.transform.x) / this.transform.scale) : Math.min(this.boardWidth, Math.ceil((rect.width - this.transform.x) / this.transform.scale));
+            const endY = this.isInfinite ? Math.ceil((rect.height - this.transform.y) / this.transform.scale) : Math.min(this.boardHeight, Math.ceil((rect.height - this.transform.y) / this.transform.scale));
 
             for (let x = startX; x <= endX; x++) {
                 this.ctx.moveTo(x, startY);

@@ -67,7 +67,7 @@ class CanvasMediaService {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.timelapse_file_path, c.id as canvas_id, c.privacy, c.owner_id 
+                SELECT s.timelapse_file_path, c.id as canvas_id, c.privacy, c.owner_id, c.size 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :snapshot_id 
@@ -121,7 +121,8 @@ class CanvasMediaService {
                 's3_doesObjectExist' => round($tx4 - $tx3, 4)
             ]);
 
-            return ['success' => true, 'file_path' => $s3Key];
+            $isInfinite = ($data['size'] ?? '') === 'infinite';
+            return ['success' => true, 'file_path' => $s3Key, 'is_infinite' => $isInfinite];
 
         } catch (Exception $e) {
             Logger::error('Error preparing snapshot timelapse.', ['snapshot_id' => $snapshotId, 'error' => $e->getMessage()]);
@@ -236,6 +237,7 @@ class CanvasMediaService {
                     'image_url' => $imageUrl,
                     'width' => $width,
                     'height' => $height,
+                    'size' => $data['size'],
                     'has_timelapse' => $hasTimelapse,
                     'palette_id' => $data['palette_id']
                 ]

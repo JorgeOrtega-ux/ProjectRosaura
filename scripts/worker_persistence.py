@@ -69,6 +69,7 @@ def canvas_persistence_thread():
         return
 
     canvas_uuid_cache = {}
+    canvas_size_cache = {}
 
     while True:
         try:
@@ -91,15 +92,18 @@ def canvas_persistence_thread():
                     canvas_id = stream_name.split(":")[1]
                     
                     canvas_uuid = canvas_uuid_cache.get(canvas_id)
-                    if not canvas_uuid:
+                    canvas_size = canvas_size_cache.get(canvas_id)
+                    if not canvas_uuid or not canvas_size:
                         db_conn = get_db_connection()
                         if db_conn:
                             cursor = db_conn.cursor()
-                            cursor.execute("SELECT uuid FROM canvases WHERE id = %s", (canvas_id,))
+                            cursor.execute("SELECT uuid, size FROM canvases WHERE id = %s", (canvas_id,))
                             row = cursor.fetchone()
                             if row:
                                 canvas_uuid = row[0]
+                                canvas_size = row[1]
                                 canvas_uuid_cache[canvas_id] = canvas_uuid
+                                canvas_size_cache[canvas_id] = canvas_size
                             cursor.close()
                             db_conn.close()
                     
@@ -107,32 +111,61 @@ def canvas_persistence_thread():
                         print(f"[!] Could not resolve UUID for canvas {canvas_id}. Skipping.")
                         continue
                     
+                    is_infinite = (canvas_size and canvas_size.lower().strip() == 'infinite')
                     s3 = get_s3_client()
-                    live_key = f"timelapses/{canvas_uuid}/live/live_canvas_{canvas_uuid}.jsonl"
                     
-                    existing_data = b""
-                    try:
-                        response = s3.get_object(Bucket=S3_BUCKET, Key=live_key)
-                        existing_data = response['Body'].read()
-                    except botocore.exceptions.ClientError as e:
-                        if e.response['Error']['Code'] != "NoSuchKey":
-                            print(f"[!] S3 error reading timelapse: {e}")
-                            
-                    new_events = []
                     parsed_events = []
                     for msg_id_b, msg_data_b in msgs:
                         msg_id = msg_id_b.decode('utf-8')
                         event = {k.decode('utf-8'): v.decode('utf-8') for k, v in msg_data_b.items()}
                         event["_id"] = msg_id
                         parsed_events.append(event)
-                        new_events.append(json.dumps(event) + "\n")
+
+                    if is_infinite:
+                        from collections import defaultdict
+                        chunk_events = defaultdict(list)
+                        for evt in parsed_events:
+                            if 'x' in evt and 'y' in evt:
+                                try:
+                                    cx = int(evt['x']) // 512
+                                    cy = int(evt['y']) // 512
+                                    chunk_events[(cx, cy)].append(json.dumps(evt) + "\n")
+                                except ValueError:
+                                    pass
                         
-                    final_data = existing_data + "".join(new_events).encode('utf-8')
-                    try:
-                        s3.put_object(Bucket=S3_BUCKET, Key=live_key, Body=final_data, ContentType='application/jsonl')
-                    except Exception as e:
-                        print(f"[!] S3 error saving timelapse: {e}")
-                        continue
+                        for (cx, cy), events_json in chunk_events.items():
+                            chunk_key = f"timelapses/{canvas_uuid}/live/{cx}_{cy}.jsonl"
+                            existing_data = b""
+                            try:
+                                response = s3.get_object(Bucket=S3_BUCKET, Key=chunk_key)
+                                existing_data = response['Body'].read()
+                            except botocore.exceptions.ClientError as e:
+                                if e.response['Error']['Code'] != "NoSuchKey":
+                                    print(f"[!] S3 error reading timelapse chunk {cx}_{cy}: {e}")
+                            
+                            final_data = existing_data + "".join(events_json).encode('utf-8')
+                            try:
+                                s3.put_object(Bucket=S3_BUCKET, Key=chunk_key, Body=final_data, ContentType='application/jsonl')
+                            except Exception as e:
+                                print(f"[!] S3 error saving timelapse chunk {cx}_{cy}: {e}")
+                    else:
+                        live_key = f"timelapses/{canvas_uuid}/live/live_canvas_{canvas_uuid}.jsonl"
+                        
+                        existing_data = b""
+                        try:
+                            response = s3.get_object(Bucket=S3_BUCKET, Key=live_key)
+                            existing_data = response['Body'].read()
+                        except botocore.exceptions.ClientError as e:
+                            if e.response['Error']['Code'] != "NoSuchKey":
+                                print(f"[!] S3 error reading timelapse: {e}")
+                                
+                        new_events = [json.dumps(evt) + "\n" for evt in parsed_events]
+                            
+                        final_data = existing_data + "".join(new_events).encode('utf-8')
+                        try:
+                            s3.put_object(Bucket=S3_BUCKET, Key=live_key, Body=final_data, ContentType='application/jsonl')
+                        except Exception as e:
+                            print(f"[!] S3 error saving timelapse: {e}")
                     
                     msg_ids = [msg_id_b for msg_id_b, _ in msgs]
                     r.xack(stream_name, CONSUMER_GROUP, *msg_ids)

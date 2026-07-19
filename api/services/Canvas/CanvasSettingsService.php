@@ -61,7 +61,7 @@ class CanvasSettingsService {
                     
                     $task = [
                         'canvas_id' => $canvasId,
-                        'old_size'  => $oldSize,
+                        'old_size'  => $canvas['size'],
                         'new_size'  => $newSize
                     ];
                     
@@ -238,9 +238,7 @@ class CanvasSettingsService {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
-            if ($canvas['size'] === 'infinite') {
-                return ['success' => false, 'message' => __('err_infinite_canvas_no_reset') ?? 'Cannot reset an infinite canvas.'];
-            }
+            // Allow resetting infinite canvas
 
             $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $takeSnapshot = filter_var($data['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN);
@@ -320,9 +318,7 @@ class CanvasSettingsService {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
 
-            if ($canvas['size'] === 'infinite') {
-                return ['success' => false, 'message' => __('err_infinite_canvas_no_reset') ?? 'Cannot reset an infinite canvas.'];
-            }
+            // Allow manual reset for infinite canvas
 
             $role = null;
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);

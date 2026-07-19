@@ -334,22 +334,21 @@ class CanvasesManageController {
                 if (btnRoles) btnRoles.setAttribute('data-nav', `${this.basePath}/canvases/manage/roles/${activeUuid}`);
                 if (btnInvites) btnInvites.setAttribute('data-nav', `${this.basePath}/canvases/manage/invites/${activeUuid}`);
                 
+                if (btnResets) {
+                    btnResets.classList.remove('disabled-interactive');
+                    btnResets.setAttribute('data-nav', `${this.basePath}/canvases/manage/resets/${activeUuid}`);
+                }
+                if (btnSnapshots) {
+                    btnSnapshots.classList.remove('disabled-interactive');
+                    btnSnapshots.setAttribute('data-nav', `${this.basePath}/design/s/${activeUuid}`);
+                }
+                
                 if (activeSize === 'infinite') {
-                    if (btnResets) {
-                        btnResets.classList.add('disabled-interactive');
-                        btnResets.setAttribute('data-nav', '');
-                    }
-                    if (btnSnapshots) {
-                        btnSnapshots.classList.add('disabled-interactive');
-                        btnSnapshots.setAttribute('data-nav', '');
-                    }
                     if (btnResize) {
                         btnResize.classList.add('disabled-interactive');
                         btnResize.setAttribute('data-nav', '');
                     }
                 } else {
-                    if (btnResets) btnResets.setAttribute('data-nav', `${this.basePath}/canvases/manage/resets/${activeUuid}`);
-                    if (btnSnapshots) btnSnapshots.setAttribute('data-nav', `${this.basePath}/design/s/${activeUuid}`);
                     if (btnResize) btnResize.setAttribute('data-nav', `${this.basePath}/canvases/manage/resize/${activeUuid}`);
                 }
             }
