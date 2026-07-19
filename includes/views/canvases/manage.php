@@ -192,7 +192,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                             <span class="material-symbols-rounded">aspect_ratio</span>
                                             <span class="search-target"><?php 
                                                 $sizeVal = $canvas['size'] ?? '0';
-                                                echo htmlspecialchars(strpos($sizeVal, 'x') !== false ? $sizeVal : $sizeVal . 'x' . $sizeVal); 
+                                                if ($sizeVal === 'infinite') {
+                                                    echo 'Infinito';
+                                                } else {
+                                                    echo htmlspecialchars(strpos($sizeVal, 'x') !== false ? $sizeVal : $sizeVal . 'x' . $sizeVal);
+                                                }
                                             ?></span>
                                         </div>
                                     </td>

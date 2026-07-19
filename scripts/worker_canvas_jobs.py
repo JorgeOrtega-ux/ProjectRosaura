@@ -417,30 +417,95 @@ def get_max_snapshots_per_tier(tier):
 
 def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palette_id, owner_tier, canvas_uuid):
     try:
-        raw_bytes = decompress(compressed_data)
-        
         width, height = parse_size(size_str)
-        expected_size = width * height * 4
         
-        if len(raw_bytes) < expected_size:
-            raw_bytes += bytes([0, 0, 0, 0] * ((expected_size - len(raw_bytes)) // 4))
-            
-        img = Image.new('RGBA', (width, height), color=(0, 0, 0, 0))
-        pixels = img.load()
+        is_infinite = (size_str.lower().strip() == 'infinite')
         
-        for y in range(height):
-            for x in range(width):
-                idx = (y * width + x) * 4
-                if idx + 3 < len(raw_bytes):
-                    r_c = raw_bytes[idx]
-                    g_c = raw_bytes[idx+1]
-                    b_c = raw_bytes[idx+2]
-                    a_c = raw_bytes[idx+3]
-                    pixels[x, y] = (r_c, g_c, b_c, a_c)
+        if is_infinite:
+            cursor = db_conn.cursor(dictionary=True) if hasattr(db_conn, 'cursor') and hasattr(db_conn.cursor(), 'dictionary') else db_conn.cursor()
+            cursor.execute("SELECT chunk_x, chunk_y, chunk_data FROM canvas_infinite_chunks WHERE canvas_id = %s", (canvas_id,))
+            chunks = cursor.fetchall()
+            cursor.close()
             
-        scale_w = THUMBNAIL_MAX_SIZE / width
-        scale_h = THUMBNAIL_MAX_SIZE / height
-        thumb_scale = min(scale_w, scale_h, SCALE_FACTOR)
+            target_width, target_height = 1024, 1024
+            img = Image.new('RGBA', (target_width, target_height), color=(0, 0, 0, 0))
+            pixels = img.load()
+            
+            if chunks:
+                if isinstance(chunks[0], dict):
+                    chunk_coords = set((c['chunk_x'], c['chunk_y']) for c in chunks)
+                else:
+                    chunk_coords = set((c[0], c[1]) for c in chunks)
+                
+                best_start_x = 0
+                best_start_y = 0
+                max_chunks_in_window = -1
+                
+                # Find the densest 2x2 chunk area
+                for cx, cy in chunk_coords:
+                    # Test window starting near this chunk to maximize coverage
+                    test_sx = cx - 1
+                    test_sy = cy - 1
+                    count = sum(1 for dx in range(2) for dy in range(2) if (test_sx + dx, test_sy + dy) in chunk_coords)
+                    if count > max_chunks_in_window:
+                        max_chunks_in_window = count
+                        best_start_x = test_sx
+                        best_start_y = test_sy
+                
+                start_x_chunk = best_start_x
+                start_y_chunk = best_start_y
+                
+                for c in chunks:
+                    cx = c['chunk_x'] if isinstance(c, dict) else c[0]
+                    cy = c['chunk_y'] if isinstance(c, dict) else c[1]
+                    cdata = c['chunk_data'] if isinstance(c, dict) else c[2]
+                    
+                    if start_x_chunk <= cx < start_x_chunk + 2 and start_y_chunk <= cy < start_y_chunk + 2:
+                        raw_chunk = decompress(cdata)
+                        offset_px_x = (cx - start_x_chunk) * 512
+                        offset_px_y = (cy - start_y_chunk) * 512
+                        
+                        for py in range(512):
+                            for px in range(512):
+                                idx = (py * 512 + px) * 4
+                                if idx + 3 < len(raw_chunk):
+                                    pixels[offset_px_x + px, offset_px_y + py] = (raw_chunk[idx], raw_chunk[idx+1], raw_chunk[idx+2], raw_chunk[idx+3])
+            bbox = img.getbbox()
+            if bbox:
+                pad = 32
+                bbox = (
+                    max(0, bbox[0] - pad),
+                    max(0, bbox[1] - pad),
+                    min(target_width, bbox[2] + pad),
+                    min(target_height, bbox[3] + pad)
+                )
+                img = img.crop(bbox)
+                width, height = img.size
+            else:
+                width, height = target_width, target_height
+        else:
+            raw_bytes = decompress(compressed_data) if compressed_data else b""
+            expected_size = width * height * 4
+            
+            if len(raw_bytes) < expected_size:
+                raw_bytes += bytes([0, 0, 0, 0] * ((expected_size - len(raw_bytes)) // 4))
+                
+            img = Image.new('RGBA', (width, height), color=(0, 0, 0, 0))
+            pixels = img.load()
+            
+            for y in range(height):
+                for x in range(width):
+                    idx = (y * width + x) * 4
+                    if idx + 3 < len(raw_bytes):
+                        r_c = raw_bytes[idx]
+                        g_c = raw_bytes[idx+1]
+                        b_c = raw_bytes[idx+2]
+                        a_c = raw_bytes[idx+3]
+                        pixels[x, y] = (r_c, g_c, b_c, a_c)
+                
+            scale_w = THUMBNAIL_MAX_SIZE / width
+            scale_h = THUMBNAIL_MAX_SIZE / height
+            thumb_scale = min(scale_w, scale_h, SCALE_FACTOR)
         
         thumb_width = max(1, int(width * thumb_scale))
         thumb_height = max(1, int(height * thumb_scale))
@@ -458,7 +523,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             return False
 
         
-        if r.exists(f"canvas:{canvas_id}:reset_lock"):
+        if r.exists(f"canvas:{canvas_id}:reset_lock") and not is_infinite:
             
             max_snapshots = get_max_snapshots_per_tier(owner_tier)
             can_save_history = True
@@ -580,25 +645,29 @@ def thumbnails_thread():
                     for canvas_id in pending_canvases:
                         query = f"""
                             SELECT s.snapshot_data, c.size, c.palette_id, IFNULL(u.subscription_tier, 2) as tier, c.uuid
-                            FROM canvas_snapshots s
-                            JOIN canvases c ON s.canvas_id = c.id
+                            FROM canvases c
+                            LEFT JOIN canvas_snapshots s ON s.canvas_id = c.id
                             LEFT JOIN {DB_IDENTITY_NAME}.users u ON c.owner_id = u.id
-                            WHERE s.canvas_id = %s
+                            WHERE c.id = %s
                         """
                         cursor.execute(query, (canvas_id,))
                         result = cursor.fetchone()
                         
-                        if result and result[0]:
+                        if result:
                             snapshot_data = result[0]
                             size_str = result[1] if result[1] else '64'
                             palette_id = result[2] if result[2] else 'default'
                             owner_tier = result[3]
                             canvas_uuid = result[4]
                             
-                            success = process_canvas_image(r, db_conn, canvas_id, snapshot_data, size_str, palette_id, owner_tier, canvas_uuid)
-                            if success:
+                            print(f"[DEBUG] Thumbnails thread canvas_id={canvas_id}, size_str='{size_str}', has_snapshot={bool(snapshot_data)}")
+                            if snapshot_data or size_str.lower().strip() == 'infinite':
+                                success = process_canvas_image(r, db_conn, canvas_id, snapshot_data, size_str, palette_id, owner_tier, canvas_uuid)
+                                if success:
+                                    r.srem("canvases:pending_snapshots", canvas_id)
+                                    print(f"[+] Thumbnail/Snapshot processed: canvas_{canvas_id}.png")
+                            else:
                                 r.srem("canvases:pending_snapshots", canvas_id)
-                                print(f"[+] Thumbnail/Snapshot processed: canvas_{canvas_id}.png")
                         else:
                             r.srem("canvases:pending_snapshots", canvas_id)
                             

@@ -446,9 +446,20 @@ export const DesignInteractions = {
                     newW = Math.min(newW, strictMaxW);
                 }
                 
+                const MAX_TEMPLATE_SIZE = 1500;
+                newW = Math.min(newW, MAX_TEMPLATE_SIZE);
+                
                 newW = Math.round(newW / 2) * 2;
                 let newH = Math.round(newW / aspect);
-                newH = Math.round(newH / 2) * 2;
+                
+                if (newH > MAX_TEMPLATE_SIZE) {
+                    newH = MAX_TEMPLATE_SIZE;
+                    newW = Math.round(newH * aspect);
+                    newW = Math.round(newW / 2) * 2;
+                    newH = Math.round(newH / 2) * 2;
+                } else {
+                    newH = Math.round(newH / 2) * 2;
+                }
 
                 // 6. Calculate new center to keep anchor stationary
                 let newLocalAnchorX = localAnchorX < 0 ? -newW / 2 : newW / 2;
@@ -713,7 +724,19 @@ export const DesignInteractions = {
                 tpl.angle = Math.round(angle);
             } else {
                 const aspect = this.templateInteraction.origW / this.templateInteraction.origH;
+                const MAX_TEMPLATE_SIZE = 1500;
                 let newW, newH;
+                
+                const enforceLimits = (w) => {
+                    w = Math.min(w, MAX_TEMPLATE_SIZE);
+                    let h = w / aspect;
+                    if (h > MAX_TEMPLATE_SIZE) {
+                        h = MAX_TEMPLATE_SIZE;
+                        w = h * aspect;
+                    }
+                    return { w: Math.round(w), h: Math.round(h) };
+                };
+                
                 if (this.templateInteraction.type === 'resize-br') {
                     newW = Math.round(this.templateInteraction.origW + dx);
                     if (this.isInfinite) {
@@ -723,8 +746,8 @@ export const DesignInteractions = {
                         let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
                         newW = Math.max(20, Math.min(newW, maxW, maxW_H));
                     }
-                    newH = Math.round(newW / aspect);
-                    tpl.w = newW; tpl.h = newH;
+                    const sizes = enforceLimits(newW);
+                    tpl.w = sizes.w; tpl.h = sizes.h;
                 } else if (this.templateInteraction.type === 'resize-tl') {
                     newW = Math.round(this.templateInteraction.origW - dx);
                     if (this.isInfinite) {
@@ -734,10 +757,10 @@ export const DesignInteractions = {
                         let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
                         newW = Math.max(20, Math.min(newW, maxW, maxW_H));
                     }
-                    newH = Math.round(newW / aspect);
-                    tpl.w = newW; tpl.h = newH;
-                    tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - newW;
-                    tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - newH;
+                    const sizes = enforceLimits(newW);
+                    tpl.w = sizes.w; tpl.h = sizes.h;
+                    tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - sizes.w;
+                    tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - sizes.h;
                 } else if (this.templateInteraction.type === 'resize-tr') {
                     newW = Math.round(this.templateInteraction.origW + dx);
                     if (this.isInfinite) {
@@ -747,9 +770,9 @@ export const DesignInteractions = {
                         let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
                         newW = Math.max(20, Math.min(newW, maxW, maxW_H));
                     }
-                    newH = Math.round(newW / aspect);
-                    tpl.w = newW; tpl.h = newH;
-                    tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - newH;
+                    const sizes = enforceLimits(newW);
+                    tpl.w = sizes.w; tpl.h = sizes.h;
+                    tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - sizes.h;
                 } else if (this.templateInteraction.type === 'resize-bl') {
                     newW = Math.round(this.templateInteraction.origW - dx);
                     if (this.isInfinite) {
@@ -759,9 +782,9 @@ export const DesignInteractions = {
                         let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
                         newW = Math.max(20, Math.min(newW, maxW, maxW_H));
                     }
-                    newH = Math.round(newW / aspect);
-                    tpl.w = newW; tpl.h = newH;
-                    tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - newW;
+                    const sizes = enforceLimits(newW);
+                    tpl.w = sizes.w; tpl.h = sizes.h;
+                    tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - sizes.w;
                 }
             }
 

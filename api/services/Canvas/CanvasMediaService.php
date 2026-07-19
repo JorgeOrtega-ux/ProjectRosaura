@@ -133,12 +133,16 @@ class CanvasMediaService {
         try {
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
-            $stmt = $pdo->prepare("SELECT id, owner_id, name, privacy FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1");
+            $stmt = $pdo->prepare("SELECT id, owner_id, name, privacy, size FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1");
             $stmt->execute([':uuid' => $uuid]);
             $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+
+            if (strtolower(trim($canvas['size'])) === 'infinite') {
+                return ['success' => false, 'message' => __('err_infinite_canvas_no_snapshots') ?? 'Snapshots are not supported for infinite canvases.'];
             }
             
             $hasRole = false;

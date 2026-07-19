@@ -263,7 +263,7 @@ class CanvasesManageController {
     handleCanvasSelection(rowElement) {
         const canvasId = rowElement.getAttribute('data-canvas-id');
         const uuid = rowElement.getAttribute('data-uuid');
-        const size = parseInt(rowElement.getAttribute('data-size')); 
+        const size = rowElement.getAttribute('data-size'); 
         
         if (this.selectedCanvasIds.has(canvasId)) {
             this.selectedCanvasIds.delete(canvasId);
@@ -320,9 +320,25 @@ class CanvasesManageController {
                 if (btnMembers) btnMembers.setAttribute('data-nav', `${this.basePath}/canvases/members/${this.selectedCanvasUuid}`);
                 if (btnRoles) btnRoles.setAttribute('data-nav', `${this.basePath}/canvases/manage/roles/${this.selectedCanvasUuid}`);
                 if (btnInvites) btnInvites.setAttribute('data-nav', `${this.basePath}/canvases/manage/invites/${this.selectedCanvasUuid}`);
-                if (btnResets) btnResets.setAttribute('data-nav', `${this.basePath}/canvases/manage/resets/${this.selectedCanvasUuid}`);
-                if (btnSnapshots) btnSnapshots.setAttribute('data-nav', `${this.basePath}/design/s/${this.selectedCanvasUuid}`);
-                if (btnResize) btnResize.setAttribute('data-nav', `${this.basePath}/canvases/manage/resize/${this.selectedCanvasUuid}`);
+                
+                if (this.currentCanvasSize === 'infinite') {
+                    if (btnResets) {
+                        btnResets.classList.add('disabled-interactive');
+                        btnResets.setAttribute('data-nav', '');
+                    }
+                    if (btnSnapshots) {
+                        btnSnapshots.classList.add('disabled-interactive');
+                        btnSnapshots.setAttribute('data-nav', '');
+                    }
+                    if (btnResize) {
+                        btnResize.classList.add('disabled-interactive');
+                        btnResize.setAttribute('data-nav', '');
+                    }
+                } else {
+                    if (btnResets) btnResets.setAttribute('data-nav', `${this.basePath}/canvases/manage/resets/${this.selectedCanvasUuid}`);
+                    if (btnSnapshots) btnSnapshots.setAttribute('data-nav', `${this.basePath}/design/s/${this.selectedCanvasUuid}`);
+                    if (btnResize) btnResize.setAttribute('data-nav', `${this.basePath}/canvases/manage/resize/${this.selectedCanvasUuid}`);
+                }
             }
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');

@@ -194,6 +194,7 @@ def canvas_persistence_thread():
                                                 ON DUPLICATE KEY UPDATE chunk_data = VALUES(chunk_data), last_updated = CURRENT_TIMESTAMP
                                             """
                                             cursor.execute(query_chunk, (canvas_id_str, cx, cy, compressed_chunk))
+                                r.sadd("canvases:pending_snapshots", canvas_id_str)
                 db_conn.commit()
             except Exception as e:
                 print(f"[!] Error saving Snapshots to DB: {e}")

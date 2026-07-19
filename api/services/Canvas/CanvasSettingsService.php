@@ -30,8 +30,13 @@ class CanvasSettingsService {
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
+            
+            if (strtolower(trim($canvas['size'])) === 'infinite') {
+                return ['success' => false, 'message' => __('err_infinite_canvas_no_resize') ?? 'Cannot resize an infinite canvas.'];
+            }
 
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
             if (!isset($allSizes[$newSize])) {
                 return ['success' => false, 'message' => __('err_invalid_canvas_size')];
             }
