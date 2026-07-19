@@ -217,6 +217,7 @@ export const DesignInteractions = {
         if (typeof this.limitBounds === 'function') this.limitBounds();
         this.calculateHoverPixel(e.clientX, e.clientY);
         this.requestRender();
+        if (typeof this.requestChunksForViewport === 'function') this.requestChunksForViewport();
     },
 
     handleMouseDown(e) {
@@ -312,6 +313,7 @@ export const DesignInteractions = {
             if (typeof this.limitBounds === 'function') this.limitBounds();
             this.calculateHoverPixel(e.clientX, e.clientY);
             this.requestRender();
+            if (typeof this.requestChunksForViewport === 'function') this.requestChunksForViewport();
             return;
         }
 
@@ -327,39 +329,41 @@ export const DesignInteractions = {
                 let newX = Math.round(this.templateInteraction.origX + dx);
                 let newY = Math.round(this.templateInteraction.origY + dy);
                 
-                const angleRad = (tpl.angle || 0) * Math.PI / 180;
-                const cosA = Math.cos(angleRad);
-                const sinA = Math.sin(angleRad);
-                
-                const w2 = tpl.w / 2;
-                const h2 = tpl.h / 2;
-                
-                const corners = [
-                    { x: -w2, y: -h2 },
-                    { x: w2, y: -h2 },
-                    { x: -w2, y: h2 },
-                    { x: w2, y: h2 }
-                ];
-                
-                let minRx = Infinity, maxRx = -Infinity;
-                let minRy = Infinity, maxRy = -Infinity;
-                
-                for (let c of corners) {
-                    const rx = c.x * cosA - c.y * sinA;
-                    const ry = c.x * sinA + c.y * cosA;
-                    if (rx < minRx) minRx = rx;
-                    if (rx > maxRx) maxRx = rx;
-                    if (ry < minRy) minRy = ry;
-                    if (ry > maxRy) maxRy = ry;
+                if (!this.isInfinite) {
+                    const angleRad = (tpl.angle || 0) * Math.PI / 180;
+                    const cosA = Math.cos(angleRad);
+                    const sinA = Math.sin(angleRad);
+                    
+                    const w2 = tpl.w / 2;
+                    const h2 = tpl.h / 2;
+                    
+                    const corners = [
+                        { x: -w2, y: -h2 },
+                        { x: w2, y: -h2 },
+                        { x: -w2, y: h2 },
+                        { x: w2, y: h2 }
+                    ];
+                    
+                    let minRx = Infinity, maxRx = -Infinity;
+                    let minRy = Infinity, maxRy = -Infinity;
+                    
+                    for (let c of corners) {
+                        const rx = c.x * cosA - c.y * sinA;
+                        const ry = c.x * sinA + c.y * cosA;
+                        if (rx < minRx) minRx = rx;
+                        if (rx > maxRx) maxRx = rx;
+                        if (ry < minRy) minRy = ry;
+                        if (ry > maxRy) maxRy = ry;
+                    }
+                    
+                    const minX = Math.round(-w2 - minRx);
+                    const maxX = Math.round(this.boardWidth - w2 - maxRx);
+                    const minY = Math.round(-h2 - minRy);
+                    const maxY = Math.round(this.boardHeight - h2 - maxRy);
+                    
+                    newX = Math.max(minX, Math.min(newX, maxX));
+                    newY = Math.max(minY, Math.min(newY, maxY));
                 }
-                
-                const minX = Math.round(-w2 - minRx);
-                const maxX = Math.round(this.boardWidth - w2 - maxRx);
-                const minY = Math.round(-h2 - minRy);
-                const maxY = Math.round(this.boardHeight - h2 - maxRy);
-                
-                newX = Math.max(minX, Math.min(newX, maxX));
-                newY = Math.max(minY, Math.min(newY, maxY));
                 
                 tpl.x = newX;
                 tpl.y = newY;
@@ -438,7 +442,9 @@ export const DesignInteractions = {
                     else if (kY < -0.0001) strictMaxW = Math.min(strictMaxW, -anchorBoardY / kY);
                 }
 
-                newW = Math.min(newW, strictMaxW);
+                if (!this.isInfinite) {
+                    newW = Math.min(newW, strictMaxW);
+                }
                 
                 newW = Math.round(newW / 2) * 2;
                 let newH = Math.round(newW / aspect);
@@ -670,6 +676,7 @@ export const DesignInteractions = {
 
             if (typeof this.limitBounds === 'function') this.limitBounds();
             this.requestRender();
+            if (typeof this.requestChunksForViewport === 'function') this.requestChunksForViewport();
             return;
         }
 
@@ -685,8 +692,10 @@ export const DesignInteractions = {
             if (this.templateInteraction.type === 'move') {
                 let newX = Math.round(this.templateInteraction.origX + dx);
                 let newY = Math.round(this.templateInteraction.origY + dy);
-                newX = Math.max(0, Math.min(newX, this.boardWidth - tpl.w));
-                newY = Math.max(0, Math.min(newY, this.boardHeight - tpl.h));
+                if (!this.isInfinite) {
+                    newX = Math.max(0, Math.min(newX, this.boardWidth - tpl.w));
+                    newY = Math.max(0, Math.min(newY, this.boardHeight - tpl.h));
+                }
                 tpl.x = newX;
                 tpl.y = newY;
             } else if (this.templateInteraction.type === 'rotate') {
@@ -707,33 +716,49 @@ export const DesignInteractions = {
                 let newW, newH;
                 if (this.templateInteraction.type === 'resize-br') {
                     newW = Math.round(this.templateInteraction.origW + dx);
-                    let maxW = this.boardWidth - this.templateInteraction.origX;
-                    let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
-                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    if (this.isInfinite) {
+                        newW = Math.max(20, newW);
+                    } else {
+                        let maxW = this.boardWidth - this.templateInteraction.origX;
+                        let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
+                        newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    }
                     newH = Math.round(newW / aspect);
                     tpl.w = newW; tpl.h = newH;
                 } else if (this.templateInteraction.type === 'resize-tl') {
                     newW = Math.round(this.templateInteraction.origW - dx);
-                    let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
-                    let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
-                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    if (this.isInfinite) {
+                        newW = Math.max(20, newW);
+                    } else {
+                        let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
+                        let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
+                        newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    }
                     newH = Math.round(newW / aspect);
                     tpl.w = newW; tpl.h = newH;
                     tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - newW;
                     tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - newH;
                 } else if (this.templateInteraction.type === 'resize-tr') {
                     newW = Math.round(this.templateInteraction.origW + dx);
-                    let maxW = this.boardWidth - this.templateInteraction.origX;
-                    let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
-                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    if (this.isInfinite) {
+                        newW = Math.max(20, newW);
+                    } else {
+                        let maxW = this.boardWidth - this.templateInteraction.origX;
+                        let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
+                        newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    }
                     newH = Math.round(newW / aspect);
                     tpl.w = newW; tpl.h = newH;
                     tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - newH;
                 } else if (this.templateInteraction.type === 'resize-bl') {
                     newW = Math.round(this.templateInteraction.origW - dx);
-                    let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
-                    let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
-                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    if (this.isInfinite) {
+                        newW = Math.max(20, newW);
+                    } else {
+                        let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
+                        let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
+                        newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    }
                     newH = Math.round(newW / aspect);
                     tpl.w = newW; tpl.h = newH;
                     tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - newW;
@@ -773,6 +798,7 @@ export const DesignInteractions = {
                 
                 if (typeof this.limitBounds === 'function') this.limitBounds();
                 this.requestRender();
+                if (typeof this.requestChunksForViewport === 'function') this.requestChunksForViewport();
             }
         }
     },
@@ -839,6 +865,10 @@ export const DesignInteractions = {
 
         const boardX = Math.floor((mouseX - this.transform.x) / this.transform.scale);
         const boardY = Math.floor((mouseY - this.transform.y) / this.transform.scale);
+
+        if (this.isInfinite) {
+            return { x: boardX, y: boardY };
+        }
 
         if (boardX >= 0 && boardX < this.boardWidth && boardY >= 0 && boardY < this.boardHeight) {
             return { x: boardX, y: boardY };
@@ -931,7 +961,7 @@ export const DesignInteractions = {
         
         this.selectedPixels.forEach(key => {
             const [x, y] = key.split(',').map(Number);
-            const offset = (y * this.boardWidth) + x;
+            const offset = this.isInfinite ? `${x},${y}` : (y * this.boardWidth) + x;
 
             if (this.interactionMode === 'normal' || this.interactionMode === 'protecting') {
                 if (this.protectedPixels && this.protectedPixels.has(offset)) {
@@ -964,9 +994,28 @@ export const DesignInteractions = {
 
         validPixels.forEach(p => {
             if (this.interactionMode === 'normal') {
-                this.offscreenCtx.fillStyle = this.currentColor;
-                this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
-                this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
+                if (this.isInfinite) {
+                    const chunkX = Math.floor(p.x / 512);
+                    const chunkY = Math.floor(p.y / 512);
+                    const chunkKey = `${chunkX},${chunkY}`;
+                    let chunkCanvas = this.chunks.get(chunkKey);
+                    if (!chunkCanvas) {
+                        chunkCanvas = document.createElement('canvas');
+                        chunkCanvas.width = 512;
+                        chunkCanvas.height = 512;
+                        this.chunks.set(chunkKey, chunkCanvas);
+                    }
+                    const chunkCtx = chunkCanvas.getContext('2d');
+                    const localX = ((p.x % 512) + 512) % 512;
+                    const localY = ((p.y % 512) + 512) % 512;
+                    chunkCtx.fillStyle = this.currentColor;
+                    chunkCtx.clearRect(localX, localY, 1, 1);
+                    chunkCtx.fillRect(localX, localY, 1, 1);
+                } else {
+                    this.offscreenCtx.fillStyle = this.currentColor;
+                    this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
+                    this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
+                }
             }
             
             if (this.wsManager) {

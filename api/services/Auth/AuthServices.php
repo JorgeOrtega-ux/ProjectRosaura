@@ -489,7 +489,7 @@ class AuthServices {
         $this->rateLimiter->clear(RateLimitConstants::KEY_AUTH_REGISTER_VERIFY . "_{$identifier}"); 
         $payload = json_decode($verification['payload'], true);
         $uuid = Utils::generateUUID();
-        $profilePic = Utils::generateProfilePicture($payload['username'], $uuid);
+        $profilePic = Utils::generateProfilePicture($payload['username']);
         
         if (!$profilePic) return ['success' => false, 'message' => __('error.internal_server_error')];
 
@@ -514,6 +514,12 @@ class AuthServices {
             ]);
             
             $redisCache = new RedisCache();
+            if ($redisClient = $redisCache->getClient()) {
+                $redisClient->rpush('queue:emails', json_encode([
+                    'type' => 'welcome',
+                    'user_id' => $newUserId
+                ]));
+            }
             $lockName = "session_pool_reg_" . $newUserId;
 
             return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user, $newUserId, &$regFlows, $regToken, $verification) {
@@ -706,7 +712,7 @@ class AuthServices {
                     $username .= rand(10, 99);
                 }
 
-                $profilePic = Utils::generateProfilePicture($username, $uuid);
+                $profilePic = Utils::generateProfilePicture($username);
                 $defaultRoleId = (int)($this->config['default_user_role_id'] ?? SecurityConstants::DEFAULT_USER_ROLE_ID);
                 $randomPassword = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
 
@@ -727,6 +733,14 @@ class AuthServices {
                         'user_uuid' => $user['uuid'],
                         'ip_address' => Utils::getIpAddress()
                     ]);
+                    
+                    $redisCache = new RedisCache();
+                    if ($redisClient = $redisCache->getClient()) {
+                        $redisClient->rpush('queue:emails', json_encode([
+                            'type' => 'welcome',
+                            'user_id' => $newUserId
+                        ]));
+                    }
                 } else {
                     return ['success' => false, 'message' => __('error.database')];
                 }

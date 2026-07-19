@@ -63,7 +63,19 @@ export const DesignSetup = {
             this.resizeTimerAction = wrapper.getAttribute('data-resize-timer-action') || 'restart';
 
             const sizeStr = wrapper.getAttribute('data-size');
-            if (sizeStr) {
+            if (sizeStr === 'infinite') {
+                this.isInfinite = true;
+                this.boardWidth = 0;
+                this.boardHeight = 0;
+                
+                const btnTimelapse = document.querySelector('[data-action="openTimelapse"]');
+                if (btnTimelapse) btnTimelapse.style.display = 'none';
+                const btnResize = document.querySelector('[data-action="openResizeSettings"]');
+                if (btnResize) btnResize.style.display = 'none';
+                const btnReset = document.querySelector('[data-action="openResetSettings"]');
+                if (btnReset) btnReset.style.display = 'none';
+            } else if (sizeStr) {
+                this.isInfinite = false;
                 const parts = sizeStr.toLowerCase().split('x');
                 this.boardWidth = parseInt(parts[0], 10);
                 this.boardHeight = parts.length > 1 ? parseInt(parts[1], 10) : this.boardWidth;
@@ -217,13 +229,85 @@ export const DesignSetup = {
         }
     },
 
+    hydrateChunk(chunkX, chunkY, base64String) {
+        if (!this.chunks) return;
+        const key = `${chunkX},${chunkY}`;
+        let chunkCanvas = this.chunks.get(key);
+        let ctx;
+        if (!chunkCanvas) {
+            chunkCanvas = document.createElement('canvas');
+            chunkCanvas.width = 512;
+            chunkCanvas.height = 512;
+            this.chunks.set(key, chunkCanvas);
+        }
+        ctx = chunkCanvas.getContext('2d', { alpha: true });
+
+        try {
+            if (!base64String) {
+                console.log(`[Chunk] ⬜ Chunk (${chunkX},${chunkY}) vacío — sin datos en servidor`);
+                return;
+            }
+            const binaryString = atob(base64String);
+            const imageData = ctx.createImageData(512, 512);
+            
+            const totalBytes = Math.min(binaryString.length, imageData.data.length);
+            for (let i = 0; i < totalBytes; i++) {
+                imageData.data[i] = binaryString.charCodeAt(i);
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            console.log(`[Chunk] ✅ Chunk (${chunkX},${chunkY}) hidratado — ${totalBytes} bytes`);
+            this.requestRender();
+        } catch (e) {
+            console.error(`[Chunk] ❌ Error hidratando chunk (${chunkX},${chunkY}):`, e);
+        }
+    },
+
+    requestChunksForViewport() {
+        if (!this.isInfinite || !this.wsManager || this.wsManager.ws?.readyState !== WebSocket.OPEN) return;
+        
+        if (this.chunkRequestDebounce) clearTimeout(this.chunkRequestDebounce);
+        this.chunkRequestDebounce = setTimeout(() => {
+            const rect = this.canvas.getBoundingClientRect();
+            
+            const startX = Math.floor(-this.transform.x / this.transform.scale / 512);
+            const startY = Math.floor(-this.transform.y / this.transform.scale / 512);
+            const endX = Math.ceil((rect.width - this.transform.x) / this.transform.scale / 512);
+            const endY = Math.ceil((rect.height - this.transform.y) / this.transform.scale / 512);
+
+            const requested = [];
+            for (let x = startX; x <= endX; x++) {
+                for (let y = startY; y <= endY; y++) {
+                    const key = `${x},${y}`;
+                    if (!this.chunks.has(key)) {
+                        requested.push({x, y});
+                        this.chunks.set(key, null);
+                    }
+                }
+            }
+            
+            if (requested.length > 0) {
+                const chunkKeys = requested.map(c => `(${c.x},${c.y})`);
+                console.log(`[Chunk] 📡 Solicitando ${requested.length} chunk(s): ${chunkKeys.join(', ')}`);
+                this.wsManager.send({
+                    type: 'request_chunks',
+                    chunks: requested
+                });
+            }
+        }, 150);
+    },
+
     setupCanvas() {
         this.updateCanvasDimensions();
 
-        this.offscreenCanvas = document.createElement('canvas');
-        this.offscreenCanvas.width = this.boardWidth;
-        this.offscreenCanvas.height = this.boardHeight;
-        this.offscreenCtx = this.offscreenCanvas.getContext('2d', { alpha: true });
+        if (this.isInfinite) {
+            this.chunks = new Map();
+        } else {
+            this.offscreenCanvas = document.createElement('canvas');
+            this.offscreenCanvas.width = this.boardWidth;
+            this.offscreenCanvas.height = this.boardHeight;
+            this.offscreenCtx = this.offscreenCanvas.getContext('2d', { alpha: true });
+        }
     },
 
     updateCanvasDimensions() {
@@ -241,6 +325,14 @@ export const DesignSetup = {
     centerBoard() {
         if (!this.canvas) return;
         
+        if (this.isInfinite) {
+            const rect = this.canvas.getBoundingClientRect();
+            this.transform.scale = 4;
+            this.transform.x = rect.width / 2;
+            this.transform.y = rect.height / 2;
+            return;
+        }
+
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = rect.width / this.boardWidth;
         const scaleY = rect.height / this.boardHeight;
@@ -252,6 +344,7 @@ export const DesignSetup = {
 
     limitBounds() {
         if (!this.canvas) return;
+        if (this.isInfinite) return;
         
         const scaledWidth = this.boardWidth * this.transform.scale;
         const scaledHeight = this.boardHeight * this.transform.scale;

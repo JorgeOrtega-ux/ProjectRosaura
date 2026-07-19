@@ -417,6 +417,61 @@ def process_email(payload):
             if conn and conn.is_connected():
                 cursor.close()
                 conn.close()
+    elif email_type == 'welcome':
+        conn = None
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT email, username FROM users WHERE id = %s", (user_id,))
+            user_data = cursor.fetchone()
+            
+            if user_data:
+                user_email = user_data['email']
+                username = user_data['username']
+                
+                if not SMTP_HOST or not SMTP_USER:
+                    Logger.error("SMTP configuration is missing. Cannot send welcome email.")
+                    return
+
+                msg = MIMEMultipart('alternative')
+                msg['Subject'] = "Welcome to Project Rosaura!"
+                msg['From'] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+                msg['To'] = user_email
+                
+                html = f"""
+                <!DOCTYPE html>
+                <html>
+                <body style='margin: 0; padding: 0; background-color: #f5f5fa; font-family: Arial, sans-serif;'>
+                    <div style='padding: 20px; background-color: #f5f5fa; color: #111;'>
+                        <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #00000020;'>
+                            <h2 style='color: #111111; margin-top: 0;'>Welcome to our platform!</h2>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hi {username}, we are thrilled to have you here.</p>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Your registration was successful, and you can now start exploring all our features.</p>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>If you have any questions, feel free to reach out to our support team.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                msg.attach(MIMEText(html, 'html'))
+                
+                if SMTP_PORT == 465:
+                    server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT)
+                else:
+                    server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+                    server.starttls()
+                server.login(SMTP_USER, SMTP_PASS)
+                server.sendmail(SMTP_FROM_EMAIL, user_email, msg.as_string())
+                server.quit()
+                Logger.info(f"Welcome email sent to {user_email}")
+            else:
+                Logger.error(f"User {user_id} not found for welcome email dispatch")
+        except Exception as e:
+            Logger.error(f"Failed to process welcome email: {e}")
+        finally:
+            if conn and conn.is_connected():
+                cursor.close()
+                conn.close()
     else:
         Logger.warning(f"Unknown email type: {email_type}")
 
@@ -774,7 +829,6 @@ def typesense_thread():
             {'name': 'name', 'type': 'string'},
             {'name': 'owner_id', 'type': 'int32', 'optional': True},
             {'name': 'privacy', 'type': 'string', 'facet': True},
-            {'name': 'scope_type', 'type': 'string', 'facet': True},
             {'name': 'created_at', 'type': 'int64'}
         ]
     }
@@ -805,7 +859,7 @@ def typesense_thread():
 
             with connection:
                 with connection.cursor() as cursor:
-                    cursor.execute("SELECT id, uuid, name, owner_id, privacy, scope_type, UNIX_TIMESTAMP(created_at) as created_at FROM canvases")
+                    cursor.execute("SELECT id, uuid, name, owner_id, privacy, UNIX_TIMESTAMP(created_at) as created_at FROM canvases")
                     
                     total_synced = 0
                     while True:
@@ -821,7 +875,6 @@ def typesense_thread():
                                 'name': c['name'],
                                 'owner_id': c['owner_id'] if c['owner_id'] else 0,
                                 'privacy': c['privacy'],
-                                'scope_type': c['scope_type'] if c['scope_type'] else 'personal',
                                 'created_at': int(c['created_at']) if c['created_at'] else 0
                             })
                         

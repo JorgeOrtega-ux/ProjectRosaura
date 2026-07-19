@@ -32,18 +32,6 @@ class CanvasSettingsService {
             }
 
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
-            if (!$isOwner) {
-                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS)) {
-                    return ['success' => false, 'message' => __('err_unauthorized')];
-                }
-            }
-
-            $oldSize = $canvas['size'];
-            if ($oldSize === $newSize) {
-                return ['success' => false, 'message' => __('err_canvas_already_size')];
-            }
-
-            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
             if (!isset($allSizes[$newSize])) {
                 return ['success' => false, 'message' => __('err_invalid_canvas_size')];
             }
@@ -127,6 +115,10 @@ class CanvasSettingsService {
 
             if (!$canvas || !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            if ($canvas['size'] === 'infinite') {
+                return ['success' => false, 'message' => __('err_infinite_canvas_no_resize') ?? 'Cannot resize an infinite canvas.'];
             }
 
             $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -241,6 +233,10 @@ class CanvasSettingsService {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
+            if ($canvas['size'] === 'infinite') {
+                return ['success' => false, 'message' => __('err_infinite_canvas_no_reset') ?? 'Cannot reset an infinite canvas.'];
+            }
+
             $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $takeSnapshot = filter_var($data['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN);
             $nextResetAt = null;
@@ -317,6 +313,10 @@ class CanvasSettingsService {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+
+            if ($canvas['size'] === 'infinite') {
+                return ['success' => false, 'message' => __('err_infinite_canvas_no_reset') ?? 'Cannot reset an infinite canvas.'];
             }
 
             $role = null;

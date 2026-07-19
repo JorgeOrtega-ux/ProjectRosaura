@@ -85,6 +85,9 @@ export const DesignNetwork = {
             
             this.wsManager.on('open', () => {
                 this.wsManager.send({ type: 'init', userId: uid });
+                if (typeof this.requestChunksForViewport === 'function') {
+                    this.requestChunksForViewport();
+                }
             });
 
             this.wsManager.on('qos_evicted', (reason) => {
@@ -97,14 +100,42 @@ export const DesignNetwork = {
                     const pY = parseInt(data.y, 10);
                     const colorData = data.color;
                     
-                    if (colorData === 'transparent' || colorData === 255) {
-                        this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                    if (this.isInfinite) {
+                        const chunkX = Math.floor(pX / 512);
+                        const chunkY = Math.floor(pY / 512);
+                        const chunkKey = `${chunkX},${chunkY}`;
+                        let chunkCanvas = this.chunks.get(chunkKey);
+                        if (!chunkCanvas) {
+                            chunkCanvas = document.createElement('canvas');
+                            chunkCanvas.width = 512;
+                            chunkCanvas.height = 512;
+                            this.chunks.set(chunkKey, chunkCanvas);
+                        }
+                        const chunkCtx = chunkCanvas.getContext('2d');
+                        const localX = ((pX % 512) + 512) % 512;
+                        const localY = ((pY % 512) + 512) % 512;
+                        if (colorData === 'transparent' || colorData === 255) {
+                            chunkCtx.clearRect(localX, localY, 1, 1);
+                        } else {
+                            chunkCtx.fillStyle = colorData;
+                            chunkCtx.clearRect(localX, localY, 1, 1);
+                            chunkCtx.fillRect(localX, localY, 1, 1);
+                        }
                     } else {
-                        this.offscreenCtx.fillStyle = colorData;
-                        this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                        this.offscreenCtx.fillRect(pX, pY, 1, 1);
+                        if (colorData === 'transparent' || colorData === 255) {
+                            this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                        } else {
+                            this.offscreenCtx.fillStyle = colorData;
+                            this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                            this.offscreenCtx.fillRect(pX, pY, 1, 1);
+                        }
                     }
                     this.requestRender();
+                } 
+                else if (data.type === 'chunk_data') {
+                    if (typeof this.hydrateChunk === 'function') {
+                        this.hydrateChunk(data.chunk_x, data.chunk_y, data.state_base64);
+                    }
                 } 
                 else if (data.type === 'init_cooldown' || data.type === 'pixel_confirm' || data.type === 'cooldown_error') {
                     this.handleCooldownSync(data);
@@ -142,12 +173,35 @@ export const DesignNetwork = {
                         const pY = parseInt(data.y, 10);
                         const colorData = data.color;
                         
-                        if (colorData === 'transparent' || colorData === 255) {
-                            this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                        if (this.isInfinite) {
+                            const chunkX = Math.floor(pX / 512);
+                            const chunkY = Math.floor(pY / 512);
+                            const chunkKey = `${chunkX},${chunkY}`;
+                            let chunkCanvas = this.chunks.get(chunkKey);
+                            if (!chunkCanvas) {
+                                chunkCanvas = document.createElement('canvas');
+                                chunkCanvas.width = 512;
+                                chunkCanvas.height = 512;
+                                this.chunks.set(chunkKey, chunkCanvas);
+                            }
+                            const chunkCtx = chunkCanvas.getContext('2d');
+                            const localX = ((pX % 512) + 512) % 512;
+                            const localY = ((pY % 512) + 512) % 512;
+                            if (colorData === 'transparent' || colorData === 255) {
+                                chunkCtx.clearRect(localX, localY, 1, 1);
+                            } else {
+                                chunkCtx.fillStyle = colorData;
+                                chunkCtx.clearRect(localX, localY, 1, 1);
+                                chunkCtx.fillRect(localX, localY, 1, 1);
+                            }
                         } else {
-                            this.offscreenCtx.fillStyle = colorData;
-                            this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                            this.offscreenCtx.fillRect(pX, pY, 1, 1);
+                            if (colorData === 'transparent' || colorData === 255) {
+                                this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                            } else {
+                                this.offscreenCtx.fillStyle = colorData;
+                                this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                                this.offscreenCtx.fillRect(pX, pY, 1, 1);
+                            }
                         }
                         this.requestRender();
                     }

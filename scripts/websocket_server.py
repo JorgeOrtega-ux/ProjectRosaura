@@ -459,14 +459,27 @@ async def handler(websocket):
                         USER_LOCKS[user_id] = asyncio.Lock()
 
                     async with USER_LOCKS[user_id]:
-                        offset = (y * width) + x
+                        if width == 0:
+                            offset = f"{x},{y}"
+                        else:
+                            offset = (y * width) + x
                         protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
                         protected_by = await r.get(protected_key)
                         
                         if protected_by:
                             print(f"[DEBUG PY] Pixel {x},{y} protected by user {protected_by.decode('utf-8')}")
-                            redis_state_key = f"canvas:{canvas_id}:state"
-                            byte_offset = offset * 4
+                            
+                            if width == 0:
+                                chunk_x = x // 512
+                                chunk_y = y // 512
+                                local_x = x % 512
+                                local_y = y % 512
+                                redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
+                                byte_offset = ((local_y * 512) + local_x) * 4
+                            else:
+                                redis_state_key = f"canvas:{canvas_id}:state"
+                                byte_offset = (y * width + x) * 4
+                                
                             orig_color = await r.getrange(redis_state_key, byte_offset, byte_offset + 3)
                             
                             orig_c_hex = "transparent"
@@ -536,8 +549,17 @@ async def handler(websocket):
                             print(f"[DEBUG PY] Confirming pixel. Msg: {confirm_msg}")
                             await websocket.send(confirm_msg)
 
-                            redis_state_key = f"canvas:{canvas_id}:state"
-                            byte_offset = offset * 4
+                            if width == 0:
+                                chunk_x = x // 512
+                                chunk_y = y // 512
+                                local_x = x % 512
+                                local_y = y % 512
+                                redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
+                                byte_offset = ((local_y * 512) + local_x) * 4
+                            else:
+                                redis_state_key = f"canvas:{canvas_id}:state"
+                                byte_offset = (y * width + x) * 4
+                                
                             await r.setrange(redis_state_key, byte_offset, color_bytes)
                             
                             stream_key = f"canvas:{canvas_id}:stream"
@@ -597,7 +619,10 @@ async def handler(websocket):
                         protection_left = int(protection_left) if protection_left else 0
                         
                         if protection_left > 0:
-                            offset = (y * width) + x
+                            if width == 0:
+                                offset = f"{x},{y}"
+                            else:
+                                offset = (y * width) + x
                             protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
                             
                             protected_by = await r.get(protected_key)
@@ -662,7 +687,10 @@ async def handler(websocket):
                         eraser_left = int(eraser_left) if eraser_left else 0
                         
                         if eraser_left > 0:
-                            offset = (y * width) + x
+                            if width == 0:
+                                offset = f"{x},{y}"
+                            else:
+                                offset = (y * width) + x
                             protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
                             
                             protected_by = await r.get(protected_key)
@@ -679,8 +707,17 @@ async def handler(websocket):
                             await r.decr(user_eraser_key)
                             await r.delete(protected_key)
                             
-                            redis_state_key = f"canvas:{canvas_id}:state"
-                            byte_offset = offset * 4
+                            if width == 0:
+                                chunk_x = x // 512
+                                chunk_y = y // 512
+                                local_x = x % 512
+                                local_y = y % 512
+                                redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
+                                byte_offset = ((local_y * 512) + local_x) * 4
+                            else:
+                                redis_state_key = f"canvas:{canvas_id}:state"
+                                byte_offset = (y * width + x) * 4
+                            
                             await r.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00')
                             
                             stream_key = f"canvas:{canvas_id}:stream"
@@ -732,6 +769,27 @@ async def handler(websocket):
                                 "perk_eraser_left": 0
                             })
                             await websocket.send(error_msg)
+
+                elif data.get("type") == "request_chunks":
+                    import base64
+                    chunks = data.get("chunks", [])
+                    for c in chunks:
+                        cx = c.get("x")
+                        cy = c.get("y")
+                        if cx is not None and cy is not None:
+                            chunk_key = f"canvas:{canvas_id}:chunk:{cx}:{cy}"
+                            chunk_data = await r.get(chunk_key)
+                            b64_data = ""
+                            if chunk_data:
+                                b64_data = base64.b64encode(chunk_data).decode('utf-8')
+                            
+                            chunk_msg = json.dumps({
+                                "type": "chunk_data",
+                                "chunk_x": cx,
+                                "chunk_y": cy,
+                                "state_base64": b64_data
+                            })
+                            await websocket.send(chunk_msg)
 
                 elif data.get("type") == "chat_typing":
                     user_id = WS_META[websocket].get('user_id')

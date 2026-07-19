@@ -66,11 +66,15 @@ export const DesignTemplates = {
                 
                 if (field === 'live_x') {
                     newVal = Math.round(newVal);
-                    newVal = Math.max(0, Math.min(newVal, this.boardWidth - tpl.w));
+                    if (!this.isInfinite) {
+                        newVal = Math.max(0, Math.min(newVal, this.boardWidth - tpl.w));
+                    }
                     tpl.x = newVal;
                 } else if (field === 'live_y') {
                     newVal = Math.round(newVal);
-                    newVal = Math.max(0, Math.min(newVal, this.boardHeight - tpl.h));
+                    if (!this.isInfinite) {
+                        newVal = Math.max(0, Math.min(newVal, this.boardHeight - tpl.h));
+                    }
                     tpl.y = newVal;
                 } else if (field === 'live_opacity') {
                     newVal = Math.round(newVal * 10) / 10;
@@ -382,23 +386,48 @@ export const DesignTemplates = {
         const img = new Image();
         img.onload = () => {
             const id = url; 
-            const targetW = this.boardWidth * 0.5;
-            const targetH = this.boardHeight * 0.5;
-            const scale = Math.min(targetW / img.width, targetH / img.height);
-            
-            const w = Math.round(img.width * scale);
-            const h = Math.round(img.height * scale);
-            
-            const x = Math.round((this.boardWidth - w) / 2);
-            const y = Math.round((this.boardHeight - h) / 2);
+            let targetW, targetH, x, y;
 
-            this.templates.push({
-                id, img,
-                src: url,
-                x, y, w, h,
-                locked: false,
-                opacity: 0.5 
-            });
+            if (this.isInfinite) {
+                // Use viewport-relative sizing for infinite canvas
+                const rect = this.canvas.getBoundingClientRect();
+                const viewW = rect.width / this.transform.scale;
+                const viewH = rect.height / this.transform.scale;
+                targetW = viewW * 0.4;
+                targetH = viewH * 0.4;
+                const scale = Math.min(targetW / img.width, targetH / img.height);
+                const w = Math.max(20, Math.round(img.width * scale));
+                const h = Math.max(20, Math.round(img.height * scale));
+                // Center on current viewport
+                const centerX = (-this.transform.x / this.transform.scale) + viewW / 2;
+                const centerY = (-this.transform.y / this.transform.scale) + viewH / 2;
+                x = Math.round(centerX - w / 2);
+                y = Math.round(centerY - h / 2);
+
+                this.templates.push({
+                    id, img,
+                    src: url,
+                    x, y, w, h,
+                    locked: false,
+                    opacity: 0.5 
+                });
+            } else {
+                targetW = this.boardWidth * 0.5;
+                targetH = this.boardHeight * 0.5;
+                const scale = Math.min(targetW / img.width, targetH / img.height);
+                const w = Math.round(img.width * scale);
+                const h = Math.round(img.height * scale);
+                x = Math.round((this.boardWidth - w) / 2);
+                y = Math.round((this.boardHeight - h) / 2);
+
+                this.templates.push({
+                    id, img,
+                    src: url,
+                    x, y, w, h,
+                    locked: false,
+                    opacity: 0.5 
+                });
+            }
 
             this.toggleTemplate(id); 
             showMessage(__('msg_template_added'), 'success');
@@ -562,8 +591,8 @@ export const DesignTemplates = {
 
             let bounds = getRotatedBounds(tpl.w, tpl.h);
 
-            // Shrink if too big
-            if (bounds.visualWidth > this.boardWidth || bounds.visualHeight > this.boardHeight) {
+            // Shrink if too big (only for finite canvases)
+            if (!this.isInfinite && (bounds.visualWidth > this.boardWidth || bounds.visualHeight > this.boardHeight)) {
                 const scaleX = this.boardWidth / bounds.visualWidth;
                 const scaleY = this.boardHeight / bounds.visualHeight;
                 const shrinkScale = Math.min(scaleX, scaleY) * 0.99; // tiny margin
@@ -583,13 +612,15 @@ export const DesignTemplates = {
             tpl.x = oldCx - tpl.w / 2;
             tpl.y = oldCy - tpl.h / 2;
 
-            const minX = Math.round(-tpl.w/2 - bounds.minRx);
-            const maxX = Math.round(this.boardWidth - tpl.w/2 - bounds.maxRx);
-            const minY = Math.round(-tpl.h/2 - bounds.minRy);
-            const maxY = Math.round(this.boardHeight - tpl.h/2 - bounds.maxRy);
+            if (!this.isInfinite) {
+                const minX = Math.round(-tpl.w/2 - bounds.minRx);
+                const maxX = Math.round(this.boardWidth - tpl.w/2 - bounds.maxRx);
+                const minY = Math.round(-tpl.h/2 - bounds.minRy);
+                const maxY = Math.round(this.boardHeight - tpl.h/2 - bounds.maxRy);
 
-            tpl.x = Math.max(minX, Math.min(tpl.x, maxX));
-            tpl.y = Math.max(minY, Math.min(tpl.y, maxY));
+                tpl.x = Math.max(minX, Math.min(tpl.x, maxX));
+                tpl.y = Math.max(minY, Math.min(tpl.y, maxY));
+            }
 
             if (typeof this.emitLiveImageUpdate === 'function') {
                 this.emitLiveImageUpdate();

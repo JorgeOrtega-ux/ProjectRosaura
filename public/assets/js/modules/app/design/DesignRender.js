@@ -70,11 +70,16 @@ export const DesignRender = {
         if (!this.ctx || !this.canvas) return;
 
         const isDark = this.isDarkMode();
-        const bgColor = isDark ? '#0e0e11' : '#f5f5fa'; 
-        const gridColor = 'rgba(0, 0, 0, 0.15)'; 
+        const bgColor = this.isInfinite ? '#FFFFFF' : (isDark ? '#0e0e11' : '#f5f5fa'); 
+        const gridColor = 'rgba(0, 0, 0, 0.15)';
         const activeColor = this.currentColor; 
 
-        this.ctx.fillStyle = bgColor; 
+        if (this.isInfinite) {
+            this.ctx.fillStyle = '#FFFFFF';
+        } else {
+            this.ctx.fillStyle = bgColor; 
+        }
+        
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.ctx.save();
@@ -87,35 +92,65 @@ export const DesignRender = {
         
         this.ctx.imageSmoothingEnabled = false;
         
-        this.ctx.fillStyle = '#FFFFFF';
-        this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
-
-
-        
-        if (this.transform.scale > 4) {
-            this.ctx.lineWidth = 1 / this.transform.scale;
-            this.ctx.strokeStyle = gridColor; 
-            this.ctx.beginPath();
-            
-            const rect = this.canvas.getBoundingClientRect();
-            
-            const startX = Math.max(0, Math.floor(-this.transform.x / this.transform.scale));
-            const startY = Math.max(0, Math.floor(-this.transform.y / this.transform.scale));
-            const endX = Math.min(this.boardWidth, Math.ceil((rect.width - this.transform.x) / this.transform.scale));
-            const endY = Math.min(this.boardHeight, Math.ceil((rect.height - this.transform.y) / this.transform.scale));
-
-            for (let x = startX; x <= endX; x++) {
-                this.ctx.moveTo(x, startY);
-                this.ctx.lineTo(x, endY);
+        if (this.isInfinite) {
+            if (this.chunks) {
+                this.chunks.forEach((chunkCanvas, key) => {
+                    if (!chunkCanvas) return;
+                    const [cx, cy] = key.split(',').map(Number);
+                    this.ctx.drawImage(chunkCanvas, cx * 512, cy * 512);
+                });
             }
-            for (let y = startY; y <= endY; y++) {
-                this.ctx.moveTo(startX, y);
-                this.ctx.lineTo(endX, y);
+
+            if (this.transform.scale >= 4) {
+                this.ctx.lineWidth = 1 / this.transform.scale;
+                this.ctx.strokeStyle = gridColor; 
+                this.ctx.beginPath();
+                
+                const rect = this.canvas.getBoundingClientRect();
+                const startX = Math.floor(-this.transform.x / this.transform.scale);
+                const startY = Math.floor(-this.transform.y / this.transform.scale);
+                const endX = Math.ceil((rect.width - this.transform.x) / this.transform.scale);
+                const endY = Math.ceil((rect.height - this.transform.y) / this.transform.scale);
+
+                for (let x = startX; x <= endX; x++) {
+                    this.ctx.moveTo(x, startY);
+                    this.ctx.lineTo(x, endY);
+                }
+                for (let y = startY; y <= endY; y++) {
+                    this.ctx.moveTo(startX, y);
+                    this.ctx.lineTo(endX, y);
+                }
+                this.ctx.stroke();
             }
-            this.ctx.stroke();
+        } else {
+            this.ctx.fillStyle = '#FFFFFF';
+            this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
+            
+            if (this.transform.scale > 4) {
+                this.ctx.lineWidth = 1 / this.transform.scale;
+                this.ctx.strokeStyle = gridColor; 
+                this.ctx.beginPath();
+                
+                const rect = this.canvas.getBoundingClientRect();
+                
+                const startX = Math.max(0, Math.floor(-this.transform.x / this.transform.scale));
+                const startY = Math.max(0, Math.floor(-this.transform.y / this.transform.scale));
+                const endX = Math.min(this.boardWidth, Math.ceil((rect.width - this.transform.x) / this.transform.scale));
+                const endY = Math.min(this.boardHeight, Math.ceil((rect.height - this.transform.y) / this.transform.scale));
+
+                for (let x = startX; x <= endX; x++) {
+                    this.ctx.moveTo(x, startY);
+                    this.ctx.lineTo(x, endY);
+                }
+                for (let y = startY; y <= endY; y++) {
+                    this.ctx.moveTo(startX, y);
+                    this.ctx.lineTo(endX, y);
+                }
+                this.ctx.stroke();
+            }
+
+            this.ctx.drawImage(this.offscreenCanvas, 0, 0);
         }
-
-        this.ctx.drawImage(this.offscreenCanvas, 0, 0);
 
         if (this.activeTemplateId && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
             const tpl = this.templates.find(t => t.id === this.activeTemplateId);

@@ -278,7 +278,7 @@ class AdminServices {
 
         Utils::deleteOldAvatar($oldPic);
 
-        $newRelPath = Utils::generateProfilePicture($user['username'], $user['uuid']);
+        $newRelPath = Utils::generateProfilePicture($user['username']);
         if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
             $currentUserId = $this->sessionManager->get('user_id');
             $logPayload = json_encode(['event' => 'admin_delete_avatar', 'target_user' => $targetId, 'admin_user' => $currentUserId]);

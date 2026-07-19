@@ -77,12 +77,37 @@ class Utils {
     }
 
     public static function generateProfilePicture($text) {
+        $colors = ['2563eb', '16a34a', '7c3aed', 'dc2626', 'ea580c', '374151'];
+        $cleanText = strtoupper(trim(preg_replace('/[^a-zA-Z0-9]/', '', $text)));
+        $initial = substr($cleanText, 0, 1);
+        
+        $category = 'letters';
+        $folderName = $initial;
+
+        if ($initial === '') {
+            $initial = 'U';
+            $folderName = '_symbol';
+        } else if (is_numeric($initial)) {
+            $category = 'numbers';
+        }
+        
+        $colorIndex = abs(crc32($text)) % count($colors);
+        $color = $colors[$colorIndex];
+        
+        $relPath = "profilePictures/default/$category/$folderName/$color.png";
+        $localPath = defined('ROOT_PATH') ? ROOT_PATH . "/storage/public/$relPath" : '';
+
+        if (!empty($localPath) && file_exists($localPath)) {
+            return $relPath;
+        }
+
+        // --- FALLBACK ---
         $uuid = self::generateUUID();
-        $backgroundColor = self::getRandomColor();
+        $backgroundColor = '#' . $color;
         
         $cleanBg = ltrim($backgroundColor, '#');
-        $initial = urlencode(strtoupper(substr(trim($text), 0, 1)));
-        $apiUrl = "https://ui-avatars.com/api/?name={$initial}&background={$cleanBg}&color=ffffff&size=256&font-size=0.5&format=png";
+        $initialUrl = urlencode($initial);
+        $apiUrl = "https://ui-avatars.com/api/?name={$initialUrl}&background={$cleanBg}&color=ffffff&size=256&font-size=0.5&format=png";
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $apiUrl);
@@ -94,17 +119,17 @@ class Utils {
 
         if (!$imageContent) {
             $image = imagecreatetruecolor(256, 256);
-            $bg = imagecolorallocate($image, hexdec(substr($backgroundColor, 1, 2)), hexdec(substr($backgroundColor, 3, 2)), hexdec(substr($backgroundColor, 5, 2)));
+            $bg = imagecolorallocate($image, hexdec(substr($color, 0, 2)), hexdec(substr($color, 2, 2)), hexdec(substr($color, 4, 2)));
             imagefill($image, 0, 0, $bg);
             $textColor = imagecolorallocate($image, 255, 255, 255);
             $fontPath = defined('ROOT_PATH') ? ROOT_PATH . '/public/assets/fonts/Inter-Bold.ttf' : '';
             
             if (!empty($fontPath) && file_exists($fontPath)) {
-                imagettftext($image, 100, 0, 70, 170, $textColor, $fontPath, urldecode($initial));
+                imagettftext($image, 100, 0, 70, 170, $textColor, $fontPath, urldecode($initialUrl));
             } else {
                 $tempImg = imagecreatetruecolor(20, 20);
                 imagefill($tempImg, 0, 0, $bg);
-                imagestring($tempImg, 5, 6, 2, urldecode($initial), $textColor);
+                imagestring($tempImg, 5, 6, 2, urldecode($initialUrl), $textColor);
                 imagecopyresized($image, $tempImg, 0, 0, 0, 0, 256, 256, 20, 20);
                 imagedestroy($tempImg);
             }

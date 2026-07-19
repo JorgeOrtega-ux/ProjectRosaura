@@ -295,13 +295,20 @@ class CanvasCoreService {
             }
 
             $sizeStr = strtolower($canvas['size']);
-            if (strpos($sizeStr, 'x') !== false) {
-                $parts = explode('x', $sizeStr);
-                $width = (int)$parts[0];
-                $height = isset($parts[1]) ? (int)$parts[1] : $width;
+            if ($sizeStr === 'infinite') {
+                $canvas['is_infinite'] = true;
+                $width = 0;
+                $height = 0;
             } else {
-                $width = (int)$sizeStr;
-                $height = $width;
+                $canvas['is_infinite'] = false;
+                if (strpos($sizeStr, 'x') !== false) {
+                    $parts = explode('x', $sizeStr);
+                    $width = (int)$parts[0];
+                    $height = isset($parts[1]) ? (int)$parts[1] : $width;
+                } else {
+                    $width = (int)$sizeStr;
+                    $height = $width;
+                }
             }
             
             $canvas['max_members'] = $canvas['max_participants'];
@@ -345,38 +352,45 @@ class CanvasCoreService {
                             'cooldown_seconds' => $canvas['cooldown_seconds'] ?? 10
                         ]);
                     }
+                }
+            } catch (Exception $e) {
+                Logger::error('Error setting canvas config in Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            }
 
+            if ($canvas['is_infinite']) {
+                $canvas['state_base64'] = ''; 
+            } else {
+                try {
                     if ($redis && $redis->exists($redisKey)) {
                         $stateRaw = $redis->get($redisKey);
                     }
+                } catch (Exception $e) {
+                    Logger::error('Error reading canvas from Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
                 }
-            } catch (Exception $e) {
-                Logger::error('Error reading canvas from Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
-            }
 
-            if ($stateRaw === null || $stateRaw === false) {
-                $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
+                if ($stateRaw === null || $stateRaw === false) {
+                    $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
 
-                if ($stateRaw && $redis) {
-                    try {
-                        $redis->set($redisKey, $stateRaw);
-                    } catch (Exception $e) {}
+                    if ($stateRaw && $redis) {
+                        try {
+                            $redis->set($redisKey, $stateRaw);
+                        } catch (Exception $e) {}
+                    }
                 }
-            }
 
-            if (!$stateRaw) {
-                $totalPixels = $width * $height;
-                // 4 bytes per pixel (RGBA transparent)
-                $stateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $totalPixels); 
-                
-                if ($redis) {
-                    try {
-                        $redis->set($redisKey, $stateRaw);
-                    } catch (Exception $e) {}
+                if (!$stateRaw) {
+                    $totalPixels = $width * $height;
+                    $stateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $totalPixels); 
+                    
+                    if ($redis) {
+                        try {
+                            $redis->set($redisKey, $stateRaw);
+                        } catch (Exception $e) {}
+                    }
                 }
-            }
 
-            $canvas['state_base64'] = base64_encode($stateRaw);
+                $canvas['state_base64'] = base64_encode($stateRaw);
+            }
 
             return ['success' => true, 'data' => $canvas];
         } catch (Exception $e) {
