@@ -1019,6 +1019,7 @@
     "validation.email_in_use":  "El correo electrónico ya está registrado.",
     "tooltip_view_requests":  "Ver solicitudes pendientes",
     "validation.invalid_length":  "La longitud del campo es incorrecta.",
+    "validation.invalid_username_format": "El nombre de usuario solo puede contener letras, números y guiones bajos.",
     "search_canvas_placeholder":  "Buscar por título o descripción...",
     "tooltip_manage_members":  "Gestionar miembros",
     "validation.invalid_preference":  "Preferencia no válida.",

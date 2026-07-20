@@ -273,9 +273,13 @@ class Utils {
     }
 
     public static function validateUsernameFormat($username, $minLen = 3, $maxLen = 32) {
-        $userLen = mb_strlen(trim($username), 'UTF-8');
+        $trimmed = trim($username);
+        $userLen = mb_strlen($trimmed, 'UTF-8');
         if ($userLen < $minLen || $userLen > $maxLen) {
             return ['valid' => false, 'message_key' => 'validation.invalid_length'];
+        }
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $trimmed)) {
+            return ['valid' => false, 'message_key' => 'validation.invalid_username_format'];
         }
         return ['valid' => true];
     }

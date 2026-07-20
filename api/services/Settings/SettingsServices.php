@@ -144,12 +144,15 @@ class SettingsServices
             return ['success' => false, 'message' => __('error.rate_limit_exceeded')];
         }
 
-        $username = trim($data['username'] ?? '');
-        $minLen = $this->config['min_username_length'];
-        $maxLen = $this->config['max_username_length'];
+        $username = Utils::sanitizeText($data['username'] ?? '');
+        if (empty($username)) return ['success' => false, 'message' => __('validation.missing_fields')];
+
+        $minLen = (int)($this->config['min_username_length'] ?? 3);
+        $maxLen = (int)($this->config['max_username_length'] ?? 20);
         
-        if (strlen($username) < $minLen || strlen($username) > $maxLen) {
-            return ['success' => false, 'message' => __('validation.invalid_length')];
+        $userValidation = Utils::validateUsernameFormat($username, $minLen, $maxLen);
+        if (!$userValidation['valid']) {
+            return ['success' => false, 'message' => __($userValidation['message_key'])];
         }
 
         $existingUser = $this->userRepository->findByUsername($username);

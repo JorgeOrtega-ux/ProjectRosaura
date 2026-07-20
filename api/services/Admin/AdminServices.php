@@ -305,10 +305,14 @@ class AdminServices {
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $username = Utils::sanitizeText($data['username'] ?? '');
-        $minLen = $this->config['min_username_length'] ?? 3;
-        $maxLen = $this->config['max_username_length'] ?? 32;
+        if (empty($username)) return ['success' => false, 'message' => __('validation.missing_fields')];
+        $minLen = (int)($this->config['min_username_length'] ?? 3);
+        $maxLen = (int)($this->config['max_username_length'] ?? 32);
         
-        if (strlen($username) < $minLen || strlen($username) > $maxLen) return ['success' => false, 'message' => __('validation.invalid_length')];
+        $userValidation = Utils::validateUsernameFormat($username, $minLen, $maxLen);
+        if (!$userValidation['valid']) {
+            return ['success' => false, 'message' => __($userValidation['message_key'])];
+        }
 
         $existingUser = $this->userRepository->findByUsername($username);
         if ($existingUser && $existingUser['id'] != $targetId) return ['success' => false, 'message' => __('validation.username_in_use')];
