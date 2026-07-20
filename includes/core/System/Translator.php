@@ -15,28 +15,42 @@ class Translator {
         } else {
             self::$translations = [];
         }
+
         $loadAdmin = false;
+        $loadSitePolicy = false;
         $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+
         if (strpos($requestUri, '/admin') !== false) {
             $loadAdmin = true;
         }
-        if (!$loadAdmin) {
+        if (strpos($requestUri, '/site-policy') !== false) {
+            $loadSitePolicy = true;
+        }
+
+        if (!$loadAdmin || !$loadSitePolicy) {
             $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
             if (strpos($contentType, 'application/json') !== false) {
                 $input = file_get_contents('php://input');
                 if (!empty($input)) {
                     $data = json_decode($input, true);
-                    if (is_array($data) && isset($data['route']) && strpos($data['route'], 'admin') === 0) {
-                        $loadAdmin = true;
+                    if (is_array($data) && isset($data['route'])) {
+                        if (strpos($data['route'], 'admin') === 0) $loadAdmin = true;
+                        if (strpos($data['route'], 'site-policy') === 0) $loadSitePolicy = true;
                     }
                 }
             }
         }
-        if (!$loadAdmin && isset($_REQUEST['route']) && strpos($_REQUEST['route'], 'admin') === 0) {
-            $loadAdmin = true;
+
+        if (isset($_REQUEST['route'])) {
+            if (strpos($_REQUEST['route'], 'admin') === 0) $loadAdmin = true;
+            if (strpos($_REQUEST['route'], 'site-policy') === 0) $loadSitePolicy = true;
         }
+
         if ($loadAdmin) {
             self::loadContext($lang, 'admin');
+        }
+        if ($loadSitePolicy) {
+            self::loadContext($lang, 'site-policy');
         }
     }
 
@@ -73,6 +87,7 @@ class Translator {
         if (!isset(self::$cache[$lang])) {
             $generalFile = ROOT_PATH . '/translations/' . $lang . '/general.json';
             $adminFile = ROOT_PATH . '/translations/' . $lang . '/admin.json';
+            $sitePolicyFile = ROOT_PATH . '/translations/' . $lang . '/site-policy.json';
             
             $translations = [];
             
@@ -82,6 +97,10 @@ class Translator {
             }
             if (file_exists($adminFile)) {
                 $json = file_get_contents($adminFile);
+                $translations = array_merge($translations, json_decode($json, true) ?: []);
+            }
+            if (file_exists($sitePolicyFile)) {
+                $json = file_get_contents($sitePolicyFile);
                 $translations = array_merge($translations, json_decode($json, true) ?: []);
             }
 
@@ -118,4 +137,3 @@ class Translator {
         ];
     }
 }
-?>
