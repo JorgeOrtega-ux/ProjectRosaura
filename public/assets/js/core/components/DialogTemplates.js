@@ -301,7 +301,7 @@ export const DialogTemplates = {
                     </div>
                     <div class="component-modal-body">
                         <input type="hidden" data-ref="modal_verify_password" value="GOOGLE_OAUTH_CONFIRMED">
-                        <div class="component-badge component-badge--glass" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; gap: 8px;">
+                        <div class="component-badge component-badge--glass" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.75rem; gap: 8px;">
                             <span class="material-symbols-rounded" style="color: #4285F4;">g_mobiledata</span>
                             <span>${userEmail ? `Sesión activa con Google (${userEmail})` : 'Sesión activa verificada con Google'}</span>
                         </div>

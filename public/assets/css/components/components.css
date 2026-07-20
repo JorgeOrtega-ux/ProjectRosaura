@@ -1,4 +1,4 @@
-.component-layout-centered {
+﻿.component-layout-centered {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -103,7 +103,7 @@
 }
 
 .component-top-title {
-    font-size: 14px;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
@@ -210,14 +210,14 @@ html.dark-theme .component-top.shadow {
 }
 
 .component-page-title {
-    font-size: 24px;
+    font-size: 1.3rem;
     font-weight: 700;
     margin: 0 0 8px 0;
     color: var(--text-primary);
 }
 
 .component-page-description {
-    font-size: 15px;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     margin: 0;
 }
@@ -244,12 +244,12 @@ html.dark-theme .component-top.shadow {
 }
 
 .component-link-text {
-    font-size: 14px;
+    font-size: 0.75rem;
     color: var(--text-secondary);
 }
 
 .component-link {
-    font-size: 14px;
+    font-size: 0.75rem;
     color: var(--text-primary);
     font-weight: 600;
     cursor: pointer;
@@ -260,7 +260,7 @@ html.dark-theme .component-top.shadow {
     margin-top: auto;
     text-align: center;
     color: var(--text-tertiary);
-    font-size: 11px;
+    font-size: 0.6rem;
     line-height: 1.5;
     padding: 24px;
     max-width: 500px;
@@ -273,7 +273,7 @@ html.dark-theme .component-top.shadow {
 }
 
 .component-text-notice {
-    font-size: 14px;
+    font-size: 0.75rem;
     line-height: 1.5;
     margin: 0;
     color: var(--text-primary);
@@ -303,13 +303,13 @@ html.dark-theme .component-top.shadow {
 }
 
 .component-empty-state-icon {
-    font-size: 48px !important;
+    font-size: 2.5rem !important;
     color: var(--text-tertiary);
 }
 
 .component-empty-state-text {
     color: var(--text-secondary);
-    font-size: 15px;
+    font-size: 0.8rem;
     margin-top: 8px;
     margin-bottom: 0;
 }
@@ -363,19 +363,19 @@ html.dark-theme .component-top.shadow {
 }
 
 .component-message-icon {
-    font-size: 48px;
+    font-size: 2.5rem;
     color: var(--color-error);
 }
 
 .component-message-title {
-    font-size: 24px;
+    font-size: 1.3rem;
     font-weight: 700;
     color: var(--color-error);
     margin-bottom: 12px;
 }
 
 .component-message-desc {
-    font-size: 16px;
+    font-size: 0.85rem;
     line-height: 1.5;
     color: var(--text-secondary);
     margin: 0;
@@ -408,7 +408,7 @@ html.dark-theme .component-top.shadow {
     color: var(--text-primary);
     outline: none;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 0.75rem;
     font-weight: 500;
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
     padding: 0 12px; 
@@ -432,12 +432,12 @@ html.dark-theme .component-top.shadow {
     opacity: 0.8;
 }
 
-.component-button--h45 { height: 45px; font-size: 15px; }
+.component-button--h45 { height: 45px; font-size: 0.8rem; }
 .component-button--h40 { height: 40px; }
 .component-button--h36 { height: 36px; }
-.component-button--h34 { height: 34px; font-size: 13px; }
-.component-button--h32 { height: 32px; font-size: 13px; }
-.component-button--h30 { height: 30px; font-size: 12px; padding: 0 6px;}
+.component-button--h34 { height: 34px; font-size: 0.7rem; }
+.component-button--h32 { height: 32px; font-size: 0.7rem; }
+.component-button--h30 { height: 30px; font-size: 0.65rem; padding: 0 6px;}
 
 .component-button--icon {
     padding: 0;
@@ -551,7 +551,7 @@ html.dark-theme .component-top.shadow {
 }
 
 .component-button--back .material-symbols-rounded {
-    font-size: 18px;
+    font-size: 1rem;
 }
 
 .component-form-box {
@@ -571,13 +571,13 @@ html.dark-theme .component-top.shadow {
 }
 
 .component-form-title {
-    font-size: 28px;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--text-primary);
 }
 
 .component-form-desc {
-    font-size: 15px;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     margin: 0;
 }
@@ -642,7 +642,7 @@ html.dark-theme .component-top.shadow {
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 15px;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     pointer-events: none;
     transition: all 0.2s ease;
@@ -651,7 +651,7 @@ html.dark-theme .component-top.shadow {
 .component-input-field:focus ~ .component-input-label,
 .component-input-field:not(:placeholder-shown) ~ .component-input-label {
     top: 12px;
-    font-size: 11px;
+    font-size: 0.6rem;
     color: var(--text-primary);
     font-weight: 500;
 }
@@ -672,7 +672,7 @@ html.dark-theme .component-top.shadow {
     color: var(--text-secondary);
     cursor: pointer;
     user-select: none;
-    font-size: 20px;
+    font-size: 1.1rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -691,7 +691,7 @@ textarea.component-input-field {
     border-radius: 8px;
     background-color: var(--bg-input);
     padding: 12px;
-    font-size: 15px;
+    font-size: 0.8rem;
     line-height: 1.5;
     color: var(--text-primary);
     font-family: inherit;
@@ -752,7 +752,7 @@ textarea.component-input-field::placeholder {
     outline: none;
     background-color: transparent;
     padding-right: 12px;
-    font-size: 14px;
+    font-size: 0.75rem;
     font-family: inherit; 
     color: var(--text-primary);
 }
@@ -882,7 +882,7 @@ textarea.component-input-field::placeholder {
     margin-top: 8px;
     margin-bottom: 24px;
     flex: 1;
-    font-size: 15px;
+    font-size: 0.8rem;
     line-height: 1.5;
 }
 
@@ -966,18 +966,18 @@ textarea.component-input-field::placeholder {
 }
 
 .component-item-card__icon-box .material-symbols-rounded {
-    font-size: 20px !important;
+    font-size: 1.1rem !important;
 }
 
 .component-item-card__title {
-    font-size: 14px;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-color);
     line-height: 1.2;
 }
 
 .component-item-card__desc {
-    font-size: 11px;
+    font-size: 0.6rem;
     color: var(--text-color-muted);
     line-height: 1.3;
     margin-bottom: 12px;
@@ -1060,21 +1060,21 @@ textarea.component-input-field::placeholder {
 }
 
 .component-card__title {
-    font-size: 15px;
+    font-size: 0.8rem;
     font-weight: 600;
     margin: 0;
     color: var(--text-primary);
 }
 
 .component-card__description {
-    font-size: 14px;
+    font-size: 0.75rem;
     color: var(--text-secondary);
     margin: 0;
     line-height: 1.4;
 }
 
 .component-display-value {
-    font-size: 15px;
+    font-size: 0.8rem;
     color: var(--text-primary);
 }
 
@@ -1127,7 +1127,7 @@ textarea.component-input-field::placeholder {
 
 .component-card__icon-container span.material-symbols-rounded {
     color: var(--text-secondary);
-    font-size: 22px;
+    font-size: 1.2rem;
 }
 
 .component-edit-row {
@@ -1232,7 +1232,7 @@ html.dark-theme .component-avatar__overlay {
 }
 
 .component-avatar--static-sm .material-symbols-rounded {
-    font-size: 16px !important;
+    font-size: 0.85rem !important;
 }
 
 .component-avatar--40 {
@@ -1260,7 +1260,7 @@ html.dark-theme .component-avatar__overlay {
     gap: 6px;
     padding: 6px 12px;
     border-radius: 20px;
-    font-size: 13px;
+    font-size: 0.7rem;
     font-weight: 500;
     background-color: var(--bg-surface);
     color: var(--text-primary);
@@ -1269,17 +1269,17 @@ html.dark-theme .component-avatar__overlay {
 }
 
 .component-badge .material-symbols-rounded {
-    font-size: 16px;
+    font-size: 0.85rem;
     color: var(--text-secondary);
 }
 
 .component-badge--sm {
     padding: 4px 10px;
-    font-size: 12px;
+    font-size: 0.65rem;
 }
 
 .component-badge--sm .material-symbols-rounded {
-    font-size: 14px;
+    font-size: 0.75rem;
 }
 
 .component-gallery-warning-overlay {
@@ -1300,16 +1300,16 @@ html.dark-theme .component-avatar__overlay {
     color: #fff;
 }
 .component-gallery-warning-content .material-symbols-rounded {
-    font-size: 32px;
+    font-size: 1.75rem;
     color: var(--color-warning);
     margin-bottom: 8px;
 }
 .component-gallery-warning-title {
     font-weight: 600;
-    font-size: 14px;
+    font-size: 0.75rem;
 }
 .component-gallery-warning-desc {
-    font-size: 11px;
+    font-size: 0.6rem;
     opacity: 0.9;
     margin-top: 4px;
     padding: 0 10px;
@@ -1337,7 +1337,7 @@ html.dark-theme .component-avatar__overlay {
     background: var(--accent-primary, #3b82f6);
     color: #fff;
     border: none;
-    font-size: 11px;
+    font-size: 0.6rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -1534,7 +1534,7 @@ html.dark-theme .component-menu-header.shadow {
 }
 
 .component-menu-header-title {
-    font-size: 14px;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -1627,7 +1627,7 @@ html.dark-theme .component-menu-header.shadow {
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    font-size: 14px;
+    font-size: 0.75rem;
     font-weight: 500;
     min-width: 0; 
 }
@@ -1707,7 +1707,7 @@ html.dark-theme .component-menu-header.shadow {
 .component-dropdown-text {
     flex: 1;
     font-weight: 500;
-    font-size: 14px;
+    font-size: 0.75rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1841,7 +1841,7 @@ input:checked + .component-toggle-slider:before {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    font-size: 14px;
+    font-size: 0.75rem;
 }
 
 .component-table th, 
@@ -1889,12 +1889,12 @@ input:checked + .component-toggle-slider:before {
     align-items: center;
     gap: 2px;
     color: var(--text-tertiary);
-    font-size: 12px;
+    font-size: 0.65rem;
     vertical-align: middle;
 }
 
 .component-table-inline-icon .material-symbols-rounded {
-    font-size: 16px;
+    font-size: 0.85rem;
 }
 
 .td-user-info {
@@ -1948,7 +1948,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-inline-control__btn .material-symbols-rounded {
-    font-size: 18px; 
+    font-size: 1rem; 
 }
 
 .component-inline-control__btn:hover:not(.disabled-interactive) {
@@ -1969,7 +1969,7 @@ input:checked + .component-toggle-slider:before {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 0.65rem;
     font-weight: 700;
     color: var(--text-primary);
     border: 1px solid var(--border-color); 
@@ -1993,7 +1993,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-calendar-title {
-    font-size: 15px;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-primary);
     text-transform: capitalize;
@@ -2003,7 +2003,7 @@ input:checked + .component-toggle-slider:before {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     text-align: center;
-    font-size: 13px;
+    font-size: 0.7rem;
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 8px;
@@ -2023,7 +2023,7 @@ input:checked + .component-toggle-slider:before {
     border: none;
     background-color: transparent;
     color: var(--text-primary);
-    font-size: 13px;
+    font-size: 0.7rem;
     font-weight: 500;
     cursor: pointer;
     display: flex;
@@ -2074,7 +2074,7 @@ input:checked + .component-toggle-slider:before {
     -moz-appearance: textfield;
     text-align: center;
     font-weight: 700;
-    font-size: 15px;
+    font-size: 0.8rem;
 }
 
 .component-calendar-actions {
@@ -2119,7 +2119,7 @@ input:checked + .component-toggle-slider:before {
     border-right: 1px solid var(--border-color);
     background-color: transparent;
     color: var(--text-secondary);
-    font-size: 13px;
+    font-size: 0.7rem;
     font-family: var(--sl-font-mono);
     cursor: pointer;
     user-select: none;
@@ -2154,7 +2154,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-tab-close .material-symbols-rounded {
-    font-size: 14px;
+    font-size: 0.75rem;
 }
 
 .component-viewer-area {
@@ -2172,7 +2172,7 @@ input:checked + .component-toggle-slider:before {
     border: none;
     padding: 8px;
     font-family: var(--sl-font-mono, monospace);
-    font-size: 13px;
+    font-size: 0.7rem;
     line-height: 1.5;
     outline: none;
 }
@@ -2261,14 +2261,14 @@ input:checked + .component-toggle-slider:before {
 
 .component-2fa-secret-col h3, 
 .component-2fa-instructions-col h3 {
-    font-size: 14px;
+    font-size: 0.75rem;
     font-weight: 600;
     margin: 0 0 12px 0;
     color: var(--text-primary);
 }
 
 .component-2fa-secret-col p {
-    font-size: 13px;
+    font-size: 0.7rem;
     color: var(--text-secondary);
     margin: 0 0 8px 0;
 }
@@ -2302,7 +2302,7 @@ input:checked + .component-toggle-slider:before {
     margin: 0;
     padding-left: 20px;
     color: var(--text-secondary);
-    font-size: 14px;
+    font-size: 0.75rem;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -2319,13 +2319,13 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-recovery-code-icon {
-    font-size: 18px !important;
+    font-size: 1rem !important;
     color: var(--text-secondary);
 }
 
 .component-recovery-code-text {
     font-family: monospace;
-    font-size: 14px;
+    font-size: 0.75rem;
     letter-spacing: 1.5px;
     color: var(--text-primary);
     font-weight: 700;
@@ -2341,7 +2341,7 @@ input:checked + .component-toggle-slider:before {
     width: 100%; height: 100%; background-color: var(--bg-app);
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
 }
-.component-gallery-ring__inner span { font-size: 32px; color: var(--text-secondary); }
+.component-gallery-ring__inner span { font-size: 1.75rem; color: var(--text-secondary); }
 
 .component-color-list { display: flex; flex-direction: column; width: 100%; }
 .component-color-row { width: 100%; display: flex; flex-direction: column; }
@@ -2428,7 +2428,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-account-name {
-    font-size: 14px;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
@@ -2437,7 +2437,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-account-email {
-    font-size: 12px;
+    font-size: 0.65rem;
     color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -2446,7 +2446,7 @@ input:checked + .component-toggle-slider:before {
 
 .component-account-check {
     color: var(--action-primary);
-    font-size: 20px !important;
+    font-size: 1.1rem !important;
 }
 
 .component-account-item--add .component-account-name {
@@ -2540,14 +2540,14 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-modal-title {
-    font-size: 14px;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
 }
 
 .component-modal-desc {
-    font-size: 13px;
+    font-size: 0.7rem;
     color: var(--text-secondary);
     margin: 0;
     line-height: 1.5;
@@ -2592,7 +2592,7 @@ input:checked + .component-toggle-slider:before {
 
 .component-role-color-text {
     font-family: monospace;
-    font-size: 16px;
+    font-size: 0.85rem;
     font-weight: 500;
 }
 
@@ -2619,7 +2619,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-modal-close-btn .material-symbols-rounded {
-    font-size: 20px;
+    font-size: 1.1rem;
 }
 
 .component-modal-close-btn:hover {
@@ -2667,12 +2667,12 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-toast-icon .material-symbols-rounded {
-    font-size: 20px;
+    font-size: 1.1rem;
     color: var(--bg-surface);
 }
 
 .component-toast-text {
-    font-size: 14px;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--bg-surface);
 }
@@ -2686,7 +2686,7 @@ input:checked + .component-toggle-slider:before {
     background-color: var(--text-primary); 
     color: var(--bg-surface); 
     padding: 6px 12px;
-    font-size: 12px;
+    font-size: 0.65rem;
     font-weight: 600;
     font-family: inherit;
     border-radius: 6px;
@@ -2739,7 +2739,7 @@ input:checked + .component-toggle-slider:before {
 .component-alert-success {
     padding: 10px 12px;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 0.75rem;
     text-align: center;
     display: none;
     width: 100%;
@@ -2764,7 +2764,7 @@ input:checked + .component-toggle-slider:before {
     align-items: center;
     padding: 10px 12px;
     border-radius: 8px;
-    font-size: 13px;
+    font-size: 0.7rem;
     gap: 8px;
     width: 100%;
 }
@@ -2784,7 +2784,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-alert-icon .material-symbols-rounded {
-    font-size: 18px;
+    font-size: 1rem;
 }
 
 .component-alert-text {
@@ -3080,7 +3080,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-stat-card__icon span.material-symbols-rounded {
-    font-size: 22px;
+    font-size: 1.2rem;
     color: var(--text-primary);
 }
 
@@ -3091,7 +3091,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-stat-card__title {
-    font-size: 13px;
+    font-size: 0.7rem;
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
@@ -3100,7 +3100,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-stat-card__value {
-    font-size: 20px; 
+    font-size: 1.1rem; 
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.1;
@@ -3185,7 +3185,7 @@ input:checked + .component-toggle-slider:before {
 .component-gallery-title {
     margin: 0; 
     color: #ffffff; 
-    font-size: 12px; 
+    font-size: 0.65rem; 
     font-family: inherit;
     text-shadow: 0px 2px 4px rgba(0,0,0,0.6);
     white-space: nowrap;
@@ -3284,7 +3284,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-credit-card__contactless span {
-    font-size: 28px;
+    font-size: 1.5rem;
     transform: rotate(90deg);
     opacity: 0.7;
 }
@@ -3296,7 +3296,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-credit-card__number {
-    font-size: 16px;
+    font-size: 0.85rem;
     letter-spacing: 2px;
     display: flex;
     gap: 8px;
@@ -3304,7 +3304,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-credit-card__brand {
-    font-size: 24px;
+    font-size: 1.3rem;
     font-weight: 900;
     font-style: italic;
     font-family: system-ui, -apple-system, sans-serif;
@@ -3416,17 +3416,17 @@ input:checked + .component-toggle-slider:before {
 .component-flex-center-gap-8 { display: flex; align-items: center; gap: 8px; }
 .component-font-bold { font-weight: bold !important; }
 .component-font-600 { font-weight: 600 !important; }
-.component-text-sm { font-size: 13px !important; }
-.component-text-md { font-size: 14px !important; }
-.component-text-lg { font-size: 20px !important; }
-.component-text-xl { font-size: 24px !important; }
-.component-text-xxl { font-size: 36px !important; }
+.component-text-sm { font-size: 0.7rem !important; }
+.component-text-md { font-size: 0.75rem !important; }
+.component-text-lg { font-size: 1.1rem !important; }
+.component-text-xl { font-size: 1.3rem !important; }
+.component-text-xxl { font-size: 2rem !important; }
 .component-text-center { text-align: center !important; }
 .component-cursor-pointer { cursor: pointer !important; }
 .component-transition-opacity { transition: opacity 0.15s ease !important; }
 .component-border-bottom {  padding-bottom: 16px; }
 .component-list-none { list-style: none !important; padding: 0 !important; margin: 0 0 24px 0 !important; flex-grow: 1; }
-.component-icon-sm { font-size: 18px !important; }
+.component-icon-sm { font-size: 1rem !important; }
 .component-w-full { width: 100% !important; }
 
 .component-wrapper[data-ref="design-wrapper"],
@@ -3643,7 +3643,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-library-card__delete .material-symbols-rounded {
-    font-size: 10px !important;
+    font-size: 0.55rem !important;
     line-height: 1 !important;
 }
 
@@ -3672,7 +3672,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .live-share-label {
-    font-size: 10px;
+    font-size: 0.55rem;
     opacity: 0.7;
 }
 
@@ -3889,14 +3889,14 @@ input:checked + .component-toggle-slider:before {
 
 .component-chat-attach-btn .material-symbols-rounded,
 .component-chat-send-btn .material-symbols-rounded {
-    font-size: 18px;
+    font-size: 1rem;
 }
 
 .chat-message {
     display: flex;
     gap: 8px;
     margin-bottom: 8px;
-    font-size: 13px;
+    font-size: 0.7rem;
 }
 
 .chat-message--mine {
@@ -3907,7 +3907,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 .chat-typing-indicator {
-    font-size: 12px;
+    font-size: 0.65rem;
     color: var(--text-secondary);
     padding: 4px 16px;
     font-style: italic;
@@ -3929,7 +3929,7 @@ input:checked + .component-toggle-slider:before {
     justify-content: center;
 }
 .chat-message-avatar-placeholder .material-symbols-rounded {
-    font-size: 18px;
+    font-size: 1rem;
     color: var(--text-secondary);
 }
 .chat-message-bubble {
@@ -3960,7 +3960,7 @@ input:checked + .component-toggle-slider:before {
     border: 1px solid var(--border-color);
     padding: 4px 12px;
     border-radius: 16px;
-    font-size: 11px;
+    font-size: 0.6rem;
     color: var(--text-secondary);
     font-weight: 500;
 }
@@ -3980,7 +3980,7 @@ input:checked + .component-toggle-slider:before {
     color: var(--primary-color);
 }
 .chat-message-time {
-    font-size: 11px;
+    font-size: 0.6rem;
     color: var(--text-secondary);
 }
 .chat-message-text {
@@ -3997,7 +3997,7 @@ input:checked + .component-toggle-slider:before {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 12px;
+    font-size: 0.65rem;
     font-style: italic;
     color: var(--text-secondary);
     opacity: 0.7;
@@ -4007,7 +4007,7 @@ input:checked + .component-toggle-slider:before {
     user-select: none;
 }
 .chat-message-status-bubble .material-symbols-rounded {
-    font-size: 16px;
+    font-size: 0.85rem;
 }
 
 .chat-attachments-preview-container {
@@ -4063,7 +4063,7 @@ input:checked + .component-toggle-slider:before {
     z-index: 2;
 }
 .chat-attachment-preview-card .remove-btn .material-symbols-rounded {
-    font-size: 10px !important;
+    font-size: 0.55rem !important;
     line-height: 1 !important;
 }
 .chat-attachment-preview-card .remove-btn:hover {
@@ -4218,7 +4218,7 @@ input:checked + .component-toggle-slider:before {
     gap: 8px;
     cursor: pointer;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 0.75rem;
     transition: all 0.2s ease;
 }
 
@@ -4403,7 +4403,7 @@ html.dark-theme .component-skeleton::after {
     opacity: 0.5;
 }
 .component-icon--20 {
-    font-size: 20px !important;
+    font-size: 1.1rem !important;
 }
 .component-gallery-actions {
     gap: 4px;
@@ -4526,33 +4526,33 @@ html.dark-theme .component-skeleton::after {
 
 /* Generic BEM Layout Components */
 .component-page-intro { text-align: center; margin-bottom: 32px; }
-.component-page-intro__title { font-size: 36px; font-weight: 700; line-height: 1.2; }
-.component-page-intro__desc { font-size: 12px; color: var(--text-secondary); margin-top: 24px; margin-bottom: 24px; }
+.component-page-intro__title { font-size: 2rem; font-weight: 700; line-height: 1.2; }
+.component-page-intro__desc { font-size: 0.65rem; color: var(--text-secondary); margin-top: 24px; margin-bottom: 24px; }
 
 .component-plan-card__header { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
-.component-plan-card__tag { font-size: 12px; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 2px; }
-.component-plan-card__title { font-size: 24px; font-weight: 500; margin: 0; }
-.component-plan-card__desc { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+.component-plan-card__tag { font-size: 0.65rem; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 2px; }
+.component-plan-card__title { font-size: 1.3rem; font-weight: 500; margin: 0; }
+.component-plan-card__desc { font-size: 0.65rem; color: var(--text-secondary); margin-top: 6px; }
 .component-plan-card__storage { margin-top: 12px; display: flex; }
 
 .component-plan-card__body { display: flex; flex-direction: column; gap: 16px; flex: 1; }
 .component-plan-card__price-section { margin-top: 8px; }
-.component-plan-card__old-price { font-size: 12px; color: var(--text-secondary); text-decoration: line-through; }
+.component-plan-card__old-price { font-size: 0.65rem; color: var(--text-secondary); text-decoration: line-through; }
 .component-plan-card__price-row { display: flex; align-items: baseline; gap: 4px; margin-top: 2px; }
-.component-plan-card__price-amount { font-size: 36px; font-weight: 500; color: var(--color-success, #10b981); line-height: 1; transition: opacity 0.15s ease; }
-.component-plan-card__period { font-size: 13px; color: var(--color-success, #10b981); transition: opacity 0.15s ease; }
-.component-plan-card__price-subtext { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+.component-plan-card__price-amount { font-size: 2rem; font-weight: 500; color: var(--color-success, #10b981); line-height: 1; transition: opacity 0.15s ease; }
+.component-plan-card__period { font-size: 0.7rem; color: var(--color-success, #10b981); transition: opacity 0.15s ease; }
+.component-plan-card__price-subtext { font-size: 0.6rem; color: var(--text-secondary); margin-top: 4px; }
 
 .component-plan-card__action { margin-bottom: 16px; }
 .component-plan-card__footer { margin-top: 16px; display: flex; flex-direction: column; gap: 16px; }
 .component-plan-card__features-list { display: flex; flex-direction: column; gap: 20px; }
-.component-plan-card__features-title { font-size: 14px; font-weight: 500; margin-bottom: 0; }
+.component-plan-card__features-title { font-size: 0.75rem; font-weight: 500; margin-bottom: 0; }
 .component-plan-card__divider { border: 0; border-top: 1px solid var(--border-color); width: 100%; margin: 0; }
 .component-plan-card__feature-item { display: flex; align-items: flex-start; gap: 12px; }
 .component-plan-card__feature-icon { margin-top: 2px; }
 .component-plan-card__feature-text { display: flex; flex-direction: column; gap: 4px; }
-.component-plan-card__feature-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
-.component-plan-card__feature-desc { font-size: 13px; color: var(--text-secondary); }
+.component-plan-card__feature-name { font-size: 0.75rem; font-weight: 500; color: var(--text-primary); }
+.component-plan-card__feature-desc { font-size: 0.7rem; color: var(--text-secondary); }
 
 .component-card--fw500,
 .component-card--fw500 h2,
@@ -4599,7 +4599,7 @@ html.dark-theme .component-skeleton::after {
 .component-toggle-group__wrapper { display: inline-flex; align-items: center; background: var(--bg-secondary); border-radius: 100px; padding: 4px; gap: 4px; }
 .component-toggle-group__button { padding: 6px 32px !important; }
 .component-toggle-group__button { border-radius: 100px; }
-.component-discount-note { text-align: center; color: var(--color-success, #10b981); font-weight: 700; font-size: 14px; margin-bottom: 32px; }
+.component-discount-note { text-align: center; color: var(--color-success, #10b981); font-weight: 700; font-size: 0.75rem; margin-bottom: 32px; }
 .component-text-gradient-blue {
     background: linear-gradient(135deg, #1a73e8 0%, #4285f4 50%, #8ab4f8 100%);
     -webkit-background-clip: text;
@@ -4674,7 +4674,7 @@ html.dark-theme .component-skeleton::after {
     border-radius: 10px;
     background-color: var(--bg-surface-alt, rgba(255, 255, 255, 0.1));
     border: 1px solid var(--border-color);
-    font-size: 10px;
+    font-size: 0.55rem;
     font-weight: 600;
     color: var(--text-primary);
     margin-left: 10px;
@@ -4683,11 +4683,11 @@ html.dark-theme .component-skeleton::after {
 }
 
 /* Icon size utilities */
-.component-icon--14 { font-size: 14px !important; }
-.component-icon--16 { font-size: 16px !important; }
-.component-icon--18 { font-size: 18px !important; }
-.component-icon--20 { font-size: 20px !important; }
-.component-icon--64 { font-size: 64px !important; }
+.component-icon--14 { font-size: 0.75rem !important; }
+.component-icon--16 { font-size: 0.85rem !important; }
+.component-icon--18 { font-size: 1rem !important; }
+.component-icon--20 { font-size: 1.1rem !important; }
+.component-icon--64 { font-size: 3.5rem !important; }
 
 /* Text Color Utilities */
 .component-text-accent { color: var(--accent-primary, #3b82f6); }

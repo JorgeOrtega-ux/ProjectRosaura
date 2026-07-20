@@ -38,11 +38,11 @@ $canManageMessages = true; // All admins currently
     }
     .dashboard-chart-card .component-top-title {
         margin: 0;
-        font-size: 16px;
+        font-size: 0.85rem;
     }
     .component-stat-card__title,
     .component-stat-card__value {
-        font-size: 14px !important;
+        font-size: 0.75rem !important;
     }
 </style>
 <div class="view-content">

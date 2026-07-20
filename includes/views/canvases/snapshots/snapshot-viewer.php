@@ -102,6 +102,6 @@ try {
         </div>
     </div>
 
-    <?php require_once __DIR__ . '/../../modules/moduleTimelapseTools.php'; ?>
+    <?php require_once __DIR__ . '/../../../modules/moduleTimelapseTools.php'; ?>
 
 </div>

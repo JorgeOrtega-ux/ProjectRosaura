@@ -37,12 +37,12 @@ class Router {
 
         if (preg_match('#^/design/s/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
-            return ['view' => 'canvases/snapshots-gallery.php'];
+            return ['view' => 'canvases/snapshots/snapshots-gallery.php'];
         }
 
         if (preg_match('#^/snapshot/view/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['id'] = $matches[1];
-            return ['view' => 'canvases/snapshot-viewer.php'];
+            return ['view' => 'canvases/snapshots/snapshot-viewer.php'];
         }
 
         if (preg_match('#^/design/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
@@ -52,7 +52,7 @@ class Router {
         if (preg_match('#^/canvases/manage/resets/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/resets/:uuid'] ?? [
-                'view' => 'canvases/components/reset-manager.php',
+                'view' => 'canvases/workspace/reset.php',
                 'auth' => true,
                 'permissions' => ['manage_canvases'],
                 'requires_2fa' => false
@@ -62,7 +62,7 @@ class Router {
             $_GET['uuid'] = $matches[1];
             $_GET['user_uuid'] = $matches[2];
             return $this->routes['/canvases/members/:uuid/role/:user_uuid'] ?? [
-                'view' => 'canvases/change-role.php',
+                'view' => 'canvases/team/change-role.php',
                 'auth' => true,
                 'permissions' => ['manage_canvases'],
                 'requires_2fa' => false
@@ -72,7 +72,7 @@ class Router {
             $_GET['uuid'] = $matches[1];
             $_GET['user_uuid'] = $matches[2];
             return $this->routes['/canvases/manage/chat-restriction/:uuid/:user_uuid'] ?? [
-                'view' => 'canvases/chat-restriction.php',
+                'view' => 'canvases/team/chat-restriction.php',
                 'auth' => true,
                 'requires_2fa' => false
             ];
@@ -80,7 +80,7 @@ class Router {
         if (preg_match('#^/canvases/members/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/members/:uuid'] ?? [
-                'view' => 'canvases/members.php',
+                'view' => 'canvases/team/members.php',
                 'auth' => true,
                 'permissions' => ['manage_canvases'],
                 'requires_2fa' => false
@@ -89,7 +89,7 @@ class Router {
         if (preg_match('#^/canvases/manage/requests/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/requests/:uuid'] ?? [
-                'view' => 'canvases/requests.php',
+                'view' => 'canvases/team/requests.php',
                 'auth' => true,
                 'permissions' => ['manage_canvases'],
                 'requires_2fa' => false
@@ -98,7 +98,7 @@ class Router {
         if (preg_match('#^/canvases/edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/edit/:uuid'] ?? [
-                'view' => 'canvases/edit.php',
+                'view' => 'canvases/workspace/edit.php',
                 'auth' => true,
                 'permissions' => ['manage_canvases'],
                 'requires_2fa' => false
@@ -107,7 +107,7 @@ class Router {
         if (preg_match('#^/canvases/manage/resize/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/resize/:uuid'] ?? [
-                'view' => 'canvases/resize.php',
+                'view' => 'canvases/workspace/resize.php',
                 'auth' => true,
                 'permissions' => ['manage_canvases'],
                 'requires_2fa' => false
@@ -116,7 +116,7 @@ class Router {
         if (preg_match('#^/canvases/manage/invites/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/invites/:uuid'] ?? [
-                'view' => 'canvases/invites.php',
+                'view' => 'canvases/team/invites.php',
                 'auth' => true,
                 'permissions' => ['manage_canvases'],
                 'requires_2fa' => false
@@ -125,7 +125,7 @@ class Router {
         if (preg_match('#^/canvases/manage/invites/generate/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/invites/generate/:uuid'] ?? [
-                'view' => 'canvases/invites-generate.php',
+                'view' => 'canvases/team/invites-generate.php',
                 'auth' => true,
                 'permissions' => ['manage_canvases'],
                 'requires_2fa' => false
@@ -134,7 +134,7 @@ class Router {
         if (preg_match('#^/canvases/manage/roles/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/roles/:uuid'] ?? [
-                'view' => 'canvases/roles.php',
+                'view' => 'canvases/team/roles.php',
                 'auth' => true,
                 'permissions' => ['manage_canvases'],
                 'requires_2fa' => false
@@ -143,7 +143,7 @@ class Router {
         if (preg_match('#^/canvases/manage/role-builder/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/role-builder/:uuid'] ?? [
-                'view' => 'canvases/role-builder.php',
+                'view' => 'canvases/team/role-builder.php',
                 'auth' => true,
                 'permissions' => ['manage_canvases'],
                 'requires_2fa' => false
@@ -153,7 +153,7 @@ class Router {
         if (preg_match('#^/canvases/manage/role-permissions/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/role-permissions/:uuid'] ?? [
-                'view' => 'canvases/role-permissions.php',
+                'view' => 'canvases/team/role-permissions.php',
                 'auth' => true,
                 'permissions' => ['manage_canvases'],
                 'requires_2fa' => false
