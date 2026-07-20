@@ -84,7 +84,7 @@ class UserRepository implements UserRepositoryInterface {
                 (isset($user['role_name']) && $user['role_name'] === 'SuperAdministrator') ||
                 (is_array($permissionsArray) && (in_array('canvases.create_official', $permissionsArray) || in_array('canvases.manage_official', $permissionsArray)))
             ) {
-                $user['subscription_tier'] = \App\Core\System\SubscriptionPlanConstants::TIER_ADVANCED;
+                $user['subscription_tier'] = \App\Core\System\SubscriptionPlanConstants::TIER_ULTRA;
             }
 
             if ($cacheKey && $this->redisClient) {

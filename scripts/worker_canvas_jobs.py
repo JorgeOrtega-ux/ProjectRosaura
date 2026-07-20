@@ -413,7 +413,7 @@ def get_max_snapshots_per_tier(tier):
     elif tier == 1:
         return 5
     else:
-        return -1 # Advanced (Ilimitado)
+        return -1 # Ultra (Ilimitado)
 
 def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palette_id, owner_tier, canvas_uuid):
     try:

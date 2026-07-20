@@ -519,10 +519,29 @@ class SettingsServices
 
         $this->sessionManager->set('2fa_setup_secret', $secret);
 
+        $totpUrl = $ga->getQRCodeUrl('ProjectRosaura', $this->sessionManager->get('user_email'), $secret);
+
+        $qrSvg = null;
+        try {
+            if (class_exists('\\chillerlan\\QRCode\\QRCode')) {
+                $options = new \chillerlan\QRCode\QROptions([
+                    'version'             => 5,
+                    'outputInterface'     => \chillerlan\QRCode\Output\QRMarkupSVG::class,
+                    'drawCircularModules' => true,
+                    'circleRadius'        => 0.45,
+                    'addQuietzone'        => false,
+                    'svgAddXmlHeader'     => false,
+                ]);
+                $qrcode = new \chillerlan\QRCode\QRCode($options);
+                $qrSvg = $qrcode->render($totpUrl);
+            }
+        } catch (\Throwable $e) {}
+
         return [
             'success' => true,
-            'secret' => $secret,
-            'qr_url' => $ga->getQRCodeUrl('ProjectRosaura', $this->sessionManager->get('user_email'), $secret)
+            'secret'  => $secret,
+            'qr_url'  => $totpUrl,
+            'qr_svg'  => $qrSvg
         ];
     }
 

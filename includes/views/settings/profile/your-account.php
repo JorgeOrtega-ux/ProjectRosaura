@@ -68,9 +68,9 @@ if ($activeAccountId !== null && isset($linkedAccounts[$activeAccountId])) {
     $subscriptionTier = (int)($_SESSION['subscription_tier'] ?? 0);
 }
 $subscriptionPlanLabel = match ($subscriptionTier) {
+    SubscriptionPlanConstants::TIER_ULTRA => __('tier_ultra'),
     SubscriptionPlanConstants::TIER_PRO => __('tier_pro'),
-    SubscriptionPlanConstants::TIER_ADVANCED => __('tier_advanced'),
-    default => __('tier_basic'),
+    default => __('tier_plus'),
 };
 
 $googleId = null;

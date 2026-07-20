@@ -72,11 +72,15 @@ export class PremiumController {
         if (checkbox) checkbox.checked = window.isYearlyPremium;
 
         if (window.isYearlyPremium) {
-            lblYearly.classList.remove('component-text-notice--muted');
-            lblMonthly.classList.add('component-text-notice--muted');
+            lblYearly.classList.remove('component-button--ghost', 'component-text-notice--muted');
+            lblYearly.classList.add('component-button--dark');
+            lblMonthly.classList.remove('component-button--dark');
+            lblMonthly.classList.add('component-button--ghost', 'component-text-notice--muted');
         } else {
-            lblMonthly.classList.remove('component-text-notice--muted');
-            lblYearly.classList.add('component-text-notice--muted');
+            lblMonthly.classList.remove('component-button--ghost', 'component-text-notice--muted');
+            lblMonthly.classList.add('component-button--dark');
+            lblYearly.classList.remove('component-button--dark');
+            lblYearly.classList.add('component-button--ghost', 'component-text-notice--muted');
         }
 
         cards.forEach(card => {

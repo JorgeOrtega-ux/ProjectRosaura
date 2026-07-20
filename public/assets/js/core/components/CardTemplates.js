@@ -180,7 +180,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
     },
 
     subscriptionCard: (data) => {
-        const tierName = data.tier === 2 ? 'Advanced' : (data.tier === 1 ? 'Pro' : 'Free');
+        const tierName = data.tier === 2 ? 'Ultra' : (data.tier === 1 ? 'Pro' : 'Plus');
         const status = escapeHTML(data.status || 'inactive');
         const cancelAtEnd = data.cancel_at_period_end;
         let dateLabel = cancelAtEnd ? window.__('ends_on') : window.__('next_billing');

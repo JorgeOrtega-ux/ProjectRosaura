@@ -20,8 +20,8 @@ class StripeServices {
             'yearly'  => 'STRIPE_PRICE_PRO_YEARLY'
         ],
         2 => [ 
-            'monthly' => 'STRIPE_PRICE_ADVANCED_MONTHLY',
-            'yearly'  => 'STRIPE_PRICE_ADVANCED_YEARLY'
+            'monthly' => 'STRIPE_PRICE_ULTRA_MONTHLY',
+            'yearly'  => 'STRIPE_PRICE_ULTRA_YEARLY'
         ]
     ];
 
@@ -47,7 +47,7 @@ class StripeServices {
         $map = [];
         foreach (self::PRICE_MAP as $tier => $periods) {
             foreach ($periods as $period => $envKey) {
-                $priceId = $_ENV[$envKey];
+                $priceId = $_ENV[$envKey] ?? ($_ENV['STRIPE_PRICE_ADVANCED_' . strtoupper($period)] ?? null);
                 if ($priceId) {
                     $map[$priceId] = ['tier' => $tier, 'period' => $period];
                 }
@@ -98,7 +98,7 @@ class StripeServices {
         $tier = isset($input['tier']) ? (int) $input['tier'] : 0;
         $billingPeriod = $input['billing_period'] ?? 'monthly';
 
-        if (!in_array($tier, [SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ADVANCED])) {
+        if (!in_array($tier, [SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ULTRA])) {
             return ['success' => false, 'message_key' => 'stripe.invalid_tier'];
         }
 
@@ -313,7 +313,7 @@ class StripeServices {
         $tier = isset($input['tier']) ? (int) $input['tier'] : 0;
         $billingPeriod = $input['billing_period'] ?? 'monthly';
 
-        if (!in_array($tier, [SubscriptionPlanConstants::TIER_BASIC, SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ADVANCED])) {
+        if (!in_array($tier, [SubscriptionPlanConstants::TIER_PLUS, SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ULTRA])) {
             return ['success' => false, 'message_key' => 'stripe.invalid_tier'];
         }
 
@@ -331,13 +331,13 @@ class StripeServices {
             return ['success' => false, 'message_key' => 'stripe.no_active_subscription'];
         }
 
-        if ($tier === SubscriptionPlanConstants::TIER_BASIC) {
+        if ($tier === SubscriptionPlanConstants::TIER_PLUS || $tier === SubscriptionPlanConstants::TIER_BASIC) {
             \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
             try {
                 $subscription = \Stripe\Subscription::retrieve($activeLocalSub['stripe_subscription_id']);
                 $subscription->cancel();
                 
-                $this->subscriptionRepo->updateUserTier($userId, SubscriptionPlanConstants::TIER_BASIC);
+                $this->subscriptionRepo->updateUserTier($userId, SubscriptionPlanConstants::TIER_PLUS);
                 $this->subscriptionRepo->updateByStripeSubscriptionId($subscription->id, [
                     'status' => 'canceled',
                     'canceled_at' => date('Y-m-d H:i:s')

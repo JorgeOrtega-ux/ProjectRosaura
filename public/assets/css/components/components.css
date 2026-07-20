@@ -788,7 +788,7 @@ textarea.component-input-field::placeholder {
     display: flex;
     flex-direction: column;
     border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border-radius: 16px;
     background-color: var(--bg-surface);
 }
 
@@ -3383,6 +3383,9 @@ input:checked + .component-toggle-slider:before {
 
 .component-mb-4 { margin-bottom: 4px !important; }
 .component-card--w320 { width: 320px !important; max-width: 100% !important; flex: 0 0 auto !important; position: relative !important; }
+.component-card--w360 { width: 360px !important; max-width: 100% !important; flex: 0 0 auto !important; position: relative !important; }
+.component-card--w380 { width: 380px !important; max-width: 100% !important; flex: 0 0 auto !important; position: relative !important; }
+.component-card--w560 { width: 560px !important; max-width: 100% !important; flex: 0 0 auto !important; position: relative !important; }
 .component-flex-center-gap { display: flex !important; flex-direction: row !important; flex-wrap: wrap !important; justify-content: center !important; gap: 24px !important; width: 100% !important; }
 .component-badge--top-center {
     position: absolute;
@@ -4510,23 +4513,45 @@ html.dark-theme .component-skeleton::after {
 
 
 /* Generic BEM Layout Components */
-.component-card__header { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
-.component-card__body { display: flex; flex-direction: column; gap: 16px; flex: 1; }
-.component-card__footer { display: flex; flex-direction: column; gap: 24px; }
-.component-card__price-box { display: flex; align-items: flex-end; gap: 4px; margin-bottom: 8px; }
-.component-card__price-prefix { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
-.component-card__price-suffix { margin-bottom: 4px; }
-.component-card__price-box .component-text-xxl { margin-left: 4px; margin-right: 4px; }
-.component-card__subtext { border-bottom: 1px solid var(--border-color); padding-bottom: 24px; }
-.component-card__action { margin-bottom: 16px; }
-.component-card__features-list { display: flex; flex-direction: column; gap: 20px; }
-.component-card__features-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
-.component-card__divider { border: 0; border-top: 1px solid var(--border-color); width: 100%; margin: 0; }
-.component-card__storage-badge-wrapper { display: flex; margin-bottom: 8px; }
-.component-card__brand { display: flex; align-items: center; gap: 8px; }
-.component-card__feature-item { display: flex; align-items: flex-start; gap: 12px; }
-.component-card__feature-icon { margin-top: 2px; }
-.component-card__feature-text { display: flex; flex-direction: column; gap: 4px; }
+.component-page-intro { text-align: center; margin-bottom: 32px; }
+.component-page-intro__title { font-size: 36px; font-weight: 700; line-height: 1.2; }
+.component-page-intro__desc { font-size: 12px; color: var(--text-secondary); margin-top: 24px; margin-bottom: 24px; }
+
+.component-plan-card__header { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
+.component-plan-card__tag { font-size: 12px; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 2px; }
+.component-plan-card__title { font-size: 24px; font-weight: 500; margin: 0; }
+.component-plan-card__desc { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+.component-plan-card__storage { margin-top: 12px; display: flex; }
+
+.component-plan-card__body { display: flex; flex-direction: column; gap: 16px; flex: 1; }
+.component-plan-card__price-section { margin-top: 8px; }
+.component-plan-card__old-price { font-size: 12px; color: var(--text-secondary); text-decoration: line-through; }
+.component-plan-card__price-row { display: flex; align-items: baseline; gap: 4px; margin-top: 2px; }
+.component-plan-card__price-amount { font-size: 36px; font-weight: 500; color: var(--color-success, #10b981); line-height: 1; transition: opacity 0.15s ease; }
+.component-plan-card__period { font-size: 13px; color: var(--color-success, #10b981); transition: opacity 0.15s ease; }
+.component-plan-card__price-subtext { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+.component-plan-card__action { margin-bottom: 16px; }
+.component-plan-card__footer { margin-top: 16px; display: flex; flex-direction: column; gap: 16px; }
+.component-plan-card__features-list { display: flex; flex-direction: column; gap: 20px; }
+.component-plan-card__features-title { font-size: 14px; font-weight: 500; margin-bottom: 0; }
+.component-plan-card__divider { border: 0; border-top: 1px solid var(--border-color); width: 100%; margin: 0; }
+.component-plan-card__feature-item { display: flex; align-items: flex-start; gap: 12px; }
+.component-plan-card__feature-icon { margin-top: 2px; }
+.component-plan-card__feature-text { display: flex; flex-direction: column; gap: 4px; }
+.component-plan-card__feature-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.component-plan-card__feature-desc { font-size: 13px; color: var(--text-secondary); }
+
+.component-card--fw500,
+.component-card--fw500 h2,
+.component-card--fw500 h1,
+.component-card--fw500 .component-font-bold,
+.component-card--fw500 .component-text-xl,
+.component-card--fw500 .component-text-xxl,
+.component-card--fw500 .component-plan-card__feature-name,
+.component-card--fw500 .component-plan-card__features-title {
+    font-weight: 500 !important;
+}
 
 .component-card--selectable {
     cursor: pointer;
@@ -4538,29 +4563,58 @@ html.dark-theme .component-skeleton::after {
     background-color: var(--color-primary-light, rgba(59, 130, 246, 0.05));
 }
 
+.component-card--featured {
+    border: 2px solid var(--text-primary, #000) !important;
+}
+
+.component-card--flow-top {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    height: auto !important;
+}
+
+.component-card--flow-top .component-plan-card__header,
+.component-card--flow-top .component-plan-card__body,
+.component-card--flow-top .component-plan-card__footer {
+    flex: none !important;
+    margin-bottom: 0 !important;
+}
+
 .component-page-header { text-align: center; padding: 24px 0; display: flex; flex-direction: column; }
 .component-toggle-group { display: flex; align-items: center; justify-content: center; }
-.component-toggle-group__wrapper { display: inline-flex; align-items: center; background: var(--bg-secondary); border-radius: 100px; padding: 4px; }
+.component-toggle-group__wrapper { display: inline-flex; align-items: center; background: var(--bg-secondary); border-radius: 100px; padding: 4px; gap: 4px; }
 .component-toggle-group__button { padding: 6px 32px !important; }
 .component-toggle-group__button { border-radius: 100px; }
-.component-discount-note { text-align: center; color: var(--text-success); font-weight: 700; margin-bottom: 32px; }
+.component-discount-note { text-align: center; color: var(--color-success, #10b981); font-weight: 700; font-size: 14px; margin-bottom: 32px; }
+.component-text-gradient-blue {
+    background: linear-gradient(135deg, #1a73e8 0%, #4285f4 50%, #8ab4f8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
 
 [data-action="buyCoins"],
-[data-action="buyPerk"] {
+[data-action="buyPerk"],
+[data-action="subscribe"] {
     position: relative;
     overflow: hidden;
 }
 [data-action="buyCoins"] .price-text,
 [data-action="buyCoins"] .pay-text,
 [data-action="buyPerk"] .price-text,
-[data-action="buyPerk"] .pay-text {
+[data-action="buyPerk"] .pay-text,
+[data-action="subscribe"] .price-text,
+[data-action="subscribe"] .pay-text {
     display: flex;
     align-items: center;
     gap: 4px;
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
 }
 [data-action="buyCoins"] .pay-text,
-[data-action="buyPerk"] .pay-text {
+[data-action="buyPerk"] .pay-text,
+[data-action="subscribe"] .pay-text {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -4570,12 +4624,14 @@ html.dark-theme .component-skeleton::after {
     justify-content: center;
 }
 [data-action="buyCoins"]:hover .price-text,
-[data-action="buyPerk"]:hover .price-text {
+[data-action="buyPerk"]:hover .price-text,
+[data-action="subscribe"]:hover .price-text {
     transform: translateY(-150%);
     opacity: 0;
 }
 [data-action="buyCoins"]:hover .pay-text,
-[data-action="buyPerk"]:hover .pay-text {
+[data-action="buyPerk"]:hover .pay-text,
+[data-action="subscribe"]:hover .pay-text {
     transform: translate(-50%, -50%);
     opacity: 1;
 }

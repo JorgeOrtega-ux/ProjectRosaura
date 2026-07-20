@@ -97,49 +97,16 @@ class TwoFactorController {
             
             if (res.success) {
                 const qrContainer = document.querySelector('[data-ref="2fa-qr-container"]');
-                if (qrContainer && res.qr_url) {
-                    try {
-                        if (!window.QRCodeStyling) {
-                            await new Promise((resolve, reject) => {
-                                const script = document.createElement('script');
-                                script.src = (window.AppBasePath || '') + '/assets/js/vendor/qr-code-styling.js';
-                                script.onload = resolve;
-                                script.onerror = reject;
-                                document.head.appendChild(script);
-                            });
+                if (qrContainer) {
+                    if (res.qr_svg) {
+                        qrContainer.innerHTML = res.qr_svg;
+                        const svgElem = qrContainer.querySelector('svg');
+                        if (svgElem) {
+                            svgElem.setAttribute('width', '150');
+                            svgElem.setAttribute('height', '150');
+                            svgElem.classList.add('component-qr');
                         }
-
-                        qrContainer.innerHTML = '';
-                        
-                        const isDarkTheme = document.documentElement.classList.contains('dark-theme') || document.body.classList.contains('dark-theme');
-                        const qrFgColor = isDarkTheme ? "#ffffff" : "#111111"; 
-
-                        const qrCode = new window.QRCodeStyling({
-                            width: 150, 
-                            height: 150, 
-                            type: "svg", 
-                            data: res.qr_url,
-                            margin: 0,
-                            dotsOptions: { color: qrFgColor, type: "rounded" }, 
-                            backgroundOptions: { color: "transparent" },
-                            cornersSquareOptions: { type: "extra-rounded", color: qrFgColor },
-                            cornersDotOptions: { type: "dot", color: qrFgColor }
-                        });
-
-                        qrCode.append(qrContainer);
-
-                        const qrElement = qrContainer.querySelector('svg');
-                        if (qrElement) {
-                            qrElement.classList.add('component-qr');
-
-                            qrElement.querySelectorAll('path').forEach(p => {
-                                p.setAttribute('stroke', qrFgColor);
-                                p.setAttribute('stroke-width', '0.3');
-                                p.style.strokeLinejoin = 'round';
-                            });
-                        }
-
-                    } catch (error) {
+                    } else if (res.qr_url) {
                         qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(res.qr_url)}" alt="QR Code" style="width:150px;height:150px;display:block;margin:auto;">`;
                     }
                 }

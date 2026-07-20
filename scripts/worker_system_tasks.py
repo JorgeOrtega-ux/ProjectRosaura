@@ -571,7 +571,7 @@ def scheduler_loop():
                         renewal_date = sub['current_period_end'].strftime('%Y-%m-%d')
                         redis_key = f"notified:renewal:{sub['id']}:{renewal_date}"
                         if not r.exists(redis_key):
-                            tier_name = 'Premium' if sub['tier'] == 2 else ('BÃ¡sico' if sub['tier'] == 0 else 'Pro')
+                            tier_name = 'Ultra' if sub['tier'] == 2 else ('Plus' if sub['tier'] == 0 else 'Pro')
                             payload = json.dumps({
                                 'type': 'upcoming_renewal',
                                 'user_id': sub['user_id'],

@@ -3,14 +3,18 @@
 namespace App\Core\System;
 
 class SubscriptionPlanConstants {
-    public const TIER_BASIC = 0;
+    public const TIER_PLUS = 0;
+    public const TIER_BASIC = 0; // Alias de compatibilidad
+
     public const TIER_PRO = 1;
-    public const TIER_ADVANCED = 2;
-    public const TIER_ULTRA = 3;
+
+    public const TIER_ULTRA = 2;
+    public const TIER_ADVANCED = 2; // Alias de compatibilidad (mapeado al antiguo nivel 2/Ultra)
 
     public static function getTierLimits(int $tier): array {
         switch ($tier) {
             case self::TIER_ULTRA:
+            case 3: // Manejo defensivo por si algún registro viejo tenía 3
                 return [
                     'name' => 'Ultra',
                     'max_canvases' => 20,
@@ -22,21 +26,6 @@ class SubscriptionPlanConstants {
                     'extended_palettes' => true,
                     'custom_palettes' => true,
                     'max_custom_palettes' => 15,
-                    'allow_live_chat' => true
-                ];
-
-            case self::TIER_ADVANCED:
-                return [
-                    'name' => 'Advanced',
-                    'max_canvases' => 10,
-                    'max_snapshots_per_canvas' => -1,
-                    'max_storage_mb' => 1024,
-                    'max_members_per_canvas' => 10000,
-                    'advanced_roles' => true,
-                    'live_templates' => true,
-                    'extended_palettes' => true,
-                    'custom_palettes' => true,
-                    'max_custom_palettes' => 5,
                     'allow_live_chat' => true
                 ];
 
@@ -55,10 +44,10 @@ class SubscriptionPlanConstants {
                     'allow_live_chat' => false
                 ];
 
-            case self::TIER_BASIC:
+            case self::TIER_PLUS:
             default:
                 return [
-                    'name' => 'Basic',
+                    'name' => 'Plus',
                     'max_canvases' => 1,
                     'max_snapshots_per_canvas' => 0,
                     'max_storage_mb' => 50,
@@ -80,7 +69,7 @@ class SubscriptionPlanConstants {
 
     public static function getTierPrices(): array {
         return [
-            self::TIER_BASIC => [
+            self::TIER_PLUS => [
                 'monthly' => 0.00,
                 'yearly' => 0.00
             ],
@@ -88,13 +77,9 @@ class SubscriptionPlanConstants {
                 'monthly' => 9.99,
                 'yearly' => 95.99
             ],
-            self::TIER_ADVANCED => [
+            self::TIER_ULTRA => [
                 'monthly' => 19.99,
                 'yearly' => 191.99
-            ],
-            self::TIER_ULTRA => [
-                'monthly' => 39.99,
-                'yearly' => 383.99
             ]
         ];
     }

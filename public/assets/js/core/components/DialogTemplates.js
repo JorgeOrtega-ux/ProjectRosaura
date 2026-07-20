@@ -108,7 +108,7 @@ export const DialogTemplates = {
                                 </div>
                                 <div class="component-card--selectable"
                                      onclick="if(window.spaRouter){window.spaRouter.navigate('/premium');}else{window.location.href='/premium';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
-                                    <h4 class="component-card__title">${window.__('premium_plan_advanced')}</h4>
+                                    <h4 class="component-card__title">${window.__('premium_plan_ultra')}</h4>
                                     <div class="component-card__price">$${window.APP_PRICES ? window.APP_PRICES[2].monthly : '19.99'}<span class="component-text-secondary">${window.__('premium_period_month')}</span></div>
                                 </div>
                             </div>
