@@ -48,10 +48,9 @@ $resizeSettings = [
     'is_active' => false,
     'next_resize_at' => null,
     'target_size' => '64x64',
-    'timer_action' => 'restart',
 ];
 
-$stmtSettings = $pdo->prepare('SELECT is_active, next_resize_at, target_size, timer_action FROM canvas_resize_settings WHERE canvas_id = :cid LIMIT 1');
+$stmtSettings = $pdo->prepare('SELECT is_active, next_resize_at, target_size FROM canvas_resize_settings WHERE canvas_id = :cid LIMIT 1');
 $stmtSettings->execute(['cid' => $canvasId]);
 $row = $stmtSettings->fetch(PDO::FETCH_ASSOC);
 
@@ -59,7 +58,6 @@ if ($row) {
     $resizeSettings['is_active'] = (bool)$row['is_active'];
     $resizeSettings['next_resize_at'] = $row['next_resize_at'];
     $resizeSettings['target_size'] = $row['target_size'] ?: '64x64';
-    $resizeSettings['timer_action'] = $row['timer_action'] ?: 'restart';
 }
 
 $ownerTier = 0;
@@ -117,16 +115,6 @@ if (!empty($resizeSettings['next_resize_at'])) {
     } catch (\Exception $e) {
         $resizeDateLocal = '';
     }
-}
-
-$timerActions = [
-    'restart' => ['label' => __('timer_action_restart'), 'icon' => 'timer'],
-    'stop'    => ['label' => __('timer_action_stop'), 'icon' => 'timer_off'],
-    'none'    => ['label' => __('timer_action_none'), 'icon' => 'visibility_off'],
-];
-$activeTimer = $resizeSettings['timer_action'];
-if (!isset($timerActions[$activeTimer])) {
-    $activeTimer = 'restart';
 }
 
 $currWidth = (int)explode('x', $currentSizeRaw)[0];

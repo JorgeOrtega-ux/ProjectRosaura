@@ -35,10 +35,10 @@ DB_PASS = os.getenv("DB_PASS")
 DB_NAME = os.getenv("DB_CANVASES_NAME")
 
 # Canvas Persistence Config
-CANVAS_SYNC_INTERVAL = int(os.getenv("WORKER_TIMELAPSE_SYNC_INTERVAL")) if os.getenv("WORKER_TIMELAPSE_SYNC_INTERVAL") else 5
-CANVAS_BATCH_SIZE = int(os.getenv("WORKER_TIMELAPSE_BATCH_SIZE")) if os.getenv("WORKER_TIMELAPSE_BATCH_SIZE") else 5000
+CANVAS_SYNC_INTERVAL = int(os.getenv("WORKER_CANVAS_SYNC_INTERVAL") or os.getenv("WORKER_TIMELAPSE_SYNC_INTERVAL") or 5)
+CANVAS_BATCH_SIZE = int(os.getenv("WORKER_CANVAS_BATCH_SIZE") or os.getenv("WORKER_TIMELAPSE_BATCH_SIZE") or 5000)
 
-CONSUMER_GROUP = "timelapse_workers"
+CONSUMER_GROUP = "canvas_workers"
 CONSUMER_NAME = "worker-1"
 
 # Chat Persistence Config

@@ -295,7 +295,7 @@ def scheduler_thread():
             
             with db.cursor() as cursor:
                 cursor.execute("""
-                    SELECT rs.canvas_id, rs.target_size, rs.timer_action, c.size as old_size
+                    SELECT rs.canvas_id, rs.target_size, c.size as old_size
                     FROM canvas_resize_settings rs JOIN canvases c ON rs.canvas_id = c.id
                     WHERE rs.is_active = 1 AND rs.next_resize_at <= UTC_TIMESTAMP()
                 """)
@@ -311,11 +311,10 @@ def scheduler_thread():
                         'type': 'canvas_locked_resize', 'canvas_id': canvas_id, 'new_size': pr['target_size']
                     }))
                     cursor.execute("UPDATE canvas_resize_settings SET is_active = 0 WHERE canvas_id = %s", (canvas_id,))
-                    if pr['timer_action'] in ['stop', 'none']:
-                        r.delete(f"canvas:next_resize:{canvas_id}")
+                    r.delete(f"canvas:next_resize:{canvas_id}")
                 
                 cursor.execute("""
-                    SELECT r.canvas_id, r.take_snapshot, r.timer_action, c.size as canvas_size 
+                    SELECT r.canvas_id, r.take_snapshot, c.size as canvas_size 
                     FROM canvas_reset_settings r JOIN canvases c ON r.canvas_id = c.id
                     WHERE r.is_active = 1 AND r.next_reset_at <= UTC_TIMESTAMP()
                 """)
@@ -629,7 +628,7 @@ def thumbnails_thread():
                             canvas_uuid = result[4]
                             
                             print(f"[DEBUG] Thumbnails thread canvas_id={canvas_id}, size_str='{size_str}', has_snapshot={bool(snapshot_data)}")
-                            if snapshot_data or size_str.lower().strip() == 'infinite':
+                            if snapshot_data:
                                 success = process_canvas_image(r, db_conn, canvas_id, snapshot_data, size_str, palette_id, owner_tier, canvas_uuid)
                                 if success:
                                     r.srem("canvases:pending_snapshots", canvas_id)

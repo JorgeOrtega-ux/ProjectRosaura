@@ -268,7 +268,6 @@ export const DesignNetwork = {
         if (data.is_active) {
             this.resizeActive = true;
             this.nextResizeAt = data.next_resize_at;
-            this.resizeTimerAction = data.timer_action;
             this.resizeTargetSize = data.target_size;
             
             if (typeof this.startResizeTimer === 'function') {
@@ -291,7 +290,6 @@ export const DesignNetwork = {
         if (data.is_active) {
             this.resetActive = true;
             this.nextResetAt = data.next_reset_at;
-            this.timerAction = data.timer_action;
             
             if (typeof this.startResetTimer === 'function') {
                 this.startResetTimer();

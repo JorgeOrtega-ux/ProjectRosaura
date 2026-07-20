@@ -39,10 +39,6 @@ class CanvasResetController {
         this.optionsContainer = this.wrapper.querySelector('[data-ref="reset_options_container"]');
         this.inputDateTime = this.wrapper.querySelector('[data-ref="next_reset_at"]');
         this.checkSnapshot = this.wrapper.querySelector('[data-ref="take_snapshot"]');
-        
-        this.inputTimer = this.wrapper.querySelector('[data-ref="timer_action"]');
-        this.textTimer = this.wrapper.querySelector('[data-ref="text-timer"]');
-        this.iconTimer = this.wrapper.querySelector('[data-ref="icon-timer"]');
 
         this.calendar = new CalendarSystem('.component-module[data-module="moduleCalendarDate"]');
         this.calendar.init();
@@ -210,8 +206,7 @@ class CanvasResetController {
             id: canvasId,
             is_active: isActive,
             next_reset_at: utcNextReset,
-            take_snapshot: this.checkSnapshot ? this.checkSnapshot.checked : false,
-            timer_action: this.inputTimer ? this.inputTimer.value : 'restart'
+            take_snapshot: this.checkSnapshot ? this.checkSnapshot.checked : false
         };
 
         setButtonLoading(btnSave);

@@ -122,7 +122,6 @@ class CanvasResizeController {
         const dropdownTrigger = e.target.closest('[data-action="toggleDropdown"]');
         const sizeScheduledItem = e.target.closest('[data-type="size_scheduled"]');
         const sizeInstantItem = e.target.closest('[data-type="size_instant"]');
-        const timerActionItem = e.target.closest('[data-type="timer_action"]');
         
         const applyNowBtn = e.target.closest('[data-action="applyResizeNow"]');
         const saveScheduledBtn = e.target.closest('[data-action="saveScheduledResize"]');
@@ -226,26 +225,7 @@ class CanvasResizeController {
         }
     }
 
-    handleTimerActionSelect(btn) {
-        const dropdown = this.wrapper.querySelector('[data-module="dropdownResizeTimerAction"]');
-        if (dropdown) {
-            dropdown.classList.remove('active');
-            dropdown.classList.add('disabled');
-        }
 
-        const label = btn.getAttribute('data-label');
-        const icon = btn.getAttribute('data-icon');
-        
-        const textRef = this.wrapper.querySelector('[data-ref="text-resize-timer-action"]');
-        const iconRef = this.wrapper.querySelector('[data-ref="resize-timer-icon"]');
-        
-        if (textRef) textRef.textContent = label;
-        if (iconRef) iconRef.textContent = icon;
-        
-        const links = this.wrapper.querySelectorAll('.component-menu-link[data-type="timer_action"]');
-        links.forEach(l => l.classList.remove('active'));
-        btn.classList.add('active');
-    }
 
     getSelectedSize(type) {
         const activeLink = this.wrapper.querySelector(`.component-menu-link[data-type="${type}"].active`);
@@ -325,15 +305,11 @@ class CanvasResizeController {
             nextResizeAt = this.localInputFormatToUtcString(localTimeStr);
         }
 
-        const actionLink = this.wrapper.querySelector('.component-menu-link[data-type="timer_action"].active');
-        const timerAction = actionLink ? actionLink.getAttribute('data-value') : 'restart';
-
         const payload = {
             id: this.canvasId,
             is_active: isActive,
             next_resize_at: nextResizeAt,
-            target_size: targetSize,
-            timer_action: timerAction
+            target_size: targetSize
         };
 
         setButtonLoading(btn);

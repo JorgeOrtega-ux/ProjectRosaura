@@ -226,7 +226,7 @@ class CanvasSettingsService {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
-            // Allow resetting infinite canvas
+
 
             $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $takeSnapshot = filter_var($data['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN);
@@ -304,7 +304,7 @@ class CanvasSettingsService {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
 
-            // Allow manual reset for infinite canvas
+
 
             $role = null;
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);

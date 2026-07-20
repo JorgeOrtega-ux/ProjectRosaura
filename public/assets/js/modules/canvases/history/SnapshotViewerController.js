@@ -27,7 +27,6 @@ class SnapshotViewerController {
         this.isDataLoaded = false;
         this.showGrid = true;
         this.originalImageUrl = null;
-        this.isInfinite = false;
 
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
@@ -45,13 +44,12 @@ class SnapshotViewerController {
 
         this.offscreenCanvas = null;
         this.offscreenCtx = null;
-        this.isInfinite = false;
 
         const wrapper = document.querySelector('[data-ref="snapshot-wrapper"]');
         if (wrapper) {
             this.snapshotId = wrapper.getAttribute('data-snapshot-id');
             const sizeStr = wrapper.getAttribute('data-size');
-            if (sizeStr && sizeStr.toLowerCase() !== 'infinite') {
+            if (sizeStr) {
                 const parts = sizeStr.toLowerCase().split('x');
                 this.boardWidth = parseInt(parts[0], 10);
                 this.boardHeight = parts.length > 1 ? parseInt(parts[1], 10) : this.boardWidth;
@@ -291,24 +289,8 @@ class SnapshotViewerController {
             }
         }
         
-        if (this.isInfinite) {
-            this.transform.scale = 4;
-            this.transform.x = rectW / 2;
-            this.transform.y = rectH / 2;
-            return;
-        }
-
-        const scaleX = rectW / (this.boardWidth || 32);
-        const scaleY = rectH / (this.boardHeight || 32);
-        this.transform.scale = Math.min(scaleX, scaleY) * 0.9; 
-        
-        this.transform.x = (rectW - (this.boardWidth * this.transform.scale)) / 2;
-        this.transform.y = (rectH - (this.boardHeight * this.transform.scale)) / 2;
-    }
-
     limitBounds() {
         if (!this.canvas) return;
-        if (this.isInfinite) return;
         
         const scaledWidth = this.boardWidth * this.transform.scale;
         const scaledHeight = this.boardHeight * this.transform.scale;
@@ -398,10 +380,6 @@ class SnapshotViewerController {
         const boardX = Math.floor((mouseX - this.transform.x) / this.transform.scale);
         const boardY = Math.floor((mouseY - this.transform.y) / this.transform.scale);
 
-        if (this.isInfinite) {
-            return { x: boardX, y: boardY };
-        }
-        
         if (boardX >= 0 && boardX < this.boardWidth && boardY >= 0 && boardY < this.boardHeight) {
             return { x: boardX, y: boardY };
         }
@@ -456,7 +434,7 @@ class SnapshotViewerController {
         if (!this.ctx || !this.canvas) return;
 
         const isDark = this.isDarkMode();
-        const bgColor = this.isInfinite ? '#FFFFFF' : (isDark ? '#0e0e11' : '#f5f5fa'); 
+        const bgColor = isDark ? '#0e0e11' : '#f5f5fa'; 
         const gridColor = 'rgba(0, 0, 0, 0.15)'; 
 
         this.ctx.fillStyle = bgColor; 
@@ -474,10 +452,8 @@ class SnapshotViewerController {
         
         this.ctx.imageSmoothingEnabled = false;
         
-        if (!this.isInfinite) {
-            this.ctx.fillStyle = '#FFFFFF';
-            this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
-        }
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
 
         if (this.offscreenCanvas) {
             this.ctx.drawImage(this.offscreenCanvas, 0, 0);
@@ -490,10 +466,10 @@ class SnapshotViewerController {
             
             const rect = this.canvas.getBoundingClientRect();
             
-            const startX = this.isInfinite ? Math.floor(-this.transform.x / this.transform.scale) : Math.max(0, Math.floor(-this.transform.x / this.transform.scale));
-            const startY = this.isInfinite ? Math.floor(-this.transform.y / this.transform.scale) : Math.max(0, Math.floor(-this.transform.y / this.transform.scale));
-            const endX = this.isInfinite ? Math.ceil((rect.width - this.transform.x) / this.transform.scale) : Math.min(this.boardWidth, Math.ceil((rect.width - this.transform.x) / this.transform.scale));
-            const endY = this.isInfinite ? Math.ceil((rect.height - this.transform.y) / this.transform.scale) : Math.min(this.boardHeight, Math.ceil((rect.height - this.transform.y) / this.transform.scale));
+            const startX = Math.max(0, Math.floor(-this.transform.x / this.transform.scale));
+            const startY = Math.max(0, Math.floor(-this.transform.y / this.transform.scale));
+            const endX = Math.min(this.boardWidth, Math.ceil((rect.width - this.transform.x) / this.transform.scale));
+            const endY = Math.min(this.boardHeight, Math.ceil((rect.height - this.transform.y) / this.transform.scale));
 
             for (let x = startX; x <= endX; x++) {
                 this.ctx.moveTo(x, startY);

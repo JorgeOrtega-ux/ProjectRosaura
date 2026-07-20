@@ -12,7 +12,6 @@ $resetSettings = [
     'is_active' => false,
     'next_reset_at' => null,
     'take_snapshot' => true,
-    'timer_action' => 'restart',
 ];
 
 $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
@@ -37,7 +36,7 @@ if ($canvasUuid && $userId) {
             if ($isOwner) {
                 $canvasId = (int)$canvas['id'];
 
-                $stmtSettings = $pdo->prepare('SELECT is_active, next_reset_at, take_snapshot, timer_action FROM canvas_reset_settings WHERE canvas_id = :cid LIMIT 1');
+                $stmtSettings = $pdo->prepare('SELECT is_active, next_reset_at, take_snapshot FROM canvas_reset_settings WHERE canvas_id = :cid LIMIT 1');
                 $stmtSettings->execute(['cid' => $canvasId]);
                 $row = $stmtSettings->fetch(PDO::FETCH_ASSOC);
 
@@ -45,7 +44,6 @@ if ($canvasUuid && $userId) {
                     $resetSettings['is_active'] = (bool)$row['is_active'];
                     $resetSettings['next_reset_at'] = $row['next_reset_at'];
                     $resetSettings['take_snapshot'] = (bool)$row['take_snapshot'];
-                    $resetSettings['timer_action'] = $row['timer_action'] ?: 'restart';
                 }
                 
                 $maxSnapshots = -1;
@@ -102,15 +100,6 @@ if (!empty($resetSettings['next_reset_at'])) {
 }
 
 $isResetActive = $resetSettings['is_active'];
-$timerActions = [
-    'restart' => ['label' => __('timer_action_restart'), 'icon' => 'timer'],
-    'stop'    => ['label' => __('timer_action_stop'), 'icon' => 'stop_circle'],
-    'none'    => ['label' => __('timer_action_none'), 'icon' => 'visibility_off'],
-];
-$activeTimer = $resetSettings['timer_action'];
-if (!isset($timerActions[$activeTimer])) {
-    $activeTimer = 'restart';
-}
 ?>
 
 <div class="view-content" data-ref="canvas-resets-wrapper" data-canvas-id="<?php echo $canvasId; ?>">
