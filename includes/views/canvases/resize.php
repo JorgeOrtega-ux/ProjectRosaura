@@ -205,7 +205,7 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                                 $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
                                                 $disabledClass = $isAllowed ? '' : 'disabled-interactive';
                                                 $action = $isAllowed ? 'selectValue' : '';
-                                                $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded">lock</span>';
+                                                $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Premium</span>';
                                                 $activeClass = ((string)$scheduledSize === (string)$val && $isAllowed) ? 'active' : '';
                                             ?>
                                             <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>"
@@ -386,7 +386,7 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                             $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
                                             $disabledClass = $isAllowed ? '' : 'disabled-interactive';
                                             $action = $isAllowed ? 'selectValue' : '';
-                                            $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded">lock</span>';
+                                            $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Premium</span>';
                                             $activeClass = ((string)$instantSize === (string)$val && $isAllowed) ? 'active' : '';
                                         ?>
                                         <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>"

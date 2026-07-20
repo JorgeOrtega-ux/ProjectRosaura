@@ -15,6 +15,8 @@ services:
     depends_on:
       - app1
       - app2
+      - websocket_server_1
+      - websocket_server_2
     networks:
       - rosaura_network
 
@@ -206,6 +208,56 @@ services:
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
       - PALETTES_FILE_PATH=/app/public/assets/data/palettes.json
+    networks:
+      - rosaura_network
+
+  # ==========================================
+  # SERVIDORES WEBSOCKET
+  # ==========================================
+
+  websocket_server_1:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_websocket_server_1
+    restart: always
+    command: python -u scripts/websocket_server.py
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+      - WS_HOST=0.0.0.0
+      - WS_PORT=8765
+    networks:
+      - rosaura_network
+
+  websocket_server_2:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_websocket_server_2
+    restart: always
+    command: python -u scripts/websocket_server.py
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+      - WS_HOST=0.0.0.0
+      - WS_PORT=8765
     networks:
       - rosaura_network
 

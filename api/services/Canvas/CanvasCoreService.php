@@ -477,8 +477,9 @@ class CanvasCoreService {
                 'allow_purchases'       => $allowPurchases,
                 'allow_chat'            => $allowChat,
                 'tags'                  => array_values(array_intersect($tags, [
-                    'fun', 'tension', 'action', 'strategy', 'roleplay', 
-                    'casual', 'romance', 'horror', 'scifi', 'fantasy'
+                    'art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 
+                    'community', 'nature', 'scifi', 'fantasy', 'music', 
+                    'sports', 'popculture', 'abstract', 'experimental'
                 ]))
             ];
             
@@ -575,8 +576,9 @@ class CanvasCoreService {
 
             if (isset($data['tags']) && is_array($data['tags'])) {
                 $data['tags'] = array_values(array_intersect($data['tags'], [
-                    'fun', 'tension', 'action', 'strategy', 'roleplay', 
-                    'casual', 'romance', 'horror', 'scifi', 'fantasy'
+                    'art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 
+                    'community', 'nature', 'scifi', 'fantasy', 'music', 
+                    'sports', 'popculture', 'abstract', 'experimental'
                 ]));
                 if (count($data['tags']) > 8) {
                     $data['tags'] = array_slice($data['tags'], 0, 8);
@@ -673,7 +675,6 @@ class CanvasCoreService {
 
             $updateData = [
                 'name' => $canvas['name'],
-                'description' => $canvas['description'] ?? '',
                 'privacy' => $canvas['privacy'],
                 'requires_approval' => $canvas['requires_approval'],
                 'palette_id' => 'default',

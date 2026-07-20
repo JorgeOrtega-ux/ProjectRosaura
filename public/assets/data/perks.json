@@ -1,7 +1,7 @@
 {
   "no_cooldown_10s": {
     "id": "no_cooldown_10s",
-    "duration_seconds": 10,
+    "duration_seconds": 60,
     "type": "cooldown_modifier",
     "amount": 0,
     "icon": "bolt",
@@ -80,11 +80,11 @@
     "category": "bomb",
     "targets": 1,
     "radii": {
-      "64": 5,
-      "128": 8,
-      "256": 12,
-      "512": 20,
-      "0": 15
+      "64": 4,
+      "128": 7,
+      "256": 10,
+      "512": 15,
+      "0": 12
     },
     "spawning": {
       "mode": "direct",
@@ -101,42 +101,6 @@
       "screen_flash": false
     }
   },
-  "bomba_atomica_1": {
-    "id": "bomba_atomica_1",
-    "duration_seconds": 86400,
-    "type": "bomb",
-    "amount": 1,
-    "icon": "crisis_alert",
-    "label_key": "perk_atomic_bomb",
-    "short_label_key": "perk_atomic_bomb_short",
-    "button_label_key": "btn_launch_nuclear",
-    "warning_icon": "crisis_alert",
-    "warning_label_key": "msg_nuke_incoming",
-    "warning_seconds": 10,
-    "category": "bomb",
-    "targets": 1,
-    "radii": {
-      "64": 15,
-      "128": 25,
-      "256": 40,
-      "512": 70,
-      "0": 250
-    },
-    "spawning": {
-      "mode": "direct",
-      "count": 1,
-      "spread_radius": 0,
-      "jitter_delay": 0
-    },
-    "explosion": {
-      "style": "nuclear",
-      "duration": 1500,
-      "shake_duration": 1000,
-      "flash_duration": 1500,
-      "screen_shake": true,
-      "screen_flash": true
-    }
-  },
   "bomba_racimo_1": {
     "id": "bomba_racimo_1",
     "duration_seconds": 86400,
@@ -148,15 +112,15 @@
     "button_label_key": "btn_launch_cluster",
     "warning_icon": "scatter_plot",
     "warning_label_key": "msg_cluster_incoming",
-    "warning_seconds": 5,
+    "warning_seconds": 4,
     "category": "bomb",
     "targets": 5,
     "radii": {
-      "64": 8,
-      "128": 12,
-      "256": 18,
-      "512": 25,
-      "0": 20
+      "64": 5,
+      "128": 8,
+      "256": 12,
+      "512": 18,
+      "0": 15
     },
     "spawning": {
       "mode": "direct",
@@ -173,6 +137,42 @@
       "screen_flash": true
     }
   },
+  "bomba_atomica_1": {
+    "id": "bomba_atomica_1",
+    "duration_seconds": 86400,
+    "type": "bomb",
+    "amount": 1,
+    "icon": "crisis_alert",
+    "label_key": "perk_atomic_bomb",
+    "short_label_key": "perk_atomic_bomb_short",
+    "button_label_key": "btn_launch_nuclear",
+    "warning_icon": "crisis_alert",
+    "warning_label_key": "msg_nuke_incoming",
+    "warning_seconds": 8,
+    "category": "bomb",
+    "targets": 1,
+    "radii": {
+      "64": 10,
+      "128": 18,
+      "256": 28,
+      "512": 45,
+      "0": 100
+    },
+    "spawning": {
+      "mode": "direct",
+      "count": 1,
+      "spread_radius": 0,
+      "jitter_delay": 0
+    },
+    "explosion": {
+      "style": "nuclear",
+      "duration": 1500,
+      "shake_duration": 1000,
+      "flash_duration": 1500,
+      "screen_shake": true,
+      "screen_flash": true
+    }
+  },
   "lluvia_meteoritos_1": {
     "id": "lluvia_meteoritos_1",
     "duration_seconds": 86400,
@@ -184,21 +184,21 @@
     "button_label_key": "btn_launch_meteor",
     "warning_icon": "storm",
     "warning_label_key": "msg_meteor_incoming",
-    "warning_seconds": 7,
+    "warning_seconds": 6,
     "category": "bomb",
     "targets": 1,
     "radii": {
-      "64": 4,
-      "128": 6,
-      "256": 10,
-      "512": 15,
+      "64": 3,
+      "128": 5,
+      "256": 8,
+      "512": 12,
       "0": 10
     },
     "spawning": {
       "mode": "random_around",
-      "count": 20,
-      "spread_radius": 200,
-      "jitter_delay": 5.0
+      "count": 15,
+      "spread_radius": 150,
+      "jitter_delay": 4.0
     },
     "explosion": {
       "style": "medium",

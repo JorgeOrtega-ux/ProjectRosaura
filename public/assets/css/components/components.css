@@ -314,6 +314,14 @@ html.dark-theme .component-top.shadow {
     margin-bottom: 0;
 }
 
+.component-empty-state-actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
 .component-empty-table-cell {
     padding: 0 !important;
 }
@@ -1723,12 +1731,12 @@ html.dark-theme .component-menu-header.shadow {
 }
 
 .component-card--grouped.component-accordion:not(.component-card--flush) > .component-accordion-header {
-    border-radius: 12px;
+    border-radius: 16px;
 }
 
 .component-list--flush > .component-accordion:last-child:not(.active) > .component-accordion-header {
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
 }
 
 .component-accordion.active > .component-accordion-header {
@@ -4476,6 +4484,10 @@ html.dark-theme .component-skeleton::after {
     background: var(--text-primary) !important;
     color: var(--bg-surface) !important;
     border-color: var(--text-primary) !important;
+}
+.component-badge.active .material-symbols-rounded,
+.component-badge--dark .material-symbols-rounded {
+    color: inherit !important;
 }
 .component-tag-nav-btn {
     position: absolute;

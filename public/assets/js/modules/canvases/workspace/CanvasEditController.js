@@ -166,7 +166,7 @@ class CanvasEditController {
                 btn.title = window.__('tooltip_upgrade_palette');
             }
 
-            const lockHtml = isLocked ? `<div class="component-menu-link-icon component-menu-link-icon--premium"><span class="material-symbols-rounded">stars</span></div>` : '';
+            const lockHtml = isLocked ? `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Premium</span>` : '';
 
             btn.innerHTML = `
                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>

@@ -171,7 +171,7 @@ if (!$canvasId) {
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">
                                             <?php 
-                                            $allowedTags = ['fun', 'tension', 'action', 'strategy', 'roleplay', 'casual', 'romance', 'horror', 'scifi', 'fantasy'];
+                                            $allowedTags = ['art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 'community', 'nature', 'scifi', 'fantasy', 'music', 'sports', 'popculture', 'abstract', 'experimental'];
                                             foreach ($allowedTags as $tag): 
                                                 $isActive = in_array($tag, $cTags);
                                             ?>
@@ -427,7 +427,7 @@ if (!$canvasId) {
                                         </div>
                                         <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
                                             <div class="component-menu-footer">
-                                                <button type="button" class="component-button component-button--full" data-action="navigateCustomPalette">
+                                                <button type="button" class="component-button component-button--h34 component-button--full" data-action="navigateCustomPalette">
                                                     <span class="material-symbols-rounded">add_circle</span>
                                                     <span><?php echo __('btn_create_custom_palette'); ?></span>
                                                 </button>

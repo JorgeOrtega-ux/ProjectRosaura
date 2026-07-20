@@ -203,7 +203,7 @@ class DesignController {
                 liveShareMenuBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    window.location.href = (window.AppBasePath || '') + '/premium';
+                    window.location.href = (window.AppBasePath || '') + '/upgrade';
                 }, true); 
             }
         }

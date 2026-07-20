@@ -3,7 +3,7 @@
 namespace App\Core\System;
 
 class CanvasConstants {
-    public const VALID_TAGS = ['all', 'fun', 'tension', 'action', 'strategy', 'roleplay', 'casual', 'romance', 'horror', 'scifi', 'fantasy'];
+    public const VALID_TAGS = ['all', 'art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 'community', 'nature', 'scifi', 'fantasy', 'music', 'sports', 'popculture', 'abstract', 'experimental'];
     
     public const RESERVED_ROLES = ['owner', 'propietario', 'superadmin', 'superadministrador'];
     

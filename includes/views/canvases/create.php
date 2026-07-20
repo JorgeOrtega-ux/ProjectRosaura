@@ -136,7 +136,7 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                                         </div>
                                         <div class="component-menu-list component-menu-list--scrollable">
                                             <?php 
-                                            $allowedTags = ['fun', 'tension', 'action', 'strategy', 'roleplay', 'casual', 'romance', 'horror', 'scifi', 'fantasy'];
+                                            $allowedTags = ['art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 'community', 'nature', 'scifi', 'fantasy', 'music', 'sports', 'popculture', 'abstract', 'experimental'];
                                             foreach ($allowedTags as $tag): ?>
                                             <div class="component-menu-link" data-action="toggleTag" data-value="<?php echo $tag; ?>" data-label="<?php echo __('tag_' . $tag); ?>">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded" data-ref="icon-check">check_box_outline_blank</span></div>
@@ -194,7 +194,7 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                                                 $isAllowed = ($tier >= $requiredTier);
                                                 $disabledClass = $isAllowed ? '' : 'disabled-interactive';
                                                 $action = $isAllowed ? 'selectValue' : '';
-                                                $lockIcon = $isAllowed ? '' : '<div class="component-menu-link-icon component-menu-link-icon--premium"><span class="material-symbols-rounded">stars</span></div>';
+                                                $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Premium</span>';
                                                 $activeClass = ($val === $defaultSizeKey && $isAllowed) ? 'active' : '';
                                             ?>
                                             <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>" data-action="<?php echo $action; ?>" data-type="size" data-value="<?php echo htmlspecialchars($val); ?>" data-tier="<?php echo $requiredTier; ?>" data-label="<?php echo htmlspecialchars($data['label']); ?>" data-icon="<?php echo htmlspecialchars($data['icon']); ?>" <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '"'; ?>>

@@ -16,10 +16,14 @@ class StripeServices {
 
     private const PRICE_MAP = [
         1 => [ 
+            'monthly' => 'STRIPE_PRICE_PLUS_MONTHLY',
+            'yearly'  => 'STRIPE_PRICE_PLUS_YEARLY'
+        ],
+        2 => [ 
             'monthly' => 'STRIPE_PRICE_PRO_MONTHLY',
             'yearly'  => 'STRIPE_PRICE_PRO_YEARLY'
         ],
-        2 => [ 
+        3 => [ 
             'monthly' => 'STRIPE_PRICE_ULTRA_MONTHLY',
             'yearly'  => 'STRIPE_PRICE_ULTRA_YEARLY'
         ]
@@ -98,7 +102,7 @@ class StripeServices {
         $tier = isset($input['tier']) ? (int) $input['tier'] : 0;
         $billingPeriod = $input['billing_period'] ?? 'monthly';
 
-        if (!in_array($tier, [SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ULTRA])) {
+        if (!in_array($tier, [SubscriptionPlanConstants::TIER_PLUS, SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ULTRA])) {
             return ['success' => false, 'message_key' => 'stripe.invalid_tier'];
         }
 
@@ -164,7 +168,7 @@ class StripeServices {
                     'quantity' => 1
                 ]],
                 'success_url' => $baseUrl . '/?checkout=success&session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => $baseUrl . '/premium?status=cancel',
+                'cancel_url' => $baseUrl . '/upgrade?status=cancel',
                 'metadata' => [
                     'user_id' => (string) $userId,
                     'tier' => (string) $tier,
@@ -331,13 +335,13 @@ class StripeServices {
             return ['success' => false, 'message_key' => 'stripe.no_active_subscription'];
         }
 
-        if ($tier === SubscriptionPlanConstants::TIER_PLUS || $tier === SubscriptionPlanConstants::TIER_BASIC) {
+        if ($tier === SubscriptionPlanConstants::TIER_FREE || $tier === SubscriptionPlanConstants::TIER_BASIC) {
             \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
             try {
                 $subscription = \Stripe\Subscription::retrieve($activeLocalSub['stripe_subscription_id']);
                 $subscription->cancel();
                 
-                $this->subscriptionRepo->updateUserTier($userId, SubscriptionPlanConstants::TIER_PLUS);
+                $this->subscriptionRepo->updateUserTier($userId, SubscriptionPlanConstants::TIER_FREE);
                 $this->subscriptionRepo->updateByStripeSubscriptionId($subscription->id, [
                     'status' => 'canceled',
                     'canceled_at' => date('Y-m-d H:i:s')

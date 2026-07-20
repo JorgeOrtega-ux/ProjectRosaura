@@ -6,7 +6,8 @@ export const RouteModulesMap = {
     
     '/search': { path: './modules/app/search/SearchController.js', className: 'SearchController', skeletonType: 'layout-grid' },
     
-    '/premium': { path: './modules/app/premium/PremiumController.js', className: 'PremiumController', skeletonType: 'layout-basic' },
+    '/upgrade': { path: './modules/app/upgrade/UpgradeController.js', className: 'UpgradeController', skeletonType: 'layout-basic' },
+    '/premium': { path: './modules/app/upgrade/UpgradeController.js', className: 'UpgradeController', skeletonType: 'layout-basic' },
 
     '/design': { path: './modules/app/design/DesignController.js', className: 'DesignController', skeletonType: 'layout-basic' },
     

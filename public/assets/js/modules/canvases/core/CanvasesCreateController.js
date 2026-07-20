@@ -127,7 +127,7 @@ class CanvasesCreateController {
                 btn.title = window.__('tooltip_upgrade_palette');
             }
 
-            const lockHtml = isLocked ? `<div class="component-menu-link-icon component-menu-link-icon--premium"><span class="material-symbols-rounded">stars</span></div>` : '';
+            const lockHtml = isLocked ? `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Premium</span>` : '';
 
             btn.innerHTML = `
                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
@@ -231,7 +231,7 @@ class CanvasesCreateController {
                 link.classList.remove('disabled-interactive');
                 link.setAttribute('data-action', 'selectValue');
                 link.removeAttribute('title');
-                const lockIcon = link.querySelector('.component-menu-link-icon--premium');
+                const lockIcon = link.querySelector('.component-badge');
                 if (lockIcon) {
                     lockIcon.remove();
                 }
@@ -240,9 +240,9 @@ class CanvasesCreateController {
                 link.setAttribute('data-action', '');
                 link.setAttribute('title', window.__('tooltip_upgrade_required'));
                 
-                let lockIcon = link.querySelector('.component-menu-link-icon--premium');
+                let lockIcon = link.querySelector('.component-badge');
                 if (!lockIcon) {
-                    link.insertAdjacentHTML('beforeend', '<div class="component-menu-link-icon component-menu-link-icon--premium"><span class="material-symbols-rounded">stars</span></div>');
+                    link.insertAdjacentHTML('beforeend', '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Premium</span>');
                 }
             }
         });

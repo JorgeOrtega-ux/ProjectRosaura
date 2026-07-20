@@ -4,7 +4,8 @@ return [
     '/' => ['view' => 'app/home.php'],
 
     '/search' => ['view' => 'app/search.php'], 
-    '/premium' => ['view' => 'app/premium.php'], 
+    '/upgrade' => ['view' => 'app/upgrade.php'], 
+    '/premium' => ['view' => 'app/upgrade.php'], 
     '/store/coins' => ['view' => 'app/store-coins.php', 'auth' => true],
     '/store/content' => ['view' => 'app/store-content.php', 'auth' => true],
     '/login' => ['view' => 'auth/login.php', 'guest_only' => true],

@@ -65,7 +65,7 @@ class Logger:
 DB_HOST = os.getenv('DB_HOST')
 DB_USER = os.getenv('DB_USER')
 DB_PASS = os.getenv('DB_PASS')
-DB_NAME = os.getenv('DB_NAME')
+DB_NAME = os.getenv('DB_IDENTITY_NAME')
 
 DB_TEL_HOST = os.getenv('DB_TELEMETRY_HOST')
 DB_TEL_NAME = os.getenv('DB_TELEMETRY_NAME')
@@ -76,15 +76,15 @@ REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = int(os.getenv('REDIS_PORT')) if os.getenv('REDIS_PORT') else None
 REDIS_PASS = os.getenv('REDIS_PASS')
 
-S3_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+S3_ENDPOINT = os.getenv("MINIO_ENDPOINT") or os.getenv("AWS_ENDPOINT")
 if S3_ENDPOINT and not S3_ENDPOINT.startswith("http"):
     S3_ENDPOINT = "http://" + S3_ENDPOINT + ":9000"
     
-S3_BUCKET = os.getenv("MINIO_BUCKET")
+S3_BUCKET = os.getenv("MINIO_BUCKET") or os.getenv("AWS_BUCKET")
 s3 = boto3.client('s3',
     endpoint_url=S3_ENDPOINT,
-    aws_access_key_id=os.getenv("MINIO_ROOT_USER"),
-    aws_secret_access_key=os.getenv("MINIO_ROOT_PASSWORD")
+    aws_access_key_id=os.getenv("MINIO_ROOT_USER") or os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("MINIO_ROOT_PASSWORD") or os.getenv("AWS_SECRET_ACCESS_KEY")
 )
 APP_ROOT_PATH = os.getenv('APP_ROOT_PATH')
 QUEUE_ACCOUNT_DELETION = 'queue:account_deletion'
@@ -571,7 +571,7 @@ def scheduler_loop():
                         renewal_date = sub['current_period_end'].strftime('%Y-%m-%d')
                         redis_key = f"notified:renewal:{sub['id']}:{renewal_date}"
                         if not r.exists(redis_key):
-                            tier_name = 'Ultra' if sub['tier'] == 2 else ('Plus' if sub['tier'] == 0 else 'Pro')
+                            tier_name = 'Ultra' if sub['tier'] == 3 else ('Pro' if sub['tier'] == 2 else ('Plus' if sub['tier'] == 1 else 'Free'))
                             payload = json.dumps({
                                 'type': 'upcoming_renewal',
                                 'user_id': sub['user_id'],
@@ -804,7 +804,7 @@ TS_PORT = os.environ.get('TYPESENSE_PORT')
 TS_PROTOCOL = os.environ.get('TYPESENSE_PROTOCOL')
 TS_API_KEY = os.environ.get('TYPESENSE_API_KEY')
 
-TS_SYNC_INTERVAL = int(os.environ.get('TYPESENSE_SYNC_INTERVAL'))
+TS_SYNC_INTERVAL = int(os.environ.get('TYPESENSE_SYNC_INTERVAL') or 60)
 
 def typesense_thread():
     if not TS_API_KEY:

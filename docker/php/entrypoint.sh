@@ -22,9 +22,6 @@ chown -h www-data:www-data /var/www/html/public/storage
 echo "[*] Applying 755 permissions to storage..."
 chmod -R 755 /var/www/html/storage
 
-echo "[*] Checking and generating default avatars..."
-php /var/www/html/scripts/check_and_generate_avatars.php
-
 echo "[+] All set. Starting Apache..."
 
 exec "$@"

@@ -70,7 +70,8 @@ if ($activeAccountId !== null && isset($linkedAccounts[$activeAccountId])) {
 $subscriptionPlanLabel = match ($subscriptionTier) {
     SubscriptionPlanConstants::TIER_ULTRA => __('tier_ultra'),
     SubscriptionPlanConstants::TIER_PRO => __('tier_pro'),
-    default => __('tier_plus'),
+    SubscriptionPlanConstants::TIER_PLUS => __('tier_plus'),
+    default => __('tier_free'),
 };
 
 $googleId = null;
@@ -214,7 +215,7 @@ $googleClientId = $_ENV['GOOGLE_CLIENT_ID'] ?? '';
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--stretch">
-                            <button type="button" class="component-button component-button--h34" data-nav="<?php echo APP_URL; ?>/premium"><?php echo __('btn_update_plan'); ?></button>
+                            <button type="button" class="component-button component-button--h34" data-nav="<?php echo APP_URL; ?>/upgrade"><?php echo __('btn_update_plan'); ?></button>
                         </div>
                     </div>
                 </div>

@@ -50,15 +50,14 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function create(array $canvasData): int {
         $sql = "INSERT INTO " . DB::TBL_CANVASES . " 
-                (uuid, owner_id, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, is_official, allow_purchases, allow_chat, tags) 
-                VALUES (:uuid, :owner_id, :name, :description, :privacy, :requires_approval, :size, :palette_id, :max_participants, :cooldown_pixels_batch, :cooldown_seconds, :is_official, :allow_purchases, :allow_chat, :tags)";
+                (uuid, owner_id, name, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, is_official, allow_purchases, allow_chat, tags) 
+                VALUES (:uuid, :owner_id, :name, :privacy, :requires_approval, :size, :palette_id, :max_participants, :cooldown_pixels_batch, :cooldown_seconds, :is_official, :allow_purchases, :allow_chat, :tags)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             ':uuid'                  => $canvasData['uuid'],
             ':owner_id'              => $canvasData['owner_id'],
             ':name'                  => $canvasData['name'],
-            ':description'           => $canvasData['description'],
             ':privacy'               => $canvasData['privacy'],
             ':requires_approval'     => $canvasData['requires_approval'],
             ':size'                  => $canvasData['size'],
@@ -257,7 +256,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
             }
 
-            $sql = "SELECT c.id, c.uuid, c.name, c.description, c.size, c.palette_id, c.is_official, c.favorites_count,
+            $sql = "SELECT c.id, c.uuid, c.name, c.size, c.palette_id, c.is_official, c.favorites_count,
                            CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                            c.members_count
                     FROM " . DB::TBL_CANVASES . " c
@@ -308,7 +307,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $whereClause = "WHERE (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL) AND f.canvas_id IS NOT NULL";
         }
 
-        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.owner_id, c.is_locked, c.locked_reasons, c.favorites_count,
+        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.owner_id, c.is_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count,
                        CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner
@@ -340,7 +339,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
-        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.is_locked, c.locked_reasons, c.favorites_count,
+        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.is_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
@@ -445,7 +444,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
     public function updateCanvasData(int $id, array $data): bool {
         $sql = "UPDATE " . DB::TBL_CANVASES . " 
                 SET name = :name, 
-                    description = :description, 
                     privacy = :privacy, 
                     requires_approval = :requires_approval,
                     palette_id = :palette_id,
@@ -465,7 +463,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt = $this->db->prepare($sql);
         $params = [
             ':name'                  => $data['name'],
-            ':description'           => $data['description'],
             ':privacy'               => $data['privacy'],
             ':requires_approval'     => $data['requires_approval'],
             ':palette_id'            => $data['palette_id'],

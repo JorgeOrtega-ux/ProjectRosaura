@@ -224,7 +224,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--h36" data-nav="/premium">
+                    <button type="button" class="component-button component-button--h36" data-nav="/upgrade">
                         ${changePlanText}
                     </button>
                 </div>

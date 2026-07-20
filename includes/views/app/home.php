@@ -19,16 +19,21 @@ $initialCanvasesJson = $initialCanvasesJson ?? '[]';
                         </button>
                         <?php 
                         $tagsList = [
-                            'fun' => 'mood', 
-                            'tension' => 'local_fire_department', 
-                            'action' => 'bolt', 
-                            'strategy' => 'psychology', 
-                            'roleplay' => 'theater_comedy', 
-                            'casual' => 'coffee', 
-                            'romance' => 'favorite', 
-                            'horror' => 'dark_mode', 
+                            'art' => 'palette', 
+                            'gaming' => 'sports_esports', 
+                            'anime' => 'animation', 
+                            'flags' => 'flag', 
+                            'memes' => 'mood', 
+                            'pixelart' => 'grid_on', 
+                            'community' => 'groups', 
+                            'nature' => 'nature', 
                             'scifi' => 'rocket_launch', 
-                            'fantasy' => 'auto_fix_high'
+                            'fantasy' => 'auto_fix_high',
+                            'music' => 'music_note',
+                            'sports' => 'sports_soccer',
+                            'popculture' => 'movie',
+                            'abstract' => 'blur_on',
+                            'experimental' => 'science'
                         ];
                         foreach($tagsList as $tag => $icon): ?>
                             <button class="component-badge component-badge--interactive" data-action="filterHomeTag" data-tag="<?php echo $tag; ?>">

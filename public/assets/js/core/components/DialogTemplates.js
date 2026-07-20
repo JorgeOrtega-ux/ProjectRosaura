@@ -102,14 +102,14 @@ export const DialogTemplates = {
                             
                             <div class="component-card-grid">
                                 <div class="component-card--selectable"
-                                     onclick="if(window.spaRouter){window.spaRouter.navigate('/premium');}else{window.location.href='/premium';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
+                                     onclick="if(window.spaRouter){window.spaRouter.navigate('/upgrade');}else{window.location.href='/upgrade';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
                                     <h4 class="component-card__title">${window.__('premium_plan_pro')}</h4>
-                                    <div class="component-card__price">$${window.APP_PRICES ? window.APP_PRICES[1].monthly : '9.99'}<span class="component-text-secondary">${window.__('premium_period_month')}</span></div>
+                                    <div class="component-card__price">$${window.APP_PRICES && window.APP_PRICES[2] ? window.APP_PRICES[2].monthly : '8.99'}<span class="component-text-secondary">${window.__('premium_period_month')}</span></div>
                                 </div>
                                 <div class="component-card--selectable"
-                                     onclick="if(window.spaRouter){window.spaRouter.navigate('/premium');}else{window.location.href='/premium';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
+                                     onclick="if(window.spaRouter){window.spaRouter.navigate('/upgrade');}else{window.location.href='/upgrade';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
                                     <h4 class="component-card__title">${window.__('premium_plan_ultra')}</h4>
-                                    <div class="component-card__price">$${window.APP_PRICES ? window.APP_PRICES[2].monthly : '19.99'}<span class="component-text-secondary">${window.__('premium_period_month')}</span></div>
+                                    <div class="component-card__price">$${window.APP_PRICES && window.APP_PRICES[3] ? window.APP_PRICES[3].monthly : '19.99'}<span class="component-text-secondary">${window.__('premium_period_month')}</span></div>
                                 </div>
                             </div>
                             

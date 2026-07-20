@@ -17,12 +17,12 @@ from datetime import datetime
 import boto3
 import io
 
-S3_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+S3_ENDPOINT = os.getenv("MINIO_ENDPOINT") or os.getenv("AWS_ENDPOINT")
 if S3_ENDPOINT and not S3_ENDPOINT.startswith("http"):
     S3_ENDPOINT = "http://" + S3_ENDPOINT + ":9000"
-S3_ACCESS_KEY = os.getenv("MINIO_ROOT_USER")
-S3_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD")
-S3_BUCKET = os.getenv("MINIO_BUCKET")
+S3_ACCESS_KEY = os.getenv("MINIO_ROOT_USER") or os.getenv("AWS_ACCESS_KEY_ID")
+S3_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD") or os.getenv("AWS_SECRET_ACCESS_KEY")
+S3_BUCKET = os.getenv("MINIO_BUCKET") or os.getenv("AWS_BUCKET")
 
 def get_s3_client():
     return boto3.client(
@@ -46,15 +46,19 @@ REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else None
 REDIS_PASS = os.getenv("REDIS_PASS")
 
-SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR")
-SYNC_INTERVAL = int(os.getenv("WORKER_RESETS_SYNC_INTERVAL"))
-THUMBNAILS_DIR = os.getenv("THUMBNAILS_DIR")
-ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR")
+SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR") or "/var/www/html/storage/private/snapshots"
+SYNC_INTERVAL = int(os.getenv("WORKER_RESETS_SYNC_INTERVAL") or 10)
+THUMBNAILS_DIR = os.getenv("THUMBNAILS_DIR") or "/var/www/html/storage/public/thumbnails"
+ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR") or "/var/www/html/storage/private/backups"
 
-SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR"))
+SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR") or 2)
 
 def get_redis_client():
-    return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS)
+    return redis.Redis(
+        host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS,
+        socket_keepalive=True, retry_on_timeout=True,
+        health_check_interval=60, socket_timeout=60
+    )
 
 def get_db_connection():
     return pymysql.connect(
@@ -345,10 +349,10 @@ def scheduler_thread():
         time.sleep(SYNC_INTERVAL)
 
 
-THUMBNAIL_MAX_SIZE = int(os.getenv("THUMBNAIL_MAX_SIZE"))
-ARCHIVE_MAX_SIZE = int(os.getenv("ARCHIVE_MAX_SIZE"))
+THUMBNAIL_MAX_SIZE = int(os.getenv("THUMBNAIL_MAX_SIZE") or 512)
+ARCHIVE_MAX_SIZE = int(os.getenv("ARCHIVE_MAX_SIZE") or 2048)
 
-PALETTES_FILE_PATH = os.getenv("PALETTES_FILE_PATH")
+PALETTES_FILE_PATH = os.getenv("PALETTES_FILE_PATH") or "/var/www/html/public/assets/data/palettes.json"
 APP_PALETTES = {}
 
 def load_palettes():

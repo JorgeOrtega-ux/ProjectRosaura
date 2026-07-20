@@ -27,14 +27,14 @@ $pdo = $db->getConnection($connName);
 $tblCanvases = defined('App\Core\System\DatabaseConstants::TBL_CANVASES') ? App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
 if ($isAdmin) {
     $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid OR is_official = 1";
-    $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, is_official, favorites_count 
+    $sqlSelect = "SELECT id, uuid, name, privacy, size, max_participants, created_at, is_official, favorites_count 
                   FROM {$tblCanvases} 
                   WHERE owner_id = :uid OR is_official = 1
                   ORDER BY id DESC 
                   LIMIT $limit OFFSET $offset";
 } else {
     $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid";
-    $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, is_official, favorites_count 
+    $sqlSelect = "SELECT id, uuid, name, privacy, size, max_participants, created_at, is_official, favorites_count 
                   FROM {$tblCanvases} 
                   WHERE owner_id = :uid 
                   ORDER BY id DESC 
@@ -169,11 +169,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                                 <span class="search-target font-medium"><?php echo htmlspecialchars($canvas['name']); ?></span>
                                             </div>
                                         </div>
-                                        <?php if (!empty($canvas['description'])): ?>
-                                            <div class="search-target">
-                                                <?php echo htmlspecialchars($canvas['description']); ?>
-                                            </div>
-                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <div class="component-badge component-badge--sm">

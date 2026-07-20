@@ -95,9 +95,8 @@ if ($isLoggedIn) {
             </button>
 
             <?php if ($isLoggedIn && !$isPremium): ?>
-                <button class="component-button component-button--h40" data-nav="<?php echo APP_URL; ?>/premium">
+                <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/upgrade" data-tooltip="<?php echo __('tooltip_upgrade_plan'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">workspace_premium</span>
-                    <span><?php echo __('premium'); ?></span>
                 </button>
             <?php endif; ?>
 
