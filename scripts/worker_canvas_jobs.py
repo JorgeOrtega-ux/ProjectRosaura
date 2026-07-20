@@ -441,112 +441,28 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
     try:
         width, height = parse_size(size_str)
         
-        is_infinite = (size_str.lower().strip() == 'infinite')
+        raw_bytes = decompress(compressed_data) if compressed_data else b""
+        expected_size = width * height * 4
         
-        if is_infinite:
-            cursor = db_conn.cursor(dictionary=True) if hasattr(db_conn, 'cursor') and hasattr(db_conn.cursor(), 'dictionary') else db_conn.cursor()
-            # Fetch ONLY coordinates to avoid OOM
-            cursor.execute("SELECT chunk_x, chunk_y FROM canvas_infinite_chunks WHERE canvas_id = %s", (canvas_id,))
-            coords = cursor.fetchall()
+        if len(raw_bytes) < expected_size:
+            raw_bytes += bytes([0, 0, 0, 0] * ((expected_size - len(raw_bytes)) // 4))
             
-            target_width, target_height = 1024, 1024
-            img = Image.new('RGBA', (target_width, target_height), color=(0, 0, 0, 0))
-            pixels = img.load()
+        img = Image.new('RGBA', (width, height), color=(0, 0, 0, 0))
+        pixels = img.load()
+        
+        for y in range(height):
+            for x in range(width):
+                idx = (y * width + x) * 4
+                if idx + 3 < len(raw_bytes):
+                    r_c = raw_bytes[idx]
+                    g_c = raw_bytes[idx+1]
+                    b_c = raw_bytes[idx+2]
+                    a_c = raw_bytes[idx+3]
+                    pixels[x, y] = (r_c, g_c, b_c, a_c)
             
-            if coords:
-                if isinstance(coords[0], dict):
-                    chunk_coords = set((c['chunk_x'], c['chunk_y']) for c in coords)
-                else:
-                    chunk_coords = set((c[0], c[1]) for c in coords)
-                
-                best_start_x = 0
-                best_start_y = 0
-                max_chunks_in_window = -1
-                
-                # Find the densest 2x2 chunk area
-                for cx, cy in chunk_coords:
-                    # Test window starting near this chunk to maximize coverage
-                    test_sx = cx - 1
-                    test_sy = cy - 1
-                    count = sum(1 for dx in range(2) for dy in range(2) if (test_sx + dx, test_sy + dy) in chunk_coords)
-                    if count > max_chunks_in_window:
-                        max_chunks_in_window = count
-                        best_start_x = test_sx
-                        best_start_y = test_sy
-                
-                start_x_chunk = best_start_x
-                start_y_chunk = best_start_y
-                
-                # Fetch only the required chunks
-                chunks_to_fetch = []
-                for dx in range(2):
-                    for dy in range(2):
-                        chunks_to_fetch.append((start_x_chunk + dx, start_y_chunk + dy))
-                
-                query_conds = " OR ".join(["(chunk_x = %s AND chunk_y = %s)"] * len(chunks_to_fetch))
-                params = [canvas_id]
-                for cx, cy in chunks_to_fetch:
-                    params.extend([cx, cy])
-                
-                cursor.execute(f"SELECT chunk_x, chunk_y, chunk_data FROM canvas_infinite_chunks WHERE canvas_id = %s AND ({query_conds})", tuple(params))
-                chunks = cursor.fetchall()
-                
-                for c in chunks:
-                    cx = c['chunk_x'] if isinstance(c, dict) else c[0]
-                    cy = c['chunk_y'] if isinstance(c, dict) else c[1]
-                    cdata = c['chunk_data'] if isinstance(c, dict) else c[2]
-                    
-                    if start_x_chunk <= cx < start_x_chunk + 2 and start_y_chunk <= cy < start_y_chunk + 2:
-                        raw_chunk = decompress(cdata)
-                        offset_px_x = (cx - start_x_chunk) * 512
-                        offset_px_y = (cy - start_y_chunk) * 512
-
-                        
-                        for py in range(512):
-                            for px in range(512):
-                                idx = (py * 512 + px) * 4
-                                if idx + 3 < len(raw_chunk):
-                                    pixels[offset_px_x + px, offset_px_y + py] = (raw_chunk[idx], raw_chunk[idx+1], raw_chunk[idx+2], raw_chunk[idx+3])
-            bbox = img.getbbox()
-            if bbox:
-                pad = 32
-                bbox = (
-                    max(0, bbox[0] - pad),
-                    max(0, bbox[1] - pad),
-                    min(target_width, bbox[2] + pad),
-                    min(target_height, bbox[3] + pad)
-                )
-                img = img.crop(bbox)
-                width, height = img.size
-            else:
-                width, height = target_width, target_height
-            
-            scale_w = THUMBNAIL_MAX_SIZE / width
-            scale_h = THUMBNAIL_MAX_SIZE / height
-            thumb_scale = min(scale_w, scale_h, SCALE_FACTOR)
-        else:
-            raw_bytes = decompress(compressed_data) if compressed_data else b""
-            expected_size = width * height * 4
-            
-            if len(raw_bytes) < expected_size:
-                raw_bytes += bytes([0, 0, 0, 0] * ((expected_size - len(raw_bytes)) // 4))
-                
-            img = Image.new('RGBA', (width, height), color=(0, 0, 0, 0))
-            pixels = img.load()
-            
-            for y in range(height):
-                for x in range(width):
-                    idx = (y * width + x) * 4
-                    if idx + 3 < len(raw_bytes):
-                        r_c = raw_bytes[idx]
-                        g_c = raw_bytes[idx+1]
-                        b_c = raw_bytes[idx+2]
-                        a_c = raw_bytes[idx+3]
-                        pixels[x, y] = (r_c, g_c, b_c, a_c)
-                
-            scale_w = THUMBNAIL_MAX_SIZE / width
-            scale_h = THUMBNAIL_MAX_SIZE / height
-            thumb_scale = min(scale_w, scale_h, SCALE_FACTOR)
+        scale_w = THUMBNAIL_MAX_SIZE / width
+        scale_h = THUMBNAIL_MAX_SIZE / height
+        thumb_scale = min(scale_w, scale_h, SCALE_FACTOR)
         thumb_width = max(1, int(width * thumb_scale))
         thumb_height = max(1, int(height * thumb_scale))
 
@@ -574,9 +490,10 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             
             if max_snapshots != -1:
                 try:
-                    cursor = db_conn.cursor()
-                    cursor.execute("SELECT COUNT(*) FROM canvas_snapshots_history WHERE canvas_id = %s", (canvas_id,))
-                    current_count = cursor.fetchone()[0]
+                    cursor = db_conn.cursor(dictionary=True) if hasattr(db_conn, 'cursor') and hasattr(db_conn.cursor(), 'dictionary') else db_conn.cursor()
+                    cursor.execute("SELECT COUNT(*) as cnt FROM canvas_snapshots_history WHERE canvas_id = %s", (canvas_id,))
+                    row = cursor.fetchone()
+                    current_count = row['cnt'] if isinstance(row, dict) else row[0]
                     cursor.close()
                     
                     if current_count >= max_snapshots and max_snapshots > 0:
@@ -585,7 +502,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                         
                         cursor_del = db_conn.cursor(dictionary=True) if hasattr(db_conn, 'cursor') and hasattr(db_conn.cursor(), 'dictionary') else db_conn.cursor()
                         cursor_del.execute("""
-                            SELECT id, file_path, timelapse_file_path 
+                            SELECT id, file_path 
                             FROM canvas_snapshots_history 
                             WHERE canvas_id = %s 
                             ORDER BY created_at ASC 
@@ -597,24 +514,9 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                         for rec in oldest_recs:
                             old_id = rec['id'] if isinstance(rec, dict) else rec[0]
                             old_file = rec['file_path'] if isinstance(rec, dict) else rec[1]
-                            old_tl = rec['timelapse_file_path'] if isinstance(rec, dict) else rec[2]
 
                             if old_file:
                                 try: s3.delete_object(Bucket=S3_BUCKET, Key=old_file.lstrip('/'))
-                                except Exception: pass
-
-                            if old_tl:
-                                try:
-                                    tl_key = old_tl.lstrip('/')
-                                    if is_infinite:
-                                        paginator = s3.get_paginator('list_objects_v2')
-                                        pages = paginator.paginate(Bucket=S3_BUCKET, Prefix=tl_key.rstrip('/') + '/')
-                                        for page in pages:
-                                            if 'Contents' in page:
-                                                for obj in page['Contents']:
-                                                    s3.delete_object(Bucket=S3_BUCKET, Key=obj['Key'])
-                                    else:
-                                        s3.delete_object(Bucket=S3_BUCKET, Key=tl_key)
                                 except Exception: pass
 
                             try:
@@ -660,62 +562,13 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             snapshot_uuid = str(uuid.uuid4())
             public_filepath = f"snapshots_archive/{canvas_uuid}/{archive_filename}"
             
-            live_key = f"timelapses/{canvas_uuid}/live/live_canvas_{canvas_uuid}.jsonl"
-            timelapse_dest_filename = f"snapshot_{snapshot_uuid}.jsonl"
-            dest_key = f"timelapses/{canvas_uuid}/snapshots/{timelapse_dest_filename}"
-            
-            timelapse_db_path = None
-            
-            if is_infinite:
-                timelapse_dest_folder = f"timelapses/{canvas_uuid}/snapshots/{snapshot_uuid}"
-                try:
-                    paginator = s3.get_paginator('list_objects_v2')
-                    pages = paginator.paginate(Bucket=S3_BUCKET, Prefix=f"timelapses/{canvas_uuid}/live/")
-                    moved_any = False
-                    for page in pages:
-                        if 'Contents' in page:
-                            for obj in page['Contents']:
-                                if obj['Key'].endswith('.jsonl'):
-                                    moved_any = True
-                                    file_name = obj['Key'].split('/')[-1]
-                                    dest_key = f"{timelapse_dest_folder}/{file_name}"
-                                    s3.copy_object(Bucket=S3_BUCKET, CopySource={'Bucket': S3_BUCKET, 'Key': obj['Key']}, Key=dest_key)
-                                    s3.delete_object(Bucket=S3_BUCKET, Key=obj['Key'])
-                    if moved_any:
-                        timelapse_db_path = timelapse_dest_folder
-                        print(f"[+] Infinite timelapse chunks successfully moved to {timelapse_dest_folder}")
-                    
-                    try:
-                        cursor = db_conn.cursor()
-                        cursor.execute("DELETE FROM canvas_infinite_chunks WHERE canvas_id = %s", (canvas_id,))
-                        db_conn.commit()
-                        cursor.close()
-                        
-                        chunk_keys = r.keys(f"canvas:{canvas_id}:chunk:*")
-                        if chunk_keys:
-                            r.delete(*chunk_keys)
-                        print(f"[+] Infinite chunks cleared for canvas {canvas_id}")
-                    except Exception as e:
-                        print(f"[!] Error clearing infinite chunks for canvas {canvas_id}: {e}")
-                        
-                except Exception as e:
-                    print(f"[-] Error moving infinite timelapse chunks: {e}")
-            else:
-                try:
-                    s3.head_object(Bucket=S3_BUCKET, Key=live_key)
-                    s3.copy_object(Bucket=S3_BUCKET, CopySource={'Bucket': S3_BUCKET, 'Key': live_key}, Key=dest_key)
-                    s3.delete_object(Bucket=S3_BUCKET, Key=live_key)
-                    timelapse_db_path = dest_key
-                    print(f"[+] Timelapse successfully converted to historical in S3: {timelapse_dest_filename}")
-                except Exception as e:
-                    print(f"[-] 'live_canvas' file not found for canvas {canvas_id} or error moving. Base snapshot will be saved without timelapse. Error: {e}")
             try:
                 cursor = db_conn.cursor()
                 insert_query = """
-                    INSERT INTO canvas_snapshots_history (canvas_id, snapshot_uuid, file_path, timelapse_file_path)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO canvas_snapshots_history (canvas_id, snapshot_uuid, file_path)
+                    VALUES (%s, %s, %s)
                 """
-                cursor.execute(insert_query, (canvas_id, snapshot_uuid, public_filepath, timelapse_db_path))
+                cursor.execute(insert_query, (canvas_id, snapshot_uuid, public_filepath))
                 db_conn.commit()
                 cursor.close()
                 print(f"[+] Historical record saved in DB with UUID: {snapshot_uuid}")
@@ -727,8 +580,6 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         return True
     except Exception as e:
         print(f"[!] Error processing PNG image for canvas {canvas_id}: {e}")
-        return False
-
 def thumbnails_thread():
     logging.info("Starting Snapshots Worker (Tiering Logic Injected)...")
     

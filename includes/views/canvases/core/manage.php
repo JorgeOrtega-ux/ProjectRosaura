@@ -185,14 +185,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                     <td>
                                         <div class="component-badge component-badge--sm">
                                             <span class="material-symbols-rounded">aspect_ratio</span>
-                                            <span class="search-target"><?php 
-                                                $sizeVal = $canvas['size'] ?? '0';
-                                                if ($sizeVal === 'infinite') {
-                                                    echo 'Sin límites';
-                                                } else {
-                                                    echo htmlspecialchars(strpos($sizeVal, 'x') !== false ? $sizeVal : $sizeVal . 'x' . $sizeVal);
-                                                }
-                                            ?></span>
+                                             <span class="search-target"><?php 
+                                                $sizeVal = $canvas['size'] ?? '64x64';
+                                                echo htmlspecialchars(strpos($sizeVal, 'x') !== false ? $sizeVal : $sizeVal . 'x' . $sizeVal);
+                                             ?></span>
                                         </div>
                                     </td>
                                     <td>

@@ -22,112 +22,6 @@ class CanvasMediaService {
     public function __construct(CanvasRepositoryInterface $canvasRepository, UserRepositoryInterface $userRepository) {
         $this->canvasRepository = $canvasRepository;
         $this->userRepository = $userRepository;
-}
-
-    public function prepareTimelapseDownload(?int $userId, int $canvasId, bool $canManageOfficial = false): array {
-        try {
-            $canvas = $this->canvasRepository->getById($canvasId);
-            if (!$canvas) {
-                return ['success' => false, 'message' => __('err_canvas_not_found')];
-            }
-
-            $hasRole = false;
-            if ($userId !== null) {
-                $roles = $this->canvasRepository->getMemberRoles($canvasId, $userId);
-                $hasRole = !empty($roles);
-            }
-            
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
-
-            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
-                return ['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
-            }
-
-            $s3Key = 'timelapses/' . $canvas['uuid'] . '/live/live_canvas_' . $canvas['uuid'] . '.jsonl';
-
-            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
-            $s3Client = Utils::getS3Client();
-
-            if (!$s3Client->doesObjectExist($bucket, $s3Key)) {
-                return ['success' => false, 'message' => __('err_no_timelapse_data'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
-            }
-
-            return ['success' => true, 'file_path' => $s3Key];
-
-        } catch (Exception $e) {
-            Logger::error('Error preparing timelapse download.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
-            return ['success' => false, 'message' => __('err_database')];
-        }
-    }
-
-    public function prepareSnapshotTimelapseDownload(?int $userId, string $snapshotId, bool $canManageOfficial = false): array {
-        try {
-            $tx0 = microtime(true);
-            $db = new DatabaseManager();
-            $pdo = $db->getConnection(DB::CONN_CANVASES);
-
-            $stmt = $pdo->prepare("
-                SELECT s.timelapse_file_path, c.id as canvas_id, c.privacy, c.owner_id, c.size 
-                FROM canvas_snapshots_history s
-                JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
-                WHERE s.snapshot_uuid = :snapshot_id 
-                LIMIT 1
-            ");
-            $stmt->execute([':snapshot_id' => $snapshotId]);
-            $data = $stmt->fetch(PDO::FETCH_ASSOC);
-            $tx1 = microtime(true);
-
-            if (!$data) {
-                return ['success' => false, 'message' => __('err_snapshot_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
-            }
-
-            $hasRole = false;
-            if ($userId !== null) {
-                $roles = $this->canvasRepository->getMemberRoles($data['canvas_id'], $userId);
-                $hasRole = !empty($roles);
-            }
-            $tx2 = microtime(true);
-
-            $isOwner = ($data['owner_id'] === $userId) || ($data['owner_id'] === null && $canManageOfficial);
-
-            if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
-                return ['success' => false, 'message' => __('err_unauthorized_view_timelapse'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
-            }
-
-            if (empty($data['timelapse_file_path'])) {
-                return ['success' => false, 'message' => __('err_no_timelapse_file'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
-            }
-
-            $s3Key = ltrim($data['timelapse_file_path'], '/');
-            if (str_starts_with($s3Key, 'private/canvases/')) {
-                $s3Key = str_replace('private/canvases/', '', $s3Key);
-            }
-
-            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
-            $tx3 = microtime(true);
-            
-            // NOTE: REMOVED doesObjectExist to avoid redundant S3 call. 
-            // The controller already checks headObject.
-            // $s3Client = Utils::getS3Client();
-            // if (!$s3Client->doesObjectExist($bucket, $s3Key)) {
-            //     return ['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
-            // }
-            $tx4 = microtime(true);
-
-            \App\Core\System\Logger::info("prepareSnapshotTiming", [
-                'db_query' => round($tx1 - $tx0, 4),
-                'getMemberRoles' => round($tx2 - $tx1, 4),
-                'pre_s3' => round($tx3 - $tx2, 4),
-                's3_doesObjectExist' => round($tx4 - $tx3, 4)
-            ]);
-
-            $isInfinite = ($data['size'] ?? '') === 'infinite';
-            return ['success' => true, 'file_path' => $s3Key, 'is_infinite' => $isInfinite];
-
-        } catch (Exception $e) {
-            Logger::error('Error preparing snapshot timelapse.', ['snapshot_id' => $snapshotId, 'error' => $e->getMessage()]);
-            return ['success' => false, 'message' => __('err_internal_server_error'), 'http_code' => 500];
-        }
     }
 
     public function getSnapshotsGallery(string $uuid, ?int $userId = null, bool $canManageOfficial = false): array {
@@ -140,10 +34,6 @@ class CanvasMediaService {
 
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
-            }
-
-            if (strtolower(trim($canvas['size'])) === 'infinite') {
-                return ['success' => false, 'message' => __('err_infinite_canvas_no_snapshots') ?? 'Snapshots are not supported for infinite canvases.'];
             }
             
             $hasRole = false;
@@ -192,7 +82,7 @@ class CanvasMediaService {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.file_path, s.timelapse_file_path, s.snapshot_uuid, c.id as canvas_id, c.size, c.privacy, c.owner_id, c.palette_id 
+                SELECT s.file_path, s.snapshot_uuid, c.id as canvas_id, c.size, c.privacy, c.owner_id, c.palette_id 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :snapshot_id 
@@ -219,8 +109,6 @@ class CanvasMediaService {
 
             $imageUrl = \App\Core\Helpers\Utils::getS3PublicUrl($data['file_path']);
 
-            $hasTimelapse = !empty($data['timelapse_file_path']);
-
             $sizeStr = strtolower($data['size']);
             if (strpos($sizeStr, 'x') !== false) {
                 $parts = explode('x', $sizeStr);
@@ -238,7 +126,6 @@ class CanvasMediaService {
                     'width' => $width,
                     'height' => $height,
                     'size' => $data['size'],
-                    'has_timelapse' => $hasTimelapse,
                     'palette_id' => $data['palette_id']
                 ]
             ];
@@ -329,7 +216,7 @@ class CanvasMediaService {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.id, s.file_path, s.timelapse_file_path, c.owner_id 
+                SELECT s.id, s.file_path, c.owner_id 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :uuid 
@@ -356,16 +243,6 @@ class CanvasMediaService {
 
             if (!empty($data['file_path'])) {
                 $s3Key = ltrim($data['file_path'], '/');
-                try {
-                    $s3Client->deleteObject(['Bucket' => $bucket, 'Key' => $s3Key]);
-                } catch (\Exception $e) {}
-            }
-
-            if (!empty($data['timelapse_file_path'])) {
-                $s3Key = ltrim($data['timelapse_file_path'], '/');
-                if (str_starts_with($s3Key, 'private/canvases/')) {
-                    $s3Key = str_replace('private/canvases/', '', $s3Key);
-                }
                 try {
                     $s3Client->deleteObject(['Bucket' => $bucket, 'Key' => $s3Key]);
                 } catch (\Exception $e) {}

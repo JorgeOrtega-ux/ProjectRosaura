@@ -66,7 +66,6 @@ Este documento proporciona una visión exhaustiva de la pila tecnológica, mecan
 * **GeoIP**: Localización basada en IP (`geoip2/geoip2`) para analíticas, protección de seguridad y adaptación de idioma/moneda.
 * **Módulos Interactivos**:
   * Lienzos / Canvases interactivos y herramientas de diseño (`moduleDesignTools.php`, `moduleSurface.php`).
-  * Módulo de Timelapse / Histórico (`moduleTimelapseTools.php`).
   * Sistema de Chat en Vivo (`moduleLiveChat.php`).
   * Calendario y Opciones de usuario (`moduleCalendar.php`, `UserPrefsManager.php`).
 

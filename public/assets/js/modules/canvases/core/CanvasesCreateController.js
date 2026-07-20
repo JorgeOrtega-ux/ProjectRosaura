@@ -105,11 +105,13 @@ class CanvasesCreateController {
 
         let activePaletteName = window.__('lbl_loading');
         
+        const userTier = window.APP_USER?.subscription_tier ?? 0;
         const canUseCustomPalettes = window.APP_LIMITS && window.APP_LIMITS.custom_palettes === true;
 
         palettes.forEach(palette => {
             const isDefault = palette.id === 'default';
-            const isLocked = !canUseCustomPalettes && !isDefault;
+            const reqTier = palette.tier !== undefined ? palette.tier : (isDefault ? 0 : 2);
+            const isLocked = isDefault ? false : (palette.id.startsWith('custom_') || palette.is_custom ? !canUseCustomPalettes : (userTier < reqTier));
             
             const translatedName = window.__ ? window.__(palette.name_key) : palette.id;
 
@@ -127,7 +129,8 @@ class CanvasesCreateController {
                 btn.title = window.__('tooltip_upgrade_palette');
             }
 
-            const lockHtml = isLocked ? `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Premium</span>` : '';
+            const tierName = reqTier === 3 ? 'Ultra' : (reqTier === 1 ? 'Plus' : 'Pro');
+            const lockHtml = isLocked ? `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${tierName}</span>` : '';
 
             btn.innerHTML = `
                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
@@ -242,7 +245,9 @@ class CanvasesCreateController {
                 
                 let lockIcon = link.querySelector('.component-badge');
                 if (!lockIcon) {
-                    link.insertAdjacentHTML('beforeend', '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Premium</span>');
+                    const reqTier = parseInt(requiredTier, 10);
+                    const tierName = reqTier === 3 ? 'Ultra' : (reqTier === 1 ? 'Plus' : 'Pro');
+                    link.insertAdjacentHTML('beforeend', `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${tierName}</span>`);
                 }
             }
         });

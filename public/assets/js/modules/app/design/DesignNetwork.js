@@ -85,17 +85,6 @@ export const DesignNetwork = {
             
             this.wsManager.on('open', () => {
                 this.wsManager.send({ type: 'init', userId: uid });
-                if (this.isInfinite && this.chunks) {
-                    // Flush pending chunks (requested but never received) so they get re-requested
-                    for (const [key, value] of this.chunks) {
-                        if (value === null) {
-                            this.chunks.delete(key);
-                        }
-                    }
-                }
-                if (typeof this.requestChunksForViewport === 'function') {
-                    this.requestChunksForViewport();
-                }
             });
 
             this.wsManager.on('qos_evicted', (reason) => {
@@ -108,35 +97,12 @@ export const DesignNetwork = {
                     const pY = parseInt(data.y, 10);
                     const colorData = data.color;
                     
-                    if (this.isInfinite) {
-                        const chunkX = Math.floor(pX / 512);
-                        const chunkY = Math.floor(pY / 512);
-                        const chunkKey = `${chunkX},${chunkY}`;
-                        let chunkCanvas = this.chunks.get(chunkKey);
-                        if (!chunkCanvas) {
-                            chunkCanvas = document.createElement('canvas');
-                            chunkCanvas.width = 512;
-                            chunkCanvas.height = 512;
-                            this.chunks.set(chunkKey, chunkCanvas);
-                        }
-                        const chunkCtx = chunkCanvas.getContext('2d');
-                        const localX = ((pX % 512) + 512) % 512;
-                        const localY = ((pY % 512) + 512) % 512;
-                        if (colorData === 'transparent' || colorData === 255) {
-                            chunkCtx.clearRect(localX, localY, 1, 1);
-                        } else {
-                            chunkCtx.fillStyle = colorData;
-                            chunkCtx.clearRect(localX, localY, 1, 1);
-                            chunkCtx.fillRect(localX, localY, 1, 1);
-                        }
+                    if (colorData === 'transparent' || colorData === 255) {
+                        this.offscreenCtx.clearRect(pX, pY, 1, 1);
                     } else {
-                        if (colorData === 'transparent' || colorData === 255) {
-                            this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                        } else {
-                            this.offscreenCtx.fillStyle = colorData;
-                            this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                            this.offscreenCtx.fillRect(pX, pY, 1, 1);
-                        }
+                        this.offscreenCtx.fillStyle = colorData;
+                        this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                        this.offscreenCtx.fillRect(pX, pY, 1, 1);
                     }
                     this.requestRender();
                 } 
@@ -162,30 +128,7 @@ export const DesignNetwork = {
                         const endX = cX + dx;
                         const width = endX - startX + 1;
 
-                        if (this.isInfinite) {
-                            let currentX = startX;
-                            while (currentX <= endX) {
-                                const chunkX = Math.floor(currentX / 512);
-                                const chunkY = Math.floor(y / 512);
-                                const chunkKey = `${chunkX},${chunkY}`;
-                                const chunkCanvas = this.chunks.get(chunkKey);
-                                
-                                const nextChunkBoundaryX = (chunkX + 1) * 512;
-                                const drawEndX = Math.min(endX, nextChunkBoundaryX - 1);
-                                const drawWidth = drawEndX - currentX + 1;
-                                
-                                if (chunkCanvas) {
-                                    const chunkCtx = chunkCanvas.getContext('2d');
-                                    const localX = ((currentX % 512) + 512) % 512;
-                                    const localY = ((y % 512) + 512) % 512;
-                                    chunkCtx.clearRect(localX, localY, drawWidth, 1);
-                                }
-                                
-                                currentX = drawEndX + 1;
-                            }
-                        } else {
-                            this.offscreenCtx.clearRect(startX, y, width, 1);
-                        }
+                        this.offscreenCtx.clearRect(startX, y, width, 1);
                     }
                     this.requestRender();
                 }
@@ -230,35 +173,12 @@ export const DesignNetwork = {
                         const pY = parseInt(data.y, 10);
                         const colorData = data.color;
                         
-                        if (this.isInfinite) {
-                            const chunkX = Math.floor(pX / 512);
-                            const chunkY = Math.floor(pY / 512);
-                            const chunkKey = `${chunkX},${chunkY}`;
-                            let chunkCanvas = this.chunks.get(chunkKey);
-                            if (!chunkCanvas) {
-                                chunkCanvas = document.createElement('canvas');
-                                chunkCanvas.width = 512;
-                                chunkCanvas.height = 512;
-                                this.chunks.set(chunkKey, chunkCanvas);
-                            }
-                            const chunkCtx = chunkCanvas.getContext('2d');
-                            const localX = ((pX % 512) + 512) % 512;
-                            const localY = ((pY % 512) + 512) % 512;
-                            if (colorData === 'transparent' || colorData === 255) {
-                                chunkCtx.clearRect(localX, localY, 1, 1);
-                            } else {
-                                chunkCtx.fillStyle = colorData;
-                                chunkCtx.clearRect(localX, localY, 1, 1);
-                                chunkCtx.fillRect(localX, localY, 1, 1);
-                            }
+                        if (colorData === 'transparent' || colorData === 255) {
+                            this.offscreenCtx.clearRect(pX, pY, 1, 1);
                         } else {
-                            if (colorData === 'transparent' || colorData === 255) {
-                                this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                            } else {
-                                this.offscreenCtx.fillStyle = colorData;
-                                this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                                this.offscreenCtx.fillRect(pX, pY, 1, 1);
-                            }
+                            this.offscreenCtx.fillStyle = colorData;
+                            this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                            this.offscreenCtx.fillRect(pX, pY, 1, 1);
                         }
                         this.requestRender();
                     }
@@ -515,29 +435,14 @@ export const DesignNetwork = {
     async handleCanvasPlazmarCompleted(data) {
         if (this.plazmarTimeout) clearTimeout(this.plazmarTimeout);
 
-        if (this.isInfinite) {
-            // Invalidate affected chunks so they get re-fetched from Redis
-            const affectedChunks = data.affected_chunks || [];
-            if (affectedChunks.length > 0 && this.chunks) {
-                for (const c of affectedChunks) {
-                    const key = `${c.x},${c.y}`;
-                    this.chunks.delete(key);
-                }
-            }
-            // Request fresh chunk data for the current viewport
-            if (typeof this.requestChunksForViewport === 'function') {
-                this.requestChunksForViewport();
-            }
-        } else {
-            try {
-                const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
-                if (response.aborted) return;
+        try {
+            const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
+            if (response.aborted) return;
 
-                if (response.success && response.data && response.data.state_base64) {
-                    this.hydrateCanvasState(response.data.state_base64);
-                }
-            } catch (error) {
+            if (response.success && response.data && response.data.state_base64) {
+                this.hydrateCanvasState(response.data.state_base64);
             }
+        } catch (error) {
         }
 
         this.isPlazmarLocked = false;

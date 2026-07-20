@@ -134,16 +134,6 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots` (
   CONSTRAINT `fk_snapshot_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
-CREATE TABLE IF NOT EXISTS `canvas_infinite_chunks` (
-  `canvas_id` int(11) NOT NULL,
-  `chunk_x` int(11) NOT NULL,
-  `chunk_y` int(11) NOT NULL,
-  `chunk_data` LONGBLOB NOT NULL,
-  `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`canvas_id`, `chunk_x`, `chunk_y`),
-  CONSTRAINT `fk_infinite_chunk_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
 
 CREATE TABLE IF NOT EXISTS `canvas_reset_settings` (
   `canvas_id` int(11) NOT NULL,
@@ -174,7 +164,6 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots_history` (
   `canvas_id` int(11) NOT NULL,
   `snapshot_uuid` varchar(36) NOT NULL,
   `file_path` varchar(255) NOT NULL,
-  `timelapse_file_path` varchar(255) DEFAULT NULL,
   `privacy` ENUM('public', 'private') NOT NULL DEFAULT 'public',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),

@@ -12,6 +12,5 @@
     "1024x1024": { "label": "1024x1024", "icon": "grid_on", "tier": 2 },
     "2048x1024": { "label": "2048x1024", "icon": "aspect_ratio", "tier": 2 },
     "2048x2048": { "label": "2048x2048", "icon": "grid_on", "tier": 2 },
-    "4096x4096": { "label": "4096x4096", "icon": "grid_on", "tier": 3 },
-    "infinite": { "label": "Sin límites", "icon": "all_out", "tier": 3 }
+    "4096x4096": { "label": "4096x4096", "icon": "grid_on", "tier": 3 }
 }

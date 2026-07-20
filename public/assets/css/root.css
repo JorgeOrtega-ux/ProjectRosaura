@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap');
 
 :root {
 
@@ -412,6 +412,11 @@
     --token-comment: #16a34a; 
     --token-string: #d32f2f;
     --token-number: #1a73e8;
+    --bg-code-editor: var(--bg-surface, #ffffff);
+    --text-code-base: var(--text-primary, #333333);
+    --token-comment: #16a34a; 
+    --token-string: #d32f2f;
+    --token-number: #1a73e8;
     --token-keyword: #1a73e8;
     --token-logic: #7c3aed;
     --token-tag: #d32f2f;
@@ -426,6 +431,9 @@
 
     --scrollbar-track: transparent;
     --scrollbar-thumb: #cccccc;
+
+    --sk-bg: #e2e2e2;
+    --sk-shimmer: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -484,9 +492,11 @@
         --token-info: #608b4e;
         --token-debug: #c586c0;
         --token-path: #ce9178;
-
         --scrollbar-track: transparent;
         --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+
+        --sk-bg: #2a2a2a;
+        --sk-shimmer: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
     }
 }
 
@@ -551,4 +561,7 @@ html.dark-theme {
 
     --scrollbar-track: transparent;
     --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+
+    --sk-bg: #2a2a2a;
+    --sk-shimmer: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
 }

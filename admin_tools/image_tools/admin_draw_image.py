@@ -56,81 +56,6 @@ def draw_finite(r, args, img, width, height):
     print(f"[+] Completado con exito! ({changed} pixeles)")
 
 
-def draw_infinite(r, args, img):
-    """Dibuja la imagen en un lienzo infinito usando chunks de 512x512 en canvas:{id}:chunk:{cx}:{cy}."""
-    original_pixels = img.load()
-    img_width, img_height = img.size
-    
-    import math
-    
-    # Calcular que chunks son afectados por el rectangulo de la imagen
-    min_chunk_x = math.floor(args.x / CHUNK_SIZE)
-    min_chunk_y = math.floor(args.y / CHUNK_SIZE)
-    max_chunk_x = math.floor((args.x + img_width - 1) / CHUNK_SIZE)
-    max_chunk_y = math.floor((args.y + img_height - 1) / CHUNK_SIZE)
-    
-    affected_chunks = []
-    chunk_expected_size = CHUNK_SIZE * CHUNK_SIZE * 4
-    
-    print(f"[*] Chunks afectados: x=[{min_chunk_x}..{max_chunk_x}], y=[{min_chunk_y}..{max_chunk_y}]")
-    
-    # Cargar y modificar cada chunk afectado
-    for chunk_cy in range(min_chunk_y, max_chunk_y + 1):
-        for chunk_cx in range(min_chunk_x, max_chunk_x + 1):
-            chunk_key = f"canvas:{args.canvas_id}:chunk:{chunk_cx}:{chunk_cy}"
-            raw_chunk = r.get(chunk_key)
-            
-            if not raw_chunk or len(raw_chunk) != chunk_expected_size:
-                chunk_state = bytearray(chunk_expected_size)
-            else:
-                chunk_state = bytearray(raw_chunk)
-            
-            # Rango de pixeles globales que caen en este chunk
-            chunk_global_x_start = chunk_cx * CHUNK_SIZE
-            chunk_global_y_start = chunk_cy * CHUNK_SIZE
-            
-            # Interseccion entre la imagen y este chunk
-            ix_start = max(0, chunk_global_x_start - args.x)
-            iy_start = max(0, chunk_global_y_start - args.y)
-            ix_end = min(img_width, chunk_global_x_start + CHUNK_SIZE - args.x)
-            iy_end = min(img_height, chunk_global_y_start + CHUNK_SIZE - args.y)
-            
-            chunk_changed = 0
-            
-            for iy in range(iy_start, iy_end):
-                for ix in range(ix_start, ix_end):
-                    orig_rgba = original_pixels[ix, iy]
-                    if orig_rgba[3] < 128:
-                        continue
-                    
-                    # Coordenadas globales del pixel
-                    gx = args.x + ix
-                    gy = args.y + iy
-                    
-                    # Coordenadas locales dentro del chunk
-                    local_x = ((gx % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE
-                    local_y = ((gy % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE
-                    
-                    offset = ((local_y * CHUNK_SIZE) + local_x) * 4
-                    
-                    if offset + 3 < len(chunk_state):
-                        chunk_state[offset] = orig_rgba[0]
-                        chunk_state[offset+1] = orig_rgba[1]
-                        chunk_state[offset+2] = orig_rgba[2]
-                        chunk_state[offset+3] = 255
-                        chunk_changed += 1
-            
-            if chunk_changed > 0:
-                r.set(chunk_key, bytes(chunk_state))
-                affected_chunks.append({"x": chunk_cx, "y": chunk_cy})
-                print(f"[*] Chunk ({chunk_cx},{chunk_cy}): {chunk_changed} pixeles escritos")
-    
-    # Output affected chunks as JSON for the worker to parse
-    r.sadd("canvases:dirty_states", args.canvas_id)
-    print(json.dumps({"affected_chunks": affected_chunks}))
-    print(f"[+] Completado con exito! {len(affected_chunks)} chunks modificados.")
-
-
 def main():
     parser = argparse.ArgumentParser(description="Dibuja una imagen en el lienzo escribiendo True Color (RGBA) directo a Redis.")
     parser.add_argument("image_path", help="Ruta de la imagen a dibujar")
@@ -163,16 +88,11 @@ def main():
         return
 
     size_str = canvas_row.get('size', '100x100')
-    is_infinite = (size_str.strip().lower() == 'infinite')
-    
-    if is_infinite:
-        print(f"[*] Canvas ID {args.canvas_id}: INFINITE (chunks of {CHUNK_SIZE}x{CHUNK_SIZE})")
-    else:
-        try:
-            width, height = map(int, size_str.split('x'))
-        except Exception:
-            width, height = 100, 100
-        print(f"[*] Canvas ID {args.canvas_id}: {width}x{height}.")
+    try:
+        width, height = map(int, size_str.split('x'))
+    except Exception:
+        width, height = 100, 100
+    print(f"[*] Canvas ID {args.canvas_id}: {width}x{height}.")
 
     try:
         img = Image.open(args.image_path).convert("RGBA")
@@ -205,10 +125,7 @@ def main():
     print("[*] Connecting to Redis...")
     r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS, db=0)
 
-    if is_infinite:
-        draw_infinite(r, args, img)
-    else:
-        draw_finite(r, args, img, width, height)
+    draw_finite(r, args, img, width, height)
 
 if __name__ == "__main__":
     main()

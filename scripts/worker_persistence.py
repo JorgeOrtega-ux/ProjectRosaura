@@ -111,81 +111,12 @@ def canvas_persistence_thread():
                         print(f"[!] Could not resolve UUID for canvas {canvas_id}. Skipping.")
                         continue
                     
-                    is_infinite = (canvas_size and canvas_size.lower().strip() == 'infinite')
-                    s3 = get_s3_client()
-                    
-                    parsed_events = []
-                    for msg_id_b, msg_data_b in msgs:
-                        msg_id = msg_id_b.decode('utf-8')
-                        event = {k.decode('utf-8'): v.decode('utf-8') for k, v in msg_data_b.items()}
-                        event["_id"] = msg_id
-                        parsed_events.append(event)
-
-                    if is_infinite:
-                        from collections import defaultdict
-                        chunk_events = defaultdict(list)
-                        for evt in parsed_events:
-                            if 'x' in evt and 'y' in evt:
-                                try:
-                                    cx = int(evt['x']) // 512
-                                    cy = int(evt['y']) // 512
-                                    chunk_events[(cx, cy)].append(json.dumps(evt) + "\n")
-                                except ValueError:
-                                    chunk_events[(0, 0)].append(json.dumps(evt) + "\n")
-                            else:
-                                chunk_events[(0, 0)].append(json.dumps(evt) + "\n")
-                        
-                        for (cx, cy), events_json in chunk_events.items():
-                            chunk_key = f"timelapses/{canvas_uuid}/live/{cx}_{cy}.jsonl"
-                            existing_data = b""
-                            try:
-                                response = s3.get_object(Bucket=S3_BUCKET, Key=chunk_key)
-                                existing_data = response['Body'].read()
-                            except botocore.exceptions.ClientError as e:
-                                if e.response['Error']['Code'] != "NoSuchKey":
-                                    print(f"[!] S3 error reading timelapse chunk {cx}_{cy}: {e}")
-                            
-                            final_data = existing_data + "".join(events_json).encode('utf-8')
-                            try:
-                                s3.put_object(Bucket=S3_BUCKET, Key=chunk_key, Body=final_data, ContentType='application/jsonl')
-                            except Exception as e:
-                                print(f"[!] S3 error saving timelapse chunk {cx}_{cy}: {e}")
-                    else:
-                        live_key = f"timelapses/{canvas_uuid}/live/live_canvas_{canvas_uuid}.jsonl"
-                        
-                        existing_data = b""
-                        try:
-                            response = s3.get_object(Bucket=S3_BUCKET, Key=live_key)
-                            existing_data = response['Body'].read()
-                        except botocore.exceptions.ClientError as e:
-                            if e.response['Error']['Code'] != "NoSuchKey":
-                                print(f"[!] S3 error reading timelapse: {e}")
-                                
-                        new_events = [json.dumps(evt) + "\n" for evt in parsed_events]
-                            
-                        final_data = existing_data + "".join(new_events).encode('utf-8')
-                        try:
-                            s3.put_object(Bucket=S3_BUCKET, Key=live_key, Body=final_data, ContentType='application/jsonl')
-                        except Exception as e:
-                            print(f"[!] S3 error saving timelapse: {e}")
-                    
                     msg_ids = [msg_id_b for msg_id_b, _ in msgs]
                     r.xack(stream_name, CONSUMER_GROUP, *msg_ids)
                     r.xdel(stream_name, *msg_ids)
                     r.sadd("canvases:dirty_states", canvas_id)
                     
-                    # Track dirty chunks granularly for infinite canvas
-                    dirty_chunks_key = f"canvas:{canvas_id}:dirty_chunks"
-                    for evt in parsed_events:
-                        if 'x' in evt and 'y' in evt:
-                            try:
-                                cx = int(evt['x']) // 512
-                                cy = int(evt['y']) // 512
-                                r.sadd(dirty_chunks_key, f"{cx}:{cy}")
-                            except ValueError:
-                                pass
-                                
-                    print(f"[+] Written {len(msgs)} events to LIVE file of canvas {canvas_id} ({canvas_uuid}).")
+                    print(f"[+] Processed {len(msgs)} stream events for canvas {canvas_id}.")
         except Exception as e:
             print(f"[!] Error processing Streams to disk: {e}")
 
@@ -193,19 +124,6 @@ def canvas_persistence_thread():
         if db_conn:
             cursor = db_conn.cursor()
             try:
-                # Ensure infinite chunks table exists
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS canvas_infinite_chunks (
-                        canvas_id int(11) NOT NULL,
-                        chunk_x int(11) NOT NULL,
-                        chunk_y int(11) NOT NULL,
-                        chunk_data LONGBLOB NOT NULL,
-                        last_updated timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-                        PRIMARY KEY (canvas_id, chunk_x, chunk_y),
-                        CONSTRAINT fk_infinite_chunk_canvas FOREIGN KEY (canvas_id) REFERENCES canvases (id) ON DELETE CASCADE
-                    ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci
-                """)
-                
                 dirty_canvases_bytes = r.smembers("canvases:dirty_states")
                 if dirty_canvases_bytes:
                     r.delete("canvases:dirty_states")
@@ -214,7 +132,6 @@ def canvas_persistence_thread():
                         state_key = f"canvas:{canvas_id_str}:state"
                         canvas_bytes = r.get(state_key)
                         if canvas_bytes:
-                            # Finite canvas persistence
                             compressed_data = compress(canvas_bytes)
                             query = """
                                 INSERT INTO canvas_snapshots (canvas_id, snapshot_data) 
@@ -223,33 +140,6 @@ def canvas_persistence_thread():
                             """
                             cursor.execute(query, (canvas_id_str, compressed_data))
                             r.sadd("canvases:pending_snapshots", canvas_id_str)
-                        else:
-                            # Infinite canvas persistence
-                            dirty_chunks_key = f"canvas:{canvas_id_str}:dirty_chunks"
-                            dirty_chunks = r.smembers(dirty_chunks_key)
-                            if dirty_chunks:
-                                r.delete(dirty_chunks_key)
-                                chunk_data_to_insert = []
-                                for chunk_bytes in dirty_chunks:
-                                    chunk_str = chunk_bytes.decode('utf-8')
-                                    try:
-                                        cx, cy = map(int, chunk_str.split(':'))
-                                        chunk_key = f"canvas:{canvas_id_str}:chunk:{cx}:{cy}"
-                                        chunk_data = r.get(chunk_key)
-                                        if chunk_data:
-                                            compressed_chunk = compress(chunk_data)
-                                            chunk_data_to_insert.append((canvas_id_str, cx, cy, compressed_chunk))
-                                    except Exception as e:
-                                        print(f"[!] Error processing chunk {chunk_str}: {e}")
-                                
-                                if chunk_data_to_insert:
-                                    query_chunk = """
-                                        INSERT INTO canvas_infinite_chunks (canvas_id, chunk_x, chunk_y, chunk_data) 
-                                        VALUES (%s, %s, %s, %s)
-                                        ON DUPLICATE KEY UPDATE chunk_data = VALUES(chunk_data), last_updated = CURRENT_TIMESTAMP
-                                    """
-                                    cursor.executemany(query_chunk, chunk_data_to_insert)
-                                r.sadd("canvases:pending_snapshots", canvas_id_str)
                 db_conn.commit()
             except Exception as e:
                 print(f"[!] Error saving Snapshots to DB: {e}")

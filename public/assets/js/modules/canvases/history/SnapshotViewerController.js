@@ -51,16 +51,10 @@ class SnapshotViewerController {
         if (wrapper) {
             this.snapshotId = wrapper.getAttribute('data-snapshot-id');
             const sizeStr = wrapper.getAttribute('data-size');
-            if (sizeStr) {
-                if (sizeStr.toLowerCase() === 'infinite') {
-                    this.isInfinite = true;
-                    this.boardWidth = 3000;
-                    this.boardHeight = 3000;
-                } else {
-                    const parts = sizeStr.toLowerCase().split('x');
-                    this.boardWidth = parseInt(parts[0], 10);
-                    this.boardHeight = parts.length > 1 ? parseInt(parts[1], 10) : this.boardWidth;
-                }
+            if (sizeStr && sizeStr.toLowerCase() !== 'infinite') {
+                const parts = sizeStr.toLowerCase().split('x');
+                this.boardWidth = parseInt(parts[0], 10);
+                this.boardHeight = parts.length > 1 ? parseInt(parts[1], 10) : this.boardWidth;
             }
         }
         
@@ -206,11 +200,10 @@ class SnapshotViewerController {
             
             if (response && response.success && response.data) {
                 this.isDataLoaded = true;
-                this.isInfinite = (response.data.size && response.data.size.toLowerCase() === 'infinite');
                 this.boardWidth = parseInt(response.data.width, 10);
                 this.boardHeight = parseInt(response.data.height, 10);
-                if (isNaN(this.boardWidth) || this.boardWidth <= 0) this.boardWidth = this.isInfinite ? 3000 : 2000;
-                if (isNaN(this.boardHeight) || this.boardHeight <= 0) this.boardHeight = this.isInfinite ? 3000 : 1000;
+                if (isNaN(this.boardWidth) || this.boardWidth <= 0) this.boardWidth = 2000;
+                if (isNaN(this.boardHeight) || this.boardHeight <= 0) this.boardHeight = 1000;
                 this.originalImageUrl = response.data.image_url;
 
                 this.setupCanvas();
@@ -249,9 +242,7 @@ class SnapshotViewerController {
             if (this.offscreenCtx) {
                 this.offscreenCtx.imageSmoothingEnabled = false; 
                 this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
-                if (!this.isInfinite) {
-                    this.offscreenCtx.drawImage(img, 0, 0, this.boardWidth, this.boardHeight);
-                }
+                this.offscreenCtx.drawImage(img, 0, 0, this.boardWidth, this.boardHeight);
                 this.requestRender();
             }
         };

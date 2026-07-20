@@ -228,7 +228,7 @@ export const DesignInteractions = {
         const zoomFactor = Math.exp(delta * zoomIntensity);
 
         let newScale = this.transform.scale * zoomFactor;
-        const minScale = this.isInfinite ? 0.2 : 0.05;
+        const minScale = 0.05;
         newScale = Math.max(minScale, Math.min(newScale, 40)); 
 
         this.transform.x = mouseX - (mouseX - this.transform.x) * (newScale / this.transform.scale);
@@ -700,7 +700,7 @@ export const DesignInteractions = {
 
             const scaleRatio = currentDistance / this.initialPinchDistance;
             let newScale = this.initialScale * scaleRatio;
-            const minScale = this.isInfinite ? 0.2 : 0.05;
+            const minScale = 0.05;
             newScale = Math.max(minScale, Math.min(newScale, 40));
 
             this.transform.x = mouseX - (mouseX - this.transform.x) * (newScale / this.transform.scale);
@@ -911,10 +911,6 @@ export const DesignInteractions = {
         const boardX = Math.floor((mouseX - this.transform.x) / this.transform.scale);
         const boardY = Math.floor((mouseY - this.transform.y) / this.transform.scale);
 
-        if (this.isInfinite) {
-            return { x: boardX, y: boardY };
-        }
-
         if (boardX >= 0 && boardX < this.boardWidth && boardY >= 0 && boardY < this.boardHeight) {
             return { x: boardX, y: boardY };
         }
@@ -1041,7 +1037,7 @@ export const DesignInteractions = {
         
         this.selectedPixels.forEach(key => {
             const [x, y] = key.split(',').map(Number);
-            const offset = this.isInfinite ? `${x},${y}` : (y * this.boardWidth) + x;
+            const offset = (y * this.boardWidth) + x;
 
             if (this.interactionMode === 'normal' || this.interactionMode === 'protecting') {
                 if (this.protectedPixels && this.protectedPixels.has(offset)) {
@@ -1074,28 +1070,9 @@ export const DesignInteractions = {
 
         validPixels.forEach(p => {
             if (this.interactionMode === 'normal') {
-                if (this.isInfinite) {
-                    const chunkX = Math.floor(p.x / 512);
-                    const chunkY = Math.floor(p.y / 512);
-                    const chunkKey = `${chunkX},${chunkY}`;
-                    let chunkCanvas = this.chunks.get(chunkKey);
-                    if (!chunkCanvas) {
-                        chunkCanvas = document.createElement('canvas');
-                        chunkCanvas.width = 512;
-                        chunkCanvas.height = 512;
-                        this.chunks.set(chunkKey, chunkCanvas);
-                    }
-                    const chunkCtx = chunkCanvas.getContext('2d');
-                    const localX = ((p.x % 512) + 512) % 512;
-                    const localY = ((p.y % 512) + 512) % 512;
-                    chunkCtx.fillStyle = this.currentColor;
-                    chunkCtx.clearRect(localX, localY, 1, 1);
-                    chunkCtx.fillRect(localX, localY, 1, 1);
-                } else {
-                    this.offscreenCtx.fillStyle = this.currentColor;
-                    this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
-                    this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
-                }
+                this.offscreenCtx.fillStyle = this.currentColor;
+                this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
+                this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
             }
             
             if (this.wsManager) {

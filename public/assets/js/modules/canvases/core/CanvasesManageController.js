@@ -339,14 +339,7 @@ class CanvasesManageController {
                     btnSnapshots.setAttribute('data-nav', `${this.basePath}/design/s/${activeUuid}`);
                 }
                 
-                if (activeSize === 'infinite') {
-                    if (btnResize) {
-                        btnResize.classList.add('disabled-interactive');
-                        btnResize.setAttribute('data-nav', '');
-                    }
-                } else {
-                    if (btnResize) btnResize.setAttribute('data-nav', `${this.basePath}/canvases/manage/resize/${activeUuid}`);
-                }
+                if (btnResize) btnResize.setAttribute('data-nav', `${this.basePath}/canvases/manage/resize/${activeUuid}`);
             }
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');

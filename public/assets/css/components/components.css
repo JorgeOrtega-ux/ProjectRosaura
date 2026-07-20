@@ -1208,14 +1208,14 @@ textarea.component-input-field::placeholder {
 
 html[data-theme="dark"] .component-avatar__overlay,
 html.dark-theme .component-avatar__overlay {
-    background-color: rgba(0, 0, 0, 0.6);
-    color: #ffffff;
+    background-color: var(--overlay-dark);
+    color: var(--text-inverse);
 }
 
 @media (prefers-color-scheme: dark) {
     html:not([data-theme="light"]):not(.light-theme) .component-avatar__overlay {
-        background-color: rgba(0, 0, 0, 0.6);
-        color: #ffffff;
+        background-color: var(--overlay-dark);
+        color: var(--text-inverse);
     }
 }
 
@@ -1299,7 +1299,7 @@ html.dark-theme .component-avatar__overlay {
 }
 .component-gallery-warning-content {
     text-align: center;
-    color: #fff;
+    color: var(--sl-color-neutral-0);
 }
 .component-gallery-warning-content .material-symbols-rounded {
     font-size: 1.75rem;
@@ -1325,10 +1325,10 @@ html.dark-theme .component-avatar__overlay {
 }
 
 .component-badge--glass {
-    background: rgba(0, 0, 0, 0.85);
-    color: #fff;
+    background: var(--overlay-dark);
+    color: var(--sl-color-neutral-0);
     border: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: var(--shadow-card);
 }
 
 .component-badge--glass .material-symbols-rounded {
@@ -1336,14 +1336,14 @@ html.dark-theme .component-avatar__overlay {
 }
 
 .component-badge--brand {
-    background: var(--accent-primary, #3b82f6);
-    color: #fff;
+    background: var(--accent-primary);
+    color: var(--sl-color-neutral-0);
     border: none;
     font-size: 0.6rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: var(--shadow-card);
 }
 
 .component-badge--brand .material-symbols-rounded {
@@ -2342,7 +2342,7 @@ input:checked + .component-toggle-slider:before {
     width: 64px; height: 64px; border-radius: 50%; padding: 4px;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     transition: background 0.05s linear; box-shadow: var(--shadow-card);
-    background-color: #808080; 
+    background-color: var(--text-tertiary); 
 }
 .component-gallery-ring__inner {
     width: 100%; height: 100%; background-color: var(--bg-app);
@@ -2359,7 +2359,7 @@ input:checked + .component-toggle-slider:before {
 .component-dropdown-trigger__left { display: flex; align-items: center; gap: 8px; }
 .component-color-swatch { 
     width: 20px; height: 20px; border-radius: 50%; 
-    border: 1px solid var(--border-color); background-color: #808080;
+    border: 1px solid var(--border-color); background-color: var(--text-tertiary);
 }
 .component-text--mono { font-family: monospace; }
 
@@ -2378,9 +2378,9 @@ input:checked + .component-toggle-slider:before {
     background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent); 
 }
 .component-color-picker__sv-thumb { 
-    position: absolute; width: 16px; height: 16px; border: 2px solid #fff; 
+    position: absolute; width: 16px; height: 16px; border: 2px solid var(--sl-color-neutral-0); 
     border-radius: 50%; transform: translate(-50%, -50%); 
-    box-shadow: 0 0 4px rgba(0,0,0,0.6); pointer-events: none; z-index: 2; 
+    box-shadow: var(--shadow-card); pointer-events: none; z-index: 2; 
     left: 0%; top: 50%;
 }
 
@@ -2390,9 +2390,9 @@ input:checked + .component-toggle-slider:before {
     background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%); 
 }
 .component-color-picker__hue-thumb { 
-    position: absolute; width: 16px; height: 16px; border: 2px solid #fff; 
+    position: absolute; width: 16px; height: 16px; border: 2px solid var(--sl-color-neutral-0); 
     border-radius: 50%; transform: translate(-50%, -50%); 
-    box-shadow: 0 0 4px rgba(0,0,0,0.6); pointer-events: none; z-index: 2; left: 0%; top: 50%;
+    box-shadow: var(--shadow-card); pointer-events: none; z-index: 2; left: 0%; top: 50%;
 }
 
 .component-input-field--mono { font-family: monospace; text-align: left; padding: 0 8px; }
@@ -2614,7 +2614,7 @@ input:checked + .component-toggle-slider:before {
     height: 32px;
     border-radius: 50%;
     background-color: var(--overlay-dark);
-    color: #ffffff;
+    color: var(--sl-color-neutral-0);
     border: none;
     cursor: pointer;
     display: flex;

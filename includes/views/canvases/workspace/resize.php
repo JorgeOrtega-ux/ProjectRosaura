@@ -204,7 +204,8 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                                     $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
                                                     $disabledClass = $isAllowed ? '' : 'disabled-interactive';
                                                     $action = $isAllowed ? 'selectValue' : '';
-                                                    $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Pro</span>';
+                                                    $tierName = SubscriptionPlanConstants::getTierLimits($requiredTier)['name'] ?? 'Pro';
+                                                    $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ' . htmlspecialchars($tierName) . '</span>';
                                                     $activeClass = ((string)$instantSize === (string)$val && $isAllowed) ? 'active' : '';
                                                 ?>
                                                 <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>"
@@ -313,7 +314,8 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                                         $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
                                                         $disabledClass = $isAllowed ? '' : 'disabled-interactive';
                                                         $action = $isAllowed ? 'selectValue' : '';
-                                                        $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Pro</span>';
+                                                        $tierName = SubscriptionPlanConstants::getTierLimits($requiredTier)['name'] ?? 'Pro';
+                                                     $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ' . htmlspecialchars($tierName) . '</span>';
                                                         $activeClass = ((string)$scheduledSize === (string)$val && $isAllowed) ? 'active' : '';
                                                     ?>
                                                     <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>"

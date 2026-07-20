@@ -591,17 +591,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_delete_snapshot', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    'canvases.get_timelapse' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',
-        'action' => 'get_timelapse',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_timelapse', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
-    ],
-    'canvases.get_snapshot_timelapse' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',
-        'action' => 'get_snapshot_timelapse',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snap_timelapse', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
-    ],
-
     'canvases.upload_template' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'upload_template',

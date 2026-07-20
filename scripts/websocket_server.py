@@ -32,26 +32,6 @@ def get_db_pool():
             print(f"[!] Error creating DB pool: {e}")
     return DB_POOL
 
-def fetch_chunk_from_db(canvas_id, cx, cy):
-    try:
-        pool = get_db_pool()
-        if not pool:
-            return None
-            
-        db = pool.get_connection()
-        cursor = db.cursor()
-        cursor.execute("SELECT chunk_data FROM canvas_infinite_chunks WHERE canvas_id = %s AND chunk_x = %s AND chunk_y = %s LIMIT 1", (canvas_id, cx, cy))
-        row = cursor.fetchone()
-        cursor.close()
-        db.close()
-        
-        if row and row[0]:
-            return zlib.decompress(row[0])
-        return None
-    except Exception as e:
-        print(f"[!] Error fetching chunk {cx},{cy} from MySQL for canvas {canvas_id}: {e}")
-        return None
-
 def consume_user_perk(user_id, perk_id):
     try:
         pool = get_db_pool()
@@ -544,16 +524,8 @@ async def handler(websocket):
                         if protected_by:
                             print(f"[DEBUG PY] Pixel {x},{y} protected by user {protected_by.decode('utf-8')}")
                             
-                            if width == 0:
-                                chunk_x = x // 512
-                                chunk_y = y // 512
-                                local_x = x % 512
-                                local_y = y % 512
-                                redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
-                                byte_offset = ((local_y * 512) + local_x) * 4
-                            else:
-                                redis_state_key = f"canvas:{canvas_id}:state"
-                                byte_offset = (y * width + x) * 4
+                            redis_state_key = f"canvas:{canvas_id}:state"
+                            byte_offset = (y * width + x) * 4
                                 
                             orig_color = await r.getrange(redis_state_key, byte_offset, byte_offset + 3)
                             
@@ -624,16 +596,8 @@ async def handler(websocket):
                             print(f"[DEBUG PY] Confirming pixel. Msg: {confirm_msg}")
                             await websocket.send(confirm_msg)
 
-                            if width == 0:
-                                chunk_x = x // 512
-                                chunk_y = y // 512
-                                local_x = x % 512
-                                local_y = y % 512
-                                redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
-                                byte_offset = ((local_y * 512) + local_x) * 4
-                            else:
-                                redis_state_key = f"canvas:{canvas_id}:state"
-                                byte_offset = (y * width + x) * 4
+                            redis_state_key = f"canvas:{canvas_id}:state"
+                            byte_offset = (y * width + x) * 4
                                 
                             await r.setrange(redis_state_key, byte_offset, color_bytes)
                             
@@ -809,16 +773,8 @@ async def handler(websocket):
                             await r.delete(user_eraser_key)
                         await r.delete(protected_key)
                         
-                        if width == 0:
-                            chunk_x = x // 512
-                            chunk_y = y // 512
-                            local_x = x % 512
-                            local_y = y % 512
-                            redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
-                            byte_offset = ((local_y * 512) + local_x) * 4
-                        else:
-                            redis_state_key = f"canvas:{canvas_id}:state"
-                            byte_offset = (y * width + x) * 4
+                        redis_state_key = f"canvas:{canvas_id}:state"
+                        byte_offset = (y * width + x) * 4
                         
                         await r.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00')
                         
@@ -948,36 +904,15 @@ async def handler(websocket):
                                     dx = int(math.sqrt(eradius**2 - dy**2))
                                     x_start = ex - dx
                                     x_end = ex + dx
+                                    if iy < 0 or iy >= height: continue
+                                    x_start = max(0, x_start)
+                                    x_end = min(width - 1, x_end)
+                                    if x_start > x_end: continue
                                     
-                                    if width != 0:
-                                        if iy < 0: continue
-                                        x_start = max(0, x_start)
-                                        x_end = min(width - 1, x_end)
-                                        if x_start > x_end: continue
-                                        
-                                        length = x_end - x_start + 1
-                                        redis_state_key = f"canvas:{canvas_id}:state"
-                                        byte_offset = (iy * width + x_start) * 4
-                                        pipeline.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00' * length)
-                                    else:
-                                        chunk_y = iy // 512
-                                        local_y = iy % 512
-                                        
-                                        current_x = x_start
-                                        while current_x <= x_end:
-                                            chunk_x = current_x // 512
-                                            local_x_start = current_x % 512
-                                            
-                                            pixels_left_in_chunk = 512 - local_x_start
-                                            pixels_to_write = min(x_end - current_x + 1, pixels_left_in_chunk)
-                                            
-                                            redis_state_key = f"canvas:{canvas_id}:chunk:{chunk_x}:{chunk_y}"
-                                            byte_offset = ((local_y * 512) + local_x_start) * 4
-                                            pipeline.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00' * pixels_to_write)
-                                            pipeline.sadd(f"canvas:{canvas_id}:dirty_chunks", f"{chunk_x}:{chunk_y}")
-
-                                            
-                                            current_x += pixels_to_write
+                                    length = x_end - x_start + 1
+                                    redis_state_key = f"canvas:{canvas_id}:state"
+                                    byte_offset = (iy * width + x_start) * 4
+                                    pipeline.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00' * length)
                                 
                                 await pipeline.execute()
                                 
@@ -1067,38 +1002,6 @@ async def handler(websocket):
                                 "message": "err_perk_not_owned"
                             })
                             await websocket.send(error_msg)
-
-                elif data.get("type") == "request_chunks":
-                    import base64
-                    chunks = data.get("chunks", [])
-                    if isinstance(chunks, list):
-                        chunks = chunks[:30] # Limit to 30 chunks per request
-                    for c in chunks:
-                        cx = c.get("x")
-                        cy = c.get("y")
-                        if cx is not None and cy is not None:
-                            chunk_key = f"canvas:{canvas_id}:chunk:{cx}:{cy}"
-                            chunk_data = await r.get(chunk_key)
-                            
-                            # Lazy load from DB if not in Redis
-                            if not chunk_data:
-                                db_chunk = await asyncio.to_thread(fetch_chunk_from_db, canvas_id, cx, cy)
-                                if db_chunk:
-                                    chunk_data = db_chunk
-                                    # Cache it back in Redis for next time
-                                    await r.set(chunk_key, chunk_data)
-
-                            b64_data = ""
-                            if chunk_data:
-                                b64_data = base64.b64encode(gzip.compress(chunk_data, compresslevel=6)).decode('utf-8')
-                            
-                            chunk_msg = json.dumps({
-                                "type": "chunk_data",
-                                "chunk_x": cx,
-                                "chunk_y": cy,
-                                "state_base64": b64_data
-                            })
-                            await websocket.send(chunk_msg)
 
                 elif data.get("type") == "chat_typing":
                     user_id = WS_META[websocket].get('user_id')

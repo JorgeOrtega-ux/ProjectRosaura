@@ -298,20 +298,13 @@ class CanvasCoreService {
             }
 
             $sizeStr = strtolower($canvas['size']);
-            if ($sizeStr === 'infinite') {
-                $canvas['is_infinite'] = true;
-                $width = 0;
-                $height = 0;
+            if (strpos($sizeStr, 'x') !== false) {
+                $parts = explode('x', $sizeStr);
+                $width = (int)$parts[0];
+                $height = isset($parts[1]) ? (int)$parts[1] : $width;
             } else {
-                $canvas['is_infinite'] = false;
-                if (strpos($sizeStr, 'x') !== false) {
-                    $parts = explode('x', $sizeStr);
-                    $width = (int)$parts[0];
-                    $height = isset($parts[1]) ? (int)$parts[1] : $width;
-                } else {
-                    $width = (int)$sizeStr;
-                    $height = $width;
-                }
+                $width = (int)$sizeStr;
+                $height = $width;
             }
             
             $canvas['max_members'] = $canvas['max_participants'];
@@ -360,18 +353,15 @@ class CanvasCoreService {
                 Logger::error('Error setting canvas config in Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
             }
 
-            if ($canvas['is_infinite']) {
-                $canvas['state_base64'] = ''; 
-            } else {
-                try {
-                    if ($redis && $redis->exists($redisKey)) {
-                        $stateRaw = $redis->get($redisKey);
-                    }
-                } catch (Exception $e) {
-                    Logger::error('Error reading canvas from Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            try {
+                if ($redis && $redis->exists($redisKey)) {
+                    $stateRaw = $redis->get($redisKey);
                 }
+            } catch (Exception $e) {
+                Logger::error('Error reading canvas from Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            }
 
-                if ($stateRaw === null || $stateRaw === false) {
+            if ($stateRaw === null || $stateRaw === false) {
                     $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
 
                     if ($stateRaw && $redis) {
@@ -394,7 +384,6 @@ class CanvasCoreService {
 
                 $canvas['state_base64'] = base64_encode(gzencode($stateRaw, 6));
                 $canvas['is_compressed'] = true;
-            }
 
             return ['success' => true, 'data' => $canvas];
         } catch (Exception $e) {
@@ -691,15 +680,11 @@ class CanvasCoreService {
             
             $this->canvasRepository->updateCanvasData($canvasId, $updateData);
 
-            $currentSizeStr = (string)($canvas['size'] ?? '0');
-            if ($currentSizeStr === '0') {
-                $currentSizeStr = 'infinite';
-            }
+            $currentSizeStr = (string)($canvas['size'] ?? '64x64');
 
             $maxAllowedSize = '64x64'; 
             $maxAllowedArea = 0;
             foreach ($allSizes as $sizeKey => $sizeConfig) {
-                if ($sizeKey === 'infinite') continue;
                 if ($ownerTier >= ($sizeConfig['tier'] ?? 0)) {
                     $parts = explode('x', strtolower($sizeKey));
                     $area = ((int)$parts[0]) * ((int)($parts[1] ?? $parts[0]));
@@ -712,7 +697,7 @@ class CanvasCoreService {
 
             $reqTierForCurrent = $allSizes[$currentSizeStr]['tier'] ?? 0;
             
-            if ($ownerTier < $reqTierForCurrent || $currentSizeStr === 'infinite') {
+            if ($ownerTier < $reqTierForCurrent) {
                 
                 $this->canvasRepository->updateSize($canvasId, $maxAllowedSize);
 
@@ -722,8 +707,7 @@ class CanvasCoreService {
                 $newTotal = $newW * $newH;
                 $newStateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $newTotal);
 
-                if ($currentSizeStr !== 'infinite') {
-                    $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
+                $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
                     if ($stateRaw) {
                         $oldParts = explode('x', strtolower($currentSizeStr));
                         $oldW = (int)$oldParts[0];
@@ -738,7 +722,6 @@ class CanvasCoreService {
                             }
                         }
                     }
-                }
 
                 $this->canvasRepository->saveSnapshot($canvasId, $newStateRaw);
 
