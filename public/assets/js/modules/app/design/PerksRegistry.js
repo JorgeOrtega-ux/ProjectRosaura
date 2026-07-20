@@ -258,14 +258,8 @@ const PerksRegistry = {
      * @returns {string}
      */
     getBombButtonLabel(perkId) {
-        const keys = {
-            'pixel_misil_1': 'btn_launch_missile',
-            'bomba_pixel_1': 'btn_launch_bomb',
-            'bomba_atomica_1': 'btn_launch_nuclear',
-            'bomba_racimo_1': 'btn_launch_cluster',
-            'lluvia_meteoritos_1': 'btn_launch_meteor'
-        };
-        const key = keys[perkId] || 'btn_launch';
+        const perk = this.get(perkId);
+        const key = perk?.button_label_key || 'btn_launch';
         return (typeof window.__ === 'function' ? window.__(key) : key) || 'Launch';
     }
 };

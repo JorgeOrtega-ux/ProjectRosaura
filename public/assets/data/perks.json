@@ -37,6 +37,7 @@
     "icon": "rocket_launch",
     "label_key": "perk_pixel_missile",
     "short_label_key": "perk_pixel_missile_short",
+    "button_label_key": "btn_launch_missile",
     "warning_icon": "crisis_alert",
     "warning_label_key": "msg_missile_incoming",
     "warning_seconds": 3,
@@ -48,6 +49,12 @@
       "256": 4,
       "512": 6,
       "0": 5
+    },
+    "spawning": {
+      "mode": "direct",
+      "count": 1,
+      "spread_radius": 0,
+      "jitter_delay": 0
     },
     "explosion": {
       "style": "missile",
@@ -66,6 +73,7 @@
     "icon": "bomb",
     "label_key": "perk_pixel_bomb",
     "short_label_key": "perk_pixel_bomb_short",
+    "button_label_key": "btn_launch_bomb",
     "warning_icon": "crisis_alert",
     "warning_label_key": "msg_bomb_incoming",
     "warning_seconds": 3,
@@ -77,6 +85,12 @@
       "256": 12,
       "512": 20,
       "0": 15
+    },
+    "spawning": {
+      "mode": "direct",
+      "count": 1,
+      "spread_radius": 0,
+      "jitter_delay": 0
     },
     "explosion": {
       "style": "medium",
@@ -95,6 +109,7 @@
     "icon": "crisis_alert",
     "label_key": "perk_atomic_bomb",
     "short_label_key": "perk_atomic_bomb_short",
+    "button_label_key": "btn_launch_nuclear",
     "warning_icon": "crisis_alert",
     "warning_label_key": "msg_nuke_incoming",
     "warning_seconds": 10,
@@ -106,6 +121,12 @@
       "256": 40,
       "512": 70,
       "0": 250
+    },
+    "spawning": {
+      "mode": "direct",
+      "count": 1,
+      "spread_radius": 0,
+      "jitter_delay": 0
     },
     "explosion": {
       "style": "nuclear",
@@ -124,6 +145,7 @@
     "icon": "scatter_plot",
     "label_key": "perk_cluster_bomb",
     "short_label_key": "perk_cluster_bomb_short",
+    "button_label_key": "btn_launch_cluster",
     "warning_icon": "scatter_plot",
     "warning_label_key": "msg_cluster_incoming",
     "warning_seconds": 5,
@@ -135,6 +157,12 @@
       "256": 18,
       "512": 25,
       "0": 20
+    },
+    "spawning": {
+      "mode": "direct",
+      "count": 1,
+      "spread_radius": 0,
+      "jitter_delay": 0
     },
     "explosion": {
       "style": "medium",
@@ -153,6 +181,7 @@
     "icon": "storm",
     "label_key": "perk_meteor_shower",
     "short_label_key": "perk_meteor_shower_short",
+    "button_label_key": "btn_launch_meteor",
     "warning_icon": "storm",
     "warning_label_key": "msg_meteor_incoming",
     "warning_seconds": 7,
@@ -164,6 +193,12 @@
       "256": 10,
       "512": 15,
       "0": 10
+    },
+    "spawning": {
+      "mode": "random_around",
+      "count": 20,
+      "spread_radius": 200,
+      "jitter_delay": 5.0
     },
     "explosion": {
       "style": "medium",

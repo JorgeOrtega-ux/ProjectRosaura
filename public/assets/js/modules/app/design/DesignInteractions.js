@@ -1,6 +1,7 @@
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 import { PerksRegistry } from './PerksRegistry.js';
+import { perkAudio } from './PerkAudioSynthesizer.js';
 
 export const DesignInteractions = {
     bindEvents() {
@@ -26,8 +27,7 @@ export const DesignInteractions = {
         if (this.interactionMode === 'protecting') return this.perkProtectionLeft || 0;
         if (this.interactionMode === 'erasing') return this.perkEraserLeft || 0;
         if (this.interactionMode === 'bombing') {
-            if (this.activeBomb === 'bomba_racimo_1') return 5;
-            return 1;
+            return typeof PerksRegistry !== 'undefined' ? PerksRegistry.getTargetCount(this.activeBomb) : 1;
         }
         return Math.floor(this.cooldownBalance);
     },
@@ -1002,37 +1002,27 @@ export const DesignInteractions = {
         }
 
         if (this.interactionMode === 'bombing') {
-            if (this.activeBomb === 'bomba_racimo_1') {
-                if (this.selectedPixels.size < 5) {
-                    if (typeof showMessage === 'function') showMessage(window.__('msg_select_5_cluster'), 'warning');
-                    return;
-                }
-                const targets = Array.from(this.selectedPixels).map(p => {
-                    const [x, y] = p.split(',').map(Number);
-                    return { x, y };
-                });
-                if (this.wsManager) {
-                    this.wsManager.send({
-                        type: 'bomb_pixel',
-                        targets: targets,
-                        perk: this.activeBomb,
-                        width: this.boardWidth,
-                        userId: window.activeUserId || null
-                    });
-                }
-            } else {
-                const p = Array.from(this.selectedPixels)[0];
+            const requiredTargets = typeof PerksRegistry !== 'undefined' ? PerksRegistry.getTargetCount(this.activeBomb) : 1;
+            if (this.selectedPixels.size < requiredTargets) {
+                const msgKey = requiredTargets > 1 ? 'msg_select_targets_count' : 'msg_select_target';
+                const msgText = (typeof window.__ === 'function' ? window.__(msgKey) : null)?.replace(':count', requiredTargets) || `Selecciona ${requiredTargets} objetivo(s)`;
+                if (typeof showMessage === 'function') showMessage(msgText, 'warning');
+                return;
+            }
+            const targets = Array.from(this.selectedPixels).map(p => {
                 const [x, y] = p.split(',').map(Number);
-                if (this.wsManager) {
-                    this.wsManager.send({
-                        type: 'bomb_pixel',
-                        x: x,
-                        y: y,
-                        perk: this.activeBomb,
-                        width: this.boardWidth,
-                        userId: window.activeUserId || null
-                    });
-                }
+                return { x, y };
+            });
+            if (this.wsManager) {
+                this.wsManager.send({
+                    type: 'bomb_pixel',
+                    targets: targets,
+                    x: targets[0]?.x ?? 0,
+                    y: targets[0]?.y ?? 0,
+                    perk: this.activeBomb,
+                    width: this.boardWidth,
+                    userId: window.activeUserId || null
+                });
             }
             this.interactionMode = 'normal';
             this.activeBomb = null;
@@ -1178,6 +1168,11 @@ export const DesignInteractions = {
             duration: PerksRegistry.getExplosionDuration(perkId)
         });
         
+        const explosionStyle = PerksRegistry.getExplosionStyle(perkId);
+        if (typeof perkAudio !== 'undefined' && perkAudio.playExplosionSound) {
+            perkAudio.playExplosionSound(explosionStyle);
+        }
+        
         if (PerksRegistry.hasScreenShake(perkId)) {
             if (!document.getElementById('nuclear-style')) {
                 const style = document.createElement('style');
@@ -1304,6 +1299,7 @@ export const DesignInteractions = {
 
         const getWarningDetails = (perk) => PerksRegistry.getWarningDetails(perk);
 
+        let lastSecondBeep = -1;
         const animateWarning = () => {
             const activeForPerk = this.nuclearWarnings.filter(w => w.perk === perkId);
             if (activeForPerk.length > 0) {
@@ -1314,6 +1310,12 @@ export const DesignInteractions = {
                 const details = getWarningDetails(perkId);
                 
                 if (remaining > 0) {
+                    if (remaining !== lastSecondBeep) {
+                        lastSecondBeep = remaining;
+                        if (typeof perkAudio !== 'undefined' && perkAudio.playWarningBeep) {
+                            perkAudio.playWarningBeep(remaining <= 3);
+                        }
+                    }
                     badge.style.display = 'flex';
                     badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
                 } else {

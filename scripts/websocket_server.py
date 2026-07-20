@@ -1009,45 +1009,43 @@ async def handler(websocket):
 
                             perk_config = get_perks_config().get(perk, {})
                             warning_duration = perk_config.get("warning_seconds", 0)
+                            spawning_cfg = perk_config.get("spawning", {})
+                            spawn_mode = spawning_cfg.get("mode", "direct")
+                            spawn_count = int(spawning_cfg.get("count", 1))
+                            spread_radius = int(spawning_cfg.get("spread_radius", 200))
+                            jitter_delay = float(spawning_cfg.get("jitter_delay", 0.0))
 
-                            if perk == 'lluvia_meteoritos_1':
+                            spawned_targets = []
+
+                            if spawn_mode == "random_around":
                                 import random
                                 import math
-                                new_targets = []
-                                for _ in range(20):
-                                    max_dist = 200 if width == 0 else int(width/2)
+                                max_dist = spread_radius if width == 0 else int(width/2)
+                                for _ in range(spawn_count):
                                     angle = random.uniform(0, 2 * math.pi)
                                     radial_r = max_dist * math.sqrt(random.uniform(0.05, 1.0))
-                                    
                                     rx = int(cx + radial_r * math.cos(angle))
                                     ry = int(cy + radial_r * math.sin(angle))
-                                    
                                     if width != 0:
                                         rx = max(0, min(width - 1, rx))
                                         ry = max(0, min(width - 1, ry))
-                                    new_targets.append({"x": rx, "y": ry, "delay": warning_duration + random.uniform(0, 5)})
-                                
-                                clients_in_room = ROOMS.get(canvas_id, set())
-                                for t in new_targets:
-                                    warning_msg = json.dumps({
-                                        "type": "nuclear_warning",
-                                        "x": t["x"],
-                                        "y": t["y"],
-                                        "duration": warning_duration,
-                                        "perk": perk,
-                                        "radius": radius
-                                    })
-                                    if len(clients_in_room) > 0:
-                                        tasks = [asyncio.create_task(client.send(warning_msg)) for client in clients_in_room]
-                                        await asyncio.gather(*tasks)
-                                    await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": warning_msg}))
-                                    asyncio.create_task(execute_explosion(t["x"], t["y"], radius, t["delay"]))
-
-                            elif perk == 'bomba_racimo_1':
-                                clients_in_room = ROOMS.get(canvas_id, set())
+                                    delay = warning_duration + (random.uniform(0, jitter_delay) if jitter_delay > 0 else 0)
+                                    spawned_targets.append({"x": rx, "y": ry, "delay": delay})
+                            else:
+                                import random
                                 for t in targets:
                                     tx = int(t.get("x", 0))
                                     ty = int(t.get("y", 0))
+                                    delay = warning_duration + (random.uniform(0, jitter_delay) if jitter_delay > 0 else 0)
+                                    spawned_targets.append({"x": tx, "y": ty, "delay": delay})
+
+                            clients_in_room = ROOMS.get(canvas_id, set())
+                            for st in spawned_targets:
+                                tx = st["x"]
+                                ty = st["y"]
+                                delay = st["delay"]
+
+                                if warning_duration > 0:
                                     warning_msg = json.dumps({
                                         "type": "nuclear_warning",
                                         "x": tx,
@@ -1060,26 +1058,8 @@ async def handler(websocket):
                                         tasks = [asyncio.create_task(client.send(warning_msg)) for client in clients_in_room]
                                         await asyncio.gather(*tasks)
                                     await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": warning_msg}))
-                                    asyncio.create_task(execute_explosion(tx, ty, radius, warning_duration))
 
-                            elif warning_duration > 0:
-                                warning_msg = json.dumps({
-                                    "type": "nuclear_warning",
-                                    "x": cx,
-                                    "y": cy,
-                                    "duration": warning_duration,
-                                    "perk": perk,
-                                    "radius": radius
-                                })
-                                clients_in_room = ROOMS.get(canvas_id, set())
-                                if len(clients_in_room) > 0:
-                                    tasks = [asyncio.create_task(client.send(warning_msg)) for client in clients_in_room]
-                                    await asyncio.gather(*tasks)
-                                await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": warning_msg}))
-                                asyncio.create_task(execute_explosion(cx, cy, radius, warning_duration))
-
-                            else:
-                                asyncio.create_task(execute_explosion(cx, cy, radius, 0))
+                                asyncio.create_task(execute_explosion(tx, ty, radius, delay))
                         else:
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
