@@ -39,7 +39,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     ?>
                     <tbody>
                         <?php if (empty($history)): ?>
-                            <tr data-ref="empty-history-table">
+                            <tr>
                                 <td colspan="4" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">receipt_long</span>

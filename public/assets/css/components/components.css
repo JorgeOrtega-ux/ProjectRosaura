@@ -324,12 +324,14 @@ html.dark-theme .component-top.shadow {
 
 .component-empty-table-cell {
     padding: 0 !important;
+    width: 100%;
 }
 
 .component-empty-state--table {
     border-radius: 0;
     border: none;
     background: transparent;
+    width: 100%;
 }
 
 .component-message-layout {
