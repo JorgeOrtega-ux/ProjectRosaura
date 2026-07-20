@@ -22,7 +22,7 @@ class PremiumMiddleware implements MiddlewareInterface {
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false, 
-                'message' => __('err_premium_required'),
+                'message' => __('err_upgrade_required') ?: __('err_premium_required'),
                 'error_code' => 'UPGRADE_REQUIRED'
             ]);
             return false;

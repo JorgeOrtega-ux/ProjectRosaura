@@ -64,7 +64,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 <div class="component-gallery-warning-overlay">
                     <div class="component-gallery-warning-content">
                         <span class="material-symbols-rounded">warning</span>
-                        <div class="component-gallery-warning-title">${window.__('premium_plan_expired')}</div>
+                        <div class="component-gallery-warning-title">${window.__('plan_expired') || window.__('premium_plan_expired')}</div>
                         <div class="component-gallery-warning-desc">${window.__('canvas_exceeds_limits')}</div>
                     </div>
                 </div>

@@ -63,7 +63,7 @@ $isFirst = true;
                                     <span class="material-symbols-rounded">stars</span> <span><?= $pkg['bonus_text'] ?></span>
                                 </div>
                                 <?php endif; ?>
-                                <div class="component-badge component-badge--dark component-badge--grouped-item component-badge--min-w130" data-action="buyCoins" data-amount="<?= $pkg['amount'] ?>">
+                                <div class="component-badge component-badge--dark component-badge--grouped-item component-badge--min-w130 component-badge--interactive" data-action="buyCoins" data-amount="<?= $pkg['amount'] ?>">
                                     <span class="price-text">
                                         <span class="material-symbols-rounded">payments</span> <span><?= \App\Core\Helpers\Utils::formatNumber($pkg['price_usd'], 2) ?> <?= __('currency_usd') ?></span>
                                     </span>

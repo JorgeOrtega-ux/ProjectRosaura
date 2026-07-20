@@ -23,7 +23,7 @@ export const DesignTemplates = {
             if (btnToggleLiveMenu.getAttribute('data-requires-premium') === 'true') {
                 e.preventDefault();
                 e.stopPropagation();
-                window.location.href = (window.AppBasePath || '') + '/store';
+                window.location.href = (window.AppBasePath || '') + '/upgrade';
                 return true;
             }
 

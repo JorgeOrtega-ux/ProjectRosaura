@@ -232,7 +232,7 @@ class StripeServices {
             $redisClient = $redisInstance->getClient();
             if ($redisClient) {
                 $lockKey = "user_lock:stripe_coin:{$userId}";
-                if (!$redisClient->set($lockKey, "1", ['NX', 'EX' => 2])) {
+                if (!$redisClient->set($lockKey, "1", 'EX', 2, 'NX')) {
                     return ['success' => false, 'message_key' => 'error.too_many_requests'];
                 }
             }

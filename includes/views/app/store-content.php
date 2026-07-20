@@ -63,7 +63,7 @@ $isFirst = true;
                                 <?php endif; ?>
 
 
-                                <div class="component-badge component-badge--dark component-badge--grouped-item component-badge--min-w130 btn-buy-perk" data-action="buyPerk" data-perkid="<?= $pkg['id'] ?>">
+                                <div class="component-badge component-badge--dark component-badge--grouped-item component-badge--min-w130 component-badge--interactive btn-buy-perk" data-action="buyPerk" data-perkid="<?= $pkg['id'] ?>">
                                     <span class="price-text">
                                         <span class="material-symbols-rounded">toll</span> <span><?= \App\Core\Helpers\Utils::formatNumber($pkg['price_coins']) ?></span>
                                     </span>

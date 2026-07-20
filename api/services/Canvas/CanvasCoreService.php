@@ -294,7 +294,7 @@ class CanvasCoreService {
                 if (!empty($canvas['locked_reasons'])) {
                     $lockedReasons = is_array($canvas['locked_reasons']) ? $canvas['locked_reasons'] : json_decode($canvas['locked_reasons'], true);
                 }
-                return ['success' => false, 'message' => __('err_premium_expired_downgrade'), 'locked_requires_downgrade' => true, 'locked_reasons' => $lockedReasons ?: []];
+                return ['success' => false, 'message' => __('err_plan_expired_downgrade') ?: __('err_premium_expired_downgrade'), 'locked_requires_downgrade' => true, 'locked_reasons' => $lockedReasons ?: []];
             }
 
             $sizeStr = strtolower($canvas['size']);

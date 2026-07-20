@@ -840,10 +840,6 @@ export const DesignNetwork = {
             showMessage(__('err_sync_limit'), 'warning');
         }
 
-        if (data.type === 'pixel_confirm' && typeof this.loadUserPerks === 'function') {
-            this.loadUserPerks();
-        }
-        
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') {
             this.updatePerkBadges();

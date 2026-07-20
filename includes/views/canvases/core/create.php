@@ -194,7 +194,7 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                                                 $isAllowed = ($tier >= $requiredTier);
                                                 $disabledClass = $isAllowed ? '' : 'disabled-interactive';
                                                 $action = $isAllowed ? 'selectValue' : '';
-                                                $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Premium</span>';
+                                                $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Pro</span>';
                                                 $activeClass = ($val === $defaultSizeKey && $isAllowed) ? 'active' : '';
                                             ?>
                                             <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>" data-action="<?php echo $action; ?>" data-type="size" data-value="<?php echo htmlspecialchars($val); ?>" data-tier="<?php echo $requiredTier; ?>" data-label="<?php echo htmlspecialchars($data['label']); ?>" data-icon="<?php echo htmlspecialchars($data['icon']); ?>" <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '"'; ?>>
@@ -437,12 +437,12 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                         </div>
                     </div>
                             <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interactive' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_premium_advanced')) . '" data-position="top"'; ?>>
+                            <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interactive' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_ultra') ?: __('lbl_requires_premium_advanced')) . '" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
                                     <?php echo __('lbl_allow_live_chat'); ?>
-                                    <?php if(!$hasLiveChat): ?><span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Premium</span><?php endif; ?>
+                                    <?php if(!$hasLiveChat): ?><span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Ultra</span><?php endif; ?>
                                 </h2>
                                 <p class="component-card__description"><?php echo __('desc_allow_live_chat'); ?></p>
                             </div>

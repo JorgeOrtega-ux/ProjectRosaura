@@ -54,7 +54,7 @@ class StoreServices {
         if ($redisClient) {
             // User concurrency lock for 3 seconds to prevent rapid automated clicks
             $userLockKey = "user_lock:buy_perk:{$userId}";
-            if (!$redisClient->set($userLockKey, "1", ['NX', 'EX' => 3])) {
+            if (!$redisClient->set($userLockKey, "1", 'EX', 3, 'NX')) {
                 return ['success' => false, 'message_key' => 'error.too_many_requests'];
             }
 
@@ -116,7 +116,7 @@ class StoreServices {
             if (isset($contentPackages[$perkId])) {
                 $perk['description'] = $contentPackages[$perkId]['description'];
             } else {
-                $perk['description'] = 'Sin descripción';
+                $perk['description'] = __('lbl_no_description');
             }
         }
 

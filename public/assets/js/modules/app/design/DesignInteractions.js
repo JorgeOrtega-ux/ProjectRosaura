@@ -1454,6 +1454,7 @@ export const DesignInteractions = {
         badgesRight.innerHTML = ''; 
 
         const PERK_ORDER = PerksRegistry.getDisplayOrder();
+        let renderedInventoryCount = 0;
 
         PERK_ORDER.forEach(perkId => {
             let isActive = false;
@@ -1479,6 +1480,7 @@ export const DesignInteractions = {
                         clickHandler = (e) => {
                             this.activatePerk('no_cooldown_10s', e.currentTarget);
                         };
+                        renderedInventoryCount++;
                     }
                 }
             } 
@@ -1495,6 +1497,7 @@ export const DesignInteractions = {
                     clickHandler = () => {
                         this.activatePerk('pixel_protection_25');
                     };
+                    if (this.showInventoryPerks && !isToggledOn) renderedInventoryCount++;
                 }
             }
             else if (perkId === 'elite_eraser_25') {
@@ -1510,6 +1513,7 @@ export const DesignInteractions = {
                     clickHandler = () => {
                         this.activatePerk('elite_eraser_25');
                     };
+                    if (this.showInventoryPerks && !isToggledOn) renderedInventoryCount++;
                 }
             }
             else if (PerksRegistry.isBomb(perkId)) {
@@ -1537,6 +1541,7 @@ export const DesignInteractions = {
                     clickHandler = () => {
                         this.activatePerk(perkId);
                     };
+                    renderedInventoryCount++;
                 }
             }
 
@@ -1559,7 +1564,7 @@ export const DesignInteractions = {
                 if (clickHandler) badge.addEventListener('click', clickHandler);
                 badgesRight.appendChild(badge);
             } 
-            else if (invItem && this.showInventoryPerks) {
+            else if (invItem && parseInt(invItem.count, 10) > 0 && this.showInventoryPerks) {
                 const badge = document.createElement('div');
                 badge.className = 'component-badge inventory-badge-temp';
                 badge.style.cursor = 'pointer';
@@ -1569,7 +1574,17 @@ export const DesignInteractions = {
                     this.activatePerk(perkId, badge);
                 });
                 badgesRight.appendChild(badge);
+                renderedInventoryCount++;
             }
         });
+
+        if (this.showInventoryPerks && renderedInventoryCount === 0) {
+            const emptyBadge = document.createElement('div');
+            emptyBadge.className = 'component-badge component-badge--muted inventory-badge-temp';
+            const rawTrans = window.__('badge_no_perks_available');
+            const displayLabel = (rawTrans && rawTrans !== 'badge_no_perks_available') ? rawTrans : 'Sin ventajas disponibles';
+            emptyBadge.innerHTML = `<span class="material-symbols-rounded">info</span><span>${displayLabel}</span>`;
+            badgesRight.appendChild(emptyBadge);
+        }
     }
 };
