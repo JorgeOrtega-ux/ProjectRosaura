@@ -28,7 +28,7 @@ return [
     '/settings/your-account' => ['view' => 'settings/profile/your-account.php', 'auth' => true],
     '/settings/security' => ['view' => 'settings/security/security.php', 'auth' => true],
     '/settings/accessibility' => ['view' => 'settings/preferences/accessibility.php', 'auth' => true],
-    '/settings/subscription' => ['view' => 'settings/billing/subscription.php', 'auth' => true],
+    '/settings/subscription' => ['view' => 'settings/billing/billing.php', 'auth' => true],
     '/settings/billing' => ['view' => 'settings/billing/billing.php', 'auth' => true],
     '/settings/purchase-history' => ['view' => 'settings/billing/purchase-history.php', 'auth' => true],
     '/settings/change-password' => ['view' => 'settings/security/change-password.php', 'auth' => true],

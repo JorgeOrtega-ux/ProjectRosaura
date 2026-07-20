@@ -525,6 +525,8 @@ class StripeServices {
         $userId = $this->sessionManager->getActiveAccountId();
         $subscription = $this->subscriptionRepo->findActiveByUserId($userId);
 
+        $userTier = (int)($_SESSION['subscription_tier'] ?? 0);
+
         if ($subscription && !empty($subscription['stripe_subscription_id'])) {
             try {
                 \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
@@ -533,6 +535,9 @@ class StripeServices {
                 $subscription['cancel_at_period_end'] = $stripeSub->cancel_at_period_end;
                 $subscription['current_period_end'] = $stripeSub->current_period_end;
                 $subscription['status'] = $stripeSub->status;
+                if (isset($subscription['tier'])) {
+                    $userTier = (int)$subscription['tier'];
+                }
             } catch (\Exception $e) {
                 Logger::error("Stripe API Error fetching subscription status", [
                     'user_id' => $userId,
@@ -541,11 +546,36 @@ class StripeServices {
             }
         }
 
-        if ($subscription && empty($subscription['current_period_end'])) {
+        if (!$subscription) {
+            $subscription = [
+                'tier' => $userTier,
+                'status' => 'active',
+                'billing_period' => 'free',
+                'cancel_at_period_end' => false,
+                'current_period_end' => null
+            ];
+        } else {
+            $subscription['tier'] = $userTier;
+        }
+
+        if (empty($subscription['current_period_end']) && $subscription['tier'] > 0) {
             $createdAt = strtotime($subscription['created_at'] ?? 'now');
             $period = (isset($subscription['billing_period']) && $subscription['billing_period'] === 'yearly') ? '+1 year' : '+1 month';
             $subscription['current_period_end'] = date('Y-m-d H:i:s', strtotime($period, $createdAt));
         }
+
+        $usedStorageMB = round($this->userRepo->getStorageUsed($userId), 2);
+        $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($userTier);
+        $maxStorageMB = (float)($planLimits['max_storage_mb'] ?? 20);
+        $remainingStorageMB = max(0, round($maxStorageMB - $usedStorageMB, 2));
+        $usedPercentage = $maxStorageMB > 0 ? min(100, round(($usedStorageMB / $maxStorageMB) * 100, 1)) : 0;
+
+        $subscription['storage'] = [
+            'used_mb' => $usedStorageMB,
+            'max_mb' => $maxStorageMB,
+            'remaining_mb' => $remainingStorageMB,
+            'used_percentage' => $usedPercentage
+        ];
 
         return [
             'success' => true,

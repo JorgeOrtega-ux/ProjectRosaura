@@ -4817,3 +4817,150 @@ html.dark-theme .component-skeleton::after {
     border: none;
 }
 
+/* Storage Usage Component */
+.component-storage-usage-container {
+    width: 100%;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.component-storage-usage__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    gap: 16px;
+}
+
+.component-storage-usage__title-area {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.component-storage-title {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+}
+
+.component-storage-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.component-storage-usage__percentage {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.component-progress-track {
+    width: 100%;
+    height: 10px;
+    background-color: var(--bg-surface-alt, rgba(255, 255, 255, 0.08));
+    border-radius: 9999px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--border-color);
+}
+
+.component-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #9333ea 0%, #c084fc 100%);
+    border-radius: 9999px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.component-storage-usage__footer {
+    margin-top: 2px;
+}
+
+.component-storage-link {
+    font-size: 0.8rem;
+    color: #a855f7;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.2s ease;
+    cursor: pointer;
+}
+
+.component-storage-link:hover {
+    color: #c084fc;
+}
+
+/* Payment Method Row Component */
+.component-pm-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.component-pm-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background-color: transparent !important;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 100%;
+    transition: border-color 0.2s ease;
+}
+
+.component-pm-row:hover {
+    border-color: #000000 !important;
+    background-color: transparent !important;
+}
+
+.component-pm-row__left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.component-pm-row__logo-box {
+    width: 42px;
+    height: 42px;
+    background: #ffffff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    padding: 6px;
+}
+
+.component-pm-row__logo-box svg,
+.component-pm-row__logo-box img {
+    max-width: 100%;
+    max-height: 100%;
+    height: auto;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.component-pm-row__info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.component-pm-row__title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.component-pm-row__subtitle {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
