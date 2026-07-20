@@ -9,12 +9,12 @@ import boto3
 import botocore
 import uuid
 
-S3_ENDPOINT = os.getenv("MINIO_ENDPOINT") or os.getenv("AWS_ENDPOINT")
+S3_ENDPOINT = os.getenv("AWS_ENDPOINT")
 if S3_ENDPOINT and not S3_ENDPOINT.startswith("http"):
     S3_ENDPOINT = "http://" + S3_ENDPOINT + ":9000"
-S3_ACCESS_KEY = os.getenv("MINIO_ROOT_USER") or os.getenv("AWS_ACCESS_KEY_ID")
-S3_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD") or os.getenv("AWS_SECRET_ACCESS_KEY")
-S3_BUCKET = os.getenv("MINIO_BUCKET") or os.getenv("AWS_BUCKET")
+S3_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID")
+S3_SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+S3_BUCKET = os.getenv("AWS_BUCKET")
 
 def get_s3_client():
     return boto3.client(

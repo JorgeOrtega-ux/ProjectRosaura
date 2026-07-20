@@ -76,15 +76,15 @@ REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = int(os.getenv('REDIS_PORT')) if os.getenv('REDIS_PORT') else None
 REDIS_PASS = os.getenv('REDIS_PASS')
 
-S3_ENDPOINT = os.getenv("MINIO_ENDPOINT") or os.getenv("AWS_ENDPOINT")
+S3_ENDPOINT = os.getenv("AWS_ENDPOINT")
 if S3_ENDPOINT and not S3_ENDPOINT.startswith("http"):
     S3_ENDPOINT = "http://" + S3_ENDPOINT + ":9000"
     
-S3_BUCKET = os.getenv("MINIO_BUCKET") or os.getenv("AWS_BUCKET")
+S3_BUCKET = os.getenv("AWS_BUCKET")
 s3 = boto3.client('s3',
     endpoint_url=S3_ENDPOINT,
-    aws_access_key_id=os.getenv("MINIO_ROOT_USER") or os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=os.getenv("MINIO_ROOT_PASSWORD") or os.getenv("AWS_SECRET_ACCESS_KEY")
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
 )
 APP_ROOT_PATH = os.getenv('APP_ROOT_PATH')
 QUEUE_ACCOUNT_DELETION = 'queue:account_deletion'
