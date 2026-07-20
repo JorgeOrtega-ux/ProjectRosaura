@@ -344,6 +344,24 @@ class SettingsServices
         $key = $data['key'] ?? '';
         $value = $data['value'] ?? '';
 
+        if ($key === 'purchase_preference') {
+            if (!in_array($value, ['fast', 'verify'])) return ['success' => false, 'message' => __('validation.invalid_preference')];
+            if ($this->userRepository->updatePurchasePreference($userId, $value)) {
+                $this->sessionManager->set('purchase_preference', $value);
+                $accounts = $this->sessionManager->getLinkedAccounts();
+                if (isset($accounts[$userId])) {
+                    $accounts[$userId]['purchase_preference'] = $value;
+                    if (!isset($accounts[$userId]['user_prefs']) || !is_array($accounts[$userId]['user_prefs'])) {
+                        $accounts[$userId]['user_prefs'] = [];
+                    }
+                    $accounts[$userId]['user_prefs']['purchase_preference'] = $value;
+                    $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+                }
+                return ['success' => true, 'message' => __('settings.preference_updated')];
+            }
+            return ['success' => false, 'message' => __('error.update_failed')];
+        }
+
         if (!in_array($key, DB::ALLOWED_PREF_KEYS)) return ['success' => false, 'message' => __('validation.invalid_preference')];
         
         if ($key === 'language') {

@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password` varchar(255) NOT NULL,
   `subscription_tier` tinyint(1) DEFAULT 0, -- NOTA DE IMPLEMENTACIÓN: Nuevo campo para el nivel de suscripción (0=Básico, 1=Pro, 2=Advanced)
   `coins` int(11) NOT NULL DEFAULT 0,
+  `purchase_preference` ENUM('fast', 'verify') DEFAULT 'verify',
   `stripe_customer_id` varchar(255) DEFAULT NULL,
   `two_factor_secret` varchar(64) DEFAULT NULL,
   `two_factor_enabled` tinyint(1) DEFAULT 0,

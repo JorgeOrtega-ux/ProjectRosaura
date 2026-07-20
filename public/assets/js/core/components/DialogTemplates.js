@@ -269,9 +269,6 @@ export const DialogTemplates = {
 
     verifyPasswordDialog: {
         build: (data = {}) => {
-            console.log("[DialogTemplates Debug] verifyPasswordDialog build called. APP_USER:", window.APP_USER, "data:", data);
-            const isGoogleUser = typeof window.APP_USER !== 'undefined' && Boolean(window.APP_USER && window.APP_USER.is_google);
-            console.log("[DialogTemplates Debug] isGoogleUser resolved to:", isGoogleUser);
             const getTrans = (key, fallback) => {
                 if (typeof window.__ === 'function') {
                     const val = window.__(key);
@@ -285,33 +282,7 @@ export const DialogTemplates = {
             const cancelBtnText = getTrans('btn_cancel', 'Cancelar');
             const confirmBtnText = data.confirmKey ? getTrans(data.confirmKey, 'Continuar') : getTrans('btn_continue', 'Continuar');
             const passwordLblText = getTrans('lbl_current_password', 'Contraseña actual');
-
-            if (isGoogleUser) {
-                const userEmail = (window.APP_USER && window.APP_USER.email) ? window.APP_USER.email : '';
-                return `
-                    <div class="pill-container"><div class="drag-handle"></div></div>
-                    <div class="component-modal-header component-modal-header--with-icon">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">verified_user</span>
-                        </div>
-                        <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${title}</h2>
-                            <p class="component-modal-desc">${desc}</p>
-                        </div>
-                    </div>
-                    <div class="component-modal-body">
-                        <input type="hidden" data-ref="modal_verify_password" value="GOOGLE_OAUTH_CONFIRMED">
-                        <div class="component-badge component-badge--glass" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.75rem; gap: 8px;">
-                            <span class="material-symbols-rounded" style="color: #4285F4;">g_mobiledata</span>
-                            <span>${userEmail ? `Sesión activa con Google (${userEmail})` : 'Sesión activa verificada con Google'}</span>
-                        </div>
-                    </div>
-                    <div class="component-modal-actions">
-                        <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${cancelBtnText}</button>
-                        <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${confirmBtnText}</button>
-                    </div>
-                `;
-            }
+            const confirmClass = data.confirmClass || 'component-button--dark';
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -333,7 +304,7 @@ export const DialogTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${cancelBtnText}</button>
-                    <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${confirmBtnText}</button>
+                    <button class="component-button component-button--h45 ${confirmClass} component-button--full" data-modal-action="confirm">${confirmBtnText}</button>
                 </div>
             `;
         }
@@ -854,6 +825,51 @@ export const DialogTemplates = {
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h45" data-modal-action="cancel">${window.__('btn_cancel', [], 'Cancelar')}</button>
                     <button type="button" class="component-button component-button--h45 component-button--dark" data-modal-action="confirm">${window.__('btn_disconnect', [], 'Desconectar')}</button>
+                </div>
+            `;
+        }
+    },
+
+    confirmUpgradeModal: {
+        build: (data = {}) => {
+            const amount = data.amount || '0.00';
+            const currency = (data.currency || 'USD').toUpperCase();
+            const isUpgrade = data.isUpgrade || false;
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">Confirmar Compra</h2>
+                    <p class="component-modal-desc">
+                        Estás a punto de confirmar la compra. Aquí tienes el desglose:
+                    </p>
+                </div>
+                <div class="component-modal-body">
+                    <div class="component-card--grouped">
+                        <div class="component-group-item component-group-item--wrap">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title">Total a cobrar hoy</h2>
+                                    <p class="component-card__description">${amount} ${currency}</p>
+                                </div>
+                            </div>
+                        </div>
+                        ${isUpgrade ? `
+                        <div class="component-group-item component-group-item--wrap">
+                            <div class="component-card__content">
+                                <div class="component-card__icon-container">
+                                    <span class="material-symbols-rounded component-text-notice--info">info</span>
+                                </div>
+                                <div class="component-card__text">
+                                    <p class="component-card__description component-text-notice--info">El monto incluye el descuento por el tiempo no utilizado de tu suscripción actual.</p>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h45" data-modal-action="cancel">Cancelar</button>
+                    <button type="button" class="component-button component-button--h45 component-button--dark" data-modal-action="confirm">Confirmar Pago</button>
                 </div>
             `;
         }

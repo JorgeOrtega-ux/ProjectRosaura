@@ -40,6 +40,13 @@ export class UpgradeController {
             this._handleSubscribeClick(e);
             return;
         }
+
+        const closeModalBtn = e.target.closest('[data-action="closeUpgradeModal"]');
+        if (closeModalBtn) {
+            const modal = document.getElementById('upgradeConfirmModal');
+            if (modal) modal.style.display = 'none';
+            return;
+        }
     }
 
     _toggleBilling() {
@@ -159,6 +166,49 @@ export class UpgradeController {
         setButtonLoading(btn);
 
         try {
+            const previewResult = await this.api.post(ApiRoutes.Stripe.PreviewUpgrade, {
+                tier: tier,
+                billing_period: billingPeriod
+            });
+
+            restoreButton(btn);
+
+            if (previewResult.success) {
+                await this._showConfirmModal(previewResult.data || previewResult, tier, billingPeriod, btn);
+            } else {
+                showMessage(previewResult.message || window.__('err_connection'), 'error');
+            }
+        } catch (error) {
+            restoreButton(btn);
+            showMessage(window.__('err_connection'), 'error');
+        }
+    }
+
+    async _showConfirmModal(previewData, tier, billingPeriod, btn) {
+        if (!window.dialogSystem) {
+            this._processActualSubscription(tier, billingPeriod, btn);
+            return;
+        }
+
+        const amount = (previewData.amount_due / 100).toFixed(2);
+        const currency = previewData.currency;
+        const isUpgrade = previewData.is_upgrade;
+
+        const confirmRes = await window.dialogSystem.show('confirmUpgradeModal', {
+            amount: amount,
+            currency: currency,
+            isUpgrade: isUpgrade
+        });
+
+        if (confirmRes && (confirmRes.action === 'confirm' || confirmRes.action === true)) {
+            this._processActualSubscription(tier, billingPeriod, btn);
+        }
+    }
+
+    async _processActualSubscription(tier, billingPeriod, btn) {
+        setButtonLoading(btn);
+
+        try {
             const subStatusResult = await this.api.post(ApiRoutes.Stripe.GetSubscriptionStatus);
             let hasActiveStripeSub = false;
 
@@ -192,6 +242,9 @@ export class UpgradeController {
 
                 if (result.success && result.checkout_url) {
                     window.location.href = result.checkout_url;
+                } else if (result.success && result.updated) {
+                    showMessage(window.__('msg_sub_updated'), 'success');
+                    setTimeout(() => { window.location.reload(); }, 1500);
                 } else {
                     restoreButton(btn);
                     const msg = result.message || window.__('stripe_checkout_error');

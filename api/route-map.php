@@ -647,6 +647,11 @@ return [
         'action' => 'create_checkout',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_checkout', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
+    'stripe.preview_upgrade' => [
+        'controller' => 'App\Api\Controllers\Stripe\StripeController',
+        'action' => 'preview_upgrade',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_preview', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
     'stripe.update_subscription' => [
         'controller' => 'App\Api\Controllers\Stripe\StripeController',
         'action' => 'update_subscription',
@@ -676,6 +681,11 @@ return [
         'controller' => 'App\Api\Controllers\Stripe\StripeController',
         'action' => 'toggle_auto_renewal',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_toggle_renewal', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'stripe.delete_payment_method' => [
+        'controller' => 'App\Api\Controllers\Stripe\StripeController',
+        'action' => 'delete_payment_method',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_delete_pm', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
     'stripe.create_coin_checkout' => [

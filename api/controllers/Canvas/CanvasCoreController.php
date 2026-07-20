@@ -156,21 +156,21 @@ class CanvasCoreController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
+            $password = $input['password'] ?? '';
+            if (empty(trim($password))) {
+                return $this->respond(['success' => false, 'message' => __('err_password_required')]);
+            }
+
             $uuid = $input['id'] ?? $input['uuid'] ?? null;
             if ($uuid && is_string($uuid) && empty($input['canvas_ids'])) {
-                $result = $this->canvasServices->deleteCanvas($userId, $uuid);
+                $result = $this->canvasServices->deleteCanvas($userId, $uuid, $password);
                 return $this->respond($result);
             }
 
             $canvasIds = $input['canvas_ids'] ?? [];
-            $password = $input['password'] ?? '';
 
             if (empty($canvasIds)) {
                 return $this->respond(['success' => false, 'message' => __('err_no_canvases_selected')]);
-            }
-
-            if (empty(trim($password))) {
-                return $this->respond(['success' => false, 'message' => __('err_password_required')]);
             }
 
             $result = $this->canvasServices->deleteUserCanvases($userId, $canvasIds, $password);

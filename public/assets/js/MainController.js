@@ -144,12 +144,24 @@ export class MainController {
     }
 
     async savePreference(key, value) {
+        const previousValue = this.getPref(key);
+
         if (key === 'theme') this.applyTheme(value);
         if (key === 'language') document.cookie = "pr_language=" + value + "; path=/; max-age=31536000";
 
         if (window.AppUserPrefs) {
             window.AppUserPrefs[key] = value;
-            
+        }
+        localStorage.setItem('pr_' + key, value);
+
+        this.syncUIPreferences();
+
+        if (key === 'language') { 
+            window.location.reload(); 
+            return; 
+        }
+
+        if (window.AppUserPrefs) {
             if (this.prefAbortController) {
                 this.prefAbortController.abort();
             }
@@ -161,20 +173,25 @@ export class MainController {
                 if (response && response.aborted) return;
 
                 if (response && response.success) {
-                    if (key !== 'language') this.showToast(__('pref_saved_account'), 'success');
+                    this.showToast(__('pref_saved_account'), 'success');
                 } else {
-                    if (key !== 'language') this.showToast(__('pref_save_network_error'), 'error');
+                    if (window.AppUserPrefs) window.AppUserPrefs[key] = previousValue;
+                    localStorage.setItem('pr_' + key, previousValue);
+                    if (key === 'theme') this.applyTheme(previousValue);
+                    this.syncUIPreferences();
+                    this.showToast(__('pref_save_network_error'), 'error');
                 }
             } catch (err) {
-                if (key !== 'language') this.showToast(__('general_save_network_error'), 'error');
+                if (err.name === 'AbortError') return;
+                if (window.AppUserPrefs) window.AppUserPrefs[key] = previousValue;
+                localStorage.setItem('pr_' + key, previousValue);
+                if (key === 'theme') this.applyTheme(previousValue);
+                this.syncUIPreferences();
+                this.showToast(__('general_save_network_error'), 'error');
             }
         } else {
-            localStorage.setItem('pr_' + key, value);
-            if (key !== 'language') this.showToast(__('pref_local_config_saved'), 'success');
+            this.showToast(__('pref_local_config_saved'), 'success');
         }
-
-        if (key === 'language') { window.location.reload(); return; }
-        this.syncUIPreferences(); 
     }
 
     applyTheme(theme) {
@@ -210,6 +227,9 @@ export class MainController {
             if (item.getAttribute('data-key') === 'language') {
                 item.classList.toggle('active', item.getAttribute('data-value') === lang);
             }
+            if (item.getAttribute('data-key') === 'purchase_preference') {
+                item.classList.toggle('active', item.getAttribute('data-value') === this.getPref('purchase_preference'));
+            }
         });
 
         const themeTriggerTxt = document.querySelector('[data-action="toggleModule"][data-target="moduleTheme"] .component-dropdown-text');
@@ -222,6 +242,12 @@ export class MainController {
         if (langTriggerTxt) {
             const activeItem = document.querySelector('[data-key="language"].active .component-menu-link-text span');
             if (activeItem) langTriggerTxt.textContent = activeItem.textContent;
+        }
+
+        const prefTriggerTxt = document.querySelector('[data-action="toggleModule"][data-target="modulePurchasePref"] .component-dropdown-text');
+        if (prefTriggerTxt) {
+            const activeItem = document.querySelector('[data-key="purchase_preference"].active .component-menu-link-text span');
+            if (activeItem) prefTriggerTxt.textContent = activeItem.textContent;
         }
     }
 

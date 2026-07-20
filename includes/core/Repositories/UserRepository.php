@@ -50,7 +50,7 @@ class UserRepository implements UserRepositoryInterface {
         try {
             $stmtUser = $this->pdo->prepare("
                 SELECT 
-                    u.id, u.uuid, u.username, u.email, u.password, u.google_id, u.subscription_tier, u.profile_picture, 
+                    u.id, u.uuid, u.username, u.email, u.password, u.google_id, u.subscription_tier, u.profile_picture, u.purchase_preference,
                     u.two_factor_secret, u.two_factor_enabled, u.two_factor_recovery_codes, u.deletion_scheduled_at, u.created_at,
                     ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
                     ur.deleted_by, ur.deleted_reason, ur.admin_notes
@@ -350,6 +350,19 @@ class UserRepository implements UserRepositoryInterface {
         }
     }
 
+    public function updatePurchasePreference(int $userId, string $pref): bool {
+        $tblUsers = DB::TBL_USERS;
+        try {
+            $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET purchase_preference = ? WHERE id = ?");
+            $res = $stmt->execute([$pref, $userId]);
+            if ($res) $this->invalidateProfileCache($userId);
+            return $res;
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'pref' => $pref, 'exception' => $e]);
+            return false;
+        }
+    }
+
     public function setFlag(int $userId, string $flagKey): bool {
         $tblFlags = DB::TBL_USER_FLAGS;
         try {
@@ -411,11 +424,64 @@ class UserRepository implements UserRepositoryInterface {
             $stmt = $this->pdo->prepare("SELECT storage_used_bytes FROM {$tblUsers} WHERE id = ?");
             $stmt->execute([$userId]);
             $bytes = (float)$stmt->fetchColumn();
+            
+            if ($bytes <= 0) {
+                $bytes = $this->calculateDynamicUserStorageBytes($userId);
+            }
+            
             return $bytes / (1024 * 1024);
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
             return 0.0;
         }
+    }
+
+    private function calculateDynamicUserStorageBytes(int $userId): float {
+        $totalBytes = 0.0;
+        try {
+            // 1. Canvases owned by user: calculate pixel buffer sizes (width * height * 4)
+            $stmt = $this->pdo->prepare("SELECT size FROM db_canvases.canvases WHERE owner_id = ?");
+            $stmt->execute([$userId]);
+            $sizes = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+
+            foreach ($sizes as $sizeStr) {
+                $parts = explode('x', strtolower((string)$sizeStr));
+                $w = (int)($parts[0] ?? 64);
+                $h = isset($parts[1]) ? (int)$parts[1] : $w;
+                if ($w <= 0) $w = 64;
+                if ($h <= 0) $h = 64;
+                // 4 bytes per pixel (RGBA)
+                $totalBytes += ($w * $h * 4);
+            }
+
+            // 2. Snapshot history entries for user's canvases (~50KB per snapshot)
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(h.id) 
+                FROM db_canvases.canvas_snapshots_history h
+                JOIN db_canvases.canvases c ON h.canvas_id = c.id
+                WHERE c.owner_id = ?
+            ");
+            $stmt->execute([$userId]);
+            $snapshotCount = (int)$stmt->fetchColumn();
+            $totalBytes += ($snapshotCount * 50 * 1024);
+
+            // 3. User uploaded templates
+            $stmt = $this->pdo->prepare("SELECT COALESCE(SUM(file_size), 0) FROM db_canvases.user_templates WHERE user_id = ?");
+            $stmt->execute([$userId]);
+            $templateBytes = (float)$stmt->fetchColumn();
+            $totalBytes += $templateBytes;
+
+            // 4. Custom profile picture check (~150KB)
+            $stmt = $this->pdo->prepare("SELECT profile_picture FROM " . DB::TBL_USERS . " WHERE id = ?");
+            $stmt->execute([$userId]);
+            $pic = (string)$stmt->fetchColumn();
+            if ($pic && strpos($pic, 'uploaded') !== false) {
+                $totalBytes += (150 * 1024);
+            }
+        } catch (\Throwable $e) {
+            Logger::error("Error calculating dynamic user storage", ['user_id' => $userId, 'error' => $e->getMessage()]);
+        }
+        return $totalBytes;
     }
 
     public function getRegistrationStats(string $startDate, string $endDate): array {

@@ -193,9 +193,11 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             `;
         }
 
+        const cardId = escapeHTML(card.id || '');
+
         return `
-            <div class="component-pm-row">
-                <div class="component-pm-row__left">
+            <div class="component-pm-row" data-pm-id="${cardId}" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div class="component-pm-row__left" style="display: flex; align-items: center; gap: 12px;">
                     <div class="component-pm-row__logo-box">
                         ${logoSvg}
                     </div>
@@ -203,6 +205,11 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                         <div class="component-pm-row__title">${brandFormatted} •••• ${last4}</div>
                         <div class="component-pm-row__subtitle">${expText}</div>
                     </div>
+                </div>
+                <div class="component-pm-row__right">
+                    <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="deletePaymentMethod" data-pm-id="${cardId}" data-tooltip="${window.__('delete_card') || 'Eliminar tarjeta'}" data-position="left">
+                        <span class="material-symbols-rounded" style="font-size: 18px;">delete</span>
+                    </button>
                 </div>
             </div>
         `;
@@ -313,9 +320,9 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 </div>
 
                 <div class="component-storage-usage__footer">
-                    <a href="/upgrade" data-nav="/upgrade" class="component-storage-link">
+                    <div data-nav="/upgrade" class="component-storage-link">
                         ${questionText}
-                    </a>
+                    </div>
                 </div>
             </div>
         `;

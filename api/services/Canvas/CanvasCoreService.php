@@ -751,8 +751,24 @@ class CanvasCoreService {
         }
     }
 
-    public function deleteCanvas(?int $userId, string $uuid, bool $canManageOfficial = false): array {
+    public function deleteCanvas(?int $userId, string $uuid, string $password = '', bool $canManageOfficial = false): array {
         try {
+            if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
+
+            $user = $this->userRepository->findById($userId);
+            if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
+
+            $passwordHash = $user['password_hash'] ?? $user['password'] ?? '';
+            $isGoogleUser = !empty($user['google_id']);
+
+            if (!empty($passwordHash)) {
+                if (!password_verify($password, $passwordHash) && $password !== 'GOOGLE_OAUTH_CONFIRMED') {
+                    return ['success' => false, 'message' => __('err_invalid_password')];
+                }
+            } else if (!$isGoogleUser && $password !== 'GOOGLE_OAUTH_CONFIRMED') {
+                return ['success' => false, 'message' => __('err_invalid_password')];
+            }
+
             $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
@@ -814,10 +830,13 @@ class CanvasCoreService {
 
             $passwordHash = $user['password_hash'] ?? $user['password'] ?? '';
             $isGoogleUser = !empty($user['google_id']);
-            if (!$isGoogleUser && $password !== 'GOOGLE_OAUTH_CONFIRMED') {
-                if (!password_verify($password, $passwordHash)) {
+
+            if (!empty($passwordHash)) {
+                if (!password_verify($password, $passwordHash) && $password !== 'GOOGLE_OAUTH_CONFIRMED') {
                     return ['success' => false, 'message' => __('err_invalid_password')];
                 }
+            } else if (!$isGoogleUser && $password !== 'GOOGLE_OAUTH_CONFIRMED') {
+                return ['success' => false, 'message' => __('err_invalid_password')];
             }
 
             $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);

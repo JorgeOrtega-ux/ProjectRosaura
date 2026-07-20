@@ -148,25 +148,18 @@ export class ApiService {
             return { success: false, message: window.__('session_revoked') };
         }
 
-        if (response.status === 500) {
-            let result;
-            try {
-                result = await this._parseJsonResponse(response);
-            } catch (parseErr) {
-                console.error(`[ApiServices 500]${routeLabel} Failed to parse error response:`, parseErr.message);
-                return { success: false, message: window.__('server_error_database_offline') };
+        try {
+            const result = await this._parseJsonResponse(response);
+            if (result && (result.message || result.message_key || result.success !== undefined)) {
+                if (result.error_details) {
+                    console.error(`[ApiServices ${response.status}]${routeLabel}`, result.error_details, result.file ? `at ${result.file}` : '');
+                }
+                return this._processResponse(result);
             }
-
-            if (result && result.error_details) {
-                console.error(`[ApiServices 500]${routeLabel}`, result.error_details, result.file ? `at ${result.file}` : '');
-            } else if (result && (result.message || result.message_key)) {
-                console.error(`[ApiServices 500]${routeLabel}`, result.message || result.message_key, result);
-            } else {
-                console.error(`[ApiServices 500]${routeLabel} Server returned empty/unrecognized error body:`, JSON.stringify(result));
-            }
-            return this._processResponse(result || { success: false, message: window.__('server_error_database_offline') });
+        } catch (parseErr) {
+            console.error(`[ApiServices ${response.status}]${routeLabel} Failed to parse error response:`, parseErr.message);
         }
-        
+
         return null;
     }
 

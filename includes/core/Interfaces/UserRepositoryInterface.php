@@ -16,6 +16,7 @@ interface UserRepositoryInterface {
     public function updateAvatar(int $id, string $path): bool;
     public function updateUsername(int $id, string $username): bool;
     public function updateEmail(int $id, string $email): bool;
+    public function updatePurchasePreference(int $id, string $pref): bool;
     public function updatePassword(int $id, string $hashedPassword): bool;
     public function update2FA(int $id, ?string $secret, int $enabled, ?string $recoveryCodes): bool;
     public function updateRecoveryCodes(int $id, string $recoveryCodes): bool;

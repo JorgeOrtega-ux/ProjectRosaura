@@ -92,6 +92,80 @@ class StripeServices {
         \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
     }
 
+    public function getUpcomingInvoicePreview(int $tier, string $billingPeriod): array {
+        if (!$this->sessionManager->isLoggedIn()) {
+            return ['success' => false, 'message' => 'Unauthorized'];
+        }
+        $userId = $this->sessionManager->getActiveAccountId();
+
+        \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+
+        $envKey = self::PRICE_MAP[$tier][$billingPeriod] ?? null;
+        if (!$envKey || empty($_ENV[$envKey])) {
+            return ['success' => false, 'message' => 'Price not configured.'];
+        }
+        $newPriceId = $_ENV[$envKey];
+
+        $stripeCustomerId = $this->subscriptionRepo->getStripeCustomerIdByUserId($userId);
+        if (!$stripeCustomerId) {
+            try {
+                $price = \Stripe\Price::retrieve($newPriceId);
+                return [
+                    'success' => true,
+                    'amount_due' => $price->unit_amount,
+                    'currency' => $price->currency,
+                    'is_upgrade' => false
+                ];
+            } catch (\Exception $e) {
+                return ['success' => false, 'message' => $e->getMessage()];
+            }
+        }
+
+        $activeLocalSub = $this->subscriptionRepo->findActiveByUserId($userId);
+        if ($activeLocalSub && !empty($activeLocalSub['stripe_subscription_id'])) {
+            try {
+                $stripe = new \Stripe\StripeClient($_ENV['STRIPE_SECRET_KEY']);
+                $subscription = $stripe->subscriptions->retrieve($activeLocalSub['stripe_subscription_id']);
+                
+                $invoice = $stripe->invoices->createPreview([
+                    'customer' => $stripeCustomerId,
+                    'subscription' => $subscription->id,
+                    'subscription_details' => [
+                        'items' => [
+                            [
+                                'id' => $subscription->items->data[0]->id,
+                                'price' => $newPriceId,
+                            ],
+                        ],
+                        'proration_behavior' => 'create_prorations'
+                    ]
+                ]);
+
+                return [
+                    'success' => true,
+                    'amount_due' => $invoice->amount_due,
+                    'currency' => $invoice->currency,
+                    'is_upgrade' => true
+                ];
+            } catch (\Exception $e) {
+                Logger::error("Stripe API Error fetching upcoming invoice", ['error' => $e->getMessage()]);
+                return ['success' => false, 'message' => $e->getMessage()];
+            }
+        } else {
+            try {
+                $price = \Stripe\Price::retrieve($newPriceId);
+                return [
+                    'success' => true,
+                    'amount_due' => $price->unit_amount,
+                    'currency' => $price->currency,
+                    'is_upgrade' => false
+                ];
+            } catch (\Exception $e) {
+                return ['success' => false, 'message' => $e->getMessage()];
+            }
+        }
+    }
+
     public function createCheckoutSession(array $input): array {
         if (!$this->sessionManager->isLoggedIn()) {
             http_response_code(401);
@@ -156,6 +230,110 @@ class StripeServices {
 
             $tierName = SubscriptionPlanConstants::getTierLimits($tier)['name'];
             $periodLabel = $billingPeriod === 'yearly' ? 'Anual' : 'Mensual';
+
+            $purchasePreference = $this->sessionManager->get('purchase_preference', 'verify');
+            
+            if ($purchasePreference === 'fast') {
+                try {
+                    $customer = \Stripe\Customer::retrieve($stripeCustomerId);
+                    $defaultPmId = $customer->invoice_settings->default_payment_method;
+                    
+                    if (!$defaultPmId) {
+                        $paymentMethods = \Stripe\PaymentMethod::all([
+                            'customer' => $stripeCustomerId,
+                            'type' => 'card',
+                            'limit' => 1
+                        ]);
+                        if (!empty($paymentMethods->data)) {
+                            $defaultPmId = $paymentMethods->data[0]->id;
+                            \Stripe\Customer::update($stripeCustomerId, [
+                                'invoice_settings' => [
+                                    'default_payment_method' => $defaultPmId
+                                ]
+                            ]);
+                        }
+                    }
+
+                    if ($defaultPmId) {
+                        $subscription = \Stripe\Subscription::create([
+                            'customer' => $stripeCustomerId,
+                            'items' => [['price' => $priceId]],
+                            'default_payment_method' => $defaultPmId,
+                            'payment_behavior' => 'error_if_incomplete',
+                            'metadata' => [
+                                'user_id' => (string) $userId,
+                                'tier' => (string) $tier,
+                                'billing_period' => $billingPeriod
+                            ]
+                        ]);
+
+                        if ($subscription->status === 'active') {
+                            $this->subscriptionRepo->createSubscription([
+                                'user_id' => $userId,
+                                'stripe_customer_id' => $stripeCustomerId,
+                                'stripe_checkout_session_id' => 'sub_fast_' . $subscription->id,
+                                'tier' => $tier,
+                                'billing_period' => $billingPeriod,
+                                'status' => 'active'
+                            ]);
+                            $this->subscriptionRepo->updateByCheckoutSessionId('sub_fast_' . $subscription->id, [
+                                'stripe_subscription_id' => $subscription->id
+                            ]);
+                            $this->subscriptionRepo->updateUserTier($userId, $tier);
+
+                            // Actualizar sesión y caché
+                            $accounts = $this->sessionManager->getLinkedAccounts();
+                            if (isset($accounts[$userId])) {
+                                $accounts[$userId]['subscription_tier'] = $tier;
+                                $this->sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+                                $this->sessionManager->syncRootState();
+                            }
+                            
+                            try {
+                                $redisCache = new \App\Config\Database\RedisCache();
+                                $redisClient = $redisCache->getClient();
+                                if ($redisClient) {
+                                    $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . $userId);
+                                }
+                            } catch (\Exception $e) {}
+
+                            $invoice = \Stripe\Invoice::retrieve($subscription->latest_invoice);
+                            
+                            $this->subscriptionRepo->createPaymentRecord([
+                                'user_id' => $userId,
+                                'stripe_payment_intent_id' => $invoice->payment_intent ?? null,
+                                'stripe_invoice_id' => $invoice->id,
+                                'amount_cents' => $invoice->amount_paid ?? 0,
+                                'currency' => strtolower($invoice->currency ?? 'usd'),
+                                'description' => "Subscription {$tierName} ({$periodLabel})",
+                                'status' => 'succeeded'
+                            ]);
+                            
+                            try {
+                                $redisCache = new \App\Config\Database\RedisCache();
+                                $redisClient = $redisCache->getClient();
+                                if ($redisClient) {
+                                    $redisClient->rpush('queue:emails', json_encode([
+                                        'type' => 'subscription_confirmation',
+                                        'user_id' => $userId,
+                                        'tierName' => $tierName,
+                                        'billingPeriod' => $billingPeriod
+                                    ]));
+                                }
+                            } catch (\Exception $e) {}
+                            
+                            return [
+                                'success' => true,
+                                'fast_payment' => true,
+                                'message_key' => 'stripe.payment_successful',
+                                'checkout_url' => null
+                            ];
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Logger::info("Fast subscription failed or requires auth, falling back to checkout", ['user_id' => $userId, 'error' => $e->getMessage()]);
+                }
+            }
 
             $baseUrl = $this->getBaseUrl($input);
             Logger::info("Stripe Checkout preparing return URLs", ['base_url' => $baseUrl, 'user_id' => $userId]);
@@ -270,6 +448,83 @@ class StripeServices {
                 $this->subscriptionRepo->updateUserStripeCustomerId($userId, $stripeCustomerId);
             }
 
+            $purchasePreference = $this->sessionManager->get('purchase_preference', 'verify');
+            
+            if ($purchasePreference === 'fast') {
+                try {
+                    $customer = \Stripe\Customer::retrieve($stripeCustomerId);
+                    $defaultPmId = $customer->invoice_settings->default_payment_method;
+                    
+                    if (!$defaultPmId) {
+                        $paymentMethods = \Stripe\PaymentMethod::all([
+                            'customer' => $stripeCustomerId,
+                            'type' => 'card',
+                            'limit' => 1
+                        ]);
+                        if (!empty($paymentMethods->data)) {
+                            $defaultPmId = $paymentMethods->data[0]->id;
+                            \Stripe\Customer::update($stripeCustomerId, [
+                                'invoice_settings' => [
+                                    'default_payment_method' => $defaultPmId
+                                ]
+                            ]);
+                        }
+                    }
+
+                    if ($defaultPmId) {
+                        $price = \Stripe\Price::retrieve($priceId);
+                        
+                        $paymentIntent = \Stripe\PaymentIntent::create([
+                            'amount' => $price->unit_amount,
+                            'currency' => $price->currency,
+                            'customer' => $stripeCustomerId,
+                            'payment_method' => $defaultPmId,
+                            'off_session' => true,
+                            'confirm' => true,
+                            'description' => "Purchase of {$coinsAmount} coins",
+                            'metadata' => [
+                                'type' => 'coins',
+                                'user_id' => (string) $userId,
+                                'amount' => (string) $coinsAmount
+                            ]
+                        ]);
+
+                        if ($paymentIntent->status === 'succeeded') {
+                            $storeRepo = new \App\Core\Repositories\StoreRepository(new \App\Config\Database\DatabaseManager());
+                            $storeRepo->processCoinPurchaseSession([
+                                'user_id' => $userId,
+                                'stripe_payment_intent_id' => $paymentIntent->id,
+                                'stripe_checkout_session_id' => 'pi_fast_' . $paymentIntent->id,
+                                'item_type' => 'coins',
+                                'item_amount' => $coinsAmount,
+                                'amount_cents' => $price->unit_amount,
+                                'currency' => $price->currency,
+                                'status' => 'succeeded'
+                            ]);
+
+                            $this->subscriptionRepo->createPaymentRecord([
+                                'user_id' => $userId,
+                                'stripe_payment_intent_id' => $paymentIntent->id,
+                                'stripe_invoice_id' => null,
+                                'amount_cents' => $price->unit_amount,
+                                'currency' => $price->currency,
+                                'description' => "Purchase of {$coinsAmount} coins (Fast)",
+                                'status' => 'succeeded'
+                            ]);
+                            
+                            return [
+                                'success' => true,
+                                'fast_payment' => true,
+                                'message_key' => 'stripe.payment_successful',
+                                'checkout_url' => null 
+                            ];
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Logger::info("Fast payment failed or requires auth, falling back to checkout", ['user_id' => $userId, 'error' => $e->getMessage()]);
+                }
+            }
+
             $baseUrl = $this->getBaseUrl($input);
             $returnUrl = isset($input['return_url']) ? rtrim($input['return_url'], '/') : $baseUrl . '/store';
             Logger::info("Stripe Coin Checkout preparing return URLs", ['return_url' => $returnUrl, 'user_id' => $userId]);
@@ -350,26 +605,16 @@ class StripeServices {
             \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
             try {
                 $subscription = \Stripe\Subscription::retrieve($activeLocalSub['stripe_subscription_id']);
-                $subscription->cancel();
                 
-                $this->subscriptionRepo->updateUserTier($userId, SubscriptionPlanConstants::TIER_FREE);
-                $this->subscriptionRepo->updateByStripeSubscriptionId($subscription->id, [
-                    'status' => 'canceled',
-                    'canceled_at' => date('Y-m-d H:i:s')
+                \Stripe\Subscription::update($subscription->id, [
+                    'cancel_at_period_end' => true
                 ]);
                 
-                try {
-                    $container = new \App\Core\Container();
-                    $lockManager = $container->get(\App\Api\Services\Canvas\CanvasLockManager::class);
-                    $lockManager->evaluateUserCanvases((int) $userId);
-                } catch (\Exception $e) {
-                    Logger::error("Failed to evaluate canvases on downgrade", ['user_id' => $userId, 'error' => $e->getMessage()]);
-                }
-                Logger::info("Stripe Subscription canceled (downgraded to basic)", [
+                Logger::info("Stripe Subscription canceled at period end (downgrade to basic)", [
                     'user_id' => $userId,
                     'subscription_id' => $subscription->id
                 ]);
-                return ['success' => true, 'updated' => true];
+                return ['success' => true, 'updated' => true, 'message' => 'Suscripción cancelada. Terminará al final del periodo actual.'];
             } catch (\Exception $e) {
                 Logger::error("Stripe API Error canceling subscription", ['error' => $e->getMessage()]);
                 return ['success' => false, 'message' => __('err_stripe_api')];
@@ -408,6 +653,25 @@ class StripeServices {
                 'tier' => $tier,
                 'billing_period' => $billingPeriod
             ]);
+            
+            // Actualizar la sesión para que se refleje inmediatamente sin tener que cerrar sesión
+            $accounts = $this->sessionManager->getLinkedAccounts();
+            if (isset($accounts[$userId])) {
+                $accounts[$userId]['subscription_tier'] = $tier;
+                $this->sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+                $this->sessionManager->syncRootState();
+            }
+
+            // Limpiar la caché de Redis del usuario para evitar datos obsoletos en consultas futuras
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                $redisClient = $redisCache->getClient();
+                if ($redisClient) {
+                    $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . $userId);
+                }
+            } catch (\Exception $e) {
+                Logger::error("Failed to clear user cache on upgrade", ['user_id' => $userId, 'error' => $e->getMessage()]);
+            }
             
             try {
                 $container = new \App\Core\Container();
@@ -592,6 +856,17 @@ class StripeServices {
         $userId = $this->sessionManager->getActiveAccountId();
         $cancelAtPeriodEnd = isset($input['cancel_at_period_end']) ? filter_var($input['cancel_at_period_end'], FILTER_VALIDATE_BOOLEAN) : false;
 
+        if (!$cancelAtPeriodEnd) {
+            // User is trying to RE-ENABLE auto-renewal. Check if they have a valid payment method attached.
+            $pms = $this->getPaymentMethods([]);
+            if ($pms['success'] && empty($pms['data'])) {
+                return [
+                    'success' => false,
+                    'message' => 'Debes agregar una tarjeta de pago antes de activar la renovación automática.'
+                ];
+            }
+        }
+
         $activeLocalSub = $this->subscriptionRepo->findActiveByUserId($userId);
         if (!$activeLocalSub || empty($activeLocalSub['stripe_subscription_id'])) {
             return ['success' => false, 'message_key' => 'stripe.no_active_subscription'];
@@ -620,6 +895,44 @@ class StripeServices {
                 'error' => $e->getMessage()
             ]);
             return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => __('err_stripe_api')];
+        }
+    }
+
+    public function deletePaymentMethod(array $input): array {
+        if (!$this->sessionManager->isLoggedIn()) {
+            return ['success' => false, 'message' => __('err_unauthorized')];
+        }
+
+        $userId = $this->sessionManager->getActiveAccountId();
+        $pmId = trim($input['payment_method_id'] ?? '');
+
+        if (empty($pmId)) {
+            return ['success' => false, 'message' => __('err_missing_parameters')];
+        }
+
+        $subscriptionStatus = $this->getSubscriptionStatus([]);
+        if ($subscriptionStatus['success'] && !empty($subscriptionStatus['data'])) {
+            $subData = $subscriptionStatus['data'];
+            $hasActivePaidTier = (int)($subData['tier'] ?? 0) > 0 && ($subData['status'] ?? '') === 'active';
+            $isAutoRenewActive = !($subData['cancel_at_period_end'] ?? false);
+
+            if ($hasActivePaidTier && $isAutoRenewActive) {
+                return [
+                    'success' => false,
+                    'message' => 'No puedes eliminar tu tarjeta mientras tengas una suscripción activa con renovación automática. Desactiva la renovación automática primero.'
+                ];
+            }
+        }
+
+        try {
+            \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+            $pm = \Stripe\PaymentMethod::retrieve($pmId);
+            $pm->detach();
+
+            return ['success' => true, 'message' => 'Tarjeta de pago eliminada correctamente.'];
+        } catch (\Exception $e) {
+            Logger::error("Stripe API Error deleting payment method", ['user_id' => $userId, 'pm_id' => $pmId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => $e->getMessage()];
         }
     }
 
