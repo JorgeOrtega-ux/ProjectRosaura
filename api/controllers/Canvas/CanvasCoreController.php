@@ -262,12 +262,12 @@ class CanvasCoreController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             }
 
-            $confirmWord = $input['confirm_word'] ?? '';
-            if (trim(strtoupper($confirmWord)) !== 'CONFIRM') {
-                return $this->respond(['success' => false, 'message' => __('err_confirm_word_required')]);
+            $password = $input['password'] ?? '';
+            if (empty($password)) {
+                return $this->respond(['success' => false, 'message' => __('err_password_required')]);
             }
 
-            $result = $this->canvasServices->downgradeCanvasToBasic($userId, $uuid);
+            $result = $this->canvasServices->downgradeCanvasToBasic($userId, $uuid, $password);
             return $this->respond($result);
 
         } catch (\Throwable $e) {

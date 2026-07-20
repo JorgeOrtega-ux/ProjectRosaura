@@ -37,7 +37,10 @@ class UserRepository implements UserRepositoryInterface {
             $cacheKey = CacheConstants::PREFIX_USER_PROFILE . $value;
             $cached = $this->redisClient->get($cacheKey);
             if ($cached) {
-                return json_decode($cached, true);
+                $decoded = json_decode($cached, true);
+                if (is_array($decoded) && array_key_exists('google_id', $decoded)) {
+                    return $decoded;
+                }
             }
         }
 
@@ -47,7 +50,7 @@ class UserRepository implements UserRepositoryInterface {
         try {
             $stmtUser = $this->pdo->prepare("
                 SELECT 
-                    u.id, u.uuid, u.username, u.email, u.password, u.subscription_tier, u.profile_picture, 
+                    u.id, u.uuid, u.username, u.email, u.password, u.google_id, u.subscription_tier, u.profile_picture, 
                     u.two_factor_secret, u.two_factor_enabled, u.two_factor_recovery_codes, u.deletion_scheduled_at, u.created_at,
                     ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
                     ur.deleted_by, ur.deleted_reason, ur.admin_notes

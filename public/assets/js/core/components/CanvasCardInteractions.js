@@ -175,48 +175,30 @@ export class CanvasCardInteractions {
 
         this.closeDropdowns();
 
-        let confirmed = false;
         if (window.dialogSystem && window.dialogSystem.show) {
-            
-            try {
-                
-                const confirmRes = await window.dialogSystem.show('confirmActionModal', {
-                    title: window.__('downgrade_basic_title'),
-                    message: window.__('downgrade_basic_message'),
-                    inputPlaceholder: 'CONFIRM',
-                    expectedInput: 'CONFIRM'
-                });
-                
-                if (confirmRes && confirmRes.confirmed) {
-                    const userInput = confirmRes.data && confirmRes.data.confirm_input ? confirmRes.data.confirm_input.trim().toUpperCase() : '';
-                    if (userInput === 'CONFIRM') {
-                        confirmed = true;
-                    } else {
-                        showMessage(window.__('must_type_confirm'), 'error');
-                    }
-                }
-            } catch(e) {
-                const ans = prompt(window.__('downgrade_basic_prompt'));
-                if (ans === 'CONFIRM') confirmed = true;
+            console.log("[CanvasCardInteractions Debug] Calling window.dialogSystem.show('downgradeCanvasModal')");
+            const confirmRes = await window.dialogSystem.show('downgradeCanvasModal');
+
+            if (!confirmRes || !confirmRes.confirmed) return;
+
+            const password = confirmRes.data && confirmRes.data.modal_verify_password ? confirmRes.data.modal_verify_password.trim() : '';
+            if (!password) {
+                if (typeof showMessage === 'function') showMessage(window.__('err_password_required') || 'La contraseña es requerida', 'error');
+                return;
             }
-        } else {
-            const ans = prompt(window.__('downgrade_basic_prompt'));
-            if (ans === 'CONFIRM') confirmed = true;
-        }
 
-        if (!confirmed) return;
+            const res = await this.api.post(ApiRoutes.Canvases.Downgrade, { uuid: uuid, password: password }, this.abortController.signal);
+            
+            if (res.aborted) return;
 
-        const res = await this.api.post(ApiRoutes.Canvases.Downgrade, { uuid: uuid, confirm_word: 'CONFIRM' }, this.abortController.signal);
-        
-        if (res.aborted) return;
-
-        if (res.success) {
-            showMessage(res.message, 'success');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showMessage(res.message, 'error');
+            if (res.success) {
+                if (typeof showMessage === 'function') showMessage(res.message, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                if (typeof showMessage === 'function') showMessage(res.message, 'error');
+            }
         }
     }
 

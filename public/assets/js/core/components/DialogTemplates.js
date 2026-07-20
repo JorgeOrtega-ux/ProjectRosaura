@@ -268,29 +268,75 @@ export const DialogTemplates = {
     },
 
     verifyPasswordDialog: {
-        build: (data) => `
-            <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header component-modal-header--with-icon">
-                <div class="component-card__icon-container component-card__icon-container--bordered">
-                    <span class="material-symbols-rounded">lock</span>
+        build: (data = {}) => {
+            console.log("[DialogTemplates Debug] verifyPasswordDialog build called. APP_USER:", window.APP_USER, "data:", data);
+            const isGoogleUser = typeof window.APP_USER !== 'undefined' && Boolean(window.APP_USER && window.APP_USER.is_google);
+            console.log("[DialogTemplates Debug] isGoogleUser resolved to:", isGoogleUser);
+            const getTrans = (key, fallback) => {
+                if (typeof window.__ === 'function') {
+                    const val = window.__(key);
+                    if (val && val !== key) return val;
+                }
+                return fallback;
+            };
+
+            const title = data.title || (data.titleKey ? getTrans(data.titleKey, 'Verificar Identidad') : getTrans('title_verify_identity', 'Verificar Identidad'));
+            const desc = data.descHtml || data.message || (data.descKey ? getTrans(data.descKey, 'Confirma tu acción para continuar.') : getTrans('desc_verify_identity', 'Confirma tu contraseña para continuar.'));
+            const cancelBtnText = getTrans('btn_cancel', 'Cancelar');
+            const confirmBtnText = data.confirmKey ? getTrans(data.confirmKey, 'Continuar') : getTrans('btn_continue', 'Continuar');
+            const passwordLblText = getTrans('lbl_current_password', 'Contraseña actual');
+
+            if (isGoogleUser) {
+                const userEmail = (window.APP_USER && window.APP_USER.email) ? window.APP_USER.email : '';
+                return `
+                    <div class="pill-container"><div class="drag-handle"></div></div>
+                    <div class="component-modal-header component-modal-header--with-icon">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">verified_user</span>
+                        </div>
+                        <div class="component-modal-header-text">
+                            <h2 class="component-modal-title">${title}</h2>
+                            <p class="component-modal-desc">${desc}</p>
+                        </div>
+                    </div>
+                    <div class="component-modal-body">
+                        <input type="hidden" data-ref="modal_verify_password" value="GOOGLE_OAUTH_CONFIRMED">
+                        <div class="component-badge component-badge--glass" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; gap: 8px;">
+                            <span class="material-symbols-rounded" style="color: #4285F4;">g_mobiledata</span>
+                            <span>${userEmail ? `Sesión activa con Google (${userEmail})` : 'Sesión activa verificada con Google'}</span>
+                        </div>
+                    </div>
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${cancelBtnText}</button>
+                        <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${confirmBtnText}</button>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">lock</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${title}</h2>
+                        <p class="component-modal-desc">${desc}</p>
+                    </div>
                 </div>
-                <div class="component-modal-header-text">
-                    <h2 class="component-modal-title">${data.titleKey ? __(data.titleKey) : __('title_verify_identity')}</h2>
-                    <p class="component-modal-desc">${data.descHtml || (data.descKey ? __(data.descKey) : __('desc_verify_identity'))}</p>
+                <div class="component-modal-body">
+                    <div class="component-input-group">
+                        <input type="password" data-ref="modal_verify_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                        <label class="component-input-label">${passwordLblText}</label>
+                        <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
+                    </div>
                 </div>
-            </div>
-            <div class="component-modal-body">
-                <div class="component-input-group">
-                    <input type="password" data-ref="modal_verify_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                    <label class="component-input-label">${__('lbl_current_password')}</label>
-                    <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${cancelBtnText}</button>
+                    <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${confirmBtnText}</button>
                 </div>
-            </div>
-            <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_continue')}</button>
-            </div>
-        `
+            `;
+        }
     },
 
     confirmDeleteAccountDialog: {
@@ -777,12 +823,10 @@ export const DialogTemplates = {
     }
 ,
     downgradeCanvasModal: {
-        build: () => DialogTemplates.confirmActionModal.build({
-            title: window.__('downgrade_basic_title'),
-            message: window.__('downgrade_basic_msg'),
-            inputPlaceholder: window.__('word_confirm'),
-            expectedInput: window.__('word_confirm'),
-            confirmClass: 'component-button--danger'
+        build: (data = {}) => DialogTemplates.verifyPasswordDialog.build({
+            titleKey: data.titleKey || 'downgrade_basic_title',
+            descKey: data.descKey || 'downgrade_basic_message',
+            confirmKey: 'btn_confirm'
         })
     },
 

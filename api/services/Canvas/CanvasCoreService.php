@@ -93,6 +93,8 @@ class CanvasCoreService {
             
             $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts, $canManageOfficial) {
                 $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
+                $canvas['is_locked'] = !empty($canvas['is_locked']);
+                $canvas['locked_requires_downgrade'] = !empty($canvas['is_locked']);
                 
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
                 
@@ -623,8 +625,20 @@ class CanvasCoreService {
         }
     }
 
-    public function downgradeCanvasToBasic(int $userId, string $uuid, bool $canManageOfficial = false): array {
+    public function downgradeCanvasToBasic(int $userId, string $uuid, string $password = '', bool $canManageOfficial = false): array {
         try {
+            $user = $this->userRepository->findById($userId);
+            if (!$user) {
+                return ['success' => false, 'message' => __('err_user_not_found')];
+            }
+            $passwordHash = $user['password_hash'] ?? $user['password'] ?? '';
+            $isGoogleUser = !empty($user['google_id']);
+            if (!$isGoogleUser && $password !== 'GOOGLE_OAUTH_CONFIRMED') {
+                if (empty($password) || !password_verify($password, $passwordHash)) {
+                    return ['success' => false, 'message' => __('err_invalid_password')];
+                }
+            }
+
             $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
@@ -659,22 +673,30 @@ class CanvasCoreService {
 
             $updateData = [
                 'name' => $canvas['name'],
+                'description' => $canvas['description'] ?? '',
                 'privacy' => $canvas['privacy'],
                 'requires_approval' => $canvas['requires_approval'],
                 'palette_id' => 'default',
                 'max_participants' => ($planLimits['max_members_per_canvas'] !== -1) ? $planLimits['max_members_per_canvas'] : $canvas['max_participants'],
                 'cooldown_pixels_batch' => $canvas['cooldown_pixels_batch'],
-                'cooldown_seconds' => $canvas['cooldown_seconds']
+                'cooldown_seconds' => $canvas['cooldown_seconds'],
+                'allow_purchases' => $canvas['allow_purchases'] ?? 1,
+                'allow_chat' => $canvas['allow_chat'] ?? 0,
+                'tags' => isset($canvas['tags']) ? (is_array($canvas['tags']) ? $canvas['tags'] : json_decode($canvas['tags'], true)) : []
             ];
             
             $this->canvasRepository->updateCanvasData($canvasId, $updateData);
 
-            $currentSizeStr = $canvas['size'];
+            $currentSizeStr = (string)($canvas['size'] ?? '0');
+            if ($currentSizeStr === '0') {
+                $currentSizeStr = 'infinite';
+            }
 
             $maxAllowedSize = '64x64'; 
             $maxAllowedArea = 0;
             foreach ($allSizes as $sizeKey => $sizeConfig) {
-                if ($ownerTier >= $sizeConfig['tier']) {
+                if ($sizeKey === 'infinite') continue;
+                if ($ownerTier >= ($sizeConfig['tier'] ?? 0)) {
                     $parts = explode('x', strtolower($sizeKey));
                     $area = ((int)$parts[0]) * ((int)($parts[1] ?? $parts[0]));
                     if ($area > $maxAllowedArea) {
@@ -686,49 +708,53 @@ class CanvasCoreService {
 
             $reqTierForCurrent = $allSizes[$currentSizeStr]['tier'] ?? 0;
             
-            if ($ownerTier < $reqTierForCurrent) {
+            if ($ownerTier < $reqTierForCurrent || $currentSizeStr === 'infinite') {
                 
                 $this->canvasRepository->updateSize($canvasId, $maxAllowedSize);
 
-                $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
-                if ($stateRaw) {
-                    $oldParts = explode('x', strtolower($currentSizeStr));
-                    $oldW = (int)$oldParts[0];
-                    $oldH = isset($oldParts[1]) ? (int)$oldParts[1] : $oldW;
+                $newParts = explode('x', strtolower($maxAllowedSize));
+                $newW = (int)$newParts[0];
+                $newH = isset($newParts[1]) ? (int)$newParts[1] : $newW;
+                $newTotal = $newW * $newH;
+                $newStateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $newTotal);
 
-                    $newParts = explode('x', strtolower($maxAllowedSize));
-                    $newW = (int)$newParts[0];
-                    $newH = isset($newParts[1]) ? (int)$newParts[1] : $newW;
+                if ($currentSizeStr !== 'infinite') {
+                    $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
+                    if ($stateRaw) {
+                        $oldParts = explode('x', strtolower($currentSizeStr));
+                        $oldW = (int)$oldParts[0];
+                        $oldH = isset($oldParts[1]) ? (int)$oldParts[1] : $oldW;
 
-                    $newTotal = $newW * $newH;
-                    // 4 bytes per pixel (RGBA transparent)
-                    $newStateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $newTotal); 
-
-                    if (strlen($stateRaw) == ($oldW * $oldH * 4)) {
-                        $minH = min($oldH, $newH);
-                        $minW = min($oldW, $newW);
-                        for ($y = 0; $y < $minH; $y++) {
-                            $rowBytes = substr($stateRaw, ($y * $oldW) * 4, $minW * 4);
-                            $newStateRaw = substr_replace($newStateRaw, $rowBytes, ($y * $newW) * 4, $minW * 4);
-                        }
-                    } else {
-                        $newStateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $newTotal);
-                    }
-
-                    $this->canvasRepository->saveSnapshot($canvasId, $newStateRaw);
-
-                    try {
-                        if (class_exists(RedisCache::class)) {
-                            $redisInstance = new RedisCache();
-                            $redis = $redisInstance->getClient();
-                            if ($redis) {
-                                $redis->set("canvas:{$canvasId}:state", $newStateRaw);
+                        if (strlen($stateRaw) == ($oldW * $oldH * 4)) {
+                            $minH = min($oldH, $newH);
+                            $minW = min($oldW, $newW);
+                            for ($y = 0; $y < $minH; $y++) {
+                                $rowBytes = substr($stateRaw, ($y * $oldW) * 4, $minW * 4);
+                                $newStateRaw = substr_replace($newStateRaw, $rowBytes, ($y * $newW) * 4, $minW * 4);
                             }
                         }
-                    } catch (Exception $e) {}
+                    }
                 }
 
-                // S3 deletion of thumbnail skipped
+                $this->canvasRepository->saveSnapshot($canvasId, $newStateRaw);
+
+                try {
+                    if (class_exists(RedisCache::class)) {
+                        $redisInstance = new RedisCache();
+                        $redis = $redisInstance->getClient();
+                        if ($redis) {
+                            $redis->set("canvas:{$canvasId}:state", $newStateRaw);
+                        }
+                    }
+                } catch (Exception $e) {}
+            }
+
+            // Re-evaluate user canvases locks to unlock the canvas now that it matches the plan limit
+            try {
+                $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository);
+                $lockManager->evaluateUserCanvases($userId);
+            } catch (\Throwable $e) {
+                Logger::error('Error evaluating canvases on downgrade.', ['error' => $e->getMessage()]);
             }
 
             return ['success' => true, 'message' => __('msg_canvas_downgraded')];
@@ -799,9 +825,12 @@ class CanvasCoreService {
             $user = $this->userRepository->findById($userId);
             if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
 
-            $passwordHash = $user['password_hash'] ?? $user['password'];
-            if (!password_verify($password, $passwordHash)) {
-                return ['success' => false, 'message' => __('err_invalid_password')];
+            $passwordHash = $user['password_hash'] ?? $user['password'] ?? '';
+            $isGoogleUser = !empty($user['google_id']);
+            if (!$isGoogleUser && $password !== 'GOOGLE_OAUTH_CONFIRMED') {
+                if (!password_verify($password, $passwordHash)) {
+                    return ['success' => false, 'message' => __('err_invalid_password')];
+                }
             }
 
             $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);

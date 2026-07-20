@@ -179,7 +179,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function getHomeFeed(?int $userId, string $tagFilter = 'all', int $limit = 20, int $offset = 0): array {
         $params = [];
-        $whereConditions = ["c.is_locked = 0"];
+        $whereConditions = [];
         
         if ($tagFilter !== 'all') {
             $whereConditions[] = "JSON_CONTAINS(c.tags, :tag)";
@@ -190,19 +190,19 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         $joinMemberSql = "";
         if ($userId) {
-            $whereConditions[] = "(c.privacy = 'public' OR c.owner_id = :current_user_id_w1 OR cm_feed.canvas_id IS NOT NULL)";
+            $whereConditions[] = "((c.is_locked = 0 AND (c.privacy = 'public' OR cm_feed.canvas_id IS NOT NULL)) OR c.owner_id = :current_user_id_w1)";
             $params[':current_user_id_w1'] = $userIdParam;
             $joinMemberSql = "LEFT JOIN " . DB::TBL_CANVAS_MEMBERS . " cm_feed ON c.id = cm_feed.canvas_id AND cm_feed.user_id = :current_user_id_member";
             $params[':current_user_id_member'] = $userIdParam;
         } else {
-            $whereConditions[] = "(c.privacy = 'public' OR c.is_official = 1)";
+            $whereConditions[] = "c.is_locked = 0 AND (c.privacy = 'public' OR c.is_official = 1)";
         }
         
         $whereSql = implode(' AND ', $whereConditions);
 
         $orderSql = "ORDER BY c.is_official DESC, c.created_at DESC";
         
-        $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.is_official, c.favorites_count, c.tags,
+        $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.is_official, c.favorites_count, c.tags, c.is_locked, c.locked_reasons,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c

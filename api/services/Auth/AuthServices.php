@@ -213,6 +213,7 @@ class AuthServices {
             'user_flags' => $this->prefsManager->getUserFlags($user['id']),
             'user_2fa' => $user['two_factor_enabled'] ?? 0,
             'user_asn' => $asn,
+            'google_id' => $user['google_id'] ?? null,
             'subscription_tier' => (int)($user['subscription_tier'] ?? 0)
         ];
 

@@ -613,7 +613,7 @@
     "err_missing_required_params":  "Faltan parÃ¡metros requeridos.",
     "err_palette_create_failed":  "Error al crear la paleta.",
     "err_palette_delete_failed":  "Error al eliminar la paleta.",
-    "downgrade_basic_message":  "Acción IRREVERSIBLE. Escribe CONFIRM para proceder.",
+    "downgrade_basic_message": "Acción IRREVERSIBLE. Ingresa tu contraseña actual para confirmar el cambio al plan básico.",
     "must_type_confirm":  "Debes escribir CONFIRM",
     "downgrade_basic_prompt":  "Escribe CONFIRM para cambiar al plan básico.",
     "err_get_data_failed":  "Error al obtener datos.",

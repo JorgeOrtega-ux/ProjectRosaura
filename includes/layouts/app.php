@@ -82,8 +82,27 @@ if (file_exists($palettesPath)) {
 $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts = $_SESSION['accounts'] ?? [];
 $subscriptionTier = 0;
+$isGoogleUser = false;
+$userEmail = '';
+
 if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     $subscriptionTier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
+    $userEmail = $linkedAccounts[$activeAccountId]['user_email'] ?? '';
+    if (!empty($linkedAccounts[$activeAccountId]['google_id'])) {
+        $isGoogleUser = true;
+    } else {
+        try {
+            global $container;
+            if ($container) {
+                $userRepo = $container->get(\App\Core\Interfaces\UserRepositoryInterface::class);
+                $userDb = $userRepo->findById((int)$activeAccountId);
+                if ($userDb && !empty($userDb['google_id'])) {
+                    $isGoogleUser = true;
+                    $_SESSION['accounts'][$activeAccountId]['google_id'] = $userDb['google_id'];
+                }
+            }
+        } catch (\Throwable $e) {}
+    }
 }
 
 $planLimits = SubscriptionPlanConstants::getTierLimits($subscriptionTier);
@@ -141,8 +160,11 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         
 
         window.APP_USER = {
-            subscription_tier: <?php echo $subscriptionTier; ?>
+            subscription_tier: <?php echo $subscriptionTier; ?>,
+            is_google: <?php echo $isGoogleUser ? 'true' : 'false'; ?>,
+            email: <?php echo json_encode($userEmail); ?>
         };
+        console.log("[APP_USER Debug]", window.APP_USER);
         window.APP_LIMITS = <?php echo json_encode($planLimits); ?>;
         window.APP_PRICES = <?php echo json_encode(\App\Core\System\SubscriptionPlanConstants::getTierPrices()); ?>;
 

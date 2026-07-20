@@ -166,6 +166,7 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
+            console.error('[ApiServices error]', error);
             return { success: false, message: window.__('api_connection_error') };
         }
     }
