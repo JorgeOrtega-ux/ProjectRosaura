@@ -1,4 +1,4 @@
-﻿{
+{
     "route_home":  "Inicio",
     "route_explore":  "Explorar colecciones",
     "route_login":  "Iniciar sesiÃ³n",
@@ -1636,5 +1636,7 @@
     "msg_meteor_incoming":  "¡Meteorito en Camino!",
     "msg_camera_centered":  "Cámara centrada en el objetivo",
     "msg_cluster_incoming":  "¡Ataque de Racimo en Camino!",
-    "msg_nuke_incoming":  "¡Bomba Nuclear en Camino!"
+    "msg_nuke_incoming":  "¡Bomba Nuclear en Camino!",
+    "msg_missile_incoming": "¡Misil en Camino!",
+    "msg_bomb_incoming": "¡Bomba en Camino!"
 }

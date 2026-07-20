@@ -148,7 +148,15 @@ class StoreServices {
         try {
             $redisInstance = new \App\Config\Database\RedisCache();
             $redis = $redisInstance->getClient();
-                        if ($perkId === 'no_cooldown_10s') {
+            
+            $perksConfigPath = __DIR__ . '/../../../public/assets/data/perks.json';
+            $perksConfig = [];
+            if (file_exists($perksConfigPath)) {
+                $perksConfig = json_decode(file_get_contents($perksConfigPath), true) ?: [];
+            }
+            $perkType = $perksConfig[$perkId]['type'] ?? '';
+
+            if ($perkId === 'no_cooldown_10s') {
                 $key = "user:{$userId}:perk:no_cooldown";
                 if ($redis->exists($key)) {
                     return ['success' => false, 'message_key' => 'err_perk_already_active'];
@@ -163,7 +171,7 @@ class StoreServices {
                 if ($redis->exists($key) && (int)$redis->get($key) > 0) {
                     return ['success' => false, 'message_key' => 'err_perk_already_active'];
                 }
-            } elseif (in_array($perkId, ['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'])) {
+            } elseif ($perkType === 'bomb') {
                 return ['success' => false, 'message_key' => 'store.bomb_perks_use_direct'];
             }
         } catch (\Throwable $e) {
@@ -177,12 +185,6 @@ class StoreServices {
 
         try {
             if (isset($redis)) {
-                $perksConfigPath = __DIR__ . '/../../../public/assets/data/perks.json';
-                $perksConfig = [];
-                if (file_exists($perksConfigPath)) {
-                    $perksConfig = json_decode(file_get_contents($perksConfigPath), true) ?: [];
-                }
-
                 if ($perkId === 'no_cooldown_10s') {
                     $duration = $perksConfig['no_cooldown_10s']['duration_seconds'] ?? 10;
                     $key = "user:{$userId}:perk:no_cooldown";

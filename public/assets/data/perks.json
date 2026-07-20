@@ -3,31 +3,59 @@
     "id": "no_cooldown_10s",
     "duration_seconds": 10,
     "type": "cooldown_modifier",
-    "amount": 0
+    "amount": 0,
+    "icon": "bolt",
+    "label_key": "perk_no_cooldown",
+    "short_label_key": "perk_no_cooldown",
+    "category": "buff"
   },
   "pixel_protection_25": {
     "id": "pixel_protection_25",
     "duration_seconds": 86400,
     "type": "protection",
-    "amount": 25
+    "amount": 25,
+    "icon": "shield",
+    "label_key": "perk_pixel_prot",
+    "short_label_key": "perk_pixel_prot",
+    "category": "buff"
   },
   "elite_eraser_25": {
     "id": "elite_eraser_25",
     "duration_seconds": 86400,
     "type": "bypass_protection",
-    "amount": 25
+    "amount": 25,
+    "icon": "ink_eraser",
+    "label_key": "perk_elite_eraser",
+    "short_label_key": "perk_elite_eraser",
+    "category": "buff"
   },
   "pixel_misil_1": {
     "id": "pixel_misil_1",
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
+    "icon": "rocket_launch",
+    "label_key": "perk_pixel_missile",
+    "short_label_key": "perk_pixel_missile_short",
+    "warning_icon": "crisis_alert",
+    "warning_label_key": "msg_missile_incoming",
+    "warning_seconds": 3,
+    "category": "bomb",
+    "targets": 1,
     "radii": {
       "64": 2,
       "128": 3,
       "256": 4,
       "512": 6,
       "0": 5
+    },
+    "explosion": {
+      "style": "missile",
+      "duration": 400,
+      "shake_duration": 0,
+      "flash_duration": 0,
+      "screen_shake": false,
+      "screen_flash": false
     }
   },
   "bomba_pixel_1": {
@@ -35,12 +63,28 @@
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
+    "icon": "bomb",
+    "label_key": "perk_pixel_bomb",
+    "short_label_key": "perk_pixel_bomb_short",
+    "warning_icon": "crisis_alert",
+    "warning_label_key": "msg_bomb_incoming",
+    "warning_seconds": 3,
+    "category": "bomb",
+    "targets": 1,
     "radii": {
       "64": 5,
       "128": 8,
       "256": 12,
       "512": 20,
       "0": 15
+    },
+    "explosion": {
+      "style": "medium",
+      "duration": 800,
+      "shake_duration": 0,
+      "flash_duration": 0,
+      "screen_shake": false,
+      "screen_flash": false
     }
   },
   "bomba_atomica_1": {
@@ -48,12 +92,28 @@
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
+    "icon": "crisis_alert",
+    "label_key": "perk_atomic_bomb",
+    "short_label_key": "perk_atomic_bomb_short",
+    "warning_icon": "crisis_alert",
+    "warning_label_key": "msg_nuke_incoming",
+    "warning_seconds": 10,
+    "category": "bomb",
+    "targets": 1,
     "radii": {
       "64": 15,
       "128": 25,
       "256": 40,
       "512": 70,
       "0": 250
+    },
+    "explosion": {
+      "style": "nuclear",
+      "duration": 1500,
+      "shake_duration": 1000,
+      "flash_duration": 1500,
+      "screen_shake": true,
+      "screen_flash": true
     }
   },
   "bomba_racimo_1": {
@@ -61,12 +121,28 @@
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
+    "icon": "scatter_plot",
+    "label_key": "perk_cluster_bomb",
+    "short_label_key": "perk_cluster_bomb_short",
+    "warning_icon": "scatter_plot",
+    "warning_label_key": "msg_cluster_incoming",
+    "warning_seconds": 5,
+    "category": "bomb",
+    "targets": 5,
     "radii": {
       "64": 8,
       "128": 12,
       "256": 18,
       "512": 25,
       "0": 20
+    },
+    "explosion": {
+      "style": "medium",
+      "duration": 800,
+      "shake_duration": 600,
+      "flash_duration": 600,
+      "screen_shake": true,
+      "screen_flash": true
     }
   },
   "lluvia_meteoritos_1": {
@@ -74,12 +150,28 @@
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
+    "icon": "storm",
+    "label_key": "perk_meteor_shower",
+    "short_label_key": "perk_meteor_shower_short",
+    "warning_icon": "storm",
+    "warning_label_key": "msg_meteor_incoming",
+    "warning_seconds": 7,
+    "category": "bomb",
+    "targets": 1,
     "radii": {
       "64": 4,
       "128": 6,
       "256": 10,
       "512": 15,
       "0": 10
+    },
+    "explosion": {
+      "style": "medium",
+      "duration": 800,
+      "shake_duration": 600,
+      "flash_duration": 0,
+      "screen_shake": true,
+      "screen_flash": false
     }
   }
 }

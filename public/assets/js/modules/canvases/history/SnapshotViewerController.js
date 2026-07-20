@@ -1,6 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
+import { PerksRegistry } from '../../app/design/PerksRegistry.js';
 
 class SnapshotViewerController {
     constructor() {
@@ -48,6 +49,7 @@ class SnapshotViewerController {
     }
 
     async init() {
+        await PerksRegistry.load();
         const wrapper = document.querySelector('[data-ref="snapshot-wrapper"]');
         if (wrapper) {
             this.snapshotId = wrapper.getAttribute('data-snapshot-id');
@@ -489,10 +491,10 @@ class SnapshotViewerController {
             maxRadius: r,
             perkId: perkId,
             startTime: Date.now(),
-            duration: perkId === 'bomba_atomica_1' ? 1500 : (['bomba_pixel_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId) ? 800 : 400) 
+            duration: PerksRegistry.getExplosionDuration(perkId)
         });
         
-        if (perkId === 'bomba_atomica_1') {
+        if (PerksRegistry.hasScreenShake(perkId)) {
             if (!document.getElementById('nuclear-style')) {
                 const style = document.createElement('style');
                 style.id = 'nuclear-style';
@@ -521,9 +523,12 @@ class SnapshotViewerController {
                 this.canvas.classList.add('nuclear-shake');
                 setTimeout(() => {
                     this.canvas.classList.remove('nuclear-shake');
-                }, 1000);
+                }, PerksRegistry.getShakeDuration(perkId));
             }
-            
+        }
+        
+        if (PerksRegistry.hasScreenFlash(perkId)) {
+            const flashMs = PerksRegistry.getFlashDuration(perkId);
             const flash = document.createElement('div');
             flash.style.position = 'fixed';
             flash.style.top = '0';
@@ -533,12 +538,12 @@ class SnapshotViewerController {
             flash.style.backgroundColor = 'white';
             flash.style.zIndex = '999999';
             flash.style.pointerEvents = 'none';
-            flash.style.transition = 'opacity 1.5s ease-out';
+            flash.style.transition = `opacity ${flashMs / 1000}s ease-out`;
             document.body.appendChild(flash);
             
             flash.offsetHeight;
             flash.style.opacity = '0';
-            setTimeout(() => flash.remove(), 1500);
+            setTimeout(() => flash.remove(), flashMs);
         }
         
         this.requestRender();
@@ -804,7 +809,9 @@ class SnapshotViewerController {
                 const progress = Math.min(1, elapsed / exp.duration);
                 const opacity = 1 - progress;
                 
-                if (exp.perkId === 'bomba_atomica_1') {
+                const style = PerksRegistry.getExplosionStyle(exp.perkId);
+                
+                if (style === 'nuclear') {
                     const currentRadius = exp.maxRadius * (1 + 2 * progress); 
                     this.ctx.beginPath();
                     this.ctx.arc(exp.x + 0.5, exp.y + 0.5, currentRadius, 0, 2 * Math.PI);
@@ -813,7 +820,7 @@ class SnapshotViewerController {
                     this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.5})`; 
                     this.ctx.fill();
                     this.ctx.stroke();
-                } else if (['bomba_pixel_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(exp.perkId)) {
+                } else if (style === 'medium') {
                     const radius1 = exp.maxRadius * (1 + 1.5 * progress);
                     const radius2 = exp.maxRadius * (0.5 + 1 * progress);
                     

@@ -1,4 +1,5 @@
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
+import { PerksRegistry } from './PerksRegistry.js';
 
 export const DesignRender = {
     renderColorPalette(paletteId) {
@@ -224,7 +225,7 @@ export const DesignRender = {
         if (this.nuclearWarnings && this.nuclearWarnings.length > 0) {
             this.nuclearWarnings.forEach(warning => {
                 this.ctx.beginPath();
-                this.ctx.arc(warning.x + 0.5, warning.y + 0.5, 24, 0, 2 * Math.PI);
+                this.ctx.arc(warning.x + 0.5, warning.y + 0.5, warning.radius, 0, 2 * Math.PI);
                 this.ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
                 this.ctx.fill();
                 this.ctx.lineWidth = 2 / this.transform.scale;
@@ -234,7 +235,7 @@ export const DesignRender = {
                 const timeRatio = (Date.now() - warning.startTime) / (warning.endTime - warning.startTime);
                 if (timeRatio >= 0 && timeRatio <= 1) {
                     this.ctx.beginPath();
-                    this.ctx.arc(warning.x + 0.5, warning.y + 0.5, 24 * (1 - timeRatio), 0, 2 * Math.PI);
+                    this.ctx.arc(warning.x + 0.5, warning.y + 0.5, warning.radius * (1 - timeRatio), 0, 2 * Math.PI);
                     this.ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
                     this.ctx.fill();
                 }
@@ -247,7 +248,9 @@ export const DesignRender = {
                 const progress = Math.min(1, elapsed / exp.duration);
                 const opacity = 1 - progress;
                 
-                if (exp.perkId === 'bomba_atomica_1') {
+                const style = PerksRegistry.getExplosionStyle(exp.perkId);
+                
+                if (style === 'nuclear') {
                     // Nuclear Bomb (r=24)
                     const currentRadius = exp.maxRadius * (1 + 2 * progress); 
                     this.ctx.beginPath();
@@ -257,7 +260,7 @@ export const DesignRender = {
                     this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.5})`; 
                     this.ctx.fill();
                     this.ctx.stroke();
-                } else if (['bomba_pixel_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(exp.perkId)) {
+                } else if (style === 'medium') {
                     // Bomba Pixel (r=4) - Double Ring + Red puff
                     const radius1 = exp.maxRadius * (1 + 1.5 * progress);
                     const radius2 = exp.maxRadius * (0.5 + 1 * progress);

@@ -1007,17 +1007,25 @@ async def handler(websocket):
                             if not targets:
                                 targets = [{"x": cx, "y": cy}]
 
+                            perk_config = get_perks_config().get(perk, {})
+                            warning_duration = perk_config.get("warning_seconds", 0)
+
                             if perk == 'lluvia_meteoritos_1':
                                 import random
+                                import math
                                 new_targets = []
                                 for _ in range(20):
-                                    if width == 0:
-                                        rx = cx + random.randint(-200, 200)
-                                        ry = cy + random.randint(-200, 200)
-                                    else:
-                                        rx = max(0, min(width - 1, cx + random.randint(-int(width/2), int(width/2))))
-                                        ry = max(0, min(width - 1, cy + random.randint(-int(width/2), int(width/2))))
-                                    new_targets.append({"x": rx, "y": ry, "delay": random.uniform(2, 7)})
+                                    max_dist = 200 if width == 0 else int(width/2)
+                                    angle = random.uniform(0, 2 * math.pi)
+                                    radial_r = max_dist * math.sqrt(random.uniform(0.05, 1.0))
+                                    
+                                    rx = int(cx + radial_r * math.cos(angle))
+                                    ry = int(cy + radial_r * math.sin(angle))
+                                    
+                                    if width != 0:
+                                        rx = max(0, min(width - 1, rx))
+                                        ry = max(0, min(width - 1, ry))
+                                    new_targets.append({"x": rx, "y": ry, "delay": warning_duration + random.uniform(0, 5)})
                                 
                                 clients_in_room = ROOMS.get(canvas_id, set())
                                 for t in new_targets:
@@ -1025,8 +1033,9 @@ async def handler(websocket):
                                         "type": "nuclear_warning",
                                         "x": t["x"],
                                         "y": t["y"],
-                                        "duration": t["delay"],
-                                        "perk": perk
+                                        "duration": warning_duration,
+                                        "perk": perk,
+                                        "radius": radius
                                     })
                                     if len(clients_in_room) > 0:
                                         tasks = [asyncio.create_task(client.send(warning_msg)) for client in clients_in_room]
@@ -1043,29 +1052,31 @@ async def handler(websocket):
                                         "type": "nuclear_warning",
                                         "x": tx,
                                         "y": ty,
-                                        "duration": 5,
-                                        "perk": perk
+                                        "duration": warning_duration,
+                                        "perk": perk,
+                                        "radius": radius
                                     })
                                     if len(clients_in_room) > 0:
                                         tasks = [asyncio.create_task(client.send(warning_msg)) for client in clients_in_room]
                                         await asyncio.gather(*tasks)
                                     await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": warning_msg}))
-                                    asyncio.create_task(execute_explosion(tx, ty, radius, 5))
+                                    asyncio.create_task(execute_explosion(tx, ty, radius, warning_duration))
 
-                            elif perk == 'bomba_atomica_1':
+                            elif warning_duration > 0:
                                 warning_msg = json.dumps({
                                     "type": "nuclear_warning",
                                     "x": cx,
                                     "y": cy,
-                                    "duration": 10,
-                                    "perk": perk
+                                    "duration": warning_duration,
+                                    "perk": perk,
+                                    "radius": radius
                                 })
                                 clients_in_room = ROOMS.get(canvas_id, set())
                                 if len(clients_in_room) > 0:
                                     tasks = [asyncio.create_task(client.send(warning_msg)) for client in clients_in_room]
                                     await asyncio.gather(*tasks)
                                 await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": warning_msg}))
-                                asyncio.create_task(execute_explosion(cx, cy, radius, 10))
+                                asyncio.create_task(execute_explosion(cx, cy, radius, warning_duration))
 
                             else:
                                 asyncio.create_task(execute_explosion(cx, cy, radius, 0))

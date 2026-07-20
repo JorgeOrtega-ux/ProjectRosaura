@@ -5,6 +5,7 @@ import { DesignNetwork } from './DesignNetwork.js';
 import { DesignTemplates } from './templates/DesignTemplates.js';
 import { DesignInteractions } from './DesignInteractions.js';
 import { DesignRender } from './DesignRender.js';
+import { PerksRegistry } from './PerksRegistry.js';
 import { DesignChat } from './DesignChat.js';
 
 class DesignController {
@@ -136,7 +137,8 @@ class DesignController {
         }
     }
 
-    init() {
+    async init() {
+        await PerksRegistry.load();
         this.abortController = new AbortController();
         
         this.canvas = document.querySelector('[data-ref="design-canvas"]');
@@ -276,15 +278,8 @@ class DesignController {
                             <span>${this.perkEraserLeft}/${maxEraser}</span>
                         `;
                     } else if (this.interactionMode === 'bombing' && this.activeBomb) {
-                        const icons = {
-                            'pixel_misil_1': 'rocket_launch',
-                            'bomba_pixel_1': 'bomb',
-                            'bomba_atomica_1': 'crisis_alert',
-                            'bomba_racimo_1': 'scatter_plot',
-                            'lluvia_meteoritos_1': 'storm'
-                        };
-                        const icon = icons[this.activeBomb] || 'bomb';
-                        const targetMax = this.activeBomb === 'bomba_racimo_1' ? 5 : 1;
+                        const icon = PerksRegistry.getIcon(this.activeBomb);
+                        const targetMax = PerksRegistry.getTargetCount(this.activeBomb);
                         const currentSel = this.selectedPixels ? this.selectedPixels.size : 0;
                         newHtml = `
                             <span class="material-symbols-rounded">${icon}</span>

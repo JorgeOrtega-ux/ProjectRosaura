@@ -1,5 +1,6 @@
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
+import { PerksRegistry } from './PerksRegistry.js';
 
 export const DesignInteractions = {
     bindEvents() {
@@ -972,19 +973,7 @@ export const DesignInteractions = {
             } else if (this.interactionMode === 'erasing') {
                 this.txtPlacePixels.textContent = `${window.__('erase')} (${this.selectedPixels.size})`;
             } else if (this.interactionMode === 'bombing') {
-                if (this.activeBomb === 'pixel_misil_1') {
-                    this.txtPlacePixels.textContent = window.__('btn_launch_missile');
-                } else if (this.activeBomb === 'bomba_pixel_1') {
-                    this.txtPlacePixels.textContent = window.__('btn_launch_bomb');
-                } else if (this.activeBomb === 'bomba_atomica_1') {
-                    this.txtPlacePixels.textContent = window.__('btn_launch_nuclear');
-                } else if (this.activeBomb === 'bomba_racimo_1') {
-                    this.txtPlacePixels.textContent = window.__('btn_launch_cluster');
-                } else if (this.activeBomb === 'lluvia_meteoritos_1') {
-                    this.txtPlacePixels.textContent = window.__('btn_launch_meteor');
-                } else {
-                    this.txtPlacePixels.textContent = window.__('btn_launch');
-                }
+                this.txtPlacePixels.textContent = PerksRegistry.getBombButtonLabel(this.activeBomb);
             } else {
                 this.txtPlacePixels.textContent = window.__('btn_place_pixels');
             }
@@ -1186,11 +1175,10 @@ export const DesignInteractions = {
             maxRadius: r,
             perkId: perkId,
             startTime: Date.now(),
-            duration: perkId === 'bomba_atomica_1' ? 1500 : (perkId === 'bomba_pixel_1' ? 800 : 400) 
+            duration: PerksRegistry.getExplosionDuration(perkId)
         });
         
-        const isHeavyExplosion = ['bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId);
-        if (isHeavyExplosion) {
+        if (PerksRegistry.hasScreenShake(perkId)) {
             if (!document.getElementById('nuclear-style')) {
                 const style = document.createElement('style');
                 style.id = 'nuclear-style';
@@ -1217,31 +1205,28 @@ export const DesignInteractions = {
             
             if (this.canvas) {
                 this.canvas.classList.add('nuclear-shake');
-                const shakeDuration = perkId === 'bomba_atomica_1' ? 1000 : 600;
                 setTimeout(() => {
                     this.canvas.classList.remove('nuclear-shake');
-                }, shakeDuration);
+                }, PerksRegistry.getShakeDuration(perkId));
             }
-            
-            if (perkId === 'bomba_atomica_1' || perkId === 'bomba_racimo_1') {
-                const flash = document.createElement('div');
-                flash.style.position = 'fixed';
-                flash.style.top = '0';
-                flash.style.left = '0';
-                flash.style.width = '100vw';
-                flash.style.height = '100vh';
-                flash.style.backgroundColor = 'white';
-                flash.style.zIndex = '999999';
-                flash.style.pointerEvents = 'none';
-                
-                const flashDuration = perkId === 'bomba_atomica_1' ? '1.5s' : '0.6s';
-                flash.style.transition = `opacity ${flashDuration} ease-out`;
-                document.body.appendChild(flash);
-                
-                flash.offsetHeight;
-                flash.style.opacity = '0';
-                setTimeout(() => flash.remove(), perkId === 'bomba_atomica_1' ? 1500 : 600);
-            }
+        }
+        
+        if (PerksRegistry.hasScreenFlash(perkId)) {
+            const flashMs = PerksRegistry.getFlashDuration(perkId);
+            const flash = document.createElement('div');
+            flash.style.position = 'fixed';
+            flash.style.top = '0';
+            flash.style.left = '0';
+            flash.style.width = '100vw';
+            flash.style.height = '100vh';
+            flash.style.backgroundColor = 'white';
+            flash.style.zIndex = '999999';
+            flash.style.pointerEvents = 'none';
+            flash.style.transition = `opacity ${flashMs / 1000}s ease-out`;
+            document.body.appendChild(flash);
+            flash.offsetHeight;
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), flashMs);
         }
         
         if (!this.isExplosionLoopRunning) {
@@ -1266,6 +1251,7 @@ export const DesignInteractions = {
             x: parseInt(data.x, 10),
             y: parseInt(data.y, 10),
             duration: parseInt(data.duration, 10),
+            radius: parseInt(data.radius || 24, 10),
             perk: perkId,
             startTime: Date.now(),
             endTime: Date.now() + (parseInt(data.duration, 10) * 1000)
@@ -1316,26 +1302,28 @@ export const DesignInteractions = {
             }
         });
 
-        const getWarningDetails = (perk) => {
-            if (perk === 'bomba_racimo_1') return { icon: 'scatter_plot', text: window.__('msg_cluster_incoming') };
-            if (perk === 'lluvia_meteoritos_1') return { icon: 'storm', text: window.__('msg_meteor_incoming') };
-            return { icon: 'crisis_alert', text: window.__('msg_nuke_incoming') };
-        };
+        const getWarningDetails = (perk) => PerksRegistry.getWarningDetails(perk);
 
         const animateWarning = () => {
             const activeForPerk = this.nuclearWarnings.filter(w => w.perk === perkId);
             if (activeForPerk.length > 0) {
                 this.requestRender();
                 
-                const maxEndTime = Math.max(...activeForPerk.map(w => w.endTime));
-                const remaining = Math.max(0, Math.ceil((maxEndTime - Date.now()) / 1000));
+                const minEndTime = Math.min(...activeForPerk.map(w => w.endTime));
+                const remaining = Math.max(0, Math.ceil((minEndTime - Date.now()) / 1000));
                 const details = getWarningDetails(perkId);
-                badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
+                
+                if (remaining > 0) {
+                    badge.style.display = 'flex';
+                    badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
+                } else {
+                    badge.style.display = 'none';
+                }
                 
                 const now = Date.now();
                 this.nuclearWarnings = this.nuclearWarnings.filter(w => now < w.endTime);
                 
-                if (remaining > 0 && this.nuclearWarnings.some(w => w.perk === perkId)) {
+                if (this.nuclearWarnings.some(w => w.perk === perkId)) {
                     requestAnimationFrame(animateWarning);
                 } else {
                     badge.remove();
@@ -1392,7 +1380,7 @@ export const DesignInteractions = {
             return;
         }
 
-        if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId)) {
+        if (PerksRegistry.isBomb(perkId)) {
             const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
             const count = owned ? parseInt(owned.count, 10) : 0;
             if (count <= 0) {
@@ -1475,34 +1463,13 @@ export const DesignInteractions = {
 
         badgesRight.innerHTML = ''; 
 
-        const PERK_ORDER = ['no_cooldown_10s', 'pixel_protection_25', 'elite_eraser_25', 'pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'];
-
-        const titles = {
-            'no_cooldown_10s': window.__('perk_no_cooldown'),
-            'pixel_protection_25': window.__('perk_pixel_prot'),
-            'elite_eraser_25': window.__('perk_elite_eraser'),
-            'pixel_misil_1': window.__('perk_pixel_missile'),
-            'bomba_pixel_1': window.__('perk_pixel_bomb'),
-            'bomba_atomica_1': window.__('perk_atomic_bomb'),
-            'bomba_racimo_1': window.__('perk_cluster_bomb'),
-            'lluvia_meteoritos_1': window.__('perk_meteor_shower')
-        };
-        const icons = {
-            'no_cooldown_10s': 'bolt',
-            'pixel_protection_25': 'shield',
-            'elite_eraser_25': 'ink_eraser',
-            'pixel_misil_1': 'rocket_launch',
-            'bomba_pixel_1': 'bomb',
-            'bomba_atomica_1': 'crisis_alert',
-            'bomba_racimo_1': 'scatter_plot',
-            'lluvia_meteoritos_1': 'storm'
-        };
+        const PERK_ORDER = PerksRegistry.getDisplayOrder();
 
         PERK_ORDER.forEach(perkId => {
             let isActive = false;
             let activeHtml = '';
             let isToggledOn = false;
-            let icon = icons[perkId] || 'stars';
+            let icon = PerksRegistry.getIcon(perkId);
             let clickHandler = null;
 
             if (perkId === 'no_cooldown_10s') {
@@ -1517,7 +1484,7 @@ export const DesignInteractions = {
                     if (totalAmount > 0) {
                         isActive = true;
                         isToggledOn = false;
-                        const titleText = titles[perkId] || perkId;
+                        const titleText = PerksRegistry.getLabel(perkId);
                         activeHtml = `<span class="material-symbols-rounded component-text-secondary">${icon}</span><span>${titleText} (${totalAmount})</span>`;
                         clickHandler = (e) => {
                             this.activatePerk('no_cooldown_10s', e.currentTarget);
@@ -1532,7 +1499,8 @@ export const DesignInteractions = {
                     isActive = true;
                     isToggledOn = this.interactionMode === 'protecting';
                     const colorClass = isToggledOn ? 'component-text-success' : '';
-                    const left = this.perkProtectionLeft > 0 ? this.perkProtectionLeft : 25;
+                    const perkAmount = PerksRegistry.get('pixel_protection_25')?.amount || 25;
+                    const left = this.perkProtectionLeft > 0 ? this.perkProtectionLeft : perkAmount;
                     activeHtml = `<span class="material-symbols-rounded ${colorClass}">${icon}</span><span>${window.__('badge_protection')}: ${left}</span>`;
                     clickHandler = () => {
                         this.activatePerk('pixel_protection_25');
@@ -1546,14 +1514,15 @@ export const DesignInteractions = {
                     isActive = true;
                     isToggledOn = this.interactionMode === 'erasing';
                     const colorClass = isToggledOn ? 'component-text-success' : 'component-text-danger';
-                    const left = this.perkEraserLeft > 0 ? this.perkEraserLeft : 25;
+                    const perkAmount = PerksRegistry.get('elite_eraser_25')?.amount || 25;
+                    const left = this.perkEraserLeft > 0 ? this.perkEraserLeft : perkAmount;
                     activeHtml = `<span class="material-symbols-rounded ${colorClass}">${icon}</span><span>${window.__('badge_eraser')}: ${left}</span>`;
                     clickHandler = () => {
                         this.activatePerk('elite_eraser_25');
                     };
                 }
             }
-            else if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId)) {
+            else if (PerksRegistry.isBomb(perkId)) {
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 const totalAmount = owned ? parseInt(owned.count, 10) : 0;
                 
@@ -1561,11 +1530,7 @@ export const DesignInteractions = {
                 
                 if (isActive) {
                     isToggledOn = true;
-                    let shortLabel = window.__('perk_atomic_bomb_short') || window.__('perk_atomic_bomb');
-                    if (perkId === 'pixel_misil_1') shortLabel = window.__('perk_pixel_missile_short') || window.__('perk_pixel_missile');
-                    else if (perkId === 'bomba_pixel_1') shortLabel = window.__('perk_pixel_bomb_short') || window.__('perk_pixel_bomb');
-                    else if (perkId === 'bomba_racimo_1') shortLabel = window.__('perk_cluster_bomb_short') || window.__('perk_cluster_bomb');
-                    else if (perkId === 'lluvia_meteoritos_1') shortLabel = window.__('perk_meteor_shower_short') || window.__('perk_meteor_shower');
+                    const shortLabel = PerksRegistry.getShortLabel(perkId);
                     activeHtml = `<span class="material-symbols-rounded component-text-danger">${icon}</span><span>${shortLabel} (${totalAmount})</span>`;
                     clickHandler = () => {
                         this.interactionMode = 'normal';
@@ -1577,7 +1542,7 @@ export const DesignInteractions = {
                 } else if (totalAmount > 0 && this.showInventoryPerks) {
                     isActive = true; 
                     isToggledOn = false;
-                    const titleText = titles[perkId] || perkId;
+                    const titleText = PerksRegistry.getLabel(perkId);
                     activeHtml = `<span class="material-symbols-rounded component-text-secondary">${icon}</span><span>${titleText} (${totalAmount})</span>`;
                     clickHandler = () => {
                         this.activatePerk(perkId);
@@ -1593,7 +1558,7 @@ export const DesignInteractions = {
                 badge.style.cursor = 'pointer';
                 badge.innerHTML = activeHtml;
                 if (isToggledOn) {
-                    if (['pixel_misil_1', 'bomba_pixel_1', 'bomba_atomica_1', 'bomba_racimo_1', 'lluvia_meteoritos_1'].includes(perkId)) {
+                    if (PerksRegistry.isBomb(perkId)) {
                         badge.style.border = '1px solid var(--color-error)';
                         badge.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
                     } else {
@@ -1608,7 +1573,7 @@ export const DesignInteractions = {
                 const badge = document.createElement('div');
                 badge.className = 'component-badge inventory-badge-temp';
                 badge.style.cursor = 'pointer';
-                const titleText = titles[perkId] || perkId;
+                const titleText = PerksRegistry.getLabel(perkId);
                 badge.innerHTML = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${invItem.count})</span>`;
                 badge.addEventListener('click', () => {
                     this.activatePerk(perkId, badge);
