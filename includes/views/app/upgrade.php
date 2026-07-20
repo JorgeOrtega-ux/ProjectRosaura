@@ -33,7 +33,7 @@ $ultraYearly  = number_format($prices[3]['yearly'] / 12, 2);
     
     <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title"><?php echo __('premium_page_title'); ?>&nbsp;<span class="component-text-gradient-blue">Gemini AI</span></h1>
+            <h1 class="component-top-title"><?php echo __('premium_page_title'); ?>&nbsp;<span class="component-text-gradient-blue">ProjectRosaura</span></h1>
         </div>
         <div class="component-top-right">
         </div>
@@ -45,13 +45,13 @@ $ultraYearly  = number_format($prices[3]['yearly'] / 12, 2);
 
                 <!-- Header Libre sin bordes -->
                 <div class="component-page-intro">
-                    <h1 class="component-page-intro__title"><?php echo __('premium_page_title'); ?>&nbsp;<span class="component-text-gradient-blue">Gemini AI</span></h1>
+                    <h1 class="component-page-intro__title"><?php echo __('premium_page_title'); ?>&nbsp;<span class="component-text-gradient-blue">ProjectRosaura</span></h1>
                     <p class="component-page-intro__desc"><?php echo __('premium_page_desc'); ?></p>
 
                     <div class="component-toggle-group" id="billingToggle">
                         <div class="component-toggle-group__wrapper">
-                            <button type="button" class="component-button component-button--dark component-button--rounded-pill component-button--h40 component-toggle-group__button" id="lblMonthly"><?php echo __('premium_billing_monthly'); ?></button>
-                            <button type="button" class="component-button component-button--ghost component-button--rounded-pill component-button--h40 component-toggle-group__button component-text-notice--muted" id="lblYearly"><?php echo __('premium_billing_yearly'); ?></button>
+                            <button type="button" class="component-button component-button--dark component-button--rounded-pill component-button--h40 component-toggle-group__button component-toggle-group__button--w145" id="lblMonthly"><?php echo __('premium_billing_monthly'); ?></button>
+                            <button type="button" class="component-button component-button--ghost component-button--rounded-pill component-button--h40 component-toggle-group__button component-toggle-group__button--w145 component-text-notice--muted" id="lblYearly"><?php echo __('premium_billing_yearly'); ?></button>
                         </div>
                         <input type="checkbox" id="billingCheckboxToggle" autocomplete="off" hidden>
                     </div>
@@ -222,7 +222,6 @@ $ultraYearly  = number_format($prices[3]['yearly'] / 12, 2);
                         
                         <div class="component-plan-card__header">
                             <div>
-                                <span class="component-plan-card__tag component-text-gradient-purple"><?php echo __('premium_badge_top'); ?></span>
                                 <h2 class="component-plan-card__title"><?php echo __('premium_plan_ultra'); ?></h2>
                             </div>
                             <p class="component-plan-card__desc"><?php echo __('premium_desc_ultra'); ?></p>

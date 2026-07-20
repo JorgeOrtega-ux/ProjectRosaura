@@ -1,4 +1,4 @@
-﻿.component-layout-centered {
+.component-layout-centered {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1593,6 +1593,7 @@ html.dark-theme .component-menu-header.shadow {
     border: none;
     background: transparent;
     text-align: left;
+    min-width: 0;
 }
 
 .component-menu-link:hover,
@@ -1630,6 +1631,10 @@ html.dark-theme .component-menu-header.shadow {
     font-size: 0.75rem;
     font-weight: 500;
     min-width: 0; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 8px;
 }
 
 .component-menu-link-text span {
@@ -4529,11 +4534,11 @@ html.dark-theme .component-skeleton::after {
 .component-page-intro__title { font-size: 2rem; font-weight: 700; line-height: 1.2; }
 .component-page-intro__desc { font-size: 0.65rem; color: var(--text-secondary); margin-top: 24px; margin-bottom: 24px; }
 
-.component-plan-card__header { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
-.component-plan-card__tag { font-size: 0.65rem; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 2px; }
+.component-plan-card__header { display: flex; flex-direction: column; margin-bottom: 16px; }
+.component-plan-card__tag { font-size: 0.85rem; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 2px; }
 .component-plan-card__title { font-size: 1.3rem; font-weight: 500; margin: 0; }
 .component-plan-card__desc { font-size: 0.65rem; color: var(--text-secondary); margin-top: 6px; }
-.component-plan-card__storage { margin-top: 12px; display: flex; }
+.component-plan-card__storage { margin-top: 12px; margin-bottom: 12px; display: flex; }
 
 .component-plan-card__body { display: flex; flex-direction: column; gap: 16px; flex: 1; }
 .component-plan-card__price-section { margin-top: 8px; }
@@ -4599,6 +4604,7 @@ html.dark-theme .component-skeleton::after {
 .component-toggle-group__wrapper { display: inline-flex; align-items: center; background: var(--bg-secondary); border-radius: 100px; padding: 4px; gap: 4px; }
 .component-toggle-group__button { padding: 6px 32px !important; }
 .component-toggle-group__button { border-radius: 100px; }
+.component-toggle-group__button--w145 { width: 145px; min-width: 145px; justify-content: center; }
 .component-discount-note { text-align: center; color: var(--color-success, #10b981); font-weight: 700; font-size: 0.75rem; margin-bottom: 32px; }
 .component-text-gradient-blue {
     background: linear-gradient(135deg, #1a73e8 0%, #4285f4 50%, #8ab4f8 100%);

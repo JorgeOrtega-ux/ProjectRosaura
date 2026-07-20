@@ -227,6 +227,17 @@ class StripeServices {
             return ['success' => false, 'message_key' => 'stripe.invalid_coin_amount'];
         }
 
+        try {
+            $redisInstance = new \App\Config\Database\RedisCache();
+            $redisClient = $redisInstance->getClient();
+            if ($redisClient) {
+                $lockKey = "user_lock:stripe_coin:{$userId}";
+                if (!$redisClient->set($lockKey, "1", ['NX', 'EX' => 2])) {
+                    return ['success' => false, 'message_key' => 'error.too_many_requests'];
+                }
+            }
+        } catch (\Throwable $e) {}
+
         $priceId = $coinPrices[$coinsAmount];
         \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
 

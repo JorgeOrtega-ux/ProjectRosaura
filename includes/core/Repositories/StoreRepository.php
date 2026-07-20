@@ -61,22 +61,94 @@ class StoreRepository implements StoreRepositoryInterface {
         return (bool) $stmt->fetch(\PDO::FETCH_ASSOC);
     }
 
-    public function createStorePurchaseRecord(array $data): bool {
-        $stmt = $this->db->prepare("
-            INSERT INTO store_purchases 
-            (user_id, stripe_payment_intent_id, stripe_checkout_session_id, item_type, item_amount, amount_cents, currency, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        return $stmt->execute([
-            $data['user_id'],
-            $data['stripe_payment_intent_id'] ?? null,
-            $data['stripe_checkout_session_id'] ?? null,
-            $data['item_type'],
-            $data['item_amount'],
-            $data['amount_cents'],
-            $data['currency'] ?? 'usd',
-            $data['status'] ?? 'pending'
-        ]);
+    public function processCoinPurchaseSession(array $data): bool {
+        $sessionId = $data['stripe_checkout_session_id'] ?? null;
+        if (!$sessionId) return false;
+
+        try {
+            $this->db->beginTransaction();
+
+            if ($this->hasProcessedStripeSession($sessionId)) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $stmt = $this->db->prepare("
+                INSERT INTO store_purchases 
+                (user_id, stripe_payment_intent_id, stripe_checkout_session_id, item_type, item_amount, amount_cents, currency, status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $data['user_id'],
+                $data['stripe_payment_intent_id'] ?? null,
+                $sessionId,
+                $data['item_type'],
+                $data['item_amount'],
+                $data['amount_cents'],
+                $data['currency'] ?? 'usd',
+                $data['status'] ?? 'succeeded'
+            ]);
+
+            $stmtAdd = $this->db->prepare("UPDATE users SET coins = coins + ? WHERE id = ?");
+            $stmtAdd->execute([$data['item_amount'], $data['user_id']]);
+
+            $this->db->commit();
+
+            if ($this->redisClient) {
+                $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $data['user_id']);
+            }
+            return true;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            \App\Core\System\Logger::error("Error procesando compra de monedas: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function purchasePerkAtomic(int $userId, string $perkId, int $price): array {
+        try {
+            $this->db->beginTransaction();
+
+            $stmt = $this->db->prepare("SELECT coins FROM users WHERE id = ? FOR UPDATE");
+            $stmt->execute([$userId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $currentCoins = $row ? (int)$row['coins'] : 0;
+
+            if ($currentCoins < $price) {
+                $this->db->rollBack();
+                return ['success' => false, 'message_key' => 'store.insufficient_coins'];
+            }
+
+            $deductStmt = $this->db->prepare("UPDATE users SET coins = coins - ? WHERE id = ? AND coins >= ?");
+            $deductStmt->execute([$price, $userId, $price]);
+            if ($deductStmt->rowCount() === 0) {
+                $this->db->rollBack();
+                return ['success' => false, 'message_key' => 'store.insufficient_coins'];
+            }
+
+            $perkStmt = $this->db->prepare("INSERT INTO user_perks (user_id, perk_id, coins_spent) VALUES (?, ?, ?)");
+            $perkStmt->execute([$userId, $perkId, $price]);
+
+            $this->db->commit();
+
+            if ($this->redisClient) {
+                $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+            }
+
+            return [
+                'success' => true,
+                'message_key' => 'store.perk_purchased',
+                'new_balance' => $currentCoins - $price
+            ];
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            \App\Core\System\Logger::error("Error atómico en purchasePerkAtomic: " . $e->getMessage());
+            return ['success' => false, 'message_key' => 'store.purchase_failed'];
+        }
     }
 
     public function addPerkToUser(int $userId, string $perkId, int $coinsSpent = 0): bool {
@@ -106,43 +178,23 @@ class StoreRepository implements StoreRepositoryInterface {
 
     public function markPerkAsUsed(int $userId, string $perkId): bool {
         $stmt = $this->db->prepare("
-            SELECT id FROM user_perks 
+            UPDATE user_perks 
+            SET is_used = 1, used_at = NOW() 
             WHERE user_id = ? AND perk_id = ? AND is_used = 0 
             ORDER BY created_at ASC LIMIT 1
         ");
         $stmt->execute([$userId, $perkId]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        if ($row) {
-            $updateStmt = $this->db->prepare("
-                UPDATE user_perks 
-                SET is_used = 1, used_at = NOW() 
-                WHERE id = ? AND is_used = 0
-            ");
-            $updateStmt->execute([$row['id']]);
-            return $updateStmt->rowCount() > 0;
-        }
-        return false;
+        return $stmt->rowCount() > 0;
     }
 
     public function refundPerk(int $userId, string $perkId): bool {
         $stmt = $this->db->prepare("
-            SELECT id FROM user_perks 
+            UPDATE user_perks 
+            SET is_used = 0, used_at = NULL 
             WHERE user_id = ? AND perk_id = ? AND is_used = 1 
             ORDER BY used_at DESC LIMIT 1
         ");
         $stmt->execute([$userId, $perkId]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        if ($row) {
-            $updateStmt = $this->db->prepare("
-                UPDATE user_perks 
-                SET is_used = 0, used_at = NULL 
-                WHERE id = ? AND is_used = 1
-            ");
-            $updateStmt->execute([$row['id']]);
-            return $updateStmt->rowCount() > 0;
-        }
-        return false;
+        return $stmt->rowCount() > 0;
     }
 }

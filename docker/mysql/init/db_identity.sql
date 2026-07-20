@@ -325,6 +325,7 @@ CREATE TABLE IF NOT EXISTS `store_purchases` (
   `status` ENUM('succeeded', 'pending', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_store_purchases_user (`user_id`),
+  UNIQUE INDEX idx_store_purchases_session (`stripe_checkout_session_id`),
   CONSTRAINT fk_store_purchases_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

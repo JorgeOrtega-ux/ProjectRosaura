@@ -44,15 +44,24 @@ class StoreServices {
 
         $idempotencyKey = $input['idempotency_key'] ?? '';
         $redisClient = null;
-        if (!empty($idempotencyKey)) {
-            try {
-                $redisInstance = new \App\Config\Database\RedisCache();
-                $redisClient = $redisInstance->getClient();
+        try {
+            $redisInstance = new \App\Config\Database\RedisCache();
+            $redisClient = $redisInstance->getClient();
+        } catch (\Throwable $e) {
+            Logger::error("Redis Cache Error en buyPerk: " . $e->getMessage());
+        }
+
+        if ($redisClient) {
+            // User concurrency lock for 3 seconds to prevent rapid automated clicks
+            $userLockKey = "user_lock:buy_perk:{$userId}";
+            if (!$redisClient->set($userLockKey, "1", ['NX', 'EX' => 3])) {
+                return ['success' => false, 'message_key' => 'error.too_many_requests'];
+            }
+
+            if (!empty($idempotencyKey)) {
                 $lockKey = "idem:buy_perk:{$userId}:{$idempotencyKey}";
-                // Lock for 1 hour to prevent duplicate clicks
                 if (!$redisClient->setnx($lockKey, "1")) {
                     Logger::info("Idempotent hit blocked in buyPerk", ['user_id' => $userId, 'key' => $idempotencyKey]);
-                    // Return a fake success so the UI doesn't crash on duplicate clicks
                     return [
                         'success' => true,
                         'message_key' => 'store.perk_purchased',
@@ -60,36 +69,21 @@ class StoreServices {
                     ];
                 }
                 $redisClient->expire($lockKey, 3600);
-            } catch (\Throwable $e) {
-                Logger::error("Redis Error en idempotencia: " . $e->getMessage());
             }
         }
 
         $price = self::PERK_PRICES[$perkId];
-        $currentCoins = $this->storeRepo->getCoins($userId);
+        $result = $this->storeRepo->purchasePerkAtomic($userId, $perkId, $price);
 
-        if ($currentCoins < $price) {
-            return ['success' => false, 'message_key' => 'store.insufficient_coins'];
-        }
-
-        if ($this->storeRepo->deductCoins($userId, $price)) {
-            
-            $this->storeRepo->addPerkToUser($userId, $perkId, $price);
-            
-            Logger::info("User bought perk", [
+        if ($result['success']) {
+            Logger::info("User bought perk atomically", [
                 'user_id' => $userId,
                 'perk_id' => $perkId,
                 'price' => $price
             ]);
-
-            return [
-                'success' => true,
-                'message_key' => 'store.perk_purchased',
-                'new_balance' => $currentCoins - $price
-            ];
         }
 
-        return ['success' => false, 'message_key' => 'store.purchase_failed'];
+        return $result;
     }
 
     public function getBalance(array $input): array {

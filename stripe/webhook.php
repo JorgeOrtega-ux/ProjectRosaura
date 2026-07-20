@@ -58,17 +58,11 @@ try {
             $metadata = $session->metadata;
 
             if (isset($metadata->type) && $metadata->type === 'coins') {
-                if ($storeRepo->hasProcessedStripeSession($session->id)) {
-                    Logger::info("Stripe webhook: ignoring duplicate session", ['session_id' => $session->id]);
-                    break;
-                }
-
                 $userId = isset($metadata->user_id) ? (int) $metadata->user_id : 0;
                 $amountCoins = isset($metadata->amount) ? (int) $metadata->amount : 0;
 
                 if ($userId > 0 && $amountCoins > 0) {
-                    $storeRepo->addCoins($userId, $amountCoins);
-                    $storeRepo->createStorePurchaseRecord([
+                    $processed = $storeRepo->processCoinPurchaseSession([
                         'user_id' => $userId,
                         'stripe_payment_intent_id' => $session->payment_intent ?? null,
                         'stripe_checkout_session_id' => $session->id,
@@ -79,17 +73,20 @@ try {
                         'status' => 'succeeded'
                     ]);
 
-                    $subRepo->createPaymentRecord([
-                        'user_id' => $userId,
-                        'stripe_payment_intent_id' => $session->payment_intent ?? null,
-                        'stripe_invoice_id' => null,
-                        'amount_cents' => $session->amount_total ?? 0,
-                        'currency' => strtolower($session->currency ?? 'usd'),
-                        'description' => "Purchase of {$amountCoins} coins",
-                        'status' => 'succeeded'
-                    ]);
-
-                    Logger::info("Stripe webhook: coins purchased", ['user_id' => $userId, 'coins' => $amountCoins]);
+                    if ($processed) {
+                        $subRepo->createPaymentRecord([
+                            'user_id' => $userId,
+                            'stripe_payment_intent_id' => $session->payment_intent ?? null,
+                            'stripe_invoice_id' => null,
+                            'amount_cents' => $session->amount_total ?? 0,
+                            'currency' => strtolower($session->currency ?? 'usd'),
+                            'description' => "Purchase of {$amountCoins} coins",
+                            'status' => 'succeeded'
+                        ]);
+                        Logger::info("Stripe webhook: coins purchased successfully", ['user_id' => $userId, 'coins' => $amountCoins, 'session_id' => $session->id]);
+                    } else {
+                        Logger::info("Stripe webhook: ignoring duplicate or failed coin session", ['session_id' => $session->id]);
+                    }
                 }
                 break;
             }
