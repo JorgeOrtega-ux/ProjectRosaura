@@ -131,6 +131,15 @@ def process_resize_task(r, db, task_data):
             """, (canvas_id, compressed_state, compressed_state))
             db.commit()
 
+        stream_key = f"canvas:{canvas_id}:stream"
+        r.xadd(stream_key, {
+            "type": "canvas_resize",
+            "old_size": f"{old_w}x{old_h}",
+            "new_size": f"{new_w}x{new_h}",
+            "w": str(new_w),
+            "h": str(new_h)
+        })
+
         r.delete(f"canvas:{canvas_id}:resize_lock")
         r.publish("admin:canvas_events", json.dumps({
             "type": "canvas_resize_completed", "canvas_id": canvas_id, "new_size": new_size_db_str
@@ -226,6 +235,13 @@ def process_reset_task(r, db, task_data):
             except Exception as e:
                 logging.error(f"Could not delete public image {canvas_id}: {e}")
         
+        stream_key = f"canvas:{canvas_id}:stream"
+        r.xadd(stream_key, {
+            "type": "canvas_reset",
+            "canvas_id": str(canvas_id),
+            "size": str(canvas_size)
+        })
+
         r.delete(f"canvas:{canvas_id}:reset_lock")
         r.publish("admin:canvas_events", json.dumps({"type": "canvas_cleared", "canvas_id": canvas_id, "next_reset_at": None}))
         logging.info(f"Canvas reset for {canvas_id} completed successfully.")
@@ -413,9 +429,11 @@ def parse_size(size_str):
 
 def get_max_snapshots_per_tier(tier):
     if tier == 0:
-        return 1
+        return 10
     elif tier == 1:
-        return 5
+        return 25
+    elif tier == 2:
+        return 100
     else:
         return -1 # Ultra (Ilimitado)
 
@@ -533,9 +551,14 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         thumb_height = max(1, int(height * thumb_scale))
 
         img_thumb = img.resize((thumb_width, thumb_height), Image.NEAREST)
+        bg_thumb = Image.new('RGB', (thumb_width, thumb_height), (255, 255, 255))
+        if img_thumb.mode == 'RGBA':
+            bg_thumb.paste(img_thumb, mask=img_thumb.split()[3])
+        else:
+            bg_thumb.paste(img_thumb)
         
         thumb_io = io.BytesIO()
-        img_thumb.save(thumb_io, "PNG", optimize=True)
+        bg_thumb.save(thumb_io, "PNG", optimize=True)
         thumb_io.seek(0)
         s3 = get_s3_client()
         try:
@@ -548,7 +571,6 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         if r.exists(f"canvas:{canvas_id}:reset_lock"):
             
             max_snapshots = get_max_snapshots_per_tier(owner_tier)
-            can_save_history = True
             
             if max_snapshots != -1:
                 try:
@@ -557,121 +579,148 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                     current_count = cursor.fetchone()[0]
                     cursor.close()
                     
-                    if current_count >= max_snapshots:
-                        can_save_history = False
+                    if current_count >= max_snapshots and max_snapshots > 0:
+                        num_to_delete = current_count - max_snapshots + 1
+                        print(f"[-] Canvas {canvas_id} reached limit ({current_count}/{max_snapshots}). Purging oldest {num_to_delete} snapshot(s)...")
+                        
+                        cursor_del = db_conn.cursor(dictionary=True) if hasattr(db_conn, 'cursor') and hasattr(db_conn.cursor(), 'dictionary') else db_conn.cursor()
+                        cursor_del.execute("""
+                            SELECT id, file_path, timelapse_file_path 
+                            FROM canvas_snapshots_history 
+                            WHERE canvas_id = %s 
+                            ORDER BY created_at ASC 
+                            LIMIT %s
+                        """, (canvas_id, num_to_delete))
+                        oldest_recs = cursor_del.fetchall()
+                        cursor_del.close()
+
+                        for rec in oldest_recs:
+                            old_id = rec['id'] if isinstance(rec, dict) else rec[0]
+                            old_file = rec['file_path'] if isinstance(rec, dict) else rec[1]
+                            old_tl = rec['timelapse_file_path'] if isinstance(rec, dict) else rec[2]
+
+                            if old_file:
+                                try: s3.delete_object(Bucket=S3_BUCKET, Key=old_file.lstrip('/'))
+                                except Exception: pass
+
+                            if old_tl:
+                                try:
+                                    tl_key = old_tl.lstrip('/')
+                                    if is_infinite:
+                                        paginator = s3.get_paginator('list_objects_v2')
+                                        pages = paginator.paginate(Bucket=S3_BUCKET, Prefix=tl_key.rstrip('/') + '/')
+                                        for page in pages:
+                                            if 'Contents' in page:
+                                                for obj in page['Contents']:
+                                                    s3.delete_object(Bucket=S3_BUCKET, Key=obj['Key'])
+                                    else:
+                                        s3.delete_object(Bucket=S3_BUCKET, Key=tl_key)
+                                except Exception: pass
+
+                            try:
+                                cursor_rm = db_conn.cursor()
+                                cursor_rm.execute("DELETE FROM canvas_snapshots_history WHERE id = %s", (old_id,))
+                                db_conn.commit()
+                                cursor_rm.close()
+                            except Exception as e:
+                                print(f"[!] Error deleting DB record for snapshot {old_id}: {e}")
+
                 except Exception as e:
                     print(f"[!] Error verifying snapshot quota for canvas {canvas_id}: {e}")
-                    can_save_history = False 
+
+            scale_arch_w = ARCHIVE_MAX_SIZE / width
+            scale_arch_h = ARCHIVE_MAX_SIZE / height
+            arch_scale = min(scale_arch_w, scale_arch_h, SCALE_FACTOR)
             
-            if not can_save_history:
-                print(f"[-] Canvas {canvas_id} exceeded its historical snapshots limit ({max_snapshots}). Purging the oldest...")
-                s3 = get_s3_client()
-                if is_infinite:
-                    try:
-                        paginator = s3.get_paginator('list_objects_v2')
-                        pages = paginator.paginate(Bucket=S3_BUCKET, Prefix=f"timelapses/{canvas_uuid}/live/")
-                        for page in pages:
-                            if 'Contents' in page:
-                                for obj in page['Contents']:
-                                    if obj['Key'].endswith('.jsonl'):
-                                        s3.delete_object(Bucket=S3_BUCKET, Key=obj['Key'])
-                    except Exception:
-                        pass
-                else:
-                    live_key = f"timelapses/{canvas_uuid}/live/live_canvas_{canvas_uuid}.jsonl"
-                    try:
-                        s3.delete_object(Bucket=S3_BUCKET, Key=live_key)
-                    except Exception:
-                        pass
+            arch_width = max(1, int(width * arch_scale))
+            arch_height = max(1, int(height * arch_scale))
+            
+            img_archive = img.resize((arch_width, arch_height), Image.NEAREST)
+            bg_archive = Image.new('RGB', (arch_width, arch_height), (255, 255, 255))
+            if img_archive.mode == 'RGBA':
+                bg_archive.paste(img_archive, mask=img_archive.split()[3])
             else:
-                scale_arch_w = ARCHIVE_MAX_SIZE / width
-                scale_arch_h = ARCHIVE_MAX_SIZE / height
-                arch_scale = min(scale_arch_w, scale_arch_h, SCALE_FACTOR)
-                
-                arch_width = max(1, int(width * arch_scale))
-                arch_height = max(1, int(height * arch_scale))
-                
-                img_archive = img.resize((arch_width, arch_height), Image.NEAREST)
+                bg_archive.paste(img_archive)
 
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                archive_filename = f"canvas_{canvas_id}_{timestamp}.png"
-                
-                s3 = get_s3_client()
-                archive_key = f"snapshots_archive/{canvas_uuid}/{archive_filename}"
-                arch_io = io.BytesIO()
-                img_archive.save(arch_io, "PNG", optimize=True)
-                arch_io.seek(0)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            archive_filename = f"canvas_{canvas_id}_{timestamp}.png"
+            
+            s3 = get_s3_client()
+            archive_key = f"snapshots_archive/{canvas_uuid}/{archive_filename}"
+            arch_io = io.BytesIO()
+            bg_archive.save(arch_io, "PNG", optimize=True)
+            arch_io.seek(0)
+            try:
+                s3.put_object(Bucket=S3_BUCKET, Key=archive_key, Body=arch_io, ContentType='image/png')
+                print(f"[+] Historical file saved to S3 successfully: {archive_key}")
+            except Exception as e:
+                print(f"[!] Error uploading archive to S3: {e}")
+                return False
+
+            snapshot_uuid = str(uuid.uuid4())
+            public_filepath = f"snapshots_archive/{canvas_uuid}/{archive_filename}"
+            
+            live_key = f"timelapses/{canvas_uuid}/live/live_canvas_{canvas_uuid}.jsonl"
+            timelapse_dest_filename = f"snapshot_{snapshot_uuid}.jsonl"
+            dest_key = f"timelapses/{canvas_uuid}/snapshots/{timelapse_dest_filename}"
+            
+            timelapse_db_path = None
+            
+            if is_infinite:
+                timelapse_dest_folder = f"timelapses/{canvas_uuid}/snapshots/{snapshot_uuid}"
                 try:
-                    s3.put_object(Bucket=S3_BUCKET, Key=archive_key, Body=arch_io, ContentType='image/png')
-                    print(f"[+] Historical file saved to S3 successfully: {archive_key}")
-                except Exception as e:
-                    print(f"[!] Error uploading archive to S3: {e}")
-                    return False
-
-                snapshot_uuid = str(uuid.uuid4())
-                public_filepath = f"snapshots_archive/{canvas_uuid}/{archive_filename}"
-                
-                live_key = f"timelapses/{canvas_uuid}/live/live_canvas_{canvas_uuid}.jsonl"
-                timelapse_dest_filename = f"snapshot_{snapshot_uuid}.jsonl"
-                dest_key = f"timelapses/{canvas_uuid}/snapshots/{timelapse_dest_filename}"
-                
-                timelapse_db_path = None
-                
-                if is_infinite:
-                    timelapse_dest_folder = f"timelapses/{canvas_uuid}/snapshots/{snapshot_uuid}"
+                    paginator = s3.get_paginator('list_objects_v2')
+                    pages = paginator.paginate(Bucket=S3_BUCKET, Prefix=f"timelapses/{canvas_uuid}/live/")
+                    moved_any = False
+                    for page in pages:
+                        if 'Contents' in page:
+                            for obj in page['Contents']:
+                                if obj['Key'].endswith('.jsonl'):
+                                    moved_any = True
+                                    file_name = obj['Key'].split('/')[-1]
+                                    dest_key = f"{timelapse_dest_folder}/{file_name}"
+                                    s3.copy_object(Bucket=S3_BUCKET, CopySource={'Bucket': S3_BUCKET, 'Key': obj['Key']}, Key=dest_key)
+                                    s3.delete_object(Bucket=S3_BUCKET, Key=obj['Key'])
+                    if moved_any:
+                        timelapse_db_path = timelapse_dest_folder
+                        print(f"[+] Infinite timelapse chunks successfully moved to {timelapse_dest_folder}")
+                    
                     try:
-                        paginator = s3.get_paginator('list_objects_v2')
-                        pages = paginator.paginate(Bucket=S3_BUCKET, Prefix=f"timelapses/{canvas_uuid}/live/")
-                        moved_any = False
-                        for page in pages:
-                            if 'Contents' in page:
-                                for obj in page['Contents']:
-                                    if obj['Key'].endswith('.jsonl'):
-                                        moved_any = True
-                                        file_name = obj['Key'].split('/')[-1]
-                                        dest_key = f"{timelapse_dest_folder}/{file_name}"
-                                        s3.copy_object(Bucket=S3_BUCKET, CopySource={'Bucket': S3_BUCKET, 'Key': obj['Key']}, Key=dest_key)
-                                        s3.delete_object(Bucket=S3_BUCKET, Key=obj['Key'])
-                        if moved_any:
-                            timelapse_db_path = timelapse_dest_folder
-                            print(f"[+] Infinite timelapse chunks successfully moved to {timelapse_dest_folder}")
+                        cursor = db_conn.cursor()
+                        cursor.execute("DELETE FROM canvas_infinite_chunks WHERE canvas_id = %s", (canvas_id,))
+                        db_conn.commit()
+                        cursor.close()
                         
-                        try:
-                            cursor = db_conn.cursor()
-                            cursor.execute("DELETE FROM canvas_infinite_chunks WHERE canvas_id = %s", (canvas_id,))
-                            db_conn.commit()
-                            cursor.close()
-                            
-                            chunk_keys = r.keys(f"canvas:{canvas_id}:chunk:*")
-                            if chunk_keys:
-                                r.delete(*chunk_keys)
-                            print(f"[+] Infinite chunks cleared for canvas {canvas_id}")
-                        except Exception as e:
-                            print(f"[!] Error clearing infinite chunks for canvas {canvas_id}: {e}")
-                            
+                        chunk_keys = r.keys(f"canvas:{canvas_id}:chunk:*")
+                        if chunk_keys:
+                            r.delete(*chunk_keys)
+                        print(f"[+] Infinite chunks cleared for canvas {canvas_id}")
                     except Exception as e:
-                        print(f"[-] Error moving infinite timelapse chunks: {e}")
-                else:
-                    try:
-                        s3.head_object(Bucket=S3_BUCKET, Key=live_key)
-                        s3.copy_object(Bucket=S3_BUCKET, CopySource={'Bucket': S3_BUCKET, 'Key': live_key}, Key=dest_key)
-                        s3.delete_object(Bucket=S3_BUCKET, Key=live_key)
-                        timelapse_db_path = dest_key
-                        print(f"[+] Timelapse successfully converted to historical in S3: {timelapse_dest_filename}")
-                    except Exception as e:
-                        print(f"[-] 'live_canvas' file not found for canvas {canvas_id} or error moving. Base snapshot will be saved without timelapse. Error: {e}")
-                try:
-                    cursor = db_conn.cursor()
-                    insert_query = """
-                        INSERT INTO canvas_snapshots_history (canvas_id, snapshot_uuid, file_path, timelapse_file_path)
-                        VALUES (%s, %s, %s, %s)
-                    """
-                    cursor.execute(insert_query, (canvas_id, snapshot_uuid, public_filepath, timelapse_db_path))
-                    db_conn.commit()
-                    cursor.close()
-                    print(f"[+] Historical record saved in DB with UUID: {snapshot_uuid}")
+                        print(f"[!] Error clearing infinite chunks for canvas {canvas_id}: {e}")
+                        
                 except Exception as e:
-                    print(f"[!] Error saving history to DB: {e}")
+                    print(f"[-] Error moving infinite timelapse chunks: {e}")
+            else:
+                try:
+                    s3.head_object(Bucket=S3_BUCKET, Key=live_key)
+                    s3.copy_object(Bucket=S3_BUCKET, CopySource={'Bucket': S3_BUCKET, 'Key': live_key}, Key=dest_key)
+                    s3.delete_object(Bucket=S3_BUCKET, Key=live_key)
+                    timelapse_db_path = dest_key
+                    print(f"[+] Timelapse successfully converted to historical in S3: {timelapse_dest_filename}")
+                except Exception as e:
+                    print(f"[-] 'live_canvas' file not found for canvas {canvas_id} or error moving. Base snapshot will be saved without timelapse. Error: {e}")
+            try:
+                cursor = db_conn.cursor()
+                insert_query = """
+                    INSERT INTO canvas_snapshots_history (canvas_id, snapshot_uuid, file_path, timelapse_file_path)
+                    VALUES (%s, %s, %s, %s)
+                """
+                cursor.execute(insert_query, (canvas_id, snapshot_uuid, public_filepath, timelapse_db_path))
+                db_conn.commit()
+                cursor.close()
+                print(f"[+] Historical record saved in DB with UUID: {snapshot_uuid}")
+            except Exception as e:
+                print(f"[!] Error saving history to DB: {e}")
 
             r.set(f"canvas:{canvas_id}:snapshot_done", "1", ex=60)
             

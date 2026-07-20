@@ -9,6 +9,14 @@ error_reporting(E_ALL);
 
 try {
     $snapshotId = isset($_GET['id']) ? $_GET['id'] : null;
+    if (!$snapshotId && !empty($_SERVER['REQUEST_URI'])) {
+        $pathParts = array_values(array_filter(explode('/', parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH))));
+        $lastPart = end($pathParts);
+        if ($lastPart && $lastPart !== 'view' && $lastPart !== 'snapshot') {
+            $snapshotId = $lastPart;
+        }
+    }
+
     $title = __('lbl_snapshot_viewer_title');
     $canvasSize = '64x64';
     
@@ -74,18 +82,15 @@ try {
                     <button id="tl-btn-toggle-grid" class="component-button component-button--icon component-button--h40 active" data-action="toggleSnapshotGrid" data-tooltip="<?php echo __('dt_grid'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">grid_on</span>
                     </button>
-                    <button id="tl-btn-play" class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleTimelapseTools" data-menu-target="menu-timelapse" data-tooltip="<?php echo __('tooltip_play_timelapse'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">play_circle</span>
-                    </button>
                 </div>
             </div>
         </div>
 
-        <div class="component-bottom">
-            <canvas data-ref="snapshot-canvas" class="component-canvas-surface"></canvas>
+        <div class="component-bottom" style="position: relative; width: 100%; height: calc(100vh - 120px); min-height: 500px; overflow: hidden;">
+            <canvas data-ref="snapshot-canvas" class="component-canvas-surface" style="width: 100%; height: 100%; min-height: 400px; display: block;"></canvas>
             
-            <div class="snapshot-viewer-overlay">
-                <div class="component-badge">
+            <div class="canvas-badges-left" data-ref="badges-left">
+                <div class="component-badge" data-badge-id="coords">
                     <span class="material-symbols-rounded">my_location</span>
                     <span data-ref="coords-text">- , -</span>
                 </div>
@@ -93,15 +98,7 @@ try {
                 <div class="component-badge component-badge--warning">
                     <span class="material-symbols-rounded">history</span> <?php echo __('lbl_historical_mode'); ?>
                 </div>
-
-                <div id="tl-stats-badge" class="component-badge component-badge--dark disabled-interactive">
-                    <span class="material-symbols-rounded">analytics</span> 
-                    <span id="tl-stats-text">0 / 0 (0%)</span>
-                </div>
             </div>
         </div>
     </div>
-
-    <?php require_once __DIR__ . '/../../../modules/moduleTimelapseTools.php'; ?>
-
 </div>

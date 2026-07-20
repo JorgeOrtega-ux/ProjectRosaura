@@ -131,8 +131,14 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 let targetInstance;
 
+                let importPath = moduleConfig.path;
+                if (importPath.startsWith('./')) {
+                    let basePath = window.AppBasePath || '';
+                    importPath = `${basePath}/public/assets/js/${importPath.slice(2)}`;
+                }
+
                 if (!window.loadedControllers[className]) {
-                    window.importLocks[className] = import(moduleConfig.path);
+                    window.importLocks[className] = import(importPath);
                     const module = await window.importLocks[className];
                     
                     const ControllerClass = module[className];
@@ -156,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
             } catch (error) {
+                console.error(`[AppInit] Error initializing controller module ${className}:`, error);
             } finally {
                 delete window.importLocks[className];
             }

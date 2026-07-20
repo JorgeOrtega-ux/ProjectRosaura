@@ -131,7 +131,9 @@ def canvas_persistence_thread():
                                     cy = int(evt['y']) // 512
                                     chunk_events[(cx, cy)].append(json.dumps(evt) + "\n")
                                 except ValueError:
-                                    pass
+                                    chunk_events[(0, 0)].append(json.dumps(evt) + "\n")
+                            else:
+                                chunk_events[(0, 0)].append(json.dumps(evt) + "\n")
                         
                         for (cx, cy), events_json in chunk_events.items():
                             chunk_key = f"timelapses/{canvas_uuid}/live/{cx}_{cy}.jsonl"

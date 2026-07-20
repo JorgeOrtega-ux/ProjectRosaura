@@ -9,6 +9,13 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $uuid = $_GET['uuid'] ?? null;
+if (!$uuid && !empty($_SERVER['REQUEST_URI'])) {
+    $pathParts = array_values(array_filter(explode('/', parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH))));
+    $lastPart = end($pathParts);
+    if ($lastPart && $lastPart !== 'snapshots' && $lastPart !== 'canvas') {
+        $uuid = $lastPart;
+    }
+}
 $snapshots = [];
 $canvasName = __('default_canvas_name');
 $error = false;

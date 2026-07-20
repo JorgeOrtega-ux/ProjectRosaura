@@ -63,7 +63,7 @@ class SubscriptionPlanConstants {
                 return [
                     'name' => 'Free',
                     'max_canvases' => 1,
-                    'max_snapshots_per_canvas' => 0,
+                    'max_snapshots_per_canvas' => 10,
                     'max_storage_mb' => 20,
                     'max_members_per_canvas' => 10,
                     'advanced_roles' => false,

@@ -1113,29 +1113,217 @@ export const DesignNetwork = {
         }
     },
 
+    handleNuclearWarning(data) {
+        if (!this.nuclearWarnings) this.nuclearWarnings = [];
+        const perkId = data.perk || 'bomba_atomica_1';
+        
+        const perkConfig = typeof PerksRegistry !== 'undefined' ? PerksRegistry.get(perkId) : null;
+        const durationSecs = parseInt(data.duration || perkConfig?.warning_seconds || 3, 10);
+        
+        let container = document.querySelector('[data-ref="badges-left"]');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'canvas-badges-left';
+            container.setAttribute('data-ref', 'badges-left');
+            document.body.appendChild(container);
+        }
+
+        const existingBadge = container.querySelector(`[data-warning-perk="${perkId}"]`);
+        if (existingBadge) {
+            return;
+        }
+
+        const badge = document.createElement('div');
+        badge.className = 'component-badge';
+        badge.setAttribute('data-warning-perk', perkId);
+        badge.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
+        badge.style.color = '#ffffff';
+        badge.style.border = '1px solid var(--color-error, #ef4444)';
+        badge.style.animation = 'pulse 1s infinite';
+
+        const details = typeof PerksRegistry !== 'undefined' && typeof PerksRegistry.getWarningDetails === 'function' 
+            ? PerksRegistry.getWarningDetails(perkId) 
+            : { icon: 'crisis_alert', text: 'Ataque de Perk' };
+
+        let remaining = durationSecs;
+        badge.style.display = 'flex';
+        badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
+        container.appendChild(badge);
+
+        const timerId = setInterval(() => {
+            remaining--;
+            if (remaining > 0) {
+                badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
+            } else {
+                clearInterval(timerId);
+                badge.remove();
+            }
+        }, 1000);
+    },
+
+    handleExpansionBadge(data) {
+        let container = document.querySelector('[data-ref="badges-left"]');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'canvas-badges-left';
+            container.setAttribute('data-ref', 'badges-left');
+            document.body.appendChild(container);
+        }
+
+        const oldSizeStr = data.old_size || `${this.boardWidth}x${this.boardHeight}`;
+        const newSizeStr = data.new_size || `${data.w}x${data.h}`;
+        const labelText = (typeof window.__ === 'function' ? window.__('msg_expansion_success') : null) || 'Lienzo expandido';
+
+        const badge = document.createElement('div');
+        badge.className = 'component-badge';
+        badge.style.backgroundColor = 'rgba(99, 102, 241, 0.9)';
+        badge.style.color = '#ffffff';
+        badge.style.border = '1px solid var(--color-primary, #6366f1)';
+        badge.innerHTML = `<span class="material-symbols-rounded">aspect_ratio</span><span class="component-text-bold">${labelText}: ${oldSizeStr} ➔ ${newSizeStr}</span>`;
+
+        container.appendChild(badge);
+        setTimeout(() => {
+            badge.style.opacity = '0';
+            badge.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => badge.remove(), 300);
+        }, 4000);
+    },
+
+    handleResetBadge() {
+        let container = document.querySelector('[data-ref="badges-left"]');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'canvas-badges-left';
+            container.setAttribute('data-ref', 'badges-left');
+            document.body.appendChild(container);
+        }
+
+        const badge = document.createElement('div');
+        badge.className = 'component-badge component-badge--warning';
+        badge.innerHTML = `<span class="material-symbols-rounded">restart_alt</span><span class="component-text-bold">Lienzo vaciado</span>`;
+
+        container.appendChild(badge);
+        setTimeout(() => {
+            badge.style.opacity = '0';
+            badge.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => badge.remove(), 300);
+        }, 3500);
+    },
+
     _drawTimelapsePixel(data) {
+        if (!data) return;
+
+        if (data.type === 'canvas_resize') {
+            this.handleExpansionBadge(data);
+
+            const newW = parseInt(data.w, 10);
+            const newH = parseInt(data.h, 10);
+
+            if (!isNaN(newW) && !isNaN(newH) && (newW !== this.boardWidth || newH !== this.boardHeight)) {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = this.boardWidth;
+                tempCanvas.height = this.boardHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(this.offscreenCanvas, 0, 0);
+
+                this.boardWidth = newW;
+                this.boardHeight = newH;
+                this.offscreenCanvas.width = newW;
+                this.offscreenCanvas.height = newH;
+
+                this.offscreenCtx.fillStyle = '#FFFFFF';
+                this.offscreenCtx.fillRect(0, 0, newW, newH);
+                this.offscreenCtx.drawImage(tempCanvas, 0, 0);
+
+                if (typeof this.centerBoard === 'function') this.centerBoard();
+                if (typeof this.requestRender === 'function') this.requestRender();
+            }
+            return;
+        }
+
+        if (data.type === 'canvas_reset') {
+            this.handleResetBadge();
+
+            this.offscreenCtx.fillStyle = '#FFFFFF';
+            this.offscreenCtx.fillRect(0, 0, this.boardWidth, this.boardHeight);
+            if (typeof this.requestRender === 'function') this.requestRender();
+            return;
+        }
+
+        if (data.type === 'bomb_pixel') {
+            const x = parseInt(data.x, 10);
+            const y = parseInt(data.y, 10);
+            const r = parseInt(data.r, 10);
+            const perkId = data.perk || 'bomba_pixel_1';
+            
+            this.handleNuclearWarning(data);
+
+            if (!isNaN(x) && !isNaN(y) && !isNaN(r)) {
+                this.offscreenCtx.save();
+                this.offscreenCtx.beginPath();
+                this.offscreenCtx.arc(x + 0.5, y + 0.5, r, 0, 2 * Math.PI);
+                this.offscreenCtx.clip();
+                this.offscreenCtx.fillStyle = '#FFFFFF';
+                this.offscreenCtx.fillRect(x - r - 1, y - r - 1, r * 2 + 2, r * 2 + 2);
+                this.offscreenCtx.restore();
+
+                if (typeof this.triggerExplosionEffect === 'function') {
+                    this.triggerExplosionEffect(x, y, r, perkId);
+                }
+            }
+            return;
+        }
+
+        if (data.type === 'template_plazmar') {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                this.offscreenCtx.save();
+                const x = parseInt(data.x, 10);
+                const y = parseInt(data.y, 10);
+                const w = parseInt(data.w, 10);
+                const h = parseInt(data.h, 10);
+                const angle = parseFloat(data.angle || 0);
+                
+                this.offscreenCtx.translate(x + w/2, y + h/2);
+                this.offscreenCtx.rotate(angle * Math.PI / 180);
+                this.offscreenCtx.drawImage(img, -w/2, -h/2, w, h);
+                this.offscreenCtx.restore();
+                if (typeof this.requestRender === 'function') this.requestRender();
+            };
+            img.src = data.image_url;
+            return;
+        }
+
         const pX = parseInt(data.x, 10);
         const pY = parseInt(data.y, 10);
-        const cIdx = parseInt(data.c !== undefined ? data.c : data.color, 10);
+        if (isNaN(pX) || isNaN(pY)) return;
 
-        if (isNaN(cIdx)) return;
+        const rawColor = data.c !== undefined ? data.c : data.color;
 
-        if (cIdx === 255) {
+        if (rawColor === 'transparent' || rawColor === 'none' || rawColor === 255 || rawColor === '255') {
             this.offscreenCtx.clearRect(pX, pY, 1, 1);
-        } else {
-            const paletteObj = getPaletteById(this.canvasPaletteId);
-            let hexColor = '#000000';
-            if (paletteObj && paletteObj.colors && paletteObj.colors[cIdx]) {
-                hexColor = paletteObj.colors[cIdx].hex;
-            } else if (window.APP_PALETTES && window.APP_PALETTES['default'] && window.APP_PALETTES['default'].colors[cIdx]) {
-                hexColor = window.APP_PALETTES['default'].colors[cIdx].hex;
-            } else {
-                hexColor = '#FFFFFF';
-            }
-            
-            this.offscreenCtx.fillStyle = hexColor;
+        } else if (typeof rawColor === 'string' && rawColor.startsWith('#')) {
+            this.offscreenCtx.fillStyle = rawColor;
             this.offscreenCtx.clearRect(pX, pY, 1, 1);
             this.offscreenCtx.fillRect(pX, pY, 1, 1);
+        } else {
+            const cIdx = parseInt(rawColor, 10);
+            if (!isNaN(cIdx)) {
+                const paletteObj = typeof getPaletteById === 'function' ? getPaletteById(this.canvasPaletteId) : null;
+                let hexColor = '#000000';
+                if (paletteObj && paletteObj.colors && paletteObj.colors[cIdx]) {
+                    hexColor = paletteObj.colors[cIdx].hex;
+                } else if (window.APP_PALETTES && window.APP_PALETTES['default'] && window.APP_PALETTES['default'].colors && window.APP_PALETTES['default'].colors[cIdx]) {
+                    hexColor = window.APP_PALETTES['default'].colors[cIdx].hex || window.APP_PALETTES['default'].colors[cIdx];
+                } else {
+                    hexColor = '#FFFFFF';
+                }
+                
+                this.offscreenCtx.fillStyle = hexColor;
+                this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                this.offscreenCtx.fillRect(pX, pY, 1, 1);
+            }
         }
     }
 };
