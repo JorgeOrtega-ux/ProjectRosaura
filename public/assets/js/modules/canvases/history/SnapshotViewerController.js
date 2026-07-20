@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
 class SnapshotViewerController {
     constructor() {
@@ -28,12 +28,21 @@ class SnapshotViewerController {
         this.showGrid = true;
         this.originalImageUrl = null;
 
+        // Touch handling properties
+        this.isPinching = false;
+        this.initialPinchDistance = 0;
+        this.initialScale = 1;
+
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
         this.handleMouseMoveBound = this.handleMouseMove.bind(this);
         this.handleMouseUpBound = this.handleMouseUp.bind(this);
         this.handleResizeBound = this.handleResize.bind(this);
         this.renderBound = this.render.bind(this);
+
+        this.handleTouchStartBound = this.handleTouchStart.bind(this);
+        this.handleTouchMoveBound = this.handleTouchMove.bind(this);
+        this.handleTouchEndBound = this.handleTouchEnd.bind(this);
     }
 
     async init() {
@@ -83,11 +92,13 @@ class SnapshotViewerController {
     destroy() {
         document.removeEventListener('wheel', this.handleWheelBound, { passive: false });
         document.removeEventListener('mousedown', this.handleMouseDownBound);
-        if (this.canvas) {
-            this.canvas.removeEventListener('mousemove', this.handleMouseMoveBound);
-        }
-        window.removeEventListener('mouseup', this.handleMouseUpBound);
+        document.removeEventListener('mousemove', this.handleMouseMoveBound);
+        document.removeEventListener('mouseup', this.handleMouseUpBound);
         window.removeEventListener('resize', this.handleResizeBound);
+
+        document.removeEventListener('touchstart', this.handleTouchStartBound);
+        document.removeEventListener('touchmove', this.handleTouchMoveBound);
+        document.removeEventListener('touchend', this.handleTouchEndBound);
 
         if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
     }
@@ -95,11 +106,13 @@ class SnapshotViewerController {
     bindEvents() {
         document.addEventListener('wheel', this.handleWheelBound, { passive: false });
         document.addEventListener('mousedown', this.handleMouseDownBound);
-        if (this.canvas) {
-            this.canvas.addEventListener('mousemove', this.handleMouseMoveBound);
-        }
-        window.addEventListener('mouseup', this.handleMouseUpBound);
+        document.addEventListener('mousemove', this.handleMouseMoveBound);
+        document.addEventListener('mouseup', this.handleMouseUpBound);
         window.addEventListener('resize', this.handleResizeBound);
+
+        document.addEventListener('touchstart', this.handleTouchStartBound, { passive: false });
+        document.addEventListener('touchmove', this.handleTouchMoveBound, { passive: false });
+        document.addEventListener('touchend', this.handleTouchEndBound);
 
         this.bindActionTools();
     }
@@ -127,13 +140,13 @@ class SnapshotViewerController {
     }
 
     downloadSnapshot() {
+        const btnDownload = document.getElementById('tl-btn-download');
+        if (btnDownload) setButtonLoading(btnDownload);
+
         if (!this.offscreenCanvas || this.boardWidth <= 0 || this.boardHeight <= 0) {
-            this.fallbackDownload();
+            this.fallbackDownload(btnDownload);
             return;
         }
-
-        const btnDownload = document.getElementById('tl-btn-download');
-        if (btnDownload) btnDownload.classList.add('disabled-interactive');
 
         try {
             const exportCanvas = document.createElement('canvas');
@@ -147,9 +160,9 @@ class SnapshotViewerController {
             expCtx.drawImage(this.offscreenCanvas, 0, 0);
 
             exportCanvas.toBlob((blob) => {
-                if (btnDownload) btnDownload.classList.remove('disabled-interactive');
+                if (btnDownload) restoreButton(btnDownload);
                 if (!blob) {
-                    this.fallbackDownload();
+                    this.fallbackDownload(btnDownload);
                     return;
                 }
                 const blobUrl = URL.createObjectURL(blob);
@@ -162,13 +175,19 @@ class SnapshotViewerController {
                 setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
             }, 'image/png');
         } catch (e) {
-            if (btnDownload) btnDownload.classList.remove('disabled-interactive');
-            this.fallbackDownload();
+            if (btnDownload) restoreButton(btnDownload);
+            this.fallbackDownload(btnDownload);
         }
     }
 
-    async fallbackDownload() {
-        if (!this.originalImageUrl) return;
+    async fallbackDownload(btnDownload = null) {
+        if (!btnDownload) {
+            btnDownload = document.getElementById('tl-btn-download');
+        }
+        if (!this.originalImageUrl) {
+            if (btnDownload) restoreButton(btnDownload);
+            return;
+        }
         try {
             const response = await fetch(this.originalImageUrl);
             const blob = await response.blob();
@@ -188,6 +207,8 @@ class SnapshotViewerController {
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+        } finally {
+            if (btnDownload) restoreButton(btnDownload);
         }
     }
 
@@ -289,6 +310,10 @@ class SnapshotViewerController {
             }
         }
 
+        const scaleX = rectW / this.boardWidth;
+        const scaleY = rectH / this.boardHeight;
+        this.transform.scale = Math.min(scaleX, scaleY) * 0.9; 
+
         const scaledWidth = this.boardWidth * this.transform.scale;
         const scaledHeight = this.boardHeight * this.transform.scale;
 
@@ -296,7 +321,7 @@ class SnapshotViewerController {
         this.transform.y = (rectH - scaledHeight) / 2;
 
         this.limitBounds();
-        this.render();
+        this.requestRender();
     }
 
     limitBounds() {
@@ -329,15 +354,19 @@ class SnapshotViewerController {
         const mouseY = e.clientY - rect.top;
 
         const zoomIntensity = 0.1;
-        let scaleFactor = e.deltaY < 0 ? (1 + zoomIntensity) : (1 - zoomIntensity);
+        const delta = e.deltaY < 0 ? 1 : -1;
+        const zoomFactor = Math.exp(delta * zoomIntensity);
         
-        const newScale = Math.min(Math.max(0.1, this.transform.scale * scaleFactor), 50);
+        let newScale = this.transform.scale * zoomFactor;
+        const minScale = 0.05;
+        newScale = Math.max(minScale, Math.min(newScale, 40)); 
         
         this.transform.x = mouseX - (mouseX - this.transform.x) * (newScale / this.transform.scale);
         this.transform.y = mouseY - (mouseY - this.transform.y) * (newScale / this.transform.scale);
         this.transform.scale = newScale;
 
         this.limitBounds();
+        this.calculateHoverPixel(e.clientX, e.clientY);
         this.requestRender();
     }
 
@@ -353,6 +382,7 @@ class SnapshotViewerController {
     }
 
     handleMouseMove(e) {
+        const target = e.target.closest('[data-ref="snapshot-canvas"]');
         if (this.isDragging) {
             const dx = e.clientX - this.lastMouse.x;
             const dy = e.clientY - this.lastMouse.y;
@@ -365,6 +395,11 @@ class SnapshotViewerController {
             this.limitBounds();
             this.calculateHoverPixel(e.clientX, e.clientY);
             this.requestRender();
+            return;
+        }
+
+        if (target) {
+            this.calculateHoverPixel(e.clientX, e.clientY);
         } else if (this.hoveredPixel !== null) {
             this.hoveredPixel = null;
             if (this.coordsText) this.coordsText.textContent = '- , -';
@@ -379,6 +414,78 @@ class SnapshotViewerController {
         }
         this.calculateHoverPixel(e.clientX, e.clientY);
         this.requestRender();
+    }
+
+    handleTouchStart(e) {
+        const target = e.target.closest('[data-ref="snapshot-canvas"]');
+        if (!target) return;
+
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            this.isPinching = true;
+            this.isDragging = false;
+            this.initialPinchDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            this.initialScale = this.transform.scale;
+            return;
+        }
+
+        if (e.touches.length === 1) {
+            this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            this.isDragging = true;
+        }
+    }
+
+    handleTouchMove(e) {
+        if (this.isPinching && e.touches.length === 2) {
+            e.preventDefault(); 
+            const currentDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+
+            const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            const rect = this.canvas.getBoundingClientRect();
+            const mouseX = centerX - rect.left;
+            const mouseY = centerY - rect.top;
+
+            const scaleRatio = currentDistance / this.initialPinchDistance;
+            let newScale = this.initialScale * scaleRatio;
+            const minScale = 0.05;
+            newScale = Math.max(minScale, Math.min(newScale, 40));
+
+            this.transform.x = mouseX - (mouseX - this.transform.x) * (newScale / this.transform.scale);
+            this.transform.y = mouseY - (mouseY - this.transform.y) * (newScale / this.transform.scale);
+            this.transform.scale = newScale;
+
+            this.limitBounds();
+            this.requestRender();
+            return;
+        }
+
+        if (this.isDragging && e.touches.length === 1) {
+            const dx = e.touches[0].clientX - this.lastMouse.x;
+            const dy = e.touches[0].clientY - this.lastMouse.y;
+            this.transform.x += dx;
+            this.transform.y += dy;
+            this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
+            this.limitBounds();
+            this.calculateHoverPixel(e.touches[0].clientX, e.touches[0].clientY);
+            this.requestRender();
+        }
+    }
+
+    handleTouchEnd(e) {
+        if (this.isPinching && e.touches.length < 2) {
+            this.isPinching = false;
+        }
+        if (this.isDragging && e.touches.length === 0) {
+            this.isDragging = false;
+        }
     }
 
     getBoardCoords(clientX, clientY) {
@@ -457,7 +564,7 @@ class SnapshotViewerController {
         const dpr = window.devicePixelRatio || 1;
         this.ctx.scale(dpr, dpr);
         
-        this.ctx.translate(Math.round(this.transform.x), Math.round(this.transform.y));        
+        this.ctx.translate(this.transform.x, this.transform.y);        
         this.ctx.scale(this.transform.scale, this.transform.scale);
         
         this.ctx.imageSmoothingEnabled = false;
@@ -465,7 +572,7 @@ class SnapshotViewerController {
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
 
-        if (this.offscreenCanvas) {
+        if (this.offscreenCanvas && this.offscreenCanvas.width > 0 && this.offscreenCanvas.height > 0) {
             this.ctx.drawImage(this.offscreenCanvas, 0, 0);
         }
 
@@ -493,7 +600,7 @@ class SnapshotViewerController {
         }
 
         if (this.hoveredPixel) {
-            this.ctx.strokeStyle = isDark ? '#FFFFFF' : '#000000';
+            this.ctx.strokeStyle = '#000000';
             this.ctx.lineWidth = 1 / this.transform.scale;
             this.ctx.strokeRect(this.hoveredPixel.x, this.hoveredPixel.y, 1, 1);
         }

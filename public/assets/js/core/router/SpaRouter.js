@@ -155,13 +155,11 @@ export class SpaRouter {
         const startTime = performance.now();
 
         try {
-            const fetchPromise = fetch(url, {
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: { 'X-SPA-Request': 'true' },
                 signal: signal 
             });
-            const delayPromise = new Promise(resolve => setTimeout(resolve, 200));
-            const [response] = await Promise.all([fetchPromise, delayPromise]);
 
             if (response.status === 503) {
                 window.dispatchEvent(new CustomEvent('systemMaintenanceTriggered'));

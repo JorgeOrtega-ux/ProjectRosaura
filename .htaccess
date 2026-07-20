@@ -12,8 +12,6 @@
     # 1.5. Enrutar webhook de Stripe directamente (sin pasar por el SPA)
     RewriteRule ^stripe/webhook$ stripe/webhook.php [L]
 
-
-
     # 3. Si la petición ya está apuntando a public/ internamente, la dejamos pasar
     RewriteRule ^public/ - [L]
 
@@ -25,4 +23,33 @@
 
     # 5. Cualquier otra petición (incluyendo la raíz y las rutas SPA) va al index.php
     RewriteRule ^(.*)$ public/index.php [QSA,L]
+</IfModule>
+
+# Compresión Gzip para acelerar la transferencia de archivos
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript application/json
+    AddOutputFilterByType DEFLATE application/xml application/xhtml+xml application/rss+xml
+    AddOutputFilterByType DEFLATE image/svg+xml font/opentype font/otf font/ttf font/woff font/woff2
+</IfModule>
+
+# Caché de Navegador para evitar descargas repetidas de activos estáticos
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(ico|jpe?g|png|gif|webp|svg|woff|woff2|ttf)$">
+        Header set Cache-Control "max-age=31536000, public"
+    </FilesMatch>
+    <FilesMatch "\.(css|js)$">
+        Header set Cache-Control "max-age=2592000, public"
+    </FilesMatch>
 </IfModule>

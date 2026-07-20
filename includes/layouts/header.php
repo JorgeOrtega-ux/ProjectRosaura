@@ -128,6 +128,7 @@ if ($isLoggedIn) {
                         data-position="bottom">
                     <img src="<?php echo htmlspecialchars($userPic); ?>" 
                          alt="<?php echo __('alt_profile'); ?>"
+                         decoding="async"
                          onerror="this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'">
                 </button>
             <?php endif; ?>
