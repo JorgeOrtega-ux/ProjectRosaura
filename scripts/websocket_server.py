@@ -8,6 +8,7 @@ from urllib.parse import urlparse, parse_qs
 import redis.asyncio as redis
 import mysql.connector
 import zlib
+import gzip
 
 from mysql.connector import pooling
 
@@ -1089,7 +1090,7 @@ async def handler(websocket):
 
                             b64_data = ""
                             if chunk_data:
-                                b64_data = base64.b64encode(chunk_data).decode('utf-8')
+                                b64_data = base64.b64encode(gzip.compress(chunk_data, compresslevel=6)).decode('utf-8')
                             
                             chunk_msg = json.dumps({
                                 "type": "chunk_data",

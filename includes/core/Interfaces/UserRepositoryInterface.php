@@ -6,9 +6,12 @@ interface UserRepositoryInterface {
     public function findById(int $id): ?array;
     public function findByUuid(string $uuid): ?array;
     public function findByEmail(string $email): ?array;
+    public function findByGoogleId(string $googleId): ?array;
+    public function updateGoogleId(int $id, ?string $googleId): bool;
     public function findByUsername(string $username): ?array;
     public function createUser(array $data): int;
     public function liftSuspension(int $id): bool;
+    public function getUsersList(int $limit, int $offset): array;
 
     public function updateAvatar(int $id, string $path): bool;
     public function updateUsername(int $id, string $username): bool;
@@ -21,6 +24,8 @@ interface UserRepositoryInterface {
     public function scheduleDeletion(int $userId, string $date): bool;
     public function cancelDeletion(int $userId): bool;
     public function deleteUserHard(int $userId): bool;
+    public function updateStorageUsed(int $userId, int $bytesDelta): bool;
+    public function getStorageUsed(int $userId): float;
     public function getRegistrationStats(string $startDate, string $endDate): array;
     public function getCustomPalettes(int $userId): array;
 }

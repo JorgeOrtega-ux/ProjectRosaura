@@ -211,24 +211,48 @@ export const DesignSetup = {
         this.resizeTimerInterval = setInterval(updateTimer, 1000);
     },
 
-    hydrateCanvasState(base64String) {
+    async decompressIfNeeded(base64String) {
+        if (!base64String) return null;
         try {
             const binaryString = atob(base64String);
-            const imageData = this.offscreenCtx.createImageData(this.boardWidth, this.boardHeight);
-            
-            const totalBytes = Math.min(binaryString.length, imageData.data.length);
-            for (let i = 0; i < totalBytes; i++) {
-                imageData.data[i] = binaryString.charCodeAt(i);
+            let bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
             }
+
+            // Check for Gzip magic bytes (0x1F, 0x8B)
+            if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+                if ('DecompressionStream' in window) {
+                    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+                    const decompressedBuffer = await new Response(stream).arrayBuffer();
+                    bytes = new Uint8Array(decompressedBuffer);
+                }
+            }
+            return bytes;
+        } catch (err) {
+            console.error('[DesignSetup] Error decompressing canvas state:', err);
+            return null;
+        }
+    },
+
+    async hydrateCanvasState(base64String) {
+        try {
+            const bytes = await this.decompressIfNeeded(base64String);
+            if (!bytes) return;
+
+            const imageData = this.offscreenCtx.createImageData(this.boardWidth, this.boardHeight);
+            const totalBytes = Math.min(bytes.length, imageData.data.length);
+            imageData.data.set(bytes.subarray(0, totalBytes));
             
             this.offscreenCtx.putImageData(imageData, 0, 0);
             this.requestRender();
 
         } catch (e) {
+            console.error('[DesignSetup] hydrateCanvasState error:', e);
         }
     },
 
-    hydrateChunk(chunkX, chunkY, base64String) {
+    async hydrateChunk(chunkX, chunkY, base64String) {
         if (!this.chunks) return;
         const key = `${chunkX},${chunkY}`;
         let chunkCanvas = this.chunks.get(key);
@@ -245,17 +269,17 @@ export const DesignSetup = {
             if (!base64String) {
                 return;
             }
-            const binaryString = atob(base64String);
+            const bytes = await this.decompressIfNeeded(base64String);
+            if (!bytes) return;
+
             const imageData = ctx.createImageData(512, 512);
-            
-            const totalBytes = Math.min(binaryString.length, imageData.data.length);
-            for (let i = 0; i < totalBytes; i++) {
-                imageData.data[i] = binaryString.charCodeAt(i);
-            }
+            const totalBytes = Math.min(bytes.length, imageData.data.length);
+            imageData.data.set(bytes.subarray(0, totalBytes));
             
             ctx.putImageData(imageData, 0, 0);
             this.requestRender();
         } catch (e) {
+            console.error('[DesignSetup] hydrateChunk error:', e);
         }
     },
 

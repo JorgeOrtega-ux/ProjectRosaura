@@ -91,7 +91,53 @@ export class ApiService {
         return result;
     }
 
-    _handleHttpErrors(response) {
+    async _parseJsonResponse(response) {
+        let text = '';
+        try {
+            text = await response.text();
+        } catch (e) {
+            throw new Error(`Failed to read response body: ${e.message}`);
+        }
+
+        if (!text || !text.trim()) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(text);
+        } catch (error) {
+            const firstBrace = text.indexOf('{');
+            const firstBracket = text.indexOf('[');
+            let jsonStart = -1;
+            if (firstBrace !== -1 && firstBracket !== -1) {
+                jsonStart = Math.min(firstBrace, firstBracket);
+            } else if (firstBrace !== -1) {
+                jsonStart = firstBrace;
+            } else if (firstBracket !== -1) {
+                jsonStart = firstBracket;
+            }
+
+            if (jsonStart > 0) {
+                const possibleJson = text.substring(jsonStart);
+                try {
+                    const parsed = JSON.parse(possibleJson);
+                    const leadingWarning = text.substring(0, jsonStart).replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+                    console.warn('[ApiServices] Stripped PHP warning/HTML output before JSON payload:', leadingWarning);
+                    return parsed;
+                } catch (e2) {
+                    // Fallthrough to logging error below
+                }
+            }
+
+            const cleanSnippet = text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+            console.error(`[ApiServices error] Non-JSON response received (HTTP ${response.status}):`, cleanSnippet || text);
+            throw new SyntaxError(`Unexpected non-JSON response from server (HTTP ${response.status}): ${cleanSnippet}`);
+        }
+    }
+
+    async _handleHttpErrors(response, routeName = '') {
+        const routeLabel = routeName ? ` [${routeName}]` : '';
+
         if (response.status === 503) {
             window.dispatchEvent(new CustomEvent('systemMaintenanceTriggered'));
             return { success: false, aborted: true };
@@ -103,7 +149,22 @@ export class ApiService {
         }
 
         if (response.status === 500) {
-            return { success: false, message: window.__('server_error_database_offline') };
+            let result;
+            try {
+                result = await this._parseJsonResponse(response);
+            } catch (parseErr) {
+                console.error(`[ApiServices 500]${routeLabel} Failed to parse error response:`, parseErr.message);
+                return { success: false, message: window.__('server_error_database_offline') };
+            }
+
+            if (result && result.error_details) {
+                console.error(`[ApiServices 500]${routeLabel}`, result.error_details, result.file ? `at ${result.file}` : '');
+            } else if (result && (result.message || result.message_key)) {
+                console.error(`[ApiServices 500]${routeLabel}`, result.message || result.message_key, result);
+            } else {
+                console.error(`[ApiServices 500]${routeLabel} Server returned empty/unrecognized error body:`, JSON.stringify(result));
+            }
+            return this._processResponse(result || { success: false, message: window.__('server_error_database_offline') });
         }
         
         return null;
@@ -133,16 +194,16 @@ export class ApiService {
             const response = await fetch(this.baseUrl, fetchOptions);
 
             if (!response.ok) {
-                const handledError = this._handleHttpErrors(response);
+                const handledError = await this._handleHttpErrors(response, route);
                 if (handledError) return handledError;
 
                 if (response.status === 403 || response.status === 429) {
-                    const result = await response.json(); 
+                    const result = await this._parseJsonResponse(response); 
 
                     if (response.status === 403 && result.message_key === 'error.invalid_csrf_token') {
                         const retryResponse = await this._handleCsrfRetry(fetchOptions);
                         if (retryResponse && retryResponse.ok) {
-                            const retryResult = await retryResponse.json();
+                            const retryResult = await this._parseJsonResponse(retryResponse);
                             return this._processResponse(retryResult);
                         }
                     }
@@ -159,7 +220,7 @@ export class ApiService {
                 throw new Error(`Error HTTP: ${response.status}`);
             }
 
-            const result = await response.json();
+            const result = await this._parseJsonResponse(response);
             return this._processResponse(result);
             
         } catch (error) {
@@ -191,16 +252,16 @@ export class ApiService {
             const response = await fetch(this.baseUrl, fetchOptions);
 
             if (!response.ok) {
-                const handledError = this._handleHttpErrors(response);
+                const handledError = await this._handleHttpErrors(response);
                 if (handledError) return handledError;
 
                 if (response.status === 403 || response.status === 429) {
-                    const result = await response.json(); 
+                    const result = await this._parseJsonResponse(response); 
 
                     if (response.status === 403 && result.message_key === 'error.invalid_csrf_token') {
                         const retryResponse = await this._handleCsrfRetry(fetchOptions);
                         if (retryResponse && retryResponse.ok) {
-                            const retryResult = await retryResponse.json();
+                            const retryResult = await this._parseJsonResponse(retryResponse);
                             return this._processResponse(retryResult);
                         }
                     }
@@ -217,13 +278,14 @@ export class ApiService {
                 throw new Error(`Error HTTP: ${response.status}`);
             }
 
-            const result = await response.json();
+            const result = await this._parseJsonResponse(response);
             return this._processResponse(result); 
 
         } catch (error) {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
+            console.error('[ApiServices error]', error);
             return { success: false, message: window.__('api_connection_error') };
         }
     }
@@ -252,11 +314,11 @@ export class ApiService {
             const response = await fetch(this.baseUrl, fetchOptions);
 
             if (!response.ok) {
-                const handledError = this._handleHttpErrors(response);
+                const handledError = await this._handleHttpErrors(response);
                 if (handledError) return handledError;
 
                 if (response.status === 403 || response.status === 429) {
-                    const result = await response.json(); 
+                    const result = await this._parseJsonResponse(response); 
 
                     if (response.status === 403 && result.message_key === 'error.invalid_csrf_token') {
                         const retryResponse = await this._handleCsrfRetry(fetchOptions);
@@ -289,6 +351,7 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
+            console.error('[ApiServices error]', error);
             return { success: false, message: window.__('api_connection_error') };
         }
     }
@@ -317,11 +380,11 @@ export class ApiService {
             const response = await fetch(this.baseUrl, fetchOptions);
 
             if (!response.ok) {
-                const handledError = this._handleHttpErrors(response);
+                const handledError = await this._handleHttpErrors(response);
                 if (handledError) return handledError;
 
                 try {
-                    const errorResult = await response.json();
+                    const errorResult = await this._parseJsonResponse(response);
 
                     if (response.status === 403 && errorResult.message_key === 'error.invalid_csrf_token') {
                         const retryResponse = await this._handleCsrfRetry(fetchOptions);

@@ -4,6 +4,7 @@ namespace App\Api\Services\Canvas;
 
 use Exception;
 use DateTime;
+use function __;
 use App\Core\Interfaces\CanvasRepositoryInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Helpers\Utils;
@@ -231,6 +232,7 @@ class CanvasCoreService {
     }
 
     public function getCanvas(?int $userId, int $canvasId, bool $canManageOfficial = false): array {
+        ini_set('memory_limit', '512M');
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             
@@ -390,7 +392,8 @@ class CanvasCoreService {
                     }
                 }
 
-                $canvas['state_base64'] = base64_encode($stateRaw);
+                $canvas['state_base64'] = base64_encode(gzencode($stateRaw, 6));
+                $canvas['is_compressed'] = true;
             }
 
             return ['success' => true, 'data' => $canvas];

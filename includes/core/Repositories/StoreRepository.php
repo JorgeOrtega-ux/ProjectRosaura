@@ -61,6 +61,10 @@ class StoreRepository implements StoreRepositoryInterface {
         return (bool) $stmt->fetch(\PDO::FETCH_ASSOC);
     }
 
+    public function createStorePurchaseRecord(array $data): bool {
+        return $this->processCoinPurchaseSession($data);
+    }
+
     public function processCoinPurchaseSession(array $data): bool {
         $sessionId = $data['stripe_checkout_session_id'] ?? null;
         if (!$sessionId) return false;

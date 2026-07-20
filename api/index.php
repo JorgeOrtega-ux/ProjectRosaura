@@ -1,6 +1,40 @@
 <?php
 
+ob_start();
+ini_set('display_errors', '0');
+ini_set('memory_limit', '512M');
+error_reporting(E_ALL);
+
 header('Content-Type: application/json');
+
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+            http_response_code(500);
+        }
+        
+        $errorMsg = $error['message'] . ' in ' . $error['file'] . ':' . $error['line'];
+        
+        if (class_exists('App\\Core\\System\\Logger', false)) {
+            try {
+                \App\Core\System\Logger::critical('Fatal shutdown error: ' . $errorMsg, ['error' => $error]);
+            } catch (\Throwable $e) {}
+        }
+        
+        echo json_encode([
+            'success' => false,
+            'message_key' => 'error.internal_server_error',
+            'error_details' => $error['message'],
+            'file' => $error['file'] . ':' . $error['line']
+        ]);
+    }
+});
 
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
@@ -28,6 +62,16 @@ use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Routing\MiddlewarePipeline;
 use App\Core\Interfaces\SessionManagerInterface;
+
+if (!function_exists('__')) { 
+    function __($key, $params = []) { 
+        try { 
+            return Translator::get($key, $params); 
+        } catch (\Throwable $e) { 
+            return $key; 
+        }
+    } 
+}
 
 if (Utils::isMaintenanceActive()) {
     $inputJSON = file_get_contents('php://input');
@@ -266,17 +310,32 @@ if (array_key_exists($route, $routes)) {
             echo json_encode(['success' => false, 'message_key' => 'error.internal_server_error']);
         }
     } catch (\PDOException $e) {
-        Logger::database("Database Exception in route {$route}: " . $e->getMessage(), 'error', ['trace' => $e->getTraceAsString()]);
+        Logger::database("Database Exception in route {$route}: " . $e->getMessage(), 'error', ['exception' => $e, 'trace' => $e->getTraceAsString()]);
         http_response_code(500);
-        echo json_encode(['success' => false, 'message_key' => 'error.internal_server_error']);
+        echo json_encode([
+            'success' => false, 
+            'message_key' => 'error.internal_server_error',
+            'error_details' => $e->getMessage(),
+            'file' => $e->getFile() . ':' . $e->getLine()
+        ]);
     } catch (\Exception $e) {
-        Logger::security("General Exception in route {$route}: " . $e->getMessage(), 'error', ['trace' => $e->getTraceAsString()]);
+        Logger::security("General Exception in route {$route}: " . $e->getMessage(), 'error', ['exception' => $e, 'trace' => $e->getTraceAsString()]);
         http_response_code(500);
-        echo json_encode(['success' => false, 'message_key' => 'error.internal_server_error']);
+        echo json_encode([
+            'success' => false, 
+            'message_key' => 'error.internal_server_error',
+            'error_details' => $e->getMessage(),
+            'file' => $e->getFile() . ':' . $e->getLine()
+        ]);
     } catch (\Error $e) {
-        Logger::security("Fatal Error in route {$route}: " . $e->getMessage(), 'error', ['trace' => $e->getTraceAsString()]);
+        Logger::security("Fatal Error in route {$route}: " . $e->getMessage(), 'error', ['exception' => $e, 'trace' => $e->getTraceAsString()]);
         http_response_code(500);
-        echo json_encode(['success' => false, 'message_key' => 'error.internal_server_error']);
+        echo json_encode([
+            'success' => false, 
+            'message_key' => 'error.internal_server_error',
+            'error_details' => $e->getMessage(),
+            'file' => $e->getFile() . ':' . $e->getLine()
+        ]);
     }
 } else {
     Logger::security("Attempted access to non-existent route: {$route}", 'warning', ['ip' => Utils::getIpAddress()]);
