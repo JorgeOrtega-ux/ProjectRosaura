@@ -2,6 +2,13 @@ import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
 
+const __ = (key, params, defaultText) => {
+    if (typeof window.__ === 'function') {
+        return window.__(key, params, defaultText);
+    }
+    return defaultText || key;
+};
+
 class TwoFactorController {
     constructor() {
         this.api = new ApiService();
@@ -84,18 +91,18 @@ class TwoFactorController {
     async init2FAView() {
         const setupContainer = document.querySelector('[data-ref="2fa-setup-container"]');
         if (setupContainer && setupContainer.classList.contains('active')) {
-            const res = await this.api.post(ApiRoutes.Settings.Generate2FA, {}, this.abortController.signal);
+            const res = await this.api.post(ApiRoutes.Settings.Generate2FA, {}, this.abortController?.signal);
             
             if (res.aborted) return;
             
             if (res.success) {
                 const qrContainer = document.querySelector('[data-ref="2fa-qr-container"]');
-                if (qrContainer) {
+                if (qrContainer && res.qr_url) {
                     try {
                         if (!window.QRCodeStyling) {
                             await new Promise((resolve, reject) => {
                                 const script = document.createElement('script');
-                                script.src = 'https:
+                                script.src = (window.AppBasePath || '') + '/assets/js/vendor/qr-code-styling.js';
                                 script.onload = resolve;
                                 script.onerror = reject;
                                 document.head.appendChild(script);
@@ -133,7 +140,7 @@ class TwoFactorController {
                         }
 
                     } catch (error) {
-                        qrContainer.innerHTML = `<p class="component-text--danger">${__('qr_render_error')}</p>`;
+                        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(res.qr_url)}" alt="QR Code" style="width:150px;height:150px;display:block;margin:auto;">`;
                     }
                 }
                 

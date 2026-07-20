@@ -168,6 +168,16 @@ return [
         'action' => 'revoke_all_devices',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_DEV_REVOKE_ALL, 'max' => RL::MAX_5, 'time' => RL::TIME_15, 'identifier' => RL::ID_USER_ID]]
     ],
+    'settings.link_google' => [
+        'controller' => 'App\Api\Controllers\Settings\SettingsController',
+        'action' => 'link_google',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'settings_link_google', 'max' => RL::MAX_5, 'time' => RL::TIME_15, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'settings.unlink_google' => [
+        'controller' => 'App\Api\Controllers\Settings\SettingsController',
+        'action' => 'unlink_google',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'settings_unlink_google', 'max' => RL::MAX_5, 'time' => RL::TIME_15, 'identifier' => RL::ID_USER_ID]]
+    ],
     'admin.get_messages' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
         'action' => 'getMessages',

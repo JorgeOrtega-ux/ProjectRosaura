@@ -43,6 +43,9 @@ class SecurityController {
 
         const btnPromptDelete = e.target.closest('[data-action="promptDeleteAccount"]');
         if (btnPromptDelete) this.promptDeleteAccount(btnPromptDelete);
+
+        const btnLogoutAll = e.target.closest('[data-action="logoutAllDevices"]');
+        if (btnLogoutAll) this.logoutAllDevices(btnLogoutAll);
     }
 
     handleChange(e) {
@@ -156,6 +159,42 @@ class SecurityController {
                 }, 2000);
             } else {
                 showMessage(result.message, "error");
+            }
+        }
+    }
+
+    async logoutAllDevices(btn) {
+        if (!window.dialogSystem) return;
+
+        const resultDialog = await window.dialogSystem.show('confirmRevokeAllDevices');
+
+        if (resultDialog && resultDialog.action && resultDialog.action !== 'cancel') {
+            setButtonLoading(btn);
+
+            try {
+                const actionType = resultDialog.action;
+                const res = await this.api.post(ApiRoutes.Settings.RevokeAllDevices, { type: actionType }, this.abortController?.signal);
+
+                if (res.aborted) return;
+
+                if (res.success) {
+                    showMessage(res.message || 'Sesiones cerradas con éxito', 'success');
+                    if (actionType === 'revoke_all') {
+                        setTimeout(() => {
+                            window.location.href = this.basePath + '/login';
+                        }, 1000);
+                    } else {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    }
+                } else {
+                    showMessage(res.message || 'Error al cerrar sesiones', 'error');
+                }
+            } catch (err) {
+                showMessage('Error de comunicación', 'error');
+            } finally {
+                restoreButton(btn);
             }
         }
     }

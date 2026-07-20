@@ -117,5 +117,15 @@ class SettingsController extends BaseController {
         try { return $this->settingsServices->revokeAllDevices($input); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
+
+    public function link_google($input) {
+        try { return $this->settingsServices->linkGoogle($input); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function unlink_google($input) {
+        try { return $this->settingsServices->unlinkGoogle($input); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
 }
 ?>

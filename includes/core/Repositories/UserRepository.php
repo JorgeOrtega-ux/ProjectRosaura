@@ -179,7 +179,7 @@ class UserRepository implements UserRepositoryInterface {
         return $this->getUserWithDetails('google_id', $googleId);
     }
 
-    public function updateGoogleId(int $id, string $googleId): bool {
+    public function updateGoogleId(int $id, ?string $googleId): bool {
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET google_id = ? WHERE id = ?");

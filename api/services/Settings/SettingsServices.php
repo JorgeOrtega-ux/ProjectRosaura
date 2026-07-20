@@ -747,6 +747,102 @@ class SettingsServices
         return ['success' => false, 'message' => __('auth.incorrect_password')];
     }
 
+    public function linkGoogle($data)
+    {
+        if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => __('auth.session_expired')];
+        $userId = $this->sessionManager->get('user_id');
+
+        $credential = $data['credential'] ?? null;
+        if (empty($credential)) return ['success' => false, 'message' => __('validation.missing_fields')];
+
+        $clientId = $_ENV['GOOGLE_CLIENT_ID'] ?? '';
+        if (empty($clientId)) return ['success' => false, 'message' => __('error.internal_server_error')];
+
+        try {
+            $userInfoUrl = 'https://www.googleapis.com/oauth2/v3/userinfo';
+            $context = stream_context_create([
+                'http' => [
+                    'header' => "Authorization: Bearer {$credential}\r\n"
+                ]
+            ]);
+            $response = @file_get_contents($userInfoUrl, false, $context);
+            if ($response === false) {
+                return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
+            }
+            $payload = json_decode($response, true);
+        } catch (\Exception $e) {
+            Logger::error("Google token verification failed in linkGoogle", ['exception' => $e]);
+            return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
+        }
+
+        if (!$payload || !isset($payload['sub'])) {
+            return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
+        }
+
+        $googleId = $payload['sub'];
+        $existingUser = $this->userRepository->findByGoogleId($googleId);
+
+        if ($existingUser) {
+            if ((int)$existingUser['id'] === (int)$userId) {
+                return ['success' => true, 'message' => __('google_already_linked', [], 'Esta cuenta de Google ya está vinculada a tu perfil.')];
+            }
+            return ['success' => false, 'message' => __('google_linked_other_user', [], 'Esta cuenta de Google ya está vinculada a otro usuario.')];
+        }
+
+        if ($this->userRepository->updateGoogleId($userId, $googleId)) {
+            $accounts = $this->sessionManager->getLinkedAccounts();
+            if (isset($accounts[$userId])) {
+                $accounts[$userId]['google_id'] = $googleId;
+                $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+            }
+            $this->logProfileChange($userId, 'link_google', null, json_encode(['google_id' => $googleId]));
+            return ['success' => true, 'message' => __('google_linked_success', [], 'Cuenta de Google vinculada con éxito.')];
+        }
+
+        return ['success' => false, 'message' => __('error.database')];
+    }
+
+    public function unlinkGoogle($data)
+    {
+        if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => __('auth.session_expired')];
+        $userId = $this->sessionManager->get('user_id');
+
+        $user = $this->userRepository->findById($userId);
+        if (!$user) return ['success' => false, 'message' => __('error.user_not_found')];
+
+        if (empty($user['google_id'])) {
+            return ['success' => false, 'message' => __('google_not_linked', [], 'No tienes una cuenta de Google vinculada.')];
+        }
+
+        $newPassword = trim($data['new_password'] ?? '');
+        $confirmPassword = trim($data['confirm_password'] ?? '');
+
+        if (!empty($newPassword)) {
+            if ($newPassword !== $confirmPassword) {
+                return ['success' => false, 'message' => __('validation.passwords_do_not_match')];
+            }
+            $minLen = (int)($this->config['min_password_length'] ?? 8);
+            $maxLen = (int)($this->config['max_password_length'] ?? 100);
+            $pVal = Utils::validatePasswordFormat($newPassword, $minLen, $maxLen);
+            if (!$pVal['valid']) {
+                return ['success' => false, 'message' => __('validation.invalid_password_format')];
+            }
+            $this->userRepository->updatePassword($userId, password_hash($newPassword, PASSWORD_BCRYPT));
+        }
+
+        if ($this->userRepository->updateGoogleId($userId, null)) {
+            $accounts = $this->sessionManager->getLinkedAccounts();
+            if (isset($accounts[$userId])) {
+                $accounts[$userId]['google_id'] = null;
+                $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+            }
+            $this->logProfileChange($userId, 'unlink_google', json_encode(['google_id' => $user['google_id']]), null);
+            return ['success' => true, 'message' => __('google_unlinked_success', [], 'Cuenta de Google desvinculada con éxito.')];
+        }
+
+        return ['success' => false, 'message' => __('error.database')];
+    }
+
     private function canChangeProfileData($userId, $changeType, $maxAttempts, $days)
     {
         $count = $this->profileLogRepository->countRecentChanges($userId, $changeType, (int)$days);

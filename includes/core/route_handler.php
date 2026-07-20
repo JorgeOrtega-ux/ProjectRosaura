@@ -43,8 +43,8 @@ if ($isMaintenanceActive && !$isPrivileged) {
             
         } else {
             if ($currentView === 'settings/guest.php') {
-                $currentView = 'settings/your-profile.php';
-                $redirectUrl = APP_URL . '/settings/your-profile';
+                $currentView = 'settings/profile/your-account.php';
+                $redirectUrl = APP_URL . '/settings/your-account';
             } else {
                 $redirectUrl = APP_URL . '/';
             }
@@ -92,8 +92,8 @@ if ($isMaintenanceActive && !$isPrivileged) {
             $currentView = 'admin/dashboard.php';
             $redirectUrl = APP_URL . '/admin/dashboard';
         } elseif ($currentView === 'settings/index.php') {
-            $currentView = $isLoggedIn ? 'settings/your-profile.php' : 'settings/guest.php';
-            $redirectUrl = $isLoggedIn ? APP_URL . '/settings/your-profile' : APP_URL . '/settings/guest';
+            $currentView = $isLoggedIn ? 'settings/profile/your-account.php' : 'settings/guest.php';
+            $redirectUrl = $isLoggedIn ? APP_URL . '/settings/your-account' : APP_URL . '/settings/guest';
         }
     }
 }

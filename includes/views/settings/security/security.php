@@ -21,7 +21,7 @@ if (isset($_SESSION['user_id'])) {
             $lastUpdateText = $date->format('d/m/Y H:i');
         }
     } catch (\Throwable $e) {
-        Logger::error("Failed to fetch last password update in security.php", ['user_id' => $_SESSION['user_id'], 'exception' => $e]);
+        Logger::error("Failed to fetch security info in security.php", ['user_id' => $_SESSION['user_id'], 'exception' => $e]);
     }
 }
 ?>
@@ -76,12 +76,12 @@ if (isset($_SESSION['user_id'])) {
                             <span class="material-symbols-rounded">devices</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title"><?php echo __('sec_devices_title'); ?></h2>
-                            <p class="component-card__description"><?php echo __('sec_devices_desc'); ?></p>
+                            <h2 class="component-card__title"><?php echo __('sec_logout_all_devices_title', [], 'Cerrar sesión en todos los dispositivos'); ?></h2>
+                            <p class="component-card__description"><?php echo __('sec_logout_all_devices_desc', [], '¿Iniciaste sesión en Rosaura desde un dispositivo de uso compartido y se te olvidó cerrar sesión? ¡No hay problema! Puedes cerrar sesión en todos tus dispositivos.'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/devices"><?php echo __('btn_manage_devices'); ?></button>
+                        <button type="button" class="component-button component-button--h36 component-button--danger" data-action="logoutAllDevices"><?php echo __('btn_logout_all_devices', [], 'Cerrar sesión en todos los dispositivos'); ?></button>
                     </div>
                 </div>
             </div>

@@ -43,7 +43,9 @@ export const ApiRoutes = {
         RegenerateRecoveryCodes: 'settings.2fa_regenerate_recovery',
         GetDevices: 'settings.get_devices',
         RevokeDevice: 'settings.revoke_device',
-        RevokeAllDevices: 'settings.revoke_all_devices'
+        RevokeAllDevices: 'settings.revoke_all_devices',
+        LinkGoogle: 'settings.link_google',
+        UnlinkGoogle: 'settings.unlink_google'
     },
     Admin: {
         GetDashboardMetrics: 'admin.get_dashboard_metrics',

@@ -131,7 +131,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                 <div class="component-menu-divider"></div>
                 
                 <?php if ($isLoggedIn): ?>
-                <div class="component-menu-link nav-item" data-nav="/settings/your-profile">
+                <div class="component-menu-link nav-item" data-nav="/settings/your-account">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">person</span>
                     </div>

@@ -836,5 +836,26 @@ export const DialogTemplates = {
             descHtml: __('confirm_plazmar_template'),
             confirmClass: 'component-button--warning'
         })
+    },
+
+    confirmUnlinkGoogleModal: {
+        build: (data = {}) => {
+            const googleName = data.googleName || '';
+            const userEmail = data.userEmail || '';
+            const appName = window.APP_NAME || 'Rosaura';
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">¿De verdad quieres desvincular la cuenta de Google “${googleName}”?</h2>
+                    <p class="component-modal-desc">
+                        La próxima vez que inicies sesión en ${appName}, tendrás que usar tu dirección de correo electrónico ${userEmail} y tu contraseña.
+                    </p>
+                </div>
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h45" data-modal-action="cancel">${window.__('btn_cancel', [], 'Cancelar')}</button>
+                    <button type="button" class="component-button component-button--h45 component-button--dark" data-modal-action="confirm">${window.__('btn_disconnect', [], 'Desconectar')}</button>
+                </div>
+            `;
+        }
     }
 };

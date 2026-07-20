@@ -78,6 +78,12 @@ class ProfileController {
         
         const btnDeleteAccount = e.target.closest('[data-action="submitDeleteAccount"]');
         if (btnDeleteAccount) this.deleteAccount(btnDeleteAccount);
+
+        const btnLinkGoogle = e.target.closest('[data-action="linkGoogle"]');
+        if (btnLinkGoogle) this.triggerGoogleLink(btnLinkGoogle);
+
+        const btnUnlinkGoogle = e.target.closest('[data-action="unlinkGoogle"]');
+        if (btnUnlinkGoogle) this.openUnlinkGoogleModal(btnUnlinkGoogle);
     }
 
     handleChange(e) {
@@ -404,6 +410,97 @@ class ProfileController {
             }, 2000);
         } else {
             showMessage(result.message, "error");
+        }
+    }
+
+    triggerGoogleLink(btn) {
+        if (!window.google || !window.google.accounts) {
+            showMessage('Google SDK no disponible', 'error');
+            return;
+        }
+
+        const clientId = window.GOOGLE_CLIENT_ID || '';
+        if (!clientId) {
+            showMessage('Google Client ID no configurado', 'error');
+            return;
+        }
+
+        setButtonLoading(btn);
+
+        const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: 'openid email profile',
+            callback: (response) => {
+                if (response.access_token) {
+                    this.handleLinkGoogleToken(response.access_token, btn);
+                } else {
+                    restoreButton(btn);
+                    showMessage('No se pudo obtener la autorización de Google', 'error');
+                }
+            },
+            error_callback: () => {
+                restoreButton(btn);
+                showMessage('Error al conectar con Google', 'error');
+            }
+        });
+
+        client.requestAccessToken();
+    }
+
+    async handleLinkGoogleToken(accessToken, btn) {
+        try {
+            const data = { credential: accessToken };
+            const result = await this.api.post(ApiRoutes.Settings.LinkGoogle, data, this.abortController?.signal);
+
+            if (result.aborted) return;
+
+            if (result.success) {
+                showMessage(result.message || 'Cuenta de Google vinculada', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showMessage(result.message || 'Error al vincular cuenta de Google', 'error');
+            }
+        } catch (err) {
+            showMessage('Error de comunicación', 'error');
+        } finally {
+            restoreButton(btn);
+        }
+    }
+
+    async openUnlinkGoogleModal(btn) {
+        if (!window.dialogSystem) return;
+
+        const googleName = btn ? (btn.getAttribute('data-google-name') || '') : '';
+        const userEmail = btn ? (btn.getAttribute('data-user-email') || '') : '';
+
+        const result = await window.dialogSystem.show('confirmUnlinkGoogleModal', {
+            googleName: googleName,
+            userEmail: userEmail
+        });
+
+        if (result && result.confirmed) {
+            this.confirmUnlinkGoogle(btn);
+        }
+    }
+
+    async confirmUnlinkGoogle(btn) {
+        if (btn) setButtonLoading(btn);
+
+        try {
+            const result = await this.api.post(ApiRoutes.Settings.UnlinkGoogle, {}, this.abortController?.signal);
+
+            if (result.aborted) return;
+
+            if (result.success) {
+                showMessage(result.message || 'Cuenta de Google desvinculada', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showMessage(result.message || 'Error al desvincular cuenta de Google', 'error');
+            }
+        } catch (err) {
+            showMessage('Error de comunicación', 'error');
+        } finally {
+            if (btn) restoreButton(btn);
         }
     }
 }

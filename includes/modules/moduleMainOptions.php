@@ -6,7 +6,7 @@ $linkedAccounts = $_SESSION['accounts'] ?? [];
 $isLoggedIn = $activeAccountId !== null && !empty($linkedAccounts) && !$isDegraded;
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 $isAdmin = in_array('access_admin_panel', $userPermissions);
-$settingsLink = $isLoggedIn ? APP_URL . '/settings/your-profile' : APP_URL . '/settings/guest';
+$settingsLink = $isLoggedIn ? APP_URL . '/settings/your-account' : APP_URL . '/settings/guest';
 
 $parseRoleColor = function($roleColorRaw) {
     $defaultBg = 'transparent';
