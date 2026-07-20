@@ -542,6 +542,11 @@ return [
         'action' => 'reset_now',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_reset_now', 'max' => RL::MAX_5, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
+    'canvases.create_snapshot' => [
+        'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
+        'action' => 'create_snapshot',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create_snap', 'max' => RL::MAX_5, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
 
     'canvases.request_access' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',

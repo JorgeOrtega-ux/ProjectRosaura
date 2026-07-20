@@ -307,12 +307,16 @@ class CanvasSettingsService {
 
 
             $role = null;
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
             if (!$isOwner) {
                 if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS)) {
                     return ['success' => false, 'message' => __('err_unauthorized')];
                 }
+            }
+
+            if ($takeSnapshot) {
+                $this->createSnapshot($userId, $canvasId, $canManageOfficial);
             }
 
             try {
@@ -333,6 +337,55 @@ class CanvasSettingsService {
             
         } catch (Exception $e) {
             Logger::error('Error in resetCanvasNow.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function createSnapshot(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+
+            $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner) {
+                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS)) {
+                    return ['success' => false, 'message' => __('err_unauthorized')];
+                }
+            }
+
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+
+                if ($planLimits['max_snapshots_per_canvas'] !== -1) {
+                    $currentSnapshots = $this->canvasRepository->countCanvasSnapshots($canvasId);
+                    if ($currentSnapshots >= $planLimits['max_snapshots_per_canvas']) {
+                        return ['success' => false, 'message' => __('err_max_snapshots_reached')];
+                    }
+                }
+            }
+
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redisInstance = new RedisCache();
+                    $redis = $redisInstance->getClient();
+                    
+                    if ($redis) {
+                        $redis->setex("canvas:{$canvasId}:snapshot_lock", 300, "1");
+                        $redis->sadd("canvases:force_snapshots", [$canvasId]);
+                    }
+                }
+            } catch (Exception $e) {
+                Logger::error('Error insertando orden de snapshot en Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            }
+
+            return ['success' => true, 'message' => __('msg_snapshot_order_sent')];
+            
+        } catch (Exception $e) {
+            Logger::error('Error in createSnapshot.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database')];
         }
     }

@@ -136,6 +136,25 @@ class CanvasSettingsController extends BaseController {
         }
     }
 
+    public function create_snapshot($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['id'] ?? null;
+            
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
+            }
+            
+            return $this->respond($this->canvasServices->createSnapshot($userId, (int)$canvasId, $this->canManageOfficial()));
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function get_reset_settings($input) {
         try {
             if (!$this->session->isLoggedIn()) {

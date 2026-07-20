@@ -79,6 +79,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                         <span class="material-symbols-rounded">collections</span>
                     </button>
 
+                    <button class="component-button component-button--icon component-button--h40" data-action="createSnapshotSelected" data-ref="btn-action-create-snapshot" data-tooltip="<?php echo __('btn_create_snapshot'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">photo_camera</span>
+                    </button>
+
                     <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-resets" data-nav="" data-tooltip="<?php echo __('tooltip_manage_resets'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">update</span>
                     </button>

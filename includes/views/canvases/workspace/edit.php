@@ -475,7 +475,9 @@ if (!$canvasId) {
                     </div>
                 </div>
 
-                            </div>
+                </div>
+
+            </div>
         </div>
     </div>
 </div>

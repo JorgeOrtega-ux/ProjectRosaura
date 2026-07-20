@@ -68,6 +68,7 @@ class CanvasesManageController {
         const deselectBtn = e.target.closest('[data-action="deselectCanvas"]');
         const deleteCanvasesBtn = e.target.closest('[data-action="deleteSelectedCanvases"]');
         const createCanvasBtn = e.target.closest('[data-action="createCanvas"]');
+        const createSnapshotBtn = e.target.closest('[data-action="createSnapshotSelected"]');
         
         if (searchBtn) this.toggleSearchToolbar();
 
@@ -78,6 +79,10 @@ class CanvasesManageController {
         if (deselectBtn) this.deselectCanvas();
         if (deleteCanvasesBtn && !deleteCanvasesBtn.classList.contains('disabled-interactive')) this.deleteSelectedCanvases(deleteCanvasesBtn);
         if (createCanvasBtn && !createCanvasBtn.classList.contains('disabled-interactive')) this.createCanvas(createCanvasBtn);
+        if (createSnapshotBtn && !createSnapshotBtn.classList.contains('disabled-interactive')) {
+            e.preventDefault();
+            this.createSnapshotSelected(createSnapshotBtn);
+        }
 
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
@@ -256,6 +261,30 @@ class CanvasesManageController {
         }
     }
 
+    async createSnapshotSelected(btn) {
+        if (this.selectedCanvasIds.size !== 1) return;
+        const canvasId = Array.from(this.selectedCanvasIds)[0];
+        setButtonLoading(btn);
+
+        try {
+            const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.CreateSnapshot) ? ApiRoutes.Canvases.CreateSnapshot : 'canvases.create_snapshot';
+            const result = await this.api.post(route, { id: parseInt(canvasId, 10) }, this.abortController.signal);
+
+            if (result.aborted) return;
+
+            if (result.success) {
+                showMessage(result.message, 'success');
+            } else {
+                showMessage(result.message, 'error');
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            showMessage(window.__('general_save_network_error') || 'Error', 'error');
+        } finally {
+            restoreButton(btn);
+        }
+    }
+
     handleCanvasSelection(rowElement) {
         const canvasId = rowElement.getAttribute('data-canvas-id');
         const uuid = rowElement.getAttribute('data-uuid');
@@ -295,22 +324,28 @@ class CanvasesManageController {
         const btnResets = document.querySelector('[data-ref="btn-nav-resets"]');
         const btnSnapshots = document.querySelector('[data-ref="btn-nav-snapshots"]');
         const btnResize = document.querySelector('[data-ref="btn-nav-resize"]');
+        
+        const btnCreateSnapshot = document.querySelector('[data-ref="btn-action-create-snapshot"]');
+
+        const navButtons = [btnEdit, btnMembers, btnRoles, btnInvites, btnResets, btnSnapshots, btnResize];
 
         if (this.selectedCanvasIds.size > 0) {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
             if (this.selectedCanvasIds.size > 1) {
-                [btnEdit, btnMembers, btnRoles, btnInvites, btnResets, btnSnapshots, btnResize].forEach(btn => {
+                navButtons.forEach(btn => {
                     if (btn) {
                         btn.classList.add('disabled-interactive');
                         btn.setAttribute('data-nav', '');
                     }
                 });
+                if (btnCreateSnapshot) btnCreateSnapshot.classList.add('disabled-interactive');
             } else {
-                [btnEdit, btnMembers, btnRoles, btnInvites, btnResets, btnSnapshots, btnResize].forEach(btn => {
+                navButtons.forEach(btn => {
                     if (btn) btn.classList.remove('disabled-interactive');
                 });
+                if (btnCreateSnapshot) btnCreateSnapshot.classList.remove('disabled-interactive');
 
                 let activeUuid = this.selectedCanvasUuid;
                 let activeSize = this.currentCanvasSize;
@@ -345,9 +380,10 @@ class CanvasesManageController {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');
             if (defaultMode) defaultMode.classList.replace('disabled', 'active');
             
-            [btnEdit, btnMembers, btnRoles, btnInvites, btnResets, btnSnapshots, btnResize].forEach(btn => {
+            navButtons.forEach(btn => {
                 if (btn) btn.setAttribute('data-nav', '');
             });
+            if (btnCreateSnapshot) btnCreateSnapshot.classList.add('disabled-interactive');
         }
     }
 

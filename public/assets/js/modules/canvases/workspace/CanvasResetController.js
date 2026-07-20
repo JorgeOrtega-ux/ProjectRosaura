@@ -93,6 +93,13 @@ class CanvasResetController {
             return;
         }
 
+        const btnCreateSnapshot = e.target.closest('[data-action="createSnapshot"]');
+        if (btnCreateSnapshot) {
+            e.preventDefault();
+            this.executeCreateSnapshot(btnCreateSnapshot);
+            return;
+        }
+
         const dropdownItem = e.target.closest('[data-action="selectTimerAction"]');
         if (dropdownItem) {
             e.preventDefault();
@@ -239,6 +246,23 @@ class CanvasResetController {
         setButtonLoading(btn);
 
         const result = await this.api.post(ApiRoutes.Canvases.ResetNow, { id: canvasId, take_snapshot: takeSnapshot }, this.abortController.signal);
+
+        if (result.aborted) return;
+        
+        restoreButton(btn);
+
+        if (result.success) {
+            showMessage(result.message, 'success');
+        } else {
+            showMessage(result.message, 'error');
+        }
+    }
+
+    async executeCreateSnapshot(btn) {
+        const canvasId = this.wrapper.getAttribute('data-canvas-id');
+        setButtonLoading(btn);
+
+        const result = await this.api.post(ApiRoutes.Canvases.CreateSnapshot, { id: canvasId }, this.abortController.signal);
 
         if (result.aborted) return;
         

@@ -145,6 +145,8 @@ $isResetActive = $resetSettings['is_active'];
                 <div class="component-accordion-body">
                     <div class="component-accordion-content">
 
+
+
                         <div class="component-group-item component-group-item--wrap">
                             <div class="component-card__content">
                                 <div class="component-card__text">

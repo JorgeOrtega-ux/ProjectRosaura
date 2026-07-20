@@ -111,6 +111,7 @@ export const ApiRoutes = {
         GetResetSettings: 'canvases.get_reset_settings',
         UpdateResetSettings: 'canvases.update_reset_settings',
         ResetNow: 'canvases.reset_now',
+        CreateSnapshot: 'canvases.create_snapshot',
 
         GetSnapshotsGallery: 'canvases.get_snapshots_gallery',
         ToggleSnapshotLike: 'canvases.toggle_snapshot_like',

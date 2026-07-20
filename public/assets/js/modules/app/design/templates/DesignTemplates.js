@@ -399,11 +399,6 @@ export const DesignTemplates = {
                 locked: false,
                 opacity: 0.5 
             });
-                    x, y, w, h,
-                    locked: false,
-                    opacity: 0.5 
-                });
-            }
 
             this.toggleTemplate(id); 
             showMessage(__('msg_template_added'), 'success');

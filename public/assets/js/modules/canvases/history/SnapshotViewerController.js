@@ -288,7 +288,17 @@ class SnapshotViewerController {
                 rectH = window.innerHeight - 120 || 600;
             }
         }
-        
+
+        const scaledWidth = this.boardWidth * this.transform.scale;
+        const scaledHeight = this.boardHeight * this.transform.scale;
+
+        this.transform.x = (rectW - scaledWidth) / 2;
+        this.transform.y = (rectH - scaledHeight) / 2;
+
+        this.limitBounds();
+        this.render();
+    }
+
     limitBounds() {
         if (!this.canvas) return;
         

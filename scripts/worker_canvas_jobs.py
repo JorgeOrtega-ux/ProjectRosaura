@@ -350,6 +350,26 @@ def scheduler_thread():
                     r.setex(f"canvas:{canvas_id}:reset_lock", 300, "1")
                     r.publish("admin:canvas_events", json.dumps({"type": "canvas_locked", "canvas_id": canvas_id}))
                     r.srem("canvases:force_resets", b_canvas_id)
+
+                force_snapshots = r.smembers("canvases:force_snapshots")
+                for b_canvas_id in force_snapshots:
+                    canvas_id = int(b_canvas_id)
+                    logging.info(f"Scheduler: Triggering Manual Snapshot for canvas {canvas_id}")
+                    state_key = f"canvas:{canvas_id}:state"
+                    current_state = r.get(state_key)
+                    if current_state:
+                        try:
+                            compressed_state = zlib.compress(current_state if isinstance(current_state, bytes) else current_state.encode('latin1'))
+                            cursor.execute("""
+                                INSERT INTO canvas_snapshots (canvas_id, snapshot_data, last_updated)
+                                VALUES (%s, %s, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE snapshot_data = %s, last_updated = CURRENT_TIMESTAMP
+                            """, (canvas_id, compressed_state, compressed_state))
+                        except Exception as ex_snap:
+                            logging.error(f"Error persisting current state for manual snapshot canvas {canvas_id}: {ex_snap}")
+
+                    r.setex(f"canvas:{canvas_id}:snapshot_lock", 300, "1")
+                    r.sadd("canvases:pending_snapshots", canvas_id)
+                    r.srem("canvases:force_snapshots", b_canvas_id)
                 
                 db.commit()
                 
@@ -483,7 +503,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             return False
 
         
-        if r.exists(f"canvas:{canvas_id}:reset_lock"):
+        if r.exists(f"canvas:{canvas_id}:reset_lock") or r.exists(f"canvas:{canvas_id}:snapshot_lock"):
             
             max_snapshots = get_max_snapshots_per_tier(owner_tier)
             
@@ -575,6 +595,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                 print(f"[!] Error saving history to DB: {e}")
 
             r.set(f"canvas:{canvas_id}:snapshot_done", "1", ex=60)
+            r.delete(f"canvas:{canvas_id}:snapshot_lock")
             
         return True
     except Exception as e:
