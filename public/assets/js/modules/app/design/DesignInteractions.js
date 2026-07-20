@@ -62,12 +62,7 @@ export const DesignInteractions = {
             return;
         }
 
-        const btnPlayTimelapse = e.target.closest('[data-action="playTimelapse"]');
-        if (btnPlayTimelapse) {
-            e.preventDefault();
-            if (typeof this.startTimelapse === 'function') this.startTimelapse();
-            return;
-        }
+
 
         const btnJoin = e.target.closest('[data-action="joinCanvasDirectly"]');
         const btnReqAccess = e.target.closest('[data-action="requestCanvasAccess"]');
@@ -105,7 +100,7 @@ export const DesignInteractions = {
             return;
         }
 
-        if (this.isSpectator || this.timelapseActive || this.isResetLocked || this.isResizeLocked) return; 
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return; 
 
         const btnUpload = e.target.closest('[data-action="triggerTemplateUpload"]');
         if (btnUpload && this.fileInput) {
@@ -192,7 +187,7 @@ export const DesignInteractions = {
     },
 
     handleKeyDown(e) {
-        if (this.isSpectator || this.timelapseActive || this.isResetLocked || this.isResizeLocked) return;
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
         
         if (e.key === 'Escape') {
             if (this.interactionMode !== 'normal') {
@@ -238,7 +233,6 @@ export const DesignInteractions = {
         if (typeof this.limitBounds === 'function') this.limitBounds();
         this.calculateHoverPixel(e.clientX, e.clientY);
         this.requestRender();
-        if (typeof this.requestChunksForViewport === 'function') this.requestChunksForViewport();
     },
 
     handleMouseDown(e) {
@@ -248,7 +242,7 @@ export const DesignInteractions = {
         const exact = this.getExactBoardCoords(e.clientX, e.clientY);
         if (!exact) return;
 
-        if (this.activeTemplateId && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
+        if (this.activeTemplateId && !this.isSpectator && !this.isResetLocked) {
             const handleHit = typeof this.checkTemplateHandleHit === 'function' ? this.checkTemplateHandleHit(exact.x, exact.y) : null;
             if (handleHit) {
                 e.preventDefault();
@@ -269,7 +263,7 @@ export const DesignInteractions = {
             }
         }
 
-        if (e.shiftKey || e.button === 1 || this.isSpectator || this.timelapseActive || this.isResetLocked) {
+        if (e.shiftKey || e.button === 1 || this.isSpectator || this.isResetLocked) {
             this.isDragging = true;
             this.lastMouse = { x: e.clientX, y: e.clientY };
             this.canvas.classList.add('component-cursor-grabbing');
@@ -334,7 +328,6 @@ export const DesignInteractions = {
             if (typeof this.limitBounds === 'function') this.limitBounds();
             this.calculateHoverPixel(e.clientX, e.clientY);
             this.requestRender();
-            if (typeof this.requestChunksForViewport === 'function') this.requestChunksForViewport();
             return;
         }
 
@@ -350,41 +343,39 @@ export const DesignInteractions = {
                 let newX = Math.round(this.templateInteraction.origX + dx);
                 let newY = Math.round(this.templateInteraction.origY + dy);
                 
-                if (!this.isInfinite) {
-                    const angleRad = (tpl.angle || 0) * Math.PI / 180;
-                    const cosA = Math.cos(angleRad);
-                    const sinA = Math.sin(angleRad);
-                    
-                    const w2 = tpl.w / 2;
-                    const h2 = tpl.h / 2;
-                    
-                    const corners = [
-                        { x: -w2, y: -h2 },
-                        { x: w2, y: -h2 },
-                        { x: -w2, y: h2 },
-                        { x: w2, y: h2 }
-                    ];
-                    
-                    let minRx = Infinity, maxRx = -Infinity;
-                    let minRy = Infinity, maxRy = -Infinity;
-                    
-                    for (let c of corners) {
-                        const rx = c.x * cosA - c.y * sinA;
-                        const ry = c.x * sinA + c.y * cosA;
-                        if (rx < minRx) minRx = rx;
-                        if (rx > maxRx) maxRx = rx;
-                        if (ry < minRy) minRy = ry;
-                        if (ry > maxRy) maxRy = ry;
-                    }
-                    
-                    const minX = Math.round(-w2 - minRx);
-                    const maxX = Math.round(this.boardWidth - w2 - maxRx);
-                    const minY = Math.round(-h2 - minRy);
-                    const maxY = Math.round(this.boardHeight - h2 - maxRy);
-                    
-                    newX = Math.max(minX, Math.min(newX, maxX));
-                    newY = Math.max(minY, Math.min(newY, maxY));
+                const angleRad = (tpl.angle || 0) * Math.PI / 180;
+                const cosA = Math.cos(angleRad);
+                const sinA = Math.sin(angleRad);
+                
+                const w2 = tpl.w / 2;
+                const h2 = tpl.h / 2;
+                
+                const corners = [
+                    { x: -w2, y: -h2 },
+                    { x: w2, y: -h2 },
+                    { x: -w2, y: h2 },
+                    { x: w2, y: h2 }
+                ];
+                
+                let minRx = Infinity, maxRx = -Infinity;
+                let minRy = Infinity, maxRy = -Infinity;
+                
+                for (let c of corners) {
+                    const rx = c.x * cosA - c.y * sinA;
+                    const ry = c.x * sinA + c.y * cosA;
+                    if (rx < minRx) minRx = rx;
+                    if (rx > maxRx) maxRx = rx;
+                    if (ry < minRy) minRy = ry;
+                    if (ry > maxRy) maxRy = ry;
                 }
+                
+                const minX = Math.round(-w2 - minRx);
+                const maxX = Math.round(this.boardWidth - w2 - maxRx);
+                const minY = Math.round(-h2 - minRy);
+                const maxY = Math.round(this.boardHeight - h2 - maxRy);
+                
+                newX = Math.max(minX, Math.min(newX, maxX));
+                newY = Math.max(minY, Math.min(newY, maxY));
                 
                 tpl.x = newX;
                 tpl.y = newY;
@@ -463,9 +454,7 @@ export const DesignInteractions = {
                     else if (kY < -0.0001) strictMaxW = Math.min(strictMaxW, -anchorBoardY / kY);
                 }
 
-                if (!this.isInfinite) {
-                    newW = Math.min(newW, strictMaxW);
-                }
+                newW = Math.min(newW, strictMaxW);
                 
                 const MAX_TEMPLATE_SIZE = 1500;
                 newW = Math.min(newW, MAX_TEMPLATE_SIZE);
@@ -536,7 +525,7 @@ export const DesignInteractions = {
         if (target) {
             const exact = this.getExactBoardCoords(e.clientX, e.clientY);
             let hit = null;
-            if (exact && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
+            if (exact && !this.isSpectator && !this.isResetLocked) {
                 if (typeof this.checkTemplateHandleHit === 'function') {
                     hit = this.checkTemplateHandleHit(exact.x, exact.y);
                     if (hit) hit = 'resize-' + hit;
@@ -651,7 +640,7 @@ export const DesignInteractions = {
             this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
 
             const exact = this.getExactBoardCoords(this.touchStartX, this.touchStartY);
-            if (exact && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
+            if (exact && !this.isSpectator && !this.isResetLocked) {
                 let hit = null;
                 if (typeof this.checkTemplateHit === 'function') {
                     hit = this.checkTemplateHit(exact.x, exact.y);
@@ -709,7 +698,6 @@ export const DesignInteractions = {
 
             if (typeof this.limitBounds === 'function') this.limitBounds();
             this.requestRender();
-            if (typeof this.requestChunksForViewport === 'function') this.requestChunksForViewport();
             return;
         }
 
@@ -725,10 +713,8 @@ export const DesignInteractions = {
             if (this.templateInteraction.type === 'move') {
                 let newX = Math.round(this.templateInteraction.origX + dx);
                 let newY = Math.round(this.templateInteraction.origY + dy);
-                if (!this.isInfinite) {
-                    newX = Math.max(0, Math.min(newX, this.boardWidth - tpl.w));
-                    newY = Math.max(0, Math.min(newY, this.boardHeight - tpl.h));
-                }
+                newX = Math.max(0, Math.min(newX, this.boardWidth - tpl.w));
+                newY = Math.max(0, Math.min(newY, this.boardHeight - tpl.h));
                 tpl.x = newX;
                 tpl.y = newY;
             } else if (this.templateInteraction.type === 'rotate') {
@@ -761,49 +747,33 @@ export const DesignInteractions = {
                 
                 if (this.templateInteraction.type === 'resize-br') {
                     newW = Math.round(this.templateInteraction.origW + dx);
-                    if (this.isInfinite) {
-                        newW = Math.max(20, newW);
-                    } else {
-                        let maxW = this.boardWidth - this.templateInteraction.origX;
-                        let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
-                        newW = Math.max(20, Math.min(newW, maxW, maxW_H));
-                    }
+                    let maxW = this.boardWidth - this.templateInteraction.origX;
+                    let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
+                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
                     const sizes = enforceLimits(newW);
                     tpl.w = sizes.w; tpl.h = sizes.h;
                 } else if (this.templateInteraction.type === 'resize-tl') {
                     newW = Math.round(this.templateInteraction.origW - dx);
-                    if (this.isInfinite) {
-                        newW = Math.max(20, newW);
-                    } else {
-                        let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
-                        let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
-                        newW = Math.max(20, Math.min(newW, maxW, maxW_H));
-                    }
+                    let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
+                    let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
+                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
                     const sizes = enforceLimits(newW);
                     tpl.w = sizes.w; tpl.h = sizes.h;
                     tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - sizes.w;
                     tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - sizes.h;
                 } else if (this.templateInteraction.type === 'resize-tr') {
                     newW = Math.round(this.templateInteraction.origW + dx);
-                    if (this.isInfinite) {
-                        newW = Math.max(20, newW);
-                    } else {
-                        let maxW = this.boardWidth - this.templateInteraction.origX;
-                        let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
-                        newW = Math.max(20, Math.min(newW, maxW, maxW_H));
-                    }
+                    let maxW = this.boardWidth - this.templateInteraction.origX;
+                    let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
+                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
                     const sizes = enforceLimits(newW);
                     tpl.w = sizes.w; tpl.h = sizes.h;
                     tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - sizes.h;
                 } else if (this.templateInteraction.type === 'resize-bl') {
                     newW = Math.round(this.templateInteraction.origW - dx);
-                    if (this.isInfinite) {
-                        newW = Math.max(20, newW);
-                    } else {
-                        let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
-                        let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
-                        newW = Math.max(20, Math.min(newW, maxW, maxW_H));
-                    }
+                    let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
+                    let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
+                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
                     const sizes = enforceLimits(newW);
                     tpl.w = sizes.w; tpl.h = sizes.h;
                     tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - sizes.w;
@@ -843,7 +813,6 @@ export const DesignInteractions = {
                 
                 if (typeof this.limitBounds === 'function') this.limitBounds();
                 this.requestRender();
-                if (typeof this.requestChunksForViewport === 'function') this.requestChunksForViewport();
             }
         }
     },
@@ -874,7 +843,7 @@ export const DesignInteractions = {
             const touchDuration = Date.now() - this.touchStartTime;
             if (!this.touchHasMoved && touchDuration < 300) {
                 
-                if (!this.isSpectator && !this.timelapseActive && !this.isResetLocked && !this.isResizeLocked) {
+                if (!this.isSpectator && !this.isResetLocked && !this.isResizeLocked) {
                     const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
                     if (coords) {
                         const key = `${coords.x},${coords.y}`;
@@ -987,7 +956,7 @@ export const DesignInteractions = {
     },
 
     placePixels() {
-        if (this.selectedPixels.size === 0 || this.isSpectator || this.timelapseActive || this.isResetLocked || this.isResizeLocked) return;
+        if (this.selectedPixels.size === 0 || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
         
         let maxBalance = this.getMaxBalance();
 

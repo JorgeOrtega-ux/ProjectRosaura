@@ -62,7 +62,6 @@ class DesignController {
         this.canvasPrivacy = 'private';
         this.canvasApproval = false;
 
-        this.timelapseActive = false;
         this.resetActive = false;
         this.nextResetAt = null;
         this.timerAction = 'restart';

@@ -348,7 +348,7 @@ export const DesignNetwork = {
 
             if (response.success && response.data) {
                 const rawSize = String(data?.new_size || response.data.size || '');
-                if (rawSize && !this.isInfinite) {
+                if (rawSize) {
                     const parts = rawSize.toLowerCase().split('x');
                     this.boardWidth = parseInt(parts[0], 10);
                     this.boardHeight = parts.length > 1 ? parseInt(parts[1], 10) : this.boardWidth;
@@ -950,73 +950,7 @@ export const DesignNetwork = {
         }
     },
 
-    async startTimelapse() {
-        if (!this.canvasIntId || this.timelapseActive || this.isResetLocked || this.isResizeLocked) return;
-        this.timelapseActive = true;
-        
-        const route = ApiRoutes.Canvases?.GetTimelapse || 'canvas/get_timelapse';
 
-        this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
-        this.requestRender();
-
-        try {
-            const response = await this.api.stream(route, { id: this.canvasIntId }, this.abortController.signal);
-            if (response.aborted) return;
-            
-            if (!response.success) {
-                showMessage(response.message, 'error');
-                this.timelapseActive = false;
-                this.checkCanvasAccess(); 
-                return;
-            }
-
-            const reader = response.reader;
-            const decoder = new TextDecoder('utf-8');
-            let buffer = '';
-
-            while (true) {
-                if (this.isResetLocked || this.isResizeLocked) break;
-
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                let lines = buffer.split('\n');
-                buffer = lines.pop();
-
-                for (const line of lines) {
-                    if (!line.trim()) continue;
-                    
-                    try {
-                        const event = JSON.parse(line);
-                        this._drawTimelapsePixel(event);
-                    } catch (e) {
-                    }
-                }
-                
-                this.requestRender();
-                await new Promise(resolve => requestAnimationFrame(resolve)); 
-            }
-            
-            if (buffer.trim() && !this.isResetLocked && !this.isResizeLocked) {
-                try {
-                    const event = JSON.parse(buffer);
-                    this._drawTimelapsePixel(event);
-                    this.requestRender();
-                } catch(e) {}
-            }
-
-            if (!this.isResetLocked && !this.isResizeLocked) showMessage(__('msg_timelapse_ended'), 'success');
-
-        } catch (err) {
-            if (err.name !== 'AbortError') {
-                showMessage(__('err_timelapse_play'), 'error');
-                this.checkCanvasAccess();
-            }
-        } finally {
-            this.timelapseActive = false;
-        }
-    },
 
     handleNuclearWarning(data) {
         if (!this.nuclearWarnings) this.nuclearWarnings = [];
@@ -1115,120 +1049,5 @@ export const DesignNetwork = {
         }, 3500);
     },
 
-    _drawTimelapsePixel(data) {
-        if (!data) return;
 
-        if (data.type === 'canvas_resize') {
-            this.handleExpansionBadge(data);
-
-            const newW = parseInt(data.w, 10);
-            const newH = parseInt(data.h, 10);
-
-            if (!isNaN(newW) && !isNaN(newH) && (newW !== this.boardWidth || newH !== this.boardHeight)) {
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = this.boardWidth;
-                tempCanvas.height = this.boardHeight;
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.drawImage(this.offscreenCanvas, 0, 0);
-
-                this.boardWidth = newW;
-                this.boardHeight = newH;
-                this.offscreenCanvas.width = newW;
-                this.offscreenCanvas.height = newH;
-
-                this.offscreenCtx.fillStyle = '#FFFFFF';
-                this.offscreenCtx.fillRect(0, 0, newW, newH);
-                this.offscreenCtx.drawImage(tempCanvas, 0, 0);
-
-                if (typeof this.centerBoard === 'function') this.centerBoard();
-                if (typeof this.requestRender === 'function') this.requestRender();
-            }
-            return;
-        }
-
-        if (data.type === 'canvas_reset') {
-            this.handleResetBadge();
-
-            this.offscreenCtx.fillStyle = '#FFFFFF';
-            this.offscreenCtx.fillRect(0, 0, this.boardWidth, this.boardHeight);
-            if (typeof this.requestRender === 'function') this.requestRender();
-            return;
-        }
-
-        if (data.type === 'bomb_pixel') {
-            const x = parseInt(data.x, 10);
-            const y = parseInt(data.y, 10);
-            const r = parseInt(data.r, 10);
-            const perkId = data.perk || 'bomba_pixel_1';
-            
-            this.handleNuclearWarning(data);
-
-            if (!isNaN(x) && !isNaN(y) && !isNaN(r)) {
-                this.offscreenCtx.save();
-                this.offscreenCtx.beginPath();
-                this.offscreenCtx.arc(x + 0.5, y + 0.5, r, 0, 2 * Math.PI);
-                this.offscreenCtx.clip();
-                this.offscreenCtx.fillStyle = '#FFFFFF';
-                this.offscreenCtx.fillRect(x - r - 1, y - r - 1, r * 2 + 2, r * 2 + 2);
-                this.offscreenCtx.restore();
-
-                if (typeof this.triggerExplosionEffect === 'function') {
-                    this.triggerExplosionEffect(x, y, r, perkId);
-                }
-            }
-            return;
-        }
-
-        if (data.type === 'template_plazmar') {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = () => {
-                this.offscreenCtx.save();
-                const x = parseInt(data.x, 10);
-                const y = parseInt(data.y, 10);
-                const w = parseInt(data.w, 10);
-                const h = parseInt(data.h, 10);
-                const angle = parseFloat(data.angle || 0);
-                
-                this.offscreenCtx.translate(x + w/2, y + h/2);
-                this.offscreenCtx.rotate(angle * Math.PI / 180);
-                this.offscreenCtx.drawImage(img, -w/2, -h/2, w, h);
-                this.offscreenCtx.restore();
-                if (typeof this.requestRender === 'function') this.requestRender();
-            };
-            img.src = data.image_url;
-            return;
-        }
-
-        const pX = parseInt(data.x, 10);
-        const pY = parseInt(data.y, 10);
-        if (isNaN(pX) || isNaN(pY)) return;
-
-        const rawColor = data.c !== undefined ? data.c : data.color;
-
-        if (rawColor === 'transparent' || rawColor === 'none' || rawColor === 255 || rawColor === '255') {
-            this.offscreenCtx.clearRect(pX, pY, 1, 1);
-        } else if (typeof rawColor === 'string' && rawColor.startsWith('#')) {
-            this.offscreenCtx.fillStyle = rawColor;
-            this.offscreenCtx.clearRect(pX, pY, 1, 1);
-            this.offscreenCtx.fillRect(pX, pY, 1, 1);
-        } else {
-            const cIdx = parseInt(rawColor, 10);
-            if (!isNaN(cIdx)) {
-                const paletteObj = typeof getPaletteById === 'function' ? getPaletteById(this.canvasPaletteId) : null;
-                let hexColor = '#000000';
-                if (paletteObj && paletteObj.colors && paletteObj.colors[cIdx]) {
-                    hexColor = paletteObj.colors[cIdx].hex;
-                } else if (window.APP_PALETTES && window.APP_PALETTES['default'] && window.APP_PALETTES['default'].colors && window.APP_PALETTES['default'].colors[cIdx]) {
-                    hexColor = window.APP_PALETTES['default'].colors[cIdx].hex || window.APP_PALETTES['default'].colors[cIdx];
-                } else {
-                    hexColor = '#FFFFFF';
-                }
-                
-                this.offscreenCtx.fillStyle = hexColor;
-                this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                this.offscreenCtx.fillRect(pX, pY, 1, 1);
-            }
-        }
-    }
 };

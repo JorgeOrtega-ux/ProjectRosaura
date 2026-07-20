@@ -119,7 +119,7 @@ export const DesignRender = {
             this.ctx.drawImage(this.offscreenCanvas, 0, 0);
         }
 
-        if (this.activeTemplateId && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
+        if (this.activeTemplateId && !this.isSpectator && !this.isResetLocked) {
             const tpl = this.templates.find(t => t.id === this.activeTemplateId);
             if (tpl) {
                 this.ctx.save();
@@ -160,14 +160,14 @@ export const DesignRender = {
 
         const renderSet = new Set(this.selectedPixels);
 
-        if (this.hoveredPixel && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
+        if (this.hoveredPixel && !this.isSpectator && !this.isResetLocked) {
             const hoverKey = `${this.hoveredPixel.x},${this.hoveredPixel.y}`;
             if (!renderSet.has(hoverKey)) {
                 renderSet.add(hoverKey);
             }
         }
 
-        if (renderSet.size > 0 && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
+        if (renderSet.size > 0 && !this.isSpectator && !this.isResetLocked) {
             this.ctx.strokeStyle = activeColor; 
             this.ctx.lineWidth = 1 / this.transform.scale;
             this.ctx.beginPath();

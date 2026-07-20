@@ -63,7 +63,7 @@ export const DesignSetup = {
             this.resizeTimerAction = wrapper.getAttribute('data-resize-timer-action') || 'restart';
 
             const sizeStr = wrapper.getAttribute('data-size');
-            if (sizeStr && sizeStr !== 'infinite') {
+            if (sizeStr) {
                 const parts = sizeStr.toLowerCase().split('x');
                 this.boardWidth = parseInt(parts[0], 10);
                 this.boardHeight = parts.length > 1 ? parseInt(parts[1], 10) : this.boardWidth;
@@ -71,7 +71,6 @@ export const DesignSetup = {
                 this.boardWidth = 64;
                 this.boardHeight = 64;
             }
-            this.isInfinite = false;
             
             this.canvasPaletteId = wrapper.getAttribute('data-palette') || 'default';
             
@@ -286,37 +285,6 @@ export const DesignSetup = {
         }
     },
 
-    requestChunksForViewport() {
-        if (!this.isInfinite || !this.wsManager || this.wsManager.ws?.readyState !== WebSocket.OPEN) return;
-        
-        if (this.chunkRequestDebounce) clearTimeout(this.chunkRequestDebounce);
-        this.chunkRequestDebounce = setTimeout(() => {
-            const rect = this.canvas.getBoundingClientRect();
-            
-            const startX = Math.floor(-this.transform.x / this.transform.scale / 512);
-            const startY = Math.floor(-this.transform.y / this.transform.scale / 512);
-            const endX = Math.ceil((rect.width - this.transform.x) / this.transform.scale / 512);
-            const endY = Math.ceil((rect.height - this.transform.y) / this.transform.scale / 512);
-
-            const requested = [];
-            for (let x = startX; x <= endX; x++) {
-                for (let y = startY; y <= endY; y++) {
-                    const key = `${x},${y}`;
-                    if (!this.chunks.has(key)) {
-                        requested.push({x, y});
-                        this.chunks.set(key, null);
-                    }
-                }
-            }
-            
-            if (requested.length > 0) {
-                this.wsManager.send({
-                    type: 'request_chunks',
-                    chunks: requested
-                });
-            }
-        }, 150);
-    },
 
     setupCanvas() {
         this.updateCanvasDimensions();
