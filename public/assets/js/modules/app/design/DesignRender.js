@@ -150,7 +150,9 @@ export const DesignRender = {
                 this.ctx.stroke();
             }
 
-            this.ctx.drawImage(this.offscreenCanvas, 0, 0);
+            if (this.offscreenCanvas && this.offscreenCanvas.width > 0 && this.offscreenCanvas.height > 0) {
+                this.ctx.drawImage(this.offscreenCanvas, 0, 0);
+            }
         }
 
         if (this.activeTemplateId && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {

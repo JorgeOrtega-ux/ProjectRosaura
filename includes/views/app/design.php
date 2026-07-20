@@ -32,8 +32,8 @@ if (!empty($canvasUuid)) {
         $db = $dbManager->getConnection(DB::CONN_CANVASES);
         $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, 
                        c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat, c.allow_purchases,
-                       r.is_active as reset_active, r.next_reset_at, r.timer_action as reset_timer_action,
-                       rs.is_active as resize_active, rs.next_resize_at, rs.target_size, rs.timer_action as resize_timer_action
+                       r.is_active as reset_active, r.next_reset_at,
+                       rs.is_active as resize_active, rs.next_resize_at, rs.target_size
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_reset_settings r ON c.id = r.canvas_id
                 LEFT JOIN canvas_resize_settings rs ON c.id = rs.canvas_id
@@ -58,12 +58,10 @@ if (!empty($canvasUuid)) {
 
             $resetActive = $canvas['reset_active'] ?? '0';
             $nextResetAt = $canvas['next_reset_at'] ?? '';
-            $timerAction = $canvas['reset_timer_action'] ?? 'restart';
 
             $resizeActive = $canvas['resize_active'] ?? '0';
             $nextResizeAt = $canvas['next_resize_at'] ?? '';
             $resizeTargetSize = $canvas['target_size'] ?? '64';
-            $resizeTimerAction = $canvas['resize_timer_action'] ?? 'restart';
             $isMember = false;
             $userRole = 'spectator';
             $userId = null;

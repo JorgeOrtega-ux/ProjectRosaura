@@ -240,7 +240,18 @@ export const DesignSetup = {
             const bytes = await this.decompressIfNeeded(base64String);
             if (!bytes) return;
 
-            const imageData = this.offscreenCtx.createImageData(this.boardWidth, this.boardHeight);
+            const w = parseInt(this.boardWidth, 10);
+            const h = parseInt(this.boardHeight, 10);
+            if (isNaN(w) || isNaN(h) || w <= 0 || h <= 0) {
+                console.error('[DesignSetup] Invalid canvas dimensions in hydrateCanvasState:', this.boardWidth, this.boardHeight);
+                return;
+            }
+
+            if (!this.offscreenCtx) {
+                this.setupCanvas();
+            }
+
+            const imageData = this.offscreenCtx.createImageData(w, h);
             const totalBytes = Math.min(bytes.length, imageData.data.length);
             imageData.data.set(bytes.subarray(0, totalBytes));
             

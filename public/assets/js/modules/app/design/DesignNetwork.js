@@ -427,11 +427,17 @@ export const DesignNetwork = {
             if (response.aborted) return;
 
             if (response.success && response.data) {
-                this.boardWidth = data.new_size;
-                this.boardHeight = data.new_size;
+                const rawSize = String(data?.new_size || response.data.size || '');
+                if (rawSize && !this.isInfinite) {
+                    const parts = rawSize.toLowerCase().split('x');
+                    this.boardWidth = parseInt(parts[0], 10);
+                    this.boardHeight = parts.length > 1 ? parseInt(parts[1], 10) : this.boardWidth;
+                }
+                if (isNaN(this.boardWidth) || this.boardWidth <= 0) this.boardWidth = 64;
+                if (isNaN(this.boardHeight) || this.boardHeight <= 0) this.boardHeight = 64;
                 
                 const wrapper = document.querySelector('[data-ref="design-wrapper"]');
-                if (wrapper) wrapper.setAttribute('data-size', data.new_size);
+                if (wrapper) wrapper.setAttribute('data-size', `${this.boardWidth}x${this.boardHeight}`);
 
                 this.setupCanvas();
                 this.centerBoard();
@@ -446,6 +452,7 @@ export const DesignNetwork = {
                 }
             }
         } catch (error) {
+            console.error('[DesignNetwork] handleCanvasResizeCompleted error:', error);
         }
 
         this.isResizeLocked = false;

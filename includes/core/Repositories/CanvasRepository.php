@@ -910,14 +910,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function updateResetSettings(int $canvasId, array $settings): bool {
         $sql = "INSERT INTO " . DB::TBL_CANVAS_RESET_SETTINGS . " 
-                (canvas_id, is_active, next_reset_at, take_snapshot, timer_action)
+                (canvas_id, is_active, next_reset_at, take_snapshot)
                 VALUES 
-                (:canvas_id, :is_active, :next_reset_at, :take_snapshot, :timer_action)
+                (:canvas_id, :is_active, :next_reset_at, :take_snapshot)
                 ON DUPLICATE KEY UPDATE 
                 is_active = :upd_is_active,
                 next_reset_at = :upd_next_reset_at,
-                take_snapshot = :upd_take_snapshot,
-                timer_action = :upd_timer_action";
+                take_snapshot = :upd_take_snapshot";
         
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
@@ -925,12 +924,10 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':is_active'         => $settings['is_active'],
             ':next_reset_at'     => $settings['next_reset_at'],
             ':take_snapshot'     => $settings['take_snapshot'],
-            ':timer_action'      => $settings['timer_action'],
             
             ':upd_is_active'     => $settings['is_active'],
             ':upd_next_reset_at' => $settings['next_reset_at'],
-            ':upd_take_snapshot' => $settings['take_snapshot'],
-            ':upd_timer_action'  => $settings['timer_action']
+            ':upd_take_snapshot' => $settings['take_snapshot']
         ]);
     }
 
@@ -945,14 +942,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function updateResizeSettings(int $canvasId, array $settings): bool {
         $sql = "INSERT INTO " . DB::TBL_CANVAS_RESIZE_SETTINGS . " 
-                (canvas_id, is_active, next_resize_at, target_size, timer_action)
+                (canvas_id, is_active, next_resize_at, target_size)
                 VALUES 
-                (:canvas_id, :is_active, :next_resize_at, :target_size, :timer_action)
+                (:canvas_id, :is_active, :next_resize_at, :target_size)
                 ON DUPLICATE KEY UPDATE 
                 is_active = :upd_is_active,
                 next_resize_at = :upd_next_resize_at,
-                target_size = :upd_target_size,
-                timer_action = :upd_timer_action";
+                target_size = :upd_target_size";
         
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
@@ -960,12 +956,10 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':is_active'         => $settings['is_active'],
             ':next_resize_at'    => $settings['next_resize_at'],
             ':target_size'       => $settings['target_size'],
-            ':timer_action'      => $settings['timer_action'],
             
             ':upd_is_active'     => $settings['is_active'],
             ':upd_next_resize_at'=> $settings['next_resize_at'],
-            ':upd_target_size'   => $settings['target_size'],
-            ':upd_timer_action'  => $settings['timer_action']
+            ':upd_target_size'   => $settings['target_size']
         ]);
     }
 

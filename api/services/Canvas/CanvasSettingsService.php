@@ -99,8 +99,7 @@ class CanvasSettingsService {
                 $settings = [
                     'is_active' => false,
                     'next_resize_at' => null,
-                    'target_size' => '64x64',
-                    'timer_action' => 'restart'
+                    'target_size' => '64x64'
                 ];
             } else {
                 $settings['is_active'] = (bool)$settings['is_active'];
@@ -157,8 +156,7 @@ class CanvasSettingsService {
             $settings = [
                 'is_active' => $isActive ? 1 : 0,
                 'next_resize_at' => $nextResizeAt,
-                'target_size' => $targetSize,
-                'timer_action' => in_array($data['timer_action'], ['stop', 'none', 'restart']) ? $data['timer_action'] : 'restart'
+                'target_size' => $targetSize
             ];
 
             $this->canvasRepository->updateResizeSettings($canvasId, $settings);
@@ -184,8 +182,7 @@ class CanvasSettingsService {
                             'canvas_id' => $canvasId,
                             'is_active' => $isActive,
                             'next_resize_at' => $nextResizeAt,
-                            'target_size' => $targetSize,
-                            'timer_action' => $settings['timer_action']
+                            'target_size' => $targetSize
                         ]));
                     }
                 }
@@ -214,8 +211,7 @@ class CanvasSettingsService {
                 $settings = [
                     'is_active' => false,
                     'next_reset_at' => null,
-                    'take_snapshot' => true,
-                    'timer_action' => 'restart'
+                    'take_snapshot' => true
                 ];
             } else {
                 $settings['is_active'] = (bool)$settings['is_active'];
@@ -272,8 +268,7 @@ class CanvasSettingsService {
             $settings = [
                 'is_active' => $isActive ? 1 : 0,
                 'next_reset_at' => $nextResetAt,
-                'take_snapshot' => $takeSnapshot ? 1 : 0,
-                'timer_action' => in_array($data['timer_action'], ['stop', 'none', 'restart']) ? $data['timer_action'] : 'restart'
+                'take_snapshot' => $takeSnapshot ? 1 : 0
             ];
 
             $this->canvasRepository->updateResetSettings($canvasId, $settings);
@@ -295,8 +290,7 @@ class CanvasSettingsService {
                             'canvas_id' => $canvasId,
                             'is_active' => $isActive,
                             'next_reset_at' => $nextResetAt,
-                            'take_snapshot' => $takeSnapshot,
-                            'timer_action' => $settings['timer_action']
+                            'take_snapshot' => $takeSnapshot
                         ]));
                     }
                 }

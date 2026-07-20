@@ -106,8 +106,7 @@ class CanvasSettingsController extends BaseController {
             $data = [
                 'is_active' => filter_var($input['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN),
                 'next_resize_at' => $input['next_resize_at'] ?? null,
-                'target_size' => $input['target_size'] ?? '64x64',
-                'timer_action' => $input['timer_action'] ?? 'restart'
+                'target_size' => $input['target_size'] ?? '64x64'
             ];
             
             return $this->respond($this->canvasServices->updateResizeSettings($userId, (int)$canvasId, $data, $this->canManageOfficial()));
@@ -170,8 +169,7 @@ class CanvasSettingsController extends BaseController {
             $data = [
                 'is_active' => filter_var($input['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN),
                 'next_reset_at' => $input['next_reset_at'] ?? null,
-                'take_snapshot' => filter_var($input['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN),
-                'timer_action' => $input['timer_action'] ?? 'restart'
+                'take_snapshot' => filter_var($input['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN)
             ];
             
             return $this->respond($this->canvasServices->updateResetSettings($userId, (int)$canvasId, $data, $this->canManageOfficial()));
