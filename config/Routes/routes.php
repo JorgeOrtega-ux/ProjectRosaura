@@ -60,6 +60,7 @@ return [
     '/admin/dashboard' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => [\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL], 'requires_2fa' => false],
     '/admin/messages' => ['view' => 'admin/messages/manage-messages.php', 'auth' => true, 'permissions' => ['view_logs'], 'requires_2fa' => false],
     '/admin/messages/visibility/:uuid' => ['view' => 'admin/messages/edit-visibility.php', 'auth' => true, 'permissions' => ['view_logs'], 'requires_2fa' => false],
+    '/admin/messages/reports/:uuid' => ['view' => 'admin/messages/reports.php', 'auth' => true, 'permissions' => ['view_logs'], 'requires_2fa' => false],
     '/admin/manage-users' => ['view' => 'admin/users/manage-users.php', 'auth' => true, 'permissions' => ['view_users'], 'requires_2fa' => false],
     '/admin/edit-user/:uuid' => ['view' => 'admin/users/edit-user.php', 'auth' => true, 'permissions' => ['edit_users'], 'requires_2fa' => false],
     '/admin/edit-status/:uuid' => ['view' => 'admin/users/edit-status.php', 'auth' => true, 'permissions' => ['moderate_users'], 'requires_2fa' => false],

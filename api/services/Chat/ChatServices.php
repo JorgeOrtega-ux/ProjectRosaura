@@ -349,13 +349,23 @@ class ChatServices
         return ['success' => true, 'message' => __('msg_message_deleted')];
     }
 
-    public function report($userId, $messageId, $reason)
+    public function report($userId, $messageId, $reason, $details = '')
     {
         if ($messageId <= 0 || empty($reason)) {
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
+
+        $stmt = $this->pdo->prepare("SELECT id FROM " . DB::TBL_CANVAS_CHAT_MESSAGES . " WHERE id = ?");
+        $stmt->execute([$messageId]);
+        if (!$stmt->fetch()) {
+            return ['success' => false, 'message' => __('err_message_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
+        }
+
+        $stmtInsert = $this->pdo->prepare("INSERT INTO " . DB::TBL_CANVAS_CHAT_REPORTS . " (message_id, reporter_user_id, reason_key, details) VALUES (?, ?, ?, ?)");
+        $stmtInsert->execute([$messageId, $userId, $reason, $details]);
+
         return ['success' => true, 'message' => __('msg_message_reported')];
-}
+    }
 
     public function getAttachmentAccess($userId, $canvasUuid, $file, $userPermissions)
     {

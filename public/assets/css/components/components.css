@@ -1712,6 +1712,22 @@ html.dark-theme .component-menu-header.shadow {
     border-color: var(--border-color-hover);
 }
 
+.component-dropdown-wrapper--full {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.component-dropdown-wrapper--full .component-dropdown-trigger,
+.component-dropdown-trigger--full {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.component-dropdown-wrapper--full .component-module--dropdown {
+    width: 100%;
+    max-width: 100%;
+}
+
 .component-dropdown-text {
     flex: 1;
     font-weight: 500;
@@ -2505,7 +2521,7 @@ input:checked + .component-toggle-slider:before {
 .component-modal-box {
     background-color: var(--bg-surface);
     color: var(--text-primary);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 24px;
     width: 100%;
     max-width: 425px;
@@ -2608,6 +2624,11 @@ input:checked + .component-toggle-slider:before {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+}
+
+.component-modal-actions .component-button {
+    height: 40px;
+    width: auto;
 }
 
 .component-modal-close-btn {

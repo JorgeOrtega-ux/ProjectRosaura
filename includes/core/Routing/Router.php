@@ -174,6 +174,16 @@ class Router {
             ];
         }
 
+        if (preg_match('#^/admin/messages/reports/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/admin/messages/reports/:uuid'] ?? [
+                'view' => 'admin/messages/reports.php',
+                'auth' => true,
+                'permissions' => ['view_logs'],
+                'requires_2fa' => false
+            ];
+        }
+
         if (preg_match('#^/admin/edit-user/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/admin/edit-user/:uuid'] ?? [

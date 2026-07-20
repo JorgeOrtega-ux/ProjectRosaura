@@ -544,41 +544,32 @@ export class DesignChat {
     }
 
     async reportMessage(id) {
-        let reasonText;
+        let selectedReason = '';
+        let detailsText = '';
 
         if (window.dialogSystem) {
             const res = await window.dialogSystem.show('reportMessageDialog');
             if (!res.confirmed) return;
 
-            const selectedReason = res.data.report_reason;
+            selectedReason = res.data.report_reason || res.data.report_reason_input;
             if (!selectedReason) {
                 showMessage(__('err_report_select_reason'), 'error');
                 return;
             }
 
-            const reasonMap = {
-                spam: __('report_spam'),
-                offensive: __('report_offensive'),
-                harassment: __('report_harassment'),
-                other: __('report_other')
-            };
-
-            if (selectedReason === 'other') {
-                const otherText = (res.data.report_other_textarea || '').trim();
-                reasonText = otherText || reasonMap.other;
-            } else {
-                reasonText = reasonMap[selectedReason] || selectedReason;
-            }
+            detailsText = (res.data.report_other_text || res.data.report_other_textarea || '').trim();
         } else {
-            reasonText = prompt(__('report_desc'));
-            if (!reasonText) return;
+            selectedReason = 'other';
+            detailsText = prompt(__('report_desc')) || '';
+            if (!detailsText) return;
         }
 
         try {
             const response = await this.api.post(ApiRoutes.Chat.Report, {
                 canvas_id: this.canvasId,
                 message_id: id,
-                reason: reasonText
+                reason: selectedReason,
+                details: detailsText
             });
             
             if (response.success || response.status === 'success') {

@@ -33,9 +33,7 @@ export const DialogTemplates = {
                     </div>
                 </div>
                 <div class="component-modal-actions">
-                </div>
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="window.location.reload()">
+                    <button class="component-button component-button--h40 component-button--dark" onclick="window.location.reload()">
                         ${window.__('start_exploring')}
                     </button>
                 </div>
@@ -67,7 +65,7 @@ export const DialogTemplates = {
                             </div>
 
                             <div class="step-modal-actions">
-                                <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="document.getElementById('welcome-step-1').classList.remove('active'); document.getElementById('welcome-step-2').classList.add('active');">
+                                <button class="component-button component-button--h40 component-button--dark" onclick="document.getElementById('welcome-step-1').classList.remove('active'); document.getElementById('welcome-step-2').classList.add('active');">
                                     ${window.__('welcome_modal_btn_next')}
                                 </button>
                             </div>
@@ -87,7 +85,7 @@ export const DialogTemplates = {
                             </div>
 
                             <div class="step-modal-actions">
-                                <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="document.getElementById('welcome-step-2').classList.remove('active'); document.getElementById('welcome-step-3').classList.add('active');">
+                                <button class="component-button component-button--h40 component-button--dark" onclick="document.getElementById('welcome-step-2').classList.remove('active'); document.getElementById('welcome-step-3').classList.add('active');">
                                     ${window.__('welcome_modal_btn_next')}
                                 </button>
                             </div>
@@ -124,7 +122,7 @@ export const DialogTemplates = {
                             </div>
 
                             <div class="step-modal-actions">
-                                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="finish">
+                                <button class="component-button component-button--h40 component-button--dark" data-modal-action="finish">
                                     ${window.__('welcome_modal_btn_finish')}
                                 </button>
                             </div>
@@ -149,8 +147,8 @@ export const DialogTemplates = {
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${__('btn_activate')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_activate')}</button>
             </div>
         `
     },
@@ -163,8 +161,8 @@ export const DialogTemplates = {
                 <p class="component-modal-desc">${__('desc_delete_avatar')}</p>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${__('btn_delete')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_delete')}</button>
             </div>
         `
     },
@@ -201,8 +199,8 @@ export const DialogTemplates = {
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${__('btn_verify')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_verify')}</button>
             </div>
         `
     },
@@ -215,9 +213,9 @@ export const DialogTemplates = {
                 <p class="component-modal-desc">${__('desc_revoke_devices')}</p>
             </div>
             <div class="component-modal-body">
-                <button class="component-button component-button--h45 component-button--danger component-button--full" data-modal-action="revoke_all">${__('btn_revoke_all')}</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="revoke_other">${__('btn_revoke_other')}</button>
-                <button class="component-button component-button--h45 component-button--full hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--danger" data-modal-action="revoke_all">${__('btn_revoke_all')}</button>
+                <button class="component-button component-button--h40 component-button--dark" data-modal-action="revoke_other">${__('btn_revoke_other')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
             </div>
         `
     },
@@ -242,8 +240,8 @@ export const DialogTemplates = {
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_save')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_save')}</button>
             </div>
         `
     },
@@ -261,8 +259,8 @@ export const DialogTemplates = {
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${__('btn_save_permissions')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_save_permissions')}</button>
             </div>
         `
     },
@@ -303,8 +301,8 @@ export const DialogTemplates = {
                     </div>
                 </div>
                 <div class="component-modal-actions">
-                    <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${cancelBtnText}</button>
-                    <button class="component-button component-button--h45 ${confirmClass} component-button--full" data-modal-action="confirm">${confirmBtnText}</button>
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${cancelBtnText}</button>
+                    <button class="component-button component-button--h40 ${confirmClass}" data-modal-action="confirm">${confirmBtnText}</button>
                 </div>
             `;
         }
@@ -330,8 +328,8 @@ export const DialogTemplates = {
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h45 component-button--danger component-button--full" data-modal-action="confirm">${__('btn_delete_account')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_delete_account')}</button>
             </div>
         `
     },
@@ -362,8 +360,8 @@ export const DialogTemplates = {
             ` : ''}
             
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${data.cancelKey ? __(data.cancelKey) : __('btn_cancel')}</button>
-                <button class="component-button component-button--h45 ${data.dangerBtn ? 'component-button--danger' : 'component-button--dark'} component-button--full" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_confirm')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${data.cancelKey ? __(data.cancelKey) : __('btn_cancel')}</button>
+                <button class="component-button component-button--h40 ${data.dangerBtn ? 'component-button--danger' : 'component-button--dark'}" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_confirm')}</button>
             </div>
         `
     },
@@ -376,8 +374,8 @@ export const DialogTemplates = {
                 <p class="component-modal-desc">${data.descHtml || (data.descKey ? __(data.descKey) : __('desc_confirm_action'))}</p>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h45 ${data.confirmClass || 'component-button--danger'} component-button--full" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_confirm')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 ${data.confirmClass || 'component-button--danger'}" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_confirm')}</button>
             </div>
         `
     },
@@ -398,8 +396,8 @@ export const DialogTemplates = {
                 ` : ''}
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h45 ${data.confirmClass || 'component-button--danger'} component-button--full" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_confirm')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 ${data.confirmClass || 'component-button--danger'}" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_confirm')}</button>
             </div>
         `
     },
@@ -422,8 +420,8 @@ export const DialogTemplates = {
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${__('btn_save')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_save')}</button>
             </div>
         `
     },
@@ -538,8 +536,8 @@ export const DialogTemplates = {
                     ${fieldsHtml}
                 </div>
                 <div class="component-modal-actions">
-                    <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm_dynamic_form">${data.confirmKey ? __(data.confirmKey) : __('btn_accept')}</button>
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm_dynamic_form">${data.confirmKey ? __(data.confirmKey) : __('btn_accept')}</button>
                 </div>
             `;
         }
@@ -553,8 +551,8 @@ export const DialogTemplates = {
                 <p class="component-dialog-desc">${__('admin_role_delete_desc').replace('%s', data.roleName || '')}</p>
             </div>
             <div class="component-dialog-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-dialog-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h45 component-button--danger component-button--full" data-dialog-action="confirm">${__('btn_confirm_delete')}</button>
+                <button class="component-button component-button--h40" data-dialog-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--danger" data-dialog-action="confirm">${__('btn_confirm_delete')}</button>
             </div>
         `
     },
@@ -634,8 +632,8 @@ export const DialogTemplates = {
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitJoinLive">${__('btn_join')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--dark component-button--h40" data-action="submitJoinLive">${__('btn_join')}</button>
             </div>
         `
     },
@@ -706,9 +704,9 @@ export const DialogTemplates = {
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_close')}</button>
-                <button class="component-button component-button--danger component-button--h45 component-button--full ${data.isActive ? 'active' : 'disabled'}" data-action="stopLive">${__('btn_stop_live')}</button>
-                <button class="component-button component-button--dark component-button--h45 component-button--full ${data.isActive ? 'disabled' : 'active'}" data-action="startLive">${__('btn_start_live')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_close')}</button>
+                <button class="component-button component-button--danger component-button--h40 ${data.isActive ? 'active' : 'disabled'}" data-action="stopLive">${__('btn_stop_live')}</button>
+                <button class="component-button component-button--dark component-button--h40 ${data.isActive ? 'disabled' : 'active'}" data-action="startLive">${__('btn_start_live')}</button>
             </div>
         `
     },
@@ -742,8 +740,8 @@ export const DialogTemplates = {
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--dark component-button--h45 component-button--full" data-modal-action="confirm">${window.__('join_canvas')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--dark component-button--h40" data-modal-action="confirm">${window.__('join_canvas')}</button>
             </div>
         `
     },
@@ -756,6 +754,56 @@ export const DialogTemplates = {
         })
     },
 
+    deleteMessageDialog: {
+        build: () => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-modal-header">
+                <h2 class="component-modal-title">${__('admin_msg_delete_title') || 'Eliminar Mensaje'}</h2>
+                <p class="component-modal-desc">${__('admin_msg_delete_desc') || 'Selecciona el motivo de moderación para eliminar este mensaje.'}</p>
+            </div>
+            <div class="component-modal-body">
+                <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                    <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason">
+                        <span class="material-symbols-rounded" data-ref="report_trigger_icon">delete</span>
+                        <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder') || 'Selecciona un motivo...'}</span>
+                        <span class="material-symbols-rounded">expand_more</span>
+                    </div>
+                    <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleReportReason">
+                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                            <div class="pill-container"><div class="drag-handle"></div></div>
+                            <div class="component-menu-list component-menu-list--scrollable">
+                                <div class="component-menu-link" data-action="selectReportReason" data-value="spam" data-icon="campaign" data-text="${__('report_reason_spam') || 'Spam / Publicidad no deseada'}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">campaign</span></div>
+                                    <div class="component-menu-link-text"><span>${__('report_reason_spam') || 'Spam / Publicidad no deseada'}</span></div>
+                                </div>
+                                <div class="component-menu-link" data-action="selectReportReason" data-value="offensive" data-icon="warning" data-text="${__('report_reason_offensive') || 'Contenido ofensivo o inapropiado'}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">warning</span></div>
+                                    <div class="component-menu-link-text"><span>${__('report_reason_offensive') || 'Contenido ofensivo o inapropiado'}</span></div>
+                                </div>
+                                <div class="component-menu-link" data-action="selectReportReason" data-value="harassment" data-icon="front_hand" data-text="${__('report_reason_harassment') || 'Acoso o discriminación'}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">front_hand</span></div>
+                                    <div class="component-menu-link-text"><span>${__('report_reason_harassment') || 'Acoso o discriminación'}</span></div>
+                                </div>
+                                <div class="component-menu-link" data-action="selectReportReason" data-value="other" data-icon="more_horiz" data-text="${__('report_reason_other') || 'Otro motivo'}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
+                                    <div class="component-menu-link-text"><span>${__('report_reason_other') || 'Otro motivo'}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="report_reason" id="report_reason" data-ref="report_reason" value="">
+                <div class="component-input-group disabled" id="report_other_group">
+                    <textarea id="report_other_textarea" data-ref="report_other_text" class="component-input-field" placeholder="${__('report_other_placeholder') || 'Escribe el motivo detallado...'}" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="component-modal-actions">
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel') || 'Cancelar'}</button>
+                <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_delete') || 'Eliminar'}</button>
+            </div>
+        `
+    },
+
     reportMessageDialog: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
@@ -764,35 +812,64 @@ export const DialogTemplates = {
                 <p class="component-modal-desc">${__('report_desc')}</p>
             </div>
             <div class="component-modal-body">
-                <div class="component-radio-group">
-                    <label class="component-radio-option">
-                        <input type="radio" name="report_reason" value="spam" data-ref="report_reason" onchange="document.getElementById('report_other_textarea').classList.add('disabled')">
-                        <span>${__('report_spam')}</span>
-                    </label>
-                    <label class="component-radio-option">
-                        <input type="radio" name="report_reason" value="offensive" data-ref="report_reason" onchange="document.getElementById('report_other_textarea').classList.add('disabled')">
-                        <span>${__('report_offensive')}</span>
-                    </label>
-                    <label class="component-radio-option">
-                        <input type="radio" name="report_reason" value="harassment" data-ref="report_reason" onchange="document.getElementById('report_other_textarea').classList.add('disabled')">
-                        <span>${__('report_harassment')}</span>
-                    </label>
-                    <label class="component-radio-option">
-                        <input type="radio" name="report_reason" value="other" data-ref="report_reason" onchange="document.getElementById('report_other_textarea').classList.remove('disabled')">
-                        <span>${__('report_other')}</span>
-                    </label>
+                <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                    <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason">
+                        <span class="material-symbols-rounded" data-ref="report_trigger_icon">report</span>
+                        <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder')}</span>
+                        <span class="material-symbols-rounded">expand_more</span>
+                    </div>
+                    <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleReportReason">
+                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                            <div class="pill-container"><div class="drag-handle"></div></div>
+                            <div class="component-menu-list component-menu-list--scrollable">
+                                <div class="component-menu-link" data-action="selectReportReason" data-value="spam" data-icon="campaign" data-text="${__('report_reason_spam')}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">campaign</span></div>
+                                    <div class="component-menu-link-text"><span>${__('report_reason_spam')}</span></div>
+                                </div>
+                                <div class="component-menu-link" data-action="selectReportReason" data-value="offensive" data-icon="warning" data-text="${__('report_reason_offensive')}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">warning</span></div>
+                                    <div class="component-menu-link-text"><span>${__('report_reason_offensive')}</span></div>
+                                </div>
+                                <div class="component-menu-link" data-action="selectReportReason" data-value="harassment" data-icon="front_hand" data-text="${__('report_reason_harassment')}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">front_hand</span></div>
+                                    <div class="component-menu-link-text"><span>${__('report_reason_harassment')}</span></div>
+                                </div>
+                                <div class="component-menu-link" data-action="selectReportReason" data-value="hate_speech" data-icon="gavel" data-text="${__('report_reason_hate_speech')}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
+                                    <div class="component-menu-link-text"><span>${__('report_reason_hate_speech')}</span></div>
+                                </div>
+                                <div class="component-menu-link" data-action="selectReportReason" data-value="violence" data-icon="dangerous" data-text="${__('report_reason_violence')}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">dangerous</span></div>
+                                    <div class="component-menu-link-text"><span>${__('report_reason_violence')}</span></div>
+                                </div>
+                                <div class="component-menu-link" data-action="selectReportReason" data-value="misinformation" data-icon="info" data-text="${__('report_reason_misinformation')}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">info</span></div>
+                                    <div class="component-menu-link-text"><span>${__('report_reason_misinformation')}</span></div>
+                                </div>
+                                <div class="component-menu-link" data-action="selectReportReason" data-value="privacy" data-icon="privacy_tip" data-text="${__('report_reason_privacy')}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">privacy_tip</span></div>
+                                    <div class="component-menu-link-text"><span>${__('report_reason_privacy')}</span></div>
+                                </div>
+                                <div class="component-menu-link" data-action="selectReportReason" data-value="other" data-icon="more_horiz" data-text="${__('report_reason_other')}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
+                                    <div class="component-menu-link-text"><span>${__('report_reason_other')}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="component-input-group">
-                    <textarea id="report_other_textarea" data-ref="report_other_text" class="component-input-field disabled" placeholder="${__('report_other_placeholder')}" rows="3"></textarea>
+                <input type="hidden" name="report_reason" id="report_reason" data-ref="report_reason" value="">
+                <div class="component-input-group disabled" id="report_other_group">
+                    <textarea id="report_other_textarea" data-ref="report_other_text" class="component-input-field" placeholder="${__('report_other_placeholder')}" rows="3"></textarea>
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h45 component-button--danger component-button--full" data-modal-action="confirm">${__('btn_report')}</button>
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_report')}</button>
             </div>
         `
-    }
-,
+    },
+
     downgradeCanvasModal: {
         build: (data = {}) => DialogTemplates.verifyPasswordDialog.build({
             titleKey: data.titleKey || 'downgrade_basic_title',
@@ -823,8 +900,8 @@ export const DialogTemplates = {
                     </p>
                 </div>
                 <div class="component-modal-actions">
-                    <button type="button" class="component-button component-button--h45" data-modal-action="cancel">${window.__('btn_cancel', [], 'Cancelar')}</button>
-                    <button type="button" class="component-button component-button--h45 component-button--dark" data-modal-action="confirm">${window.__('btn_disconnect', [], 'Desconectar')}</button>
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${window.__('btn_cancel', [], 'Cancelar')}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${window.__('btn_disconnect', [], 'Desconectar')}</button>
                 </div>
             `;
         }
@@ -868,8 +945,8 @@ export const DialogTemplates = {
                     </div>
                 </div>
                 <div class="component-modal-actions">
-                    <button type="button" class="component-button component-button--h45" data-modal-action="cancel">Cancelar</button>
-                    <button type="button" class="component-button component-button--h45 component-button--dark" data-modal-action="confirm">Confirmar Pago</button>
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">Cancelar</button>
+                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">Confirmar Pago</button>
                 </div>
             `;
         }

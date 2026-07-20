@@ -240,3 +240,16 @@ CREATE TABLE IF NOT EXISTS `canvas_chat_restrictions` (
   UNIQUE KEY `idx_canvas_user` (`canvas_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `canvas_chat_reports` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `message_id` INT NOT NULL,
+  `reporter_user_id` INT NOT NULL,
+  `reason_key` VARCHAR(50) NOT NULL,
+  `details` TEXT DEFAULT NULL,
+  `status` ENUM('pending', 'reviewed', 'dismissed') NOT NULL DEFAULT 'pending',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX (`message_id`),
+  INDEX (`reporter_user_id`),
+  INDEX (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

@@ -188,6 +188,16 @@ return [
         'action' => 'updateMessageVisibility',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_upd_msg', 'max' => 30, 'time' => 1, 'identifier' => 'user_id']]
     ],
+    'admin.get_message_reports' => [
+        'controller' => 'App\Api\Controllers\Admin\AdminController',
+        'action' => 'getMessageReports',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_get_msg_rep', 'max' => 60, 'time' => 1, 'identifier' => 'user_id']]
+    ],
+    'admin.update_report_status' => [
+        'controller' => 'App\Api\Controllers\Admin\AdminController',
+        'action' => 'updateReportStatus',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_upd_rep_st', 'max' => 30, 'time' => 1, 'identifier' => 'user_id']]
+    ],
 
     'admin.get_dashboard_metrics' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',

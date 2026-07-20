@@ -1321,4 +1321,89 @@ class AdminServices {
             'message' => 'Visibilidad actualizada correctamente.'
         ];
     }
+
+    public function getMessageReports(string $messageUuid) {
+        $this->requirePermission('view_logs');
+
+        if (empty($messageUuid)) {
+            throw new \Exception("UUID de mensaje requerido.");
+        }
+
+        $dbManager = new DatabaseManager();
+        $pdoCanvases = $dbManager->getConnection(DB::CONN_CANVASES);
+        $pdoIdentity = $dbManager->getConnection(DB::CONN_IDENTITY);
+
+        $msgStmt = $pdoCanvases->prepare("
+            SELECT m.id, m.uuid, m.user_id, m.message, m.attachments, m.visibility, m.created_at, m.canvas_id, c.name as canvas_name, c.uuid as canvas_uuid
+            FROM canvas_chat_messages m
+            LEFT JOIN canvases c ON m.canvas_id = c.id
+            WHERE m.uuid = :uuid
+        ");
+        $msgStmt->execute([':uuid' => $messageUuid]);
+        $message = $msgStmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$message) {
+            throw new \Exception("Mensaje no encontrado.");
+        }
+
+        $senderStmt = $pdoIdentity->prepare("SELECT username FROM users WHERE id = ?");
+        $senderStmt->execute([$message['user_id']]);
+        $message['sender_username'] = $senderStmt->fetchColumn() ?: __('user');
+
+        $repStmt = $pdoCanvases->prepare("
+            SELECT r.id, r.message_id, r.reporter_user_id, r.reason_key, r.details, r.status, r.created_at
+            FROM canvas_chat_reports r
+            WHERE r.message_id = :message_id
+            ORDER BY r.id DESC
+        ");
+        $repStmt->execute([':message_id' => $message['id']]);
+        $reports = $repStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        if (!empty($reports)) {
+            $reporterIds = array_values(array_unique(array_column($reports, 'reporter_user_id')));
+            $placeholders = implode(',', array_fill(0, count($reporterIds), '?'));
+            $uStmt = $pdoIdentity->prepare("SELECT id, username FROM users WHERE id IN ($placeholders)");
+            $uStmt->execute($reporterIds);
+            $uMap = [];
+            while ($row = $uStmt->fetch(\PDO::FETCH_ASSOC)) {
+                $uMap[$row['id']] = $row['username'];
+            }
+            foreach ($reports as &$rep) {
+                $rep['reporter_username'] = $uMap[$rep['reporter_user_id']] ?? __('user');
+            }
+            unset($rep);
+        }
+
+        return [
+            'success' => true,
+            'message_data' => $message,
+            'reports' => $reports
+        ];
+    }
+
+    public function updateReportStatus(array $data) {
+        $this->requirePermission('view_logs');
+
+        $reportId = (int)($data['report_id'] ?? 0);
+        $status = $data['status'] ?? 'pending';
+
+        if ($reportId <= 0) {
+            throw new \Exception("ID de reporte invalido.");
+        }
+
+        if (!in_array($status, ['pending', 'reviewed', 'dismissed'])) {
+            throw new \Exception("Estado de reporte invalido.");
+        }
+
+        $dbManager = new DatabaseManager();
+        $pdoCanvases = $dbManager->getConnection(DB::CONN_CANVASES);
+
+        $stmt = $pdoCanvases->prepare("UPDATE canvas_chat_reports SET status = :status WHERE id = :id");
+        $stmt->execute([':status' => $status, ':id' => $reportId]);
+
+        return [
+            'success' => true,
+            'message' => 'Estado del reporte actualizado correctamente.'
+        ];
+    }
 }

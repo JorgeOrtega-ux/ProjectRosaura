@@ -6,21 +6,28 @@ use App\Core\Helpers\Utils;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 
-
 $userPerms = $_SESSION['user_permissions'] ?? [];
-$canManageMessages = in_array('view_logs', $userPerms) || true; // Replace logic if needed
+$canManageMessages = in_array('view_logs', $userPerms) || true;
 
 $limit = 25; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
 
+$filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'recent';
+
 $db = new DatabaseManager(); 
 $pdoCanvases = $db->getConnection(DB::CONN_CANVASES);
 $pdoIdentity = $db->getConnection(DB::CONN_IDENTITY);
 
-$stmtCount = $pdoCanvases->query("SELECT COUNT(*) FROM canvas_chat_messages");
-$totalMessages = (int)$stmtCount->fetchColumn();
+if ($filter === 'reported') {
+    $stmtCount = $pdoCanvases->query("SELECT COUNT(DISTINCT message_id) FROM canvas_chat_reports");
+    $totalMessages = (int)$stmtCount->fetchColumn();
+} else {
+    $stmtCount = $pdoCanvases->query("SELECT COUNT(*) FROM canvas_chat_messages");
+    $totalMessages = (int)$stmtCount->fetchColumn();
+}
 
 $totalPages = ceil($totalMessages / $limit);
 if ($totalPages < 1) $totalPages = 1;
@@ -29,12 +36,19 @@ if ($page > $totalPages) {
     $offset = ($page - 1) * $limit;
 }
 
+$havingClause = ($filter === 'reported') ? "HAVING report_count > 0" : "";
+$orderBy = ($sort === 'most_reported') ? "report_count DESC, m.id DESC" : "m.id DESC";
+
 $messages = [];
 try {
     $stmt = $pdoCanvases->prepare("
-        SELECT m.id, m.uuid, m.user_id, m.message, m.attachments, m.visibility, m.created_at, m.canvas_id
+        SELECT m.id, m.uuid, m.user_id, m.message, m.attachments, m.visibility, m.created_at, m.canvas_id,
+               COUNT(r.id) AS report_count
         FROM canvas_chat_messages m
-        ORDER BY m.id DESC 
+        LEFT JOIN canvas_chat_reports r ON r.message_id = m.id
+        GROUP BY m.id, m.uuid, m.user_id, m.message, m.attachments, m.visibility, m.created_at, m.canvas_id
+        {$havingClause}
+        ORDER BY {$orderBy}
         LIMIT :limit OFFSET :offset
     ");
     $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
@@ -42,7 +56,6 @@ try {
     $stmt->execute();
     $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Fetch canvas names separately to avoid any JOIN issues
     if (!empty($messages)) {
         $canvasIds = array_values(array_unique(array_filter(array_column($messages, 'canvas_id'))));
         $canvasMap = [];
@@ -70,7 +83,7 @@ try {
 try {
     $redisCache = new \App\Config\Database\RedisCache();
     $redis = $redisCache->getClient();
-    if ($page === 1 && $redis) {
+    if ($page === 1 && $redis && $filter !== 'reported') {
         $redisMessages = [];
         $rawQueue = $redis->lrange('canvas_chat_queue', 0, -1);
         if ($rawQueue) {
@@ -86,7 +99,8 @@ try {
                         'visibility' => 'visible',
                         'created_at' => $data['created_at'] ?? date('Y-m-d H:i:s'),
                         'canvas_id' => $data['canvas_id'] ?? 0,
-                        'canvas_name' => 'ID: ' . ($data['canvas_id'] ?? 0)
+                        'canvas_name' => 'ID: ' . ($data['canvas_id'] ?? 0),
+                        'report_count' => 0
                     ];
                 }
             }
@@ -116,8 +130,16 @@ if (!empty($messages)) {
 }
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
-$prevPageUrl = $page > 1 ? $appUrl . '/admin/messages?page=' . ($page - 1) : '#';
-$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page + 1) : '#';
+
+function buildMessagesUrl($appUrl, $page, $filter, $sort) {
+    $params = ['page' => $page];
+    if ($filter !== 'all') $params['filter'] = $filter;
+    if ($sort !== 'recent') $params['sort'] = $sort;
+    return $appUrl . '/admin/messages?' . http_build_query($params);
+}
+
+$prevPageUrl = $page > 1 ? buildMessagesUrl($appUrl, $page - 1, $filter, $sort) : '#';
+$nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filter, $sort) : '#';
 ?>
 
 <div class="view-content">
@@ -130,6 +152,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page 
             
             <div class="component-top-right">
                 <div class="component-actions disabled" data-ref="header-selection-actions">
+                    <button class="component-button component-button--icon component-button--h40" data-action="viewMessageReports" data-tooltip="<?php echo __('tooltip_view_reports'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">flag</span>
+                    </button>
                     <button class="component-button component-button--icon component-button--h40" data-action="editMessageVisibility" data-tooltip="<?php echo __('tooltip_change_visibility'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
                     </button>
@@ -138,6 +163,26 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page 
                     </button>
                 </div>
                 <div class="component-actions active" data-ref="header-default-actions">
+                    <div class="component-inline-control" data-tooltip="<?php echo __('filter_all'); ?> / <?php echo __('filter_reported'); ?>" data-position="bottom">
+                        <div class="component-inline-control__group">
+                            <button class="component-inline-control__btn <?php echo $filter === 'all' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, 'all', $sort); ?>">
+                                <span class="material-symbols-rounded">chat</span>
+                            </button>
+                            <button class="component-inline-control__btn <?php echo $filter === 'reported' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, 'reported', $sort); ?>">
+                                <span class="material-symbols-rounded">report</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="component-inline-control" data-tooltip="<?php echo __('sort_recent'); ?> / <?php echo __('sort_most_reported'); ?>" data-position="bottom">
+                        <div class="component-inline-control__group">
+                            <button class="component-inline-control__btn <?php echo $sort === 'recent' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, $filter, 'recent'); ?>">
+                                <span class="material-symbols-rounded">schedule</span>
+                            </button>
+                            <button class="component-inline-control__btn <?php echo $sort === 'most_reported' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, $filter, 'most_reported'); ?>">
+                                <span class="material-symbols-rounded">bar_chart</span>
+                            </button>
+                        </div>
+                    </div>
                     <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]); ?>" data-position="bottom">
                         <div class="component-inline-control__group">
                             <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interaction' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
@@ -162,6 +207,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page 
                         <tr>
                             <th><?php echo __('table_id'); ?></th>
                             <th><?php echo __('table_message'); ?></th>
+                            <th><?php echo __('table_reports'); ?></th>
                             <th><?php echo __('table_visibility'); ?></th>
                             <th><?php echo __('table_sender'); ?></th>
                             <th><?php echo __('table_canvas_group'); ?></th>
@@ -171,7 +217,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page 
                     <tbody data-ref="messages-tbody">
                         <?php if (empty($messages)): ?>
                         <tr>
-                            <td colspan="6" class="component-table-empty">
+                            <td colspan="7" class="component-table-empty">
                                 <div class="component-table-empty__content">
                                     <span class="material-symbols-rounded component-table-empty__icon">chat</span>
                                     <p class="component-table-empty__text"><?php echo __('admin_msg_empty_list'); ?></p>
@@ -179,8 +225,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page 
                             </td>
                         </tr>
                         <?php else: ?>
-                            <?php foreach ($messages as $msg): ?>
-                            <tr class="component-table-row" data-action="selectMessage" data-message-uuid="<?php echo htmlspecialchars($msg['uuid']); ?>">
+                            <?php foreach ($messages as $msg): 
+                                $repCount = (int)($msg['report_count'] ?? 0);
+                            ?>
+                            <tr class="component-table-row" data-action="selectMessage" data-message-uuid="<?php echo htmlspecialchars($msg['uuid']); ?>" data-report-count="<?php echo $repCount; ?>">
                                 <td><span class="component-badge component-badge--sm"><?php echo htmlspecialchars($msg['id']); ?></span></td>
                                 <td>
                                     <?php 
@@ -210,6 +258,18 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page 
                                     ?>
                                 </td>
                                 <td>
+                                    <?php if ($repCount > 0): 
+                                        $reportsUrl = $appUrl . '/admin/messages/reports/' . urlencode($msg['uuid']);
+                                    ?>
+                                        <a class="component-badge component-badge--sm component-badge--warning" data-nav="<?php echo htmlspecialchars($reportsUrl); ?>" style="cursor: pointer; text-decoration: none;">
+                                            <span class="material-symbols-rounded" style="font-size: 14px; margin-right: 2px; vertical-align: middle;">flag</span>
+                                            <?php echo $repCount; ?>
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="component-badge component-badge--sm component-badge--muted">0</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
                                     <span class="component-badge component-badge--sm component-badge--<?php echo $msg['visibility'] === 'visible' ? 'success' : ($msg['visibility'] === 'deleted' ? 'danger' : 'warning'); ?>">
                                         <?php echo htmlspecialchars($msg['visibility']); ?>
                                     </span>
@@ -224,7 +284,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/messages?page=' . ($page 
                 </table>
             </div>
         </div>
-        
         
     </div>
 </div>

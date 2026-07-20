@@ -110,6 +110,44 @@ export class DialogSystem {
             return;
         }
 
+        const selectReasonBtn = e.target.closest('[data-action="selectReportReason"]');
+        if (selectReasonBtn) {
+            const val = selectReasonBtn.getAttribute('data-value');
+            const icon = selectReasonBtn.getAttribute('data-icon');
+            const text = selectReasonBtn.getAttribute('data-text');
+            const modal = this.activeBox;
+            if (modal) {
+                const inputs = modal.querySelectorAll('#report_reason, #report_reason_input, [data-ref="report_reason"]');
+                inputs.forEach(inp => inp.value = val);
+                
+                const triggerText = modal.querySelector('[data-ref="report_trigger_text"]');
+                if (triggerText) triggerText.textContent = text;
+                
+                const triggerIcon = modal.querySelector('[data-ref="report_trigger_icon"]');
+                if (triggerIcon) triggerIcon.textContent = icon;
+                
+                const otherGroup = modal.querySelector('#report_other_group');
+                if (otherGroup) {
+                    if (val === 'other') {
+                        otherGroup.classList.remove('disabled');
+                    } else {
+                        otherGroup.classList.add('disabled');
+                    }
+                }
+                
+                modal.querySelectorAll('[data-action="selectReportReason"]').forEach(el => el.classList.remove('active'));
+                selectReasonBtn.classList.add('active');
+                
+                const module = selectReasonBtn.closest('.component-module');
+                if (module && window.appInstance && typeof window.appInstance.closeModule === 'function') {
+                    window.appInstance.closeModule(module);
+                } else if (module) {
+                    module.classList.replace('active', 'disabled');
+                }
+            }
+            return;
+        }
+
         const actionBtn = e.target.closest('[data-modal-action], [data-action="confirm"], [data-action="cancel"], #btn_confirm_custom_backup');
         
         if (actionBtn) {

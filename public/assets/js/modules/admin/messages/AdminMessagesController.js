@@ -30,15 +30,17 @@ class AdminMessagesController {
         const selectTargetRow = e.target.closest('[data-action="selectMessage"]');
         const deselectBtn = e.target.closest('[data-action="deselectMessage"]');
         const editVisBtn = e.target.closest('[data-action="editMessageVisibility"]');
+        const viewReportsBtn = e.target.closest('[data-action="viewMessageReports"]');
         
         if (selectTargetRow && !e.target.closest('button') && !e.target.closest('a')) {
             this.handleMessageSelection(selectTargetRow);
         }
         if (deselectBtn) this.deselectMessage();
         if (editVisBtn && !editVisBtn.classList.contains('disabled-interactive')) this.editMessageVisibility();
+        if (viewReportsBtn && !viewReportsBtn.classList.contains('disabled-interactive')) this.viewMessageReports();
     }
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/messages') && !e.detail.url.includes('/admin/messages/visibility')) {
+        if (e.detail.url.includes('/admin/messages') && !e.detail.url.includes('/admin/messages/visibility') && !e.detail.url.includes('/admin/messages/reports')) {
             this.resetViewState();
         }
     }
@@ -66,22 +68,26 @@ class AdminMessagesController {
         const defaultMode = document.querySelector('[data-ref="header-default-actions"]');
         const selectionMode = document.querySelector('[data-ref="header-selection-actions"]');
         const editVisBtn = document.querySelector('[data-action="editMessageVisibility"]');
+        const viewReportsBtn = document.querySelector('[data-action="viewMessageReports"]');
         
         if (this.selectedMessageId) {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
             
-            if (editVisBtn) {
-                if (this.selectedMessageId.startsWith('REDIS-')) {
-                    editVisBtn.classList.add('disabled-interactive');
-                    editVisBtn.style.opacity = '0.5';
-                    editVisBtn.style.cursor = 'not-allowed';
-                } else {
-                    editVisBtn.classList.remove('disabled-interactive');
-                    editVisBtn.style.opacity = '';
-                    editVisBtn.style.cursor = '';
+            const isRedis = this.selectedMessageId.startsWith('REDIS-');
+            [editVisBtn, viewReportsBtn].forEach(btn => {
+                if (btn) {
+                    if (isRedis) {
+                        btn.classList.add('disabled-interactive');
+                        btn.style.opacity = '0.5';
+                        btn.style.cursor = 'not-allowed';
+                    } else {
+                        btn.classList.remove('disabled-interactive');
+                        btn.style.opacity = '';
+                        btn.style.cursor = '';
+                    }
                 }
-            }
+            });
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');
             if (defaultMode) defaultMode.classList.replace('disabled', 'active');
@@ -94,6 +100,15 @@ class AdminMessagesController {
             window.spaRouter.navigate(`${basePath}/admin/messages/visibility/${this.selectedMessageId}`);
         } else {
             window.location.href = `${basePath}/admin/messages/visibility/${this.selectedMessageId}`;
+        }
+    }
+    viewMessageReports() {
+        if (!this.selectedMessageId) return;
+        const basePath = window.AppBasePath || '';
+        if (window.spaRouter) {
+            window.spaRouter.navigate(`${basePath}/admin/messages/reports/${this.selectedMessageId}`);
+        } else {
+            window.location.href = `${basePath}/admin/messages/reports/${this.selectedMessageId}`;
         }
     }
 }

@@ -366,4 +366,25 @@ class AdminController extends BaseController {
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
+
+    public function getMessageReports($input) {
+        try {
+            $this->requirePermission('view_logs');
+            $uuid = $input['uuid'] ?? $this->request['uuid'] ?? null;
+            return $this->respond($this->adminServices->getMessageReports($uuid));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function updateReportStatus($input) {
+        try {
+            $this->requirePermission('view_logs');
+            $data = [
+                'report_id' => $input['report_id'] ?? null,
+                'status' => $input['status'] ?? null
+            ];
+            return $this->respond($this->adminServices->updateReportStatus($data));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
 }

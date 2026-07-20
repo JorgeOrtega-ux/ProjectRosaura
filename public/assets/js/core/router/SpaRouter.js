@@ -30,6 +30,7 @@ export class SpaRouter {
         if (url.startsWith('/canvases/members/') && url.includes('/role/')) return '/canvases/members/:uuid/role/:id';
         if (url.startsWith('/canvases/members/')) return '/canvases/members/:uuid';
         if (url.startsWith('/admin/messages/visibility/')) return '/admin/messages/visibility/:uuid';
+        if (url.startsWith('/admin/messages/reports/')) return '/admin/messages/reports/:uuid';
         
         return url;
     }

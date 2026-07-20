@@ -78,8 +78,9 @@ class ChatController extends BaseController
 
             $messageId = (int)($request['message_id'] ?? 0);
             $reason = trim((string)($request['reason'] ?? ''));
+            $details = trim((string)($request['details'] ?? ''));
 
-            $result = $this->chatServices->report($userId, $messageId, $reason);
+            $result = $this->chatServices->report($userId, $messageId, $reason, $details);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

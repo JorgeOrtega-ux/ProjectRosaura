@@ -37,16 +37,32 @@ class Colors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
 
+def load_env():
+    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+    if os.path.exists(env_path):
+        with open(env_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    k, v = line.split('=', 1)
+                    k = k.strip()
+                    v = v.strip().strip("'").strip('"')
+                    if k not in os.environ:
+                        os.environ[k] = v
+
+load_env()
+
 def random_string(length=10):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for _ in range(length))
 
 def get_code_from_redis(email, code_type):
-    redis_pass = os.getenv("REDIS_PASS")
-    cmd1 = [
-        "docker", "exec", "-i", "rosaura_redis",
-        "redis-cli", "-a", redis_pass, "GET", f"vercode:ident:{email}:{code_type}"
-    ]
+    redis_pass = os.getenv("REDIS_PASS") or ""
+    cmd1 = ["docker", "exec", "-i", "rosaura_redis", "redis-cli"]
+    if redis_pass:
+        cmd1.extend(["-a", redis_pass])
+    cmd1.extend(["GET", f"vercode:ident:{email}:{code_type}"])
+    
     try:
         id_res = subprocess.check_output(cmd1).decode('utf-8').strip()
         if 'Warning:' in id_res:
@@ -55,10 +71,11 @@ def get_code_from_redis(email, code_type):
         if id_res == "(nil)" or not id_res:
             return None
 
-        cmd2 = [
-            "docker", "exec", "-i", "rosaura_redis",
-            "redis-cli", "-a", redis_pass, "GET", f"vercode:id:{id_res}"
-        ]
+        cmd2 = ["docker", "exec", "-i", "rosaura_redis", "redis-cli"]
+        if redis_pass:
+            cmd2.extend(["-a", redis_pass])
+        cmd2.extend(["GET", f"vercode:id:{id_res}"])
+
         json_res = subprocess.check_output(cmd2).decode('utf-8').strip()
         if 'Warning:' in json_res:
             json_res = json_res.split('\n')[-1].strip()

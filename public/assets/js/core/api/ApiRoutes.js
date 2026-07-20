@@ -81,8 +81,10 @@ export const ApiRoutes = {
 
         CreateBackup: 'admin.create_backup',
         RestoreBackup: 'admin.restore_backup',
-        ReadLogs: 'admin.read_logs',
-        UpdateMessageVisibility: 'admin.update_message_visibility'
+        GetMessages: 'admin.get_messages',
+        UpdateMessageVisibility: 'admin.update_message_visibility',
+        GetMessageReports: 'admin.get_message_reports',
+        UpdateReportStatus: 'admin.update_report_status',
     },
     Canvases: {
         GetHomeFeed: 'canvases.get_home_feed',
