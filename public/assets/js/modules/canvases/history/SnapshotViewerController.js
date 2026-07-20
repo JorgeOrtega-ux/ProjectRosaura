@@ -2,7 +2,6 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 import { PerksRegistry } from '../../app/design/PerksRegistry.js';
-import { perkAudio } from '../../app/design/PerkAudioSynthesizer.js';
 
 class SnapshotViewerController {
     constructor() {
@@ -494,11 +493,6 @@ class SnapshotViewerController {
             startTime: Date.now(),
             duration: PerksRegistry.getExplosionDuration(perkId)
         });
-        
-        const explosionStyle = PerksRegistry.getExplosionStyle(perkId);
-        if (typeof perkAudio !== 'undefined' && perkAudio.playExplosionSound) {
-            perkAudio.playExplosionSound(explosionStyle);
-        }
         
         if (PerksRegistry.hasScreenShake(perkId)) {
             if (!document.getElementById('nuclear-style')) {

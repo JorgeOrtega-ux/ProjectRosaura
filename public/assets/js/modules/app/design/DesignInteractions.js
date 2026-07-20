@@ -1,7 +1,6 @@
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 import { PerksRegistry } from './PerksRegistry.js';
-import { perkAudio } from './PerkAudioSynthesizer.js';
 
 export const DesignInteractions = {
     bindEvents() {
@@ -1168,11 +1167,6 @@ export const DesignInteractions = {
             duration: PerksRegistry.getExplosionDuration(perkId)
         });
         
-        const explosionStyle = PerksRegistry.getExplosionStyle(perkId);
-        if (typeof perkAudio !== 'undefined' && perkAudio.playExplosionSound) {
-            perkAudio.playExplosionSound(explosionStyle);
-        }
-        
         if (PerksRegistry.hasScreenShake(perkId)) {
             if (!document.getElementById('nuclear-style')) {
                 const style = document.createElement('style');
@@ -1310,12 +1304,6 @@ export const DesignInteractions = {
                 const details = getWarningDetails(perkId);
                 
                 if (remaining > 0) {
-                    if (remaining !== lastSecondBeep) {
-                        lastSecondBeep = remaining;
-                        if (typeof perkAudio !== 'undefined' && perkAudio.playWarningBeep) {
-                            perkAudio.playWarningBeep(remaining <= 3);
-                        }
-                    }
                     badge.style.display = 'flex';
                     badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
                 } else {
