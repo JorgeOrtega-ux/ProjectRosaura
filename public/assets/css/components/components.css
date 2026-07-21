@@ -4436,6 +4436,11 @@ html.dark-theme .component-skeleton::after {
     margin-right: auto;
 }
 
+.component-skeleton--pill,
+.component-skeleton--badge {
+    border-radius: 9999px !important;
+}
+
 .ui-skeleton-loader {
     position: relative;
     background-color: var(--sk-bg-dark); 

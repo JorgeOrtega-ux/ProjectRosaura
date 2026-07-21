@@ -111,9 +111,6 @@ $backUrl = $appUrl . '/admin/messages';
                     <button class="component-button component-button--icon component-button--h40" data-action="markReportPending" data-tooltip="<?php echo __('report_status_pending'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">restart_alt</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectReport" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
                 </div>
 
                 <!-- ACCIONES DEFAULT DE NAVEGACIÓN Y VISIBILIDAD -->

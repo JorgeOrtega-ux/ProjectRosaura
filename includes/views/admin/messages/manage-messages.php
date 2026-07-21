@@ -158,9 +158,6 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                     <button class="component-button component-button--icon component-button--h40" data-action="editMessageVisibility" data-tooltip="<?php echo __('tooltip_change_visibility'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectMessage" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
                 </div>
                 <div class="component-actions active" data-ref="header-default-actions">
                     <div class="component-inline-control" data-tooltip="<?php echo __('filter_all'); ?> / <?php echo __('filter_reported'); ?>" data-position="bottom">

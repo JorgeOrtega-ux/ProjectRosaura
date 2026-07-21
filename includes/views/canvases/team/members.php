@@ -126,10 +126,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                     <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="removeMember" data-tooltip="<?php echo __('tooltip_remove_member'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">person_remove</span>
                     </button>
-
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectMember" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">

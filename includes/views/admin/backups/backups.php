@@ -67,10 +67,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                         <span class="material-symbols-rounded">settings_backup_restore</span>
                     </button>
                     <?php endif; ?>
-
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectBackup" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
                 </div>
 
                 <div class="component-actions active" data-ref="header-default-actions">
@@ -154,6 +150,15 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                         </div>
                     </div>
 
+                    <?php if ($canCreate): ?>
+                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/backups/automation" data-tooltip="<?php echo __('btn_automate'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">schedule</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/backups/create" data-tooltip="<?php echo __('btn_create_backup'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">add</span>
+                    </button>
+                    <?php endif; ?>
+
                     <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]); ?>" data-position="bottom">
                         <div class="component-inline-control__group">
                             <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interaction' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
@@ -167,15 +172,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                             </button>
                         </div>
                     </div>
-
-                    <?php if ($canCreate): ?>
-                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/backups/automation" data-tooltip="<?php echo __('btn_automate'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">schedule</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/backups/create" data-tooltip="<?php echo __('btn_create_backup'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">add</span>
-                    </button>
-                    <?php endif; ?>
                     
                 </div>
             </div>

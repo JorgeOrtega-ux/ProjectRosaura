@@ -87,10 +87,6 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                     <button class="component-button component-button--danger component-button--icon component-button--h40" data-action="deleteRole" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
-
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectRole" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">

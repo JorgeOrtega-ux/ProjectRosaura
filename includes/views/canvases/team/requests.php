@@ -57,10 +57,6 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                     <button class="component-button component-button--icon component-button--h40" data-action="rejectSelectedRequests" data-tooltip="<?php echo __('tooltip_reject_request'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">cancel</span>
                     </button>
-
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectRequest" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">

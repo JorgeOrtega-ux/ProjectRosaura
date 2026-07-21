@@ -132,10 +132,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/manage-users?page=' . ($p
                         <span class="material-symbols-rounded">delete</span>
                     </button>
                     <?php endif; ?>
-
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectUser" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">

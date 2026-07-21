@@ -106,10 +106,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                     <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedCanvases" data-tooltip="<?php echo __('tooltip_delete_canvas'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
-
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectCanvas" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">

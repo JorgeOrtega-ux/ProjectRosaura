@@ -15,9 +15,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     <button class="component-button component-button--icon component-button--h40" data-action="downloadReceipt" data-tooltip="<?php echo __('btn_download_receipt'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">download</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectPurchase" data-tooltip="<?php echo __('cancel'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
                 </div>
 
                 <div class="component-actions active" data-ref="header-default-actions">

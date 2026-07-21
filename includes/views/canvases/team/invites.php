@@ -75,9 +75,6 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                     <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="revokeSelectedInvites" data-tooltip="<?php echo htmlspecialchars(__('lbl_revoke_selection')); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete_forever</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectInvite" data-tooltip="<?php echo htmlspecialchars(__('lbl_cancel_selection')); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">

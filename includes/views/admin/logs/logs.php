@@ -66,9 +66,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/logs?page=' . ($page + 1)
                     <button class="component-button component-button--icon component-button--h40" data-action="viewSelectedLogs" data-tooltip="<?php echo __('tooltip_view_files'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectLog" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
                 </div>
 
                 <div class="component-actions active" data-ref="header-default-actions">
