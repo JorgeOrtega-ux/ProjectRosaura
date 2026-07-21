@@ -155,31 +155,88 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                     <button class="component-button component-button--icon component-button--h40" data-action="viewMessageReports" data-tooltip="<?php echo __('tooltip_view_reports'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">flag</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="editMessageVisibility" data-tooltip="<?php echo __('tooltip_change_visibility'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">visibility</span>
-                    </button>
                 </div>
                 <div class="component-actions active" data-ref="header-default-actions">
-                    <div class="component-inline-control" data-tooltip="<?php echo __('filter_all'); ?> / <?php echo __('filter_reported'); ?>" data-position="bottom">
-                        <div class="component-inline-control__group">
-                            <button class="component-inline-control__btn <?php echo $filter === 'all' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, 'all', $sort); ?>">
-                                <span class="material-symbols-rounded">chat</span>
-                            </button>
-                            <button class="component-inline-control__btn <?php echo $filter === 'reported' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, 'reported', $sort); ?>">
-                                <span class="material-symbols-rounded">report</span>
-                            </button>
+                    
+                    <button class="component-button component-button--icon component-button--h40 <?php echo !empty($_GET['search']) ? 'has-active-filter' : ''; ?>" data-action="searchMessages" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_placeholder'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">search</span>
+                    </button>
+
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
+                        <button class="component-button component-button--icon component-button--h40 <?php echo ($filter !== 'all' || $sort !== 'recent') ? 'has-active-filter' : ''; ?>" data-action="toggleModule" data-target="moduleMessageFilters" data-ref="btn-toggle-filters" data-tooltip="<?php echo __('tooltip_filters'); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded">tune</span>
+                        </button>
+                        
+                        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--spaced disabled" data-module="moduleMessageFilters">
+                            
+                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-ref="menuMainFilters">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-header">
+                                    <div class="component-menu-header-box">
+                                        <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="component-menu-list component-menu-list--compact">
+                                    <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterType">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">chat</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('filter_type'); ?></span></div>
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">chevron_right</span></div>
+                                    </div>
+                                    <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterSort">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">sort</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('filter_sort'); ?></span></div>
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">chevron_right</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" data-ref="menuFilterType">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-header">
+                                    <div class="component-menu-header-box">
+                                        <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToMainFilters">
+                                            <span class="material-symbols-rounded">arrow_back</span>
+                                        </button>
+                                        <span class="component-menu-header-title"><?php echo __('filter_by_type'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                    <a class="component-menu-link component-menu-link--bordered <?php echo $filter === 'all' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, 'all', $sort); ?>">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">chat</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('filter_all'); ?></span></div>
+                                    </a>
+                                    <a class="component-menu-link component-menu-link--bordered <?php echo $filter === 'reported' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, 'reported', $sort); ?>">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">report</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('filter_reported'); ?></span></div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" data-ref="menuFilterSort">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-header">
+                                    <div class="component-menu-header-box">
+                                        <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToMainFilters">
+                                            <span class="material-symbols-rounded">arrow_back</span>
+                                        </button>
+                                        <span class="component-menu-header-title"><?php echo __('filter_by_sort'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                    <a class="component-menu-link component-menu-link--bordered <?php echo $sort === 'recent' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, $filter, 'recent'); ?>">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('sort_recent'); ?></span></div>
+                                    </a>
+                                    <a class="component-menu-link component-menu-link--bordered <?php echo $sort === 'most_reported' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, $filter, 'most_reported'); ?>">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">bar_chart</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('sort_most_reported'); ?></span></div>
+                                    </a>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-                    <div class="component-inline-control" data-tooltip="<?php echo __('sort_recent'); ?> / <?php echo __('sort_most_reported'); ?>" data-position="bottom">
-                        <div class="component-inline-control__group">
-                            <button class="component-inline-control__btn <?php echo $sort === 'recent' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, $filter, 'recent'); ?>">
-                                <span class="material-symbols-rounded">schedule</span>
-                            </button>
-                            <button class="component-inline-control__btn <?php echo $sort === 'most_reported' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, $filter, 'most_reported'); ?>">
-                                <span class="material-symbols-rounded">bar_chart</span>
-                            </button>
-                        </div>
-                    </div>
+
                     <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]); ?>" data-position="bottom">
                         <div class="component-inline-control__group">
                             <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interaction' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
@@ -193,12 +250,25 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                             </button>
                         </div>
                     </div>
+
                 </div>
             </div>
+
+            <div class="component-search-toolbar disabled" data-ref="search-toolbar">
+                <div class="component-search">
+                    <div class="component-search-icon">
+                        <span class="material-symbols-rounded">search</span>
+                    </div>
+                    <div class="component-search-input">
+                        <input type="text" data-ref="message-search-input" placeholder="<?php echo __('search_placeholder'); ?>">
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <div class="component-bottom">
-            <div class="component-table-wrapper">
+            <div class="component-table-wrapper" data-ref="view-table">
                 <table class="component-table component-table--hoverable">
                     <thead>
                         <tr>
@@ -226,7 +296,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                 $repCount = (int)($msg['report_count'] ?? 0);
                             ?>
                             <tr class="component-table-row" data-action="selectMessage" data-message-uuid="<?php echo htmlspecialchars($msg['uuid']); ?>" data-report-count="<?php echo $repCount; ?>">
-                                <td><span class="component-badge component-badge--sm"><?php echo htmlspecialchars($msg['id']); ?></span></td>
+                                <td><span class="component-badge component-badge--sm search-target"><?php echo htmlspecialchars($msg['id']); ?></span></td>
                                 <td>
                                     <?php 
                                         $rawAttachments = $msg['attachments'] ?? null;
@@ -251,7 +321,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                             $badgeContent .= '<span class="component-text-notice--muted">' . __('admin_msg_empty') . '</span>';
                                         }
                                         
-                                        echo '<span class="component-badge component-badge--sm">' . $badgeContent . '</span>';
+                                        echo '<span class="component-badge component-badge--sm search-target">' . $badgeContent . '</span>';
                                     ?>
                                 </td>
                                 <td>
@@ -271,11 +341,20 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                         <?php echo htmlspecialchars($msg['visibility']); ?>
                                     </span>
                                 </td>
-                                <td><span class="component-badge component-badge--sm"><?php echo htmlspecialchars($msg['username']); ?></span></td>
-                                <td><span class="component-badge component-badge--sm"><?php echo htmlspecialchars($msg['canvas_name'] ?? 'ID: '.$msg['canvas_id']); ?></span></td>
+                                <td><span class="component-badge component-badge--sm search-target"><?php echo htmlspecialchars($msg['username']); ?></span></td>
+                                <td><span class="component-badge component-badge--sm search-target"><?php echo htmlspecialchars($msg['canvas_name'] ?? 'ID: '.$msg['canvas_id']); ?></span></td>
                                 <td><span class="component-badge component-badge--sm"><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($msg['created_at']))); ?></span></td>
                             </tr>
                             <?php endforeach; ?>
+
+                            <tr class="disabled" data-ref="empty-search-table">
+                                <td colspan="7" class="component-empty-table-cell">
+                                    <div class="component-empty-state component-empty-state--table">
+                                        <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
+                                        <p class="component-empty-state-text"><?php echo __('empty_search_messages'); ?></p>
+                                    </div>
+                                </td>
+                            </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>

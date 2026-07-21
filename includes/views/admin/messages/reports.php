@@ -88,6 +88,19 @@ $statusLabels = [
     'dismissed' => __('report_status_dismissed')
 ];
 
+$visibilityLabels = [
+    'visible' => __('msg_visibility_visible'),
+    'under_review' => __('msg_visibility_under_review'),
+    'deleted' => __('msg_visibility_deleted')
+];
+$visibilityIcons = [
+    'visible' => 'check_circle',
+    'under_review' => 'pending',
+    'deleted' => 'delete'
+];
+$currentVisText = $visibilityLabels[$visibility] ?? $visibility;
+$currentVisIcon = $visibilityIcons[$visibility] ?? 'visibility';
+
 $backUrl = $appUrl . '/admin/messages';
 ?>
 
@@ -102,15 +115,32 @@ $backUrl = $appUrl . '/admin/messages';
             <div class="component-top-right">
                 <!-- ACCIONES DE SELECCIÓN DE REPORTE -->
                 <div class="component-actions disabled" data-ref="header-selection-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="markReportReviewed" data-tooltip="<?php echo __('report_status_reviewed'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">check</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="markReportDismissed" data-tooltip="<?php echo __('report_status_dismissed'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="markReportPending" data-tooltip="<?php echo __('report_status_pending'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">restart_alt</span>
-                    </button>
+                    <div class="component-dropdown-wrapper">
+                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleReportStatusAction">
+                            <span class="material-symbols-rounded" data-ref="admin-report-status-icon">rule</span>
+                            <span class="component-dropdown-text" data-ref="admin-report-status-text"><?php echo __('report_status_action'); ?></span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleReportStatusAction">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    <div class="component-menu-link" data-action="markReportReviewed">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">check</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('report_status_reviewed'); ?></span></div>
+                                    </div>
+                                    <div class="component-menu-link" data-action="markReportDismissed">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">close</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('report_status_dismissed'); ?></span></div>
+                                    </div>
+                                    <div class="component-menu-link" data-action="markReportPending">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">restart_alt</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('report_status_pending'); ?></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ACCIONES DEFAULT DE NAVEGACIÓN Y VISIBILIDAD -->
@@ -118,23 +148,23 @@ $backUrl = $appUrl . '/admin/messages';
                     <!-- Dropdown de Visibilidad -->
                     <div class="component-dropdown-wrapper">
                         <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleVisibilityStatus">
-                            <span class="material-symbols-rounded">visibility</span>
-                            <span class="component-dropdown-text" data-ref="admin-visibility-text"><?php echo htmlspecialchars($visibility); ?></span>
+                            <span class="material-symbols-rounded" data-ref="admin-visibility-icon"><?php echo $currentVisIcon; ?></span>
+                            <span class="component-dropdown-text" data-ref="admin-visibility-text"><?php echo htmlspecialchars($currentVisText); ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleVisibilityStatus">
                             <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">
-                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="visibility" data-value="visible">
+                                    <div class="component-menu-link <?php echo $visibility === 'visible' ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="visibility" data-value="visible">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">check_circle</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('msg_visibility_visible'); ?></span></div>
                                     </div>
-                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="visibility" data-value="under_review">
+                                    <div class="component-menu-link <?php echo $visibility === 'under_review' ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="visibility" data-value="under_review">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">pending</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('msg_visibility_under_review'); ?></span></div>
                                     </div>
-                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="visibility" data-value="deleted">
+                                    <div class="component-menu-link <?php echo $visibility === 'deleted' ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="visibility" data-value="deleted">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('msg_visibility_deleted'); ?></span></div>
                                     </div>
@@ -145,10 +175,6 @@ $backUrl = $appUrl . '/admin/messages';
 
                     <button class="component-button component-button--icon component-button--h40 disabled-interaction" data-action="submitVisibilityUpdate" data-ref="btn-save-visibility" data-tooltip="<?php echo __('tooltip_save_visibility'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">save</span>
-                    </button>
-                    
-                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo htmlspecialchars($backUrl); ?>" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">arrow_back</span>
                     </button>
                 </div>
             </div>

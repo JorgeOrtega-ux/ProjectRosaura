@@ -73,9 +73,21 @@ class AdminMessagesReportsController {
         }
         if (deselectBtn) this.deselectReport();
 
-        if (markReviewedBtn) await this.updateSelectedReportStatus('reviewed', markReviewedBtn);
-        if (markDismissedBtn) await this.updateSelectedReportStatus('dismissed', markDismissedBtn);
-        if (markPendingBtn) await this.updateSelectedReportStatus('pending', markPendingBtn);
+        if (markReviewedBtn) {
+            await this.updateSelectedReportStatus('reviewed', markReviewedBtn);
+            const mod = markReviewedBtn.closest('[data-module]');
+            if (mod) mod.classList.add('disabled');
+        }
+        if (markDismissedBtn) {
+            await this.updateSelectedReportStatus('dismissed', markDismissedBtn);
+            const mod = markDismissedBtn.closest('[data-module]');
+            if (mod) mod.classList.add('disabled');
+        }
+        if (markPendingBtn) {
+            await this.updateSelectedReportStatus('pending', markPendingBtn);
+            const mod = markPendingBtn.closest('[data-module]');
+            if (mod) mod.classList.add('disabled');
+        }
 
         if (dropdownItem) {
             const key = dropdownItem.getAttribute('data-key');
@@ -132,7 +144,27 @@ class AdminMessagesReportsController {
 
     renderUI() {
         const visText = document.querySelector('[data-ref="admin-visibility-text"]');
-        if (visText) visText.textContent = this.state.visibility;
+        const visIcon = document.querySelector('[data-ref="admin-visibility-icon"]');
+        const labels = {
+            'visible': typeof window.__ === 'function' ? window.__('msg_visibility_visible') : 'Visible',
+            'under_review': typeof window.__ === 'function' ? window.__('msg_visibility_under_review') : 'En revisión',
+            'deleted': typeof window.__ === 'function' ? window.__('msg_visibility_deleted') : 'Eliminado'
+        };
+        const icons = {
+            'visible': 'check_circle',
+            'under_review': 'pending',
+            'deleted': 'delete'
+        };
+        if (visText) visText.textContent = labels[this.state.visibility] || this.state.visibility;
+        if (visIcon) visIcon.textContent = icons[this.state.visibility] || 'visibility';
+
+        document.querySelectorAll('[data-module="moduleVisibilityStatus"] .component-menu-link').forEach(link => {
+            if (link.getAttribute('data-value') === this.state.visibility) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
     }
 
     checkForChanges() {
