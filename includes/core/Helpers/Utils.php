@@ -26,6 +26,11 @@ class Utils {
         return self::$canvasSizes;
     }
 
+    public static function isProgressiveLoadRequired(string $size): bool {
+        $sizes = self::getCanvasSizes();
+        return isset($sizes[$size]['progressive_load']) && $sizes[$size]['progressive_load'] === true;
+    }
+
     public static function getS3Client() {
         if (self::$s3Client === null) {
             $endpoint = EnvLoader::get('AWS_ENDPOINT', 'http://minio:9000');

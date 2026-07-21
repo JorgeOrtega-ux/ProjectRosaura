@@ -380,20 +380,44 @@ export const DesignTemplates = {
         }
 
         const img = new Image();
-        img.onload = () => {
+        img.crossOrigin = 'anonymous';
+
+        const loadBitmap = async (imageSource) => {
+            let imageBitmap = null;
+            try {
+                const res = await fetch(url, { mode: 'cors' });
+                if (res.ok) {
+                    const blob = await res.blob();
+                    imageBitmap = await createImageBitmap(blob);
+                }
+            } catch (e) {}
+
+            if (!imageBitmap && typeof createImageBitmap === 'function') {
+                try {
+                    imageBitmap = await createImageBitmap(imageSource);
+                } catch (e) {
+                    console.warn('[DesignTemplates] Could not create ImageBitmap:', e);
+                }
+            }
+            return imageBitmap;
+        };
+
+        img.onload = async () => {
             const id = url; 
             let targetW, targetH, x, y;
 
             targetW = this.boardWidth * 0.5;
             targetH = this.boardHeight * 0.5;
-            const scale = Math.min(targetW / img.width, targetH / img.height);
-            const w = Math.round(img.width * scale);
-            const h = Math.round(img.height * scale);
+            const scale = Math.min(targetW / (img.width || 100), targetH / (img.height || 100));
+            const w = Math.round((img.width || 100) * scale);
+            const h = Math.round((img.height || 100) * scale);
             x = Math.round((this.boardWidth - w) / 2);
             y = Math.round((this.boardHeight - h) / 2);
 
+            const imageBitmap = await loadBitmap(img);
+
             this.templates.push({
-                id, img,
+                id, img, imageBitmap,
                 src: url,
                 x, y, w, h,
                 locked: false,

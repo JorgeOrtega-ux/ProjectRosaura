@@ -233,6 +233,11 @@ export const DesignInteractions = {
         if (typeof this.limitBounds === 'function') this.limitBounds();
         this.calculateHoverPixel(e.clientX, e.clientY);
         this.requestRender();
+
+        if (this.isProgressive && typeof this.updateVisibleChunks === 'function') {
+            if (this.chunkThrottleTimer) clearTimeout(this.chunkThrottleTimer);
+            this.chunkThrottleTimer = setTimeout(() => this.updateVisibleChunks(), 100);
+        }
     },
 
     handleMouseDown(e) {
@@ -328,6 +333,11 @@ export const DesignInteractions = {
             if (typeof this.limitBounds === 'function') this.limitBounds();
             this.calculateHoverPixel(e.clientX, e.clientY);
             this.requestRender();
+
+            if (this.isProgressive && typeof this.updateVisibleChunks === 'function') {
+                if (this.chunkThrottleTimer) clearTimeout(this.chunkThrottleTimer);
+                this.chunkThrottleTimer = setTimeout(() => this.updateVisibleChunks(), 100);
+            }
             return;
         }
 
@@ -456,7 +466,7 @@ export const DesignInteractions = {
 
                 newW = Math.min(newW, strictMaxW);
                 
-                const MAX_TEMPLATE_SIZE = 1500;
+                const MAX_TEMPLATE_SIZE = Math.max(this.boardWidth || 4096, this.boardHeight || 4096);
                 newW = Math.min(newW, MAX_TEMPLATE_SIZE);
                 
                 newW = Math.round(newW / 2) * 2;
@@ -732,7 +742,7 @@ export const DesignInteractions = {
                 tpl.angle = Math.round(angle);
             } else {
                 const aspect = this.templateInteraction.origW / this.templateInteraction.origH;
-                const MAX_TEMPLATE_SIZE = 1500;
+                const MAX_TEMPLATE_SIZE = Math.max(this.boardWidth || 4096, this.boardHeight || 4096);
                 let newW, newH;
                 
                 const enforceLimits = (w) => {

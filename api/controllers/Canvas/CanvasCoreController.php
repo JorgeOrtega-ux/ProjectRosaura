@@ -51,6 +51,23 @@ class CanvasCoreController extends BaseController {
         }
     }
 
+    public function get_chunks($input) {
+        try {
+            $canvasId = (int)($input['canvas_id'] ?? 0);
+            $chunks = $input['chunks'] ?? [];
+
+            if ($canvasId <= 0 || empty($chunks) || !is_array($chunks)) {
+                return $this->respond(['success' => false, 'message' => __('err_invalid_params')]);
+            }
+
+            $result = $this->canvasServices->getCanvasChunks($canvasId, $chunks);
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
    public function create($input) {
         try {
             if (!$this->session->isLoggedIn()) {

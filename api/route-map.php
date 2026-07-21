@@ -424,6 +424,11 @@ return [
         'action' => 'get',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
+    'canvases.get_chunks' => [
+        'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
+        'action' => 'get_chunks',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_chunks', 'max' => RL::MAX_60, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
     'canvases.create' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'create',

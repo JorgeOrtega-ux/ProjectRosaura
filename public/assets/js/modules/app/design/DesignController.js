@@ -152,7 +152,6 @@ class DesignController {
         this.uiCooldownBadge = document.querySelector('[data-ref="cooldown-badge"]');
 
         if (this.canvas) {
-            this.ctx = this.canvas.getContext('2d', { alpha: false });
             this.canvas.classList.add('component-pixelated');
             this.canvas.classList.add('component-canvas-transition');
         }

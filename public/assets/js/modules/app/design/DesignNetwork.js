@@ -103,12 +103,18 @@ export const DesignNetwork = {
                     }
                 } 
                 else if (data.type === 'batch_pixels' || data.type === 'batch_protect_pixels' || data.type === 'batch_erase_pixels') {
-                    if (Array.isArray(data.pixels)) {
-                        const pixels = data.pixels.map(p => ({
-                            x: parseInt(p.x, 10),
-                            y: parseInt(p.y, 10),
-                            color: data.color
-                        }));
+                    if (Array.isArray(data.pixels) && data.pixels.length > 0) {
+                        const len = data.pixels.length;
+                        const pixels = new Array(len);
+                        const batchColor = data.color;
+                        for (let i = 0; i < len; i++) {
+                            const p = data.pixels[i];
+                            pixels[i] = {
+                                x: typeof p.x === 'number' ? p.x : parseInt(p.x, 10),
+                                y: typeof p.y === 'number' ? p.y : parseInt(p.y, 10),
+                                color: p.color || batchColor
+                            };
+                        }
                         if (this.renderWorker) {
                             this.renderWorker.postMessage({ type: 'PUSH_PIXELS', payload: { pixels } });
                         } else {
@@ -376,7 +382,12 @@ export const DesignNetwork = {
                 this.isSpectator = !(role === 'admin' || role === 'editor');
                 this.setRoleUI(role, response.data);
 
-                if (response.data.state_base64) {
+                if (this.loadedChunks) {
+                    this.loadedChunks.clear();
+                }
+                if (typeof this.initCanvasData === 'function') {
+                    this.initCanvasData(response.data, true);
+                } else if (response.data.state_base64) {
                     this.hydrateCanvasState(response.data.state_base64);
                 }
             }
@@ -444,12 +455,24 @@ export const DesignNetwork = {
     async handleCanvasPlazmarCompleted(data) {
         if (this.plazmarTimeout) clearTimeout(this.plazmarTimeout);
 
+        this.activeTemplateId = null;
+        if (typeof this.updateTemplateUI === 'function') {
+            this.updateTemplateUI();
+        }
+
         try {
             const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
             if (response.aborted) return;
 
-            if (response.success && response.data && response.data.state_base64) {
-                this.hydrateCanvasState(response.data.state_base64);
+            if (response.success && response.data) {
+                if (this.loadedChunks) {
+                    this.loadedChunks.clear();
+                }
+                if (typeof this.initCanvasData === 'function') {
+                    this.initCanvasData(response.data, true);
+                } else if (response.data.state_base64) {
+                    this.hydrateCanvasState(response.data.state_base64);
+                }
             }
         } catch (error) {
         }
@@ -823,7 +846,9 @@ export const DesignNetwork = {
                 
                 this.setRoleUI(role, response.data);
 
-                if (response.data.state_base64) {
+                if (typeof this.initCanvasData === 'function') {
+                    this.initCanvasData(response.data);
+                } else if (response.data.state_base64) {
                     this.hydrateCanvasState(response.data.state_base64);
                 }
 

@@ -86,9 +86,77 @@ async function hydrateState(base64String) {
     }
 }
 
+async function hydrateChunkWorker(chunkX, chunkY, chunkSize, base64String) {
+    const bytes = await decompressIfNeeded(base64String);
+    if (!bytes || !offscreenCtx) return;
+
+    try {
+        const actualW = Math.min(chunkSize, boardWidth - chunkX * chunkSize);
+        const actualH = Math.min(chunkSize, boardHeight - chunkY * chunkSize);
+        if (actualW <= 0 || actualH <= 0) return;
+
+        const imageData = offscreenCtx.createImageData(actualW, actualH);
+        const totalBytes = Math.min(bytes.length, imageData.data.length);
+        imageData.data.set(bytes.subarray(0, totalBytes));
+
+        offscreenCtx.putImageData(imageData, chunkX * chunkSize, chunkY * chunkSize);
+        requestRender();
+    } catch (e) {
+        console.error('[CanvasRenderWorker] Error hydrating chunk:', e);
+    }
+}
+
+let selectedBitmask = new Uint8Array(0);
+
+function updateSelectionBitmask() {
+    const totalPixels = boardWidth * boardHeight;
+    if (selectedBitmask.length !== totalPixels) {
+        selectedBitmask = new Uint8Array(totalPixels);
+    } else {
+        selectedBitmask.fill(0);
+    }
+
+    const len = selectedPixelsArray.length;
+    for (let i = 0; i < len; i++) {
+        const key = selectedPixelsArray[i];
+        const x = key & 0xFFFF;
+        const y = key >> 16;
+        if (x >= 0 && x < boardWidth && y >= 0 && y < boardHeight) {
+            selectedBitmask[y * boardWidth + x] = 1;
+        }
+    }
+
+    if (hoveredPixelKey >= 0 && !isSpectator && !isResetLocked) {
+        const hx = hoveredPixelKey & 0xFFFF;
+        const hy = hoveredPixelKey >> 16;
+        if (hx >= 0 && hx < boardWidth && hy >= 0 && hy < boardHeight) {
+            selectedBitmask[hy * boardWidth + hx] = 1;
+        }
+    }
+}
+
 function processPixelQueue() {
     if (!pixelQueue || pixelQueue.length === 0 || !offscreenCtx) return;
     try {
+        const len = pixelQueue.length;
+        if (len === 1) {
+            const p = pixelQueue.pop();
+            const x = p.x;
+            const y = p.y;
+            if (x >= 0 && x < boardWidth && y >= 0 && y < boardHeight) {
+                const color = p.color;
+                if (color === 'transparent' || color === 255) {
+                    offscreenCtx.clearRect(x, y, 1, 1);
+                } else if (typeof color === 'string') {
+                    offscreenCtx.fillStyle = color;
+                    offscreenCtx.clearRect(x, y, 1, 1);
+                    offscreenCtx.fillRect(x, y, 1, 1);
+                }
+            }
+            return;
+        }
+
+        const colorGroups = new Map();
         while (pixelQueue.length > 0) {
             const p = pixelQueue.pop();
             const x = p.x;
@@ -97,15 +165,27 @@ function processPixelQueue() {
                 continue;
             }
             const color = p.color;
+            let group = colorGroups.get(color);
+            if (!group) {
+                group = [];
+                colorGroups.set(color, group);
+            }
+            group.push(x, y);
+        }
 
+        colorGroups.forEach((coords, color) => {
             if (color === 'transparent' || color === 255) {
-                offscreenCtx.clearRect(x, y, 1, 1);
+                for (let i = 0; i < coords.length; i += 2) {
+                    offscreenCtx.clearRect(coords[i], coords[i + 1], 1, 1);
+                }
             } else if (typeof color === 'string') {
                 offscreenCtx.fillStyle = color;
-                offscreenCtx.clearRect(x, y, 1, 1);
-                offscreenCtx.fillRect(x, y, 1, 1);
+                for (let i = 0; i < coords.length; i += 2) {
+                    offscreenCtx.clearRect(coords[i], coords[i + 1], 1, 1);
+                    offscreenCtx.fillRect(coords[i], coords[i + 1], 1, 1);
+                }
             }
-        }
+        });
     } catch (e) {
         pixelQueue.length = 0;
     }
@@ -195,7 +275,7 @@ function render() {
         ctx.restore();
     }
 
-    // TypedArray para renderSet de selección y hover
+    // Dibujado de contornos de selección optimizado vía Bitmask O(1)
     const selLen = selectedPixelsArray.length;
     const hasHover = hoveredPixelKey >= 0 && !isSpectator && !isResetLocked;
     
@@ -204,23 +284,31 @@ function render() {
         ctx.lineWidth = 1 / transform.scale;
         ctx.beginPath();
 
-        const keyLookup = new Set(selectedPixelsArray);
-        if (hasHover) keyLookup.add(hoveredPixelKey);
+        updateSelectionBitmask();
 
-        keyLookup.forEach(key => {
+        const drawPixelContour = (key) => {
             const x = key & 0xFFFF;
             const y = key >> 16;
+            if (x < 0 || x >= boardWidth || y < 0 || y >= boardHeight) return;
 
-            const hasTop = keyLookup.has(((y - 1) << 16) | x);
-            const hasBottom = keyLookup.has(((y + 1) << 16) | x);
-            const hasLeft = keyLookup.has((y << 16) | (x - 1));
-            const hasRight = keyLookup.has((y << 16) | (x + 1));
+            const idx = y * boardWidth + x;
+            const hasTop = y > 0 && selectedBitmask[idx - boardWidth] === 1;
+            const hasBottom = y < boardHeight - 1 && selectedBitmask[idx + boardWidth] === 1;
+            const hasLeft = x > 0 && selectedBitmask[idx - 1] === 1;
+            const hasRight = x < boardWidth - 1 && selectedBitmask[idx + 1] === 1;
 
             if (!hasTop) { ctx.moveTo(x, y); ctx.lineTo(x + 1, y); }
             if (!hasBottom) { ctx.moveTo(x, y + 1); ctx.lineTo(x + 1, y + 1); }
             if (!hasLeft) { ctx.moveTo(x, y); ctx.lineTo(x, y + 1); }
             if (!hasRight) { ctx.moveTo(x + 1, y); ctx.lineTo(x + 1, y + 1); }
-        });
+        };
+
+        for (let i = 0; i < selLen; i++) {
+            drawPixelContour(selectedPixelsArray[i]);
+        }
+        if (hasHover) {
+            drawPixelContour(hoveredPixelKey);
+        }
         ctx.stroke();
     }
 
@@ -368,6 +456,10 @@ self.onmessage = function (e) {
                 }
             }
             hydrateState(payload.base64String);
+            break;
+
+        case 'HYDRATE_CHUNK':
+            hydrateChunkWorker(payload.chunkX, payload.chunkY, payload.chunkSize || 512, payload.base64String);
             break;
 
         case 'DRAW_IMAGE_BUFFER':

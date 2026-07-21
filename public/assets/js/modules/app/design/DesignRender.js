@@ -61,25 +61,104 @@ export const DesignRender = {
 
     requestRender() {
         if (this.renderWorker) {
-            const selArray = this.selectedPixels ? Array.from(this.selectedPixels) : [];
-            const hoverKey = this.hoveredPixel ? ((this.hoveredPixel.y << 16) | this.hoveredPixel.x) : -1;
-            
-            this.renderWorker.postMessage({
-                type: 'UPDATE_TRANSFORM',
-                payload: {
-                    transform: this.transform,
-                    isDarkMode: this.isDarkMode(),
-                    currentColor: this.currentColor,
-                    isSpectator: this.isSpectator,
-                    isResetLocked: this.isResetLocked
-                }
-            });
+            if (this._workerRenderPending) return;
+            this._workerRenderPending = true;
 
-            this.renderWorker.postMessage({
-                type: 'UPDATE_SELECTION',
-                payload: {
-                    selectedPixels: selArray,
-                    hoveredPixelKey: hoverKey
+            requestAnimationFrame(() => {
+                this._workerRenderPending = false;
+                if (!this.renderWorker) return;
+
+                const selArray = this.selectedPixels ? Array.from(this.selectedPixels) : [];
+                const hoverKey = this.hoveredPixel ? ((this.hoveredPixel.y << 16) | this.hoveredPixel.x) : -1;
+                
+                this.renderWorker.postMessage({
+                    type: 'UPDATE_TRANSFORM',
+                    payload: {
+                        transform: this.transform,
+                        isDarkMode: this.isDarkMode(),
+                        currentColor: this.currentColor,
+                        isSpectator: this.isSpectator,
+                        isResetLocked: this.isResetLocked
+                    }
+                });
+
+                this.renderWorker.postMessage({
+                    type: 'UPDATE_SELECTION',
+                    payload: {
+                        selectedPixels: selArray,
+                        hoveredPixelKey: hoverKey
+                    }
+                });
+
+                if (this.activeTemplateId && this.templates) {
+                    const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+                    if (tpl) {
+                        if (!tpl.imageBitmap && (tpl.src || tpl.id)) {
+                            const targetUrl = tpl.src || tpl.id;
+                            if (!tpl._isFetchingBitmap) {
+                                tpl._isFetchingBitmap = true;
+                                fetch(targetUrl, { mode: 'cors' })
+                                    .then(res => res.ok ? res.blob() : null)
+                                    .then(blob => blob ? createImageBitmap(blob) : null)
+                                    .then(bmp => {
+                                        if (bmp) {
+                                            tpl.imageBitmap = bmp;
+                                            this.requestRender();
+                                        }
+                                    })
+                                    .catch(() => {})
+                                    .finally(() => { tpl._isFetchingBitmap = false; });
+                            }
+                        }
+
+                        try {
+                            this.renderWorker.postMessage({
+                                type: 'UPDATE_TEMPLATE',
+                                payload: {
+                                    template: {
+                                        x: tpl.x,
+                                        y: tpl.y,
+                                        w: tpl.w,
+                                        h: tpl.h,
+                                        angle: tpl.angle || 0,
+                                        opacity: tpl.opacity !== undefined ? tpl.opacity : 0.5,
+                                        locked: !!tpl.locked,
+                                        imageBitmap: tpl.imageBitmap || null
+                                    }
+                                }
+                            });
+                        } catch (err) {
+                            console.warn('[DesignRender] DataCloneError sending ImageBitmap to worker, fallback to null bitmap:', err);
+                            tpl.imageBitmap = null;
+                            try {
+                                this.renderWorker.postMessage({
+                                    type: 'UPDATE_TEMPLATE',
+                                    payload: {
+                                        template: {
+                                            x: tpl.x,
+                                            y: tpl.y,
+                                            w: tpl.w,
+                                            h: tpl.h,
+                                            angle: tpl.angle || 0,
+                                            opacity: tpl.opacity !== undefined ? tpl.opacity : 0.5,
+                                            locked: !!tpl.locked,
+                                            imageBitmap: null
+                                        }
+                                    }
+                                });
+                            } catch (e2) {}
+                        }
+                    } else {
+                        this.renderWorker.postMessage({
+                            type: 'UPDATE_TEMPLATE',
+                            payload: { template: null }
+                        });
+                    }
+                } else {
+                    this.renderWorker.postMessage({
+                        type: 'UPDATE_TEMPLATE',
+                        payload: { template: null }
+                    });
                 }
             });
             return;
@@ -97,22 +176,52 @@ export const DesignRender = {
 
         if (this.pixelQueue && this.pixelQueue.length > 0 && this.offscreenCtx && this.boardWidth > 0 && this.boardHeight > 0) {
             try {
-                while (this.pixelQueue.length > 0) {
+                const len = this.pixelQueue.length;
+                if (len === 1) {
                     const p = this.pixelQueue.pop();
                     const x = p.x;
                     const y = p.y;
-                    if (isNaN(x) || isNaN(y) || x < 0 || x >= this.boardWidth || y < 0 || y >= this.boardHeight) {
-                        continue;
+                    if (x >= 0 && x < this.boardWidth && y >= 0 && y < this.boardHeight) {
+                        const color = p.color;
+                        if (color === 'transparent' || color === 255) {
+                            this.offscreenCtx.clearRect(x, y, 1, 1);
+                        } else if (typeof color === 'string') {
+                            this.offscreenCtx.fillStyle = color;
+                            this.offscreenCtx.clearRect(x, y, 1, 1);
+                            this.offscreenCtx.fillRect(x, y, 1, 1);
+                        }
                     }
-                    const color = p.color;
+                } else {
+                    const colorGroups = new Map();
+                    while (this.pixelQueue.length > 0) {
+                        const p = this.pixelQueue.pop();
+                        const x = p.x;
+                        const y = p.y;
+                        if (isNaN(x) || isNaN(y) || x < 0 || x >= this.boardWidth || y < 0 || y >= this.boardHeight) {
+                            continue;
+                        }
+                        const color = p.color;
+                        let group = colorGroups.get(color);
+                        if (!group) {
+                            group = [];
+                            colorGroups.set(color, group);
+                        }
+                        group.push(x, y);
+                    }
 
-                    if (color === 'transparent' || color === 255) {
-                        this.offscreenCtx.clearRect(x, y, 1, 1);
-                    } else if (typeof color === 'string') {
-                        this.offscreenCtx.fillStyle = color;
-                        this.offscreenCtx.clearRect(x, y, 1, 1);
-                        this.offscreenCtx.fillRect(x, y, 1, 1);
-                    }
+                    colorGroups.forEach((coords, color) => {
+                        if (color === 'transparent' || color === 255) {
+                            for (let i = 0; i < coords.length; i += 2) {
+                                this.offscreenCtx.clearRect(coords[i], coords[i + 1], 1, 1);
+                            }
+                        } else if (typeof color === 'string') {
+                            this.offscreenCtx.fillStyle = color;
+                            for (let i = 0; i < coords.length; i += 2) {
+                                this.offscreenCtx.clearRect(coords[i], coords[i + 1], 1, 1);
+                                this.offscreenCtx.fillRect(coords[i], coords[i + 1], 1, 1);
+                            }
+                        }
+                    });
                 }
             } catch (e) {
                 this.pixelQueue.length = 0;
@@ -207,34 +316,63 @@ export const DesignRender = {
             }
         }
 
-        const renderSet = new Set(this.selectedPixels);
+        const selCount = this.selectedPixels ? this.selectedPixels.size : 0;
+        const hasHover = this.hoveredPixel && !this.isSpectator && !this.isResetLocked;
 
-        if (this.hoveredPixel && !this.isSpectator && !this.isResetLocked) {
-            const hoverKey = (this.hoveredPixel.y << 16) | this.hoveredPixel.x;
-            if (!renderSet.has(hoverKey)) {
-                renderSet.add(hoverKey);
-            }
-        }
-
-        if (renderSet.size > 0 && !this.isSpectator && !this.isResetLocked) {
+        if ((selCount > 0 || hasHover) && !this.isSpectator && !this.isResetLocked && this.boardWidth > 0 && this.boardHeight > 0) {
             this.ctx.strokeStyle = activeColor; 
             this.ctx.lineWidth = 1 / this.transform.scale;
             this.ctx.beginPath();
             
-            renderSet.forEach(key => {
+            const totalPixels = this.boardWidth * this.boardHeight;
+            if (!this._selectedBitmask || this._selectedBitmask.length !== totalPixels) {
+                this._selectedBitmask = new Uint8Array(totalPixels);
+            } else {
+                this._selectedBitmask.fill(0);
+            }
+
+            if (selCount > 0) {
+                this.selectedPixels.forEach(key => {
+                    const x = key & 0xFFFF;
+                    const y = key >> 16;
+                    if (x >= 0 && x < this.boardWidth && y >= 0 && y < this.boardHeight) {
+                        this._selectedBitmask[y * this.boardWidth + x] = 1;
+                    }
+                });
+            }
+
+            if (hasHover) {
+                const hx = this.hoveredPixel.x;
+                const hy = this.hoveredPixel.y;
+                if (hx >= 0 && hx < this.boardWidth && hy >= 0 && hy < this.boardHeight) {
+                    this._selectedBitmask[hy * this.boardWidth + hx] = 1;
+                }
+            }
+
+            const drawContour = (key) => {
                 const x = key & 0xFFFF;
                 const y = key >> 16;
-                
-                const hasTop = renderSet.has(((y - 1) << 16) | x);
-                const hasBottom = renderSet.has(((y + 1) << 16) | x);
-                const hasLeft = renderSet.has((y << 16) | (x - 1));
-                const hasRight = renderSet.has((y << 16) | (x + 1));
-                
+                if (x < 0 || x >= this.boardWidth || y < 0 || y >= this.boardHeight) return;
+
+                const idx = y * this.boardWidth + x;
+                const hasTop = y > 0 && this._selectedBitmask[idx - this.boardWidth] === 1;
+                const hasBottom = y < this.boardHeight - 1 && this._selectedBitmask[idx + this.boardWidth] === 1;
+                const hasLeft = x > 0 && this._selectedBitmask[idx - 1] === 1;
+                const hasRight = x < this.boardWidth - 1 && this._selectedBitmask[idx + 1] === 1;
+
                 if (!hasTop) { this.ctx.moveTo(x, y); this.ctx.lineTo(x + 1, y); }
                 if (!hasBottom) { this.ctx.moveTo(x, y + 1); this.ctx.lineTo(x + 1, y + 1); }
                 if (!hasLeft) { this.ctx.moveTo(x, y); this.ctx.lineTo(x, y + 1); }
                 if (!hasRight) { this.ctx.moveTo(x + 1, y); this.ctx.lineTo(x + 1, y + 1); }
-            });
+            };
+
+            if (selCount > 0) {
+                this.selectedPixels.forEach(key => drawContour(key));
+            }
+            if (hasHover) {
+                const hoverKey = (this.hoveredPixel.y << 16) | this.hoveredPixel.x;
+                drawContour(hoverKey);
+            }
             this.ctx.stroke();
         }
 

@@ -1,5 +1,6 @@
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 
 export const DesignSetup = {
     loadCanvasConfigForSnapshot() {
@@ -277,31 +278,106 @@ export const DesignSetup = {
         }
     },
 
-    async hydrateChunk(chunkX, chunkY, base64String) {
-        if (!this.chunks) return;
-        const key = `${chunkX},${chunkY}`;
-        let chunkCanvas = this.chunks.get(key);
-        let ctx;
-        if (!chunkCanvas) {
-            chunkCanvas = document.createElement('canvas');
-            chunkCanvas.width = 512;
-            chunkCanvas.height = 512;
-            this.chunks.set(key, chunkCanvas);
+    async initCanvasData(canvasData, forceReload = false) {
+        if (!canvasData) return;
+        this.isProgressive = !!canvasData.progressive_load;
+        if (!this.loadedChunks || forceReload) {
+            this.loadedChunks = new Set();
         }
-        ctx = chunkCanvas.getContext('2d', { alpha: true });
+
+        if (this.isProgressive) {
+            console.log(`[ProgressiveLoad] Modo activado para lienzo ID ${this.canvasIntId} (${this.boardWidth}x${this.boardHeight}). Solicitando chunks iniciales del Viewport...`);
+            this.updateVisibleChunks();
+        } else if (canvasData.state_base64) {
+            console.log(`[ProgressiveLoad] Modo desactivado. Usando hidratación monolítica tradicional (state_base64).`);
+            this.hydrateCanvasState(canvasData.state_base64);
+        }
+    },
+
+    updateVisibleChunks() {
+        if (!this.isProgressive || !this.canvas) return;
+
+        const chunkSize = 512;
+        const rect = this.canvas.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0 || !this.transform || !this.transform.scale) return;
+
+        const startX = Math.max(0, Math.floor(-this.transform.x / this.transform.scale));
+        const startY = Math.max(0, Math.floor(-this.transform.y / this.transform.scale));
+        const endX = Math.min(this.boardWidth, Math.ceil((rect.width - this.transform.x) / this.transform.scale));
+        const endY = Math.min(this.boardHeight, Math.ceil((rect.height - this.transform.y) / this.transform.scale));
+
+        const minChunkX = Math.floor(startX / chunkSize);
+        const minChunkY = Math.floor(startY / chunkSize);
+        const maxChunkX = Math.floor(Math.max(0, endX - 1) / chunkSize);
+        const maxChunkY = Math.floor(Math.max(0, endY - 1) / chunkSize);
+
+        const chunksToFetch = [];
+
+        for (let cx = minChunkX; cx <= maxChunkX; cx++) {
+            for (let cy = minChunkY; cy <= maxChunkY; cy++) {
+                if (cx * chunkSize >= this.boardWidth || cy * chunkSize >= this.boardHeight) continue;
+                const key = `${cx},${cy}`;
+                if (!this.loadedChunks.has(key)) {
+                    chunksToFetch.push(key);
+                }
+            }
+        }
+
+        if (chunksToFetch.length > 0) {
+            this.fetchChunks(chunksToFetch);
+        }
+    },
+
+    async fetchChunks(chunkKeys) {
+        if (!chunkKeys || chunkKeys.length === 0) return;
+        chunkKeys.forEach(k => this.loadedChunks.add(k));
+
+        console.log(`[ProgressiveLoad] 📥 Solicitando ${chunkKeys.length} chunk(s) al servidor:`, chunkKeys);
 
         try {
-            if (!base64String) {
-                return;
-            }
-            const bytes = await this.decompressIfNeeded(base64String);
-            if (!bytes) return;
+            const response = await this.api.post(ApiRoutes.Canvases.GetChunks, {
+                canvas_id: parseInt(this.canvasIntId, 10),
+                chunks: chunkKeys
+            });
 
-            const imageData = ctx.createImageData(512, 512);
+            if (response && response.success && response.data?.chunks) {
+                const receivedKeys = Object.keys(response.data.chunks);
+                console.log(`[ProgressiveLoad] 🎨 Recibidos y renderizados ${receivedKeys.length} chunk(s):`, receivedKeys);
+
+                Object.entries(response.data.chunks).forEach(([key, base64]) => {
+                    const [cx, cy] = key.split(',').map(Number);
+                    this.hydrateChunk(cx, cy, base64);
+                });
+            }
+        } catch (e) {
+            console.error('[DesignSetup] Error fetching chunks:', e);
+        }
+    },
+
+    async hydrateChunk(chunkX, chunkY, base64String) {
+        if (!base64String) return;
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'HYDRATE_CHUNK',
+                payload: { chunkX, chunkY, chunkSize: 512, base64String }
+            });
+            return;
+        }
+
+        try {
+            const bytes = await this.decompressIfNeeded(base64String);
+            if (!bytes || !this.offscreenCtx) return;
+
+            const chunkSize = 512;
+            const actualW = Math.min(chunkSize, this.boardWidth - chunkX * chunkSize);
+            const actualH = Math.min(chunkSize, this.boardHeight - chunkY * chunkSize);
+            if (actualW <= 0 || actualH <= 0) return;
+
+            const imageData = this.offscreenCtx.createImageData(actualW, actualH);
             const totalBytes = Math.min(bytes.length, imageData.data.length);
             imageData.data.set(bytes.subarray(0, totalBytes));
-            
-            ctx.putImageData(imageData, 0, 0);
+
+            this.offscreenCtx.putImageData(imageData, chunkX * chunkSize, chunkY * chunkSize);
             this.requestRender();
         } catch (e) {
             console.error('[DesignSetup] hydrateChunk error:', e);
@@ -337,6 +413,9 @@ export const DesignSetup = {
         }
 
         if (!this.renderWorker) {
+            if (this.canvas && !this.ctx) {
+                this.ctx = this.canvas.getContext('2d', { alpha: false });
+            }
             this.offscreenCanvas = document.createElement('canvas');
             this.offscreenCanvas.width = this.boardWidth;
             this.offscreenCanvas.height = this.boardHeight;

@@ -382,7 +382,14 @@ class CanvasCoreService {
                     }
                 }
 
-                $canvas['state_base64'] = base64_encode(gzencode($stateRaw, 6));
+                $isProgressive = Utils::isProgressiveLoadRequired($canvas['size']);
+                $canvas['progressive_load'] = $isProgressive;
+
+                if ($isProgressive) {
+                    $canvas['state_base64'] = null;
+                } else {
+                    $canvas['state_base64'] = base64_encode(gzencode($stateRaw, 6));
+                }
                 $canvas['is_compressed'] = true;
 
             return ['success' => true, 'data' => $canvas];
@@ -850,6 +857,90 @@ class CanvasCoreService {
             return ['success' => false, 'message' => __('err_canvases_delete_failed')];
         } catch (Exception $e) {
             Logger::error('Error deleting canvases.', ['user_id' => $userId, 'exception' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function getCanvasChunks(int $canvasId, array $requestedChunks): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+
+            $sizeStr = strtolower($canvas['size']);
+            if (strpos($sizeStr, 'x') !== false) {
+                $parts = explode('x', $sizeStr);
+                $boardW = (int)$parts[0];
+                $boardH = isset($parts[1]) ? (int)$parts[1] : $boardW;
+            } else {
+                $boardW = (int)$sizeStr;
+                $boardH = $boardW;
+            }
+
+            $redisKey = "canvas:{$canvasId}:state";
+            $stateRaw = null;
+
+            if (class_exists(RedisCache::class)) {
+                try {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis && $redis->exists($redisKey)) {
+                        $stateRaw = $redis->get($redisKey);
+                    }
+                } catch (Exception $e) {
+                    Logger::error('Error reading chunk state from Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+                }
+            }
+
+            if (!$stateRaw) {
+                $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
+            }
+
+            if (!$stateRaw) {
+                $totalPixels = $boardW * $boardH;
+                $stateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $totalPixels);
+            }
+
+            $chunkSize = 512;
+            $responseChunks = [];
+
+            foreach ($requestedChunks as $chunkKey) {
+                if (!is_string($chunkKey) || strpos($chunkKey, ',') === false) continue;
+                list($cx, $cy) = explode(',', $chunkKey);
+                $cx = (int)$cx;
+                $cy = (int)$cy;
+
+                $startX = $cx * $chunkSize;
+                $startY = $cy * $chunkSize;
+
+                if ($startX >= $boardW || $startY >= $boardH || $startX < 0 || $startY < 0) continue;
+
+                $actualW = min($chunkSize, $boardW - $startX);
+                $actualH = min($chunkSize, $boardH - $startY);
+
+                $chunkBuffer = '';
+                for ($y = 0; $y < $actualH; $y++) {
+                    $offset = (($startY + $y) * $boardW + $startX) * 4;
+                    $length = $actualW * 4;
+                    $chunkBuffer .= substr($stateRaw, $offset, $length);
+                }
+
+                $responseChunks[$chunkKey] = base64_encode(gzencode($chunkBuffer, 6));
+            }
+
+            return [
+                'success' => true,
+                'data' => [
+                    'canvas_id' => $canvasId,
+                    'chunk_size' => $chunkSize,
+                    'chunks' => $responseChunks
+                ]
+            ];
+        } catch (Exception $e) {
+            Logger::error('Error getting canvas chunks.', [
+                'canvas_id' => $canvasId,
+                'exception' => $e->getMessage()
+            ]);
             return ['success' => false, 'message' => __('err_database')];
         }
     }
