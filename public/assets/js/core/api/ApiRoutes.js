@@ -97,7 +97,7 @@ export const ApiRoutes = {
         Delete: 'canvases.delete',
         Downgrade: 'canvases.downgrade',
         Leave: 'canvases.leave',
-        UpdateChatRestriction: 'canvas.update_chat_restriction',
+        UpdateChatRestriction: 'canvases.update_chat_restriction',
 
         Resize: 'canvases.resize',
         GetResizeSettings: 'canvases.get_resize_settings',

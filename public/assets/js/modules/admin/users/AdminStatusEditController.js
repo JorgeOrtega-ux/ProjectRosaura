@@ -69,26 +69,27 @@ class AdminStatusEditController {
         const viewContent = document.querySelector('.view-content[data-user-id]');
         if (!viewContent) return;
         this.targetUserId = viewContent.getAttribute('data-user-id');
-        const initialStateData = viewContent.getAttribute('data-initial-state');
-        if (initialStateData) {
-            try {
-                const parsedState = JSON.parse(initialStateData);
-                this.state = Object.assign({}, this.state, parsedState);
-                this.initialState = JSON.parse(JSON.stringify(this.state)); 
-                const inpSuspCustom = document.querySelector('[data-ref="inp_custom_suspension_reason"]');
-                const chkNotifySuspension = document.querySelector('[data-ref="chk_notify_user_suspension"]');
-                if (inpSuspCustom) inpSuspCustom.value = this.state.customSuspensionReason || '';
-                if (chkNotifySuspension) chkNotifySuspension.checked = this.state.notifyUserSuspension;
-                const reasonEl = document.querySelector('[data-ref="admin-suspensionReason-text"]');
-                if (reasonEl) this.defaultTexts.suspensionReason = reasonEl.textContent.trim();
-                const dateEl = document.querySelector('[data-ref="admin-endDate-text"]');
-                if (dateEl) this.defaultTexts.endDate = dateEl.textContent.trim();
-                this.syncVisuals(false); 
-                this.renderUI();
-                this.checkForChanges();
-            } catch (error) {
-            }
-        }
+        this.state = {
+            isSuspended: viewContent.getAttribute('data-is-suspended') || '0',
+            suspensionReason: viewContent.getAttribute('data-suspension-reason') || '',
+            customSuspensionReason: viewContent.getAttribute('data-custom-suspension-reason') || '',
+            suspendedType: viewContent.getAttribute('data-suspended-type') || 'temporary',
+            suspensionDuration: viewContent.getAttribute('data-suspension-duration') || '7',
+            endDate: viewContent.getAttribute('data-end-date') || '',
+            notifyUserSuspension: viewContent.getAttribute('data-notify-user-suspension') !== '0'
+        };
+        this.initialState = Object.assign({}, this.state);
+        const inpSuspCustom = document.querySelector('[data-ref="inp_custom_suspension_reason"]');
+        const chkNotifySuspension = document.querySelector('[data-ref="chk_notify_user_suspension"]');
+        if (inpSuspCustom) inpSuspCustom.value = this.state.customSuspensionReason || '';
+        if (chkNotifySuspension) chkNotifySuspension.checked = this.state.notifyUserSuspension;
+        const reasonEl = document.querySelector('[data-ref="admin-suspensionReason-text"]');
+        if (reasonEl) this.defaultTexts.suspensionReason = reasonEl.textContent.trim();
+        const dateEl = document.querySelector('[data-ref="admin-endDate-text"]');
+        if (dateEl) this.defaultTexts.endDate = dateEl.textContent.trim();
+        this.syncVisuals(false); 
+        this.renderUI();
+        this.checkForChanges();
     }
     handleClick(e) {
         if (!window.location.pathname.includes('/admin/user-moderation')) return;
@@ -276,19 +277,19 @@ class AdminStatusEditController {
     async submitSuspensionUpdate(btn) {
         if (this.state.isSuspended === '1') {
             if (!this.state.suspensionReason) {
-                showMessage(__('err_select_suspension_reason'), 'error'); return;
+                showMessage(typeof window.__ === 'function' ? window.__('err_select_suspension_reason') : 'Debes seleccionar una razón', 'error'); return;
             }
             if (this.state.suspensionReason === 'reason_other' && !this.state.customSuspensionReason.trim()) {
-                showMessage(__('err_specify_suspension_reason'), 'error'); return;
+                showMessage(typeof window.__ === 'function' ? window.__('err_specify_suspension_reason') : 'Debes especificar el motivo', 'error'); return;
             }
             if (this.state.suspendedType === 'temporary' && !this.state.endDate) {
-                showMessage(__('err_select_end_date'), 'error'); return;
+                showMessage(typeof window.__ === 'function' ? window.__('err_select_end_date') : 'Debes seleccionar una fecha', 'error'); return;
             }
         }
         const resultDialog = await window.dialogSystem.show('verifyPasswordUpdateStatus');
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-        if (!password) { showMessage(__('err_admin_password_required'), 'error'); return; }
+        if (!password) { showMessage(typeof window.__ === 'function' ? window.__('err_admin_password_required') : 'Debes ingresar tu contraseña', 'error'); return; }
         setButtonLoading(btn);
         const payload = {
             target_user_id: this.targetUserId,

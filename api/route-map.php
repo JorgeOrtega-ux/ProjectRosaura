@@ -180,22 +180,22 @@ return [
     ],
     'admin.get_messages' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
-        'action' => 'getMessages',
+        'action' => 'get_messages',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_get_messages', 'max' => 60, 'time' => 1, 'identifier' => 'user_id']]
     ],
     'admin.update_message_visibility' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
-        'action' => 'updateMessageVisibility',
+        'action' => 'update_message_visibility',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_upd_msg', 'max' => 30, 'time' => 1, 'identifier' => 'user_id']]
     ],
     'admin.get_message_reports' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
-        'action' => 'getMessageReports',
+        'action' => 'get_message_reports',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_get_msg_rep', 'max' => 60, 'time' => 1, 'identifier' => 'user_id']]
     ],
     'admin.update_report_status' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
-        'action' => 'updateReportStatus',
+        'action' => 'update_report_status',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_upd_rep_st', 'max' => 30, 'time' => 1, 'identifier' => 'user_id']]
     ],
 
@@ -628,7 +628,7 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_plazmar', 'max' => 5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    'canvas.update_chat_restriction' => [
+    'canvases.update_chat_restriction' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasChatRestrictionController',
         'action' => 'updateRestriction',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_update_chat_res', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]

@@ -45,20 +45,18 @@ class AdminMessagesReportsController {
         if (!viewContent) return;
 
         this.messageUuid = viewContent.getAttribute('data-message-uuid');
-        const initialStateData = viewContent.getAttribute('data-initial-state');
-        if (initialStateData) {
-            try {
-                const parsed = JSON.parse(initialStateData);
-                this.state = Object.assign({}, this.state, parsed);
-                this.state.deletedBy = 'admin';
-                this.initialState = JSON.parse(JSON.stringify(this.state));
-            } catch (err) {}
-        }
+        this.state.visibility = viewContent.getAttribute('data-visibility') || 'visible';
+        this.state.deletedBy = viewContent.getAttribute('data-deleted-by') || 'admin';
+        this.state.deleteReason = viewContent.getAttribute('data-delete-reason') || '';
+        this.initialState = Object.assign({}, this.state);
+
         this.resetReportSelection();
         this.renderUI();
     }
 
     async handleClick(e) {
+        if (!window.location.pathname.includes('/admin/messages/reports')) return;
+
         const selectReportRow = e.target.closest('[data-action="selectReport"]');
         const deselectBtn = e.target.closest('[data-action="deselectReport"]');
         const markReviewedBtn = e.target.closest('[data-action="markReportReviewed"]');
@@ -134,11 +132,11 @@ class AdminMessagesReportsController {
         const selectionMode = document.querySelector('[data-ref="header-selection-actions"]');
 
         if (this.selectedReportId) {
-            if (defaultMode) defaultMode.classList.replace('active', 'disabled');
-            if (selectionMode) selectionMode.classList.replace('disabled', 'active');
+            if (defaultMode) { defaultMode.classList.remove('active'); defaultMode.classList.add('disabled'); }
+            if (selectionMode) { selectionMode.classList.remove('disabled'); selectionMode.classList.add('active'); }
         } else {
-            if (selectionMode) selectionMode.classList.replace('active', 'disabled');
-            if (defaultMode) defaultMode.classList.replace('disabled', 'active');
+            if (selectionMode) { selectionMode.classList.remove('active'); selectionMode.classList.add('disabled'); }
+            if (defaultMode) { defaultMode.classList.remove('disabled'); defaultMode.classList.add('active'); }
         }
     }
 
@@ -225,6 +223,8 @@ class AdminMessagesReportsController {
             if (window.dialogSystem) {
                 const dialogRes = await window.dialogSystem.show('deleteMessageDialog');
                 if (!dialogRes) {
+                    this.state = Object.assign({}, this.initialState);
+                    this.renderUI();
                     return; // Admin se arrepintió o cerró el modal
                 }
 
@@ -242,7 +242,11 @@ class AdminMessagesReportsController {
                 }
             } else {
                 deleteReason = prompt('Motivo de eliminación:');
-                if (deleteReason === null) return;
+                if (deleteReason === null) {
+                    this.state = Object.assign({}, this.initialState);
+                    this.renderUI();
+                    return;
+                }
             }
             this.state.deleteReason = deleteReason;
         }

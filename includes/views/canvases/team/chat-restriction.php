@@ -68,8 +68,6 @@ if ($restriction && $restriction['suspension_type'] === 'temporary' && $restrict
     $initialState['endDate'] = $d->format('Y-m-d\TH:i');
 }
 
-$initialStateJson = htmlspecialchars(json_encode($initialState), ENT_QUOTES, 'UTF-8');
-
 $displayTexts = [
     'isSuspended' => ($initialState['isSuspended'] === '1') ? __('lbl_restricted') : __('lbl_unrestricted'),
     'suspensionReason' => !empty($initialState['suspensionReason']) ? (in_array($initialState['suspensionReason'], $predefinedSuspension) ? __($initialState['suspensionReason']) : $initialState['suspensionReason']) : __('lbl_select_suspension_reason'),
@@ -113,7 +111,7 @@ if ($initialState['isSuspended'] === '1') {
     }
 }
 ?>
-<div class="view-content" data-canvas-id="<?php echo $canvasUuid; ?>" data-user-id="<?php echo $targetUserUuid; ?>" data-initial-state="<?php echo $initialStateJson; ?>">
+<div class="view-content" data-canvas-id="<?php echo $canvasUuid; ?>" data-user-id="<?php echo $targetUserUuid; ?>" data-is-suspended="<?php echo htmlspecialchars($initialState['isSuspended']); ?>" data-suspension-reason="<?php echo htmlspecialchars($initialState['suspensionReason']); ?>" data-custom-suspension-reason="<?php echo htmlspecialchars($initialState['customSuspensionReason']); ?>" data-suspended-type="<?php echo htmlspecialchars($initialState['suspendedType']); ?>" data-suspension-duration="<?php echo htmlspecialchars($initialState['suspensionDuration']); ?>" data-end-date="<?php echo htmlspecialchars($initialState['endDate']); ?>">
     
     <div class="component-top">
         <div class="component-top-left">
@@ -327,7 +325,7 @@ if ($initialState['isSuspended'] === '1') {
                                                 <span class="material-symbols-rounded">calendar_month</span>
                                                 <span class="component-dropdown-text" data-ref="admin-endDate-text"><?php echo $displayTexts['endDate']; ?></span>
                                             </div>
-                                            <?php include __DIR__ . '/../../../../modules/moduleCalendar.php'; ?>
+                                            <?php include __DIR__ . '/../../../modules/moduleCalendar.php'; ?>
                                         </div>
                                     </div>
                                 </div>

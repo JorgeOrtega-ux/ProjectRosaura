@@ -340,7 +340,7 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
-    public function getMessages() {
+    public function get_messages() {
         try {
             $page = (int)($this->request['page'] ?? 1);
             $limit = (int)($this->request['limit'] ?? 50);
@@ -353,7 +353,7 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
-    public function updateMessageVisibility($input) {
+    public function update_message_visibility($input) {
         try {
             $this->requirePermission('view_logs');
             $data = [
@@ -367,7 +367,7 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
-    public function getMessageReports($input) {
+    public function get_message_reports($input) {
         try {
             $this->requirePermission('view_logs');
             $uuid = $input['uuid'] ?? $this->request['uuid'] ?? null;
@@ -376,7 +376,7 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
-    public function updateReportStatus($input) {
+    public function update_report_status($input) {
         try {
             $this->requirePermission('view_logs');
             $data = [

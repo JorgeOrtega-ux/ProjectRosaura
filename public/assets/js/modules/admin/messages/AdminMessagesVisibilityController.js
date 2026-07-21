@@ -56,27 +56,20 @@ class AdminMessagesVisibilityController {
         if (!viewContent) return;
 
         this.messageUuid = viewContent.getAttribute('data-message-uuid');
-        const initialStateData = viewContent.getAttribute('data-initial-state');
+        this.state.visibility = viewContent.getAttribute('data-visibility') || 'visible';
+        this.state.deletedBy = viewContent.getAttribute('data-deleted-by') || '';
+        this.state.deleteReason = viewContent.getAttribute('data-delete-reason') || '';
+        this.initialState = Object.assign({}, this.state);
 
-        if (initialStateData) {
-            try {
-                const parsedState = JSON.parse(initialStateData);
-                this.state = Object.assign({}, this.state, parsedState);
-                this.initialState = JSON.parse(JSON.stringify(this.state));
+        const inpReason = document.querySelector('[data-ref="inp_delete_reason"]');
+        if (inpReason) inpReason.value = this.state.deleteReason || '';
 
-                const inpReason = document.querySelector('[data-ref="inp_delete_reason"]');
-                if (inpReason) inpReason.value = this.state.deleteReason || '';
+        const deletedByEl = document.querySelector('[data-ref="admin-deletedBy-text"]');
+        if (deletedByEl) this.defaultTexts.deletedBy = deletedByEl.textContent.trim();
 
-                const deletedByEl = document.querySelector('[data-ref="admin-deletedBy-text"]');
-                if (deletedByEl) this.defaultTexts.deletedBy = deletedByEl.textContent.trim();
-
-                this.syncVisuals(false);
-                this.renderUI();
-                this.checkForChanges();
-            } catch (error) {
-                // Silent fail on parse error
-            }
-        }
+        this.syncVisuals(false);
+        this.renderUI();
+        this.checkForChanges();
     }
 
     handleClick(e) {
@@ -207,7 +200,7 @@ class AdminMessagesVisibilityController {
         restoreButton(btn);
 
         if (result.success) {
-            showMessage(result.message || __('success_visibility_updated'), 'success');
+            showMessage(result.message || (typeof window.__ === 'function' ? window.__('success_visibility_updated') : 'Visibilidad actualizada correctamente.'), 'success');
             this.initialState = JSON.parse(JSON.stringify(this.state));
             this.checkForChanges();
         } else {
