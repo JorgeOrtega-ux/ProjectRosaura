@@ -50,7 +50,7 @@ class AdminUserHistoryController {
         }
     }
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/user-history')) {
+        if (e.detail.url.includes('/admin/user-activity')) {
             this.resetViewState();
         }
     }

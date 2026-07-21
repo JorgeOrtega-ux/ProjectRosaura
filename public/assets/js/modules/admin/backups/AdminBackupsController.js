@@ -40,9 +40,9 @@ class AdminBackupsController {
     }
     handlePaginationClick(e) {
         if (!window.location.pathname.includes('/admin/backups') || 
-            window.location.pathname.includes('/admin/backups/automation') || 
-            window.location.pathname.includes('/admin/backups/create') ||
-            window.location.pathname.includes('/admin/backups/restore')) return;
+            window.location.pathname.includes('/admin/backup-schedule') || 
+            window.location.pathname.includes('/admin/backup-create') ||
+            window.location.pathname.includes('/admin/backup-restore')) return;
         const target = e.target.closest('a[href], button[data-nav]');
         if (!target) return;
         const url = target.getAttribute('href') || target.getAttribute('data-nav') || '';
@@ -60,9 +60,9 @@ class AdminBackupsController {
     }
     async handleClick(e) {
         if (!window.location.pathname.includes('/admin/backups') || 
-            window.location.pathname.includes('/admin/backups/automation') || 
-            window.location.pathname.includes('/admin/backups/create') ||
-            window.location.pathname.includes('/admin/backups/restore')) return;
+            window.location.pathname.includes('/admin/backup-schedule') || 
+            window.location.pathname.includes('/admin/backup-create') ||
+            window.location.pathname.includes('/admin/backup-restore')) return;
         const searchBtn = e.target.closest('[data-action="searchBackup"]');
         const toggleFiltersBtn = e.target.closest('[data-action="toggleBackupFilters"]');
         const selectTarget = e.target.closest('[data-action="selectBackup"]');
@@ -92,19 +92,19 @@ class AdminBackupsController {
         }
     }
     handleInput(e) {
-        if (!window.location.pathname.includes('/admin/backups') || window.location.pathname.includes('/admin/backups/automation') || window.location.pathname.includes('/admin/backups/create') || window.location.pathname.includes('/admin/backups/restore')) return;
+        if (!window.location.pathname.includes('/admin/backups') || window.location.pathname.includes('/admin/backup-schedule') || window.location.pathname.includes('/admin/backup-create') || window.location.pathname.includes('/admin/backup-restore')) return;
         if (e.target && e.target.getAttribute('data-ref') === 'backup-search-input') {
             this.applyAllFilters();
         }
     }
     handleChange(e) {
-        if (!window.location.pathname.includes('/admin/backups') || window.location.pathname.includes('/admin/backups/automation') || window.location.pathname.includes('/admin/backups/create') || window.location.pathname.includes('/admin/backups/restore')) return;
+        if (!window.location.pathname.includes('/admin/backups') || window.location.pathname.includes('/admin/backup-schedule') || window.location.pathname.includes('/admin/backup-create') || window.location.pathname.includes('/admin/backup-restore')) return;
         if (e.target && e.target.classList.contains('filter-checkbox')) {
             this.applyAllFilters();
         }
     }
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/backups') && !e.detail.url.includes('/admin/backups/automation') && !e.detail.url.includes('/admin/backups/create') && !e.detail.url.includes('/admin/backups/restore')) {
+        if (e.detail.url.includes('/admin/backups') && !e.detail.url.includes('/admin/backup-schedule') && !e.detail.url.includes('/admin/backup-create') && !e.detail.url.includes('/admin/backup-restore')) {
             this.resetViewState();
         }
     }
@@ -299,9 +299,9 @@ class AdminBackupsController {
     prepareRestore(btn) {
         if (!this.selectedBackupId) return;
         if (window.spaRouter) {
-            window.spaRouter.navigate(this.basePath + '/admin/backups/restore/' + encodeURIComponent(this.selectedBackupId));
+            window.spaRouter.navigate(this.basePath + '/admin/backup-restore/' + encodeURIComponent(this.selectedBackupId));
         } else {
-            window.location.href = this.basePath + '/admin/backups/restore/' + encodeURIComponent(this.selectedBackupId);
+            window.location.href = this.basePath + '/admin/backup-restore/' + encodeURIComponent(this.selectedBackupId);
         }
     }
 }

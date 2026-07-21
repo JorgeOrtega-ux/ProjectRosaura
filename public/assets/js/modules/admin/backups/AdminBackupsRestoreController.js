@@ -31,7 +31,7 @@ class AdminBackupsRestoreController {
         document.addEventListener('change', this.handleChangeBound);
     }
     handleChange(e) {
-        if (!window.location.pathname.includes('/admin/backups/restore')) return;
+        if (!window.location.pathname.includes('/admin/backup-restore')) return;
         const toggleLock = e.target.closest('[data-action="toggleRestoreLock"]');
         if (toggleLock) {
             const confirmBtn = document.querySelector('[data-action="confirmRestore"]');
@@ -45,7 +45,7 @@ class AdminBackupsRestoreController {
         }
     }
     handleClick(e) {
-        if (!window.location.pathname.includes('/admin/backups/restore')) return;
+        if (!window.location.pathname.includes('/admin/backup-restore')) return;
         const confirmBtn = e.target.closest('[data-action="confirmRestore"]');
         if (confirmBtn) {
             this.handleConfirmRestore(confirmBtn);

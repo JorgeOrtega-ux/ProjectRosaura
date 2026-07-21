@@ -29,7 +29,7 @@ class AdminBackupsAutomationController {
     init() {
         this.abortController = new AbortController();
         this.bindEvents();
-        if (window.location.pathname.includes('/admin/backups/automation')) {
+        if (window.location.pathname.includes('/admin/backup-schedule')) {
             this.loadData();
         }
     }
@@ -47,7 +47,7 @@ class AdminBackupsAutomationController {
         document.addEventListener('change', this.handleChangeBound);
     }
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/backups/automation')) {
+        if (e.detail.url.includes('/admin/backup-schedule')) {
             this.loadData();
         }
     }
@@ -102,7 +102,7 @@ class AdminBackupsAutomationController {
         }
     }
     handleClick(e) {
-        if (!window.location.pathname.includes('/admin/backups/automation')) return;
+        if (!window.location.pathname.includes('/admin/backup-schedule')) return;
         const btnSetDropdown = e.target.closest('[data-action="adminSetDropdown"]');
         if (btnSetDropdown) {
             const key = btnSetDropdown.getAttribute('data-key');
@@ -130,7 +130,7 @@ class AdminBackupsAutomationController {
         }
     }
     handleChange(e) {
-        if (!window.location.pathname.includes('/admin/backups/automation')) return;
+        if (!window.location.pathname.includes('/admin/backup-schedule')) return;
         if (e.target && e.target.getAttribute('data-ref') === 'toggle-auto-backup') {
             this.state.auto_backup_enabled = e.target.checked ? 1 : 0;
             this.renderVisibility();

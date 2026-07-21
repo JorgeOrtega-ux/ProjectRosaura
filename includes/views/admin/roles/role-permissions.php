@@ -8,7 +8,7 @@ use App\Core\Repositories\RoleRepository;
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/manage-roles");
+    header("Location: " . APP_URL . "/admin/roles");
     exit;
 }
 
@@ -19,7 +19,7 @@ $roleRepo = new RoleRepository($dbManager, $redis);
 
 $role = $roleRepo->findById($roleId);
 if (!$role) {
-    header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/manage-roles");
+    header("Location: " . APP_URL . "/admin/roles");
     exit;
 }
 $currentUserWeight = isset($_SESSION['user_role_weight']) ? (int)$_SESSION['user_role_weight'] : 0;

@@ -31,13 +31,13 @@ export class SpaRouter {
         if (url.startsWith('/canvases/members/')) return '/canvases/members/:uuid';
         if (url.startsWith('/admin/messages/visibility/')) return '/admin/messages/visibility/:uuid';
         if (url.startsWith('/admin/messages/reports/')) return '/admin/messages/reports/:uuid';
-        if (url.startsWith('/admin/roles/edit/')) return '/admin/roles/edit/:uuid';
-        if (url.startsWith('/admin/roles/permissions/')) return '/admin/roles/permissions/:uuid';
-        if (url.startsWith('/admin/edit-user/')) return '/admin/edit-user/:uuid';
-        if (url.startsWith('/admin/edit-user-role/')) return '/admin/edit-user-role/:uuid';
-        if (url.startsWith('/admin/edit-status/')) return '/admin/edit-status/:uuid';
-        if (url.startsWith('/admin/user-history/')) return '/admin/user-history/:uuid';
-        if (url.startsWith('/admin/backups/restore/')) return '/admin/backups/restore/:uuid';
+        if (url.startsWith('/admin/role-edit/')) return '/admin/role-edit/:uuid';
+        if (url.startsWith('/admin/role-permissions/')) return '/admin/role-permissions/:uuid';
+        if (url.startsWith('/admin/user-profile/')) return '/admin/user-profile/:uuid';
+        if (url.startsWith('/admin/user-roles/')) return '/admin/user-roles/:uuid';
+        if (url.startsWith('/admin/user-moderation/')) return '/admin/user-moderation/:uuid';
+        if (url.startsWith('/admin/user-activity/')) return '/admin/user-activity/:uuid';
+        if (url.startsWith('/admin/backup-restore/')) return '/admin/backup-restore/:uuid';
         
         return url;
     }

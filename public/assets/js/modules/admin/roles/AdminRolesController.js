@@ -130,25 +130,25 @@ class AdminRolesController {
     }
     navigateToAddRole() {
         if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/admin/roles/create`);
+            window.spaRouter.navigate(`${this.basePath}/admin/role-create`);
         } else {
-            window.location.href = `${this.basePath}/admin/roles/create`;
+            window.location.href = `${this.basePath}/admin/role-create`;
         }
     }
     navigateToEditRole() {
         if (!this.selectedRoleId) return;
         if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/admin/roles/edit/${this.selectedRoleId}`);
+            window.spaRouter.navigate(`${this.basePath}/admin/role-edit/${this.selectedRoleId}`);
         } else {
-            window.location.href = `${this.basePath}/admin/roles/edit/${this.selectedRoleId}`;
+            window.location.href = `${this.basePath}/admin/role-edit/${this.selectedRoleId}`;
         }
     }
     navigateToEditPermissions() {
         if (!this.selectedRoleId) return;
         if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/admin/roles/permissions/${this.selectedRoleId}`);
+            window.spaRouter.navigate(`${this.basePath}/admin/role-permissions/${this.selectedRoleId}`);
         } else {
-            window.location.href = `${this.basePath}/admin/roles/permissions/${this.selectedRoleId}`;
+            window.location.href = `${this.basePath}/admin/role-permissions/${this.selectedRoleId}`;
         }
     }
     handleRowSelection(target) {

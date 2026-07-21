@@ -9,7 +9,7 @@ use App\Core\Repositories\ModerationRepository;
 
 $targetUserUuid = isset($_GET['uuid']) ? $_GET['uuid'] : '';
 if (empty($targetUserUuid)) {
-    $redirectUrl = (defined('APP_URL') ? APP_URL : '') . "/admin/manage-users";
+    $redirectUrl = APP_URL . "/admin/users";
     if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
         header("X-SPA-Update-URL: " . $redirectUrl);
         require __DIR__ . '/manage-users.php';
@@ -27,7 +27,7 @@ $modRepo = new ModerationRepository($db);
 
 $user = $userRepo->findByUuid($targetUserUuid);
 if (!$user) {
-    $redirectUrl = (defined('APP_URL') ? APP_URL : '') . "/admin/manage-users";
+    $redirectUrl = APP_URL . "/admin/users";
     if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
         header("X-SPA-Update-URL: " . $redirectUrl);
         require __DIR__ . '/manage-users.php';
@@ -58,8 +58,8 @@ if (!is_array($paginatedLogs)) {
 }
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
-$prevPageUrl = $page > 1 ? $appUrl . '/admin/user-history?id=' . $targetUserId . '&page=' . ($page - 1) : '#';
-$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targetUserId . '&page=' . ($page + 1) : '#';
+$prevPageUrl = $page > 1 ? $appUrl . '/admin/user-activity?id=' . $targetUserId . '&page=' . ($page - 1) : '#';
+$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity?id=' . $targetUserId . '&page=' . ($page + 1) : '#';
 ?>
 <div class="view-content" data-user-id="<?php echo $targetUserId; ?>">
     <div class="component-top">

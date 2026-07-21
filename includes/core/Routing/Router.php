@@ -184,9 +184,9 @@ class Router {
             ];
         }
 
-        if (preg_match('#^/admin/edit-user/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+        if (preg_match('#^/admin/user-profile/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/edit-user/:uuid'] ?? [
+            return $this->routes['/admin/user-profile/:uuid'] ?? [
                 'view' => 'admin/users/edit-user.php',
                 'auth' => true,
                 'permissions' => ['edit_users'],
@@ -194,9 +194,9 @@ class Router {
             ];
         }
 
-        if (preg_match('#^/admin/edit-status/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+        if (preg_match('#^/admin/user-moderation/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/edit-status/:uuid'] ?? [
+            return $this->routes['/admin/user-moderation/:uuid'] ?? [
                 'view' => 'admin/users/edit-status.php',
                 'auth' => true,
                 'permissions' => ['moderate_users'],
@@ -204,9 +204,9 @@ class Router {
             ];
         }
 
-        if (preg_match('#^/admin/user-history/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+        if (preg_match('#^/admin/user-activity/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/user-history/:uuid'] ?? [
+            return $this->routes['/admin/user-activity/:uuid'] ?? [
                 'view' => 'admin/users/user-history.php',
                 'auth' => true,
                 'permissions' => ['view_kardex'],
@@ -214,9 +214,9 @@ class Router {
             ];
         }
 
-        if (preg_match('#^/admin/edit-user-role/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+        if (preg_match('#^/admin/user-roles/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/edit-user-role/:uuid'] ?? [
+            return $this->routes['/admin/user-roles/:uuid'] ?? [
                 'view' => 'admin/users/edit-user-role.php',
                 'auth' => true,
                 'permissions' => [\App\Core\System\PermissionsConstants::ASSIGN_ROLES],
@@ -224,9 +224,9 @@ class Router {
             ];
         }
 
-        if (preg_match('#^/admin/roles/edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+        if (preg_match('#^/admin/role-edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['id'] = $matches[1];
-            return $this->routes['/admin/roles/edit/:uuid'] ?? [
+            return $this->routes['/admin/role-edit/:uuid'] ?? [
                 'view' => 'admin/roles/role-builder.php',
                 'auth' => true,
                 'permissions' => [\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE],
@@ -234,9 +234,9 @@ class Router {
             ];
         }
 
-        if (preg_match('#^/admin/roles/permissions/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+        if (preg_match('#^/admin/role-permissions/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['id'] = $matches[1];
-            return $this->routes['/admin/roles/permissions/:uuid'] ?? [
+            return $this->routes['/admin/role-permissions/:uuid'] ?? [
                 'view' => 'admin/roles/role-permissions.php',
                 'auth' => true,
                 'permissions' => [\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE],
@@ -244,9 +244,9 @@ class Router {
             ];
         }
 
-        if (preg_match('#^/admin/backups/restore/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+        if (preg_match('#^/admin/backup-restore/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['id'] = $matches[1];
-            return $this->routes['/admin/backups/restore/:uuid'] ?? [
+            return $this->routes['/admin/backup-restore/:uuid'] ?? [
                 'view' => 'admin/backups/backups-restore.php',
                 'auth' => true,
                 'permissions' => ['restore_backups'],

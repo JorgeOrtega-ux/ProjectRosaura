@@ -62,7 +62,7 @@ class AdminRoleBuilderController {
         document.addEventListener('touchend', this.handleGlobalMouseupBound);
     }
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/roles/create') || e.detail.url.includes('/admin/roles/edit')) {
+        if (e.detail.url.includes('/admin/role-create') || e.detail.url.includes('/admin/role-edit')) {
             this.detectModeAndLoad();
         }
     }
@@ -577,9 +577,9 @@ class AdminRoleBuilderController {
     }
     goBack() {
         if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/admin/manage-roles`);
+            window.spaRouter.navigate(`${this.basePath}/admin/roles`);
         } else {
-            window.location.href = `${this.basePath}/admin/manage-roles`;
+            window.location.href = `${this.basePath}/admin/roles`;
         }
     }
 }

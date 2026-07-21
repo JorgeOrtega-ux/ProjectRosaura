@@ -220,7 +220,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                 </div>
                 
                 <?php if (count(array_intersect(['view_users', 'edit_users', 'moderate_users', 'delete_users', 'assign_roles'], $userPermissions)) > 0): ?>
-                <div class="component-menu-link nav-item" data-nav="/admin/manage-users">
+                <div class="component-menu-link nav-item" data-nav="/admin/users">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">group</span>
                     </div>
@@ -246,7 +246,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                 <?php endif; ?>
                 
                 <?php if (in_array('manage_server_config', $userPermissions)): ?>
-                <div class="component-menu-link nav-item" data-nav="/admin/server-config">
+                <div class="component-menu-link nav-item" data-nav="/admin/system-settings">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">dns</span>
                     </div>

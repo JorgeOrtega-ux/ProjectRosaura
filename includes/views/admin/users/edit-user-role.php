@@ -8,7 +8,7 @@ use App\Core\Repositories\RoleRepository;
 
 $targetUserUuid = isset($_GET['uuid']) ? $_GET['uuid'] : '';
 if (empty($targetUserUuid)) {
-    $redirectUrl = (defined('APP_URL') ? APP_URL : '') . "/admin/manage-users";
+    $redirectUrl = APP_URL . "/admin/users";
     if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
         header("X-SPA-Update-URL: " . $redirectUrl);
         require __DIR__ . '/manage-users.php';
@@ -25,7 +25,7 @@ $userRepo = new UserRepository($db, $roleRepo);
 
 $user = $userRepo->findByUuid($targetUserUuid);
 if (!$user) {
-    $redirectUrl = (defined('APP_URL') ? APP_URL : '') . "/admin/manage-users";
+    $redirectUrl = APP_URL . "/admin/users";
     if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
         header("X-SPA-Update-URL: " . $redirectUrl);
         require __DIR__ . '/manage-users.php';

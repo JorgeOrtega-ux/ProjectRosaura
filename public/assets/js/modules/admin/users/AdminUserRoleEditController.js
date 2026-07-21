@@ -14,7 +14,7 @@ class AdminUserRoleEditController {
     init() {
         this.abortController = new AbortController();
         this.bindEvents();
-        if (window.location.pathname.includes('/admin/edit-user-role')) {
+        if (window.location.pathname.includes('/admin/user-roles')) {
             this.setupInitialState();
         }
     }
@@ -30,7 +30,7 @@ class AdminUserRoleEditController {
         document.addEventListener('click', this.handleClickBound);
     }
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/edit-user-role')) {
+        if (e.detail.url.includes('/admin/user-roles')) {
             this.setupInitialState();
         }
     }
@@ -41,7 +41,7 @@ class AdminUserRoleEditController {
         }
     }
     handleClick(e) {
-        if (!window.location.pathname.includes('/admin/edit-user-role')) return;
+        if (!window.location.pathname.includes('/admin/user-roles')) return;
         const btnCancelUpdate = e.target.closest('[data-action="cancelRoleUpdate"]');
         if (btnCancelUpdate) this.cancelRoleUpdate();
         const btnSubmitUpdate = e.target.closest('[data-action="submitMultipleRolesUpdate"]') || e.target.closest('[data-action="submitRoleUpdate"]');
@@ -49,9 +49,9 @@ class AdminUserRoleEditController {
     }
     cancelRoleUpdate() {
         if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/admin/manage-users`);
+            window.spaRouter.navigate(`${this.basePath}/admin/users`);
         } else {
-            window.location.href = `${this.basePath}/admin/manage-users`;
+            window.location.href = `${this.basePath}/admin/users`;
         }
     }
     async submitRoleUpdate(btn) {

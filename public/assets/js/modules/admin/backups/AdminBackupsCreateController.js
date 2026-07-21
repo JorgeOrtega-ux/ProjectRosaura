@@ -18,7 +18,7 @@ class AdminBackupsCreateController {
     init() {
         this.abortController = new AbortController();
         this.bindEvents();
-        if (window.location.pathname.includes('/admin/backups/create')) {
+        if (window.location.pathname.includes('/admin/backup-create')) {
             this.loadDatabaseSchema();
         }
     }
@@ -35,12 +35,12 @@ class AdminBackupsCreateController {
         document.addEventListener('change', this.handleChangeBound);
     }
     handleViewLoaded(e) {
-        if (e.detail && e.detail.url && e.detail.url.includes('/admin/backups/create')) {
+        if (e.detail && e.detail.url && e.detail.url.includes('/admin/backup-create')) {
             this.loadDatabaseSchema();
         }
     }
     handleClick(e) {
-        if (!window.location.pathname.includes('/admin/backups/create')) return;
+        if (!window.location.pathname.includes('/admin/backup-create')) return;
         const target = e.target;
         const executeBtn = target.closest('[data-action="executeCustomBackup"]');
         if (executeBtn) this.executeCustomBackup(executeBtn);
@@ -59,7 +59,7 @@ class AdminBackupsCreateController {
         }
     }
     handleChange(e) {
-        if (!window.location.pathname.includes('/admin/backups/create')) return;
+        if (!window.location.pathname.includes('/admin/backup-create')) return;
         if (e.target && e.target.classList.contains('custom-schema-db-cb')) {
             const dbName = e.target.value;
             const isChecked = e.target.checked;

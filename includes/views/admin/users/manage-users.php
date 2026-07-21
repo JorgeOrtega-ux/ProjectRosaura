@@ -88,8 +88,8 @@ if (!empty($users)) {
 }
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
-$prevPageUrl = $page > 1 ? $appUrl . '/admin/manage-users?page=' . ($page - 1) : '#';
-$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/manage-users?page=' . ($page + 1) : '#';
+$prevPageUrl = $page > 1 ? $appUrl . '/admin/users?page=' . ($page - 1) : '#';
+$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1) : '#';
 ?>
 
 <div class="view-content">

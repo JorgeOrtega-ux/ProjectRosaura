@@ -113,7 +113,7 @@ class AdminUsersController {
         }
     }
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/manage-users')) {
+        if (e.detail.url.includes('/admin/users')) {
             this.resetViewState();
             this.translateRolesInTable();
         }
@@ -179,32 +179,32 @@ class AdminUsersController {
         const id = Array.from(this.selectedUserIds)[0];
         const row = document.querySelector(`tr[data-user-id="${id}"]`);
         const uuid = row ? row.getAttribute('data-user-uuid') : id;
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/edit-user/${uuid}`);
-        else window.location.href = `${this.basePath}/admin/edit-user/${uuid}`;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/user-profile/${uuid}`);
+        else window.location.href = `${this.basePath}/admin/user-profile/${uuid}`;
     }
     editSelectedUserRole() {
         if (this.selectedUserIds.size !== 1) return;
         const id = Array.from(this.selectedUserIds)[0];
         const row = document.querySelector(`tr[data-user-id="${id}"]`);
         const uuid = row ? row.getAttribute('data-user-uuid') : id;
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/edit-user-role/${uuid}`);
-        else window.location.href = `${this.basePath}/admin/edit-user-role/${uuid}`;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/user-roles/${uuid}`);
+        else window.location.href = `${this.basePath}/admin/user-roles/${uuid}`;
     }
     editSelectedUserStatus() {
         if (this.selectedUserIds.size !== 1) return;
         const id = Array.from(this.selectedUserIds)[0];
         const row = document.querySelector(`tr[data-user-id="${id}"]`);
         const uuid = row ? row.getAttribute('data-user-uuid') : id;
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/edit-status/${uuid}`);
-        else window.location.href = `${this.basePath}/admin/edit-status/${uuid}`;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/user-moderation/${uuid}`);
+        else window.location.href = `${this.basePath}/admin/user-moderation/${uuid}`;
     }
     viewSelectedUserHistory() {
         if (this.selectedUserIds.size !== 1) return;
         const id = Array.from(this.selectedUserIds)[0];
         const row = document.querySelector(`tr[data-user-id="${id}"]`);
         const uuid = row ? row.getAttribute('data-user-uuid') : id;
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/user-history/${uuid}`);
-        else window.location.href = `${this.basePath}/admin/user-history/${uuid}`;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/user-activity/${uuid}`);
+        else window.location.href = `${this.basePath}/admin/user-activity/${uuid}`;
     }
     async deleteSelectedUsers(btn) {
         if (this.selectedUserIds.size === 0) return;
@@ -231,7 +231,7 @@ class AdminUsersController {
             }
             this.selectedUserIds.clear();
             setTimeout(() => {
-                if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/manage-users`, { forceReload: true });
+                if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/users`, { forceReload: true });
                 else window.location.reload();
             }, 2500);
         } else {

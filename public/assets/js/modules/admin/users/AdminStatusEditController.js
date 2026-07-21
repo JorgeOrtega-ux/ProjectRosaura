@@ -39,7 +39,7 @@ class AdminStatusEditController {
         this.calendarSystem = new CalendarSystem();
         this.calendarSystem.init();
         this.bindEvents();
-        if (window.location.pathname.includes('/admin/edit-status')) {
+        if (window.location.pathname.includes('/admin/user-moderation')) {
             this.setupInitialState();
         }
     }
@@ -63,7 +63,7 @@ class AdminStatusEditController {
         document.addEventListener('change', this.handleChangeBound);
     }
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/edit-status')) this.setupInitialState();
+        if (e.detail.url.includes('/admin/user-moderation')) this.setupInitialState();
     }
     setupInitialState() {
         const viewContent = document.querySelector('.view-content[data-user-id]');
@@ -91,7 +91,7 @@ class AdminStatusEditController {
         }
     }
     handleClick(e) {
-        if (!window.location.pathname.includes('/admin/edit-status')) return;
+        if (!window.location.pathname.includes('/admin/user-moderation')) return;
         const btnToggleModule = e.target.closest('[data-action="toggleModule"]');
         if (btnToggleModule && !btnToggleModule.classList.contains('disabled-interaction')) {
             const target = btnToggleModule.getAttribute('data-target');
@@ -139,7 +139,7 @@ class AdminStatusEditController {
         if (btnSubmitSuspension) this.submitSuspensionUpdate(btnSubmitSuspension);
     }
     handleInput(e) {
-        if (!window.location.pathname.includes('/admin/edit-status')) return;
+        if (!window.location.pathname.includes('/admin/user-moderation')) return;
         const ref = e.target.getAttribute('data-ref');
         if (!ref) return;
         if (ref === 'inp_custom_suspension_reason') {
@@ -170,7 +170,7 @@ class AdminStatusEditController {
         }
     }
     handleChange(e) {
-        if (!window.location.pathname.includes('/admin/edit-status')) return;
+        if (!window.location.pathname.includes('/admin/user-moderation')) return;
         const ref = e.target.getAttribute('data-ref');
         if (ref === 'chk_notify_user_suspension') {
             this.state.notifyUserSuspension = e.target.checked;

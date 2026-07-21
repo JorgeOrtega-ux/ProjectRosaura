@@ -151,10 +151,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                     </div>
 
                     <?php if ($canCreate): ?>
-                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/backups/automation" data-tooltip="<?php echo __('btn_automate'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/backup-schedule" data-tooltip="<?php echo __('btn_automate'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">schedule</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/backups/create" data-tooltip="<?php echo __('btn_create_backup'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/backup-create" data-tooltip="<?php echo __('btn_create_backup'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">add</span>
                     </button>
                     <?php endif; ?>

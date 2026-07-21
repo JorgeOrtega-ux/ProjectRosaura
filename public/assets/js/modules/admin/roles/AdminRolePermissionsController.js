@@ -124,9 +124,9 @@ class AdminRolePermissionsController {
     }
     goBack() {
         if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/admin/manage-roles`);
+            window.spaRouter.navigate(`${this.basePath}/admin/roles`);
         } else {
-            window.location.href = `${this.basePath}/admin/manage-roles`;
+            window.location.href = `${this.basePath}/admin/roles`;
         }
     }
     async savePermissions(btn) {

@@ -17,7 +17,7 @@ class AdminUserEditController {
     init() {
         this.abortController = new AbortController();
         this.bindEvents();
-        if (window.location.pathname.includes('/admin/edit-user')) {
+        if (window.location.pathname.includes('/admin/user-profile')) {
             this.setupInitialState();
         }
     }
@@ -38,7 +38,7 @@ class AdminUserEditController {
         return typeof window.__ === 'function' ? window.__(key) : key;
     }
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/edit-user')) {
+        if (e.detail.url.includes('/admin/user-profile')) {
             this.setupInitialState();
         }
     }
@@ -55,7 +55,7 @@ class AdminUserEditController {
         }
     }
     handleClick(e) {
-        if (!window.location.pathname.includes('/admin/edit-user')) return;
+        if (!window.location.pathname.includes('/admin/user-profile')) return;
         if (e.target.closest('[data-ref="admin-btn-change-avatar"]') || e.target.closest('[data-ref="admin-profile-avatar-overlay"]')) {
             const input = document.querySelector('[data-ref="admin-input-avatar-file"]');
             if (input) input.click();
@@ -75,7 +75,7 @@ class AdminUserEditController {
         if (btnSetPref) this.savePrefFromDropdown(btnSetPref);
     }
     handleChange(e) {
-        if (!window.location.pathname.includes('/admin/edit-user')) return;
+        if (!window.location.pathname.includes('/admin/user-profile')) return;
         if (e.target && e.target.getAttribute('data-ref') === 'admin-input-avatar-file') this.handleFileSelection(e);
         if (e.target.matches('[data-action="adminTogglePreference"]')) {
             const key = e.target.getAttribute('data-key');

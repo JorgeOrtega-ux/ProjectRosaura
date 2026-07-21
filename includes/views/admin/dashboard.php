@@ -20,7 +20,7 @@ $canManageMessages = true; // All admins currently
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageMessages ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/messages" data-tooltip="<?php echo __('admin_manage_messages'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">chat</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageRoles ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/manage-roles" data-tooltip="<?php echo __('btn_manage_roles'); ?>" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageRoles ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/roles" data-tooltip="<?php echo __('btn_manage_roles'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">admin_panel_settings</span>
                 </button>
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canViewLogs ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/logs" data-tooltip="<?php echo __('btn_view_logs'); ?>" data-position="bottom">

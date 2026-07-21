@@ -16,7 +16,7 @@ class AdminServerConfigController {
     init() {
         this.abortController = new AbortController();
         this.bindEvents();
-        if (window.location.pathname.includes('/admin/server-config')) {
+        if (window.location.pathname.includes('/admin/system-settings')) {
             this.loadData();
         }
     }
@@ -38,19 +38,19 @@ class AdminServerConfigController {
         document.addEventListener('keydown', this.handleKeydownBound);
     }
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/server-config')) {
+        if (e.detail.url.includes('/admin/system-settings')) {
             this.loadData();
         }
     }
     handleClick(e) {
-        if (!window.location.pathname.includes('/admin/server-config')) return;
+        if (!window.location.pathname.includes('/admin/system-settings')) return;
         const btnAdjust = e.target.closest('[data-action="adjustConfig"]');
         if (btnAdjust) this.handleAdjustment(btnAdjust);
         const btnSave = e.target.closest('[data-action="submitServerConfig"]');
         if (btnSave) this.submitConfig(btnSave);
     }
     handleChange(e) {
-        if (!window.location.pathname.includes('/admin/server-config')) return;
+        if (!window.location.pathname.includes('/admin/system-settings')) return;
         if (e.target && e.target.getAttribute('data-action') === 'toggleMaintenance') {
             this.state['maintenance_mode'] = e.target.checked ? 1 : 0;
             this.checkForChanges();
@@ -64,7 +64,7 @@ class AdminServerConfigController {
         }
     }
     handleInput(e) {
-        if (!window.location.pathname.includes('/admin/server-config')) return;
+        if (!window.location.pathname.includes('/admin/system-settings')) return;
         if (e.target && e.target.getAttribute('data-action') === 'updateTextConfig') {
             const field = e.target.getAttribute('data-field');
             if (field) {
@@ -74,7 +74,7 @@ class AdminServerConfigController {
         }
     }
     handleKeydown(e) {
-        if (!window.location.pathname.includes('/admin/server-config')) return;
+        if (!window.location.pathname.includes('/admin/system-settings')) return;
         if (e.key === 'Enter' && e.target && e.target.getAttribute('data-action') === 'addCustomDomain') {
             e.preventDefault();
             this.addCustomDomain(e.target);
