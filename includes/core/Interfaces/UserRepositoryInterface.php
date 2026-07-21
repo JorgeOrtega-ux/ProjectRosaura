@@ -29,5 +29,6 @@ interface UserRepositoryInterface {
     public function getStorageUsed(int $userId): float;
     public function getRegistrationStats(string $startDate, string $endDate): array;
     public function getCustomPalettes(int $userId): array;
+    public function invalidateProfileCache(int $userId, ?string $uuid = null): void;
 }
 ?>

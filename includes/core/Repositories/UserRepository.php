@@ -25,9 +25,21 @@ class UserRepository implements UserRepositoryInterface {
         $this->redisClient = $redisCache ? $redisCache->getClient() : null;
     }
     
-    private function invalidateProfileCache(int $userId): void {
+    public function invalidateProfileCache(int $userId, ?string $uuid = null): void {
         if ($this->redisClient) {
             $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+            if ($uuid) {
+                $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $uuid);
+            } else {
+                try {
+                    $stmt = $this->pdo->prepare("SELECT uuid FROM " . DB::TBL_USERS . " WHERE id = ?");
+                    $stmt->execute([$userId]);
+                    $userUuid = $stmt->fetchColumn();
+                    if ($userUuid) {
+                        $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userUuid);
+                    }
+                } catch (\Throwable $e) {}
+            }
         }
     }
 
@@ -252,11 +264,14 @@ class UserRepository implements UserRepositoryInterface {
         $tblUserRestr = DB::TBL_USER_RESTRICTIONS;
         try {
             $stmt = $this->pdo->prepare("
-                UPDATE {$tblUserRestr} 
-                SET is_suspended = 0, suspension_type = NULL, suspension_reason = NULL, suspension_end_date = NULL 
-                WHERE user_id = ?
+                INSERT INTO {$tblUserRestr} (user_id, is_suspended, suspension_type, suspension_reason, suspension_end_date)
+                VALUES (?, 0, NULL, NULL, NULL)
+                ON DUPLICATE KEY UPDATE 
+                    is_suspended = 0, suspension_type = NULL, suspension_reason = NULL, suspension_end_date = NULL
             ");
-            return $stmt->execute([$id]);
+            $res = $stmt->execute([$id]);
+            if ($res) $this->invalidateProfileCache($id);
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'exception' => $e]);
             return false;

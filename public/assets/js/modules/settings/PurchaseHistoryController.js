@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
-import { escapeHTML, showMessage } from '../../core/utils/uiUtils.js';
+import { escapeHTML, showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
 
 export class PurchaseHistoryController {
     constructor() {
@@ -66,6 +66,7 @@ export class PurchaseHistoryController {
         const selectTargetRow = e.target.closest('[data-action="selectPurchase"]');
         const deselectBtn = e.target.closest('[data-action="deselectPurchase"]');
         const downloadReceiptBtn = e.target.closest('[data-action="downloadReceipt"]');
+        const downloadInvoiceBtn = e.target.closest('[data-action="downloadInvoice"]');
         
         const toggleModuleBtn = e.target.closest('[data-action="toggleModule"]');
         const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
@@ -146,7 +147,7 @@ export class PurchaseHistoryController {
         }
 
         if (downloadReceiptBtn && !downloadReceiptBtn.classList.contains('disabled-interaction')) {
-            this.downloadSelectedReceipt();
+            this.downloadSelectedDocument(downloadReceiptBtn);
             return;
         }
 
@@ -305,31 +306,56 @@ export class PurchaseHistoryController {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
-            if (downloadBtn) {
-                downloadBtn.classList.remove('disabled-interaction');
-            }
+            if (downloadBtn) downloadBtn.classList.remove('disabled-interaction');
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');
             if (defaultMode) defaultMode.classList.replace('disabled', 'active');
         }
     }
 
-    downloadSelectedReceipt() {
+    async downloadSelectedDocument(btn = null) {
         if (!this.selectedRow || !this.selectedPurchaseId) {
-            showMessage(window.__('no_receipt_available') || 'No hay recibo disponible para esta compra.', 'warning');
+            showMessage(window.__('no_receipt_available') || 'No hay comprobante disponible para esta compra.', 'warning');
             return;
         }
 
-        const downloadUrl = `${window.AppBasePath || ''}/api/index.php?route=stripe.download_receipt&id=${encodeURIComponent(this.selectedPurchaseId)}`;
+        if (btn) setButtonLoading(btn);
 
-        let iframe = document.getElementById('receipt-download-iframe');
-        if (!iframe) {
-            iframe = document.createElement('iframe');
-            iframe.id = 'receipt-download-iframe';
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
+        try {
+            const downloadUrl = `${window.AppBasePath || ''}/api/index.php?route=stripe.download_receipt&id=${encodeURIComponent(this.selectedPurchaseId)}`;
+            
+            const response = await fetch(downloadUrl, {
+                method: 'GET',
+                credentials: 'same-origin',
+                signal: this.abortController ? this.abortController.signal : undefined
+            });
+
+            if (!response.ok) {
+                throw new Error('Error de respuesta del servidor');
+            }
+
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `Comprobante_${this.selectedPurchaseId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            
+            setTimeout(() => {
+                window.URL.revokeObjectURL(blobUrl);
+            }, 1000);
+
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('[PurchaseHistoryController] Error al descargar comprobante:', error);
+                showMessage(window.__('err_download_receipt') || 'Error al descargar el comprobante.', 'error');
+            }
+        } finally {
+            if (btn) restoreButton(btn);
         }
-        iframe.src = downloadUrl;
     }
 
     async loadHistory() {

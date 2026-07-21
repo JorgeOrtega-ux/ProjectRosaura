@@ -69,7 +69,7 @@ $selectedModules = $schemaConfig['_modules'] ?? [
                 </script>
 
                 <div class="component-card--grouped" data-form-group="admin-auto-form">
-                    <div class="component-group-item component-group-item--wrap">
+                    <div class="component-group-item">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">power_settings_new</span>
@@ -81,82 +81,103 @@ $selectedModules = $schemaConfig['_modules'] ?? [
                         </div>
                         <div class="component-card__actions component-card__actions--end">
                             <label class="component-toggle-switch">
-                                <input type="checkbox" data-ref="toggle-auto-backup" data-action="toggleAutoBackup" <?php echo $autoEnabled ? 'checked' : ''; ?>>
+                                <input type="checkbox" data-ref="toggle-auto-backup" data-action="toggleAutoBackup" data-initial-enabled="<?php echo $autoEnabled; ?>" <?php echo $autoEnabled ? 'checked' : ''; ?>>
                                 <span class="component-toggle-slider"></span>
                             </label>
                         </div>
                     </div>
                 </div>
 
-                <div class="component-card--grouped <?php echo !$autoEnabled ? 'disabled' : ''; ?>" data-ref="wrapper-auto-options" data-form-group="admin-auto-form">
-                    <div class="component-group-item component-group-item--stacked">
+                <div class="component-card--grouped component-accordion disabled-interaction <?php echo !$autoEnabled ? 'disabled' : ''; ?>" data-ref="wrapper-auto-options" data-form-group="admin-auto-form">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="auto_options_root">
                         <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">schedule</span>
+                            </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('auto_backup_freq_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('auto_backup_freq_desc'); ?></p>
+                                <h2 class="component-card__title">Frecuencia y Límite de Retención</h2>
+                                <p class="component-card__description">Configura la frecuencia de ejecución y la cantidad de copias automáticas a conservar</p>
                             </div>
                         </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleAutoFreq">
-                                    <span class="material-symbols-rounded">update</span>
-                                    <span class="component-dropdown-text" data-ref="admin-autoFreq-text" data-val="<?php echo $autoFreq; ?>">
-                                        <?php echo htmlspecialchars($currentFreqText); ?>
-                                    </span>
-                                    <span class="material-symbols-rounded">expand_more</span>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
+                    </div>
+
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('auto_backup_freq_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('auto_backup_freq_desc'); ?></p>
+                                    </div>
                                 </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleAutoFreq">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
-                                            <?php 
-                                            $freqs = [1 => '1h', 3 => '3h', 6 => '6h', 12 => '12h', 24 => '24h', 48 => '48h', 168 => '168h'];
-                                            foreach($freqs as $val => $label): 
-                                                $icon = $val >= 24 ? ($val >= 168 ? 'date_range' : 'today') : 'schedule';
-                                            ?>
-                                            <div class="component-menu-link <?php echo $autoFreq === $val ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="auto_backup_frequency_hours" data-value="<?php echo $val; ?>">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo $icon; ?></span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __("auto_freq_$label"); ?></span></div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-wrapper">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleAutoFreq">
+                                            <span class="material-symbols-rounded">update</span>
+                                            <span class="component-dropdown-text" data-ref="admin-autoFreq-text" data-val="<?php echo $autoFreq; ?>">
+                                                <?php echo htmlspecialchars($currentFreqText); ?>
+                                            </span>
+                                            <span class="material-symbols-rounded">expand_more</span>
+                                        </div>
+                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleAutoFreq">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                                <div class="component-menu-list component-menu-list--scrollable">
+                                                    <?php 
+                                                    $freqs = [1 => '1h', 3 => '3h', 6 => '6h', 12 => '12h', 24 => '24h', 48 => '48h', 168 => '168h'];
+                                                    foreach($freqs as $val => $label): 
+                                                        $icon = $val >= 24 ? ($val >= 168 ? 'date_range' : 'today') : 'schedule';
+                                                    ?>
+                                                    <div class="component-menu-link <?php echo $autoFreq === $val ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="auto_backup_frequency_hours" data-value="<?php echo $val; ?>">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo $icon; ?></span></div>
+                                                        <div class="component-menu-link-text"><span><?php echo __("auto_freq_$label"); ?></span></div>
+                                                    </div>
+                                                    <?php endforeach; ?>
+                                                </div>
                                             </div>
-                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="component-divider">
+
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('auto_backup_retention_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('auto_backup_retention_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="-5" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="val_auto_backup_retention_count" data-val="<?php echo $autoRetention; ?>"><?php echo $autoRetention; ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="1" data-max="100"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="5" data-max="100"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('auto_backup_retention_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('auto_backup_retention_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-inline-control component-inline-control--fixed">
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="-5" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
-                                </div>
-                                <div class="component-inline-control__center" data-ref="val_auto_backup_retention_count" data-val="<?php echo $autoRetention; ?>"><?php echo $autoRetention; ?></div>
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="1" data-max="100"><span class="material-symbols-rounded">chevron_right</span></button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="5" data-max="100"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
 
 
 
-                <div class="component-card--grouped component-accordion <?php echo !$autoEnabled ? 'disabled' : ''; ?>" data-ref="wrapper-auto-schema" data-form-group="admin-auto-form">
+                <div class="component-card--grouped component-accordion disabled-interaction <?php echo !$autoEnabled ? 'disabled' : ''; ?>" data-ref="wrapper-auto-schema" data-form-group="admin-auto-form">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="auto_schema_root">
                         <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">schema</span>
+                            </div>
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('auto_backup_schema_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('auto_backup_schema_desc'); ?></p>

@@ -22,6 +22,9 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                 <div class="component-card--grouped component-accordion">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="modules_settings">
                         <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">layers</span>
+                            </div>
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('backup_modules_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('backup_modules_desc'); ?></p>
@@ -55,9 +58,12 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
 
-                <div class="component-card--grouped component-accordion mt-4">
+                <div class="component-card--grouped component-accordion mt-4 disabled-interaction" data-ref="custom-schema-accordion">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="backup_schema_root">
                         <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">schema</span>
+                            </div>
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('auto_backup_schema_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('auto_backup_schema_desc'); ?></p>

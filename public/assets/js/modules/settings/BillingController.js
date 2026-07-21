@@ -24,26 +24,15 @@ export class BillingController {
         Promise.all([
             this.loadSubscriptionStatus(),
             this.loadPaymentMethods()
-        ]);
+        ]).finally(() => {
+            const addCardBtn = document.querySelector('[data-action="addNewCard"]');
+            if (addCardBtn) {
+                addCardBtn.classList.remove('disabled-interaction');
+            }
+        });
     }
 
     renderSkeletons() {
-        if (this.subscriptionArea) {
-            this.subscriptionArea.innerHTML = `
-                <div class="component-group-item component-group-item--wrap" style="padding: 24px;">
-                    <div class="component-card__content">
-                        <div class="component-spinner"></div>
-                        <div class="component-card__text">
-                            <h2 class="component-card__title">${window.__('loading_subscription') || 'Cargando información de suscripción...'}</h2>
-                            <p class="component-card__description">${window.__('please_wait') || 'Obteniendo datos de Stripe...'}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            this.subscriptionArea.classList.remove('disabled');
-            this.subscriptionArea.classList.add('active');
-        }
-
         if (this.paymentMethodsArea) {
             this.paymentMethodsArea.innerHTML = `
                 <div class="component-group-item" style="padding: 20px; justify-content: center; align-items: center; gap: 10px;">
@@ -79,22 +68,106 @@ export class BillingController {
             const response = await this.api.post(ApiRoutes.Stripe.GetSubscriptionStatus, {}, this.abortController.signal);
             
             if (response.success && response.data) {
-                this.subscriptionArea.innerHTML = CardTemplates.subscriptionCard(response.data);
-                this.subscriptionArea.classList.remove('disabled');
-                this.subscriptionArea.classList.add('active');
+                this.updateSubscriptionData(response.data);
             } else {
-                const emptyMsg = window.__('empty_subscription') || 'No tienes una suscripción activa.';
-                this.subscriptionArea.innerHTML = CardTemplates.emptyState(emptyMsg, 'stars');
-                this.subscriptionArea.classList.remove('disabled');
-                this.subscriptionArea.classList.add('active');
+                const planDescEl = this.subscriptionArea.querySelector('[data-ref="sub-plan-desc"]');
+                if (planDescEl) planDescEl.textContent = window.__('empty_subscription') || 'No tienes una suscripción activa.';
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                const emptyMsg = window.__('error_fetching_subscription') || 'Error al obtener estado de suscripción.';
-                this.subscriptionArea.innerHTML = CardTemplates.emptyState(emptyMsg, 'error');
-                this.subscriptionArea.classList.remove('disabled');
-                this.subscriptionArea.classList.add('active');
+                const planDescEl = this.subscriptionArea.querySelector('[data-ref="sub-plan-desc"]');
+                if (planDescEl) planDescEl.textContent = window.__('error_fetching_subscription') || 'Error al obtener estado de suscripción.';
             }
+        } finally {
+            if (this.subscriptionArea) {
+                this.subscriptionArea.classList.remove('disabled-interaction');
+            }
+        }
+    }
+
+    updateSubscriptionData(data) {
+        if (!this.subscriptionArea) return;
+
+        const tierName = data.tier === 3 ? 'Ultra' : (data.tier === 2 ? 'Pro' : (data.tier === 1 ? 'Plus' : 'Free'));
+        const status = data.status || 'active';
+        const cancelAtEnd = data.cancel_at_period_end;
+        let dateLabel = cancelAtEnd ? (window.__('ends_on') || 'Finaliza el') : (window.__('next_billing') || 'Próxima facturación');
+
+        let dateVal = '-';
+        if (data.current_period_end) {
+            let dateObj;
+            if (typeof data.current_period_end === 'string' && isNaN(Number(data.current_period_end))) {
+                dateObj = new Date(data.current_period_end.replace(' ', 'T'));
+            } else {
+                dateObj = new Date(Number(data.current_period_end) * 1000);
+            }
+            if (!isNaN(dateObj.getTime())) {
+                dateVal = dateObj.toLocaleDateString();
+            }
+        }
+
+        let statusText = window.__('status_active') || 'Activo';
+        if (status !== 'active') {
+            statusText = status === 'incomplete' ? (window.__('status_incomplete') || 'Incompleto') : (window.__('status_inactive') || 'Inactivo');
+        } else if (cancelAtEnd) {
+            statusText = window.__('will_cancel_soon') || 'Cancelación pendiente';
+        }
+
+        // 1. Plan description
+        const planDescEl = this.subscriptionArea.querySelector('[data-ref="sub-plan-desc"]');
+        if (planDescEl) {
+            planDescEl.textContent = `${tierName} (${statusText})`;
+        }
+
+        // 2. Renewal container
+        const renewalContainer = this.subscriptionArea.querySelector('[data-ref="sub-renewal-container"]');
+        if (renewalContainer) {
+            if (data.tier > 0) {
+                renewalContainer.style.display = 'block';
+                let renewText = cancelAtEnd ? (window.__('status_canceled') || 'Cancelado') : (window.__('status_active') || 'Activo');
+                const renewalDescEl = renewalContainer.querySelector('[data-ref="sub-renewal-desc"]');
+                if (renewalDescEl) {
+                    renewalDescEl.textContent = `${renewText} (${dateLabel} ${dateVal})`;
+                }
+
+                const renewalBtn = renewalContainer.querySelector('[data-ref="sub-renewal-btn"]');
+                if (renewalBtn) {
+                    const actionText = cancelAtEnd ? (window.__('btn_reactivate_sub') || 'Reactivar suscripción') : (window.__('btn_cancel_renew') || 'Cancelar renovación');
+                    renewalBtn.textContent = actionText;
+                    renewalBtn.dataset.cancelState = !cancelAtEnd;
+                    if (cancelAtEnd) {
+                        renewalBtn.classList.remove('component-button--dark');
+                        renewalBtn.classList.add('component-button--brand');
+                    } else {
+                        renewalBtn.classList.remove('component-button--brand');
+                        renewalBtn.classList.add('component-button--dark');
+                    }
+                }
+            } else {
+                renewalContainer.style.display = 'none';
+            }
+        }
+
+        // 3. Storage section
+        const storage = data.storage || { used_mb: 0, max_mb: 20, remaining_mb: 20, used_percentage: 0 };
+        const usedMB = storage.used_mb !== undefined ? storage.used_mb : 0;
+        const maxMB = storage.max_mb !== undefined ? storage.max_mb : 20;
+        const remainingMB = storage.remaining_mb !== undefined ? storage.remaining_mb : maxMB;
+        const percentage = storage.used_percentage !== undefined ? storage.used_percentage : 0;
+
+        const subtitleEl = this.subscriptionArea.querySelector('[data-ref="sub-storage-subtitle"]');
+        if (subtitleEl) {
+            subtitleEl.textContent = `Tu capacidad de almacenamiento · ${usedMB} MB de ${maxMB} MB utilizados (Quedan ${remainingMB} MB)`;
+        }
+
+        const percentageEl = this.subscriptionArea.querySelector('[data-ref="sub-storage-percentage"]');
+        if (percentageEl) {
+            percentageEl.textContent = `${percentage}% ${window.__('used') || 'usado'}`;
+        }
+
+        const progressFill = this.subscriptionArea.querySelector('[data-ref="sub-storage-progress-fill"]');
+        if (progressFill) {
+            progressFill.style.width = `${percentage}%`;
         }
     }
 
@@ -119,6 +192,11 @@ export class BillingController {
             if (error.name !== 'AbortError') {
                 const emptyMsg = window.__('error_fetching_payment_methods');
                 this.paymentMethodsArea.innerHTML = CardTemplates.emptyState(emptyMsg, 'error');
+            }
+        } finally {
+            const pmAccordion = document.querySelector('[data-ref="payment-methods-accordion"]');
+            if (pmAccordion) {
+                pmAccordion.classList.remove('disabled-interaction');
             }
         }
     }

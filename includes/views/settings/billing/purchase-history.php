@@ -12,7 +12,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             
             <div class="component-top-right">
                 <div class="component-actions disabled" data-ref="header-selection-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="downloadReceipt" data-tooltip="<?php echo __('btn_download_receipt'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="downloadReceipt" data-tooltip="<?php echo __('btn_download_receipt') ?: 'Descargar comprobante'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">download</span>
                     </button>
                 </div>

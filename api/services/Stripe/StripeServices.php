@@ -991,7 +991,7 @@ class StripeServices {
             $receiptData = [
                 'id' => $id,
                 'date' => date('d/m/Y'),
-                'description' => 'Suscripción / Compra',
+                'description' => 'Comprobante de Pago',
                 'amount' => '$0.00',
                 'status' => 'PAGADO'
             ];
@@ -1000,13 +1000,13 @@ class StripeServices {
                 if (strpos($id, 'ch_') === 0 || strpos($id, 'py_') === 0) {
                     $charge = \Stripe\Charge::retrieve($id);
                     $receiptData['date'] = date('d/m/Y', $charge->created);
-                    $receiptData['description'] = $charge->description ?: 'Suscripción';
+                    $receiptData['description'] = $charge->description ?: 'Comprobante de Compra';
                     $receiptData['amount'] = '$' . number_format($charge->amount / 100, 2) . ' ' . strtoupper($charge->currency);
                     $receiptData['status'] = $charge->status === 'succeeded' ? 'PAGADO' : strtoupper($charge->status);
                 } elseif (strpos($id, 'in_') === 0) {
                     $invoice = \Stripe\Invoice::retrieve($id);
                     $receiptData['date'] = date('d/m/Y', $invoice->created);
-                    $receiptData['description'] = 'Factura de Suscripción';
+                    $receiptData['description'] = 'Comprobante de Suscripción';
                     $receiptData['amount'] = '$' . number_format($invoice->amount_paid / 100, 2) . ' ' . strtoupper($invoice->currency);
                     $receiptData['status'] = $invoice->paid ? 'PAGADO' : 'PENDIENTE';
                 }
@@ -1020,7 +1020,7 @@ class StripeServices {
         }
 
         header('Content-Type: application/pdf');
-        header('Content-Disposition: attachment; filename="Recibo_' . preg_replace('/[^a-zA-Z0-9_-]/', '', $id) . '.pdf"');
+        header('Content-Disposition: attachment; filename="Comprobante_' . preg_replace('/[^a-zA-Z0-9_-]/', '', $id) . '.pdf"');
         header('Content-Length: ' . strlen($pdfData));
         header('Cache-Control: private, max-age=0, must-revalidate');
         header('Pragma: public');

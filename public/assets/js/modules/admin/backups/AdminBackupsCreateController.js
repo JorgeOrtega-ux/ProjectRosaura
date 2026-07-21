@@ -11,23 +11,33 @@ class AdminBackupsCreateController {
         this.schemaData = null; 
         this.selectedState = {}; 
         this.expandedAccordions = {}; 
+        this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.handleClickBound = this.handleClick.bind(this);
         this.handleChangeBound = this.handleChange.bind(this);
     }
     init() {
         this.abortController = new AbortController();
         this.bindEvents();
-        this.loadDatabaseSchema();
+        if (window.location.pathname.includes('/admin/backups/create')) {
+            this.loadDatabaseSchema();
+        }
     }
     destroy() {
         if (this.abortController) this.abortController.abort();
         if (this.pollInterval) clearInterval(this.pollInterval);
+        window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
         document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('change', this.handleChangeBound);
     }
     bindEvents() {
+        window.addEventListener('viewLoaded', this.handleViewLoadedBound);
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('change', this.handleChangeBound);
+    }
+    handleViewLoaded(e) {
+        if (e.detail && e.detail.url && e.detail.url.includes('/admin/backups/create')) {
+            this.loadDatabaseSchema();
+        }
     }
     handleClick(e) {
         if (!window.location.pathname.includes('/admin/backups/create')) return;
@@ -80,21 +90,32 @@ class AdminBackupsCreateController {
     async loadDatabaseSchema() {
         const container = document.querySelector('[data-ref="custom-schema-container"]');
         if (!container) return;
+
         container.innerHTML = '<div class="component-spinner component-spinner--centered"></div>';
-        const resSchema = await this.api.post('admin.get_backup_schema', {}, this.abortController.signal);
-        if (resSchema.aborted) return;
-        if (!resSchema.success || !resSchema.schema) {
-            showMessage(__('err_get_db_schema'), 'error');
-            container.innerHTML = `<div class="component-empty-state"><p>${__('err_get_db_schema')}</p></div>`;
-            return;
+
+        try {
+            const resSchema = await this.api.post('admin.get_backup_schema', {}, this.abortController.signal);
+            if (resSchema.aborted) return;
+            if (!resSchema.success || !resSchema.schema) {
+                showMessage(__('err_get_db_schema'), 'error');
+                container.innerHTML = `<div class="component-empty-state"><p>${__('err_get_db_schema')}</p></div>`;
+                return;
+            }
+            this.schemaData = resSchema.schema;
+            for (const dbName of Object.keys(this.schemaData)) {
+                this.selectedState[dbName] = [];
+                this.expandedAccordions[dbName] = false; 
+            }
+            this.buildInitialHTML(container);
+            this.updateUIState();
+        } catch (error) {
+            console.error('[AdminBackupsCreateController] Error loading schema:', error);
+        } finally {
+            const schemaAccordion = document.querySelector('[data-ref="custom-schema-accordion"]');
+            if (schemaAccordion) {
+                schemaAccordion.classList.remove('disabled-interaction');
+            }
         }
-        this.schemaData = resSchema.schema;
-        for (const dbName of Object.keys(this.schemaData)) {
-            this.selectedState[dbName] = [];
-            this.expandedAccordions[dbName] = false; 
-        }
-        this.buildInitialHTML(container);
-        this.updateUIState();
     }
     buildInitialHTML(container) {
         let html = '<div class="component-list component-list--flush">'; 

@@ -3,95 +3,178 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 
 <div class="view-content">
-    <div class="component-wrapper">
-        <div class="component-bottom">
-            
-            <div class="component-header-card">
-                <h1 class="component-page-title"><?php echo __('billing_title'); ?></h1>
-                <p class="component-page-description"><?php echo __('manage_billing_desc'); ?></p>
-            </div>
 
-            <div class="component-card--grouped active" data-ref="subscription-storage-area">
-                <div class="component-group-item component-group-item--wrap" style="padding: 24px;">
-                    <div class="component-card__content">
-                        <div class="component-spinner"></div>
-                        <div class="component-card__text">
-                            <h2 class="component-card__title"><?php echo __('loading_subscription') ?: 'Cargando información de suscripción...'; ?></h2>
-                            <p class="component-card__description"><?php echo __('please_wait') ?: 'Obteniendo datos de Stripe...'; ?></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div class="component-top">
+        <div class="component-top-left">
+            <h1 class="component-top-title"><?php echo __('billing_title'); ?></h1>
+        </div>
+        <div class="component-top-right">
+            <button type="button" class="component-button component-button--h40 disabled-interaction" data-action="addNewCard" data-tooltip="<?php echo __('tooltip_add_card'); ?>" data-position="bottom">
+                <span class="material-symbols-rounded">add</span>
+                <span><?php echo __('btn_add_card') ?: 'Agregar tarjeta'; ?></span>
+            </button>
+        </div>
+    </div>
 
-            <div class="component-card--grouped">
-                <div class="component-group-item component-group-item--wrap">
-                    <div class="component-card__content">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">credit_card</span>
-                        </div>
-                        <div class="component-card__text">
-                            <h2 class="component-card__title"><?php echo __('payment_methods_title'); ?></h2>
-                            <p class="component-card__description"><?php echo __('manage_billing_desc'); ?></p>
-                        </div>
-                    </div>
-                    <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--dark component-button--h36" data-action="addNewCard" data-tooltip="<?php echo __('tooltip_add_card'); ?>" data-position="bottom">
-                            <span class="material-symbols-rounded">add</span>
-                            <?php echo __('btn_add'); ?>
-                        </button>
-                    </div>
-                </div>
+    <div class="component-viewport">
+        <div class="component-wrapper">
+            <div class="component-bottom">
 
-                <hr class="component-divider">
-
-                <div class="component-group-item component-group-item--stacked" data-ref="payment-methods-area">
-                    <div class="component-group-item" style="padding: 20px; justify-content: center; align-items: center; gap: 10px;">
-                        <div class="component-spinner"></div>
-                        <span class="component-text-secondary" style="font-size: 0.85rem;"><?php echo __('loading_payment_methods') ?: 'Cargando métodos de pago...'; ?></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="component-card--grouped">
-                <div class="component-group-item component-group-item--stacked">
-                    <div class="component-card__content">
-                        <div class="component-card__text">
-                            <h2 class="component-card__title">Preferencias de Compra</h2>
-                            <p class="component-card__description">Elige cómo quieres confirmar tus compras.</p>
-                        </div>
-                    </div>
-                    <div class="component-card__actions component-card__actions--start">
-                        <?php 
-                            $activeAccountId = $_SESSION['active_account'] ?? null;
-                            $account = ($activeAccountId && isset($_SESSION['accounts'][$activeAccountId])) ? $_SESSION['accounts'][$activeAccountId] : [];
-                            $userPrefs = $account['user_prefs'] ?? [];
-                            $purchasePref = $account['purchase_preference'] ?? ($userPrefs['purchase_preference'] ?? ($_SESSION['purchase_preference'] ?? 'verify'));
-                            $prefText = $purchasePref === 'fast' ? 'Pago rápido (Automático)' : 'Pago con verificación';
-                        ?>
-                        <div class="component-dropdown-wrapper">
-                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="modulePurchasePref">
-                                <span class="material-symbols-rounded">security</span>
-                                <span class="component-dropdown-text"><?php echo htmlspecialchars($prefText); ?></span>
-                                <span class="material-symbols-rounded">expand_more</span>
+                <!-- 1. Acordeón de Suscripción y Almacenamiento -->
+                <div class="component-card--grouped component-accordion disabled-interaction" data-ref="subscription-storage-area">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">stars</span>
                             </div>
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="modulePurchasePref">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited active" data-ref="menuMainPurchasePref">
-                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list component-menu-list--scrollable">
-                                        <div class="component-menu-link <?php echo $purchasePref === 'verify' ? 'active' : ''; ?>" data-action="setPref" data-key="purchase_preference" data-value="verify">
-                                            <div class="component-menu-link-icon">
-                                                <span class="material-symbols-rounded">security</span>
-                                            </div>
-                                            <div class="component-menu-link-text">
-                                                <span>Pago con verificación</span>
-                                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('subscription_details_title') ?: 'Plan y Almacenamiento'; ?></h2>
+                                <p class="component-card__description"><?php echo __('subscription_details_desc') ?: 'Información de tu plan actual, ciclo de facturación y capacidad disponible.'; ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
+                    </div>
+
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            
+                            <!-- Plan Actual -->
+                            <div class="component-group-item component-group-item--wrap">
+                                <div class="component-card__content">
+                                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                                        <span class="material-symbols-rounded">stars</span>
+                                    </div>
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('current_plan'); ?></h2>
+                                        <p class="component-card__description" data-ref="sub-plan-desc"><?php echo __('lbl_loading') ?: 'Cargando...'; ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <button type="button" class="component-button component-button--h36" data-nav="/upgrade">
+                                        <?php echo __('btn_change_plan'); ?>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Renovación Automática -->
+                            <div data-ref="sub-renewal-container" style="display: none;">
+                                <hr class="component-divider">
+                                <div class="component-group-item component-group-item--wrap">
+                                    <div class="component-card__content">
+                                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                                            <span class="material-symbols-rounded">event_repeat</span>
                                         </div>
-                                        <div class="component-menu-link <?php echo $purchasePref === 'fast' ? 'active' : ''; ?>" data-action="setPref" data-key="purchase_preference" data-value="fast">
-                                            <div class="component-menu-link-icon">
-                                                <span class="material-symbols-rounded">bolt</span>
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title"><?php echo __('auto_renewal'); ?></h2>
+                                            <p class="component-card__description" data-ref="sub-renewal-desc"><?php echo __('lbl_loading') ?: 'Cargando...'; ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--end">
+                                        <button type="button" class="component-button component-button--h36 component-button--dark" data-action="toggleAutoRenew" data-ref="sub-renewal-btn">
+                                            <?php echo __('btn_cancel_renew'); ?>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="component-divider">
+
+                            <!-- Almacenamiento del Plan -->
+                            <div class="component-group-item component-group-item--stacked" style="padding: 24px; gap: 14px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 16px;">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Almacenamiento del Plan</h2>
+                                            <p class="component-card__description" data-ref="sub-storage-subtitle">Tu capacidad de almacenamiento · -- MB de -- MB utilizados (Quedan -- MB)</p>
+                                        </div>
+                                    </div>
+                                    <div class="component-storage-usage__percentage" style="align-self: flex-start; padding-top: 2px;">
+                                        <span data-ref="sub-storage-percentage">0%</span>
+                                    </div>
+                                </div>
+
+                                <div class="component-progress-track">
+                                    <div class="component-progress-fill" data-ref="sub-storage-progress-fill" style="width: 0%;"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Acordeón Métodos de Pago -->
+                <div class="component-card--grouped component-accordion disabled-interaction" data-ref="payment-methods-accordion">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">credit_card</span>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('payment_methods_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('manage_billing_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
+                    </div>
+
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <div class="component-group-item component-group-item--stacked" data-ref="payment-methods-area">
+                                <div class="component-group-item" style="padding: 20px; justify-content: center; align-items: center; gap: 10px;">
+                                    <div class="component-spinner"></div>
+                                    <span class="component-text-secondary" style="font-size: 0.85rem;"><?php echo __('loading_payment_methods') ?: 'Cargando métodos de pago...'; ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Preferencias de Compra -->
+                <div class="component-card--grouped">
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Preferencias de Compra</h2>
+                                <p class="component-card__description">Elige cómo quieres confirmar tus compras.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <?php 
+                                $activeAccountId = $_SESSION['active_account'] ?? null;
+                                $account = ($activeAccountId && isset($_SESSION['accounts'][$activeAccountId])) ? $_SESSION['accounts'][$activeAccountId] : [];
+                                $userPrefs = $account['user_prefs'] ?? [];
+                                $purchasePref = $account['purchase_preference'] ?? ($userPrefs['purchase_preference'] ?? ($_SESSION['purchase_preference'] ?? 'verify'));
+                                $prefText = $purchasePref === 'fast' ? 'Pago rápido (Automático)' : 'Pago con verificación';
+                            ?>
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="modulePurchasePref">
+                                    <span class="material-symbols-rounded">security</span>
+                                    <span class="component-dropdown-text"><?php echo htmlspecialchars($prefText); ?></span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="modulePurchasePref">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited active" data-ref="menuMainPurchasePref">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            <div class="component-menu-link <?php echo $purchasePref === 'verify' ? 'active' : ''; ?>" data-action="setPref" data-key="purchase_preference" data-value="verify">
+                                                <div class="component-menu-link-icon">
+                                                    <span class="material-symbols-rounded">security</span>
+                                                </div>
+                                                <div class="component-menu-link-text">
+                                                    <span>Pago con verificación</span>
+                                                </div>
                                             </div>
-                                            <div class="component-menu-link-text">
-                                                <span>Pago rápido (Automático)</span>
+                                            <div class="component-menu-link <?php echo $purchasePref === 'fast' ? 'active' : ''; ?>" data-action="setPref" data-key="purchase_preference" data-value="fast">
+                                                <div class="component-menu-link-icon">
+                                                    <span class="material-symbols-rounded">bolt</span>
+                                                </div>
+                                                <div class="component-menu-link-text">
+                                                    <span>Pago rápido (Automático)</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -100,9 +183,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         </div>
                     </div>
                 </div>
-            </div>
 
-        </div> <!-- end component-bottom -->
-
-    </div>
+            </div> <!-- end component-bottom -->
+        </div> <!-- end component-wrapper -->
+    </div> <!-- end component-viewport -->
 </div>

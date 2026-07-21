@@ -22,57 +22,74 @@ $filename = base64_decode($backupId);
         <div class="component-wrapper">
             <div class="component-bottom">
                 
-                <div class="component-card--grouped">
+                <div class="component-card--grouped component-accordion active">
                     
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content component-card__content--full component-card__content--start">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">warning</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('warning_critical_action'); ?></h2>
-                                <p class="component-card__description"><?php echo __('msg_restore_warning_data_loss'); ?></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content component-card__content--full component-card__content--start">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">database</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('lbl_backup_to_restore'); ?></h2>
-                                <p class="component-card__description font-medium" data-ref="restore-target-filename" data-backup-id="<?php echo htmlspecialchars($backupId); ?>">
-                                    <?php echo htmlspecialchars($filename); ?>
-                                </p>
-                                <div class="component-badge component-badge--sm mt-2">
-                                    <span class="material-symbols-rounded">info</span>
-                                    <span><?php echo __('restore_package_info'); ?></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--wrap">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">lock_open</span>
+                                <span class="material-symbols-rounded">settings_backup_restore</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('admin_unlock_restore_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('admin_unlock_restore_desc'); ?></p>
+                                <h2 class="component-card__title">Parámetros de Restauración de Sistema</h2>
+                                <p class="component-card__description">Revisión del archivo de paquete de datos y confirmación de seguridad</p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <label class="component-toggle-switch">
-                                <input type="checkbox" data-action="toggleRestoreLock">
-                                <span class="component-toggle-slider"></span>
-                            </label>
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
+                    </div>
+
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content component-card__content--full component-card__content--start">
+                                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                                        <span class="material-symbols-rounded">warning</span>
+                                    </div>
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Advertencia de Acción Destructiva</h2>
+                                        <p class="component-card__description">La restauración reemplazará la estructura y registros actuales del sistema por los contenidos en este paquete. Esta acción es irreversible.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="component-divider">
+
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content component-card__content--full component-card__content--start">
+                                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                                        <span class="material-symbols-rounded">database</span>
+                                    </div>
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Paquete de Respaldo Seleccionado</h2>
+                                        <p class="component-card__description font-medium" data-ref="restore-target-filename" data-backup-id="<?php echo htmlspecialchars($backupId); ?>">
+                                            <?php echo htmlspecialchars($filename); ?>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="component-divider">
+
+                            <div class="component-group-item component-group-item--wrap">
+                                <div class="component-card__content">
+                                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                                        <span class="material-symbols-rounded">lock_open</span>
+                                    </div>
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Desbloqueo de Seguridad para Restauración</h2>
+                                        <p class="component-card__description">Habilita el interruptor para confirmar la operación y autorizar el procedimiento en el servidor.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" data-action="toggleRestoreLock">
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                     

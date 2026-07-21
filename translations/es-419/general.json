@@ -1636,5 +1636,6 @@
     "msg_cluster_incoming":  "¡Ataque de Racimo en Camino!",
     "msg_nuke_incoming":  "¡Bomba Nuclear en Camino!",
     "msg_missile_incoming":  "¡Misil en Camino!",
-    "msg_bomb_incoming":  "¡Bomba en Camino!"
+    "msg_bomb_incoming":  "¡Bomba en Camino!",
+    "btn_download_receipt":  "Descargar comprobante"
 }

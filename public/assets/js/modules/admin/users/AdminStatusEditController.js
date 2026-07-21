@@ -157,10 +157,10 @@ class AdminStatusEditController {
                     const textNode = item.querySelector('.component-menu-link-text');
                     const text = textNode ? textNode.textContent.toLowerCase() : item.textContent.toLowerCase();
                     if (text.includes(query)) {
-                        .classList.remove('disabled'); .classList.add('active');
+                        item.classList.remove('disabled'); item.classList.add('active');
                         hasVisibleItems = true;
                     } else {
-                        .classList.remove('active'); .classList.add('disabled');
+                        item.classList.remove('active'); item.classList.add('disabled');
                     }
                 });
                 if (emptyState) {

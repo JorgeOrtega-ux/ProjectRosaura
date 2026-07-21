@@ -57,7 +57,11 @@ class AdminBackupsAutomationController {
         try {
             this.availableSchema = JSON.parse(schemaElement.textContent);
             const toggleAuto = document.querySelector('[data-ref="toggle-auto-backup"]');
-            const autoEnabled = toggleAuto && toggleAuto.checked ? 1 : 0;
+            const currentAutoEnabled = toggleAuto && toggleAuto.checked ? 1 : 0;
+            const initialAutoEnabled = toggleAuto && toggleAuto.hasAttribute('data-initial-enabled')
+                ? parseInt(toggleAuto.getAttribute('data-initial-enabled'))
+                : currentAutoEnabled;
+
             const freqTextNode = document.querySelector('[data-ref="admin-autoFreq-text"]');
             const autoFreq = freqTextNode ? parseInt(freqTextNode.getAttribute('data-val')) : 24;
             const retentionNode = document.querySelector('[data-ref="val_auto_backup_retention_count"]');
@@ -74,16 +78,27 @@ class AdminBackupsAutomationController {
                 if (tables.length > 0) payloadSchema[dbName] = tables;
             }
             this.state = {
-                auto_backup_enabled: autoEnabled,
+                auto_backup_enabled: currentAutoEnabled,
                 auto_backup_frequency_hours: autoFreq,
                 auto_backup_retention_count: autoRetention,
                 backup_schema_config: JSON.stringify(payloadSchema)
             };
-            this.initialState = JSON.parse(JSON.stringify(this.state));
+            this.initialState = {
+                auto_backup_enabled: initialAutoEnabled,
+                auto_backup_frequency_hours: autoFreq,
+                auto_backup_retention_count: autoRetention,
+                backup_schema_config: JSON.stringify(payloadSchema)
+            };
             this.renderValues();
             this.renderVisibility();
             this.checkForChanges();
         } catch (e) {
+        } finally {
+            const refs = ['wrapper-auto-options', 'wrapper-auto-schema'];
+            refs.forEach(ref => {
+                const el = document.querySelector(`[data-ref="${ref}"]`);
+                if (el) el.classList.remove('disabled-interaction');
+            });
         }
     }
     handleClick(e) {
@@ -198,7 +213,10 @@ class AdminBackupsAutomationController {
         const isDisabled = this.state.auto_backup_enabled !== 1;
         refs.forEach(ref => {
             const el = document.querySelector(`[data-ref="${ref}"]`);
-            if (el) el.classList.toggle('disabled', isDisabled);
+            if (el) {
+                el.classList.toggle('disabled', isDisabled);
+                el.classList.remove('disabled-interaction');
+            }
         });
     }
     handleAdjustment(btn) {

@@ -573,6 +573,7 @@ class AdminServices {
         }
 
         if ($this->moderationRepository->updateStatus($targetId, 'active', null, null, $dbIsSuspended, $dbSuspensionType, $dbSuspensionReason, $dbEndDate, null)) {
+            $this->userRepository->invalidateProfileCache($targetId, $user['uuid'] ?? null);
             if ($actionType !== 'note_updated') {
                 $logPayload = json_encode(['event' => 'admin_update_suspension', 'action' => $actionType, 'reason' => $logReason, 'admin_user' => $currentUserId]);
                 $this->moderationRepository->logAction($targetId, $currentUserId, $actionType, $logPayload, $dbEndDate, null);

@@ -23,17 +23,23 @@ class ModerationRepository implements ModerationRepositoryInterface {
             $this->pdo->beginTransaction();
 
             $stmtRest = $this->pdo->prepare("
-                UPDATE {$tblUserRestr} 
-                SET is_suspended = ?, suspension_type = ?, suspension_reason = ?, 
-                    suspension_end_date = ?, deleted_by = ?, deleted_reason = ?, 
-                    admin_notes = ? 
-                WHERE user_id = ?
+                INSERT INTO {$tblUserRestr} (
+                    user_id, is_suspended, suspension_type, suspension_reason, 
+                    suspension_end_date, deleted_by, deleted_reason, admin_notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE 
+                    is_suspended = VALUES(is_suspended),
+                    suspension_type = VALUES(suspension_type),
+                    suspension_reason = VALUES(suspension_reason),
+                    suspension_end_date = VALUES(suspension_end_date),
+                    deleted_by = VALUES(deleted_by),
+                    deleted_reason = VALUES(deleted_reason),
+                    admin_notes = VALUES(admin_notes)
             ");
             
             $stmtRest->execute([
-                $isSuspended, $suspensionType, $suspensionReason, 
-                $endDate, $deletedBy, $deletedReason, 
-                $adminNotes, $userId
+                $userId, $isSuspended, $suspensionType, $suspensionReason, 
+                $endDate, $deletedBy, $deletedReason, $adminNotes
             ]);
 
             $this->pdo->commit();

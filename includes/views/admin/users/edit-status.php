@@ -135,10 +135,13 @@ if ($initialState['isSuspended'] === '1') {
                     
                     <div class="component-setup-container active">
                         
-                        <div class="component-card--grouped">
+                        <div class="component-card--grouped component-accordion active">
                             
-                            <div class="component-group-item component-group-item--stacked">
+                            <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                                 <div class="component-card__content">
+                                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                                        <span class="material-symbols-rounded">shield</span>
+                                    </div>
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('admin_access_restriction_title'); ?></h2>
                                         <p class="component-card__description">
@@ -146,237 +149,258 @@ if ($initialState['isSuspended'] === '1') {
                                         </p>
                                     </div>
                                 </div>
-                                <div class="component-card__actions component-card__actions--start">
-                                    <div class="component-dropdown-wrapper">
-                                        <div class="component-dropdown-trigger <?php echo ($user['role_name'] === 'founder') ? 'disabled-interaction' : ''; ?>" data-action="toggleModule" data-target="adminModuleSuspended">
-                                            <span class="material-symbols-rounded">shield</span>
-                                            <span class="component-dropdown-text" data-ref="admin-isSuspended-text"><?php echo $displayTexts['isSuspended']; ?></span>
-                                            <span class="material-symbols-rounded">expand_more</span>
-                                        </div>
-                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspended">
-                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                                <div class="component-menu-list component-menu-list--scrollable">
-                                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="isSuspended" data-value="0">
-                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock_open</span></div>
-                                                        <div class="component-menu-link-text"><span><?php echo __('suspension_none'); ?></span></div>
-                                                    </div>
-                                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="isSuspended" data-value="1">
-                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
-                                                        <div class="component-menu-link-text"><span><?php echo __('suspension_active'); ?></span></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
                                 </div>
                             </div>
 
-                            <div class="<?php echo $vis['suspension_reason']; ?>" data-ref="section-suspended-reason">
-                                <hr class="component-divider">
-                                <div class="component-group-item component-group-item--stacked">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_suspension_reason_title'); ?></h2>
-                                            <p class="component-card__description"><?php echo __('admin_suspension_reason_desc'); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--start">
-                                        <div class="component-dropdown-wrapper">
-                                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleSuspensionReason">
-                                                <span class="material-symbols-rounded">format_list_bulleted</span>
-                                                <span class="component-dropdown-text" data-ref="admin-suspensionReason-text"><?php echo $displayTexts['suspensionReason']; ?></span>
-                                                <span class="material-symbols-rounded">expand_more</span>
-                                            </div>
-                                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionReason">
-                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                                    
-                                                    <div class="component-menu-header">
-                                                        <div class="component-search component-search--full component-search--h36">
-                                                            <div class="component-search-icon">
-                                                                <span class="material-symbols-rounded">search</span>
-                                                            </div>
-                                                            <div class="component-search-input">
-                                                                <input type="text" data-ref="suspension-reason-search" placeholder="<?php echo __('placeholder_search'); ?>">
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                            <div class="component-accordion-body">
+                                <div class="component-accordion-content">
 
-                                                    <div class="component-menu-list component-menu-list--scrollable" data-ref="suspension-reason-list">
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_terms">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('reason_terms'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_fake_info">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">person_off</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('reason_fake_info'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_illegal">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">local_police</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('reason_illegal'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_fraud_use">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">warning</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('reason_fraud_use'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_abuse">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('reason_abuse'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_prohibited_content">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">report</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('reason_prohibited_content'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_ip_violation">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">copyright</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('reason_ip_violation'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_spam_bot">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">smart_toy</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('reason_spam_bot'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_security_breach">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">security</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('reason_security_breach'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_unauthorized_commercial">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">storefront</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('reason_unauthorized_commercial'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_other">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('reason_other'); ?></span></div>
-                                                        </div>
-                                                        
-                                                        <div class="component-menu-empty" data-ref="suspension-reason-empty" hidden>
-                                                             <div class="component-menu-link disabled-interaction">
-                                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div>
-                                                                 <div class="component-menu-link-text"><span class="component-text-notice--muted"><?php echo __('no_results_found'); ?></span></div>
+                                    <div class="component-group-item component-group-item--stacked">
+                                        <div class="component-card__content">
+                                            <div class="component-card__text">
+                                                <h2 class="component-card__title"><?php echo __('admin_access_restriction_title'); ?></h2>
+                                                <p class="component-card__description">
+                                                    <?php echo ($user['role_name'] === 'founder') ? '<span class="component-text-notice--error">'.__('err_founder_suspend_immutable').'</span>' : __('desc_account_suspension'); ?>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="component-card__actions component-card__actions--start">
+                                            <div class="component-dropdown-wrapper">
+                                                <div class="component-dropdown-trigger <?php echo ($user['role_name'] === 'founder') ? 'disabled-interaction' : ''; ?>" data-action="toggleModule" data-target="adminModuleSuspended">
+                                                    <span class="material-symbols-rounded">shield</span>
+                                                    <span class="component-dropdown-text" data-ref="admin-isSuspended-text"><?php echo $displayTexts['isSuspended']; ?></span>
+                                                    <span class="material-symbols-rounded">expand_more</span>
+                                                </div>
+                                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspended">
+                                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                                         <div class="component-menu-list component-menu-list--scrollable">
+                                                             <div class="component-menu-link <?php echo ($initialState['isSuspended'] === '0') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="isSuspended" data-value="0">
+                                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock_open</span></div>
+                                                                 <div class="component-menu-link-text"><span><?php echo __('suspension_none'); ?></span></div>
                                                              </div>
-                                                        </div>
+                                                             <div class="component-menu-link <?php echo ($initialState['isSuspended'] === '1') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="isSuspended" data-value="1">
+                                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
+                                                                 <div class="component-menu-link-text"><span><?php echo __('suspension_active'); ?></span></div>
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>
+
+                                     <div class="<?php echo $vis['suspension_reason']; ?>" data-ref="section-suspended-reason">
+                                         <hr class="component-divider">
+                                         <div class="component-group-item component-group-item--stacked">
+                                             <div class="component-card__content">
+                                                 <div class="component-card__text">
+                                                     <h2 class="component-card__title"><?php echo __('admin_suspension_reason_title'); ?></h2>
+                                                     <p class="component-card__description"><?php echo __('admin_suspension_reason_desc'); ?></p>
+                                                 </div>
+                                             </div>
+                                             <div class="component-card__actions component-card__actions--start">
+                                                 <div class="component-dropdown-wrapper">
+                                                     <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleSuspensionReason">
+                                                         <span class="material-symbols-rounded">format_list_bulleted</span>
+                                                         <span class="component-dropdown-text" data-ref="admin-suspensionReason-text"><?php echo $displayTexts['suspensionReason']; ?></span>
+                                                         <span class="material-symbols-rounded">expand_more</span>
+                                                     </div>
+                                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionReason">
+                                                         <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                                             <div class="pill-container"><div class="drag-handle"></div></div>
+                                                             
+                                                             <div class="component-menu-header">
+                                                                 <div class="component-search component-search--full component-search--h36">
+                                                                     <div class="component-search-icon">
+                                                                         <span class="material-symbols-rounded">search</span>
+                                                                     </div>
+                                                                     <div class="component-search-input">
+                                                                         <input type="text" data-ref="suspension-reason-search" placeholder="<?php echo __('placeholder_search'); ?>">
+                                                                     </div>
+                                                                 </div>
+                                                             </div>
+
+                                                             <div class="component-menu-list component-menu-list--scrollable" data-ref="suspension-reason-list">
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_terms') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_terms">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_terms'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_fake_info') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_fake_info">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">person_off</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_fake_info'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_illegal') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_illegal">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">local_police</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_illegal'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_fraud_use') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_fraud_use">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">warning</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_fraud_use'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_abuse') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_abuse">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_abuse'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_prohibited_content') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_prohibited_content">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">report</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_prohibited_content'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_ip_violation') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_ip_violation">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">copyright</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_ip_violation'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_spam_bot') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_spam_bot">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">smart_toy</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_spam_bot'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_security_breach') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_security_breach">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">security</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_security_breach'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_unauthorized_commercial') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_unauthorized_commercial">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">storefront</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_unauthorized_commercial'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_other') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_other">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_other'); ?></span></div>
+                                                                 </div>
+                                                                 
+                                                                 <div class="component-menu-empty" data-ref="suspension-reason-empty" hidden>
+                                                                      <div class="component-menu-link disabled-interaction">
+                                                                          <div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div>
+                                                                          <div class="component-menu-link-text"><span class="component-text-notice--muted"><?php echo __('no_results_found'); ?></span></div>
+                                                                      </div>
+                                                                 </div>
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>
+
+                                     <div class="<?php echo $vis['suspension_custom']; ?>" data-ref="section-suspended-custom-reason">
+                                         <hr class="component-divider">
+                                         <div class="component-group-item component-group-item--stacked">
+                                             <div class="component-card__content component-card__content--full">
+                                                 <div class="component-card__text">
+                                                     <h2 class="component-card__title"><?php echo __('admin_custom_reason_suspension_title'); ?></h2>
+                                                     <div class="component-card__form-area">
+                                                         <textarea class="component-input-field" data-ref="inp_custom_suspension_reason" placeholder="<?php echo __('placeholder_suspension_reason'); ?>"><?php echo htmlspecialchars($initialState['customSuspensionReason'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>
+
+                                     <div class="<?php echo $vis['suspension_type']; ?>" data-ref="section-suspended-type">
+                                         <hr class="component-divider">
+                                         <div class="component-group-item component-group-item--stacked">
+                                             <div class="component-card__content">
+                                                 <div class="component-card__text">
+                                                     <h2 class="component-card__title"><?php echo __('admin_suspension_type_title'); ?></h2>
+                                                     <p class="component-card__description"><?php echo __('admin_suspension_type_desc'); ?></p>
+                                                 </div>
+                                             </div>
+                                             <div class="component-card__actions component-card__actions--start">
+                                                 <div class="component-dropdown-wrapper">
+                                                     <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleSuspendedType">
+                                                         <span class="material-symbols-rounded">hourglass_empty</span>
+                                                         <span class="component-dropdown-text" data-ref="admin-suspendedType-text"><?php echo $displayTexts['suspendedType']; ?></span>
+                                                         <span class="material-symbols-rounded">expand_more</span>
+                                                     </div>
+                                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspendedType">
+                                                         <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                                             <div class="pill-container"><div class="drag-handle"></div></div>
+                                                             <div class="component-menu-list component-menu-list--scrollable">
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspendedType'] === DB::SUSPENSION_TEMP) ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspendedType" data-value="<?php echo DB::SUSPENSION_TEMP; ?>">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('suspension_temp'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspendedType'] === DB::SUSPENSION_PERM) ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspendedType" data-value="<?php echo DB::SUSPENSION_PERM; ?>">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock_clock</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('suspension_perm'); ?></span></div>
+                                                                 </div>
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>
+
+                                     <div class="<?php echo $vis['suspension_duration']; ?>" data-ref="section-suspended-duration">
+                                         <hr class="component-divider">
+                                         <div class="component-group-item component-group-item--stacked">
+                                             <div class="component-card__content">
+                                                 <div class="component-card__text">
+                                                     <h2 class="component-card__title"><?php echo __('admin_suspension_duration_title'); ?></h2>
+                                                     <p class="component-card__description"><?php echo __('admin_suspension_duration_desc'); ?></p>
+                                                 </div>
+                                             </div>
+                                             <div class="component-card__actions component-card__actions--start">
+                                                 <div class="component-dropdown-wrapper">
+                                                     <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleSuspensionDuration">
+                                                         <span class="material-symbols-rounded">schedule</span>
+                                                         <span class="component-dropdown-text" data-ref="admin-suspensionDuration-text"><?php echo $displayTexts['suspensionDuration']; ?></span>
+                                                         <span class="material-symbols-rounded">expand_more</span>
+                                                     </div>
+                                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionDuration">
+                                                         <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                                             <div class="pill-container"><div class="drag-handle"></div></div>
+                                                             <div class="component-menu-list component-menu-list--scrollable">
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionDuration'] === '1') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="1">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('duration_1d'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionDuration'] === '3') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="3">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('duration_3d'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionDuration'] === '7') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="7">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('duration_7d'); ?></span></div>
+                                                                 </div>
+                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionDuration'] === 'custom') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="custom">
+                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">edit_calendar</span></div>
+                                                                     <div class="component-menu-link-text"><span><?php echo __('suspension_custom_time'); ?></span></div>
+                                                                 </div>
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>
+
+                                    <div class="<?php echo $vis['suspension_date']; ?>" data-ref="section-suspended-date">
+                                        <hr class="component-divider">
+                                        <div class="component-group-item component-group-item--stacked">
+                                            <div class="component-card__content">
+                                                <div class="component-card__text">
+                                                    <h2 class="component-card__title"><?php echo __('admin_suspension_end_title'); ?></h2>
+                                                    <p class="component-card__description"><?php echo __('admin_suspension_end_desc'); ?></p>
+                                                </div>
+                                            </div>
+                                            <div class="component-card__actions component-card__actions--start">
+                                                <div class="component-dropdown-wrapper">
+                                                    <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleCalendar">
+                                                        <span class="material-symbols-rounded">calendar_month</span>
+                                                        <span class="component-dropdown-text" data-ref="admin-endDate-text"><?php echo $displayTexts['endDate']; ?></span>
                                                     </div>
+                                                    <?php include __DIR__ . '/../../../modules/moduleCalendar.php'; ?>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
+
                                 </div>
                             </div>
 
-                            <div class="<?php echo $vis['suspension_custom']; ?>" data-ref="section-suspended-custom-reason">
-                                <hr class="component-divider">
-                                <div class="component-group-item component-group-item--stacked">
-                                    <div class="component-card__content component-card__content--full">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_custom_reason_suspension_title'); ?></h2>
-                                            <div class="component-card__form-area">
-                                                <textarea class="component-input-field" data-ref="inp_custom_suspension_reason" placeholder="<?php echo __('placeholder_suspension_reason'); ?>"><?php echo htmlspecialchars($initialState['customSuspensionReason'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="<?php echo $vis['suspension_type']; ?>" data-ref="section-suspended-type">
-                                <hr class="component-divider">
-                                <div class="component-group-item component-group-item--stacked">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_suspension_type_title'); ?></h2>
-                                            <p class="component-card__description"><?php echo __('admin_suspension_type_desc'); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--start">
-                                        <div class="component-dropdown-wrapper">
-                                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleSuspendedType">
-                                                <span class="material-symbols-rounded">hourglass_empty</span>
-                                                <span class="component-dropdown-text" data-ref="admin-suspendedType-text"><?php echo $displayTexts['suspendedType']; ?></span>
-                                                <span class="material-symbols-rounded">expand_more</span>
-                                            </div>
-                                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspendedType">
-                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                                    <div class="component-menu-list component-menu-list--scrollable">
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspendedType" data-value="<?php echo DB::SUSPENSION_TEMP; ?>">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('suspension_temp'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspendedType" data-value="<?php echo DB::SUSPENSION_PERM; ?>">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock_clock</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('suspension_perm'); ?></span></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="<?php echo $vis['suspension_duration']; ?>" data-ref="section-suspended-duration">
-                                <hr class="component-divider">
-                                <div class="component-group-item component-group-item--stacked">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_suspension_duration_title'); ?></h2>
-                                            <p class="component-card__description"><?php echo __('admin_suspension_duration_desc'); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--start">
-                                        <div class="component-dropdown-wrapper">
-                                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleSuspensionDuration">
-                                                <span class="material-symbols-rounded">schedule</span>
-                                                <span class="component-dropdown-text" data-ref="admin-suspensionDuration-text"><?php echo $displayTexts['suspensionDuration']; ?></span>
-                                                <span class="material-symbols-rounded">expand_more</span>
-                                            </div>
-                                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionDuration">
-                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                                    <div class="component-menu-list component-menu-list--scrollable">
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="1">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('duration_1d'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="3">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('duration_3d'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="7">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('duration_7d'); ?></span></div>
-                                                        </div>
-                                                        <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="custom">
-                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">edit_calendar</span></div>
-                                                            <div class="component-menu-link-text"><span><?php echo __('suspension_custom_time'); ?></span></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="<?php echo $vis['suspension_date']; ?>" data-ref="section-suspended-date">
-                                <hr class="component-divider">
-                                <div class="component-group-item component-group-item--stacked">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_suspension_end_title'); ?></h2>
-                                            <p class="component-card__description"><?php echo __('admin_suspension_end_desc'); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--start">
-                                        <div class="component-dropdown-wrapper">
-                                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleCalendar">
-                                                <span class="material-symbols-rounded">calendar_month</span>
-                                                <span class="component-dropdown-text" data-ref="admin-endDate-text"><?php echo $displayTexts['endDate']; ?></span>
-                                            </div>
-                                            <?php include __DIR__ . '/../../../modules/moduleCalendar.php'; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                         
                         <div class="component-card--grouped <?php echo $vis['notify_user_suspension']; ?>" data-ref="section-notify-user-suspension">
