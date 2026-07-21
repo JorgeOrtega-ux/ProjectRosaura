@@ -124,7 +124,7 @@ export const ApiRoutes = {
         UploadTemplate: 'canvases.upload_template',
         GetTemplates: 'canvases.get_templates',
         DeleteTemplate: 'canvases.delete_template',
-        PlazmarImagen: 'canvases.plazmar_imagen',
+        InjectTemplate: 'canvases.inject_template',
 
         CreateLiveShare: 'canvases.create_live_share',
         JoinLiveShare: 'canvases.join_live_share',

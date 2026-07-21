@@ -165,7 +165,7 @@ class CanvasAssetController extends BaseController {
         return $result;
     }
 
-    public function plazmar_imagen($input) {
+    public function inject_template($input) {
         try {
             if (!$this->session->isLoggedIn()) {
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
@@ -185,7 +185,7 @@ class CanvasAssetController extends BaseController {
                          in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms);
             
             if (!$canInject) {
-                return $this->respond(['success' => false, 'message' => 'No tienes permiso para plasmar plantillas.']);
+                return $this->respond(['success' => false, 'message' => 'No tienes permiso para inyectar plantillas.']);
             }
 
             $canvasUuid = $input['canvas_id'] ?? null;

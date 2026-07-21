@@ -270,7 +270,7 @@ if (!empty($canvasUuid)) {
                         <span class="material-symbols-rounded">rotate_right</span>
                     </button>
                     <?php if (isset($canInjectTemplate) && $canInjectTemplate): ?>
-                    <button class="component-button component-button--icon component-button--h40 component-button--warning disabled" data-action="plazmarTemplate" data-ref="btn-template-plazmar" data-tooltip="<?php echo __('tooltip_plazmar_template'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--warning disabled" data-action="injectTemplate" data-ref="btn-template-inject" data-tooltip="<?php echo __('tooltip_inject_template'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">brush</span>
                     </button>
                     <?php endif; ?>

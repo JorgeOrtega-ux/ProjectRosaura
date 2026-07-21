@@ -124,10 +124,10 @@ export const DesignSetup = {
             this.removeCanvasBadge('lock-resize', 'left');
         }
 
-        if (this.isPlazmarLocked) {
-            this.setCanvasBadge('lock-plazmar', 'brush', __('badge_stamping'), 'left');
+        if (this.isInjectLocked) {
+            this.setCanvasBadge('lock-inject', 'brush', __('badge_stamping'), 'left');
         } else {
-            this.removeCanvasBadge('lock-plazmar', 'left');
+            this.removeCanvasBadge('lock-inject', 'left');
         }
 
         if (this.isPremiumBlocked) {
@@ -430,13 +430,22 @@ export const DesignSetup = {
     updateCanvasDimensions() {
         if (!this.canvas) return;
         const parent = this.canvas.parentElement;
+        if (!parent) return;
         const rect = parent.getBoundingClientRect();
         
         const dpr = window.devicePixelRatio || 1;
-        this.canvas.width = rect.width * dpr;
-        this.canvas.height = rect.height * dpr;
         this.canvas.style.width = `${rect.width}px`;
         this.canvas.style.height = `${rect.height}px`;
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'RESIZE',
+                payload: { width: rect.width, height: rect.height, dpr: dpr }
+            });
+        } else {
+            this.canvas.width = rect.width * dpr;
+            this.canvas.height = rect.height * dpr;
+        }
     },
 
     centerBoard() {

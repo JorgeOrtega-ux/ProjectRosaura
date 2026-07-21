@@ -490,7 +490,7 @@ export const DesignTemplates = {
 
         const btnLock = document.querySelector('[data-ref="btn-template-lock"]');
         const btnRotate = document.querySelector('[data-ref="btn-template-rotate"]');
-        const btnPlazmar = document.querySelector('[data-ref="btn-template-plazmar"]');
+        const btnInject = document.querySelector('[data-ref="btn-template-inject"]');
         const btnDel = document.querySelector('[data-ref="btn-template-delete"]');
         const btnLive = document.querySelector('[data-ref="btn-start-live"]');
         const divider = document.querySelector('[data-ref="template-actions-divider"]');
@@ -500,7 +500,7 @@ export const DesignTemplates = {
             if (tpl) {
                 if (btnLock) btnLock.classList.remove('disabled');
                 if (btnRotate) btnRotate.classList.remove('disabled');
-                if (btnPlazmar) btnPlazmar.classList.remove('disabled');
+                if (btnInject) btnInject.classList.remove('disabled');
                 if (btnDel) btnDel.classList.remove('disabled');
                 if (btnLive) btnLive.classList.remove('disabled');
                 if (divider) divider.classList.remove('disabled');
@@ -515,7 +515,7 @@ export const DesignTemplates = {
         } else {
             if (btnLock) btnLock.classList.add('disabled');
             if (btnRotate) btnRotate.classList.add('disabled');
-            if (btnPlazmar) btnPlazmar.classList.add('disabled');
+            if (btnInject) btnInject.classList.add('disabled');
             if (btnDel) btnDel.classList.add('disabled');
             if (btnLive) btnLive.classList.add('disabled');
             if (divider) divider.classList.add('disabled');
@@ -625,23 +625,23 @@ export const DesignTemplates = {
         }
     },
 
-    async plazmarTemplate() {
+    async injectTemplate() {
         if (!this.activeTemplateId) return;
         const tpl = this.templates.find(t => t.id === this.activeTemplateId);
         if (!tpl) return;
         if (!this.canvasId) return;
-        if (this.isPlazmarLocked || this.isResetLocked || this.isResizeLocked) return;
+        if (this.isInjectLocked || this.isResetLocked || this.isResizeLocked) return;
 
         if (window.dialogSystem) {
-            const res = await window.dialogSystem.show('confirmPlazmarTemplate');
+            const res = await window.dialogSystem.show('confirmInjectTemplate');
             if (!res.confirmed) return;
         }
 
-        const btn = document.querySelector('[data-ref="btn-template-plazmar"]');
+        const btn = document.querySelector('[data-ref="btn-template-inject"]');
         setButtonLoading(btn);
 
         try {
-            const res = await this.api.post(ApiRoutes.Canvases.PlazmarImagen, {
+            const res = await this.api.post(ApiRoutes.Canvases.InjectTemplate, {
                 canvas_id: this.canvasId,
                 url: tpl.src,
                 x: Math.round(tpl.x),

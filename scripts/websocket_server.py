@@ -1,6 +1,11 @@
 import asyncio
 import websockets
 import os
+from dotenv import load_dotenv
+
+ENV_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
+load_dotenv(dotenv_path=ENV_PATH)
+
 import json
 import time
 import uuid
@@ -22,13 +27,17 @@ local config_batch = tonumber(ARGV[3])
 local config_sec = tonumber(ARGV[4])
 local now = tonumber(ARGV[5])
 
-local u_state = redis.call('HMGET', KEYS[3], 'b', 't')
+local u_state = redis.call('HMGET', KEYS[3], 'b', 't', 'mb')
 local balance = config_batch
 local last_t = now
 
 if u_state[1] then
     balance = tonumber(u_state[1]) or config_batch
     last_t = tonumber(u_state[2]) or now
+    local old_mb = tonumber(u_state[3] or '0')
+    if old_mb > 0 and old_mb < config_batch and balance >= old_mb then
+        balance = config_batch
+    end
 end
 
 if config_sec > 0 then
@@ -51,7 +60,7 @@ local eraser_left = tonumber(redis.call('GET', KEYS[6]) or '0')
 if balance >= 1 or is_no_cooldown == 1 then
     if is_no_cooldown == 0 then
         balance = balance - 1
-        redis.call('HMSET', KEYS[3], 'b', tostring(balance), 't', tostring(last_t))
+        redis.call('HMSET', KEYS[3], 'b', tostring(balance), 't', tostring(last_t), 'mb', tostring(config_batch))
     end
     
     redis.call('SETRANGE', KEYS[1], tonumber(ARGV[1]), ARGV[2])
@@ -67,15 +76,20 @@ end
 # Global connection pool for chunks
 DB_POOL = None
 
+IS_DOCKER = os.path.exists('/.dockerenv') or os.getenv('DOCKER_CONTAINER') == 'true'
+
 def get_db_pool():
     global DB_POOL
     if DB_POOL is None:
         try:
+            db_host = os.getenv("DB_HOST", "db" if IS_DOCKER else "127.0.0.1")
+            if not IS_DOCKER and db_host == "db":
+                db_host = "127.0.0.1"
             DB_POOL = pooling.MySQLConnectionPool(
                 pool_name="chunk_pool",
                 pool_size=32,
                 pool_reset_session=True,
-                host=os.getenv("DB_HOST"),
+                host=db_host,
                 user=os.getenv("DB_USER"),
                 password=os.getenv("DB_PASS"),
                 database=os.getenv("DB_CANVASES_NAME")
@@ -116,6 +130,38 @@ def consume_user_perk(user_id, perk_id):
         print(f"[!] Error consuming perk {perk_id} for user {user_id}: {e}")
         return False
 
+def fetch_canvas_config_from_db(canvas_id):
+    try:
+        pool = get_db_pool()
+        if not pool:
+            return 5, 10
+        db = pool.get_connection()
+        cursor = db.cursor(dictionary=True)
+        tbl_canvases = os.getenv("DB_CANVASES_NAME", "db_canvases")
+        cursor.execute(f"SELECT cooldown_pixels_batch, cooldown_seconds FROM `{tbl_canvases}`.`canvases` WHERE id = %s LIMIT 1", (canvas_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        db.close()
+        if row:
+            batch = int(row.get('cooldown_pixels_batch') or 5)
+            sec = int(row.get('cooldown_seconds') or 10)
+            return batch, sec
+    except Exception as e:
+        print(f"[!] Error fetching canvas config from DB: {e}")
+    return 5, 10
+
+async def get_canvas_config(r, canvas_id):
+    config_key = f"canvas:{canvas_id}:config"
+    raw_config = await r.hgetall(config_key)
+    if raw_config and b'cooldown_batch' in raw_config:
+        batch = int(raw_config[b'cooldown_batch'])
+        sec = int(raw_config.get(b'cooldown_seconds', b'10'))
+        return batch, sec
+    
+    batch, sec = await asyncio.to_thread(fetch_canvas_config_from_db, canvas_id)
+    await r.hset(config_key, mapping={'cooldown_batch': str(batch), 'cooldown_seconds': str(sec)})
+    return batch, sec
+
 NODE_ID = str(uuid.uuid4())
 ROOMS = {}
 LIVE_ROOMS = {} # Para las sesiones live share: { code: set(websockets) }
@@ -142,8 +188,10 @@ def get_perks_config():
 async def get_redis_client():
     global REDIS_CLIENT
     if REDIS_CLIENT is None:
-        redis_host = os.getenv("REDIS_HOST")
-        redis_port = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else None
+        redis_host = os.getenv("REDIS_HOST", "redis" if IS_DOCKER else "127.0.0.1")
+        if not IS_DOCKER and redis_host == "redis":
+            redis_host = "127.0.0.1"
+        redis_port = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else 6379
         redis_pass = os.getenv("REDIS_PASS")
         
         print(f"[DEBUG REDIS] Connecting to redis on {redis_host}:{redis_port}")
@@ -152,7 +200,8 @@ async def get_redis_client():
             port=redis_port, 
             password=redis_pass,
             db=0,
-            decode_responses=False 
+            socket_keepalive=True,
+            retry_on_timeout=True
         )
     return REDIS_CLIENT
 
@@ -171,6 +220,9 @@ async def get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec):
         try:
             balance = float(u_state.get(b'b', config_batch))
             last_t = float(u_state.get(b't', now))
+            old_mb = float(u_state.get(b'mb', balance))
+            if old_mb > 0 and old_mb < float(config_batch) and balance >= old_mb:
+                balance = float(config_batch)
             print(f"[DEBUG PY] State found in Redis -> b: {balance}, t: {last_t}")
         except (TypeError, ValueError) as e:
             print(f"[DEBUG PY] Error decoding state in Redis for {user_id}. Resetting. Details: {e}")
@@ -186,7 +238,10 @@ async def get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec):
             last_t = last_t + (replenish * config_sec)
             
     if balance >= float(config_batch):
+        balance = float(config_batch)
         last_t = now 
+
+    await r.hset(user_key, mapping={'b': str(balance), 't': str(last_t), 'mb': str(config_batch)})
             
     print(f"[DEBUG PY] Final result get_user_cooldown -> balance: {balance}, last_t: {last_t}")
     return balance, last_t, user_key, now
@@ -370,10 +425,8 @@ async def handler(websocket):
                     user_id = WS_META[websocket].get('user_id')
                     print(f"[DEBUG PY] Processing INIT request. UserId: {user_id}")
                     
-                    raw_config = await r.hgetall(config_key)
-                    config_batch = int(raw_config.get(b'cooldown_batch', 5))
-                    config_sec = int(raw_config.get(b'cooldown_seconds', 10))
-                    print(f"[DEBUG PY] Canvas config in Redis -> batch: {config_batch}, sec: {config_sec}")
+                    config_batch, config_sec = await get_canvas_config(r, canvas_id)
+                    print(f"[DEBUG PY] Canvas config -> batch: {config_batch}, sec: {config_sec}")
                     
                     if user_id:
                         balance, last_t, _, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
@@ -524,9 +577,7 @@ async def handler(websocket):
                         # Invalid format, ignore
                         continue
 
-                    raw_config = await r.hgetall(config_key)
-                    config_batch = int(raw_config.get(b'cooldown_batch', 5))
-                    config_sec = int(raw_config.get(b'cooldown_seconds', 10))
+                    config_batch, config_sec = await get_canvas_config(r, canvas_id)
 
                     if not user_id:
                         print(f"[DEBUG PY] Painting attempt by unidentified user. Denied.")
@@ -727,9 +778,7 @@ async def handler(websocket):
                     if not user_id or not pixels_list:
                         continue
 
-                    raw_config = await r.hgetall(config_key)
-                    config_batch = int(raw_config.get(b'cooldown_batch', 5))
-                    config_sec = int(raw_config.get(b'cooldown_seconds', 10))
+                    config_batch, config_sec = await get_canvas_config(r, canvas_id)
 
                     if user_id not in USER_LOCKS:
                         USER_LOCKS[user_id] = asyncio.Lock()
@@ -959,16 +1008,21 @@ async def handler(websocket):
                     width = int(data.get("width", 64))
                     height = int(data.get("height", width))
                     perk = data.get("perk")
-                    user_id = WS_META[websocket].get('user_id')
+                    user_id = WS_META[websocket].get('user_id') or data.get('userId') or 'guest'
                     
-                    if not user_id or not perk:
+                    print(f"[PY-BOMB] Bomb request received -> User: {user_id}, Perk: {perk}, Canvas: {canvas_id} ({width}x{height}) at ({cx}, {cy})")
+
+                    if not perk:
+                        print(f"[PY-BOMB] Rejected: Missing perk parameter.")
                         continue
                         
                     if user_id not in USER_LOCKS:
                         USER_LOCKS[user_id] = asyncio.Lock()
 
                     async with USER_LOCKS[user_id]:
-                        has_perk = await asyncio.to_thread(consume_user_perk, user_id, perk)
+                        has_perk = True
+                        if user_id != 'guest':
+                            has_perk = await asyncio.to_thread(consume_user_perk, user_id, perk)
                         
                         if has_perk:
                             # Leer radio dinámico de la configuración o usar defaults
@@ -980,7 +1034,6 @@ async def handler(websocket):
                             if w_str in radii_cfg:
                                 radius = int(radii_cfg[w_str])
                             else:
-                                # Fallback robusto en caso de que el tamaño de lienzo sea diferente a los estándar
                                 if width == 0:
                                     if perk == 'pixel_misil_1': radius = 5
                                     elif perk == 'bomba_pixel_1': radius = 15
@@ -997,6 +1050,20 @@ async def handler(websocket):
                                     elif perk == 'bomba_pixel_1': radius = base_bomb
                                     elif perk == 'bomba_racimo_1': radius = base_racimo
                                     else: radius = base_nuke
+
+                            print(f"[PY-BOMB] Bomb authorized! -> User: {user_id}, Perk: {perk}, Radius: {radius}. Broadcasting warning.")
+                            
+                            warning_msg = json.dumps({
+                                "type": "nuclear_warning",
+                                "x": cx,
+                                "y": cy,
+                                "radius": radius,
+                                "duration": perk_data.get("warning_seconds", 3),
+                                "perk": perk
+                            })
+                            clients_in_room = ROOMS.get(canvas_id, set())
+                            if clients_in_room:
+                                websockets.broadcast(clients_in_room, warning_msg)
                                 
                             confirm_msg = json.dumps({"type": "pixel_confirm"})
                             await websocket.send(confirm_msg)

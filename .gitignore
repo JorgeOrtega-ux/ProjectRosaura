@@ -39,6 +39,7 @@ storage/private/backups/*.gz
 
 # Ignorar el symlink generado dinámicamente
 /public/storage
+/storage/public/public
 
 # Ignorar archivos generados por editores / IDEs
 .idea/

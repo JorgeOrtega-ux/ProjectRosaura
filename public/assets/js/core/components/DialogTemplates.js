@@ -878,10 +878,10 @@ export const DialogTemplates = {
         })
     },
 
-    confirmPlazmarTemplate: {
+    confirmInjectTemplate: {
         build: () => DialogTemplates.confirmAction.build({
             titleKey: 'title_confirm_action',
-            descHtml: __('confirm_plazmar_template'),
+            descHtml: __('confirm_inject_template'),
             confirmClass: 'component-button--warning'
         })
     },

@@ -26,19 +26,22 @@ let needsRender = false;
 let animFrameId = null;
 
 const EXPLOSION_STYLES = {
-    'pixel_misil_1': 'small',
-    'pixel_misil_2': 'small',
-    'pixel_misil_3': 'small',
+    'pixel_misil_1': 'missile',
+    'pixel_misil_2': 'missile',
+    'pixel_misil_3': 'missile',
     'bomba_pixel_1': 'medium',
     'bomba_pixel_2': 'medium',
     'bomba_pixel_3': 'medium',
+    'bomba_racimo_1': 'medium',
+    'bomba_atomica_1': 'nuclear',
     'bomba_nuclear_1': 'nuclear',
     'bomba_nuclear_2': 'nuclear',
-    'bomba_nuclear_3': 'nuclear'
+    'bomba_nuclear_3': 'nuclear',
+    'lluvia_meteoritos_1': 'medium'
 };
 
 function getExplosionStyle(perkId) {
-    return EXPLOSION_STYLES[perkId] || 'small';
+    return EXPLOSION_STYLES[perkId] || 'medium';
 }
 
 function requestRender() {
@@ -191,6 +194,19 @@ function processPixelQueue() {
     }
 }
 
+function clearBombPixels(cX, cY, r) {
+    if (!offscreenCtx) return;
+    const radius = Math.max(1, parseInt(r || 1, 10));
+    for (let y = cY - radius; y <= cY + radius; y++) {
+        const dy = y - cY;
+        const dx = Math.floor(Math.sqrt(Math.max(0, radius * radius - dy * dy)));
+        const startX = cX - dx;
+        const endX = cX + dx;
+        const width = endX - startX + 1;
+        offscreenCtx.clearRect(startX, y, width, 1);
+    }
+}
+
 function render() {
     needsRender = false;
     if (!ctx || !canvas) return;
@@ -312,24 +328,58 @@ function render() {
         ctx.stroke();
     }
 
-    // Nuclear Warnings
+    // Nuclear Warnings (Mira telescópica + Círculo rojo cerrándose)
     if (nuclearWarnings.length > 0) {
+        const now = Date.now();
+        nuclearWarnings = nuclearWarnings.filter(w => !isNaN(w.endTime) && now < w.endTime);
+        if (nuclearWarnings.length > 0) {
+            requestRender();
+        }
+
+        const scale = transform.scale || 1;
+        const lineW = 1.2 / scale;
+
         nuclearWarnings.forEach(warning => {
+            const wx = warning.x + 0.5;
+            const wy = warning.y + 0.5;
+            const outerR = warning.radius;
+            const crossLength = outerR + (4 / scale);
+
+            ctx.save();
+            // 1. Mira telescópica fina cruzada en el centro
             ctx.beginPath();
-            ctx.arc(warning.x + 0.5, warning.y + 0.5, warning.radius, 0, 2 * Math.PI);
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+            ctx.moveTo(wx - crossLength, wy);
+            ctx.lineTo(wx + crossLength, wy);
+            ctx.moveTo(wx, wy - crossLength);
+            ctx.lineTo(wx, wy + crossLength);
+            ctx.lineWidth = lineW;
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
+            ctx.stroke();
+
+            // 2. Anillo fijo exterior translúcido
+            ctx.beginPath();
+            ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
             ctx.fill();
-            ctx.lineWidth = 2 / transform.scale;
+            ctx.lineWidth = lineW;
             ctx.strokeStyle = '#ef4444';
             ctx.stroke();
 
-            const timeRatio = (Date.now() - warning.startTime) / (warning.endTime - warning.startTime);
-            if (timeRatio >= 0 && timeRatio <= 1) {
+            // 3. Círculo rojo cerrándose progresivamente hacia el centro
+            const duration = warning.endTime - warning.startTime;
+            const timeRatio = duration > 0 ? Math.min(1, Math.max(0, (now - warning.startTime) / duration)) : 1;
+            const innerR = outerR * (1 - timeRatio);
+
+            if (innerR > 0.1) {
                 ctx.beginPath();
-                ctx.arc(warning.x + 0.5, warning.y + 0.5, warning.radius * (1 - timeRatio), 0, 2 * Math.PI);
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
+                ctx.arc(wx, wy, innerR, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.35)';
                 ctx.fill();
+                ctx.lineWidth = lineW;
+                ctx.strokeStyle = '#dc2626';
+                ctx.stroke();
             }
+            ctx.restore();
         });
     }
 
@@ -337,58 +387,35 @@ function render() {
     if (explosions.length > 0) {
         const now = Date.now();
         explosions = explosions.filter(exp => (now - exp.startTime) < exp.duration);
+        if (explosions.length > 0) {
+            requestRender();
+        }
 
         explosions.forEach(exp => {
             const elapsed = now - exp.startTime;
             const progress = Math.min(1, elapsed / exp.duration);
             const opacity = 1 - progress;
-            const style = getExplosionStyle(exp.perkId);
 
-            if (style === 'nuclear') {
-                const currentRadius = exp.maxRadius * (1 + 2 * progress);
-                ctx.beginPath();
-                ctx.arc(exp.x + 0.5, exp.y + 0.5, currentRadius, 0, 2 * Math.PI);
-                ctx.lineWidth = 10 / transform.scale;
-                ctx.strokeStyle = `rgba(239, 68, 68, ${opacity})`;
-                ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.5})`;
-                ctx.fill();
-                ctx.stroke();
-            } else if (style === 'medium') {
-                const radius1 = exp.maxRadius * (1 + 1.5 * progress);
-                const radius2 = exp.maxRadius * (0.5 + 1 * progress);
-                ctx.beginPath();
-                ctx.arc(exp.x + 0.5, exp.y + 0.5, radius1, 0, 2 * Math.PI);
-                ctx.lineWidth = 3 / transform.scale;
-                ctx.strokeStyle = `rgba(249, 115, 22, ${opacity})`;
-                ctx.stroke();
+            // Animación unificada de onda expansiva circular (escalada proporcionalmente al radio)
+            const radiusOuter = exp.maxRadius * (1 + 1.5 * progress);
+            const radiusInner = exp.maxRadius * (0.5 + 1 * progress);
 
-                ctx.beginPath();
-                ctx.arc(exp.x + 0.5, exp.y + 0.5, radius2, 0, 2 * Math.PI);
-                ctx.lineWidth = 4 / transform.scale;
-                ctx.strokeStyle = `rgba(239, 68, 68, ${opacity})`;
-                ctx.fillStyle = `rgba(220, 38, 38, ${opacity * 0.6})`;
-                ctx.fill();
-                ctx.stroke();
-            } else {
-                const size = exp.maxRadius * (1 + 3 * progress);
-                ctx.beginPath();
-                ctx.moveTo(exp.x + 0.5 - size, exp.y + 0.5);
-                ctx.lineTo(exp.x + 0.5 + size, exp.y + 0.5);
-                ctx.moveTo(exp.x + 0.5, exp.y + 0.5 - size);
-                ctx.lineTo(exp.x + 0.5, exp.y + 0.5 + size);
-                ctx.lineWidth = 3 / transform.scale;
-                ctx.strokeStyle = `rgba(6, 182, 212, ${opacity})`;
-                ctx.stroke();
+            // Anillo exterior de onda expansiva
+            ctx.beginPath();
+            ctx.arc(exp.x + 0.5, exp.y + 0.5, radiusOuter, 0, 2 * Math.PI);
+            ctx.lineWidth = Math.max(2, 4 / transform.scale);
+            ctx.strokeStyle = `rgba(249, 115, 22, ${opacity})`;
+            ctx.stroke();
 
-                ctx.beginPath();
-                ctx.arc(exp.x + 0.5, exp.y + 0.5, size * 0.8, 0, 2 * Math.PI);
-                ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.8})`;
-                ctx.fill();
-            }
+            // Núcleo de fuego interior
+            ctx.beginPath();
+            ctx.arc(exp.x + 0.5, exp.y + 0.5, radiusInner, 0, 2 * Math.PI);
+            ctx.lineWidth = Math.max(3, 5 / transform.scale);
+            ctx.strokeStyle = `rgba(239, 68, 68, ${opacity})`;
+            ctx.fillStyle = `rgba(220, 38, 38, ${opacity * 0.5})`;
+            ctx.fill();
+            ctx.stroke();
         });
-        if (explosions.length > 0) {
-            requestRender();
-        }
     }
 
     ctx.restore();
@@ -470,25 +497,57 @@ self.onmessage = function (e) {
             }
             break;
 
+        case 'BOMB_WARNING':
+        case 'NUCLEAR_WARNING':
+            if (payload) {
+                const cx = parseInt(payload.x || 0, 10);
+                const cy = parseInt(payload.y || 0, 10);
+                const r = parseInt(payload.radius || 10, 10);
+                const durationMs = parseInt(payload.durationMs || 3000, 10);
+                const key = payload.key || `${cx}_${cy}`;
+                const now = Date.now();
+
+                const existing = nuclearWarnings.find(w => w.key === key && now < w.endTime);
+                if (existing) {
+                    console.log(`[WorkerWarning] Duplicate warning ignored for key:${key}`);
+                    break;
+                }
+
+                console.log(`[WorkerWarning] Received BOMB_WARNING -> key:${key}, x:${cx}, y:${cy}, r:${r}, durationMs:${durationMs}ms`);
+
+                nuclearWarnings.push({
+                    key: key,
+                    x: cx,
+                    y: cy,
+                    radius: r,
+                    startTime: now,
+                    endTime: now + durationMs
+                });
+                requestRender();
+            }
+            break;
+
         case 'BOMB_PIXEL':
             if (offscreenCtx) {
-                const { cX, cY, r, perkId } = payload;
+                const cX = parseInt(payload.cX ?? payload.x ?? 0, 10);
+                const cY = parseInt(payload.cY ?? payload.y ?? 0, 10);
+                const r = parseInt(payload.r ?? payload.radius ?? 10, 10);
+                const perkId = payload.perkId || payload.perk || 'pixel_misil_1';
+                const now = Date.now();
+
+                // Limpiar advertencia del objetivo si aún sigue activa
+                nuclearWarnings = nuclearWarnings.filter(w => Math.abs(w.x - cX) > 2 || Math.abs(w.y - cY) > 2);
+
+                clearBombPixels(cX, cY, r);
+
                 explosions.push({
                     x: cX,
                     y: cY,
                     maxRadius: r,
-                    startTime: Date.now(),
+                    startTime: now,
                     duration: 800,
-                    perkId: perkId || 'pixel_misil_1'
+                    perkId: perkId
                 });
-                for (let y = cY - r; y <= cY + r; y++) {
-                    const dy = y - cY;
-                    const dx = Math.floor(Math.sqrt(r * r - dy * dy));
-                    const startX = cX - dx;
-                    const endX = cX + dx;
-                    const width = endX - startX + 1;
-                    offscreenCtx.clearRect(startX, y, width, 1);
-                }
                 requestRender();
             }
             break;

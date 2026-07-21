@@ -70,7 +70,7 @@ class DesignController {
         
         this.isResetLocked = false; 
         this.isResizeLocked = false;
-        this.isPlazmarLocked = false;
+        this.isInjectLocked = false;
 
         this.cooldownBalance = 5;
         this.cooldownMax = 5;
@@ -78,6 +78,7 @@ class DesignController {
         this.cooldownNextIn = 0;
         this.lastSyncTime = Date.now();
         this.cooldownLoopId = null;
+        this.isCooldownSynced = false;
 
         this.uiCooldownCounter = null;
         this.uiCooldownTimer = null;
@@ -284,7 +285,7 @@ class DesignController {
                             <span class="material-symbols-rounded">${icon}</span>
                             <span>${currentSel}/${targetMax}</span>
                         `;
-                    } else {
+                    } else if (this.isCooldownSynced) {
                         const rText = remaining > 0 ? `${Math.ceil(remaining)}s` : '0s';
                         newHtml = `
                             <span class="material-symbols-rounded">bolt</span>
@@ -292,6 +293,14 @@ class DesignController {
                             <span>|</span>
                             <span class="material-symbols-rounded">timer</span>
                             <span>${rText}</span>
+                        `;
+                    } else {
+                        newHtml = `
+                            <span class="material-symbols-rounded">bolt</span>
+                            <span>...</span>
+                            <span>|</span>
+                            <span class="material-symbols-rounded">timer</span>
+                            <span>0s</span>
                         `;
                     }
 

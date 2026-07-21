@@ -142,12 +142,12 @@ export const DesignInteractions = {
             return;
         }
         
-        const btnPlazmar = e.target.closest('[data-action="plazmarTemplate"]');
-        if (btnPlazmar) {
+        const btnInject = e.target.closest('[data-action="injectTemplate"]');
+        if (btnInject) {
             e.preventDefault();
             e.stopPropagation();
-            if (typeof this.plazmarTemplate === 'function') {
-                this.plazmarTemplate();
+            if (typeof this.injectTemplate === 'function') {
+                this.injectTemplate();
             }
             return;
         }
@@ -988,6 +988,29 @@ export const DesignInteractions = {
                 y: key >> 16
             }));
             const usedPerk = this.activeBomb;
+            const perkConfig = typeof PerksRegistry !== 'undefined' ? PerksRegistry.get(usedPerk) : null;
+            const durationSecs = parseInt(perkConfig?.warning_seconds || 3, 10);
+            const perkRadius = typeof PerksRegistry !== 'undefined' 
+                ? PerksRegistry.getExplosionRadius(usedPerk, this.boardWidth, this.boardHeight) 
+                : 10;
+
+            console.log(`[BombWarning] Clicked launch -> Perk: ${usedPerk}, targets: ${targets.length}, durationSecs: ${durationSecs}s, radius: ${perkRadius}`);
+
+            targets.forEach(tgt => {
+                const warningData = {
+                    x: tgt.x,
+                    y: tgt.y,
+                    duration: durationSecs,
+                    perk: usedPerk,
+                    radius: perkRadius
+                };
+                if (typeof this.handleBombWarning === 'function') {
+                    this.handleBombWarning(warningData);
+                } else if (typeof this.handleNuclearWarning === 'function') {
+                    this.handleNuclearWarning(warningData);
+                }
+            });
+
             if (this.wsManager) {
                 this.wsManager.send({
                     type: 'bomb_pixel',
@@ -1153,41 +1176,7 @@ export const DesignInteractions = {
     },
 
     ensureExplosionStyles() {
-        if (!document.getElementById('nuclear-style')) {
-            const style = document.createElement('style');
-            style.id = 'nuclear-style';
-            style.innerHTML = `
-                @keyframes nuclear-shake {
-                    0% { transform: translate(1px, 1px) rotate(0deg); }
-                    10% { transform: translate(-10px, -4px) rotate(-1deg); }
-                    20% { transform: translate(-6px, 0px) rotate(1deg); }
-                    30% { transform: translate(6px, 4px) rotate(0deg); }
-                    40% { transform: translate(2px, -2px) rotate(1deg); }
-                    50% { transform: translate(-2px, 4px) rotate(-1deg); }
-                    60% { transform: translate(-6px, 2px) rotate(0deg); }
-                    70% { transform: translate(6px, 2px) rotate(-1deg); }
-                    80% { transform: translate(-2px, -2px) rotate(1deg); }
-                    90% { transform: translate(2px, 4px) rotate(0deg); }
-                    100% { transform: translate(2px, -4px) rotate(-1deg); }
-                }
-                .nuclear-shake {
-                    animation: nuclear-shake 0.1s infinite !important;
-                }
-                .canvas-flash-overlay {
-                    position: fixed;
-                    top: 0; left: 0;
-                    width: 100vw; height: 100vh;
-                    background-color: white;
-                    z-index: 999999;
-                    pointer-events: none;
-                    opacity: 0;
-                }
-                .canvas-flash-overlay.active {
-                    opacity: 1;
-                }
-            `;
-            document.head.appendChild(style);
-        }
+        // Estilos integrados en components.css (.nuclear-shake y .canvas-flash-overlay)
     },
 
     triggerExplosionEffect(cx, cy, r, perkId) {
@@ -1247,99 +1236,7 @@ export const DesignInteractions = {
         }
     },
 
-    handleNuclearWarning(data) {
-        if (!this.nuclearWarnings) this.nuclearWarnings = [];
-        const perkId = data.perk || 'bomba_atomica_1';
-        const warning = {
-            x: parseInt(data.x, 10),
-            y: parseInt(data.y, 10),
-            duration: parseInt(data.duration, 10),
-            radius: parseInt(data.radius || 24, 10),
-            perk: perkId,
-            startTime: Date.now(),
-            endTime: Date.now() + (parseInt(data.duration, 10) * 1000)
-        };
-        this.nuclearWarnings.push(warning);
-        
-        let container = document.querySelector('[data-ref="badges-left"]');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'nuclear-warnings-container';
-            container.style.position = 'fixed';
-            container.style.top = '100px';
-            container.style.left = '20px';
-            container.style.zIndex = '9999';
-            container.style.display = 'flex';
-            container.style.flexDirection = 'column';
-            container.style.gap = '10px';
-            document.body.appendChild(container);
-        }
-
-        // Si ya existe un badge activo para esta ventaja de bomba en la UI, no duplicar
-        const existingBadge = container.querySelector(`[data-warning-perk="${perkId}"]`);
-        if (existingBadge) {
-            this.requestRender();
-            return;
-        }
-
-        const badge = document.createElement('div');
-        badge.className = 'component-badge';
-        badge.setAttribute('data-warning-perk', perkId);
-        badge.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
-        badge.style.color = '#fff';
-        badge.style.border = '1px solid var(--color-error)';
-        badge.style.animation = 'pulse 1s infinite';
-        badge.style.cursor = 'pointer';
-        badge.title = 'Haz clic para ver dónde caerá';
-        
-        badge.addEventListener('click', () => {
-            const activeForPerk = this.nuclearWarnings.filter(w => w.perk === perkId);
-            const target = activeForPerk.length > 0 ? activeForPerk[0] : warning;
-            if (this.canvas && target) {
-                const rect = this.canvas.getBoundingClientRect();
-                this.transform.x = (rect.width / 2) - (target.x * this.transform.scale);
-                this.transform.y = (rect.height / 2) - (target.y * this.transform.scale);
-                if (typeof this.limitBounds === 'function') this.limitBounds();
-                this.requestRender();
-                if (typeof showMessage === 'function') showMessage(window.__('msg_camera_centered'), 'info');
-            }
-        });
-
-        const getWarningDetails = (perk) => PerksRegistry.getWarningDetails(perk);
-
-        let lastSecondBeep = -1;
-        const animateWarning = () => {
-            const activeForPerk = this.nuclearWarnings.filter(w => w.perk === perkId);
-            if (activeForPerk.length > 0) {
-                this.requestRender();
-                
-                const minEndTime = Math.min(...activeForPerk.map(w => w.endTime));
-                const remaining = Math.max(0, Math.ceil((minEndTime - Date.now()) / 1000));
-                const details = getWarningDetails(perkId);
-                
-                if (remaining > 0) {
-                    badge.style.display = 'flex';
-                    badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
-                } else {
-                    badge.style.display = 'none';
-                }
-                
-                const now = Date.now();
-                this.nuclearWarnings = this.nuclearWarnings.filter(w => now < w.endTime);
-                
-                if (this.nuclearWarnings.some(w => w.perk === perkId)) {
-                    requestAnimationFrame(animateWarning);
-                } else {
-                    badge.remove();
-                }
-            } else {
-                badge.remove();
-            }
-        };
-        
-        requestAnimationFrame(animateWarning);
-        container.appendChild(badge);
-    },
+    // handleNuclearWarning gestionado por DesignNetwork.js
 
     async loadUserPerks() {
         try {
@@ -1538,8 +1435,8 @@ export const DesignInteractions = {
                 
                 if (isActive) {
                     isToggledOn = true;
-                    const shortLabel = PerksRegistry.getShortLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded component-text-danger">${icon}</span><span>${shortLabel} (${totalAmount})</span>`;
+                    const titleText = PerksRegistry.getLabel(perkId);
+                    activeHtml = `<span class="material-symbols-rounded component-text-danger">${icon}</span><span>${titleText} (${totalAmount})</span>`;
                     clickHandler = () => {
                         this.interactionMode = 'normal';
                         this.activeBomb = null;
@@ -1547,6 +1444,7 @@ export const DesignInteractions = {
                         this.updateSelectionUI();
                         this.updatePerkBadges();
                     };
+                    if (this.showInventoryPerks) renderedInventoryCount++;
                 } else if (totalAmount > 0 && this.showInventoryPerks) {
                     isActive = true; 
                     isToggledOn = false;

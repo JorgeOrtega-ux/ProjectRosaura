@@ -135,12 +135,13 @@ export const DesignNetwork = {
                     const r = parseInt(data.r, 10);
                     const perkId = data.perk || 'pixel_misil_1';
                     
+                    if (typeof this.triggerExplosionEffect === 'function') {
+                        this.triggerExplosionEffect(cX, cY, r, perkId);
+                    }
+
                     if (this.renderWorker) {
                         this.renderWorker.postMessage({ type: 'BOMB_PIXEL', payload: { cX, cY, r, perkId } });
                     } else {
-                        if (typeof this.triggerExplosionEffect === 'function') {
-                            this.triggerExplosionEffect(cX, cY, r, perkId);
-                        }
                         if (this.offscreenCtx) {
                             for (let y = cY - r; y <= cY + r; y++) {
                                 const dy = y - cY;
@@ -212,14 +213,14 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_resize_error') {
                     this.handleCanvasResizeError(data);
                 }
-                else if (data.type === 'canvas_locked_plazmar') {
-                    this.handleCanvasLockedPlazmar(data);
+                else if (data.type === 'canvas_locked_inject') {
+                    this.handleCanvasLockedInject(data);
                 }
-                else if (data.type === 'canvas_plazmar_completed') {
-                    this.handleCanvasPlazmarCompleted(data);
+                else if (data.type === 'canvas_inject_completed') {
+                    this.handleCanvasInjectCompleted(data);
                 }
-                else if (data.type === 'canvas_plazmar_error') {
-                    this.handleCanvasPlazmarError(data);
+                else if (data.type === 'canvas_inject_error') {
+                    this.handleCanvasInjectError(data);
                 }
                 else if (data.type === 'canvas_resize_settings_updated') {
                     this.handleResizeSettingsUpdated(data);
@@ -422,8 +423,8 @@ export const DesignNetwork = {
         showMessage(data.error, 'error');
     },
 
-    handleCanvasLockedPlazmar(data) {
-        this.isPlazmarLocked = true;
+    handleCanvasLockedInject(data) {
+        this.isInjectLocked = true;
 
         if (this.canvas) {
             this.canvas.classList.add('component-canvas-blur');
@@ -438,10 +439,10 @@ export const DesignNetwork = {
 
         showMessage(__('info_stamping_template'), 'warning');
 
-        if (this.plazmarTimeout) clearTimeout(this.plazmarTimeout);
-        this.plazmarTimeout = setTimeout(() => {
-            if (this.isPlazmarLocked) {
-                this.isPlazmarLocked = false;
+        if (this.injectTimeout) clearTimeout(this.injectTimeout);
+        this.injectTimeout = setTimeout(() => {
+            if (this.isInjectLocked) {
+                this.isInjectLocked = false;
                 if (this.canvas) {
                     this.canvas.classList.remove('component-canvas-blur');
                     this.canvas.classList.remove('disabled-interaction');
@@ -452,8 +453,8 @@ export const DesignNetwork = {
         }, 60000);
     },
 
-    async handleCanvasPlazmarCompleted(data) {
-        if (this.plazmarTimeout) clearTimeout(this.plazmarTimeout);
+    async handleCanvasInjectCompleted(data) {
+        if (this.injectTimeout) clearTimeout(this.injectTimeout);
 
         this.activeTemplateId = null;
         if (typeof this.updateTemplateUI === 'function') {
@@ -477,7 +478,7 @@ export const DesignNetwork = {
         } catch (error) {
         }
 
-        this.isPlazmarLocked = false;
+        this.isInjectLocked = false;
 
         if (this.canvas && !this.isPrivateBlocked) {
             this.canvas.classList.remove('component-canvas-blur');
@@ -490,10 +491,10 @@ export const DesignNetwork = {
         showMessage(__('msg_template_stamped'), 'success');
     },
 
-    handleCanvasPlazmarError(data) {
-        if (this.plazmarTimeout) clearTimeout(this.plazmarTimeout);
+    handleCanvasInjectError(data) {
+        if (this.injectTimeout) clearTimeout(this.injectTimeout);
 
-        this.isPlazmarLocked = false;
+        this.isInjectLocked = false;
 
         if (this.canvas) {
             this.canvas.classList.remove('component-canvas-blur');
@@ -768,6 +769,7 @@ export const DesignNetwork = {
             return;
         }
 
+        this.isCooldownSynced = true;
         if (data.balance !== undefined) this.cooldownBalance = data.balance;
         if (data.max_batch !== undefined) this.cooldownMax = data.max_batch;
         if (data.cooldown_sec !== undefined) this.cooldownSec = data.cooldown_sec;
@@ -990,13 +992,67 @@ export const DesignNetwork = {
 
 
 
-    handleNuclearWarning(data) {
-        if (!this.nuclearWarnings) this.nuclearWarnings = [];
+    handleBombWarning(data) {
+        console.log('[BombWarning] handleBombWarning payload received:', data);
+        const cx = parseInt(data.x || 0, 10);
+        const cy = parseInt(data.y || 0, 10);
         const perkId = data.perk || 'bomba_atomica_1';
         
         const perkConfig = typeof PerksRegistry !== 'undefined' ? PerksRegistry.get(perkId) : null;
-        const durationSecs = parseInt(data.duration || perkConfig?.warning_seconds || 3, 10);
-        
+        let durationSecs = parseInt(data.duration || perkConfig?.warning_seconds || 3, 10);
+        if (isNaN(durationSecs) || durationSecs <= 0) durationSecs = 3;
+
+        let r = data.radius || data.r;
+        if (!r && typeof PerksRegistry !== 'undefined') {
+            r = PerksRegistry.getExplosionRadius(perkId, this.boardWidth, this.boardHeight);
+        }
+        r = parseInt(r || 10, 10);
+        if (isNaN(r) || r <= 0) r = 10;
+
+        const targetKey = `${cx}_${cy}_${perkId}`;
+        const now = Date.now();
+
+        if (!this.nuclearWarnings) this.nuclearWarnings = [];
+        const existing = this.nuclearWarnings.find(w => w.key === targetKey && now < w.endTime);
+        if (existing) {
+            console.log(`[BombWarning] Warning already active for target (${cx}, ${cy}), skipping duplicate registration.`);
+            return;
+        }
+
+        const durationMs = durationSecs * 1000;
+        console.log(`[BombWarning] Registering active warning -> key:${targetKey}, x:${cx}, y:${cy}, r:${r}, durationSecs:${durationSecs}s`);
+
+        const warningObj = {
+            key: targetKey,
+            x: cx,
+            y: cy,
+            radius: r,
+            startTime: now,
+            endTime: now + durationMs,
+            perkId: perkId
+        };
+        this.nuclearWarnings.push(warningObj);
+
+        if (this.renderWorker) {
+            console.log('[BombWarning] Sending BOMB_WARNING to Web Worker (renderWorker)');
+            this.renderWorker.postMessage({
+                type: 'BOMB_WARNING',
+                payload: { key: targetKey, x: cx, y: cy, radius: r, durationMs: durationMs }
+            });
+        }
+
+        const animateWarning = () => {
+            const currentNow = Date.now();
+            if (this.nuclearWarnings && this.nuclearWarnings.some(w => w === warningObj)) {
+                this.requestRender();
+                if (currentNow < warningObj.endTime) {
+                    requestAnimationFrame(animateWarning);
+                }
+            }
+        };
+        requestAnimationFrame(animateWarning);
+
+        // UI Badge flotante en la izquierda
         let container = document.querySelector('[data-ref="badges-left"]');
         if (!container) {
             container = document.createElement('div');
@@ -1006,36 +1062,38 @@ export const DesignNetwork = {
         }
 
         const existingBadge = container.querySelector(`[data-warning-perk="${perkId}"]`);
-        if (existingBadge) {
-            return;
+        if (!existingBadge) {
+            const badge = document.createElement('div');
+            badge.className = 'component-badge';
+            badge.setAttribute('data-warning-perk', perkId);
+            badge.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
+            badge.style.color = '#ffffff';
+            badge.style.border = '1px solid var(--color-error, #ef4444)';
+            badge.style.animation = 'pulse 1s infinite';
+
+            const details = typeof PerksRegistry !== 'undefined' && typeof PerksRegistry.getWarningDetails === 'function' 
+                ? PerksRegistry.getWarningDetails(perkId) 
+                : { icon: 'crisis_alert', text: 'Ataque de Perk' };
+
+            let remaining = durationSecs;
+            badge.style.display = 'flex';
+            badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
+            container.appendChild(badge);
+
+            const timerId = setInterval(() => {
+                remaining--;
+                if (remaining > 0) {
+                    badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
+                } else {
+                    clearInterval(timerId);
+                    badge.remove();
+                }
+            }, 1000);
         }
+    },
 
-        const badge = document.createElement('div');
-        badge.className = 'component-badge';
-        badge.setAttribute('data-warning-perk', perkId);
-        badge.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
-        badge.style.color = '#ffffff';
-        badge.style.border = '1px solid var(--color-error, #ef4444)';
-        badge.style.animation = 'pulse 1s infinite';
-
-        const details = typeof PerksRegistry !== 'undefined' && typeof PerksRegistry.getWarningDetails === 'function' 
-            ? PerksRegistry.getWarningDetails(perkId) 
-            : { icon: 'crisis_alert', text: 'Ataque de Perk' };
-
-        let remaining = durationSecs;
-        badge.style.display = 'flex';
-        badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
-        container.appendChild(badge);
-
-        const timerId = setInterval(() => {
-            remaining--;
-            if (remaining > 0) {
-                badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
-            } else {
-                clearInterval(timerId);
-                badge.remove();
-            }
-        }, 1000);
+    handleNuclearWarning(data) {
+        return this.handleBombWarning(data);
     },
 
     handleExpansionBadge(data) {

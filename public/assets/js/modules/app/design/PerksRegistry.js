@@ -169,8 +169,40 @@ const PerksRegistry = {
         return perk?.targets || 1;
     },
 
+    /**
+     * Get explosion radius for canvas dimensions.
+     * @param {string} perkId
+     * @param {number} boardWidth
+     * @param {number} boardHeight
+     * @returns {number}
+     */
+    getExplosionRadius(perkId, boardWidth = 64, boardHeight = 64) {
+        const perk = this.get(perkId);
+        if (!perk) return 10;
+        
+        const w = boardWidth || 64;
+        const radii = perk.radii || {};
+        
+        if (radii[String(w)]) {
+            return parseInt(radii[String(w)], 10);
+        }
+        
+        const maxDim = Math.min(boardWidth || 64, boardHeight || 64);
+        if (perkId === 'bomba_atomica_1') {
+            return Math.max(6, Math.floor(maxDim * 0.38));
+        } else if (perkId === 'bomba_racimo_1') {
+            return Math.max(4, Math.floor(maxDim * 0.22));
+        } else if (perkId === 'bomba_pixel_1') {
+            return Math.max(3, Math.floor(maxDim * 0.14));
+        } else if (perkId === 'lluvia_meteoritos_1') {
+            return Math.max(3, Math.floor(maxDim * 0.12));
+        } else {
+            return Math.max(2, Math.floor(maxDim * 0.06));
+        }
+    },
+
     // ──────────────────────────────────────
-    // Warning badges (nuclear_warning)
+    // Warning badges (bomb_warning)
     // ──────────────────────────────────────
 
     /**

@@ -1,6 +1,11 @@
 import os
 import time
 import json
+from dotenv import load_dotenv
+
+ENV_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
+load_dotenv(dotenv_path=ENV_PATH)
+
 import zlib
 import pymysql
 import redis
@@ -35,15 +40,21 @@ def get_s3_client():
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(threadName)s] %(levelname)s: %(message)s')
 
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = int(os.getenv("DB_PORT")) if os.getenv("DB_PORT") else None
+IS_DOCKER = os.path.exists('/.dockerenv') or os.getenv('DOCKER_CONTAINER') == 'true'
+
+DB_HOST = os.getenv("DB_HOST", "db" if IS_DOCKER else "127.0.0.1")
+if not IS_DOCKER and DB_HOST == "db":
+    DB_HOST = "127.0.0.1"
+DB_PORT = int(os.getenv("DB_PORT")) if os.getenv("DB_PORT") else 3306
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_NAME = os.getenv("DB_CANVASES_NAME")
 DB_IDENTITY_NAME = os.getenv("DB_IDENTITY_NAME")
 
-REDIS_HOST = os.getenv("REDIS_HOST")
-REDIS_PORT = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else None
+REDIS_HOST = os.getenv("REDIS_HOST", "redis" if IS_DOCKER else "127.0.0.1")
+if not IS_DOCKER and REDIS_HOST == "redis":
+    REDIS_HOST = "127.0.0.1"
+REDIS_PORT = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else 6379
 REDIS_PASS = os.getenv("REDIS_PASS")
 
 SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR") or "/var/www/html/storage/private/snapshots"
@@ -689,7 +700,7 @@ def draw_image_listener_thread():
                 
                 # Broadcast lock event so frontend blocks the canvas
                 r.publish("admin:canvas_events", json.dumps({
-                    "type": "canvas_locked_plazmar", "canvas_id": canvas_id
+                    "type": "canvas_locked_inject", "canvas_id": canvas_id
                 }))
                 
                 try:
@@ -733,13 +744,13 @@ def draw_image_listener_thread():
                     
                     # Broadcast completed event so frontend reloads the canvas state
                     r.publish("admin:canvas_events", json.dumps({
-                        "type": "canvas_plazmar_completed", "canvas_id": canvas_id,
+                        "type": "canvas_inject_completed", "canvas_id": canvas_id,
                         "affected_chunks": affected_chunks
                     }))
                     
                     stream_key = f"canvas:{canvas_id}:stream"
                     r.xadd(stream_key, {
-                        "type": "template_plazmar",
+                        "type": "template_inject",
                         "x": str(x),
                         "y": str(y),
                         "w": str(w),
@@ -747,16 +758,17 @@ def draw_image_listener_thread():
                         "angle": str(angle),
                         "image_url": str(url)
                     })
-                    logging.info(f"Canvas plazmar for {canvas_id} completed successfully. Affected chunks: {len(affected_chunks)}")
+                    logging.info(f"Canvas inject for {canvas_id} completed successfully. Affected chunks: {len(affected_chunks)}")
                     
                 except Exception as draw_err:
                     logging.error(f"Error in draw_image processing: {draw_err}")
                     r.publish("admin:canvas_events", json.dumps({
-                        "type": "canvas_plazmar_error", "canvas_id": canvas_id, "error": str(draw_err)
+                        "type": "canvas_inject_error", "canvas_id": canvas_id, "error": str(draw_err)
                     }))
                 
         except Exception as e:
             logging.error(f"Error in Draw Image listener: {e}")
+            time.sleep(1)
 
 if __name__ == "__main__":
     logging.info("INICIANDO WORKER UNIFICADO DE CANVAS (RESETS, RESIZES, THUMBNAILS)...")
