@@ -1170,7 +1170,22 @@ class AdminServices {
         $pdoTelemetry = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_TELEMETRY);
         
         $totalMessages = 0;
-        try { $totalMessages = (int)$pdoCanvases->query("SELECT COUNT(*) FROM canvas_chat_messages")->fetchColumn(); } catch (\Exception $e) {}
+        try { 
+            $totalMessages = (int)$pdoCanvases->query("SELECT COALESCE(SUM(total_messages), 0) FROM canvases")->fetchColumn();
+            if ($totalMessages === 0) {
+                $totalMessages = (int)$pdoCanvases->query("SELECT COUNT(*) FROM canvas_chat_messages")->fetchColumn();
+            }
+        } catch (\Exception $e) {}
+
+        $totalPixels = 0;
+        try {
+            $totalPixels = (int)$pdoCanvases->query("SELECT COALESCE(SUM(total_pixels), 0) FROM canvases")->fetchColumn();
+        } catch (\Exception $e) {}
+
+        $totalPerksUsed = 0;
+        try {
+            $totalPerksUsed = (int)$pdoIdentity->query("SELECT COUNT(*) FROM user_perks WHERE is_used = 1")->fetchColumn();
+        } catch (\Exception $e) {}
 
         $totalCanvases = 0;
         try { $totalCanvases = (int)$pdoCanvases->query("SELECT COUNT(*) FROM " . \App\Core\System\DatabaseConstants::TBL_CANVASES)->fetchColumn(); } catch (\Exception $e) {}
@@ -1199,6 +1214,8 @@ class AdminServices {
                 'pageviews' => $totalPv,
                 'logins' => $totalLogins,
                 'messages' => $totalMessages,
+                'pixels' => $totalPixels,
+                'perks_used' => $totalPerksUsed,
                 'canvases' => $totalCanvases,
                 'banned_users' => $totalBanned,
                 'avg_latency' => $avgLatency

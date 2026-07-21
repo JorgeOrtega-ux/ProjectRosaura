@@ -48,7 +48,7 @@ export const SkeletonTemplates = {
                 
                 <div class="component-top">
                     <div class="component-top-left">
-                        <div class="component-skeleton component-skeleton--title"></div>
+                        <div class="component-skeleton component-skeleton--control"></div>
                     </div>
                     
                     <div class="component-top-right">
@@ -84,11 +84,11 @@ export const SkeletonTemplates = {
         for (let i = 0; i < rows; i++) {
             rowItems += `
             <tr class="component-table-row">
-                <td><div class="component-skeleton component-skeleton--h20 component-skeleton--pill" style="width: 140px;"></div></td>
-                <td><div class="component-skeleton component-skeleton--h20 component-skeleton--pill" style="width: 100px;"></div></td>
-                <td><div class="component-skeleton component-skeleton--h20 component-skeleton--pill" style="width: 90px;"></div></td>
-                <td><div class="component-skeleton component-skeleton--h20 component-skeleton--pill" style="width: 80px;"></div></td>
-                <td><div class="component-skeleton component-skeleton--h20 component-skeleton--pill" style="width: 110px;"></div></td>
+                <td><div class="component-badge component-badge--sm component-skeleton component-skeleton--badge component-skeleton--w140"></div></td>
+                <td><div class="component-badge component-badge--sm component-skeleton component-skeleton--badge component-skeleton--w100"></div></td>
+                <td><div class="component-badge component-badge--sm component-skeleton component-skeleton--badge component-skeleton--w90"></div></td>
+                <td><div class="component-badge component-badge--sm component-skeleton component-skeleton--badge component-skeleton--w80"></div></td>
+                <td><div class="component-badge component-badge--sm component-skeleton component-skeleton--badge component-skeleton--w110"></div></td>
             </tr>`;
         }
 
@@ -97,11 +97,11 @@ export const SkeletonTemplates = {
             <table class="component-table">
                 <thead>
                     <tr>
-                        <th><div class="component-skeleton component-skeleton--h16 component-skeleton--pill" style="width: 100px;"></div></th>
-                        <th><div class="component-skeleton component-skeleton--h16 component-skeleton--pill" style="width: 80px;"></div></th>
-                        <th><div class="component-skeleton component-skeleton--h16 component-skeleton--pill" style="width: 70px;"></div></th>
-                        <th><div class="component-skeleton component-skeleton--h16 component-skeleton--pill" style="width: 70px;"></div></th>
-                        <th><div class="component-skeleton component-skeleton--h16 component-skeleton--pill" style="width: 90px;"></div></th>
+                        <th><div class="component-skeleton component-skeleton--h16 component-skeleton--w100"></div></th>
+                        <th><div class="component-skeleton component-skeleton--h16 component-skeleton--w80"></div></th>
+                        <th><div class="component-skeleton component-skeleton--h16 component-skeleton--w70"></div></th>
+                        <th><div class="component-skeleton component-skeleton--h16 component-skeleton--w70"></div></th>
+                        <th><div class="component-skeleton component-skeleton--h16 component-skeleton--w90"></div></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -118,14 +118,14 @@ export const SkeletonTemplates = {
                 
                 <div class="component-top">
                     <div class="component-top-left">
-                        <div class="component-skeleton component-skeleton--title component-skeleton--pill"></div>
+                        <div class="component-skeleton component-skeleton--control"></div>
                     </div>
                     
                     <div class="component-top-right">
                         <div class="component-actions active">
-                            <div class="component-skeleton component-skeleton--h40 component-skeleton--pill" style="width: 40px;"></div>
-                            <div class="component-skeleton component-skeleton--h40 component-skeleton--pill" style="width: 40px;"></div>
-                            <div class="component-skeleton component-skeleton--h40 component-skeleton--pill" style="width: 120px;"></div>
+                            <div class="component-skeleton component-skeleton--btn-icon"></div>
+                            <div class="component-skeleton component-skeleton--btn-icon"></div>
+                            <div class="component-skeleton component-skeleton--control"></div>
                         </div>
                     </div>
                 </div>

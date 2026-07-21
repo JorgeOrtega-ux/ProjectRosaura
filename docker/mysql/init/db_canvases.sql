@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `cooldown_seconds` int(11) NOT NULL DEFAULT 10,
   `favorites_count` int(11) NOT NULL DEFAULT 0,
   `members_count` int(11) NOT NULL DEFAULT 0,
+  `total_pixels` bigint(20) NOT NULL DEFAULT 0,
+  `total_messages` bigint(20) NOT NULL DEFAULT 0,
   `is_official` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

@@ -117,6 +117,19 @@ def canvas_persistence_thread():
                     r.sadd("canvases:dirty_states", canvas_id)
                     
                     print(f"[+] Processed {len(msgs)} stream events for canvas {canvas_id}.")
+                    
+                    # Increment total_pixels counter in canvases table
+                    db_conn = get_db_connection()
+                    if db_conn:
+                        cursor = db_conn.cursor()
+                        try:
+                            cursor.execute("UPDATE canvases SET total_pixels = total_pixels + %s WHERE id = %s", (len(msgs), canvas_id))
+                            db_conn.commit()
+                        except Exception as e:
+                            print(f"[!] Error updating total_pixels for canvas {canvas_id}: {e}")
+                        finally:
+                            cursor.close()
+                            db_conn.close()
         except Exception as e:
             print(f"[!] Error processing Streams to disk: {e}")
 
@@ -195,8 +208,16 @@ def chat_persistence_thread():
                                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                                 """
                                 cursor.executemany(query, insert_data)
+
+                                canvas_msg_counts = {}
+                                for item in insert_data:
+                                    c_id = item[1]
+                                    canvas_msg_counts[c_id] = canvas_msg_counts.get(c_id, 0) + 1
+                                for c_id, count in canvas_msg_counts.items():
+                                    cursor.execute("UPDATE canvases SET total_messages = total_messages + %s WHERE id = %s", (count, c_id))
+
                                 db_conn.commit()
-                                print(f"[+] Bulk inserted {len(insert_data)} chat messages into MySQL.")
+                                print(f"[+] Bulk inserted {len(insert_data)} chat messages into MySQL and updated total_messages counters.")
                             
                             r.ltrim('canvas_chat_queue', limit, -1)
                         

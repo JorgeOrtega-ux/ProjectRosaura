@@ -8,43 +8,6 @@ $canViewLogs = in_array('view_logs', $userPermissions);
 $canManageMessages = true; // All admins currently
 
 ?>
-<script src="<?php echo APP_URL; ?>/assets/js/vendor/chart.js"></script>
-<style>
-    .dashboard-charts-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-        gap: 20px;
-        margin-top: 24px;
-    }
-    .dashboard-chart-card {
-        background: var(--bg-surface);
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius-lg, 12px);
-        box-sizing: border-box;
-        overflow: hidden;
-    }
-    .dashboard-chart-header {
-        padding: 8px;
-        border-bottom: 1px solid var(--border-color);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .dashboard-chart-body {
-        position: relative;
-        height: 350px;
-        width: 100%;
-        background: var(--bg-surface);
-    }
-    .dashboard-chart-card .component-top-title {
-        margin: 0;
-        font-size: 0.85rem;
-    }
-    .component-stat-card__title,
-    .component-stat-card__value {
-        font-size: 0.75rem !important;
-    }
-</style>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding h-full-flex">
         
@@ -102,11 +65,11 @@ $canManageMessages = true; // All admins currently
 
                 <div class="component-item-card component-stat-card">
                     <div class="component-card__icon-container component-card__icon-container--bordered component-stat-card__icon">
-                        <span class="material-symbols-rounded">speed</span>
+                        <span class="material-symbols-rounded">grid_view</span>
                     </div>
                     <div class="component-stat-card__content">
-                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_avg_latency'); ?></span>
-                        <span class="component-stat-card__value" id="stat-latency">--</span>
+                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_total_pixels'); ?></span>
+                        <span class="component-stat-card__value" id="stat-pixels">--</span>
                     </div>
                 </div>
 
@@ -117,6 +80,26 @@ $canManageMessages = true; // All admins currently
                     <div class="component-stat-card__content">
                         <span class="component-stat-card__title"><?php echo __('admin_dashboard_total_messages'); ?></span>
                         <span class="component-stat-card__value" id="stat-messages">--</span>
+                    </div>
+                </div>
+
+                <div class="component-item-card component-stat-card">
+                    <div class="component-card__icon-container component-card__icon-container--bordered component-stat-card__icon">
+                        <span class="material-symbols-rounded">auto_awesome</span>
+                    </div>
+                    <div class="component-stat-card__content">
+                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_perks_used'); ?></span>
+                        <span class="component-stat-card__value" id="stat-perks">--</span>
+                    </div>
+                </div>
+
+                <div class="component-item-card component-stat-card">
+                    <div class="component-card__icon-container component-card__icon-container--bordered component-stat-card__icon">
+                        <span class="material-symbols-rounded">speed</span>
+                    </div>
+                    <div class="component-stat-card__content">
+                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_avg_latency'); ?></span>
+                        <span class="component-stat-card__value" id="stat-latency">--</span>
                     </div>
                 </div>
 
@@ -188,17 +171,17 @@ $canManageMessages = true; // All admins currently
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">
                                     
-                                    <div class="component-menu-link active" id="menu-tab-act" onclick="window.dashboardController.switchTab('activity')">
+                                    <div class="component-menu-link active" id="menu-tab-act" data-tab="activity">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">monitoring</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('admin_dashboard_global_activity'); ?></span></div>
                                     </div>
                                     
-                                    <div class="component-menu-link" id="menu-tab-reg" onclick="window.dashboardController.switchTab('regs')">
+                                    <div class="component-menu-link" id="menu-tab-reg" data-tab="regs">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">person_add</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('admin_dashboard_new_registrations'); ?></span></div>
                                     </div>
 
-                                    <div class="component-menu-link" id="menu-tab-err" onclick="window.dashboardController.switchTab('errors')">
+                                    <div class="component-menu-link" id="menu-tab-err" data-tab="errors">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">warning</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('admin_dashboard_access_errors'); ?></span></div>
                                     </div>

@@ -1,5 +1,6 @@
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage } from '../../core/utils/uiUtils.js';
+
 export class AdminDashboardController {
     constructor() {
         this.api = new ApiService();
@@ -8,17 +9,51 @@ export class AdminDashboardController {
         this.currentTab = 'activity';
         this.lastChartsData = null;
     }
+
     async init() {
         window.dashboardController = this;
         this.cacheDOM();
+        this.bindEvents();
         this._setLoadingState();
+        try {
+            await this.ensureChartScriptLoaded();
+        } catch (e) {
+            console.error('[AdminDashboardController] Error loading chart.js:', e);
+        }
         await this.fetchAndRenderData();
     }
+
+    ensureChartScriptLoaded() {
+        if (typeof window.Chart !== 'undefined') {
+            return Promise.resolve();
+        }
+        return new Promise((resolve, reject) => {
+            const existingScript = document.querySelector('script[src*="chart.js"]');
+            if (existingScript) {
+                if (typeof window.Chart !== 'undefined') {
+                    return resolve();
+                }
+                existingScript.addEventListener('load', () => resolve());
+                existingScript.addEventListener('error', (err) => reject(err));
+                return;
+            }
+
+            const script = document.createElement('script');
+            const basePath = window.AppBasePath || '';
+            script.src = `${basePath}/public/assets/js/vendor/chart.js`;
+            script.onload = () => resolve();
+            script.onerror = (err) => reject(err);
+            document.head.appendChild(script);
+        });
+    }
+
     cacheDOM() {
         this.dom.statNewUsers = document.getElementById('stat-new-users');
         this.dom.statLogins = document.getElementById('stat-logins');
         this.dom.statPageviews = document.getElementById('stat-pageviews');
+        this.dom.statPixels = document.getElementById('stat-pixels');
         this.dom.statMessages = document.getElementById('stat-messages');
+        this.dom.statPerks = document.getElementById('stat-perks');
         this.dom.statCanvases = document.getElementById('stat-canvases');
         this.dom.statBanned = document.getElementById('stat-banned');
         this.dom.statLatency = document.getElementById('stat-latency');
@@ -43,15 +78,31 @@ export class AdminDashboardController {
             loginfails: langDataEl && langDataEl.getAttribute('data-lbl-loginfails') ? langDataEl.getAttribute('data-lbl-loginfails') : window.__('admin_failed_logins')
         };
     }
+
+    bindEvents() {
+        if (this.dom.menuTabAct) {
+            this.dom.menuTabAct.addEventListener('click', () => this.switchTab('activity'));
+        }
+        if (this.dom.menuTabReg) {
+            this.dom.menuTabReg.addEventListener('click', () => this.switchTab('regs'));
+        }
+        if (this.dom.menuTabErr) {
+            this.dom.menuTabErr.addEventListener('click', () => this.switchTab('errors'));
+        }
+    }
+
     _setLoadingState() {
         if (this.dom.statNewUsers) this.dom.statNewUsers.textContent = '...';
         if (this.dom.statLogins) this.dom.statLogins.textContent = '...';
         if (this.dom.statPageviews) this.dom.statPageviews.textContent = '...';
+        if (this.dom.statPixels) this.dom.statPixels.textContent = '...';
         if (this.dom.statMessages) this.dom.statMessages.textContent = '...';
+        if (this.dom.statPerks) this.dom.statPerks.textContent = '...';
         if (this.dom.statCanvases) this.dom.statCanvases.textContent = '...';
         if (this.dom.statBanned) this.dom.statBanned.textContent = '...';
         if (this.dom.statLatency) this.dom.statLatency.textContent = '...';
     }
+
     async fetchAndRenderData() {
         const response = await this.api.getDashboardMetrics(null, null);
         if (response && response.success) {
@@ -61,19 +112,24 @@ export class AdminDashboardController {
             }
         } else {
             showMessage(response?.message, 'error');
-            this.updateStatsCards({ new_users: 0, logins: 0, pageviews: 0, messages: 0, canvases: 0 });
+            this.updateStatsCards({ new_users: 0, logins: 0, pageviews: 0, messages: 0, pixels: 0, perks_used: 0, canvases: 0 });
         }
     }
+
     updateStatsCards(summary) {
         if (this.dom.statNewUsers) this.dom.statNewUsers.textContent = summary.new_users;
         if (this.dom.statLogins) this.dom.statLogins.textContent = summary.logins;
         if (this.dom.statPageviews) this.dom.statPageviews.textContent = summary.pageviews;
+        if (this.dom.statPixels) this.dom.statPixels.textContent = summary.pixels ?? 0;
         if (this.dom.statMessages) this.dom.statMessages.textContent = summary.messages ?? 0;
+        if (this.dom.statPerks) this.dom.statPerks.textContent = summary.perks_used ?? 0;
         if (this.dom.statCanvases) this.dom.statCanvases.textContent = summary.canvases ?? 0;
         if (this.dom.statBanned) this.dom.statBanned.textContent = summary.banned_users ?? 0;
         if (this.dom.statLatency) this.dom.statLatency.textContent = (summary.avg_latency ?? 0) + ' ms';
     }
-    renderChart(chartsData) {
+
+    async renderChart(chartsData) {
+        await this.ensureChartScriptLoaded();
         if (typeof Chart === 'undefined') return;
         this.lastChartsData = chartsData;
         this.renderTabsChart(chartsData);
@@ -92,7 +148,7 @@ export class AdminDashboardController {
     }
 
     renderTabsChart(chartsData) {
-        if (!this.dom.canvasTabsMain) return;
+        if (!this.dom.canvasTabsMain || typeof Chart === 'undefined') return;
         const ctx = this.dom.canvasTabsMain.getContext('2d');
         
         // Update menu active states and dropdown label
@@ -144,41 +200,42 @@ export class AdminDashboardController {
         const textPrimary = getComputedStyle(document.body).getPropertyValue('--text-primary').trim() || '#fff';
 
         return {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { color: textColor }
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        backgroundColor: bgSurface,
-                        titleColor: textPrimary,
-                        bodyColor: textColor,
-                        borderColor: borderColor,
-                        borderWidth: 1
-                    }
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: textColor }
                 },
-                scales: {
-                    x: {
-                        grid: { color: borderColor },
-                        ticks: { color: textColor }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: borderColor },
-                        ticks: { color: textColor, precision: 0 }
-                    }
-                },
-                interaction: {
-                    mode: 'nearest',
-                    axis: 'x',
-                    intersect: false
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: bgSurface,
+                    titleColor: textPrimary,
+                    bodyColor: textColor,
+                    borderColor: borderColor,
+                    borderWidth: 1
                 }
-            };
+            },
+            scales: {
+                x: {
+                    grid: { color: borderColor },
+                    ticks: { color: textColor }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: borderColor },
+                    ticks: { color: textColor, precision: 0 }
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        };
     }
+
     destroy() {
         if (this.chartTabsMain) this.chartTabsMain.destroy();
     }
