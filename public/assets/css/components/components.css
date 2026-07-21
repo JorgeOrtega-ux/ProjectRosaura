@@ -5,7 +5,44 @@
     width: 100%;
     min-height: 100%;
     padding: 24px;
+    position: relative;
 }
+
+.auth-header-logo {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    display: flex;
+    align-items: center;
+    color: var(--text-primary);
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+}
+
+
+.auth-header-logo svg {
+    height: 45px;
+    width: auto;
+    display: block;
+}
+
+@media (max-width: 640px) {
+    .component-layout-centered {
+        padding-top: 72px;
+    }
+
+    .auth-header-logo {
+        top: 16px;
+        left: 16px;
+    }
+
+    .auth-header-logo svg {
+        height: 24px;
+    }
+}
+
 
 .view-content {
     width: 100%;

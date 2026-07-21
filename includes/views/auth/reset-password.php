@@ -30,6 +30,7 @@ if (!empty($token)) {
 }
 ?>
 <div class="component-layout-centered">
+    <?php include __DIR__ . '/auth-logo.php'; ?>
     <div class="component-form-box">
         
         <?php if (!$isValid): ?>
