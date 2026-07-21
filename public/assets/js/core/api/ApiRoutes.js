@@ -142,6 +142,7 @@ export const ApiRoutes = {
         CreateCoinCheckout: 'stripe.create_coin_checkout',
         UpdateSubscription: 'stripe.update_subscription',
         GetPaymentHistory: 'stripe.get_payment_history',
+        DownloadReceipt: 'stripe.download_receipt',
         GetSubscriptionStatus: 'stripe.get_subscription_status',
         CreateSetupSession: 'stripe.create_setup_session',
         GetPaymentMethods: 'stripe.get_payment_methods',

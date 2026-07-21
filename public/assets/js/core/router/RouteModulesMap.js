@@ -2,8 +2,7 @@ export const RouteModulesMap = {
     
     '/': { path: './modules/app/home/HomeController.js', className: 'HomeController', skeletonType: 'layout-grid' },
     '/home': { path: './modules/app/home/HomeController.js', className: 'HomeController', skeletonType: 'layout-grid' },
-    '/explore': { path: './modules/app/home/HomeController.js', className: 'HomeController', skeletonType: 'layout-grid' },
-    
+        
     '/search': { path: './modules/app/search/SearchController.js', className: 'SearchController', skeletonType: 'layout-grid' },
     
     '/upgrade': { path: './modules/app/upgrade/UpgradeController.js', className: 'UpgradeController', skeletonType: 'layout-basic' },
@@ -37,7 +36,7 @@ export const RouteModulesMap = {
     '/settings/change-password': { path: './modules/settings/SecurityController.js', className: 'SecurityController', skeletonType: 'layout-basic' },
     '/settings/subscription': { path: './modules/settings/BillingController.js', className: 'BillingController', skeletonType: 'layout-basic' },
     '/settings/billing': { path: './modules/settings/BillingController.js', className: 'BillingController', skeletonType: 'layout-basic' },
-    '/settings/purchase-history': { path: './modules/settings/PurchaseHistoryController.js', className: 'PurchaseHistoryController', skeletonType: 'layout-basic' },
+    '/settings/purchase-history': { path: './modules/settings/PurchaseHistoryController.js', className: 'PurchaseHistoryController', skeletonType: 'layout-table' },
     '/settings/2fa': { path: './modules/settings/TwoFactorController.js', className: 'TwoFactorController', skeletonType: 'layout-basic' },
     '/settings/2fa/recovery-codes': { path: './modules/settings/TwoFactorController.js', className: 'TwoFactorController', skeletonType: 'layout-basic' },
     '/settings/2fa/deactivate': { path: './modules/settings/TwoFactorController.js', className: 'TwoFactorController', skeletonType: 'layout-basic' },
@@ -45,11 +44,11 @@ export const RouteModulesMap = {
 
     '/admin': { path: './modules/admin/AdminDashboardController.js', className: 'AdminDashboardController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/dashboard': { path: './modules/admin/AdminDashboardController.js', className: 'AdminDashboardController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-    '/admin/messages': { path: './modules/admin/messages/AdminMessagesController.js', className: 'AdminMessagesController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+    '/admin/messages': { path: './modules/admin/messages/AdminMessagesController.js', className: 'AdminMessagesController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/messages/visibility/:uuid': { path: './modules/admin/messages/AdminMessagesVisibilityController.js', className: 'AdminMessagesVisibilityController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/messages/reports/:uuid': { path: './modules/admin/messages/AdminMessagesReportsController.js', className: 'AdminMessagesReportsController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-    '/admin/manage-users': { path: './modules/admin/users/AdminUsersController.js', className: 'AdminUsersController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-    '/admin/manage-roles': { path: './modules/admin/roles/AdminRolesController.js', className: 'AdminRolesController', requiresAdminLang: true, skeletonType: 'layout-basic' }, 
+    '/admin/manage-users': { path: './modules/admin/users/AdminUsersController.js', className: 'AdminUsersController', requiresAdminLang: true, skeletonType: 'layout-table' },
+    '/admin/manage-roles': { path: './modules/admin/roles/AdminRolesController.js', className: 'AdminRolesController', requiresAdminLang: true, skeletonType: 'layout-table' }, 
     
     '/admin/roles/create': { path: './modules/admin/roles/AdminRoleBuilderController.js', className: 'AdminRoleBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/roles/edit/:uuid': { path: './modules/admin/roles/AdminRoleBuilderController.js', className: 'AdminRoleBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
@@ -62,16 +61,16 @@ export const RouteModulesMap = {
 
     '/admin/server-config': { path: './modules/admin/server/AdminServerConfigController.js', className: 'AdminServerConfigController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 
-    '/admin/backups': { path: './modules/admin/backups/AdminBackupsController.js', className: 'AdminBackupsController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+    '/admin/backups': { path: './modules/admin/backups/AdminBackupsController.js', className: 'AdminBackupsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/backups/automation': { path: './modules/admin/backups/AdminBackupsAutomationController.js', className: 'AdminBackupsAutomationController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/backups/create': { path: './modules/admin/backups/AdminBackupsCreateController.js', className: 'AdminBackupsCreateController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/backups/restore/:uuid': { path: './modules/admin/backups/AdminBackupsRestoreController.js', className: 'AdminBackupsRestoreController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 
-    '/admin/logs': { path: './modules/admin/logs/AdminLogsController.js', className: 'AdminLogsController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+    '/admin/logs': { path: './modules/admin/logs/AdminLogsController.js', className: 'AdminLogsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/logs/viewer': { path: './modules/admin/logs/AdminLogsViewerController.js', className: 'AdminLogsViewerController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 
     '/canvases/create': { path: './modules/canvases/core/CanvasesCreateController.js', className: 'CanvasesCreateController', skeletonType: 'layout-basic' },
-    '/canvases/manage': { path: './modules/canvases/core/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-basic' },
+    '/canvases/manage': { path: './modules/canvases/core/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-table' },
 
     '/canvases/members/:uuid/role/:id': { path: './modules/canvases/team/CanvasMemberRoleController.js', className: 'CanvasMemberRoleController', skeletonType: 'layout-basic' },
     
@@ -84,9 +83,9 @@ export const RouteModulesMap = {
     '/canvases/manage/chat-restriction/:uuid/:user_uuid': { path: './modules/canvases/workspace/CanvasChatRestrictionController.js', className: 'CanvasChatRestrictionController', skeletonType: 'layout-basic' },
     '/canvases/manage/role-permissions/:uuid': { path: './modules/canvases/team/CanvasRolePermissionsController.js', className: 'CanvasRolePermissionsController', skeletonType: 'layout-basic' },
 
-    '/canvases/members/:uuid': { path: './modules/canvases/team/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-basic' },
+    '/canvases/members/:uuid': { path: './modules/canvases/team/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-table' },
     
-    '/canvases/manage/invites/:uuid': { path: './modules/canvases/team/CanvasInvitesController.js', className: 'CanvasInvitesController', skeletonType: 'layout-basic' },
+    '/canvases/manage/invites/:uuid': { path: './modules/canvases/team/CanvasInvitesController.js', className: 'CanvasInvitesController', skeletonType: 'layout-table' },
     '/canvases/manage/invites/generate/:uuid': { path: './modules/canvases/team/CanvasInvitesGenerateController.js', className: 'CanvasInvitesGenerateController', skeletonType: 'layout-basic' },
     
     '/canvases/manage/resize/:uuid': { path: './modules/canvases/workspace/CanvasResizeController.js', className: 'CanvasResizeController', skeletonType: 'layout-basic' },

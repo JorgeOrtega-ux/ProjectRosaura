@@ -672,6 +672,11 @@ return [
         'action' => 'get_payment_history',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_history', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
+    'stripe.download_receipt' => [
+        'controller' => 'App\Api\Controllers\Stripe\StripeController',
+        'action' => 'download_receipt',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_dl_receipt', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
     'stripe.get_subscription_status' => [
         'controller' => 'App\Api\Controllers\Stripe\StripeController',
         'action' => 'get_subscription_status',

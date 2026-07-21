@@ -46,6 +46,11 @@ class StripeController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
+    public function download_receipt($input) {
+        try { return $this->stripeServices->downloadReceipt($input); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
     public function get_subscription_status($input) {
         try { return $this->respond($this->stripeServices->getSubscriptionStatus($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }

@@ -443,4 +443,69 @@ export class ApiService {
     async rejectCanvasRequest(requestId) {
         return await this.post(ApiRoutes.Canvases.RejectRequest, { request_id: requestId });
     }
+
+    async downloadFile(route, data = {}, defaultFilename = 'Recibo.pdf', signal = null) {
+        const payload = {
+            route: route,
+            ...data
+        };
+
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+        const fetchOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+            },
+            body: JSON.stringify(payload)
+        };
+
+        if (signal) fetchOptions.signal = signal;
+
+        try {
+            const response = await fetch(this.baseUrl, fetchOptions);
+
+            if (!response.ok) {
+                const handledError = await this._handleHttpErrors(response, route);
+                if (handledError) return handledError;
+                return { success: false, message: window.__('api_connection_error') };
+            }
+
+            const contentType = response.headers.get('Content-Type') || '';
+
+            if (contentType.includes('application/json')) {
+                const result = await this._parseJsonResponse(response);
+                return this._processResponse(result);
+            }
+
+            const blob = await response.blob();
+            let filename = defaultFilename;
+            const disposition = response.headers.get('Content-Disposition');
+            if (disposition && disposition.indexOf('filename=')) {
+                const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+                if (matches != null && matches[1]) {
+                    filename = matches[1].replace(/['"]/g, '');
+                }
+            }
+
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(blobUrl);
+
+            return { success: true };
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                return { success: false, aborted: true };
+            }
+            console.error('[ApiServices download error]', error);
+            return { success: false, message: window.__('api_connection_error') };
+        }
+    }
 }

@@ -1100,6 +1100,8 @@
     "store_content_bomba_pixel_1_name":  "Bomba Píxel",
     "tooltip_manage_invites":  "Gestionar invitaciones",
     "phistory_title":  "Historial de Compras",
+    "btn_download_receipt":  "Descargar recibo",
+    "no_receipt_available":  "No hay recibo disponible para esta compra.",
     "search_tags":  "Etiquetas de Búsqueda",
     "msg_role_created":  "Rol creado correctamente.",
     "tooltip_view_history":  "Ver historial",

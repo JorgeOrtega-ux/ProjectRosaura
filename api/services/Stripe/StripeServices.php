@@ -745,7 +745,8 @@ class StripeServices {
                 \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
                 $charges = \Stripe\Charge::all([
                     'customer' => $stripeCustomerId,
-                    'limit' => 20
+                    'limit' => 20,
+                    'expand' => ['data.invoice']
                 ]);
                 
                 foreach ($charges->data as $charge) {
@@ -753,13 +754,21 @@ class StripeServices {
                     if (empty($desc) && isset($charge->metadata->type) && $charge->metadata->type === 'coins') {
                         $desc = "Purchase of " . ($charge->metadata->amount ?? '') . " coins";
                     }
+
+                    $pdfUrl = null;
+                    if (!empty($charge->invoice) && is_object($charge->invoice) && !empty($charge->invoice->invoice_pdf)) {
+                        $pdfUrl = $charge->invoice->invoice_pdf;
+                    }
+
                     $history[] = [
                         'id' => $charge->id,
                         'created_at' => date('Y-m-d H:i:s', $charge->created),
                         'description' => $desc ?: 'Subscription',
                         'amount_cents' => $charge->amount,
                         'currency' => $charge->currency,
-                        'status' => $charge->status 
+                        'status' => $charge->status,
+                        'receipt_url' => $charge->receipt_url ?? null,
+                        'pdf_url' => $pdfUrl
                     ];
                 }
             } catch (\Exception $e) {
@@ -778,6 +787,247 @@ class StripeServices {
             'success' => true,
             'data' => $history
         ];
+    }
+
+    private function getStripePdfUrl(string $id): ?string {
+        \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+
+        if (strpos($id, 'in_') === 0) {
+            try {
+                $invoice = \Stripe\Invoice::retrieve($id);
+                if (!empty($invoice->invoice_pdf)) {
+                    return $invoice->invoice_pdf;
+                }
+            } catch (\Exception $e) {}
+        }
+
+        if (strpos($id, 'ch_') === 0 || strpos($id, 'py_') === 0) {
+            try {
+                $charge = \Stripe\Charge::retrieve($id);
+
+                // 1. Direct charge->invoice
+                if (!empty($charge->invoice)) {
+                    $invId = is_string($charge->invoice) ? $charge->invoice : ($charge->invoice->id ?? null);
+                    if ($invId) {
+                        $invoice = \Stripe\Invoice::retrieve($invId);
+                        if (!empty($invoice->invoice_pdf)) {
+                            return $invoice->invoice_pdf;
+                        }
+                    }
+                }
+
+                // 2. Payment intent invoice
+                if (!empty($charge->payment_intent)) {
+                    $piId = is_string($charge->payment_intent) ? $charge->payment_intent : ($charge->payment_intent->id ?? null);
+                    if ($piId) {
+                        $pi = \Stripe\PaymentIntent::retrieve($piId);
+                        if (!empty($pi->invoice)) {
+                            $invId = is_string($pi->invoice) ? $pi->invoice : ($pi->invoice->id ?? null);
+                            if ($invId) {
+                                $invoice = \Stripe\Invoice::retrieve($invId);
+                                if (!empty($invoice->invoice_pdf)) {
+                                    return $invoice->invoice_pdf;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 3. Search invoices by customer
+                if (!empty($charge->customer)) {
+                    $customerId = is_string($charge->customer) ? $charge->customer : ($charge->customer->id ?? null);
+                    if ($customerId) {
+                        $invoices = \Stripe\Invoice::all([
+                            'customer' => $customerId,
+                            'limit' => 15
+                        ]);
+                        foreach ($invoices->data as $inv) {
+                            if (($inv->charge && $inv->charge === $charge->id) || ($inv->payment_intent && $inv->payment_intent === $charge->payment_intent)) {
+                                if (!empty($inv->invoice_pdf)) {
+                                    return $inv->invoice_pdf;
+                                }
+                            }
+                        }
+                        foreach ($invoices->data as $inv) {
+                            if (abs($inv->amount_paid - $charge->amount) < 10 && !empty($inv->invoice_pdf)) {
+                                return $inv->invoice_pdf;
+                            }
+                        }
+                    }
+                }
+
+                // 4. Scrape receipt_url HTML for pay.stripe.com/invoice/.../pdf link
+                if (!empty($charge->receipt_url)) {
+                    $ch = curl_init();
+                    curl_setopt($ch, CURLOPT_URL, $charge->receipt_url);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                    curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+                    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+                    $html = curl_exec($ch);
+                    curl_close($ch);
+
+                    if ($html && preg_match('/(https:\/\/pay\.stripe\.com\/invoice\/[^\s"\'\>]+(?:\/pdf|\?pdf=1))/i', $html, $matches)) {
+                        return $matches[1];
+                    }
+                }
+            } catch (\Exception $e) {
+                Logger::error("Error in getStripePdfUrl", ['id' => $id, 'error' => $e->getMessage()]);
+            }
+        }
+
+        return null;
+    }
+
+    private function createStyledPdfReceiptBytes(array $data): string {
+        $date = $data['date'] ?? date('d/m/Y');
+        $id = $data['id'] ?? 'REC-' . time();
+        $desc = $data['description'] ?? 'Suscripcion / Compra';
+        $amount = $data['amount'] ?? '$0.00';
+        $status = strtoupper($data['status'] ?? 'PAGADO');
+
+        $desc = iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $desc);
+        $status = iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $status);
+
+        $stream = "";
+        $stream .= "0.1 0.12 0.15 rg\n";
+        $stream .= "40 770 515 45 re\nf\n";
+        $stream .= "1 1 1 rg\n";
+        $stream .= "BT /F2 16 Tf 55 785 Td (PROJECT ROSAURA) Tj ET\n";
+        $stream .= "BT /F1 10 Tf 420 785 Td (COMPROBANTE DE PAGO) Tj ET\n";
+        $stream .= "0.15 0.15 0.15 rg\n";
+        $stream .= "BT /F2 10 Tf 50 735 Td (ID de Transaccion:) Tj ET\n";
+        $stream .= "BT /F1 10 Tf 160 735 Td (" . $id . ") Tj ET\n";
+        $stream .= "BT /F2 10 Tf 50 715 Td (Fecha de Emision:) Tj ET\n";
+        $stream .= "BT /F1 10 Tf 160 715 Td (" . $date . ") Tj ET\n";
+        $stream .= "BT /F2 10 Tf 50 695 Td (Estado del Pago:) Tj ET\n";
+        $stream .= "BT /F2 10 Tf 160 695 Td (" . $status . ") Tj ET\n";
+        $stream .= "0.85 0.85 0.85 rg\n";
+        $stream .= "50 670 495 1 re\nf\n";
+        $stream .= "0.3 0.3 0.3 rg\n";
+        $stream .= "BT /F2 10 Tf 50 650 Td (DESCRIPCION) Tj ET\n";
+        $stream .= "BT /F2 10 Tf 450 650 Td (IMPORTE) Tj ET\n";
+        $stream .= "0.85 0.85 0.85 rg\n";
+        $stream .= "50 640 495 1 re\nf\n";
+        $stream .= "0.2 0.2 0.2 rg\n";
+        $stream .= "BT /F1 10 Tf 50 620 Td (" . $desc . ") Tj ET\n";
+        $stream .= "BT /F2 10 Tf 450 620 Td (" . $amount . ") Tj ET\n";
+        $stream .= "0.85 0.85 0.85 rg\n";
+        $stream .= "50 600 495 1 re\nf\n";
+        $stream .= "0.1 0.1 0.1 rg\n";
+        $stream .= "BT /F2 11 Tf 350 575 Td (TOTAL PAGADO:) Tj ET\n";
+        $stream .= "BT /F2 12 Tf 450 575 Td (" . $amount . ") Tj ET\n";
+        $stream .= "0.5 0.5 0.5 rg\n";
+        $stream .= "BT /F1 9 Tf 50 500 Td (Este documento es un comprobante digital generado por Project Rosaura.) Tj ET\n";
+        $stream .= "BT /F1 9 Tf 50 485 Td (Si tienes alguna duda sobre tu compra, puedes contactar con nuestro soporte oficial.) Tj ET\n";
+
+        $len = strlen($stream);
+
+        $pdf = "%PDF-1.4\n";
+        $pdf .= "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
+        $pdf .= "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n";
+        $pdf .= "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>\nendobj\n";
+        $pdf .= "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n";
+        $pdf .= "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n";
+        $pdf .= "6 0 obj\n<< /Length " . $len . " >>\nstream\n" . $stream . "\nendstream\nendobj\n";
+
+        $o1 = strpos($pdf, "1 0 obj");
+        $o2 = strpos($pdf, "2 0 obj");
+        $o3 = strpos($pdf, "3 0 obj");
+        $o4 = strpos($pdf, "4 0 obj");
+        $o5 = strpos($pdf, "5 0 obj");
+        $o6 = strpos($pdf, "6 0 obj");
+
+        $xref = "xref\n0 7\n0000000000 65535 f \n";
+        $xref .= sprintf("%010d 00000 n \n", $o1);
+        $xref .= sprintf("%010d 00000 n \n", $o2);
+        $xref .= sprintf("%010d 00000 n \n", $o3);
+        $xref .= sprintf("%010d 00000 n \n", $o4);
+        $xref .= sprintf("%010d 00000 n \n", $o5);
+        $xref .= sprintf("%010d 00000 n \n", $o6);
+
+        $trailer = "trailer\n<< /Size 7 /Root 1 0 R >>\nstartxref\n" . strlen($pdf) . "\n%%EOF";
+
+        return $pdf . $xref . $trailer;
+    }
+
+    public function downloadReceipt(array $input) {
+        if (!$this->sessionManager->isLoggedIn()) {
+            http_response_code(401);
+            exit('Unauthorized');
+        }
+
+        $id = $input['id'] ?? '';
+        if (empty($id)) {
+            http_response_code(400);
+            exit('Missing payment ID');
+        }
+
+        $userId = $this->sessionManager->getActiveAccountId();
+        \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+
+        $pdfUrl = $this->getStripePdfUrl($id);
+        $pdfData = null;
+
+        if ($pdfUrl) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $pdfUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+            $fetched = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200 && !empty($fetched) && strpos($fetched, '%PDF') === 0) {
+                $pdfData = $fetched;
+            }
+        }
+
+        if (!$pdfData) {
+            $receiptData = [
+                'id' => $id,
+                'date' => date('d/m/Y'),
+                'description' => 'Suscripción / Compra',
+                'amount' => '$0.00',
+                'status' => 'PAGADO'
+            ];
+
+            try {
+                if (strpos($id, 'ch_') === 0 || strpos($id, 'py_') === 0) {
+                    $charge = \Stripe\Charge::retrieve($id);
+                    $receiptData['date'] = date('d/m/Y', $charge->created);
+                    $receiptData['description'] = $charge->description ?: 'Suscripción';
+                    $receiptData['amount'] = '$' . number_format($charge->amount / 100, 2) . ' ' . strtoupper($charge->currency);
+                    $receiptData['status'] = $charge->status === 'succeeded' ? 'PAGADO' : strtoupper($charge->status);
+                } elseif (strpos($id, 'in_') === 0) {
+                    $invoice = \Stripe\Invoice::retrieve($id);
+                    $receiptData['date'] = date('d/m/Y', $invoice->created);
+                    $receiptData['description'] = 'Factura de Suscripción';
+                    $receiptData['amount'] = '$' . number_format($invoice->amount_paid / 100, 2) . ' ' . strtoupper($invoice->currency);
+                    $receiptData['status'] = $invoice->paid ? 'PAGADO' : 'PENDIENTE';
+                }
+            } catch (\Exception $e) {}
+
+            $pdfData = $this->createStyledPdfReceiptBytes($receiptData);
+        }
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="Recibo_' . preg_replace('/[^a-zA-Z0-9_-]/', '', $id) . '.pdf"');
+        header('Content-Length: ' . strlen($pdfData));
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        header('Pragma: public');
+        echo $pdfData;
+        exit;
     }
 
     public function getSubscriptionStatus(array $input): array {

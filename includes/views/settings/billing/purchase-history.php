@@ -11,7 +11,16 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             </div>
             
             <div class="component-top-right">
-                <div class="component-actions active">
+                <div class="component-actions disabled" data-ref="header-selection-actions">
+                    <button class="component-button component-button--icon component-button--h40" data-action="downloadReceipt" data-tooltip="<?php echo __('btn_download_receipt'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">download</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h40" data-action="deselectPurchase" data-tooltip="<?php echo __('cancel'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
+                </div>
+
+                <div class="component-actions active" data-ref="header-default-actions">
                 </div>
             </div>
         </div>
@@ -54,24 +63,36 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 $amount = '$' . number_format($item['amount_cents'] / 100, 2) . ' ' . strtoupper(htmlspecialchars($item['currency']));
                                 
                                 $statusClass = 'component-text-notice--success';
-                                $statusIcon = 'check_circle';
                                 $statusText = __('paid');
                                 
                                 if ($item['status'] !== 'succeeded' && $item['status'] !== 'paid') {
                                     $statusClass = 'component-text-notice--error';
-                                    $statusIcon = 'error';
                                     $statusText = __('failed');
                                 }
                             ?>
-                            <tr>
-                                <td><?php echo $date; ?></td>
-                                <td><?php echo $description; ?></td>
-                                <td><?php echo $amount; ?></td>
+                            <tr class="component-table-row" data-action="selectPurchase" data-id="<?php echo htmlspecialchars($item['id'] ?? ''); ?>" data-receipt-url="<?php echo htmlspecialchars($item['receipt_url'] ?? ''); ?>" data-pdf-url="<?php echo htmlspecialchars($item['pdf_url'] ?? ''); ?>">
                                 <td>
-                                    <span class="<?php echo $statusClass; ?>">
-                                        <span class="material-symbols-rounded"><?php echo $statusIcon; ?></span>
-                                        <?php echo $statusText; ?>
-                                    </span>
+                                    <div class="component-badge component-badge--sm">
+                                        <span class="material-symbols-rounded">calendar_month</span>
+                                        <span class="search-target"><?php echo $date; ?></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="component-badge component-badge--sm">
+                                        <span class="material-symbols-rounded">description</span>
+                                        <span class="search-target"><?php echo $description; ?></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="component-badge component-badge--sm">
+                                        <span class="material-symbols-rounded">payments</span>
+                                        <span class="search-target"><?php echo $amount; ?></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="component-badge component-badge--sm">
+                                        <span class="search-target <?php echo $statusClass; ?>"><?php echo $statusText; ?></span>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
