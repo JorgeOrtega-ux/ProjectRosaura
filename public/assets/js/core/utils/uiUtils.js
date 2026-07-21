@@ -6,17 +6,13 @@ function showMessage(message, type = 'success') {
     }
 }
 
-function setButtonLoading(btn, text = null) {
+function setButtonLoading(btn) {
     if (!btn) return;
     
     btn.dataset.originalText = btn.innerHTML;
     
     btn.classList.add('disabled-interaction');
-    if (text) {
-        btn.innerHTML = `<div class="component-spinner"></div><span>${text}</span>`;
-    } else {
-        btn.innerHTML = '<div class="component-spinner"></div>';
-    }
+    btn.innerHTML = '<div class="component-spinner"></div>';
 }
 
 function restoreButton(btn) {

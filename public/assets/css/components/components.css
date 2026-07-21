@@ -20,7 +20,36 @@
     transition: opacity 0.2s ease;
     z-index: 10;
 }
+/* Modificadores de tamaño reutilizables */
+.component-spinner--sm {
+    width: 16px;
+    height: 16px;
+}
 
+.component-spinner--xs {
+    width: 14px;
+    height: 14px;
+}
+
+/* Adaptación automática para cualquier botón según su clase de altura */
+.component-button--h36 .component-spinner,
+.component-button--h34 .component-spinner,
+.component-button--h32 .component-spinner {
+    width: 16px;
+    height: 16px;
+}
+
+.component-button--h30 .component-spinner {
+    width: 14px;
+    height: 14px;
+}
+
+/* Para botones donde la altura se calcula mediante em / font-size o % */
+.component-button .component-spinner {
+    max-width: 50%;
+    max-height: 50%;
+    aspect-ratio: 1;
+}
 
 .auth-header-logo svg {
     height: 45px;
@@ -1297,6 +1326,7 @@ html.dark-theme .component-avatar__overlay {
 .component-badge {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 6px 12px;
     border-radius: 9999px;
@@ -2894,6 +2924,22 @@ input:checked + .component-toggle-slider:before {
     border-top-color: var(--action-primary);
     border-radius: 50%;
     animation: component-spin 0.8s linear infinite;
+    box-sizing: border-box;
+}
+
+.component-spinner--sm {
+    width: 16px;
+    height: 16px;
+}
+
+.component-spinner--xs {
+    width: 14px;
+    height: 14px;
+}
+
+.component-spinner--lg {
+    width: 28px;
+    height: 28px;
 }
 
 .component-spinner--centered {
@@ -2901,9 +2947,34 @@ input:checked + .component-toggle-slider:before {
     display: block;
 }
 
-.component-button--dark .component-spinner {
+/* Auto-adaptación de tamaño de spinner según contenedor */
+.component-badge .component-spinner {
+    width: 14px;
+    height: 14px;
+}
+
+.component-badge--sm .component-spinner {
+    width: 12px;
+    height: 12px;
+}
+
+.component-button--h36 .component-spinner,
+.component-button--h34 .component-spinner,
+.component-button--h32 .component-spinner {
+    width: 16px;
+    height: 16px;
+}
+
+.component-button--h30 .component-spinner {
+    width: 14px;
+    height: 14px;
+}
+
+/* Colores para elementos oscuros */
+.component-button--dark .component-spinner,
+.component-badge--dark .component-spinner {
     border-color: rgba(255, 255, 255, 0.3);
-    border-top-color: var(--text-inverse);
+    border-top-color: var(--text-inverse, #ffffff);
 }
 
 @media (max-width: 600px) {
