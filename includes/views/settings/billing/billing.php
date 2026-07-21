@@ -75,7 +75,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
                             <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="modulePurchasePref">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited active" data-ref="menuMainPurchasePref">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list component-menu-list--scrollable">
                                         <div class="component-menu-link <?php echo $purchasePref === 'verify' ? 'active' : ''; ?>" data-action="setPref" data-key="purchase_preference" data-value="verify">

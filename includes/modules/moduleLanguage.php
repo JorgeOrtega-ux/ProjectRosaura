@@ -29,7 +29,7 @@ $languages = \App\Core\System\Translator::getAvailableLanguages();
             <?php endforeach; ?>
             
             <div class="component-menu-empty" data-ref="language-empty" hidden>
-                 <div class="component-menu-link disabled-interactive">
+                 <div class="component-menu-link disabled-interaction">
                      <div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div>
                      <div class="component-menu-link-text"><span class="component-text-notice--muted"><?php echo __('no_results_found'); ?></span></div>
                  </div>

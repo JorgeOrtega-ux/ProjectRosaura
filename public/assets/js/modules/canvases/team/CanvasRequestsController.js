@@ -56,8 +56,8 @@ class CanvasRequestsController {
 
         if (deselectBtn) this.deselectRequest();
         
-        if (approveBtn && !approveBtn.classList.contains('disabled-interactive')) this.processSelectedRequests('approve', approveBtn);
-        if (rejectBtn && !rejectBtn.classList.contains('disabled-interactive')) this.processSelectedRequests('reject', rejectBtn);
+        if (approveBtn && !approveBtn.classList.contains('disabled-interaction')) this.processSelectedRequests('approve', approveBtn);
+        if (rejectBtn && !rejectBtn.classList.contains('disabled-interaction')) this.processSelectedRequests('reject', rejectBtn);
         
         if (refreshBtn) this.loadRequests(); 
     }

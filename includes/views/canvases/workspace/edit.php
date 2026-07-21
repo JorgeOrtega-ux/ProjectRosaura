@@ -47,9 +47,9 @@ if ($canvasUuid) {
             $cAllowPurchases = (int)($canvasData['allow_purchases'] ?? 1);
             $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
             
-$userPerms = $_SESSION['user_permissions'] ?? [];
-$canCreateOfficial = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPerms) || in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
-$cOfficial = (bool)($canvasData['is_official'] ?? 0);
+            $userPerms = $_SESSION['user_permissions'] ?? [];
+            $canCreateOfficial = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPerms) || in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
+            $cOfficial = (bool)($canvasData['is_official'] ?? 0);
 
             $cTags = [];
             if (!empty($canvasData['tags'])) {
@@ -100,7 +100,82 @@ if (!$canvasId) {
                     </div>
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
+
+                            <!-- 1. Título del Lienzo -->
+                            <div class="component-group-item component-group-item--stateful">
+                                <div class="active component-state-box" data-state="canvasname-view">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title"><?php echo __('canvas_name_title'); ?></h2>
+                                            <span class="component-display-value" data-ref="display-canvasname"><?php echo $cName; ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--stretch">
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="canvasname"><?php echo __('btn_edit'); ?></button>
+                                    </div>
+                                </div>
+
+                                <div class="disabled component-state-box" data-state="canvasname-edit">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title"><?php echo __('canvas_name_title'); ?></h2>
+                                            <div class="component-edit-row">
+                                                <div class="component-input-group component-input-group--h34">
+                                                    <input type="text" data-ref="input-canvasname" class="component-input-field component-input-field--simple" value="<?php echo $cName; ?>" data-original-value="<?php echo $cName; ?>" placeholder="<?php echo __('ph_canvas_name'); ?>">
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--stretch">
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="canvasname"><?php echo __('btn_cancel'); ?></button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveCanvasName"><?php echo __('btn_save'); ?></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="component-divider">
+
+                            <!-- 2. Etiquetas del Lienzo -->
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('canvas_tags_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('canvas_tags_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-wrapper" data-dropdown-type="multiple" data-max="8">
+                                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownTags">
+                                            <span class="material-symbols-rounded">label</span>
+                                            <span class="component-dropdown-text" data-ref="text-tags">
+                                                <?php echo count($cTags) > 0 ? count($cTags) . ' seleccionadas' : __('ph_select_tags'); ?>
+                                            </span>
+                                            <span class="material-symbols-rounded">expand_more</span>
+                                        </div>
+                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownTags">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                                <div class="component-menu-list component-menu-list--scrollable">
+                                                    <?php 
+                                                    $allowedTags = ['art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 'community', 'nature', 'scifi', 'fantasy', 'music', 'sports', 'popculture', 'abstract', 'experimental'];
+                                                    foreach ($allowedTags as $tag): 
+                                                        $isActive = in_array($tag, $cTags);
+                                                    ?>
+                                                    <div class="component-menu-link <?php echo $isActive ? 'active' : ''; ?>" data-action="toggleTag" data-value="<?php echo $tag; ?>" data-label="<?php echo __('tag_' . $tag); ?>">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded" data-ref="icon-check"><?php echo $isActive ? 'check_box' : 'check_box_outline_blank'; ?></span></div>
+                                                        <div class="component-menu-link-text"><span><?php echo __('tag_' . $tag); ?></span></div>
+                                                    </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Lienzo Oficial -->
                             <?php if ($canCreateOfficial): ?>
+                            <hr class="component-divider">
                             <div class="component-group-item component-group-item--wrap">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
@@ -110,82 +185,13 @@ if (!$canvasId) {
                                 </div>
                                 <div class="component-card__actions component-card__actions--end">
                                     <label class="component-toggle-switch">
-                                        <input type="checkbox" data-ref="val_is_official" "<?php echo ($cOfficial ?? false) ? 'checked' : ''; ?>">
+                                        <input type="checkbox" data-ref="val_is_official" <?php echo ($cOfficial ?? false) ? 'checked' : ''; ?>>
                                         <span class="component-toggle-slider"></span>
                                     </label>
                                 </div>
                             </div>
-                            <hr class="component-divider">
                             <?php endif; ?>
 
-                            <div class="component-group-item component-group-item--stateful">
-                        
-                        <div class="active component-state-box" data-state="canvasname-view">
-                            <div class="component-card__content">
-                                <div class="component-card__text">
-                                    <h2 class="component-card__title"><?php echo __('canvas_name_title'); ?></h2>
-                                    <span class="component-display-value" data-ref="display-canvasname"><?php echo $cName; ?></span>
-                                </div>
-                            </div>
-                            <div class="component-card__actions component-card__actions--stretch">
-                                <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="canvasname"><?php echo __('btn_edit'); ?></button>
-                            </div>
-                        </div>
-
-                        <div class="disabled component-state-box" data-state="canvasname-edit">
-                            <div class="component-card__content">
-                                <div class="component-card__text">
-                                    <h2 class="component-card__title"><?php echo __('canvas_name_title'); ?></h2>
-                                    <div class="component-edit-row">
-                                        <div class="component-input-group component-input-group--h34">
-                                            <input type="text" data-ref="input-canvasname" class="component-input-field component-input-field--simple" value="<?php echo $cName; ?>" data-original-value="<?php echo $cName; ?>" placeholder="<?php echo __('ph_canvas_name'); ?>">
-                                        </div>
-                                        <div class="component-card__actions component-card__actions--stretch">
-                                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="canvasname"><?php echo __('btn_cancel'); ?></button>
-                                            <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveCanvasName"><?php echo __('btn_save'); ?></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_tags_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_tags_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-dropdown-wrapper" data-dropdown-type="multiple" data-max="8">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownTags">
-                                    <span class="material-symbols-rounded">label</span>
-                                    <span class="component-dropdown-text" data-ref="text-tags">
-                                        <?php echo count($cTags) > 0 ? count($cTags) . ' seleccionadas' : __('ph_select_tags'); ?>
-                                    </span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownTags">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
-                                            <?php 
-                                            $allowedTags = ['art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 'community', 'nature', 'scifi', 'fantasy', 'music', 'sports', 'popculture', 'abstract', 'experimental'];
-                                            foreach ($allowedTags as $tag): 
-                                                $isActive = in_array($tag, $cTags);
-                                            ?>
-                                            <div class="component-menu-link <?php echo $isActive ? 'active' : ''; ?>" data-action="toggleTag" data-value="<?php echo $tag; ?>" data-label="<?php echo __('tag_' . $tag); ?>">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded" data-ref="icon-check"><?php echo $isActive ? 'check_box' : 'check_box_outline_blank'; ?></span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('tag_' . $tag); ?></span></div>
-                                            </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                         </div>
                     </div>
                 </div>
@@ -208,7 +214,7 @@ if (!$canvasId) {
                     </div>
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--stacked disabled-interactive" data-tooltip="<?php echo __('canvas_size_locked_tooltip'); ?>" data-position="top">
+                            <div class="component-group-item component-group-item--stacked disabled-interaction" data-tooltip="<?php echo __('canvas_size_locked_tooltip'); ?>" data-position="top">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
@@ -427,7 +433,7 @@ if (!$canvasId) {
                                         </div>
                                         <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
                                             <div class="component-menu-footer">
-                                                <button type="button" class="component-button component-button--h34 component-button--full" data-action="navigateCustomPalette">
+                                                <button type="button" class="component-button component-button--h40 component-button--full" data-action="navigateCustomPalette">
                                                     <span class="material-symbols-rounded">add_circle</span>
                                                     <span><?php echo __('btn_create_custom_palette'); ?></span>
                                                 </button>
@@ -454,7 +460,7 @@ if (!$canvasId) {
                         </div>
                     </div>
                             <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interactive' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_ultra') ?: __('lbl_requires_premium_advanced')) . '" data-position="top"'; ?>>
+                            <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_ultra') ?: __('lbl_requires_premium_advanced')) . '" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">

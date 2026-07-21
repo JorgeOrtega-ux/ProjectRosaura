@@ -195,7 +195,7 @@ export const DialogTemplates = {
                 
                 <div class="component-link-container component-link-container--start">
                     <span class="component-link-text">${__('txt_not_received_code')}</span>
-                    <span class="component-link disabled-interactive component-text-notice--muted" data-action="dialogResendCode">${__('btn_resend_code')} (60)</span>
+                    <span class="component-link disabled-interaction component-text-notice--muted" data-action="dialogResendCode">${__('btn_resend_code')} (60)</span>
                 </div>
             </div>
             <div class="component-modal-actions">

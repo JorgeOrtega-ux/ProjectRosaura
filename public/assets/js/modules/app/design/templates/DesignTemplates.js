@@ -109,7 +109,7 @@ export const DesignTemplates = {
                 
                 const originalText = btnSubmitJoinLive.innerHTML;
                 btnSubmitJoinLive.innerHTML = '<span class="component-spinner component-spinner--small"></span> Uniendo...';
-                btnSubmitJoinLive.classList.add('disabled-interactive');
+                btnSubmitJoinLive.classList.add('disabled-interaction');
                 
                 const attemptJoin = async () => {
                     try {
@@ -128,12 +128,12 @@ export const DesignTemplates = {
                             }
                         } else {
                             btnSubmitJoinLive.innerHTML = originalText;
-                            btnSubmitJoinLive.classList.remove('disabled-interactive');
+                            btnSubmitJoinLive.classList.remove('disabled-interaction');
                         }
                     } catch (error) {
                         showMessage(error.message || window.__('err_join'), 'error');
                         btnSubmitJoinLive.innerHTML = originalText;
-                        btnSubmitJoinLive.classList.remove('disabled-interactive');
+                        btnSubmitJoinLive.classList.remove('disabled-interaction');
                     }
                 };
                 
@@ -151,7 +151,7 @@ export const DesignTemplates = {
             if (typeof this.startLiveShare === 'function') {
                 const originalText = btnStartLive.innerHTML;
                 btnStartLive.innerHTML = '<span class="component-spinner component-spinner--small"></span> Iniciando...';
-                btnStartLive.classList.add('disabled-interactive');
+                btnStartLive.classList.add('disabled-interaction');
 
                 const attemptStart = async () => {
                     const success = await this.startLiveShare();
@@ -169,7 +169,7 @@ export const DesignTemplates = {
                         
                         const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
                         if (btnOpenJoinLive) {
-                            btnOpenJoinLive.classList.add('disabled-interactive');
+                            btnOpenJoinLive.classList.add('disabled-interaction');
                             btnOpenJoinLive.setAttribute('title', window.__('err_cannot_join_while_streaming'));
                         }
                         
@@ -181,7 +181,7 @@ export const DesignTemplates = {
                     }
                     
                     btnStartLive.innerHTML = originalText;
-                    btnStartLive.classList.remove('disabled-interactive');
+                    btnStartLive.classList.remove('disabled-interaction');
                 };
                 
                 attemptStart();
@@ -207,7 +207,7 @@ export const DesignTemplates = {
 
                 const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
                 if (btnOpenJoinLive) {
-                    btnOpenJoinLive.classList.remove('disabled-interactive', 'disabled');
+                    btnOpenJoinLive.classList.remove('disabled-interaction', 'disabled');
                     btnOpenJoinLive.removeAttribute('title');
                 }
 
@@ -342,7 +342,7 @@ export const DesignTemplates = {
 
         const btnUpload = document.querySelector('[data-action="triggerTemplateUpload"]');
         if (btnUpload) {
-            btnUpload.classList.add('disabled-interactive');
+            btnUpload.classList.add('disabled-interaction');
             btnUpload.innerHTML = `<span class="material-symbols-rounded icon-spin-slow">autorenew</span> ${window.__('uploading')}...`;
         }
 
@@ -366,7 +366,7 @@ export const DesignTemplates = {
         } finally {
             this.fileInput.value = '';
             if (btnUpload) {
-                btnUpload.classList.remove('disabled-interactive');
+                btnUpload.classList.remove('disabled-interaction');
                 btnUpload.innerHTML = `<span class="material-symbols-rounded">cloud_upload</span> ${window.__('upload_to_library')}`;
             }
         }
@@ -411,7 +411,7 @@ export const DesignTemplates = {
 
     async deleteServerTemplate(id) {
         const btn = document.querySelector(`[data-action="deleteServerTemplate"][data-id="${id}"]`);
-        if (btn) btn.classList.add('disabled-interactive');
+        if (btn) btn.classList.add('disabled-interaction');
 
         let templateFilePath = null;
         if (btn && btn.parentElement) {
@@ -445,11 +445,11 @@ export const DesignTemplates = {
                 await this.loadUserLibrary();
             } else {
                 showMessage(response.message, 'error');
-                if (btn) btn.classList.remove('disabled-interactive');
+                if (btn) btn.classList.remove('disabled-interaction');
             }
         } catch (error) {
             showMessage(__('err_connection'), 'error');
-            if (btn) btn.classList.remove('disabled-interactive');
+            if (btn) btn.classList.remove('disabled-interaction');
         }
     },
 

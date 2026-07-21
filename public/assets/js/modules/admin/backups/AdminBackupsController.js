@@ -112,7 +112,7 @@ class AdminBackupsController {
         const tableContainer = document.querySelector('[data-ref="view-table"]');
         const currentPaginations = document.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
         if (tableContainer) {
-            tableContainer.classList.add('disabled-interactive');
+            tableContainer.classList.add('disabled-interaction');
         }
         try {
             const response = await fetch(url, {
@@ -149,7 +149,7 @@ class AdminBackupsController {
             else window.location.href = url;
         } finally {
             if (tableContainer) {
-                tableContainer.classList.remove('disabled-interactive');
+                tableContainer.classList.remove('disabled-interaction');
             }
         }
     }

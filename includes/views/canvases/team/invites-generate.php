@@ -126,7 +126,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                                     $isHighRole = in_array($nameLower, ['owner', 'propietario', 'superadmin', 'superadministrador']) || (isset($role['weight']) && (int)$role['weight'] >= 100);
                                                     
                                                     $isActive = ($defaultRole && $defaultRole['id'] == $role['id']) ? 'active' : '';
-                                                    $isDisabled = $isHighRole ? 'disabled-interactive' : '';
+                                                    $isDisabled = $isHighRole ? 'disabled-interaction' : '';
                                                 ?>
                                                     <div class="component-menu-link <?php echo $isActive . ' ' . $isDisabled; ?>" data-action="selectInviteRole" data-value="<?php echo htmlspecialchars($role['id']); ?>" data-label="<?php echo htmlspecialchars($translatedName); ?>" data-icon="<?php echo $icon; ?>" <?php if($isHighRole) echo 'data-tooltip="' . htmlspecialchars(__('err_cannot_generate_invite_role')) . '" data-position="right"'; ?>>
                                                         <div class="component-menu-link-icon">

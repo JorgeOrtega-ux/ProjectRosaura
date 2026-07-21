@@ -119,13 +119,13 @@ class CanvasesCreateController {
             if (isActive) activePaletteName = translatedName;
 
             const btn = document.createElement('div');
-            btn.className = `component-menu-link ${isActive ? 'active' : ''} ${isLocked ? 'disabled-interactive' : ''}`;
+            btn.className = `component-menu-link ${isActive ? 'active' : ''} ${isLocked ? 'disabled-interaction' : ''}`;
             btn.setAttribute('data-action', isLocked ? '' : 'selectPalette');
             btn.setAttribute('data-palette-id', palette.id);
             btn.setAttribute('data-palette-name', translatedName);
             
             if (isLocked) {
-                btn.classList.add('disabled-interactive');
+                btn.classList.add('disabled-interaction');
                 btn.title = window.__('tooltip_upgrade_palette');
             }
 
@@ -172,7 +172,7 @@ class CanvasesCreateController {
                 if (!emptyEl) {
                     emptyEl = document.createElement('div');
                     emptyEl.className = 'component-menu-empty';
-                    emptyEl.innerHTML = `<div class="component-menu-link disabled-interactive"><div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div><div class="component-menu-link-text"><span class="component-text-notice--muted">${window.__ ? window.__('no_results_found') : 'No results found'}</span></div></div>`;
+                    emptyEl.innerHTML = `<div class="component-menu-link disabled-interaction"><div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div><div class="component-menu-link-text"><span class="component-text-notice--muted">${window.__ ? window.__('no_results_found') : 'No results found'}</span></div></div>`;
                     menuList.appendChild(emptyEl);
                 }
                 emptyEl.hidden = hasVisible;
@@ -231,7 +231,7 @@ class CanvasesCreateController {
             const isAllowed = isOfficial || (userTier >= requiredTier);
             
             if (isAllowed) {
-                link.classList.remove('disabled-interactive');
+                link.classList.remove('disabled-interaction');
                 link.setAttribute('data-action', 'selectValue');
                 link.removeAttribute('title');
                 const lockIcon = link.querySelector('.component-badge');
@@ -239,7 +239,7 @@ class CanvasesCreateController {
                     lockIcon.remove();
                 }
             } else {
-                link.classList.add('disabled-interactive');
+                link.classList.add('disabled-interaction');
                 link.setAttribute('data-action', '');
                 link.setAttribute('title', window.__('tooltip_upgrade_required'));
                 
@@ -253,8 +253,8 @@ class CanvasesCreateController {
         });
 
         const activeSize = document.querySelector('.component-menu-link[data-type="size"].active');
-        if (activeSize && activeSize.classList.contains('disabled-interactive')) {
-            const firstAllowed = document.querySelector('.component-menu-link[data-type="size"]:not(.disabled-interactive)');
+        if (activeSize && activeSize.classList.contains('disabled-interaction')) {
+            const firstAllowed = document.querySelector('.component-menu-link[data-type="size"]:not(.disabled-interaction)');
             if (firstAllowed) {
                 this.selectDropdownValue(firstAllowed);
             }
@@ -288,7 +288,7 @@ class CanvasesCreateController {
     }
 
     toggleDropdown(triggerBtn) {
-        if (triggerBtn.classList.contains('disabled-interactive')) return;
+        if (triggerBtn.classList.contains('disabled-interaction')) return;
         
         const targetId = triggerBtn.getAttribute('data-target');
         const targetDropdown = document.querySelector(`[data-module="${targetId}"]`);

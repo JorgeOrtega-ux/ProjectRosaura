@@ -304,7 +304,7 @@ if (!empty($canvasUuid)) {
             </div>
         </div>
         <div class="component-bottom">
-            <canvas data-ref="design-canvas" class="component-canvas-surface <?php echo (isset($isBlockedInit) && $isBlockedInit) ? 'component-canvas-blocked disabled-interactive' : ''; ?>"></canvas>
+            <canvas data-ref="design-canvas" class="component-canvas-surface <?php echo (isset($isBlockedInit) && $isBlockedInit) ? 'component-canvas-blocked disabled-interaction' : ''; ?>"></canvas>
 
             <div class="canvas-badges-left" data-ref="badges-left">
                 
@@ -342,7 +342,7 @@ if (!empty($canvasUuid)) {
             
             <?php if (!$isSnapshot): ?>
             <div class="component-action-pill <?php echo ((isset($isBlockedInit) && $isBlockedInit) || (isset($isSpectatorInit) && $isSpectatorInit)) ? 'disabled' : ''; ?>">
-                <button class="component-button component-button--dark component-button--h45 disabled-interactive" data-action="placePixels" data-ref="pixel-action-btn">
+                <button class="component-button component-button--dark component-button--h45 disabled-interaction" data-action="placePixels" data-ref="pixel-action-btn">
                     <span class="material-symbols-rounded">touch_app</span>
                     <span data-ref="pixel-action-text"><?php echo __('btn_select_pixels'); ?></span>
                 </button>

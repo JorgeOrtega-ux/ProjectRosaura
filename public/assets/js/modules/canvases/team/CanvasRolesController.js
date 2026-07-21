@@ -52,9 +52,9 @@ class CanvasRolesController {
         
         if (deselectBtn) this.deselectRole();
         if (addBtn) this.navigateToAddRole();
-        if (editBtn && !editBtn.classList.contains('disabled-interactive')) this.navigateToEditRole();
-        if (permsBtn && !permsBtn.classList.contains('disabled-interactive')) this.navigateToEditPermissions();
-        if (deleteBtn && !deleteBtn.classList.contains('disabled-interactive')) this.deleteRole(deleteBtn);
+        if (editBtn && !editBtn.classList.contains('disabled-interaction')) this.navigateToEditRole();
+        if (permsBtn && !permsBtn.classList.contains('disabled-interaction')) this.navigateToEditPermissions();
+        if (deleteBtn && !deleteBtn.classList.contains('disabled-interaction')) this.deleteRole(deleteBtn);
     }
 
     handleRoleSelection(rowElement) {
@@ -99,20 +99,20 @@ class CanvasRolesController {
             const isSystem = this.selectedIsSystem === 1;
 
             if (canEdit && !isSystem) {
-                if (btnEdit) btnEdit.classList.remove('disabled-interactive');
-                if (btnPerms) btnPerms.classList.remove('disabled-interactive');
-                if (btnDelete) btnDelete.classList.remove('disabled-interactive');
+                if (btnEdit) btnEdit.classList.remove('disabled-interaction');
+                if (btnPerms) btnPerms.classList.remove('disabled-interaction');
+                if (btnDelete) btnDelete.classList.remove('disabled-interaction');
             } else {
-                if (btnEdit) btnEdit.classList.add('disabled-interactive');
+                if (btnEdit) btnEdit.classList.add('disabled-interaction');
 
                 if (btnPerms) {
-                    if (canEdit) btnPerms.classList.remove('disabled-interactive');
-                    else btnPerms.classList.add('disabled-interactive');
+                    if (canEdit) btnPerms.classList.remove('disabled-interaction');
+                    else btnPerms.classList.add('disabled-interaction');
                 }
-                if (btnDelete) btnDelete.classList.add('disabled-interactive');
+                if (btnDelete) btnDelete.classList.add('disabled-interaction');
             }
 
-            if (isSystem && btnDelete) btnDelete.classList.add('disabled-interactive');
+            if (isSystem && btnDelete) btnDelete.classList.add('disabled-interaction');
 
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');

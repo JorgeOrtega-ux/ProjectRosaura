@@ -11,7 +11,7 @@ function setButtonLoading(btn, text = null) {
     
     btn.dataset.originalText = btn.innerHTML;
     
-    btn.classList.add('disabled-interactive');
+    btn.classList.add('disabled-interaction');
     if (text) {
         btn.innerHTML = `<div class="component-spinner"></div><span>${text}</span>`;
     } else {
@@ -26,7 +26,7 @@ function restoreButton(btn) {
         btn.innerHTML = btn.dataset.originalText;
     }
     
-    btn.classList.remove('disabled-interactive');
+    btn.classList.remove('disabled-interaction');
 }
 
 function renderSkeleton(container, type = 'generic') {

@@ -123,7 +123,7 @@ $maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
             
                         <div class="component-menu-bottom component-chat-input-area">
                 <div class="component-search component-search--w-auto">
-                    <div class="component-search-input <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled-interactive' : ''; ?>">
+                    <div class="component-search-input <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled-interaction' : ''; ?>">
                         
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
                             <button class="component-chat-attach-btn" data-action="toggleChatDropdown" data-target="chat-attach-menu" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>

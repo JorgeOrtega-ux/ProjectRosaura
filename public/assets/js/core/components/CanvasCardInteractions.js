@@ -38,7 +38,7 @@ export class CanvasCardInteractions {
     }
 
     async toggleFavorite(btn) {
-        if (btn.classList.contains('disabled-interactive')) return;
+        if (btn.classList.contains('disabled-interaction')) return;
         
         const canvasId = btn.getAttribute('data-id');
         if (!canvasId) return;
@@ -50,11 +50,11 @@ export class CanvasCardInteractions {
             btn.classList.add('is-favorite');
         }
 
-        btn.classList.add('disabled-interactive');
+        btn.classList.add('disabled-interaction');
 
         const res = await this.api.toggleFavorite(canvasId);
 
-        btn.classList.remove('disabled-interactive');
+        btn.classList.remove('disabled-interaction');
 
         if (res && res.success) {
             

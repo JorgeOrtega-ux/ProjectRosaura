@@ -89,11 +89,11 @@ class AdminUsersController {
             this.handleUserSelection(selectTargetRow);
         }
         if (deselectBtn) this.deselectUser();
-        if (editUserBtn && !editUserBtn.classList.contains('disabled-interactive')) this.editSelectedUser();
-        if (editRoleBtn && !editRoleBtn.classList.contains('disabled-interactive')) this.editSelectedUserRole();
-        if (editStatusBtn && !editStatusBtn.classList.contains('disabled-interactive')) this.editSelectedUserStatus();
-        if (viewHistoryBtn && !viewHistoryBtn.classList.contains('disabled-interactive')) this.viewSelectedUserHistory();
-        if (deleteUsersBtn && !deleteUsersBtn.classList.contains('disabled-interactive')) this.deleteSelectedUsers(deleteUsersBtn);
+        if (editUserBtn && !editUserBtn.classList.contains('disabled-interaction')) this.editSelectedUser();
+        if (editRoleBtn && !editRoleBtn.classList.contains('disabled-interaction')) this.editSelectedUserRole();
+        if (editStatusBtn && !editStatusBtn.classList.contains('disabled-interaction')) this.editSelectedUserStatus();
+        if (viewHistoryBtn && !viewHistoryBtn.classList.contains('disabled-interaction')) this.viewSelectedUserHistory();
+        if (deleteUsersBtn && !deleteUsersBtn.classList.contains('disabled-interaction')) this.deleteSelectedUsers(deleteUsersBtn);
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
             if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
@@ -135,7 +135,7 @@ class AdminUsersController {
         const tableContainer = document.querySelector('[data-ref="view-table"]');
         const currentPaginations = document.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
         if (tableContainer) {
-            tableContainer.classList.add('disabled-interactive');
+            tableContainer.classList.add('disabled-interaction');
         }
         try {
             const response = await fetch(url, {
@@ -170,7 +170,7 @@ class AdminUsersController {
             else window.location.href = url;
         } finally {
             if (tableContainer) {
-                tableContainer.classList.remove('disabled-interactive');
+                tableContainer.classList.remove('disabled-interaction');
             }
         }
     }
@@ -298,11 +298,11 @@ class AdminUsersController {
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
             if (this.selectedUserIds.size > 1) {
                 [btnEditAccount, btnEditRole, btnEditStatus, btnHistory].forEach(btn => {
-                    if (btn) btn.classList.add('disabled-interactive');
+                    if (btn) btn.classList.add('disabled-interaction');
                 });
             } else {
                 [btnEditAccount, btnEditRole, btnEditStatus, btnHistory].forEach(btn => {
-                    if (btn) btn.classList.remove('disabled-interactive');
+                    if (btn) btn.classList.remove('disabled-interaction');
                 });
             }
             const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');

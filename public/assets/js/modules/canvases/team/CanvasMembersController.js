@@ -74,8 +74,8 @@ class CanvasMembersController {
 
         if (deselectBtn) this.deselectMember();
         
-        if (changeRoleBtn && !changeRoleBtn.classList.contains('disabled-interactive')) this.changeMemberRole();
-        if (removeMemberBtn && !removeMemberBtn.classList.contains('disabled-interactive')) this.removeMember();
+        if (changeRoleBtn && !changeRoleBtn.classList.contains('disabled-interaction')) this.changeMemberRole();
+        if (removeMemberBtn && !removeMemberBtn.classList.contains('disabled-interaction')) this.removeMember();
 
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
@@ -118,7 +118,7 @@ class CanvasMembersController {
 
         if (tableContainer) {
             
-            tableContainer.classList.add('disabled-interactive');
+            tableContainer.classList.add('disabled-interaction');
             
         }
 
@@ -159,7 +159,7 @@ class CanvasMembersController {
             else window.location.href = url;
         } finally {
             if (tableContainer) {
-                tableContainer.classList.remove('disabled-interactive');
+                tableContainer.classList.remove('disabled-interaction');
                 
             }
         }
@@ -274,11 +274,11 @@ class CanvasMembersController {
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
             if (this.selectedMemberIds.size > 1) {
-                if (btnChangeRole) btnChangeRole.classList.add('disabled-interactive');
-                if (btnRemove) btnRemove.classList.remove('disabled-interactive'); 
+                if (btnChangeRole) btnChangeRole.classList.add('disabled-interaction');
+                if (btnRemove) btnRemove.classList.remove('disabled-interaction'); 
             } else {
-                if (btnChangeRole) btnChangeRole.classList.remove('disabled-interactive');
-                if (btnRemove) btnRemove.classList.remove('disabled-interactive');
+                if (btnChangeRole) btnChangeRole.classList.remove('disabled-interaction');
+                if (btnRemove) btnRemove.classList.remove('disabled-interaction');
             }
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');

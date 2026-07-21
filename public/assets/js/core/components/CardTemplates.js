@@ -318,12 +318,6 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 <div class="component-progress-track">
                     <div class="component-progress-fill" style="width: ${percentage}%;"></div>
                 </div>
-
-                <div class="component-storage-usage__footer">
-                    <div data-nav="/upgrade" class="component-storage-link">
-                        ${questionText}
-                    </div>
-                </div>
             </div>
         `;
     }

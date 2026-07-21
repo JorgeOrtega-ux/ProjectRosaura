@@ -220,7 +220,7 @@ $isResetActive = $resetSettings['is_active'];
                             </div>
                         </div>
 
-                        <div data-ref="reset_options_container" class="<?php echo $isResetActive ? '' : 'disabled-interactive'; ?>">
+                        <div data-ref="reset_options_container" class="<?php echo $isResetActive ? '' : 'disabled-interaction'; ?>">
                             <hr class="component-divider">
 
                             <div class="component-group-item component-group-item--stacked">

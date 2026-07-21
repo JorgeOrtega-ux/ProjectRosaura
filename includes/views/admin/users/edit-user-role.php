@@ -93,7 +93,7 @@ $isTargetSuperAdmin = in_array(4, $assignedRoleIds);
                             $isDisabled = ($r['id'] == 4 || $isHigherHierarchy || $r['id'] == 1 || $isTargetSuperAdmin) ? true : false;
                             
                             $isChecked = in_array($r['id'], $assignedRoleIds) ? 'checked' : '';
-                            $disabledClass = $isDisabled ? 'disabled-interactive' : '';
+                            $disabledClass = $isDisabled ? 'disabled-interaction' : '';
                             $opacityStyle = $isDisabled ? 'opacity: 0.6; pointer-events: none;' : '';
                         ?>
                         

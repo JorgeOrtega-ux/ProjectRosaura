@@ -310,9 +310,9 @@ class ProfileController {
     }
 
     async resendEmailUpdateCode(btn) {
-        if (btn.classList.contains('disabled-interactive')) return;
+        if (btn.classList.contains('disabled-interaction')) return;
         
-        btn.classList.add('disabled-interactive', 'component-text-notice--muted');
+        btn.classList.add('disabled-interaction', 'component-text-notice--muted');
 
         const result = await this.api.post(ApiRoutes.Settings.ResendEmailCode, {}, this.abortController.signal);
         
@@ -326,7 +326,7 @@ class ProfileController {
             if (result.cooldown) {
                 this.startDialogResendTimer(btn, result.cooldown);
             } else {
-                btn.classList.remove('disabled-interactive', 'component-text-notice--muted');
+                btn.classList.remove('disabled-interaction', 'component-text-notice--muted');
                 btn.textContent = __('btn_resend_code');
             }
         }
@@ -340,10 +340,10 @@ class ProfileController {
         const updateUI = () => {
             if (timeLeft <= 0) {
                 clearInterval(this.dialogResendInterval);
-                element.classList.remove('disabled-interactive', 'component-text-notice--muted');
+                element.classList.remove('disabled-interaction', 'component-text-notice--muted');
                 element.textContent = defaultText;
             } else {
-                element.classList.add('disabled-interactive', 'component-text-notice--muted');
+                element.classList.add('disabled-interaction', 'component-text-notice--muted');
                 element.textContent = `${defaultText} (${timeLeft})`;
             }
         };

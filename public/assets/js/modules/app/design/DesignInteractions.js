@@ -931,7 +931,7 @@ export const DesignInteractions = {
         }
 
         if (this.selectedPixels.size > 0 && this.selectedPixels.size <= maxBalance) {
-            this.btnPlacePixels.classList.remove('disabled-interactive');
+            this.btnPlacePixels.classList.remove('disabled-interaction');
             if (this.interactionMode === 'protecting') {
                 this.txtPlacePixels.textContent = `${window.__('btn_protect') || window.__('protect')} (${this.selectedPixels.size})`;
             } else if (this.interactionMode === 'erasing') {
@@ -942,7 +942,7 @@ export const DesignInteractions = {
                 this.txtPlacePixels.textContent = window.__('btn_place_pixels');
             }
         } else {
-            this.btnPlacePixels.classList.add('disabled-interactive');
+            this.btnPlacePixels.classList.add('disabled-interaction');
             if (this.selectedPixels.size > maxBalance) {
                 if (this.interactionMode === 'protecting' || this.interactionMode === 'erasing') {
                     this.txtPlacePixels.textContent = `Máx: ${maxBalance} usos`;

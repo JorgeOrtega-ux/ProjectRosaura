@@ -56,7 +56,7 @@ class CanvasSnapshotsGalleryController {
     }
 
     async toggleLike(btn) {
-        if (btn.classList.contains('disabled-interactive')) return;
+        if (btn.classList.contains('disabled-interaction')) return;
         
         const snapshotUuid = btn.getAttribute('data-id'); // Using snapshot_uuid from php
         if (!snapshotUuid) return;
@@ -69,11 +69,11 @@ class CanvasSnapshotsGalleryController {
             btn.classList.add('is-favorite');
         }
 
-        btn.classList.add('disabled-interactive');
+        btn.classList.add('disabled-interaction');
 
         const res = await this.api.post(ApiRoutes.Canvases.ToggleSnapshotLike, { id: snapshotUuid }, this.abortController.signal);
 
-        btn.classList.remove('disabled-interactive');
+        btn.classList.remove('disabled-interaction');
 
         if (res && res.success) {
             if (res.data.action === 'added') {

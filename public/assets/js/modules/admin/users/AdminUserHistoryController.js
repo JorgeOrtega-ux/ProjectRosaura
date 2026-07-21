@@ -62,7 +62,7 @@ class AdminUserHistoryController {
         const tableContainer = document.querySelector('[data-ref="view-table"]');
         const currentPaginations = document.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
         if (tableContainer) {
-            .classList.add('disabled-interactive');
+            .classList.add('disabled-interaction');
         }
         try {
             const response = await fetch(url, {
@@ -96,7 +96,7 @@ class AdminUserHistoryController {
             else window.location.href = url;
         } finally {
             if (tableContainer) {
-                .classList.remove('disabled-interactive');
+                .classList.remove('disabled-interaction');
             }
         }
     }

@@ -13,6 +13,18 @@ export class PurchaseHistoryController {
         this.selectedPurchaseId = null;
         this.selectedReceiptUrl = null;
         this.selectedPdfUrl = null;
+
+        // Paginación y Filtros
+        this.currentPage = 1;
+        this.limit = 10;
+        this.totalItems = 0;
+        this.totalPages = 1;
+        this.rawItems = [];
+        this.filteredItems = [];
+        this.activeFilters = {
+            types: ['all'],
+            statuses: ['all']
+        };
     }
 
     async init() {
@@ -20,29 +32,237 @@ export class PurchaseHistoryController {
         this.container = document.querySelector('.view-content');
         this.tbody = document.querySelector('.component-table tbody');
         this.bindEvents();
+        this.parseInitialDOMItems();
+        this.applyFiltersAndRender();
+        await this.loadHistory();
+    }
+
+    parseInitialDOMItems() {
+        if (!this.tbody) return;
+        const rows = this.tbody.querySelectorAll('tr.component-table-row');
+        if (rows.length === 0) return;
+
+        this.rawItems = Array.from(rows).map(row => {
+            return {
+                id: row.getAttribute('data-id') || '',
+                receipt_url: row.getAttribute('data-receipt-url') || '',
+                pdf_url: row.getAttribute('data-pdf-url') || '',
+                type: row.getAttribute('data-type') || 'subscription',
+                status: row.getAttribute('data-status') || 'succeeded',
+                html: row.outerHTML,
+                element: row
+            };
+        });
     }
 
     bindEvents() {
         if (!this.container) return;
+
         this.container.addEventListener('click', (e) => this.handleGlobalClick(e));
+        this.container.addEventListener('change', (e) => this.handleGlobalChange(e));
     }
 
     handleGlobalClick(e) {
         const selectTargetRow = e.target.closest('[data-action="selectPurchase"]');
         const deselectBtn = e.target.closest('[data-action="deselectPurchase"]');
         const downloadReceiptBtn = e.target.closest('[data-action="downloadReceipt"]');
+        
+        const toggleModuleBtn = e.target.closest('[data-action="toggleModule"]');
+        const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
+        const backToMainBtn = e.target.closest('[data-action="backToMainFilters"]');
+        
+        const prevPageBtn = e.target.closest('[data-action="prevPage"]');
+        const nextPageBtn = e.target.closest('[data-action="nextPage"]');
+
+        if (toggleModuleBtn) {
+            e.stopPropagation();
+            const targetModuleName = toggleModuleBtn.getAttribute('data-target');
+            const module = this.container.querySelector(`[data-module="${targetModuleName}"]`);
+            if (module) {
+                module.classList.toggle('disabled');
+            }
+            return;
+        }
+
+        if (openSubMenuBtn) {
+            e.stopPropagation();
+            const targetMenuRef = openSubMenuBtn.getAttribute('data-target');
+            const dropdownModule = openSubMenuBtn.closest('.component-module--dropdown');
+            if (dropdownModule) {
+                dropdownModule.querySelectorAll('.component-menu').forEach(m => {
+                    m.classList.remove('active');
+                    m.classList.add('disabled');
+                });
+                const subMenu = dropdownModule.querySelector(`[data-ref="${targetMenuRef}"]`);
+                if (subMenu) {
+                    subMenu.classList.remove('disabled');
+                    subMenu.classList.add('active');
+                }
+            }
+            return;
+        }
+
+        if (backToMainBtn) {
+            e.stopPropagation();
+            const dropdownModule = backToMainBtn.closest('.component-module--dropdown');
+            if (dropdownModule) {
+                dropdownModule.querySelectorAll('.component-menu').forEach(m => {
+                    m.classList.remove('active');
+                    m.classList.add('disabled');
+                });
+                const mainMenu = dropdownModule.querySelector('[data-ref="menuMainFilters"]');
+                if (mainMenu) {
+                    mainMenu.classList.remove('disabled');
+                    mainMenu.classList.add('active');
+                }
+            }
+            return;
+        }
+
+        if (prevPageBtn && !prevPageBtn.classList.contains('disabled-interaction')) {
+            if (this.currentPage > 1) {
+                this.currentPage--;
+                this.renderCurrentPage();
+            }
+            return;
+        }
+
+        if (nextPageBtn && !nextPageBtn.classList.contains('disabled-interaction')) {
+            if (this.currentPage < this.totalPages) {
+                this.currentPage++;
+                this.renderCurrentPage();
+            }
+            return;
+        }
 
         if (selectTargetRow && !e.target.closest('button') && !e.target.closest('a')) {
             this.handlePurchaseSelection(selectTargetRow);
+            return;
         }
 
         if (deselectBtn) {
             this.deselectPurchase();
+            return;
         }
 
-        if (downloadReceiptBtn && !downloadReceiptBtn.classList.contains('disabled-interactive')) {
+        if (downloadReceiptBtn && !downloadReceiptBtn.classList.contains('disabled-interaction')) {
             this.downloadSelectedReceipt();
+            return;
         }
+
+        // Close dropdown if clicking outside
+        if (!e.target.closest('.component-dropdown-wrapper')) {
+            const dropdownModules = this.container.querySelectorAll('[data-module="modulePurchaseFilters"]');
+            dropdownModules.forEach(m => m.classList.add('disabled'));
+        }
+    }
+
+    handleGlobalChange(e) {
+        const checkbox = e.target.closest('.filter-checkbox');
+        if (checkbox) {
+            const filterCategory = checkbox.getAttribute('data-filter-type'); // 'type' or 'status'
+            const val = checkbox.value;
+
+            const dropdownModule = checkbox.closest('[data-module="modulePurchaseFilters"]');
+            if (!dropdownModule) return;
+
+            const groupCheckboxes = dropdownModule.querySelectorAll(`.filter-checkbox[data-filter-type="${filterCategory}"]`);
+
+            if (val === 'all') {
+                if (checkbox.checked) {
+                    groupCheckboxes.forEach(cb => cb.checked = true);
+                } else {
+                    groupCheckboxes.forEach(cb => cb.checked = false);
+                }
+            } else {
+                const allCheckbox = Array.from(groupCheckboxes).find(cb => cb.value === 'all');
+                if (!checkbox.checked && allCheckbox) {
+                    allCheckbox.checked = false;
+                }
+                const specificCheckboxes = Array.from(groupCheckboxes).filter(cb => cb.value !== 'all');
+                const allSpecificChecked = specificCheckboxes.every(cb => cb.checked);
+                if (allSpecificChecked && allCheckbox) {
+                    allCheckbox.checked = true;
+                }
+            }
+
+            // Actualizar activeFilters
+            const checkedVals = Array.from(groupCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+            if (filterCategory === 'type') {
+                this.activeFilters.types = checkedVals;
+            } else if (filterCategory === 'status') {
+                this.activeFilters.statuses = checkedVals;
+            }
+
+            this.currentPage = 1;
+            this.applyFiltersAndRender();
+        }
+    }
+
+    applyFiltersAndRender() {
+        this.deselectPurchase();
+
+        this.filteredItems = this.rawItems.filter(item => {
+            const matchType = this.activeFilters.types.includes('all') || this.activeFilters.types.includes(item.type);
+            const matchStatus = this.activeFilters.statuses.includes('all') || this.activeFilters.statuses.includes(item.status);
+            return matchType && matchStatus;
+        });
+
+        this.totalItems = this.filteredItems.length;
+        this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.limit));
+        if (this.currentPage > this.totalPages) {
+            this.currentPage = this.totalPages;
+        }
+
+        this.renderCurrentPage();
+    }
+
+    renderCurrentPage() {
+        if (!this.tbody) return;
+
+        const pageCenterEl = this.container.querySelector('[data-ref="pagination-page"]');
+        const prevPageBtn = this.container.querySelector('[data-action="prevPage"]');
+        const nextPageBtn = this.container.querySelector('[data-action="nextPage"]');
+
+        if (pageCenterEl) {
+            pageCenterEl.textContent = this.currentPage;
+        }
+
+        if (prevPageBtn) {
+            if (this.currentPage <= 1) {
+                prevPageBtn.classList.add('disabled-interaction');
+            } else {
+                prevPageBtn.classList.remove('disabled-interaction');
+            }
+        }
+
+        if (nextPageBtn) {
+            if (this.currentPage >= this.totalPages) {
+                nextPageBtn.classList.add('disabled-interaction');
+            } else {
+                nextPageBtn.classList.remove('disabled-interaction');
+            }
+        }
+
+        if (this.filteredItems.length === 0) {
+            this.tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="component-empty-table-cell">
+                        <div class="component-empty-state component-empty-state--table">
+                            <span class="material-symbols-rounded component-empty-state-icon">receipt_long</span>
+                            <p class="component-empty-state-text">${window.__('no_purchases') || 'No hay compras registradas.'}</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        const startIndex = (this.currentPage - 1) * this.limit;
+        const endIndex = startIndex + this.limit;
+        const pageItems = this.filteredItems.slice(startIndex, endIndex);
+
+        this.tbody.innerHTML = pageItems.map(item => item.html).join('');
     }
 
     handlePurchaseSelection(rowElement) {
@@ -86,7 +306,7 @@ export class PurchaseHistoryController {
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
             if (downloadBtn) {
-                downloadBtn.classList.remove('disabled-interactive');
+                downloadBtn.classList.remove('disabled-interaction');
             }
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');
@@ -116,13 +336,10 @@ export class PurchaseHistoryController {
         if (!this.tbody) return;
 
         try {
-            const response = await this.api.post(ApiRoutes.Stripe.GetPaymentHistory, { limit: 20, offset: 0 }, this.abortController.signal);
+            const response = await this.api.post(ApiRoutes.Stripe.GetPaymentHistory, { limit: 100, offset: 0 }, this.abortController.signal);
             
             if (response.success && response.data && response.data.length > 0) {
-                this.tbody.innerHTML = ''; 
-                this.deselectPurchase();
-                
-                response.data.forEach(item => {
+                this.rawItems = response.data.map(item => {
                     const date = new Date(item.created_at).toLocaleDateString();
                     const description = escapeHTML(item.description || window.__('lbl_subscription'));
                     const amount = `$${(item.amount_cents / 100).toFixed(2)} ${escapeHTML(item.currency).toUpperCase()}`;
@@ -132,14 +349,21 @@ export class PurchaseHistoryController {
                     
                     let statusClass = 'component-text-notice--success';
                     let statusText = window.__('lbl_paid');
+                    let itemStatus = 'succeeded';
                     
                     if (item.status !== 'succeeded' && item.status !== 'paid') {
                         statusClass = 'component-text-notice--error';
                         statusText = window.__('lbl_failed');
+                        itemStatus = 'failed';
                     }
 
-                    const row = `
-                        <tr class="component-table-row" data-action="selectPurchase" data-id="${rowId}" data-receipt-url="${receiptUrl}" data-pdf-url="${pdfUrl}">
+                    const descLower = (item.description || '').toLowerCase();
+                    const isCoins = descLower.includes('coin') || descLower.includes('moneda');
+                    const itemType = isCoins ? 'coins' : 'subscription';
+                    const iconName = isCoins ? 'monetization_on' : 'description';
+
+                    const rowHtml = `
+                        <tr class="component-table-row" data-action="selectPurchase" data-id="${rowId}" data-receipt-url="${receiptUrl}" data-pdf-url="${pdfUrl}" data-type="${itemType}" data-status="${itemStatus}">
                             <td>
                                 <div class="component-badge component-badge--sm">
                                     <span class="material-symbols-rounded">calendar_month</span>
@@ -148,7 +372,7 @@ export class PurchaseHistoryController {
                             </td>
                             <td>
                                 <div class="component-badge component-badge--sm">
-                                    <span class="material-symbols-rounded">description</span>
+                                    <span class="material-symbols-rounded">${iconName}</span>
                                     <span class="search-target">${description}</span>
                                 </div>
                             </td>
@@ -165,32 +389,22 @@ export class PurchaseHistoryController {
                             </td>
                         </tr>
                     `;
-                    this.tbody.insertAdjacentHTML('beforeend', row);
+
+                    return {
+                        id: rowId,
+                        receipt_url: receiptUrl,
+                        pdf_url: pdfUrl,
+                        type: itemType,
+                        status: itemStatus,
+                        html: rowHtml
+                    };
                 });
-            } else {
-                this.tbody.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="component-empty-table-cell">
-                            <div class="component-empty-state component-empty-state--table">
-                                <span class="material-symbols-rounded component-empty-state-icon">inbox</span>
-                                <p class="component-empty-state-text">${window.__('no_purchases')}</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+
+                this.applyFiltersAndRender();
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                this.tbody.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="component-empty-table-cell">
-                            <div class="component-empty-state component-empty-state--table">
-                                <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                                <p class="component-empty-state-text">${window.__('err_load_history')}</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                console.error('[PurchaseHistoryController] Error loading history:', error);
             }
         }
     }

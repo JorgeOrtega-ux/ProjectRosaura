@@ -139,8 +139,13 @@ export class MainController {
     }
 
     getPref(key) {
-        if (window.AppUserPrefs) return window.AppUserPrefs[key];
-        return localStorage.getItem('pr_' + key);
+        if (window.AppUserPrefs && window.AppUserPrefs[key] !== undefined && window.AppUserPrefs[key] !== null) {
+            return window.AppUserPrefs[key];
+        }
+        const local = localStorage.getItem('pr_' + key);
+        if (local !== null) return local;
+        if (key === 'purchase_preference') return 'verify';
+        return null;
     }
 
     async savePreference(key, value) {
@@ -213,6 +218,7 @@ export class MainController {
         const lang = this.getPref('language');
         const openLinks = this.getPref('open_links_new_tab');
         const alerts = this.getPref('extended_alerts');
+        const purchasePref = this.getPref('purchase_preference') || 'verify';
 
         const toggleLinks = document.querySelector('[data-key="open_links_new_tab"]');
         if (toggleLinks) toggleLinks.checked = (openLinks == 1 || openLinks == '1');
@@ -228,7 +234,7 @@ export class MainController {
                 item.classList.toggle('active', item.getAttribute('data-value') === lang);
             }
             if (item.getAttribute('data-key') === 'purchase_preference') {
-                item.classList.toggle('active', item.getAttribute('data-value') === this.getPref('purchase_preference'));
+                item.classList.toggle('active', item.getAttribute('data-value') === purchasePref);
             }
         });
 
@@ -371,7 +377,7 @@ export class MainController {
             
             if (list) {
                 let hasVisibleItems = false;
-                const items = list.querySelectorAll('.component-menu-link:not(.disabled-interactive)');
+                const items = list.querySelectorAll('.component-menu-link:not(.disabled-interaction)');
                 
                 items.forEach(item => {
                     const textNode = item.querySelector('.component-menu-link-text');
@@ -565,7 +571,7 @@ export class MainController {
 
         if (btnElement) {
             btnElement.dataset.loading = 'true';
-            btnElement.classList.add('disabled-interactive');
+            btnElement.classList.add('disabled-interaction');
             btnElement.style.pointerEvents = 'none';
         }
 
@@ -574,7 +580,7 @@ export class MainController {
         if (result && result.aborted) {
             if (btnElement) {
                 btnElement.dataset.loading = 'false';
-                btnElement.classList.remove('disabled-interactive');;
+                btnElement.classList.remove('disabled-interaction');;
                 btnElement.style.pointerEvents = '';
             }
             return;
@@ -585,7 +591,7 @@ export class MainController {
         } else {
             if (btnElement) {
                 btnElement.dataset.loading = 'false';
-                btnElement.classList.remove('disabled-interactive');;
+                btnElement.classList.remove('disabled-interaction');;
                 btnElement.style.pointerEvents = '';
             }
             this.showToast(result.message, 'error');

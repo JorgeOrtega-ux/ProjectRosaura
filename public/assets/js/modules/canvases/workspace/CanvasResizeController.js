@@ -97,9 +97,9 @@ class CanvasResizeController {
         if (!this.optionsContainer) return;
         
         if (isActive) {
-            this.optionsContainer.classList.remove('disabled-interactive');
+            this.optionsContainer.classList.remove('disabled-interaction');
         } else {
-            this.optionsContainer.classList.add('disabled-interactive');
+            this.optionsContainer.classList.add('disabled-interaction');
         }
     }
 
@@ -161,12 +161,12 @@ class CanvasResizeController {
             this.handleTimerActionSelect(timerActionItem);
         }
 
-        if (applyNowBtn && !applyNowBtn.classList.contains('disabled-interactive')) {
+        if (applyNowBtn && !applyNowBtn.classList.contains('disabled-interaction')) {
             e.preventDefault();
             this.confirmResizeNow(applyNowBtn);
         }
 
-        if (saveScheduledBtn && !saveScheduledBtn.classList.contains('disabled-interactive')) {
+        if (saveScheduledBtn && !saveScheduledBtn.classList.contains('disabled-interaction')) {
             e.preventDefault();
             this.saveScheduledResize(saveScheduledBtn);
         }

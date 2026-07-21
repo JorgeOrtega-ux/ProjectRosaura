@@ -36,8 +36,8 @@ class AdminMessagesController {
             this.handleMessageSelection(selectTargetRow);
         }
         if (deselectBtn) this.deselectMessage();
-        if (editVisBtn && !editVisBtn.classList.contains('disabled-interactive')) this.editMessageVisibility();
-        if (viewReportsBtn && !viewReportsBtn.classList.contains('disabled-interactive')) this.viewMessageReports();
+        if (editVisBtn && !editVisBtn.classList.contains('disabled-interaction')) this.editMessageVisibility();
+        if (viewReportsBtn && !viewReportsBtn.classList.contains('disabled-interaction')) this.viewMessageReports();
     }
     handleViewLoaded(e) {
         if (e.detail.url.includes('/admin/messages') && !e.detail.url.includes('/admin/messages/visibility') && !e.detail.url.includes('/admin/messages/reports')) {
@@ -78,11 +78,11 @@ class AdminMessagesController {
             [editVisBtn, viewReportsBtn].forEach(btn => {
                 if (btn) {
                     if (isRedis) {
-                        btn.classList.add('disabled-interactive');
+                        btn.classList.add('disabled-interaction');
                         btn.style.opacity = '0.5';
                         btn.style.cursor = 'not-allowed';
                     } else {
-                        btn.classList.remove('disabled-interactive');
+                        btn.classList.remove('disabled-interaction');
                         btn.style.opacity = '';
                         btn.style.cursor = '';
                     }

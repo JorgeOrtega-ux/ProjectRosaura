@@ -312,7 +312,7 @@ export const DesignNetwork = {
         
         if (this.canvas) {
             this.canvas.classList.add('component-canvas-blur');
-            this.canvas.classList.add('disabled-interactive');
+            this.canvas.classList.add('disabled-interaction');
         }
 
         this.updateLockBadges(); 
@@ -329,7 +329,7 @@ export const DesignNetwork = {
                 this.isResizeLocked = false;
                 if (this.canvas) {
                     this.canvas.classList.remove('component-canvas-blur');
-                    this.canvas.classList.remove('disabled-interactive');
+                    this.canvas.classList.remove('disabled-interaction');
                 }
                 this.updateLockBadges();
                 showMessage(__('err_server_timeout'), 'error');
@@ -377,7 +377,7 @@ export const DesignNetwork = {
         
         if (this.canvas && !this.isPrivateBlocked) {
             this.canvas.classList.remove('component-canvas-blur');
-            this.canvas.classList.remove('disabled-interactive');
+            this.canvas.classList.remove('disabled-interaction');
         }
         
         this.updateLockBadges();
@@ -393,7 +393,7 @@ export const DesignNetwork = {
         
         if (this.canvas) {
             this.canvas.classList.remove('component-canvas-blur');
-            this.canvas.classList.remove('disabled-interactive');
+            this.canvas.classList.remove('disabled-interaction');
         }
 
         this.updateLockBadges(); 
@@ -405,7 +405,7 @@ export const DesignNetwork = {
 
         if (this.canvas) {
             this.canvas.classList.add('component-canvas-blur');
-            this.canvas.classList.add('disabled-interactive');
+            this.canvas.classList.add('disabled-interaction');
         }
 
         this.updateLockBadges();
@@ -422,7 +422,7 @@ export const DesignNetwork = {
                 this.isPlazmarLocked = false;
                 if (this.canvas) {
                     this.canvas.classList.remove('component-canvas-blur');
-                    this.canvas.classList.remove('disabled-interactive');
+                    this.canvas.classList.remove('disabled-interaction');
                 }
                 this.updateLockBadges();
                 showMessage(__('err_server_timeout'), 'error');
@@ -447,7 +447,7 @@ export const DesignNetwork = {
 
         if (this.canvas && !this.isPrivateBlocked) {
             this.canvas.classList.remove('component-canvas-blur');
-            this.canvas.classList.remove('disabled-interactive');
+            this.canvas.classList.remove('disabled-interaction');
         }
 
         this.updateLockBadges();
@@ -463,7 +463,7 @@ export const DesignNetwork = {
 
         if (this.canvas) {
             this.canvas.classList.remove('component-canvas-blur');
-            this.canvas.classList.remove('disabled-interactive');
+            this.canvas.classList.remove('disabled-interaction');
         }
 
         this.updateLockBadges();
@@ -551,7 +551,7 @@ export const DesignNetwork = {
 
         const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
         if (btnOpenJoinLive) {
-            btnOpenJoinLive.classList.remove('disabled-interactive', 'disabled');
+            btnOpenJoinLive.classList.remove('disabled-interaction', 'disabled');
             btnOpenJoinLive.removeAttribute('title');
         }
 
@@ -717,7 +717,7 @@ export const DesignNetwork = {
             
             const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
             if (btnOpenJoinLive) {
-                btnOpenJoinLive.classList.remove('disabled-interactive', 'disabled');
+                btnOpenJoinLive.classList.remove('disabled-interaction', 'disabled');
                 btnOpenJoinLive.removeAttribute('title');
             }
 
@@ -844,7 +844,7 @@ export const DesignNetwork = {
         if (role === 'blocked') {
             if (this.canvas) {
                 this.canvas.classList.add('component-canvas-blocked');
-                this.canvas.classList.add('disabled-interactive');
+                this.canvas.classList.add('disabled-interaction');
             }
 
             if (specControls) {
@@ -878,7 +878,7 @@ export const DesignNetwork = {
         } else {
             if (this.canvas) {
                 this.canvas.classList.remove('component-canvas-blocked');
-                this.canvas.classList.remove('disabled-interactive');
+                this.canvas.classList.remove('disabled-interaction');
             }
 
             if (role === 'spectator') {
@@ -940,7 +940,7 @@ export const DesignNetwork = {
             if (response.joined || response.message.toLowerCase().includes('unido')) {
                 this.checkCanvasAccess();
             } else {
-                btn.classList.add('disabled-interactive');
+                btn.classList.add('disabled-interaction');
                 btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span> ${__('btn_pending')}`;
             }
         } else {

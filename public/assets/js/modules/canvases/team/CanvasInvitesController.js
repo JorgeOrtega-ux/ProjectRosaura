@@ -78,9 +78,9 @@ class CanvasInvitesController {
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
             
             if (this.selectedInviteIds.size > 1) {
-                if (copyBtn) copyBtn.classList.add('disabled-interactive');
+                if (copyBtn) copyBtn.classList.add('disabled-interaction');
             } else {
-                if (copyBtn) copyBtn.classList.remove('disabled-interactive');
+                if (copyBtn) copyBtn.classList.remove('disabled-interaction');
             }
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');

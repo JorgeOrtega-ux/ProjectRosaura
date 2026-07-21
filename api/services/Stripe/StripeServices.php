@@ -740,12 +740,15 @@ class StripeServices {
         $stripeCustomerId = $this->subscriptionRepo->getStripeCustomerIdByUserId($userId);
         $history = [];
         
+        $fetchLimit = isset($input['limit']) ? min((int) $input['limit'], 100) : 100;
+        $offset = isset($input['offset']) ? (int) $input['offset'] : 0;
+        
         if ($stripeCustomerId) {
             try {
                 \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
                 $charges = \Stripe\Charge::all([
                     'customer' => $stripeCustomerId,
-                    'limit' => 20,
+                    'limit' => $fetchLimit,
                     'expand' => ['data.invoice']
                 ]);
                 
@@ -772,15 +775,10 @@ class StripeServices {
                     ];
                 }
             } catch (\Exception $e) {
-                
-                $limit = isset($input['limit']) ? min((int) $input['limit'], 50) : 20;
-                $offset = isset($input['offset']) ? (int) $input['offset'] : 0;
-                $history = $this->subscriptionRepo->getPaymentHistory($userId, $limit, $offset);
+                $history = $this->subscriptionRepo->getPaymentHistory($userId, $fetchLimit, $offset);
             }
         } else {
-            $limit = isset($input['limit']) ? min((int) $input['limit'], 50) : 20;
-            $offset = isset($input['offset']) ? (int) $input['offset'] : 0;
-            $history = $this->subscriptionRepo->getPaymentHistory($userId, $limit, $offset);
+            $history = $this->subscriptionRepo->getPaymentHistory($userId, $fetchLimit, $offset);
         }
 
         return [

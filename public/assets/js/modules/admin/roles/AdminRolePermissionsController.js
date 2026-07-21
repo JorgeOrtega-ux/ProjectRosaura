@@ -102,7 +102,7 @@ class AdminRolePermissionsController {
                     cb.classList.add('permission-locked');
                     const block = cb.closest('.component-card__content');
                     if (block) {
-                        .classList.add('disabled-interactive');
+                        .classList.add('disabled-interaction');
                         block.setAttribute('title', _t());
                     }
                     blockedCount++;

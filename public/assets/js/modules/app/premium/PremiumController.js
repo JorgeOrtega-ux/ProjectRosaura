@@ -102,8 +102,8 @@ export class PremiumController {
                         
                     priceEl.style.opacity = '1';
                     periodEl.style.opacity = '1';
-                    priceEl.classList.remove('disabled-interactive');
-                    periodEl.classList.remove('disabled-interactive');
+                    priceEl.classList.remove('disabled-interaction');
+                    periodEl.classList.remove('disabled-interaction');
                 }, 150);
             }
         });

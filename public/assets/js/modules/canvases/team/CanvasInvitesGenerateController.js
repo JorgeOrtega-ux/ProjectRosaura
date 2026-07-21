@@ -59,7 +59,7 @@ class CanvasInvitesGenerateController {
 
         if (btnRole) {
             e.preventDefault();
-            if (btnRole.classList.contains('disabled') || btnRole.classList.contains('disabled-interactive')) {
+            if (btnRole.classList.contains('disabled') || btnRole.classList.contains('disabled-interaction')) {
                 return;
             }
             

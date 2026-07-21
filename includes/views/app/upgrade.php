@@ -90,7 +90,7 @@ $ultraYearly  = number_format($prices[3]['yearly'] / 12, 2);
 
                             <div class="component-plan-card__action">
                                 <?php if ($tier === 1): ?>
-                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 disabled-interactive component-cursor-pointer component-text-center"><?php echo __('plan_btn_current'); ?></div>
+                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 disabled-interaction component-cursor-pointer component-text-center"><?php echo __('plan_btn_current'); ?></div>
                                 <?php elseif ($tier > 1): ?>
                                     <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="1"><?php echo __('plan_btn_downgrade_plus'); ?></div>
                                 <?php else: ?>
@@ -160,7 +160,7 @@ $ultraYearly  = number_format($prices[3]['yearly'] / 12, 2);
 
                             <div class="component-plan-card__action">
                                 <?php if ($tier === 2): ?>
-                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 disabled-interactive component-cursor-pointer component-text-center"><?php echo __('plan_btn_current'); ?></div>
+                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 disabled-interaction component-cursor-pointer component-text-center"><?php echo __('plan_btn_current'); ?></div>
                                 <?php elseif (2 < $tier): ?>
                                     <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="2"><?php echo __('plan_btn_downgrade_pro'); ?></div>
                                 <?php else: ?>
@@ -249,7 +249,7 @@ $ultraYearly  = number_format($prices[3]['yearly'] / 12, 2);
 
                             <div class="component-plan-card__action">
                                 <?php if ($tier === 3): ?>
-                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 disabled-interactive component-cursor-pointer component-text-center"><?php echo __('plan_btn_current'); ?></div>
+                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 disabled-interaction component-cursor-pointer component-text-center"><?php echo __('plan_btn_current'); ?></div>
                                 <?php else: ?>
                                     <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="3"><?php echo __('plan_btn_upgrade_ultra'); ?></div>
                                 <?php endif; ?>

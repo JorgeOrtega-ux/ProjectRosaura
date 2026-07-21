@@ -176,9 +176,9 @@ class CanvasResetController {
         if (!this.optionsContainer) return;
         
         if (isActive) {
-            this.optionsContainer.classList.remove('disabled-interactive');
+            this.optionsContainer.classList.remove('disabled-interaction');
         } else {
-            this.optionsContainer.classList.add('disabled-interactive');
+            this.optionsContainer.classList.add('disabled-interaction');
         }
     }
 

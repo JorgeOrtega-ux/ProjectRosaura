@@ -152,7 +152,7 @@ class AdminStatusEditController {
             const emptyState = document.querySelector('[data-ref="suspension-reason-empty"]');
             if (list) {
                 let hasVisibleItems = false;
-                const items = list.querySelectorAll('.component-menu-link:not(.disabled-interactive)');
+                const items = list.querySelectorAll('.component-menu-link:not(.disabled-interaction)');
                 items.forEach(item => {
                     const textNode = item.querySelector('.component-menu-link-text');
                     const text = textNode ? textNode.textContent.toLowerCase() : item.textContent.toLowerCase();

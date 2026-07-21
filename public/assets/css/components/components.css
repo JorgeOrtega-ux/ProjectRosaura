@@ -229,7 +229,7 @@ html.dark-theme .component-top.shadow {
     flex-direction: column;
 }
 
-.disabled-interactive {
+.disabled-interaction {
     opacity: 0.6;
     pointer-events: none !important;
 }
@@ -467,7 +467,7 @@ html.dark-theme .component-top.shadow {
     transform: scale(0.96); 
 }
 
-.component-button.disabled-interactive {
+.component-button.disabled-interaction {
     cursor: not-allowed;
     opacity: 0.8;
 }
@@ -2012,12 +2012,12 @@ input:checked + .component-toggle-slider:before {
     font-size: 1rem; 
 }
 
-.component-inline-control__btn:hover:not(.disabled-interactive) {
+.component-inline-control__btn:hover:not(.disabled-interaction) {
     background-color: var(--bg-hover-light);
     border-color: var(--border-color-hover);
 }
 
-.component-inline-control__btn:active:not(.disabled-interactive) {
+.component-inline-control__btn:active:not(.disabled-interaction) {
     background-color: var(--border-color);
 }
 

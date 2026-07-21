@@ -158,13 +158,13 @@ class CanvasEditController {
             if (isActive) activePaletteName = translatedName;
 
             const btn = document.createElement('div');
-            btn.className = `component-menu-link ${isActive ? 'active' : ''} ${isLocked ? 'disabled-interactive' : ''}`;
+            btn.className = `component-menu-link ${isActive ? 'active' : ''} ${isLocked ? 'disabled-interaction' : ''}`;
             btn.setAttribute('data-action', isLocked ? '' : 'selectPalette');
             btn.setAttribute('data-palette-id', palette.id);
             btn.setAttribute('data-palette-name', translatedName);
             
             if (isLocked) {
-                btn.classList.add('disabled-interactive');
+                btn.classList.add('disabled-interaction');
                 btn.title = window.__('tooltip_upgrade_palette');
             }
 

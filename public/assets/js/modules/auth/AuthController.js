@@ -122,9 +122,9 @@ class AuthController {
         let timeLeft = seconds;
 
         if (isLink) {
-            element.classList.add('disabled-interactive', 'component-text-notice--muted');
+            element.classList.add('disabled-interaction', 'component-text-notice--muted');
         } else {
-            element.classList.add('disabled-interactive');
+            element.classList.add('disabled-interaction');
         }
 
         element.textContent = `${defaultText} (${timeLeft})`;
@@ -134,9 +134,9 @@ class AuthController {
             if (timeLeft <= 0) {
                 clearInterval(this.resendInterval);
                 if (isLink) {
-                    element.classList.remove('disabled-interactive', 'component-text-notice--muted');
+                    element.classList.remove('disabled-interaction', 'component-text-notice--muted');
                 } else {
-                    element.classList.remove('disabled-interactive');
+                    element.classList.remove('disabled-interaction');
                     element.dataset.originalText = defaultText;
                 }
                 element.textContent = defaultText;
@@ -601,7 +601,7 @@ class AuthController {
 
     async handleResendRegisterCode(btn) {
         this.clearMessages();
-        if (btn.classList.contains('disabled-interactive')) return;
+        if (btn.classList.contains('disabled-interaction')) return;
 
         const regToken = sessionStorage.getItem('reg_token');
         if (!regToken) {
@@ -609,7 +609,7 @@ class AuthController {
             return;
         }
 
-        btn.classList.add('disabled-interactive', 'component-text-notice--muted');
+        btn.classList.add('disabled-interaction', 'component-text-notice--muted');
         btn.textContent = __('btn_sending');
 
         const data = { reg_token: regToken };
@@ -627,7 +627,7 @@ class AuthController {
             if (result.cooldown) {
                 this.startResendTimer(btn, defaultText, result.cooldown, true);
             } else {
-                btn.classList.remove('disabled-interactive', 'component-text-notice--muted');
+                btn.classList.remove('disabled-interaction', 'component-text-notice--muted');
                 btn.textContent = defaultText;
             }
         }

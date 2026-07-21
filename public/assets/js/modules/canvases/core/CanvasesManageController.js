@@ -77,9 +77,9 @@ class CanvasesManageController {
         }
 
         if (deselectBtn) this.deselectCanvas();
-        if (deleteCanvasesBtn && !deleteCanvasesBtn.classList.contains('disabled-interactive')) this.deleteSelectedCanvases(deleteCanvasesBtn);
-        if (createCanvasBtn && !createCanvasBtn.classList.contains('disabled-interactive')) this.createCanvas(createCanvasBtn);
-        if (createSnapshotBtn && !createSnapshotBtn.classList.contains('disabled-interactive')) {
+        if (deleteCanvasesBtn && !deleteCanvasesBtn.classList.contains('disabled-interaction')) this.deleteSelectedCanvases(deleteCanvasesBtn);
+        if (createCanvasBtn && !createCanvasBtn.classList.contains('disabled-interaction')) this.createCanvas(createCanvasBtn);
+        if (createSnapshotBtn && !createSnapshotBtn.classList.contains('disabled-interaction')) {
             e.preventDefault();
             this.createSnapshotSelected(createSnapshotBtn);
         }
@@ -137,7 +137,7 @@ class CanvasesManageController {
                     banner.classList.remove('disabled'); banner.classList.add('active');
                     banner.classList.remove('disabled');
                 }
-                btn.classList.add('disabled-interactive');
+                btn.classList.add('disabled-interaction');
             } else {
                 showMessage(result.message, 'error');
             }
@@ -176,7 +176,7 @@ class CanvasesManageController {
 
         if (tableContainer) {
             
-            tableContainer.classList.add('disabled-interactive');
+            tableContainer.classList.add('disabled-interaction');
             
         }
 
@@ -217,7 +217,7 @@ class CanvasesManageController {
             else window.location.href = url;
         } finally {
             if (tableContainer) {
-                tableContainer.classList.remove('disabled-interactive');
+                tableContainer.classList.remove('disabled-interaction');
                 
             }
         }
@@ -336,16 +336,16 @@ class CanvasesManageController {
             if (this.selectedCanvasIds.size > 1) {
                 navButtons.forEach(btn => {
                     if (btn) {
-                        btn.classList.add('disabled-interactive');
+                        btn.classList.add('disabled-interaction');
                         btn.setAttribute('data-nav', '');
                     }
                 });
-                if (btnCreateSnapshot) btnCreateSnapshot.classList.add('disabled-interactive');
+                if (btnCreateSnapshot) btnCreateSnapshot.classList.add('disabled-interaction');
             } else {
                 navButtons.forEach(btn => {
-                    if (btn) btn.classList.remove('disabled-interactive');
+                    if (btn) btn.classList.remove('disabled-interaction');
                 });
-                if (btnCreateSnapshot) btnCreateSnapshot.classList.remove('disabled-interactive');
+                if (btnCreateSnapshot) btnCreateSnapshot.classList.remove('disabled-interaction');
 
                 let activeUuid = this.selectedCanvasUuid;
                 let activeSize = this.currentCanvasSize;
@@ -366,11 +366,11 @@ class CanvasesManageController {
                 if (btnInvites) btnInvites.setAttribute('data-nav', `${this.basePath}/canvases/manage/invites/${activeUuid}`);
                 
                 if (btnResets) {
-                    btnResets.classList.remove('disabled-interactive');
+                    btnResets.classList.remove('disabled-interaction');
                     btnResets.setAttribute('data-nav', `${this.basePath}/canvases/manage/resets/${activeUuid}`);
                 }
                 if (btnSnapshots) {
-                    btnSnapshots.classList.remove('disabled-interactive');
+                    btnSnapshots.classList.remove('disabled-interaction');
                     btnSnapshots.setAttribute('data-nav', `${this.basePath}/design/s/${activeUuid}`);
                 }
                 
@@ -383,7 +383,7 @@ class CanvasesManageController {
             navButtons.forEach(btn => {
                 if (btn) btn.setAttribute('data-nav', '');
             });
-            if (btnCreateSnapshot) btnCreateSnapshot.classList.add('disabled-interactive');
+            if (btnCreateSnapshot) btnCreateSnapshot.classList.add('disabled-interaction');
         }
     }
 

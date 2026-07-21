@@ -459,8 +459,8 @@ export class DesignChat {
         
         this.isSending = true;
 
-        if (this.btnSend) this.btnSend.classList.add('disabled-interactive');
-        if (this.chatInput) this.chatInput.classList.add('disabled-interactive');
+        if (this.btnSend) this.btnSend.classList.add('disabled-interaction');
+        if (this.chatInput) this.chatInput.classList.add('disabled-interaction');
         
         const backupText = text;
         const backupFiles = [...this.selectedFiles];
@@ -494,8 +494,8 @@ export class DesignChat {
         } catch (error) {
             showMessage(window.__('err_send_message'), 'error');
         } finally {
-            if (this.btnSend) this.btnSend.classList.remove('disabled-interactive');
-            if (this.chatInput) this.chatInput.classList.remove('disabled-interactive');
+            if (this.btnSend) this.btnSend.classList.remove('disabled-interaction');
+            if (this.chatInput) this.chatInput.classList.remove('disabled-interaction');
             
             if (this.chatInput.value.trim().length > 0 || this.selectedFiles.length > 0) {
                 this.btnSend.classList.add('active');

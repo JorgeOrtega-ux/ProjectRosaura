@@ -190,7 +190,7 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                                 <?php foreach ($sizesList as $val => $data): 
                                                     $requiredTier = $data['tier'] ?? 0;
                                                     $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
-                                                    $disabledClass = $isAllowed ? '' : 'disabled-interactive';
+                                                    $disabledClass = $isAllowed ? '' : 'disabled-interaction';
                                                     $action = $isAllowed ? 'selectValue' : '';
                                                     $tierName = SubscriptionPlanConstants::getTierLimits($requiredTier)['name'] ?? 'Pro';
                                                     $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ' . htmlspecialchars($tierName) . '</span>';
@@ -275,7 +275,7 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                             </div>
                         </div>
 
-                        <div data-ref="resize_options_container" class="<?php echo $isResizeActive ? '' : 'disabled-interactive'; ?>">
+                        <div data-ref="resize_options_container" class="<?php echo $isResizeActive ? '' : 'disabled-interaction'; ?>">
                             <hr class="component-divider">
 
                             <div class="component-group-item component-group-item--stacked">
@@ -300,7 +300,7 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                                     <?php foreach ($sizesList as $val => $data): 
                                                         $requiredTier = $data['tier'] ?? 0;
                                                         $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
-                                                        $disabledClass = $isAllowed ? '' : 'disabled-interactive';
+                                                        $disabledClass = $isAllowed ? '' : 'disabled-interaction';
                                                         $action = $isAllowed ? 'selectValue' : '';
                                                         $tierName = SubscriptionPlanConstants::getTierLimits($requiredTier)['name'] ?? 'Pro';
                                                      $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ' . htmlspecialchars($tierName) . '</span>';
