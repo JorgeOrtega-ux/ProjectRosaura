@@ -699,6 +699,85 @@ async def handler(websocket):
                                 })
                                 await websocket.send(error_msg)
 
+                elif data.get("type") == "batch_pixels":
+                    is_locked = await r.exists(lock_key)
+                    is_resize_locked = await r.exists(resize_lock_key)
+                    if is_locked or is_resize_locked:
+                        await websocket.send(json.dumps({"type": "canvas_locked_error"}))
+                        continue
+
+                    pixels_list = data.get("pixels", [])
+                    width = int(data.get("width", 64))
+                    user_id = WS_META[websocket].get('user_id')
+                    raw_color = data.get("color", "transparent")
+                    color_bytes = b'\x00\x00\x00\x00'
+                    color_hex = "transparent"
+                    if isinstance(raw_color, str) and raw_color.startswith("#") and len(raw_color) == 7:
+                        try:
+                            r_c = int(raw_color[1:3], 16)
+                            g_c = int(raw_color[3:5], 16)
+                            b_c = int(raw_color[5:7], 16)
+                            color_bytes = bytes([r_c, g_c, b_c, 255])
+                            color_hex = raw_color.lower()
+                        except ValueError:
+                            continue
+                    elif raw_color != "transparent":
+                        continue
+
+                    if not user_id or not pixels_list:
+                        continue
+
+                    raw_config = await r.hgetall(config_key)
+                    config_batch = int(raw_config.get(b'cooldown_batch', 5))
+                    config_sec = int(raw_config.get(b'cooldown_seconds', 10))
+
+                    if user_id not in USER_LOCKS:
+                        USER_LOCKS[user_id] = asyncio.Lock()
+
+                    async with USER_LOCKS[user_id]:
+                        for px in pixels_list:
+                            x = int(px.get("x", 0))
+                            y = int(px.get("y", 0))
+                            offset = (y * width) + x
+                            protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
+                            protected_by = await r.get(protected_key)
+                            if protected_by:
+                                continue
+
+                            now_t = time.time()
+                            byte_offset = (y * width + x) * 4
+                            keys = [
+                                f"canvas:{canvas_id}:state",
+                                protected_key,
+                                f"canvas:{canvas_id}:user:{user_id}:cooldown",
+                                f"user:{user_id}:perk:no_cooldown",
+                                f"user:{user_id}:perk:protection",
+                                f"user:{user_id}:perk:eraser",
+                                f"canvas:{canvas_id}:stream"
+                            ]
+                            args = [
+                                str(byte_offset),
+                                color_bytes,
+                                str(config_batch),
+                                str(config_sec),
+                                str(now_t),
+                                str(user_id),
+                                str(x),
+                                str(y),
+                                color_hex
+                            ]
+                            await r.eval(PAINT_PIXEL_LUA, 7, *keys, *args)
+
+                        clients_in_room = ROOMS.get(canvas_id, set()) - {websocket}
+                        broadcast_msg = json.dumps({
+                            "type": "batch_pixels",
+                            "pixels": pixels_list,
+                            "color": color_hex
+                        })
+                        if clients_in_room:
+                            websockets.broadcast(clients_in_room, broadcast_msg)
+                        await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
+
                 elif data.get("type") == "protect_pixel":
                     x = int(data.get("x", 0))
                     y = int(data.get("y", 0))

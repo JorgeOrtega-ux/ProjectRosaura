@@ -296,7 +296,7 @@ export const DesignInteractions = {
 
         const coords = this.getBoardCoords(e.clientX, e.clientY);
         if (coords) {
-            const key = `${coords.x},${coords.y}`;
+            const key = (coords.y << 16) | coords.x;
             if (this.selectedPixels.has(key)) {
                 this.selectionMode = 'remove';
                 this.selectedPixels.delete(key);
@@ -502,7 +502,7 @@ export const DesignInteractions = {
         if (this.isSelecting) {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
             if (coords) {
-                const key = `${coords.x},${coords.y}`;
+                const key = (coords.y << 16) | coords.x;
                 const sizeBefore = this.selectedPixels.size;
                 
                 if (this.selectionMode === 'add') {
@@ -846,7 +846,7 @@ export const DesignInteractions = {
                 if (!this.isSpectator && !this.isResetLocked && !this.isResizeLocked) {
                     const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
                     if (coords) {
-                        const key = `${coords.x},${coords.y}`;
+                        const key = (coords.y << 16) | coords.x;
                         if (this.selectedPixels.has(key)) {
                             this.selectionMode = 'remove';
                             this.selectedPixels.delete(key);
@@ -973,10 +973,10 @@ export const DesignInteractions = {
                 if (typeof showMessage === 'function') showMessage(msgText, 'warning');
                 return;
             }
-            const targets = Array.from(this.selectedPixels).map(p => {
-                const [x, y] = p.split(',').map(Number);
-                return { x, y };
-            });
+            const targets = Array.from(this.selectedPixels).map(key => ({
+                x: key & 0xFFFF,
+                y: key >> 16
+            }));
             const usedPerk = this.activeBomb;
             if (this.wsManager) {
                 this.wsManager.send({
@@ -1016,18 +1016,17 @@ export const DesignInteractions = {
         let hitProtected = false;
         
         this.selectedPixels.forEach(key => {
-            const [x, y] = key.split(',').map(Number);
+            const x = key & 0xFFFF;
+            const y = key >> 16;
             const offset = (y * this.boardWidth) + x;
 
             if (this.interactionMode === 'normal' || this.interactionMode === 'protecting') {
                 if (this.protectedPixels && this.protectedPixels.has(offset)) {
-                    
                     hitProtected = true;
                     return;
                 }
             } else if (this.interactionMode === 'erasing') {
                 if (this.protectedPixels && !this.protectedPixels.has(offset)) {
-                    
                     return;
                 }
             }
@@ -1048,14 +1047,26 @@ export const DesignInteractions = {
             return;
         }
 
-        validPixels.forEach(p => {
-            if (this.interactionMode === 'normal') {
-                this.offscreenCtx.fillStyle = this.currentColor;
-                this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
-                this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
-            }
-            
-            if (this.wsManager) {
+        if (this.renderWorker) {
+            const pixelsToPush = validPixels.map(p => ({
+                x: p.x,
+                y: p.y,
+                color: this.interactionMode === 'normal' ? this.currentColor : 'transparent'
+            }));
+            this.renderWorker.postMessage({ type: 'PUSH_PIXELS', payload: { pixels: pixelsToPush } });
+        } else if (this.offscreenCtx) {
+            validPixels.forEach(p => {
+                if (this.interactionMode === 'normal') {
+                    this.offscreenCtx.fillStyle = this.currentColor;
+                    this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
+                    this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
+                }
+            });
+        }
+        
+        if (this.wsManager && validPixels.length > 0) {
+            if (validPixels.length === 1) {
+                const p = validPixels[0];
                 let msgType = 'pixel';
                 if (this.interactionMode === 'protecting') msgType = 'protect_pixel';
                 if (this.interactionMode === 'erasing') msgType = 'erase_pixel';
@@ -1068,8 +1079,20 @@ export const DesignInteractions = {
                     width: this.boardWidth,
                     userId: window.activeUserId || null 
                 });
+            } else {
+                let msgType = 'batch_pixels';
+                if (this.interactionMode === 'protecting') msgType = 'batch_protect_pixels';
+                if (this.interactionMode === 'erasing') msgType = 'batch_erase_pixels';
+
+                this.wsManager.send({
+                    type: msgType,
+                    pixels: validPixels.map(p => ({ x: p.x, y: p.y })),
+                    color: colorHex,
+                    width: this.boardWidth,
+                    userId: window.activeUserId || null
+                });
             }
-        });
+        }
 
         if (this.interactionMode === 'normal') {
             if (!this.perkNoCooldown) {
@@ -1119,6 +1142,44 @@ export const DesignInteractions = {
         this.requestRender();
     },
 
+    ensureExplosionStyles() {
+        if (!document.getElementById('nuclear-style')) {
+            const style = document.createElement('style');
+            style.id = 'nuclear-style';
+            style.innerHTML = `
+                @keyframes nuclear-shake {
+                    0% { transform: translate(1px, 1px) rotate(0deg); }
+                    10% { transform: translate(-10px, -4px) rotate(-1deg); }
+                    20% { transform: translate(-6px, 0px) rotate(1deg); }
+                    30% { transform: translate(6px, 4px) rotate(0deg); }
+                    40% { transform: translate(2px, -2px) rotate(1deg); }
+                    50% { transform: translate(-2px, 4px) rotate(-1deg); }
+                    60% { transform: translate(-6px, 2px) rotate(0deg); }
+                    70% { transform: translate(6px, 2px) rotate(-1deg); }
+                    80% { transform: translate(-2px, -2px) rotate(1deg); }
+                    90% { transform: translate(2px, 4px) rotate(0deg); }
+                    100% { transform: translate(2px, -4px) rotate(-1deg); }
+                }
+                .nuclear-shake {
+                    animation: nuclear-shake 0.1s infinite !important;
+                }
+                .canvas-flash-overlay {
+                    position: fixed;
+                    top: 0; left: 0;
+                    width: 100vw; height: 100vh;
+                    background-color: white;
+                    z-index: 999999;
+                    pointer-events: none;
+                    opacity: 0;
+                }
+                .canvas-flash-overlay.active {
+                    opacity: 1;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    },
+
     triggerExplosionEffect(cx, cy, r, perkId) {
         if (!this.explosions) this.explosions = [];
         this.explosions.push({
@@ -1130,31 +1191,9 @@ export const DesignInteractions = {
             duration: PerksRegistry.getExplosionDuration(perkId)
         });
         
+        this.ensureExplosionStyles();
+
         if (PerksRegistry.hasScreenShake(perkId)) {
-            if (!document.getElementById('nuclear-style')) {
-                const style = document.createElement('style');
-                style.id = 'nuclear-style';
-                style.innerHTML = `
-                    @keyframes nuclear-shake {
-                        0% { transform: translate(1px, 1px) rotate(0deg); }
-                        10% { transform: translate(-10px, -4px) rotate(-1deg); }
-                        20% { transform: translate(-6px, 0px) rotate(1deg); }
-                        30% { transform: translate(6px, 4px) rotate(0deg); }
-                        40% { transform: translate(2px, -2px) rotate(1deg); }
-                        50% { transform: translate(-2px, 4px) rotate(-1deg); }
-                        60% { transform: translate(-6px, 2px) rotate(0deg); }
-                        70% { transform: translate(6px, 2px) rotate(-1deg); }
-                        80% { transform: translate(-2px, -2px) rotate(1deg); }
-                        90% { transform: translate(2px, 4px) rotate(0deg); }
-                        100% { transform: translate(2px, -4px) rotate(-1deg); }
-                    }
-                    .nuclear-shake {
-                        animation: nuclear-shake 0.1s infinite !important;
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            
             if (this.canvas) {
                 this.canvas.classList.add('nuclear-shake');
                 setTimeout(() => {
@@ -1165,20 +1204,22 @@ export const DesignInteractions = {
         
         if (PerksRegistry.hasScreenFlash(perkId)) {
             const flashMs = PerksRegistry.getFlashDuration(perkId);
-            const flash = document.createElement('div');
-            flash.style.position = 'fixed';
-            flash.style.top = '0';
-            flash.style.left = '0';
-            flash.style.width = '100vw';
-            flash.style.height = '100vh';
-            flash.style.backgroundColor = 'white';
-            flash.style.zIndex = '999999';
-            flash.style.pointerEvents = 'none';
-            flash.style.transition = `opacity ${flashMs / 1000}s ease-out`;
-            document.body.appendChild(flash);
-            flash.offsetHeight;
-            flash.style.opacity = '0';
-            setTimeout(() => flash.remove(), flashMs);
+            if (!this.flashOverlay) {
+                this.flashOverlay = document.createElement('div');
+                this.flashOverlay.className = 'canvas-flash-overlay';
+                document.body.appendChild(this.flashOverlay);
+            }
+            this.flashOverlay.style.transition = 'none';
+            this.flashOverlay.classList.add('active');
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    if (this.flashOverlay) {
+                        this.flashOverlay.style.transition = `opacity ${flashMs / 1000}s ease-out`;
+                        this.flashOverlay.classList.remove('active');
+                    }
+                });
+            });
         }
         
         if (!this.isExplosionLoopRunning) {

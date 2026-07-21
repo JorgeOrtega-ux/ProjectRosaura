@@ -93,14 +93,31 @@ export const DesignNetwork = {
 
             this.wsManager.on('message', (data) => {
                 if (data.type === 'pixel') {
-                    if (!this.pixelQueue) this.pixelQueue = [];
-                    this.pixelQueue.push({
-                        x: parseInt(data.x, 10),
-                        y: parseInt(data.y, 10),
-                        color: data.color
-                    });
-                    this.requestRender();
+                    const p = { x: parseInt(data.x, 10), y: parseInt(data.y, 10), color: data.color };
+                    if (this.renderWorker) {
+                        this.renderWorker.postMessage({ type: 'PUSH_PIXELS', payload: { pixels: [p] } });
+                    } else {
+                        if (!this.pixelQueue) this.pixelQueue = [];
+                        this.pixelQueue.push(p);
+                        this.requestRender();
+                    }
                 } 
+                else if (data.type === 'batch_pixels' || data.type === 'batch_protect_pixels' || data.type === 'batch_erase_pixels') {
+                    if (Array.isArray(data.pixels)) {
+                        const pixels = data.pixels.map(p => ({
+                            x: parseInt(p.x, 10),
+                            y: parseInt(p.y, 10),
+                            color: data.color
+                        }));
+                        if (this.renderWorker) {
+                            this.renderWorker.postMessage({ type: 'PUSH_PIXELS', payload: { pixels } });
+                        } else {
+                            if (!this.pixelQueue) this.pixelQueue = [];
+                            this.pixelQueue.push(...pixels);
+                            this.requestRender();
+                        }
+                    }
+                }
                 else if (data.type === 'nuclear_warning') {
                     if (typeof this.handleNuclearWarning === 'function') {
                         this.handleNuclearWarning(data);
@@ -112,20 +129,24 @@ export const DesignNetwork = {
                     const r = parseInt(data.r, 10);
                     const perkId = data.perk || 'pixel_misil_1';
                     
-                    if (typeof this.triggerExplosionEffect === 'function') {
-                        this.triggerExplosionEffect(cX, cY, r, perkId);
+                    if (this.renderWorker) {
+                        this.renderWorker.postMessage({ type: 'BOMB_PIXEL', payload: { cX, cY, r, perkId } });
+                    } else {
+                        if (typeof this.triggerExplosionEffect === 'function') {
+                            this.triggerExplosionEffect(cX, cY, r, perkId);
+                        }
+                        if (this.offscreenCtx) {
+                            for (let y = cY - r; y <= cY + r; y++) {
+                                const dy = y - cY;
+                                const dx = Math.floor(Math.sqrt(r * r - dy * dy));
+                                const startX = cX - dx;
+                                const endX = cX + dx;
+                                const width = endX - startX + 1;
+                                this.offscreenCtx.clearRect(startX, y, width, 1);
+                            }
+                        }
+                        this.requestRender();
                     }
-                    
-                    for (let y = cY - r; y <= cY + r; y++) {
-                        const dy = y - cY;
-                        const dx = Math.floor(Math.sqrt(r * r - dy * dy));
-                        const startX = cX - dx;
-                        const endX = cX + dx;
-                        const width = endX - startX + 1;
-
-                        this.offscreenCtx.clearRect(startX, y, width, 1);
-                    }
-                    this.requestRender();
                 }
                 else if (data.type === 'chunk_data') {
                     if (typeof this.hydrateChunk === 'function') {
@@ -756,7 +777,11 @@ export const DesignNetwork = {
     },
     
     handleCanvasCleared(data) {
-        this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({ type: 'DRAW_IMAGE_BUFFER', payload: { imageBitmap: null } });
+        } else if (this.offscreenCtx) {
+            this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+        }
         this.requestRender();
         
         this.isResetLocked = false;

@@ -60,6 +60,31 @@ export const DesignRender = {
     },
 
     requestRender() {
+        if (this.renderWorker) {
+            const selArray = this.selectedPixels ? Array.from(this.selectedPixels) : [];
+            const hoverKey = this.hoveredPixel ? ((this.hoveredPixel.y << 16) | this.hoveredPixel.x) : -1;
+            
+            this.renderWorker.postMessage({
+                type: 'UPDATE_TRANSFORM',
+                payload: {
+                    transform: this.transform,
+                    isDarkMode: this.isDarkMode(),
+                    currentColor: this.currentColor,
+                    isSpectator: this.isSpectator,
+                    isResetLocked: this.isResetLocked
+                }
+            });
+
+            this.renderWorker.postMessage({
+                type: 'UPDATE_SELECTION',
+                payload: {
+                    selectedPixels: selArray,
+                    hoveredPixelKey: hoverKey
+                }
+            });
+            return;
+        }
+
         if (!this.needsRender) {
             this.needsRender = true;
             this.animationFrameId = requestAnimationFrame(this.renderBound);
@@ -72,10 +97,6 @@ export const DesignRender = {
 
         if (this.pixelQueue && this.pixelQueue.length > 0 && this.offscreenCtx && this.boardWidth > 0 && this.boardHeight > 0) {
             try {
-                const imgData = this.offscreenCtx.getImageData(0, 0, this.boardWidth, this.boardHeight);
-                const data32 = new Uint32Array(imgData.data.buffer);
-                let updated = false;
-
                 while (this.pixelQueue.length > 0) {
                     const p = this.pixelQueue.pop();
                     const x = p.x;
@@ -83,23 +104,15 @@ export const DesignRender = {
                     if (isNaN(x) || isNaN(y) || x < 0 || x >= this.boardWidth || y < 0 || y >= this.boardHeight) {
                         continue;
                     }
-                    const idx = (y * this.boardWidth) + x;
                     const color = p.color;
 
                     if (color === 'transparent' || color === 255) {
-                        data32[idx] = 0x00000000;
-                        updated = true;
-                    } else if (typeof color === 'string' && color.startsWith('#') && color.length === 7) {
-                        const r = parseInt(color.slice(1, 3), 16);
-                        const g = parseInt(color.slice(3, 5), 16);
-                        const b = parseInt(color.slice(5, 7), 16);
-                        data32[idx] = (255 << 24) | (b << 16) | (g << 8) | r;
-                        updated = true;
+                        this.offscreenCtx.clearRect(x, y, 1, 1);
+                    } else if (typeof color === 'string') {
+                        this.offscreenCtx.fillStyle = color;
+                        this.offscreenCtx.clearRect(x, y, 1, 1);
+                        this.offscreenCtx.fillRect(x, y, 1, 1);
                     }
-                }
-
-                if (updated) {
-                    this.offscreenCtx.putImageData(imgData, 0, 0);
                 }
             } catch (e) {
                 this.pixelQueue.length = 0;
@@ -197,7 +210,7 @@ export const DesignRender = {
         const renderSet = new Set(this.selectedPixels);
 
         if (this.hoveredPixel && !this.isSpectator && !this.isResetLocked) {
-            const hoverKey = `${this.hoveredPixel.x},${this.hoveredPixel.y}`;
+            const hoverKey = (this.hoveredPixel.y << 16) | this.hoveredPixel.x;
             if (!renderSet.has(hoverKey)) {
                 renderSet.add(hoverKey);
             }
@@ -209,12 +222,13 @@ export const DesignRender = {
             this.ctx.beginPath();
             
             renderSet.forEach(key => {
-                const [x, y] = key.split(',').map(Number);
+                const x = key & 0xFFFF;
+                const y = key >> 16;
                 
-                const hasTop = renderSet.has(`${x},${y-1}`);
-                const hasBottom = renderSet.has(`${x},${y+1}`);
-                const hasLeft = renderSet.has(`${x-1},${y}`);
-                const hasRight = renderSet.has(`${x+1},${y}`);
+                const hasTop = renderSet.has(((y - 1) << 16) | x);
+                const hasBottom = renderSet.has(((y + 1) << 16) | x);
+                const hasLeft = renderSet.has((y << 16) | (x - 1));
+                const hasRight = renderSet.has((y << 16) | (x + 1));
                 
                 if (!hasTop) { this.ctx.moveTo(x, y); this.ctx.lineTo(x + 1, y); }
                 if (!hasBottom) { this.ctx.moveTo(x, y + 1); this.ctx.lineTo(x + 1, y + 1); }

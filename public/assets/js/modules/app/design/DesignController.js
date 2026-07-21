@@ -51,6 +51,7 @@ class DesignController {
 
         this.offscreenCanvas = null;
         this.offscreenCtx = null;
+        this.renderWorker = null;
         
         this.needsRender = false;
         this.animationFrameId = null;
@@ -336,6 +337,11 @@ class DesignController {
 
         if (this.resetTimerInterval) {
             clearInterval(this.resetTimerInterval);
+        }
+
+        if (this.renderWorker) {
+            this.renderWorker.terminate();
+            this.renderWorker = null;
         }
     }
 }

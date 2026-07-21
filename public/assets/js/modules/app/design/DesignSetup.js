@@ -30,10 +30,22 @@ export const DesignSetup = {
 
     drawImageOnCanvas(url) {
         const img = new Image();
-        img.onload = () => {
-            this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
-            this.offscreenCtx.drawImage(img, 0, 0, this.boardWidth, this.boardHeight);
-            this.requestRender();
+        img.onload = async () => {
+            if (this.renderWorker) {
+                try {
+                    const imageBitmap = await createImageBitmap(img);
+                    this.renderWorker.postMessage({
+                        type: 'DRAW_IMAGE_BUFFER',
+                        payload: { imageBitmap }
+                    }, [imageBitmap]);
+                } catch (e) {
+                    console.error('[DesignSetup] Error creating image bitmap for worker:', e);
+                }
+            } else if (this.offscreenCtx) {
+                this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+                this.offscreenCtx.drawImage(img, 0, 0, this.boardWidth, this.boardHeight);
+                this.requestRender();
+            }
         };
         img.onerror = () => {
             showMessage(__('err_history_image_missing'), 'error');
@@ -228,6 +240,17 @@ export const DesignSetup = {
 
     async hydrateCanvasState(base64String) {
         try {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'HYDRATE_STATE',
+                    payload: {
+                        base64String,
+                        boardWidth: this.boardWidth,
+                        boardHeight: this.boardHeight
+                    }
+                });
+                return;
+            }
             const bytes = await this.decompressIfNeeded(base64String);
             if (!bytes) return;
 
@@ -288,10 +311,41 @@ export const DesignSetup = {
 
     setupCanvas() {
         this.updateCanvasDimensions();
-        this.offscreenCanvas = document.createElement('canvas');
-        this.offscreenCanvas.width = this.boardWidth;
-        this.offscreenCanvas.height = this.boardHeight;
-        this.offscreenCtx = this.offscreenCanvas.getContext('2d', { alpha: true });
+        
+        if (this.canvas && typeof this.canvas.transferControlToOffscreen === 'function' && typeof Worker !== 'undefined') {
+            try {
+                if (!this.renderWorker) {
+                    const workerPath = `${this.basePath}/assets/js/modules/app/design/workers/CanvasRenderWorker.js`;
+                    this.renderWorker = new Worker(workerPath);
+                    const offscreen = this.canvas.transferControlToOffscreen();
+                    const dpr = window.devicePixelRatio || 1;
+                    
+                    this.renderWorker.postMessage({
+                        type: 'INIT_CANVAS',
+                        payload: {
+                            canvas: offscreen,
+                            boardWidth: this.boardWidth,
+                            boardHeight: this.boardHeight,
+                            dpr: dpr
+                        }
+                    }, [offscreen]);
+                }
+            } catch (e) {
+                console.warn('[DesignSetup] Worker OffscreenCanvas initialization fallback to main thread:', e);
+                this.renderWorker = null;
+            }
+        }
+
+        if (!this.renderWorker) {
+            this.offscreenCanvas = document.createElement('canvas');
+            this.offscreenCanvas.width = this.boardWidth;
+            this.offscreenCanvas.height = this.boardHeight;
+            this.offscreenCtx = this.offscreenCanvas.getContext('2d', { alpha: true });
+        }
+
+        if (typeof this.ensureExplosionStyles === 'function') {
+            this.ensureExplosionStyles();
+        }
     },
 
     updateCanvasDimensions() {
