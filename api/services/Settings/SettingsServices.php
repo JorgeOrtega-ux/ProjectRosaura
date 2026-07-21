@@ -435,11 +435,11 @@ class SettingsServices
             return ['success' => false, 'message' => __('error.rate_limit_exceeded')];
         }
 
-        $submittedPassword = trim($data['current_password'] ?? $data['password'] ?? '');
-        $isGoogleUser = !empty($user['google_id']);
-        $passwordValid = ($isGoogleUser || $submittedPassword === 'GOOGLE_OAUTH_CONFIRMED') ? true : password_verify($submittedPassword, $user['password'] ?? '');
+        $user = $this->userRepository->findById($userId);
+        if (!$user) return ['success' => false, 'message' => __('error.user_not_found')];
 
-        if ($user && $passwordValid) {
+        $submittedPassword = trim($data['current_password'] ?? $data['password'] ?? '');
+        if (!empty($submittedPassword) && password_verify($submittedPassword, $user['password'] ?? '')) {
             $this->rateLimiter->clear(RateLimitConstants::KEY_SET_VERIFY_PASSWORD . "_{$userId}");
             $codeMinutes = $this->config['verification_code_minutes'];
             $this->sessionManager->set('can_change_password_expires', time() + ($codeMinutes * 60));
@@ -506,8 +506,7 @@ class SettingsServices
         $user = $this->userRepository->findById($userId);
 
         $submittedPassword = trim($data['password'] ?? '');
-        $isGoogleUser = !empty($user['google_id']);
-        $passwordValid = ($isGoogleUser || $submittedPassword === 'GOOGLE_OAUTH_CONFIRMED') ? true : password_verify($submittedPassword, $user['password'] ?? '');
+        $passwordValid = !empty($submittedPassword) && password_verify($submittedPassword, $user['password'] ?? '');
 
         if ($user && $passwordValid) {
             $this->rateLimiter->clear(RateLimitConstants::KEY_SET_DELETE_ACCOUNT . "_{$userId}");

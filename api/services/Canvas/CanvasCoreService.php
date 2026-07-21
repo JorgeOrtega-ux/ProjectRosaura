@@ -626,11 +626,8 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_user_not_found')];
             }
             $passwordHash = $user['password_hash'] ?? $user['password'] ?? '';
-            $isGoogleUser = !empty($user['google_id']);
-            if (!$isGoogleUser && $password !== 'GOOGLE_OAUTH_CONFIRMED') {
-                if (empty($password) || !password_verify($password, $passwordHash)) {
-                    return ['success' => false, 'message' => __('err_invalid_password')];
-                }
+            if (empty($password) || empty($passwordHash) || !password_verify($password, $passwordHash)) {
+                return ['success' => false, 'message' => __('err_invalid_password')];
             }
 
             $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
@@ -759,13 +756,7 @@ class CanvasCoreService {
             if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
 
             $passwordHash = $user['password_hash'] ?? $user['password'] ?? '';
-            $isGoogleUser = !empty($user['google_id']);
-
-            if (!empty($passwordHash)) {
-                if (!password_verify($password, $passwordHash) && $password !== 'GOOGLE_OAUTH_CONFIRMED') {
-                    return ['success' => false, 'message' => __('err_invalid_password')];
-                }
-            } else if (!$isGoogleUser && $password !== 'GOOGLE_OAUTH_CONFIRMED') {
+            if (empty($password) || empty($passwordHash) || !password_verify($password, $passwordHash)) {
                 return ['success' => false, 'message' => __('err_invalid_password')];
             }
 
@@ -829,13 +820,7 @@ class CanvasCoreService {
             if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
 
             $passwordHash = $user['password_hash'] ?? $user['password'] ?? '';
-            $isGoogleUser = !empty($user['google_id']);
-
-            if (!empty($passwordHash)) {
-                if (!password_verify($password, $passwordHash) && $password !== 'GOOGLE_OAUTH_CONFIRMED') {
-                    return ['success' => false, 'message' => __('err_invalid_password')];
-                }
-            } else if (!$isGoogleUser && $password !== 'GOOGLE_OAUTH_CONFIRMED') {
+            if (empty($password) || empty($passwordHash) || !password_verify($password, $passwordHash)) {
                 return ['success' => false, 'message' => __('err_invalid_password')];
             }
 

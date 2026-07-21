@@ -344,38 +344,42 @@ class AuthController {
                 window.location.href = this.basePath + '/';
             }
         } else {
-            this._resetTurnstile();
-            restoreButton(btn);
+            this.handleLoginFailure(result, btn);
+        }
+    }
 
-            if (result.status === 'pending_deletion') {
-                const formWrapper = document.querySelector('.component-form-box');
-                if (formWrapper) {
-                    formWrapper.innerHTML = `
-                        <div class="component-form-header">
-                            <h1 class="component-form-title">${window.__('account_in_deletion')}</h1>
-                            <p class="component-form-desc">${window.__('account_scheduled_deletion').replace(':date', `<strong>${new Date(result.scheduled_at).toLocaleDateString()}</strong>`)}</p>
+    handleLoginFailure(result, btn = null) {
+        this._resetTurnstile();
+        if (btn) restoreButton(btn);
+
+        if (result.status === 'pending_deletion') {
+            const formWrapper = document.querySelector('.component-form-box');
+            if (formWrapper) {
+                formWrapper.innerHTML = `
+                    <div class="component-form-header">
+                        <h1 class="component-form-title">${window.__('account_in_deletion')}</h1>
+                        <p class="component-form-desc">${window.__('account_scheduled_deletion').replace(':date', `<strong>${new Date(result.scheduled_at).toLocaleDateString()}</strong>`)}</p>
+                    </div>
+                    <div class="component-form-body">
+                        <p class="component-form-desc">${window.__('cancel_deletion_prompt')}</p>
+                        <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="cancelAccountDeletion" data-token="${result.temp_auth_token}">${window.__('yes_cancel_deletion')}</button>
+                        
+                        <div class="component-link-container component-link-container--center">
+                            <span class="component-link" data-action="continueAccountDeletion">${window.__('no_keep_deletion')}</span>
                         </div>
-                        <div class="component-form-body">
-                            <p class="component-form-desc">${window.__('cancel_deletion_prompt')}</p>
-                            <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="cancelAccountDeletion" data-token="${result.temp_auth_token}">${window.__('yes_cancel_deletion')}</button>
-                            
-                            <div class="component-link-container component-link-container--center">
-                                <span class="component-link" data-action="continueAccountDeletion">${window.__('no_keep_deletion')}</span>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    this.showError(result.message);
-                }
-            } else if (result.status === 'suspended') {
-                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/account-suspended');
-                else window.location.href = this.basePath + '/account-suspended';
-            } else if (result.status === 'deleted') {
-                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/account-deleted');
-                else window.location.href = this.basePath + '/account-deleted';
+                    </div>
+                `;
             } else {
-                this.showError(result.message || window.__('err_login_limit'));
+                this.showError(result.message);
             }
+        } else if (result.status === 'suspended') {
+            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/account-suspended');
+            else window.location.href = this.basePath + '/account-suspended';
+        } else if (result.status === 'deleted') {
+            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/account-deleted');
+            else window.location.href = this.basePath + '/account-deleted';
+        } else {
+            this.showError(result.message || window.__('err_login_limit'));
         }
     }
 
@@ -410,7 +414,7 @@ class AuthController {
                 window.location.href = this.basePath + '/';
             }
         } else {
-            this.showError(result.message || 'Google Login failed');
+            this.handleLoginFailure(result);
         }
     }
 
