@@ -12,6 +12,58 @@ import gzip
 
 from mysql.connector import pooling
 
+PAINT_PIXEL_LUA = """
+local protected_by = redis.call('GET', KEYS[2])
+if protected_by then
+    return {'PROTECTED_ERROR', protected_by}
+end
+
+local config_batch = tonumber(ARGV[3])
+local config_sec = tonumber(ARGV[4])
+local now = tonumber(ARGV[5])
+
+local u_state = redis.call('HMGET', KEYS[3], 'b', 't')
+local balance = config_batch
+local last_t = now
+
+if u_state[1] then
+    balance = tonumber(u_state[1]) or config_batch
+    last_t = tonumber(u_state[2]) or now
+end
+
+if config_sec > 0 then
+    local elapsed = now - last_t
+    local replenish = math.floor(elapsed / config_sec)
+    if replenish > 0 then
+        balance = math.min(config_batch, balance + replenish)
+        last_t = last_t + (replenish * config_sec)
+    end
+end
+
+if balance >= config_batch then
+    last_t = now
+end
+
+local is_no_cooldown = redis.call('EXISTS', KEYS[4])
+local prot_left = tonumber(redis.call('GET', KEYS[5]) or '0')
+local eraser_left = tonumber(redis.call('GET', KEYS[6]) or '0')
+
+if balance >= 1 or is_no_cooldown == 1 then
+    if is_no_cooldown == 0 then
+        balance = balance - 1
+        redis.call('HMSET', KEYS[3], 'b', tostring(balance), 't', tostring(last_t))
+    end
+    
+    redis.call('SETRANGE', KEYS[1], tonumber(ARGV[1]), ARGV[2])
+    redis.call('XADD', KEYS[7], '*', 'u', ARGV[6], 'x', ARGV[7], 'y', ARGV[8], 'c', ARGV[9])
+    
+    return {'OK', tostring(balance), tostring(last_t), tostring(is_no_cooldown), tostring(prot_left), tostring(eraser_left)}
+else
+    return {'COOLDOWN_ERROR', tostring(balance), tostring(last_t), tostring(is_no_cooldown), tostring(prot_left), tostring(eraser_left)}
+end
+"""
+
+
 # Global connection pool for chunks
 DB_POOL = None
 
@@ -153,14 +205,8 @@ async def admin_events_listener():
                     data = json.loads(message["data"].decode('utf-8'))
                     canvas_id = str(data.get("canvas_id"))
                     
-                    if canvas_id in ROOMS:
-                        msg_str = json.dumps(data)
-                        tasks = [
-                            asyncio.create_task(client.send(msg_str))
-                            for client in ROOMS[canvas_id]
-                        ]
-                        if tasks:
-                            await asyncio.gather(*tasks)
+                    if canvas_id in ROOMS and ROOMS[canvas_id]:
+                        websockets.broadcast(ROOMS[canvas_id], json.dumps(data))
                 except Exception as e:
                     print(f"[!] Error processing Pub/Sub message: {e}")
     except Exception as e:
@@ -187,23 +233,13 @@ async def sync_events_listener():
                     
                     if target_type == "canvas":
                         canvas_id = str(data.get("canvas_id"))
-                        if canvas_id in ROOMS:
-                            tasks = [
-                                asyncio.create_task(client.send(payload))
-                                for client in ROOMS[canvas_id]
-                            ]
-                            if tasks:
-                                await asyncio.gather(*tasks)
+                        if canvas_id in ROOMS and ROOMS[canvas_id]:
+                            websockets.broadcast(ROOMS[canvas_id], payload)
                                 
                     elif target_type == "live":
                         code = str(data.get("code"))
-                        if code in LIVE_ROOMS:
-                            tasks = [
-                                asyncio.create_task(client.send(payload))
-                                for client in LIVE_ROOMS[code]
-                            ]
-                            if tasks:
-                                await asyncio.gather(*tasks)
+                        if code in LIVE_ROOMS and LIVE_ROOMS[code]:
+                            websockets.broadcast(LIVE_ROOMS[code], payload)
                 except Exception as e:
                     print(f"[!] Error processing sync event message: {e}")
     except Exception as e:
@@ -430,12 +466,9 @@ async def handler(websocket):
                             "opacity": data.get("opacity"),
                             "angle": data.get("angle")
                         })
-                        tasks = [
-                            asyncio.create_task(client.send(update_msg))
-                            for client in LIVE_ROOMS[code] if client != websocket
-                        ]
-                        if tasks:
-                            await asyncio.gather(*tasks)
+                        recipients = LIVE_ROOMS[code] - {websocket}
+                        if recipients:
+                            websockets.broadcast(recipients, update_msg)
                         await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "live", "code": code, "payload": update_msg}))
                             
                 elif data.get("type") == "end_live_share":
@@ -445,12 +478,9 @@ async def handler(websocket):
                             "type": "live_session_ended",
                             "code": code
                         })
-                        tasks = [
-                            asyncio.create_task(client.send(end_msg))
-                            for client in LIVE_ROOMS[code] if client != websocket
-                        ]
-                        if tasks:
-                            await asyncio.gather(*tasks)
+                        recipients = LIVE_ROOMS[code] - {websocket}
+                        if recipients:
+                            websockets.broadcast(recipients, end_msg)
                         await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "live", "code": code, "payload": end_msg}))
                             
                         del LIVE_ROOMS[code]
@@ -562,83 +592,112 @@ async def handler(websocket):
                             await websocket.send(error_msg)
                             continue
 
-                        balance, last_t, user_key, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
-                        
-                        user_no_cooldown_key = f"user:{user_id}:perk:no_cooldown"
-                        is_no_cooldown = await r.exists(user_no_cooldown_key)
+                        now = time.time()
+                        byte_offset = (y * width + x) * 4
+                        offset = f"{x},{y}" if width == 0 else (y * width) + x
 
-                        user_protection_key = f"user:{user_id}:perk:protection"
-                        protection_left = await r.get(user_protection_key)
-                        protection_left = int(protection_left) if protection_left else 0
+                        keys = [
+                            f"canvas:{canvas_id}:state",
+                            f"canvas:{canvas_id}:protected_pixels:{offset}",
+                            f"canvas:{canvas_id}:user:{user_id}:cooldown",
+                            f"user:{user_id}:perk:no_cooldown",
+                            f"user:{user_id}:perk:protection",
+                            f"user:{user_id}:perk:eraser",
+                            f"canvas:{canvas_id}:stream"
+                        ]
 
-                        user_eraser_key = f"user:{user_id}:perk:eraser"
-                        eraser_left = await r.get(user_eraser_key)
-                        eraser_left = int(eraser_left) if eraser_left else 0
+                        args = [
+                            str(byte_offset),
+                            color_bytes,
+                            str(config_batch),
+                            str(config_sec),
+                            str(now),
+                            str(user_id),
+                            str(x),
+                            str(y),
+                            color_hex
+                        ]
 
-                        if balance >= 1 or is_no_cooldown:
-                            if not is_no_cooldown:
-                                balance -= 1
-                                print(f"[DEBUG PY] Deducting 1 pixel. Remaining balance: {balance}")
-                                await r.hset(user_key, mapping={b'b': str(balance).encode(), b't': str(last_t).encode()})
-                            else:
-                                print(f"[DEBUG PY] no_cooldown_10s Perk active for {user_id}. Balance not deducted.")
+                        res = await r.eval(PAINT_PIXEL_LUA, 7, *keys, *args)
+
+                        if res and len(res) > 0:
+                            status = res[0].decode('utf-8') if isinstance(res[0], bytes) else res[0]
                             
-                            confirm_msg = json.dumps({
-                                "type": "pixel_confirm",
-                                "balance": int(balance),
-                                "max_batch": config_batch,
-                                "cooldown_sec": config_sec,
-                                "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0,
-                                "perk_no_cooldown": bool(is_no_cooldown),
-                                "perk_protection_left": protection_left - 1 if (color_hex != "transparent" and protection_left > 0) else protection_left,
-                                "perk_eraser_left": eraser_left
-                            })
-                            print(f"[DEBUG PY] Confirming pixel. Msg: {confirm_msg}")
-                            await websocket.send(confirm_msg)
-
-                            redis_state_key = f"canvas:{canvas_id}:state"
-                            byte_offset = (y * width + x) * 4
+                            if status == "PROTECTED_ERROR":
+                                protected_by = res[1].decode('utf-8') if isinstance(res[1], bytes) else res[1]
+                                print(f"[DEBUG PY] Pixel {x},{y} protected by user {protected_by}")
                                 
-                            await r.setrange(redis_state_key, byte_offset, color_bytes)
-                            
-                            stream_key = f"canvas:{canvas_id}:stream"
-                            event_dict = {
-                                "u": str(user_id),
-                                "x": str(x),
-                                "y": str(y),
-                                "c": color_hex
-                            }
-                            await r.xadd(stream_key, event_dict)
+                                redis_state_key = f"canvas:{canvas_id}:state"
+                                orig_color = await r.getrange(redis_state_key, byte_offset, byte_offset + 3)
+                                
+                                orig_c_hex = "transparent"
+                                if orig_color and len(orig_color) == 4 and orig_color[3] != 0:
+                                    orig_c_hex = f"#{orig_color[0]:02x}{orig_color[1]:02x}{orig_color[2]:02x}"
+                                
+                                balance, last_t, user_key, now_t = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
+                                is_no_cooldown = await r.exists(f"user:{user_id}:perk:no_cooldown")
+                                protection_left = await r.get(f"user:{user_id}:perk:protection")
+                                protection_left = int(protection_left) if protection_left else 0
+                                eraser_left = await r.get(f"user:{user_id}:perk:eraser")
+                                eraser_left = int(eraser_left) if eraser_left else 0
+                                
+                                error_msg = json.dumps({
+                                    "type": "pixel_protected_error",
+                                    "message": "err_pixel_protected",
+                                    "x": x,
+                                    "y": y,
+                                    "color": orig_c_hex,
+                                    "balance": int(balance),
+                                    "max_batch": config_batch,
+                                    "cooldown_sec": config_sec,
+                                    "next_replenish_in": round(config_sec - (now_t - last_t), 2) if config_sec > 0 else 0,
+                                    "perk_no_cooldown": bool(is_no_cooldown),
+                                    "perk_protection_left": protection_left,
+                                    "perk_eraser_left": eraser_left
+                                })
+                                await websocket.send(error_msg)
+                                continue
 
-                            clients_in_room = ROOMS.get(canvas_id, set())
-                            if len(clients_in_room) > 1:
-                                tasks = [
-                                    asyncio.create_task(client.send(message))
-                                    for client in clients_in_room if client != websocket
-                                ]
-                                if tasks:
-                                    await asyncio.gather(*tasks)
-                            await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": message}))
+                            elif status == "OK":
+                                balance = float(res[1].decode('utf-8') if isinstance(res[1], bytes) else res[1])
+                                last_t = float(res[2].decode('utf-8') if isinstance(res[2], bytes) else res[2])
+                                is_no_cooldown = bool(int(res[3].decode('utf-8') if isinstance(res[3], bytes) else res[3]))
+                                protection_left = int(res[4].decode('utf-8') if isinstance(res[4], bytes) else res[4])
+                                eraser_left = int(res[5].decode('utf-8') if isinstance(res[5], bytes) else res[5])
 
-                        else:
-                            print(f"[DEBUG PY] Cooldown active. Insufficient pixels for {user_id}.")
-                            user_no_cooldown_key = f"user:{user_id}:perk:no_cooldown"
-                            is_no_cooldown = await r.exists(user_no_cooldown_key)
+                                confirm_msg = json.dumps({
+                                    "type": "pixel_confirm",
+                                    "balance": int(balance),
+                                    "max_batch": config_batch,
+                                    "cooldown_sec": config_sec,
+                                    "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0,
+                                    "perk_no_cooldown": is_no_cooldown,
+                                    "perk_protection_left": protection_left - 1 if (color_hex != "transparent" and protection_left > 0) else protection_left,
+                                    "perk_eraser_left": eraser_left
+                                })
+                                await websocket.send(confirm_msg)
 
-                            user_protection_key = f"user:{user_id}:perk:protection"
-                            protection_left = await r.get(user_protection_key)
-                            protection_left = int(protection_left) if protection_left else 0
-                            
-                            error_msg = json.dumps({
-                                "type": "cooldown_error",
-                                "balance": 0,
-                                "max_batch": config_batch,
-                                "cooldown_sec": config_sec,
-                                "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0,
-                                "perk_no_cooldown": bool(is_no_cooldown),
-                                "perk_protection_left": protection_left
-                            })
-                            await websocket.send(error_msg)
+                                clients_in_room = ROOMS.get(canvas_id, set()) - {websocket}
+                                if clients_in_room:
+                                    websockets.broadcast(clients_in_room, message)
+                                await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": message}))
+
+                            elif status == "COOLDOWN_ERROR":
+                                balance = float(res[1].decode('utf-8') if isinstance(res[1], bytes) else res[1])
+                                last_t = float(res[2].decode('utf-8') if isinstance(res[2], bytes) else res[2])
+                                is_no_cooldown = bool(int(res[3].decode('utf-8') if isinstance(res[3], bytes) else res[3]))
+                                protection_left = int(res[4].decode('utf-8') if isinstance(res[4], bytes) else res[4])
+
+                                error_msg = json.dumps({
+                                    "type": "cooldown_error",
+                                    "balance": 0,
+                                    "max_batch": config_batch,
+                                    "cooldown_sec": config_sec,
+                                    "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0,
+                                    "perk_no_cooldown": is_no_cooldown,
+                                    "perk_protection_left": protection_left
+                                })
+                                await websocket.send(error_msg)
 
                 elif data.get("type") == "protect_pixel":
                     x = int(data.get("x", 0))
@@ -800,31 +859,26 @@ async def handler(websocket):
                             "y": y
                         })
                         clients_in_room = ROOMS.get(canvas_id, set())
-                        if len(clients_in_room) > 0:
-                            tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
-                            await asyncio.gather(*tasks)
+                        if clients_in_room:
+                            websockets.broadcast(clients_in_room, broadcast_msg)
                         await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
 
-                        clients_in_room = ROOMS.get(canvas_id, set())
-                        if len(clients_in_room) > 1:
-                            broadcast_msg = json.dumps({
+                        recipients = clients_in_room - {websocket}
+                        if recipients:
+                            broadcast_msg_pixel = json.dumps({
                                 "type": "pixel",
                                 "x": x,
                                 "y": y,
                                 "color": "transparent"
                             })
-                            tasks = [
-                                asyncio.create_task(client.send(broadcast_msg))
-                                for client in clients_in_room if client != websocket
-                            ]
-                            if tasks:
-                                await asyncio.gather(*tasks)
-                            await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
+                            websockets.broadcast(recipients, broadcast_msg_pixel)
+                            await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg_pixel}))
 
                 elif data.get("type") == "bomb_pixel":
                     cx = int(data.get("x", 0))
                     cy = int(data.get("y", 0))
                     width = int(data.get("width", 64))
+                    height = int(data.get("height", width))
                     perk = data.get("perk")
                     user_id = WS_META[websocket].get('user_id')
                     
@@ -869,75 +923,77 @@ async def handler(websocket):
                             await websocket.send(confirm_msg)
                             
                             async def execute_explosion(ex, ey, eradius, delay=0):
-                                if delay > 0:
-                                    await asyncio.sleep(delay)
+                                try:
+                                    if delay > 0:
+                                        await asyncio.sleep(delay)
+                                        
+                                    pipeline = r.pipeline()
+                                    pipeline.sadd("canvases:dirty_states", canvas_id)
                                     
-                                pipeline = r.pipeline()
-                                pipeline.sadd("canvases:dirty_states", canvas_id)
-                                
-                                zset_key = f"canvas:{canvas_id}:protected_zset"
-                                protected_offsets = await r.zrange(zset_key, 0, -1)
-                                to_remove_protected = []
-                                for offset_bytes in protected_offsets:
-                                    offset_str = offset_bytes.decode('utf-8')
-                                    px, py = 0, 0
-                                    if width == 0:
-                                        if "," in offset_str:
-                                            px, py = map(int, offset_str.split(","))
-                                        else: continue
-                                    else:
-                                        off_int = int(offset_str)
-                                        px = off_int % width
-                                        py = off_int // width
-                                    if (px - ex)**2 + (py - ey)**2 <= eradius**2:
-                                        protected_key = f"canvas:{canvas_id}:protected_pixels:{offset_str}"
-                                        pipeline.delete(protected_key)
-                                        to_remove_protected.append(offset_bytes)
-                                
-                                if to_remove_protected:
-                                    pipeline.zrem(zset_key, *to_remove_protected)
+                                    zset_key = f"canvas:{canvas_id}:protected_zset"
+                                    protected_offsets = await r.zrange(zset_key, 0, -1)
+                                    to_remove_protected = []
+                                    for offset_bytes in protected_offsets:
+                                        offset_str = offset_bytes.decode('utf-8')
+                                        px, py = 0, 0
+                                        if width == 0:
+                                            if "," in offset_str:
+                                                px, py = map(int, offset_str.split(","))
+                                            else: continue
+                                        else:
+                                            off_int = int(offset_str)
+                                            px = off_int % width
+                                            py = off_int // width
+                                        if (px - ex)**2 + (py - ey)**2 <= eradius**2:
+                                            protected_key = f"canvas:{canvas_id}:protected_pixels:{offset_str}"
+                                            pipeline.delete(protected_key)
+                                            to_remove_protected.append(offset_bytes)
+                                    
+                                    if to_remove_protected:
+                                        pipeline.zrem(zset_key, *to_remove_protected)
 
-                                import math
-                                for iy in range(ey - eradius, ey + eradius + 1):
-                                    dy = iy - ey
-                                    if abs(dy) > eradius: continue
-                                    dx = int(math.sqrt(eradius**2 - dy**2))
-                                    x_start = ex - dx
-                                    x_end = ex + dx
-                                    if iy < 0 or iy >= height: continue
-                                    x_start = max(0, x_start)
-                                    x_end = min(width - 1, x_end)
-                                    if x_start > x_end: continue
+                                    import math
+                                    for iy in range(ey - eradius, ey + eradius + 1):
+                                        dy = iy - ey
+                                        if abs(dy) > eradius: continue
+                                        dx = int(math.sqrt(eradius**2 - dy**2))
+                                        x_start = ex - dx
+                                        x_end = ex + dx
+                                        if height > 0 and (iy < 0 or iy >= height): continue
+                                        x_start = max(0, x_start)
+                                        x_end = min(width - 1, x_end) if width > 0 else x_end
+                                        if x_start > x_end: continue
+                                        
+                                        length = x_end - x_start + 1
+                                        redis_state_key = f"canvas:{canvas_id}:state"
+                                        byte_offset = (iy * width + x_start) * 4
+                                        pipeline.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00' * length)
                                     
-                                    length = x_end - x_start + 1
-                                    redis_state_key = f"canvas:{canvas_id}:state"
-                                    byte_offset = (iy * width + x_start) * 4
-                                    pipeline.setrange(redis_state_key, byte_offset, b'\x00\x00\x00\x00' * length)
-                                
-                                await pipeline.execute()
-                                
-                                broadcast_msg = json.dumps({
-                                    "type": "bomb_pixel",
-                                    "x": ex,
-                                    "y": ey,
-                                    "r": eradius,
-                                    "perk": perk
-                                })
-                                clients_in_room = ROOMS.get(canvas_id, set())
-                                if len(clients_in_room) > 0:
-                                    tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
-                                    await asyncio.gather(*tasks)
-                                await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
-                                
-                                stream_key = f"canvas:{canvas_id}:stream"
-                                event_dict = {
-                                    "type": "bomb_pixel",
-                                    "x": str(ex),
-                                    "y": str(ey),
-                                    "r": str(eradius),
-                                    "perk": str(perk)
-                                }
-                                await r.xadd(stream_key, event_dict)
+                                    await pipeline.execute()
+                                    
+                                    broadcast_msg = json.dumps({
+                                        "type": "bomb_pixel",
+                                        "x": ex,
+                                        "y": ey,
+                                        "r": eradius,
+                                        "perk": perk
+                                    })
+                                    clients_in_room = ROOMS.get(canvas_id, set())
+                                    if clients_in_room:
+                                        websockets.broadcast(clients_in_room, broadcast_msg)
+                                    await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
+                                    
+                                    stream_key = f"canvas:{canvas_id}:stream"
+                                    event_dict = {
+                                        "type": "bomb_pixel",
+                                        "x": str(ex),
+                                        "y": str(ey),
+                                        "r": str(eradius),
+                                        "perk": str(perk)
+                                    }
+                                    await r.xadd(stream_key, event_dict)
+                                except Exception as e:
+                                    print(f"[!] Error in execute_explosion: {e}")
 
                             targets = data.get("targets")
                             if not targets:
@@ -990,9 +1046,8 @@ async def handler(websocket):
                                         "perk": perk,
                                         "radius": radius
                                     })
-                                    if len(clients_in_room) > 0:
-                                        tasks = [asyncio.create_task(client.send(warning_msg)) for client in clients_in_room]
-                                        await asyncio.gather(*tasks)
+                                    if clients_in_room:
+                                        websockets.broadcast(clients_in_room, warning_msg)
                                     await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": warning_msg}))
 
                                 asyncio.create_task(execute_explosion(tx, ty, radius, delay))
@@ -1016,11 +1071,9 @@ async def handler(websocket):
                             "username": data.get("username", "Alguien"),
                             "isTyping": data.get("isTyping", False)
                         })
-                        clients_in_room = ROOMS.get(canvas_id, set())
-                        if len(clients_in_room) > 1:
-                            tasks = [asyncio.create_task(client.send(typing_msg)) for client in clients_in_room if client != websocket]
-                            if tasks:
-                                await asyncio.gather(*tasks)
+                        clients_in_room = ROOMS.get(canvas_id, set()) - {websocket}
+                        if clients_in_room:
+                            websockets.broadcast(clients_in_room, typing_msg)
                         await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": typing_msg}))
 
             except Exception as e:
@@ -1044,12 +1097,8 @@ async def handler(websocket):
                 
                 if websocket in OWNER_CONNS and OWNER_CONNS[websocket] == code:
                     end_msg = json.dumps({"type": "live_session_ended", "code": code})
-                    tasks = [
-                        asyncio.create_task(c.send(end_msg))
-                        for c in clients
-                    ]
-                    if tasks:
-                        await asyncio.gather(*tasks)
+                    if clients:
+                        websockets.broadcast(clients, end_msg)
                         
                     del LIVE_ROOMS[code]
                     try:

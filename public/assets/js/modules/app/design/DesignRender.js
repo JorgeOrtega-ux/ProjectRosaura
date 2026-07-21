@@ -70,6 +70,42 @@ export const DesignRender = {
         this.needsRender = false;
         if (!this.ctx || !this.canvas) return;
 
+        if (this.pixelQueue && this.pixelQueue.length > 0 && this.offscreenCtx && this.boardWidth > 0 && this.boardHeight > 0) {
+            try {
+                const imgData = this.offscreenCtx.getImageData(0, 0, this.boardWidth, this.boardHeight);
+                const data32 = new Uint32Array(imgData.data.buffer);
+                let updated = false;
+
+                while (this.pixelQueue.length > 0) {
+                    const p = this.pixelQueue.pop();
+                    const x = p.x;
+                    const y = p.y;
+                    if (isNaN(x) || isNaN(y) || x < 0 || x >= this.boardWidth || y < 0 || y >= this.boardHeight) {
+                        continue;
+                    }
+                    const idx = (y * this.boardWidth) + x;
+                    const color = p.color;
+
+                    if (color === 'transparent' || color === 255) {
+                        data32[idx] = 0x00000000;
+                        updated = true;
+                    } else if (typeof color === 'string' && color.startsWith('#') && color.length === 7) {
+                        const r = parseInt(color.slice(1, 3), 16);
+                        const g = parseInt(color.slice(3, 5), 16);
+                        const b = parseInt(color.slice(5, 7), 16);
+                        data32[idx] = (255 << 24) | (b << 16) | (g << 8) | r;
+                        updated = true;
+                    }
+                }
+
+                if (updated) {
+                    this.offscreenCtx.putImageData(imgData, 0, 0);
+                }
+            } catch (e) {
+                this.pixelQueue.length = 0;
+            }
+        }
+
         const isDark = this.isDarkMode();
         const bgColor = isDark ? '#0e0e11' : '#f5f5fa'; 
         const gridColor = 'rgba(0, 0, 0, 0.15)';

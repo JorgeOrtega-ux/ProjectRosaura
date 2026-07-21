@@ -977,16 +977,26 @@ export const DesignInteractions = {
                 const [x, y] = p.split(',').map(Number);
                 return { x, y };
             });
+            const usedPerk = this.activeBomb;
             if (this.wsManager) {
                 this.wsManager.send({
                     type: 'bomb_pixel',
                     targets: targets,
                     x: targets[0]?.x ?? 0,
                     y: targets[0]?.y ?? 0,
-                    perk: this.activeBomb,
+                    perk: usedPerk,
                     width: this.boardWidth,
                     userId: window.activeUserId || null
                 });
+            }
+            if (this.inventoryPerks && usedPerk) {
+                const perkObj = this.inventoryPerks.find(p => p.perk_id === usedPerk);
+                if (perkObj) {
+                    perkObj.count = Math.max(0, parseInt(perkObj.count, 10) - 1);
+                    if (perkObj.count === 0) {
+                        this.inventoryPerks = this.inventoryPerks.filter(p => p.perk_id !== usedPerk);
+                    }
+                }
             }
             this.interactionMode = 'normal';
             this.activeBomb = null;
@@ -995,6 +1005,7 @@ export const DesignInteractions = {
             this.updateSelectionUI();
             this.requestRender();
             if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+            if (typeof this.loadUserPerks === 'function') this.loadUserPerks();
             return;
         }
 
@@ -1080,8 +1091,14 @@ export const DesignInteractions = {
 
         this.selectedPixels.clear();
 
-        if (this.interactionMode === 'protecting' && this.perkProtectionLeft <= 0) this.cancelInteractionMode();
-        if (this.interactionMode === 'erasing' && this.perkEraserLeft <= 0) this.cancelInteractionMode();
+        if (this.interactionMode === 'protecting' && this.perkProtectionLeft <= 0) {
+            this.cancelInteractionMode();
+            if (typeof this.loadUserPerks === 'function') this.loadUserPerks();
+        }
+        if (this.interactionMode === 'erasing' && this.perkEraserLeft <= 0) {
+            this.cancelInteractionMode();
+            if (typeof this.loadUserPerks === 'function') this.loadUserPerks();
+        }
         
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();

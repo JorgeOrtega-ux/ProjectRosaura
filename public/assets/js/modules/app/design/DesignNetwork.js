@@ -93,17 +93,12 @@ export const DesignNetwork = {
 
             this.wsManager.on('message', (data) => {
                 if (data.type === 'pixel') {
-                    const pX = parseInt(data.x, 10);
-                    const pY = parseInt(data.y, 10);
-                    const colorData = data.color;
-                    
-                    if (colorData === 'transparent' || colorData === 255) {
-                        this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                    } else {
-                        this.offscreenCtx.fillStyle = colorData;
-                        this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                        this.offscreenCtx.fillRect(pX, pY, 1, 1);
-                    }
+                    if (!this.pixelQueue) this.pixelQueue = [];
+                    this.pixelQueue.push({
+                        x: parseInt(data.x, 10),
+                        y: parseInt(data.y, 10),
+                        color: data.color
+                    });
                     this.requestRender();
                 } 
                 else if (data.type === 'nuclear_warning') {
@@ -169,17 +164,12 @@ export const DesignNetwork = {
                     }
 
                     if (data.x !== undefined && data.y !== undefined && data.color !== undefined) {
-                        const pX = parseInt(data.x, 10);
-                        const pY = parseInt(data.y, 10);
-                        const colorData = data.color;
-                        
-                        if (colorData === 'transparent' || colorData === 255) {
-                            this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                        } else {
-                            this.offscreenCtx.fillStyle = colorData;
-                            this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                            this.offscreenCtx.fillRect(pX, pY, 1, 1);
-                        }
+                        if (!this.pixelQueue) this.pixelQueue = [];
+                        this.pixelQueue.push({
+                            x: parseInt(data.x, 10),
+                            y: parseInt(data.y, 10),
+                            color: data.color
+                        });
                         this.requestRender();
                     }
                 }
