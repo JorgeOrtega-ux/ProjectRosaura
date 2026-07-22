@@ -55,16 +55,31 @@ class Translator {
     }
 
     public static function loadContext($lang, $context = 'admin') {
-        $file = ROOT_PATH . '/translations/' . $lang . '/' . $context . '.json';
+        $path = ROOT_PATH . '/translations/' . $lang . '/' . $context;
         
-        if (file_exists($file)) {
-            $json = file_get_contents($file);
-            $newTranslations = json_decode($json, true) ?: [];
-            
-            if (self::$translations === null) {
-                self::$translations = $newTranslations;
-            } else {
-                self::$translations = array_merge(self::$translations, $newTranslations);
+        if (is_dir($path)) {
+            $files = glob($path . '/*.json');
+            foreach ($files as $file) {
+                $json = file_get_contents($file);
+                $newTranslations = json_decode($json, true) ?: [];
+                
+                if (self::$translations === null) {
+                    self::$translations = $newTranslations;
+                } else {
+                    self::$translations = array_merge(self::$translations, $newTranslations);
+                }
+            }
+        } else {
+            $file = $path . '.json';
+            if (file_exists($file)) {
+                $json = file_get_contents($file);
+                $newTranslations = json_decode($json, true) ?: [];
+                
+                if (self::$translations === null) {
+                    self::$translations = $newTranslations;
+                } else {
+                    self::$translations = array_merge(self::$translations, $newTranslations);
+                }
             }
         }
     }
@@ -87,7 +102,6 @@ class Translator {
         if (!isset(self::$cache[$lang])) {
             $generalFile = ROOT_PATH . '/translations/' . $lang . '/general.json';
             $adminFile = ROOT_PATH . '/translations/' . $lang . '/admin.json';
-            $sitePolicyFile = ROOT_PATH . '/translations/' . $lang . '/site-policy.json';
             
             $translations = [];
             
@@ -99,9 +113,20 @@ class Translator {
                 $json = file_get_contents($adminFile);
                 $translations = array_merge($translations, json_decode($json, true) ?: []);
             }
-            if (file_exists($sitePolicyFile)) {
-                $json = file_get_contents($sitePolicyFile);
-                $translations = array_merge($translations, json_decode($json, true) ?: []);
+            
+            $sitePolicyPath = ROOT_PATH . '/translations/' . $lang . '/site-policy';
+            if (is_dir($sitePolicyPath)) {
+                $files = glob($sitePolicyPath . '/*.json');
+                foreach ($files as $file) {
+                    $json = file_get_contents($file);
+                    $translations = array_merge($translations, json_decode($json, true) ?: []);
+                }
+            } else {
+                $sitePolicyFile = $sitePolicyPath . '.json';
+                if (file_exists($sitePolicyFile)) {
+                    $json = file_get_contents($sitePolicyFile);
+                    $translations = array_merge($translations, json_decode($json, true) ?: []);
+                }
             }
 
             self::$cache[$lang] = $translations;

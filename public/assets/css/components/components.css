@@ -4721,12 +4721,12 @@ html.dark-theme .component-skeleton::after {
 
 /* Generic BEM Layout Components */
 .component-page-intro { text-align: center; margin-bottom: 32px; }
-.component-page-intro__title { font-size: 2rem; font-weight: 700; line-height: 1.2; }
+.component-page-intro__title { font-size: 2rem; font-weight: 700; line-height: 1.2; color: var(--text-primary); }
 .component-page-intro__desc { font-size: 0.65rem; color: var(--text-secondary); margin-top: 24px; margin-bottom: 24px; }
 
 .component-plan-card__header { display: flex; flex-direction: column; margin-bottom: 16px; }
 .component-plan-card__tag { font-size: 0.85rem; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 2px; }
-.component-plan-card__title { font-size: 1.3rem; font-weight: 500; margin: 0; }
+.component-plan-card__title { font-size: 1.3rem; font-weight: 500; margin: 0; color: var(--text-primary); }
 .component-plan-card__desc { font-size: 0.65rem; color: var(--text-secondary); margin-top: 6px; }
 .component-plan-card__storage { margin-top: 12px; margin-bottom: 12px; display: flex; }
 
@@ -4744,7 +4744,7 @@ html.dark-theme .component-skeleton::after {
 .component-plan-card__features-title { font-size: 0.75rem; font-weight: 500; margin-bottom: 0; }
 .component-plan-card__divider { border: 0; border-top: 1px solid var(--border-color); width: 100%; margin: 0; }
 .component-plan-card__feature-item { display: flex; align-items: flex-start; gap: 12px; }
-.component-plan-card__feature-icon { margin-top: 2px; }
+.component-plan-card__feature-icon { margin-top: 2px; color: var(--text-primary); }
 .component-plan-card__feature-text { display: flex; flex-direction: column; gap: 4px; }
 .component-plan-card__feature-name { font-size: 0.75rem; font-weight: 500; color: var(--text-primary); }
 .component-plan-card__feature-desc { font-size: 0.7rem; color: var(--text-secondary); }

@@ -177,7 +177,7 @@ export class MainController {
 
         this.syncUIPreferences();
 
-        if (key === 'language') { 
+        if (key === 'language' && !window.AppUserPrefs) { 
             window.location.reload(); 
             return; 
         }
@@ -194,6 +194,10 @@ export class MainController {
                 if (response && response.aborted) return;
 
                 if (response && response.success) {
+                    if (key === 'language') {
+                        window.location.reload();
+                        return;
+                    }
                     this.showToast(__('pref_saved_account'), 'success');
                 } else {
                     if (window.AppUserPrefs) window.AppUserPrefs[key] = previousValue;

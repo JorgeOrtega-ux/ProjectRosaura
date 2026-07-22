@@ -209,7 +209,7 @@ $googleClientId = $_ENV['GOOGLE_CLIENT_ID'] ?? '';
                     <div class="active component-state-box" data-state="role-view">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Rol en el Sistema</h2>
+                                <h2 class="component-card__title"><?php echo __('lbl_system_role'); ?></h2>
                                 <span class="component-display-value" data-ref="display-role"><?php echo htmlspecialchars($userRoleName); ?></span>
                             </div>
                         </div>

@@ -271,6 +271,33 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                     </label>
                                 </div>
                             </div>
+                            </div>
+        
+                            <hr class="component-divider">
+        
+                            <div class="component-group-item component-group-item--wrap">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_price_monthly') ?: 'Precio Mensual (USD)'; ?></h2>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <input type="number" id="priceMonthly" step="0.01" class="component-input-field component-input-field--simple" style="width: 120px;" value="<?php echo htmlspecialchars($featuresData['price_monthly'] ?? '0.00'); ?>" placeholder="0.00">
+                                </div>
+                            </div>
+        
+                            <hr class="component-divider">
+        
+                            <div class="component-group-item component-group-item--wrap">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_price_yearly') ?: 'Precio Anual (USD)'; ?></h2>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <input type="number" id="priceYearly" step="0.01" class="component-input-field component-input-field--simple" style="width: 120px;" value="<?php echo htmlspecialchars($featuresData['price_yearly'] ?? '0.00'); ?>" placeholder="0.00">
+                                </div>
+                            </div>
         
                             <hr class="component-divider">
         

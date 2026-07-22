@@ -89,7 +89,7 @@ function formatStoragePremium(int $mb): string {
                         <div class="component-plan-card__header">
                             <div>
                                 <?php if ($isPopular): ?>
-                                    <span class="component-plan-card__tag" style="<?php echo $colorStyle; ?>"><?php echo __('plan_badge_popular'); ?></span>
+                                    <span class="component-badge component-badge--sm" style="margin-bottom: 8px;"><span class="component-text-gradient-blue"><?php echo __('plan_badge_popular'); ?></span></span>
                                 <?php endif; ?>
                                 <h2 class="component-plan-card__title"><?php echo htmlspecialchars($tier['name']); ?></h2>
                             </div>

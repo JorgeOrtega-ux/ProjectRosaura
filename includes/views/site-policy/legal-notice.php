@@ -6,128 +6,78 @@ $appName = htmlspecialchars($_ENV['APP_NAME']);
         <div class="component-top">
             <div class="component-top-left">
                 <h1 class="component-top-title"><?php echo __('policy_legal_title'); ?></h1>
-                <p class="policy-subtitle">Última actualización: 20 de Julio de 2026 | Versión 5.0 Enterprise Ultra-Shield Standard</p>
+                <p class="policy-subtitle"><?php echo __('legal_notice_subtitle'); ?></p>
             </div>
         </div>
         <div class="component-bottom policy-container">
 
             <div class="policy-section">
-                <h2 class="policy-section-title">PREÁMBULO Y CUMPLIMIENTO REGULATORIO</h2>
-                <p class="policy-text">
-                    El presente Aviso Legal (en adelante, el "Aviso Legal" o el "Reglamento Legal del Sitio") regula formalmente las condiciones de acceso, navegación, uso legítimo, derechos de propiedad intelectual, exenciones de responsabilidad y salvaguardas aplicables a la plataforma digital **<?php echo $appName; ?>** (en adelante, la "Plataforma", la "Empresa", "Nosotros" o "Nuestro"), así como a todos sus sitios web, subdominios, aplicaciones, herramientas de lienzo interactivo en tiempo real, interfaces de composición gráfica vectorial y servicios en la nube asociados. La utilización de cualquier funcionalidad expuesta en la Plataforma atribuye de manera automática e incondicional la condición de usuario (en adelante, el "Usuario" o "Usted") e implica la adhesión plena, explícita, incondicional y sin reservas a todas y cada una de las estipulaciones contenidas en este documento regulatorio, así como a nuestros Términos de Uso, Política de Privacidad y Política de Cookies.
-                </p>
-                <p class="policy-text">
-                    El Usuario asume la obligación estricta de leer detenidamente el presente Aviso Legal en cada una de las ocasiones en que acceda o haga uso de la Plataforma, habida cuenta de que la estructura técnica, los servicios expuestos y las condiciones jurídicas aquí contempladas pueden sufrir modificaciones, actualizaciones o adaptaciones unilaterales para responder a novedades legislativas, requerimientos judiciales, evolución del modelo de negocio o mejoras de infraestructura informática. Esta manifestación de voluntad digital posee el mismo valor probatorio y eficacia ejecutiva que una firma autógrafa prestada por escrito.
-                </p>
-                <p class="policy-text">
-                    Si el Usuario no estuviera de acuerdo con la totalidad de las cláusulas, advertencias legales, restricciones de uso o exenciones de responsabilidad contempladas en el presente aviso, o bien careciera de la capacidad legal exigida por la legislación aplicable en su país de residencia para obligarse contractualmente, deberá abstenerse de manera inmediata, definitiva e incondicional de acceder, navegar, registrar una cuenta o hacer uso de cualquier componente digital de <?php echo $appName; ?>. La continuación en el uso del sitio se interpretará inequívocamente como un consentimiento libre, voluntario e informado a la totalidad del marco legal expuesto.
-                </p>
+                <h2 class="policy-section-title"><?php echo __('legal_notice_section_0_title'); ?></h2>
+                <p class="policy-text"><?php echo __('legal_notice_section_0_p1', ['appName' => $appName]); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_0_p2'); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_0_p3', ['appName' => $appName]); ?></p>
             </div>
 
             <div class="policy-section">
-                <h2 class="policy-section-title">1. DATOS IDENTIFICATIVOS DEL TITULAR DEL SITIO WEB</h2>
-                <p class="policy-text">
-                    En cumplimiento de los deberes de información y transparencia exigidos por las normativas reguladoras del comercio electrónico, los servicios de la sociedad de la información y la protección del consumidor digital, se hace constar formalmente que la Plataforma digital <?php echo $appName; ?>, sus nombres comerciales, logotipos, marcas registradas, dominios de Internet, arquitectura de software, código fuente e infraestructura de servicios en la nube son de la titularidad y explotación comercial exclusiva de la entidad jurídica operadora de la Plataforma.
-                </p>
-                <p class="policy-text">
-                    Para la atención de notificaciones formales, requerimientos legales, notificaciones de infracción de derechos de autor o consultas regulatorias sobre los contenidos expuestos en la Plataforma, el Usuario o las autoridades competentes pueden dirigirse formalmente al Departamento Legal de la Empresa a través de la dirección oficial de correo electrónico **legal@projectrosaura.com** o mediante el Centro de Políticas habilitado en la interfaz del sitio (`/site-policy/legal-notice`).
-                </p>
+                <h2 class="policy-section-title"><?php echo __('legal_notice_section_1_title'); ?></h2>
+                <p class="policy-text"><?php echo __('legal_notice_section_1_p1', ['appName' => $appName]); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_1_p2'); ?></p>
             </div>
 
             <div class="policy-section">
-                <h2 class="policy-section-title">2. OBJETO Y ÁMBITO DE APLICACIÓN DE LA PLATAFORMA</h2>
-                <p class="policy-text">
-                    <?php echo $appName; ?> es una plataforma web especializada en la provisión de servicios de Software como Servicio (SaaS) orientados a la creación gráfica, composición vectorial, colaboración interactiva en tiempo real sobre lienzos digitales, generación de historiales en formato timelapse y gestión de comunidades. Las presentes condiciones regulan de manera estricta los términos bajo los cuales los Usuarios autorizados pueden hacer uso de las funcionalidades expuestas en el sitio.
-                </p>
-                <p class="policy-text">
-                    La Empresa se reserva el derecho inalienable de modificar, suspender, interrumpir, restringir o cancelar en cualquier momento, de forma unilateral y sin necesidad de previo aviso, la presentación, configuración, contenidos, herramientas o servicios de la Plataforma, sin que ello genere derecho a indemnización, reembolso o compensación económica alguna a favor del Usuario.
-                </p>
+                <h2 class="policy-section-title"><?php echo __('legal_notice_section_2_title'); ?></h2>
+                <p class="policy-text"><?php echo __('legal_notice_section_2_p1', ['appName' => $appName]); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_2_p2'); ?></p>
             </div>
 
             <div class="policy-section">
-                <h2 class="policy-section-title">3. CONDICIONES DE ACCESO Y USO LÍCITO DE LA PLATAFORMA</h2>
-                <p class="policy-text">
-                    El acceso a las zonas públicas de la Plataforma es de carácter libre, mientras que el acceso a las herramientas avanzadas, creación de Lienzos privados y funciones síncronas en tiempo real exige la previa creación de una Cuenta de Usuario y la eventual contratación de Planes de Suscripción pagados (Pro, Advanced, Ultra) o la adquisición de créditos consumibles en la Tienda Virtual. El Usuario se obliga a hacer un uso diligente, correcto, legítimo y de buena fe de todos los recursos expuestos.
-                </p>
-                <p class="policy-text">
-                    <strong>3.1. Usos Prohibidos, Restricciones de Conducta y Delitos Informáticos:</strong> Queda expresamente prohibido hacer uso de la Plataforma con fines ilícitos, lesivos de derechos de terceros, engañosos, o que de cualquier forma puedan dañar, inutilizar, sobrecargar o deteriorar los servidores, redes informáticas, bases de datos o equipos informáticos de <?php echo $appName; ?> o de otros Usuarios. Asimismo, queda prohibida la difusión de contenidos difamatorios, obscenos, de acoso, discriminatorios por motivos de raza, género o religión, o que promuevan actividades delictivas dentro de los lienzos colaborativos o canales de Chat en Vivo.
-                </p>
-                <p class="policy-text">
-                    <strong>3.2. Responsabilidad por Credenciales de Acceso:</strong> El Usuario es el único responsable de la custodia, confidencialidad y uso adecuado de su nombre de usuario, contraseña y métodos de autenticación de dos factores (2FA / TOTP). Todas las acciones, modificaciones en lienzos, compras o mensajes ejecutados desde la Cuenta del Usuario se presumirán de forma irrefutable como realizadas por el propio Usuario.
-                </p>
+                <h2 class="policy-section-title"><?php echo __('legal_notice_section_3_title'); ?></h2>
+                <p class="policy-text"><?php echo __('legal_notice_section_3_p1'); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_3_p2', ['appName' => $appName]); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_3_p3'); ?></p>
             </div>
 
             <div class="policy-section">
-                <h2 class="policy-section-title">4. PROPIEDAD INTELECTUAL E INDUSTRIAL</h2>
-                <p class="policy-text">
-                    Todos los elementos que integran la Plataforma <?php echo $appName; ?> —incluyendo, sin limitación, la arquitectura de software, código fuente, diseño gráfico, interfaces de usuario, herramientas de lienzo, logotipos, marcas comerciales, nombres de dominio, motores de búsqueda interna y documentación técnica— son de la propiedad exclusiva de la Empresa o de sus licenciantes, protegidos por las leyes de propiedad intelectual e industrial.
-                </p>
-                <p class="policy-text">
-                    <strong>4.1. Resguardo de la Propiedad Intelectual del Usuario:</strong> El Usuario conserva la titularidad absoluta y exclusiva de los derechos de autor sobre las obras originales, ilustraciones, gráficos vectoriales y composiciones creadas por él dentro de los Lienzos digitales. La Plataforma no adquiere la propiedad del contenido del usuario, recibiendo únicamente una licencia operativa limitada para alojar, procesar y renderizar el contenido dentro del sitio.
-                </p>
-                <p class="policy-text">
-                    <strong>4.2. Prohibición de Copia e Ingeniería Inversa:</strong> Queda estrictamente prohibida la reproducción total o parcial, descompilación, ingeniería inversa, distribución, comunicación pública o transformación del código, diseño o elementos distintivos de la Plataforma sin la autorización previa y por escrito de la Empresa.
-                </p>
+                <h2 class="policy-section-title"><?php echo __('legal_notice_section_4_title'); ?></h2>
+                <p class="policy-text"><?php echo __('legal_notice_section_4_p1', ['appName' => $appName]); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_4_p2'); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_4_p3'); ?></p>
             </div>
 
             <div class="policy-section">
-                <h2 class="policy-section-title">5. EXENCIÓN DE GARANTÍAS Y LIMITACIÓN DE RESPONSABILIDAD</h2>
-                <p class="policy-text">
-                    <?php echo $appName; ?> se proporciona estrictamente bajo la modalidad "TAL CUAL" ("AS IS") y "SEGÚN DISPONIBILIDAD" ("AS AVAILABLE"). La Empresa no garantiza la disponibilidad ininterrumpida, la ausencia de errores de software, la infalibilidad de los servidores en tiempo real o la conservación permanente e incorruptible de los archivos guardados en el almacenamiento en la nube.
-                </p>
-                <p class="policy-text">
-                    En la máxima medida permitida por la ley, la Empresa declina toda responsabilidad por daños directos, indirectos, incidentales, consecuentes, pérdidas de beneficios, lucros cesantes, pérdidas de datos o interrupciones de negocio resultantes del uso o de la imposibilidad de uso de la Plataforma, o por fallos de infraestructura derivados de proveedores externos de almacenamiento, CDN, pasarelas de pago o servicios de geolocalización.
-                </p>
+                <h2 class="policy-section-title"><?php echo __('legal_notice_section_5_title'); ?></h2>
+                <p class="policy-text"><?php echo __('legal_notice_section_5_p1', ['appName' => $appName]); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_5_p2'); ?></p>
             </div>
 
             <div class="policy-section">
-                <h2 class="policy-section-title">6. POLÍTICA DE ENLACES EXTERNOS (HIPERVÍNCULOS)</h2>
-                <p class="policy-text">
-                    La Plataforma puede contener enlaces o hipervínculos hacia sitios web de terceros (proveedores de autenticación federada, pasarelas de pago, recursos externos). La Empresa no ejerce control alguno sobre dichos sitios externos ni asume responsabilidad alguna por los contenidos, políticas de privacidad o prácticas operativas de los mismos. El acceso a dichos enlaces se realiza bajo la exclusiva responsabilidad del Usuario.
-                </p>
-                <p class="policy-text">
-                    La presencia de enlaces a sitios web de terceros en <?php echo $appName; ?> no implica la existencia de relaciones contractuales, de recomendación ni de asociación comercial entre la Empresa y los propietarios de las páginas enlazadas.
-                </p>
+                <h2 class="policy-section-title"><?php echo __('legal_notice_section_6_title'); ?></h2>
+                <p class="policy-text"><?php echo __('legal_notice_section_6_p1'); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_6_p2', ['appName' => $appName]); ?></p>
             </div>
 
             <div class="policy-section">
-                <h2 class="policy-section-title">7. CIBERSEGURIDAD Y PROTECCIÓN CONTRA ABUSOS TÉCNICOS</h2>
-                <p class="policy-text">
-                    Queda estrictamente prohibido realizar ataques de denegación de servicio (DDoS), inyecciones de código malicioso, uso de bots o raspadores automatizados (scraping), o intentar vulnerar los sistemas de comprobación anti-bot y controles de límite de peticiones por segundo (Rate Limiting) de la Plataforma.
-                </p>
-                <p class="policy-text">
-                    La detección de cualquier infracción técnica o vulneración de la seguridad informática facultará el bloqueo inmediato de direcciones IP, la cancelación definitiva de la Cuenta de Usuario y la interposición de las acciones penales y civiles correspondientes ante las autoridades competentes.
-                </p>
+                <h2 class="policy-section-title"><?php echo __('legal_notice_section_7_title'); ?></h2>
+                <p class="policy-text"><?php echo __('legal_notice_section_7_p1'); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_7_p2'); ?></p>
             </div>
 
             <div class="policy-section">
-                <h2 class="policy-section-title">8. MODIFICACIONES DEL AVISO LEGAL</h2>
-                <p class="policy-text">
-                    La Empresa se reserva el derecho inalienable de modificar, actualizar o reemplazar discrecionalmente el presente Aviso Legal en cualquier momento. Las modificaciones entrarán en vigor a partir del momento de su publicación en el sitio web de la Plataforma.
-                </p>
-                <p class="policy-text">
-                    Es responsabilidad del Usuario revisar periódicamente este documento para mantenerse informado sobre las condiciones vigentes. La navegación continuada del Usuario en la Plataforma tras la publicación de las modificaciones constituirá su aceptación plena y vinculante del Aviso Legal modificado.
-                </p>
+                <h2 class="policy-section-title"><?php echo __('legal_notice_section_8_title'); ?></h2>
+                <p class="policy-text"><?php echo __('legal_notice_section_8_p1'); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_8_p2'); ?></p>
             </div>
 
             <div class="policy-section">
-                <h2 class="policy-section-title">9. LEGISLACIÓN APLICABLE Y JURISDICCIÓN COMPETENTE</h2>
-                <p class="policy-text">
-                    El presente Aviso Legal, su interpretación, validez y cumplimiento se rigen exclusivamente de conformidad con las leyes vigentes en la jurisdicción del domicilio legal de la entidad operadora de <?php echo $appName; ?>, con exclusión de cualquier norma sobre conflicto de leyes.
-                </p>
-                <p class="policy-text">
-                    Para la resolución de cualquier controversia o conflicto legal derivado del uso de la Plataforma o de la interpretación de este documento, las partes se someten voluntariamente a la jurisdicción de los tribunales ordinarios competentes de la sede legal de la Empresa, renunciando expresamente el Usuario a cualquier otro fuero o domicilio que pudiera corresponderle.
-                </p>
+                <h2 class="policy-section-title"><?php echo __('legal_notice_section_9_title'); ?></h2>
+                <p class="policy-text"><?php echo __('legal_notice_section_9_p1', ['appName' => $appName]); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_9_p2'); ?></p>
             </div>
 
             <div class="policy-section">
-                <h2 class="policy-section-title">10. INFORMACIÓN DE CONTACTO Y ATENCIÓN LEGAL</h2>
-                <p class="policy-text">
-                    Para enviar notificaciones formales, solicitudes de aclaración o requerimientos legales referentes a este Aviso Legal, el Usuario puede ponerse en contacto con nuestro Departamento Legal a través del correo electrónico oficial **legal@projectrosaura.com**.
-                </p>
-                <p class="policy-text">
-                    En caso de existir cualquier discrepancia o conflicto de interpretación entre la versión oficial redactada en idioma español de este Aviso Legal y cualquiera de sus traducciones a otros idiomas, prevalecerá a todos los efectos legales la versión en español publicada en la Plataforma.
-                </p>
+                <h2 class="policy-section-title"><?php echo __('legal_notice_section_10_title'); ?></h2>
+                <p class="policy-text"><?php echo __('legal_notice_section_10_p1'); ?></p>
+                <p class="policy-text"><?php echo __('legal_notice_section_10_p2'); ?></p>
             </div>
 
         </div>
