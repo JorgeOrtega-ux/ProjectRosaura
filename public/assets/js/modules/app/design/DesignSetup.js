@@ -85,6 +85,9 @@ export const DesignSetup = {
                 this.boardHeight = 64;
             }
             
+            const initialZoomAttr = wrapper.getAttribute('data-initial-zoom');
+            this.initialZoomConfig = initialZoomAttr ? parseFloat(initialZoomAttr) : 0.5;
+            
             this.canvasPaletteId = wrapper.getAttribute('data-palette') || 'default';
             
             this.setupCanvas();
@@ -287,6 +290,9 @@ export const DesignSetup = {
 
         if (this.isProgressive) {
             console.log(`[ProgressiveLoad] Modo activado para lienzo ID ${this.canvasIntId} (${this.boardWidth}x${this.boardHeight}). Solicitando chunks iniciales del Viewport...`);
+            if (canvasData.thumbnail_url && !forceReload) {
+                this.drawImageOnCanvas(canvasData.thumbnail_url);
+            }
             this.updateVisibleChunks();
         } else if (canvasData.state_base64) {
             console.log(`[ProgressiveLoad] Modo desactivado. Usando hidratación monolítica tradicional (state_base64).`);
@@ -432,10 +438,19 @@ export const DesignSetup = {
         const parent = this.canvas.parentElement;
         if (!parent) return;
         const rect = parent.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
         
         const dpr = window.devicePixelRatio || 1;
-        this.canvas.style.width = `${rect.width}px`;
-        this.canvas.style.height = `${rect.height}px`;
+        const newWidth = Math.floor(rect.width * dpr);
+        const newHeight = Math.floor(rect.height * dpr);
+
+        if (this._lastCanvasW === newWidth && this._lastCanvasH === newHeight && this._lastDpr === dpr) {
+            return;
+        }
+
+        this._lastCanvasW = newWidth;
+        this._lastCanvasH = newHeight;
+        this._lastDpr = dpr;
 
         if (this.renderWorker) {
             this.renderWorker.postMessage({
@@ -443,8 +458,22 @@ export const DesignSetup = {
                 payload: { width: rect.width, height: rect.height, dpr: dpr }
             });
         } else {
-            this.canvas.width = rect.width * dpr;
-            this.canvas.height = rect.height * dpr;
+            this.canvas.width = newWidth;
+            this.canvas.height = newHeight;
+        }
+    },
+
+    handleResize() {
+        if (!this.canvas) return;
+        this.updateCanvasDimensions();
+        if (typeof this.limitBounds === 'function') {
+            this.limitBounds();
+        }
+        if (this.isProgressive && typeof this.updateVisibleChunks === 'function') {
+            this.updateVisibleChunks();
+        }
+        if (typeof this.requestRender === 'function') {
+            this.requestRender();
         }
     },
 
@@ -453,7 +482,13 @@ export const DesignSetup = {
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = rect.width / this.boardWidth;
         const scaleY = rect.height / this.boardHeight;
-        this.transform.scale = Math.min(scaleX, scaleY) * 0.9; 
+        let initialScale = Math.min(scaleX, scaleY) * 0.9; 
+        
+        if (this.boardWidth >= 1024 || this.boardHeight >= 1024) {
+            initialScale = Math.max(initialScale, this.initialZoomConfig || 0.5);
+        }
+        
+        this.transform.scale = initialScale;
         
         this.transform.x = (rect.width - (this.boardWidth * this.transform.scale)) / 2;
         this.transform.y = (rect.height - (this.boardHeight * this.transform.scale)) / 2;
@@ -461,6 +496,8 @@ export const DesignSetup = {
 
     limitBounds() {
         if (!this.canvas) return;
+        const rect = this.canvas.getBoundingClientRect();
+        if (!rect || rect.width === 0 || rect.height === 0) return;
         
         const scaledWidth = this.boardWidth * this.transform.scale;
         const scaledHeight = this.boardHeight * this.transform.scale;
@@ -469,10 +506,10 @@ export const DesignSetup = {
         const safeMarginY = Math.min(100, scaledHeight / 2);
 
         const minX = safeMarginX - scaledWidth;
-        const maxX = (this.canvas.width / (window.devicePixelRatio || 1)) - safeMarginX;
+        const maxX = rect.width - safeMarginX;
         
         const minY = safeMarginY - scaledHeight;
-        const maxY = (this.canvas.height / (window.devicePixelRatio || 1)) - safeMarginY;
+        const maxY = rect.height - safeMarginY;
 
         this.transform.x = Math.min(Math.max(this.transform.x, minX), maxX);
         this.transform.y = Math.min(Math.max(this.transform.y, minY), maxY);

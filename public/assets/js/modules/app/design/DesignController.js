@@ -335,6 +335,16 @@ class DesignController {
             this.fileInput.removeEventListener('change', this.handleFileUploadBound);
         }
 
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+            this.resizeObserver = null;
+        }
+
+        if (this.resizeAnimationFrame) {
+            cancelAnimationFrame(this.resizeAnimationFrame);
+            this.resizeAnimationFrame = null;
+        }
+
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
         }

@@ -878,54 +878,134 @@ class CanvasCoreService {
                 $boardH = $boardW;
             }
 
-            $redisKey = "canvas:{$canvasId}:state";
-            $stateRaw = null;
-
-            if (class_exists(RedisCache::class)) {
-                try {
-                    $redis = (new RedisCache())->getClient();
-                    if ($redis && $redis->exists($redisKey)) {
-                        $stateRaw = $redis->get($redisKey);
-                    }
-                } catch (Exception $e) {
-                    Logger::error('Error reading chunk state from Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
-                }
-            }
-
-            if (!$stateRaw) {
-                $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
-            }
-
-            if (!$stateRaw) {
-                $totalPixels = $boardW * $boardH;
-                $stateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $totalPixels);
-            }
-
             $chunkSize = 512;
+            $redisKey = "canvas:{$canvasId}:state";
             $responseChunks = [];
+            $validChunkKeys = [];
 
             foreach ($requestedChunks as $chunkKey) {
-                if (!is_string($chunkKey) || strpos($chunkKey, ',') === false) continue;
-                list($cx, $cy) = explode(',', $chunkKey);
-                $cx = (int)$cx;
-                $cy = (int)$cy;
+                if (is_string($chunkKey) && strpos($chunkKey, ',') !== false) {
+                    $validChunkKeys[] = $chunkKey;
+                }
+            }
 
-                $startX = $cx * $chunkSize;
-                $startY = $cy * $chunkSize;
+            if (empty($validChunkKeys)) {
+                return [
+                    'success' => true,
+                    'data' => [
+                        'canvas_id' => $canvasId,
+                        'chunk_size' => $chunkSize,
+                        'chunks' => []
+                    ]
+                ];
+            }
 
-                if ($startX >= $boardW || $startY >= $boardH || $startX < 0 || $startY < 0) continue;
+            $extractedViaRedis = false;
 
-                $actualW = min($chunkSize, $boardW - $startX);
-                $actualH = min($chunkSize, $boardH - $startY);
+            if (count($validChunkKeys) <= 8 && class_exists(RedisCache::class)) {
+                try {
+                    $redisInstance = new RedisCache();
+                    $redis = $redisInstance->getClient();
 
-                $chunkBuffer = '';
-                for ($y = 0; $y < $actualH; $y++) {
-                    $offset = (($startY + $y) * $boardW + $startX) * 4;
-                    $length = $actualW * 4;
-                    $chunkBuffer .= substr($stateRaw, $offset, $length);
+                    if ($redis && $redis->exists($redisKey)) {
+                        $luaScript = <<<LUA
+local redisKey = KEYS[1]
+local boardW = tonumber(ARGV[1])
+local boardH = tonumber(ARGV[2])
+local chunkSize = tonumber(ARGV[3])
+local res = {}
+
+for i = 4, #ARGV do
+    local chunkKey = ARGV[i]
+    local comma = string.find(chunkKey, ",")
+    if comma then
+        local cx = tonumber(string.sub(chunkKey, 1, comma - 1))
+        local cy = tonumber(string.sub(chunkKey, comma + 1))
+        local startX = cx * chunkSize
+        local startY = cy * chunkSize
+        
+        if startX < boardW and startY < boardH and startX >= 0 and startY >= 0 then
+            local actualW = math.min(chunkSize, boardW - startX)
+            local actualH = math.min(chunkSize, boardH - startY)
+            local rowLen = actualW * 4
+            local rows = {}
+            for y = 0, actualH - 1 do
+                local offset = ((startY + y) * boardW + startX) * 4
+                local line = redis.call('GETRANGE', redisKey, offset, offset + rowLen - 1)
+                rows[#rows + 1] = line
+            end
+            res[#res + 1] = chunkKey
+            res[#res + 1] = table.concat(rows)
+        end
+    end
+end
+return res
+LUA;
+
+                        $evalArgs = array_merge([$redisKey, $boardW, $boardH, $chunkSize], $validChunkKeys);
+                        $luaResult = $redis->eval($luaScript, $evalArgs, 1);
+
+                        if (is_array($luaResult)) {
+                            $extractedViaRedis = true;
+                            $count = count($luaResult);
+                            for ($i = 0; $i < $count; $i += 2) {
+                                $cKey = $luaResult[$i];
+                                $cBuffer = $luaResult[$i + 1] ?? '';
+                                $responseChunks[$cKey] = base64_encode(gzencode($cBuffer, 1));
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    Logger::error('Error extracting chunks via Redis Lua script.', [
+                        'canvas_id' => $canvasId,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            if (!$extractedViaRedis) {
+                // Fallback: cargar el buffer completo si Redis no respondió
+                $stateRaw = null;
+                if (class_exists(RedisCache::class)) {
+                    try {
+                        $redis = (new RedisCache())->getClient();
+                        if ($redis && $redis->exists($redisKey)) {
+                            $stateRaw = $redis->get($redisKey);
+                        }
+                    } catch (Exception $e) {}
                 }
 
-                $responseChunks[$chunkKey] = base64_encode(gzencode($chunkBuffer, 6));
+                if (!$stateRaw) {
+                    $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
+                }
+
+                if (!$stateRaw) {
+                    $totalPixels = $boardW * $boardH;
+                    $stateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $totalPixels);
+                }
+
+                foreach ($validChunkKeys as $chunkKey) {
+                    list($cx, $cy) = explode(',', $chunkKey);
+                    $cx = (int)$cx;
+                    $cy = (int)$cy;
+
+                    $startX = $cx * $chunkSize;
+                    $startY = $cy * $chunkSize;
+
+                    if ($startX >= $boardW || $startY >= $boardH || $startX < 0 || $startY < 0) continue;
+
+                    $actualW = min($chunkSize, $boardW - $startX);
+                    $actualH = min($chunkSize, $boardH - $startY);
+
+                    $chunkBuffer = '';
+                    for ($y = 0; $y < $actualH; $y++) {
+                        $offset = (($startY + $y) * $boardW + $startX) * 4;
+                        $length = $actualW * 4;
+                        $chunkBuffer .= substr($stateRaw, $offset, $length);
+                    }
+
+                    $responseChunks[$chunkKey] = base64_encode(gzencode($chunkBuffer, 1));
+                }
             }
 
             return [

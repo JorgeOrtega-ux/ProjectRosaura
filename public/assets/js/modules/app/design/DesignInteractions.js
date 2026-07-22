@@ -12,6 +12,18 @@ export const DesignInteractions = {
         document.addEventListener('click', this.handleClickBound);
         window.addEventListener('resize', this.handleResizeBound);
 
+        if (this.canvas && this.canvas.parentElement && typeof ResizeObserver !== 'undefined') {
+            this.resizeObserver = new ResizeObserver(() => {
+                if (this.resizeAnimationFrame) cancelAnimationFrame(this.resizeAnimationFrame);
+                this.resizeAnimationFrame = requestAnimationFrame(() => {
+                    if (typeof this.handleResize === 'function') {
+                        this.handleResize();
+                    }
+                });
+            });
+            this.resizeObserver.observe(this.canvas.parentElement);
+        }
+
         document.addEventListener('touchstart', this.handleTouchStartBound, { passive: false });
         document.addEventListener('touchmove', this.handleTouchMoveBound, { passive: false });
         document.addEventListener('touchend', this.handleTouchEndBound);

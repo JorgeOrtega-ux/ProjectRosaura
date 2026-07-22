@@ -27,8 +27,22 @@ class Utils {
     }
 
     public static function isProgressiveLoadRequired(string $size): bool {
+        $sizeKey = strtolower(trim($size));
         $sizes = self::getCanvasSizes();
-        return isset($sizes[$size]['progressive_load']) && $sizes[$size]['progressive_load'] === true;
+        if (isset($sizes[$sizeKey]['progressive_load'])) {
+            return (bool)$sizes[$sizeKey]['progressive_load'];
+        }
+
+        if (strpos($sizeKey, 'x') !== false) {
+            $parts = explode('x', $sizeKey);
+            $w = (int)($parts[0] ?? 0);
+            $h = (int)($parts[1] ?? $w);
+        } else {
+            $w = (int)$sizeKey;
+            $h = $w;
+        }
+
+        return ($w >= 1024 || $h >= 1024 || ($w * $h) >= 1048576);
     }
 
     public static function getS3Client() {

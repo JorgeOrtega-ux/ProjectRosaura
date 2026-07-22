@@ -447,6 +447,15 @@ self.onmessage = function (e) {
             requestRender();
             break;
 
+        case 'RESIZE':
+            if (canvas && payload.width && payload.height) {
+                dpr = payload.dpr || 1;
+                canvas.width = Math.floor(payload.width * dpr);
+                canvas.height = Math.floor(payload.height * dpr);
+                requestRender();
+            }
+            break;
+
         case 'UPDATE_TRANSFORM':
             transform = payload.transform;
             isDarkMode = payload.isDarkMode;

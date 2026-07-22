@@ -138,6 +138,10 @@ if (!empty($canvasUuid)) {
                     }
                 }
             } catch (\Throwable $e) {}
+            
+            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
+            $canvasInitialZoom = $allSizes[$canvasSize]['initial_zoom'] ?? 0.5;
+            
             $isChatRestricted = false;
             $chatRestrictionType = null;
             $chatRestrictionEnd = null;
@@ -181,6 +185,7 @@ if (!empty($canvasUuid)) {
          data-canvas-id="<?php echo htmlspecialchars($canvasIntId); ?>"
          data-canvas-uuid="<?php echo htmlspecialchars($canvasUuid); ?>"
          data-size="<?php echo htmlspecialchars($canvasSize); ?>" 
+         data-initial-zoom="<?php echo htmlspecialchars($canvasInitialZoom ?? '0.5'); ?>"
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
          data-is-blocked="<?php echo isset($isBlockedInit) && $isBlockedInit ? '1' : '0'; ?>"
