@@ -1,0 +1,8 @@
+=== REPORTE DE TRADUCCIONES FALTANTES ===
+Fecha: 2026-07-22 16:11:21
+Archivos escaneados: 262
+Claves en código: 1678
+Claves en JSON: 2282
+Claves faltantes: 0
+
+No faltan traducciones. ¡Todo está en orden!
