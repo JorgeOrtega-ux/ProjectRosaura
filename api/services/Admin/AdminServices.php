@@ -683,9 +683,10 @@ class AdminServices {
 
     public function saveSubscription($data) {
         if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
-        $id = (int)($data['id'] ?? 0);
+        $uuid = Utils::sanitizeText($data['uuid'] ?? '');
         $name = Utils::sanitizeText($data['name'] ?? '');
         $tier_level = (int)($data['tier_level'] ?? 1);
+        $is_active = isset($data['is_active']) ? (int)$data['is_active'] : 1;
         $stripeMonthly = Utils::sanitizeText($data['stripe_price_id_monthly'] ?? '');
         $stripeYearly = Utils::sanitizeText($data['stripe_price_id_yearly'] ?? '');
 
@@ -707,16 +708,20 @@ class AdminServices {
         }
 
         try {
-            if ($id > 0) {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            
+            if (!empty($uuid)) {
                 // Update
-                $stmt = $this->pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, color = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, features = ? WHERE id = ?");
-                $stmt->execute([$name, $tier_level, $colorString, $stripeMonthly, $stripeYearly, $featuresString, $id]);
+                $stmt = $pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, is_active = ?, color = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, features = ? WHERE uuid = ?");
+                $stmt->execute([$name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $featuresString, $uuid]);
                 return ['success' => true, 'message' => 'Suscripción actualizada'];
             } else {
                 // Insert
-                $stmt = $this->pdo->prepare("INSERT INTO subscription_tiers (name, tier_level, color, stripe_price_id_monthly, stripe_price_id_yearly, features) VALUES (?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$name, $tier_level, $colorString, $stripeMonthly, $stripeYearly, $featuresString]);
-                return ['success' => true, 'message' => 'Suscripción creada', 'data' => ['id' => $this->pdo->lastInsertId()]];
+                $uuid = \App\Core\Helpers\Utils::generateUUID();
+                $stmt = $pdo->prepare("INSERT INTO subscription_tiers (uuid, name, tier_level, is_active, color, stripe_price_id_monthly, stripe_price_id_yearly, features) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$uuid, $name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $featuresString]);
+                return ['success' => true, 'message' => 'Suscripción creada', 'data' => ['uuid' => $uuid]];
             }
         } catch (\PDOException $e) {
             Logger::error("saveSubscription Error", ['exception' => $e]);
@@ -726,12 +731,21 @@ class AdminServices {
 
     public function deleteSubscription($data) {
         if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
-        $id = (int)($data['id'] ?? 0);
-        if ($id <= 1) return ['success' => false, 'message' => 'No se puede eliminar esta suscripción'];
+        $uuid = Utils::sanitizeText($data['uuid'] ?? '');
+        if (empty($uuid)) return ['success' => false, 'message' => 'UUID requerido'];
 
         try {
-            $stmt = $this->pdo->prepare("DELETE FROM subscription_tiers WHERE id = ?");
-            $stmt->execute([$id]);
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            
+            // Protect system tiers from deletion
+            $stmtCheck = $pdo->prepare("SELECT id FROM subscription_tiers WHERE uuid = ?");
+            $stmtCheck->execute([$uuid]);
+            $tierId = (int)$stmtCheck->fetchColumn();
+            if ($tierId > 0 && $tierId <= 1) return ['success' => false, 'message' => 'No se puede eliminar esta suscripción'];
+
+            $stmt = $pdo->prepare("DELETE FROM subscription_tiers WHERE uuid = ?");
+            $stmt->execute([$uuid]);
             return ['success' => true, 'message' => 'Suscripción eliminada'];
         } catch (\PDOException $e) {
             Logger::error("deleteSubscription Error", ['exception' => $e]);

@@ -40,7 +40,7 @@ if ($page > $totalPages) {
 }
 $offset = ($page - 1) * $limit;
 
-$stmt = $pdo->prepare("SELECT id, name, color, tier_level, created_at FROM {$tblTiers} {$searchCondition} ORDER BY tier_level ASC LIMIT :limit OFFSET :offset");
+$stmt = $pdo->prepare("SELECT id, uuid, is_active, name, color, tier_level, created_at FROM {$tblTiers} {$searchCondition} ORDER BY tier_level ASC LIMIT :limit OFFSET :offset");
 foreach ($searchParams as $key => $val) {
     $stmt->bindValue($key, $val);
 }
@@ -162,7 +162,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                         ?>
                         <tr class="component-table-row clickable" 
                             data-action="selectTierRow" 
-                            data-tier-id="<?php echo $tier['id']; ?>" 
+                            data-tier-id="<?php echo htmlspecialchars($tier['uuid']); ?>" 
                             data-tier-name="<?php echo htmlspecialchars($rawName); ?>" 
                             data-is-system="<?php echo $isSystemFlag; ?>" 
                             data-tier-level="<?php echo (int)$tier['tier_level']; ?>">
@@ -177,6 +177,17 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                                         <span class="material-symbols-rounded">workspace_premium</span>
                                         <span class="search-target font-medium"><?php echo htmlspecialchars($rawName); ?></span>
                                     </div>
+                                    <?php if ($tier['is_active']): ?>
+                                        <div class="component-badge component-badge--sm component-badge--success" style="margin-left: 8px;">
+                                            <span class="material-symbols-rounded component-icon-sm">check_circle</span>
+                                            <span>Activa</span>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="component-badge component-badge--sm component-badge--danger" style="margin-left: 8px;">
+                                            <span class="material-symbols-rounded component-icon-sm">cancel</span>
+                                            <span>Inactiva</span>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                             <td>

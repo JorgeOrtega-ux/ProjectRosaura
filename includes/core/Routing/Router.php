@@ -225,7 +225,7 @@ class Router {
         }
 
         if (preg_match('#^/admin/subscription-edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['id'] = $matches[1];
+            $_GET['uuid'] = $matches[1];
             return $this->routes['/admin/subscription-edit/:uuid'] ?? [
                 'view' => 'admin/subscriptions/subscription-builder.php',
                 'auth' => true,

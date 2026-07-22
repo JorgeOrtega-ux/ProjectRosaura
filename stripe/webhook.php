@@ -180,7 +180,7 @@ try {
                     'canceled_at' => date('Y-m-d H:i:s')
                 ]);
 
-                $subRepo->updateUserTier((int) $localSub['user_id'], SubscriptionPlanConstants::TIER_BASIC);
+                $subRepo->updateUserTier((int) $localSub['user_id'], 0);
 
                 try {
                     $container = new \App\Core\Container();
@@ -224,7 +224,7 @@ try {
                 $localSub = $subRepo->findByStripeSubscriptionId($stripeSubId);
                 if ($localSub) {
                     $userId = (int) $localSub['user_id'];
-                    $subRepo->updateUserTier($userId, SubscriptionPlanConstants::TIER_BASIC);
+                    $subRepo->updateUserTier($userId, 0);
                     try {
                         $container = new \App\Core\Container();
                         $lockManager = $container->get(\App\Api\Services\Canvas\CanvasLockManager::class);

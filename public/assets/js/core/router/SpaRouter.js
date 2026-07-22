@@ -38,6 +38,7 @@ export class SpaRouter {
         if (url.startsWith('/admin/user-moderation/')) return '/admin/user-moderation/:uuid';
         if (url.startsWith('/admin/user-activity/')) return '/admin/user-activity/:uuid';
         if (url.startsWith('/admin/backup-restore/')) return '/admin/backup-restore/:uuid';
+        if (url.startsWith('/admin/subscription-edit/')) return '/admin/subscription-edit/:uuid';
         
         return url;
     }

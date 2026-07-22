@@ -5,29 +5,18 @@ use App\Core\System\SubscriptionPlanConstants;
 
 $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts  = $_SESSION['accounts'] ?? [];
-$tier = 0;
+$currentUserTier = 0;
 if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
-    $tier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
+    $currentUserTier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
 }
 
-$tierPlus  = SubscriptionPlanConstants::getTierLimits(SubscriptionPlanConstants::TIER_PLUS);
-$tierPro   = SubscriptionPlanConstants::getTierLimits(SubscriptionPlanConstants::TIER_PRO);
-$tierUltra = SubscriptionPlanConstants::getTierLimits(SubscriptionPlanConstants::TIER_ULTRA);
+// Fetch all active tiers (tier_level > 0 and is_active = 1)
+$allTiers = array_filter(SubscriptionPlanConstants::getAllTiers(), fn($t) => $t['tier_level'] > 0 && (isset($t['is_active']) ? (int)$t['is_active'] === 1 : true));
 
 function formatStoragePremium(int $mb): string {
     if ($mb >= 1024) return number_format($mb / 1024, 0) . ' GB';
     return $mb . ' MB';
 }
-
-$prices = SubscriptionPlanConstants::getTierPrices();
-
-$plusMonthly  = number_format($prices[1]['monthly'], 2);
-$plusYearly   = number_format($prices[1]['yearly'] / 12, 2);
-$proMonthly   = number_format($prices[2]['monthly'], 2);
-$proYearly    = number_format($prices[2]['yearly'] / 12, 2);
-$ultraMonthly = number_format($prices[3]['monthly'], 2);
-$ultraYearly  = number_format($prices[3]['yearly'] / 12, 2);
-
 ?>
 <div class="view-content" data-ref="premium-wrapper">
     
@@ -43,7 +32,6 @@ $ultraYearly  = number_format($prices[3]['yearly'] / 12, 2);
         <div class="component-wrapper component-wrapper--full">
             <div class="component-bottom">
 
-                <!-- Header Libre sin bordes -->
                 <div class="component-page-intro">
                     <h1 class="component-page-intro__title"><?php echo __('upgrade_page_title'); ?>&nbsp;<span class="component-text-gradient-blue">ProjectRosaura</span></h1>
                     <p class="component-page-intro__desc"><?php echo __('upgrade_page_desc'); ?></p>
@@ -57,31 +45,74 @@ $ultraYearly  = number_format($prices[3]['yearly'] / 12, 2);
                     </div>
                 </div>
 
-                <!-- Contenedor Flex de 3 Tarjetas de Suscripción -->
                 <div class="component-flex-center-gap">
-                    
-                    <!-- Tarjeta 1: Plus (Tier 1) -->
-                    <div class="component-card component-plan-card component-card--grouped component-card--p18 component-card--w560 component-card--flow-top component-card--fw500" data-tier="1" data-ref="plan-card">
+                    <?php foreach ($allTiers as $tier): 
+                        $feats = $tier['features'];
+                        $isPopular = !empty($feats['is_popular']);
+                        $tierLevel = (int)$tier['tier_level'];
+                        
+                        $monthly = number_format((float)($feats['price_monthly'] ?? 0), 2);
+                        $yearly = number_format((float)($feats['price_yearly'] ?? 0) / 12, 2);
+                        $oldPrice = number_format(((float)($feats['price_monthly'] ?? 0)) * 1.5, 2);
+
+                        $limits = $feats['limits'] ?? $feats; // Backward compatibility
+                        $storage = (int)($limits['max_storage_mb'] ?? 0);
+                        
+                        $availableFeatures = \App\Core\System\SubscriptionFeatureConfig::getAvailableFeatures();
+                        $cardClass = 'component-card component-plan-card component-card--grouped component-card--p18 component-card--w560 component-card--flow-top component-card--fw500';
+                        if ($isPopular) $cardClass .= ' component-card--featured';
+                        
+                        // Handle dynamic colors
+                        $colorStyle = '';
+                        if (!empty($tier['color'])) {
+                            $c = $tier['color'];
+                            if (($c['type'] ?? 'solid') === 'gradient') {
+                                $angle = $c['angle'] ?? 90;
+                                $stops = [];
+                                $prev = 0;
+                                foreach (($c['colors'] ?? []) as $sc) {
+                                    $end = $prev + ($sc['percentage'] ?? 0);
+                                    $stops[] = $sc['hex'] . " {$prev}% {$end}%";
+                                    $prev = $end;
+                                }
+                                if ($stops) {
+                                    $colorStyle = "background: conic-gradient(from {$angle}deg, " . implode(', ', $stops) . "); -webkit-background-clip: text; -webkit-text-fill-color: transparent;";
+                                }
+                            } else {
+                                $solidHex = $c['colors'][0]['hex'] ?? '#808080';
+                                $colorStyle = "color: {$solidHex};";
+                            }
+                        }
+                    ?>
+                    <div class="<?php echo $cardClass; ?>" data-tier="<?php echo $tierLevel; ?>" data-ref="plan-card">
                         
                         <div class="component-plan-card__header">
-                            <h2 class="component-plan-card__title"><?php echo __('plan_plus'); ?></h2>
-                            <p class="component-plan-card__desc"><?php echo __('plan_desc_plus'); ?></p>
+                            <div>
+                                <?php if ($isPopular): ?>
+                                    <span class="component-plan-card__tag" style="<?php echo $colorStyle; ?>"><?php echo __('plan_badge_popular'); ?></span>
+                                <?php endif; ?>
+                                <h2 class="component-plan-card__title"><?php echo htmlspecialchars($tier['name']); ?></h2>
+                            </div>
+                            <!-- Note: The desc is dynamic per tier. If we don't have a specific description key in DB, we can use a generic one or map it -->
+                            <p class="component-plan-card__desc"><?php echo __('plan_desc_' . strtolower(str_replace(' ', '_', $tier['name'])), __('upgrade_page_desc')); ?></p>
 
                             <div class="component-plan-card__storage">
                                 <span class="component-badge component-badge--sm">
                                     <span class="material-symbols-rounded component-badge__icon component-icon-sm">cloud</span>
-                                    <span><?php echo formatStoragePremium($tierPlus['max_storage_mb']); ?> <?php echo __('lbl_storage'); ?></span>
+                                    <span><?php echo formatStoragePremium($storage); ?> <?php echo __('lbl_storage'); ?></span>
                                 </span>
                             </div>
                         </div>
                         
                         <div class="component-plan-card__body">
                             <div class="component-plan-card__price-section">
-                                <div class="component-plan-card__old-price">USD <?php echo number_format($prices[1]['monthly'] * 1.5, 2); ?></div>
+                                <?php if ((float)$oldPrice > 0): ?>
+                                    <div class="component-plan-card__old-price">USD <?php echo $oldPrice; ?></div>
+                                <?php endif; ?>
                                 
                                 <div class="component-plan-card__price-row">
                                     <span class="component-plan-card__price-amount">USD&nbsp;</span>
-                                    <span data-ref="plan-price" data-monthly="<?php echo $plusMonthly; ?>" data-yearly="<?php echo $plusYearly; ?>" class="component-plan-card__price-amount"><?php echo $plusMonthly; ?></span>
+                                    <span data-ref="plan-price" data-monthly="<?php echo $monthly; ?>" data-yearly="<?php echo $yearly; ?>" class="component-plan-card__price-amount"><?php echo $monthly; ?></span>
                                     <span data-ref="plan-period" data-period-monthly="<?php echo __('plan_period_month'); ?>" data-period-yearly="<?php echo __('plan_period_year'); ?>" class="component-plan-card__period"><?php echo __('plan_period_month'); ?></span>
                                 </div>
 
@@ -89,228 +120,46 @@ $ultraYearly  = number_format($prices[3]['yearly'] / 12, 2);
                             </div>
 
                             <div class="component-plan-card__action">
-                                <?php if ($tier === 1): ?>
+                                <?php if ($currentUserTier === $tierLevel): ?>
                                     <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 disabled-interaction component-cursor-pointer component-text-center"><?php echo __('plan_btn_current'); ?></div>
-                                <?php elseif ($tier > 1): ?>
-                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="1"><?php echo __('plan_btn_downgrade_plus'); ?></div>
+                                <?php elseif ($currentUserTier > $tierLevel): ?>
+                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>"><?php echo __('plan_btn_downgrade'); ?></div>
                                 <?php else: ?>
-                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="1"><?php echo __('plan_btn_upgrade_plus'); ?></div>
+                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>"><?php echo __('plan_btn_upgrade'); ?></div>
                                 <?php endif; ?>
                             </div>
                         </div>
 
                         <div class="component-plan-card__footer">
                             <ul class="component-plan-card__features-list">
+                                <?php 
+                                foreach ($availableFeatures as $fKey => $fData): 
+                                    if (empty($feats[$fKey])) continue; // Only show enabled features
+                                    
+                                    // Parse value replacements if needed (e.g., max_canvases)
+                                    $titleStr = __($fData['title_key'], ['value' => $limits['max_canvases'] ?? 0]);
+                                    
+                                    if (strpos($fData['title_key'], 'snapshots') !== false) {
+                                        $titleStr = __($fData['title_key'], ['value' => $limits['max_snapshots_per_canvas'] ?? 0]);
+                                    } elseif (strpos($fData['title_key'], 'members') !== false) {
+                                        $titleStr = __($fData['title_key'], ['value' => number_format($limits['max_members_per_canvas'] ?? 0)]);
+                                    } elseif (strpos($fData['title_key'], 'palettes') !== false) {
+                                        $titleStr = __($fData['title_key'], ['value' => $limits['max_custom_palettes'] ?? 0]);
+                                    }
+                                ?>
                                 <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">check</span>
+                                    <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon"><?php echo htmlspecialchars($fData['icon']); ?></span>
                                     <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_canvases', ['value' => $tierPlus['max_canvases']]); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_canvases_plus', ['value' => $tierPlus['max_canvases']]); ?></span>
+                                        <span class="component-plan-card__feature-name"><?php echo $titleStr; ?></span>
+                                        <span class="component-plan-card__feature-desc"><?php echo __($fData['desc_key']); ?></span>
                                     </div>
                                 </li>
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">check</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_members', ['value' => number_format($tierPlus['max_members_per_canvas'])]); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_members_plus'); ?></span>
-                                    </div>
-                                </li>
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">check</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_live_share'); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_live_share'); ?></span>
-                                    </div>
-                                </li>
+                                <?php endforeach; ?>
                             </ul>
                         </div>
 
                     </div>
-
-                    <!-- Tarjeta 2: Pro (Recomendado - Tier 2) -->
-                    <div class="component-card component-plan-card component-card--grouped component-card--p18 component-card--w560 component-card--flow-top component-card--fw500 component-card--featured" data-tier="2" data-ref="plan-card">
-                        
-                        <div class="component-plan-card__header">
-                            <div>
-                                <span class="component-plan-card__tag component-text-gradient-blue"><?php echo __('plan_badge_popular'); ?></span>
-                                <h2 class="component-plan-card__title"><?php echo __('plan_pro'); ?></h2>
-                            </div>
-                            <p class="component-plan-card__desc"><?php echo __('plan_desc_pro'); ?></p>
-
-                            <div class="component-plan-card__storage">
-                                <span class="component-badge component-badge--sm">
-                                    <span class="material-symbols-rounded component-badge__icon component-icon-sm">cloud</span>
-                                    <span><?php echo formatStoragePremium($tierPro['max_storage_mb']); ?> <?php echo __('lbl_storage'); ?></span>
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="component-plan-card__body">
-                            <div class="component-plan-card__price-section">
-                                <div class="component-plan-card__old-price">USD <?php echo number_format($prices[2]['monthly'] * 1.5, 2); ?></div>
-                                
-                                <div class="component-plan-card__price-row">
-                                    <span class="component-plan-card__price-amount">USD&nbsp;</span>
-                                    <span data-ref="plan-price" data-monthly="<?php echo $proMonthly; ?>" data-yearly="<?php echo $proYearly; ?>" class="component-plan-card__price-amount"><?php echo $proMonthly; ?></span>
-                                    <span data-ref="plan-period" data-period-monthly="<?php echo __('plan_period_month'); ?>" data-period-yearly="<?php echo __('plan_period_year'); ?>" class="component-plan-card__period"><?php echo __('plan_period_month'); ?></span>
-                                </div>
-
-                                <div class="component-plan-card__price-subtext"><?php echo __('upgrade_billing_currency_note'); ?></div>
-                            </div>
-
-                            <div class="component-plan-card__action">
-                                <?php if ($tier === 2): ?>
-                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 disabled-interaction component-cursor-pointer component-text-center"><?php echo __('plan_btn_current'); ?></div>
-                                <?php elseif (2 < $tier): ?>
-                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="2"><?php echo __('plan_btn_downgrade_pro'); ?></div>
-                                <?php else: ?>
-                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="2"><?php echo __('plan_btn_upgrade_pro'); ?></div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-
-                        <div class="component-plan-card__footer">
-                            <ul class="component-plan-card__features-list">
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">check</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_canvases', ['value' => $tierPro['max_canvases']]); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_canvases_pro', ['value' => $tierPro['max_canvases']]); ?></span>
-                                    </div>
-                                </li>
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">check</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_members', ['value' => number_format($tierPro['max_members_per_canvas'])]); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_members_pro'); ?></span>
-                                    </div>
-                                </li>
-                            </ul>
-                            
-                            <hr class="component-plan-card__divider">
-                            <div class="component-plan-card__features-title"><?php echo __('plan_feat_title_pro'); ?></div>
-                            
-                            <ul class="component-plan-card__features-list">
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-text-secondary component-plan-card__feature-icon">palette</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_custom_palettes_limit', ['value' => 5]); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_custom_palettes_pro'); ?></span>
-                                    </div>
-                                </li>
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-text-secondary component-plan-card__feature-icon">admin_panel_settings</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_advanced_roles'); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_advanced_roles'); ?></span>
-                                    </div>
-                                </li>
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-text-secondary component-plan-card__feature-icon">history</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_snapshots', ['value' => $tierPro['max_snapshots_per_canvas']]); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_snapshots_pro'); ?></span>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-
-                    </div>
-
-                    <!-- Tarjeta 3: Ultra (Máximo Nivel - Tier 3) -->
-                    <div class="component-card component-plan-card component-card--grouped component-card--p18 component-card--w560 component-card--flow-top component-card--fw500" data-tier="3" data-ref="plan-card">
-                        
-                        <div class="component-plan-card__header">
-                            <div>
-                                <h2 class="component-plan-card__title"><?php echo __('plan_ultra'); ?></h2>
-                            </div>
-                            <p class="component-plan-card__desc"><?php echo __('plan_desc_ultra'); ?></p>
-
-                            <div class="component-plan-card__storage">
-                                <span class="component-badge component-badge--sm">
-                                    <span class="material-symbols-rounded component-badge__icon component-icon-sm">cloud</span>
-                                    <span><?php echo formatStoragePremium($tierUltra['max_storage_mb']); ?> <?php echo __('lbl_storage'); ?></span>
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="component-plan-card__body">
-                            <div class="component-plan-card__price-section">
-                                <div class="component-plan-card__old-price">USD <?php echo number_format($prices[3]['monthly'] * 1.5, 2); ?></div>
-                                
-                                <div class="component-plan-card__price-row">
-                                    <span class="component-plan-card__price-amount">USD&nbsp;</span>
-                                    <span data-ref="plan-price" data-monthly="<?php echo $ultraMonthly; ?>" data-yearly="<?php echo $ultraYearly; ?>" class="component-plan-card__price-amount"><?php echo $ultraMonthly; ?></span>
-                                    <span data-ref="plan-period" data-period-monthly="<?php echo __('plan_period_month'); ?>" data-period-yearly="<?php echo __('plan_period_year'); ?>" class="component-plan-card__period"><?php echo __('plan_period_month'); ?></span>
-                                </div>
-
-                                <div class="component-plan-card__price-subtext"><?php echo __('upgrade_price_subtext_ultra'); ?></div>
-                            </div>
-
-                            <div class="component-plan-card__action">
-                                <?php if ($tier === 3): ?>
-                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 disabled-interaction component-cursor-pointer component-text-center"><?php echo __('plan_btn_current'); ?></div>
-                                <?php else: ?>
-                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--full component-button--h40 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="3"><?php echo __('plan_btn_upgrade_ultra'); ?></div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-
-                        <div class="component-plan-card__footer">
-                            <ul class="component-plan-card__features-list">
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">check</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_canvases', ['value' => $tierUltra['max_canvases']]); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_canvases_ultra'); ?></span>
-                                    </div>
-                                </li>
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">check</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_members', ['value' => number_format($tierUltra['max_members_per_canvas'])]); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_members_ultra'); ?></span>
-                                    </div>
-                                </li>
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">check</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_snapshots_unlimited'); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_snapshots_ultra'); ?></span>
-                                    </div>
-                                </li>
-                            </ul>
-                            
-                            <hr class="component-plan-card__divider">
-                            <div class="component-plan-card__features-title"><?php echo __('plan_feat_title_ultra'); ?></div>
-                            
-                            <ul class="component-plan-card__features-list">
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-text-secondary component-plan-card__feature-icon">palette</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_palettes_custom'); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_custom_palettes_ultra'); ?></span>
-                                    </div>
-                                </li>
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-text-secondary component-plan-card__feature-icon">forum</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_live_chat'); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_live_chat'); ?></span>
-                                    </div>
-                                </li>
-                                <li class="component-plan-card__feature-item">
-                                    <span class="material-symbols-rounded component-icon-sm component-text-secondary component-plan-card__feature-icon">terminal</span>
-                                    <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo __('plan_card_priority_support'); ?></span>
-                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_desc_priority_support'); ?></span>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-
-                    </div>
-
+                    <?php endforeach; ?>
                 </div>
                 
                 <div class="component-disclaimer component-margin-top-32">

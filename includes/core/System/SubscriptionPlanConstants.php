@@ -3,14 +3,6 @@
 namespace App\Core\System;
 
 class SubscriptionPlanConstants {
-    public const TIER_FREE = 0;
-    public const TIER_BASIC = 0; // Alias de compatibilidad
-
-    public const TIER_PLUS = 1;
-    public const TIER_PRO = 2;
-    public const TIER_ULTRA = 3;
-    public const TIER_ADVANCED = 3; // Alias de compatibilidad
-
     private static $tierLimitsCache = [];
 
     public static function getTierLimits(int $tier): array {
@@ -26,9 +18,13 @@ class SubscriptionPlanConstants {
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             if ($row) {
                 $features = json_decode($row['features'], true) ?? [];
-                $features['name'] = $row['name'];
-                self::$tierLimitsCache[$tier] = $features;
-                return $features;
+                
+                // Compatibility for old code that assumes limits are in the root of features array
+                $limits = $features['limits'] ?? $features;
+                $limits['name'] = $row['name'];
+                
+                self::$tierLimitsCache[$tier] = $limits;
+                return $limits;
             }
         } catch (\Exception $e) {
             // Silently fallback on error
@@ -39,13 +35,7 @@ class SubscriptionPlanConstants {
             'max_canvases' => 1,
             'max_snapshots_per_canvas' => 10,
             'max_storage_mb' => 20,
-            'max_members_per_canvas' => 10,
-            'advanced_roles' => false,
-            'live_templates' => false,
-            'extended_palettes' => false,
-            'custom_palettes' => false,
-            'max_custom_palettes' => 0,
-            'allow_live_chat' => false
+            'max_members_per_canvas' => 10
         ];
         self::$tierLimitsCache[$tier] = $default;
         return $default;
@@ -57,24 +47,39 @@ class SubscriptionPlanConstants {
     }
 
     public static function getTierPrices(): array {
-        return [
-            self::TIER_FREE => [
-                'monthly' => 0.00,
-                'yearly' => 0.00
-            ],
-            self::TIER_PLUS => [
-                'monthly' => 3.99,
-                'yearly' => 39.99
-            ],
-            self::TIER_PRO => [
-                'monthly' => 8.99,
-                'yearly' => 89.99
-            ],
-            self::TIER_ULTRA => [
-                'monthly' => 19.99,
-                'yearly' => 199.99
-            ]
-        ];
+        $prices = [];
+        try {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmt = $pdo->query("SELECT tier_level, features FROM subscription_tiers");
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $features = json_decode($row['features'], true) ?? [];
+                $prices[(int)$row['tier_level']] = [
+                    'monthly' => (float)($features['price_monthly'] ?? 0),
+                    'yearly'  => (float)($features['price_yearly'] ?? 0)
+                ];
+            }
+        } catch (\Exception $e) {
+            // Silently fallback on error
+        }
+        return $prices;
+    }
+
+    public static function getAllTiers(): array {
+        $tiers = [];
+        try {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmt = $pdo->query("SELECT * FROM subscription_tiers ORDER BY tier_level ASC");
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $row['features'] = json_decode($row['features'], true) ?? [];
+                $row['color'] = json_decode($row['color'], true) ?? [];
+                $tiers[] = $row;
+            }
+        } catch (\Exception $e) {
+            // Silently fallback on error
+        }
+        return $tiers;
     }
 }
 ?>

@@ -176,7 +176,8 @@ class StripeServices {
         $tier = isset($input['tier']) ? (int) $input['tier'] : 0;
         $billingPeriod = $input['billing_period'] ?? 'monthly';
 
-        if (!in_array($tier, [SubscriptionPlanConstants::TIER_PLUS, SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ULTRA])) {
+        // Verify if the tier level is a paid tier (greater than 0)
+        if ($tier <= 0) {
             return ['success' => false, 'message_key' => 'stripe.invalid_tier'];
         }
 
@@ -583,7 +584,8 @@ class StripeServices {
         $tier = isset($input['tier']) ? (int) $input['tier'] : 0;
         $billingPeriod = $input['billing_period'] ?? 'monthly';
 
-        if (!in_array($tier, [SubscriptionPlanConstants::TIER_PLUS, SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ULTRA])) {
+        // Verify if the requested tier is a paid tier (greater than 0)
+        if ($tier <= 0) {
             return ['success' => false, 'message_key' => 'stripe.invalid_tier'];
         }
 
@@ -601,7 +603,7 @@ class StripeServices {
             return ['success' => false, 'message_key' => 'stripe.no_active_subscription'];
         }
 
-        if ($tier === SubscriptionPlanConstants::TIER_FREE || $tier === SubscriptionPlanConstants::TIER_BASIC) {
+        if ($tier <= 0) {
             \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
             try {
                 $subscription = \Stripe\Subscription::retrieve($activeLocalSub['stripe_subscription_id']);

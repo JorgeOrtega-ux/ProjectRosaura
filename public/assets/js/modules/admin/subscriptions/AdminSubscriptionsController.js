@@ -223,14 +223,14 @@ class AdminSubscriptionsController {
         }
     }
     handleRowSelection(target) {
-        const tierId = parseInt(target.getAttribute('data-tier-id'), 10);
+        const tierId = target.getAttribute('data-tier-id'); // UUID
         if (this.selectedTierId === tierId) {
             this.deselectAll();
             return;
         }
         this.selectedTierId = tierId;
         document.querySelectorAll('[data-action="selectTierRow"]').forEach(row => {
-            if(row.getAttribute('data-tier-id') == tierId) {
+            if(row.getAttribute('data-tier-id') === tierId) {
                 row.classList.add('selected');
             } else {
                 row.classList.remove('selected');
@@ -272,7 +272,7 @@ class AdminSubscriptionsController {
     }
     async deleteTier() {
         if (!this.selectedTierId || !window.dialogSystem) return;
-        const tierId = parseInt(this.selectedTierId, 10);
+        const tierId = this.selectedTierId;
         const selectedRow = document.querySelector(`[data-action="selectTierRow"][data-tier-id="${tierId}"]`);
         if (selectedRow && parseInt(selectedRow.getAttribute('data-is-system'), 10) === 1) {
             showMessage(_t(), 'error');
@@ -281,7 +281,7 @@ class AdminSubscriptionsController {
         const tierName = selectedRow ? selectedRow.getAttribute('data-tier-name') : _t();
         const response = await window.dialogSystem.show('confirmDeleteRole', { roleName: tierName });
         if (response.confirmed) {
-            await this.executeApiAction(ApiRoutes.Admin.DeleteTier, { id: tierId });
+            await this.executeApiAction(ApiRoutes.Admin.DeleteTier, { uuid: tierId });
         }
     }
     async executeApiAction(apiRoute, payload) {

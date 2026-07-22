@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
+use App\Core\System\SubscriptionFeatureConfig;
 use PDO;
 
 $db = new DatabaseManager();
@@ -14,19 +15,21 @@ $userPermissions = $_SESSION['user_permissions'] ?? [];
 
 $isEdit = false;
 $tierData = [
+    'uuid' => '',
     'id' => 0,
     'name' => '',
+    'is_active' => 1,
     'color' => json_encode(['type' => 'solid', 'angle' => 0, 'colors' => [['hex' => '#808080', 'percentage' => 100]]]),
     'tier_level' => 1,
     'stripe_price_id_monthly' => '',
     'stripe_price_id_yearly' => ''
 ];
 
-if (isset($_GET['id'])) {
-    $id = (int)$_GET['id'];
+if (isset($_GET['uuid'])) {
+    $uuid = trim($_GET['uuid']);
     
-    $stmt = $pdo->prepare("SELECT * FROM {$tblTiers} WHERE id = ?");
-    $stmt->execute([$id]);
+    $stmt = $pdo->prepare("SELECT * FROM {$tblTiers} WHERE uuid = ?");
+    $stmt->execute([$uuid]);
     $tier = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($tier) {
@@ -178,7 +181,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
         <div class="component-wrapper">
             <div class="component-bottom">
                 
-                <input type="hidden" id="tierId" value="<?php echo $tierData['id']; ?>">
+                <input type="hidden" id="tierId" value="<?php echo htmlspecialchars($tierData['uuid']); ?>">
                 
                 <!-- Detalles Accordion -->
                 <div class="component-card--grouped component-accordion">
@@ -198,16 +201,32 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                     </div>
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--stacked">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Nombre de Suscripción</h2>
-                                        <p class="component-card__description">Identificador principal para esta suscripción.</p>
+                            <div class="component-group-item component-group-item--stateful">
+                                <div class="active component-state-box" data-state="tier-name-view">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Nombre de Suscripción</h2>
+                                            <span class="component-display-value" data-ref="display-tier-name"><?php echo htmlspecialchars($tierData['name']) ?: 'No configurado'; ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--stretch">
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="tier-name"><?php echo __('btn_edit') ?: 'Editar'; ?></button>
                                     </div>
                                 </div>
-                                <div class="component-card__actions component-card__actions--start">
-                                    <div class="component-input-group component-input-group--h34">
-                                        <input type="text" id="tierName" class="component-input-field component-input-field--simple" placeholder="Ej. Pro, Ultra" value="<?php echo htmlspecialchars($tierData['name']); ?>">
+                                <div class="disabled component-state-box" data-state="tier-name-edit">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Nombre de Suscripción</h2>
+                                            <div class="component-edit-row">
+                                                <div class="component-input-group component-input-group--h34">
+                                                    <input type="text" id="tierName" data-ref="input-tier-name" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['name']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['name']); ?>" placeholder="Ej. Pro, Ultra">
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--stretch">
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="tier-name"><?php echo __('btn_cancel') ?: 'Cancelar'; ?></button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="tier-name"><?php echo __('btn_save') ?: 'Aplicar'; ?></button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -233,6 +252,23 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="5" data-max="99"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            <hr class="component-divider">
+
+                            <div class="component-group-item component-group-item--wrap">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Estado de la Suscripción</h2>
+                                        <p class="component-card__description">Activa o desactiva la visibilidad pública de este plan.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" id="isActiveToggle" <?php echo (int)$tierData['is_active'] ? 'checked' : ''; ?>>
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
                                 </div>
                             </div>
         
@@ -460,88 +496,31 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                     </div>
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Roles Avanzados</h2>
-                                        <p class="component-card__description">Permitir la creación de roles de equipo personalizados en el lienzo.</p>
+                            <?php 
+                            $availableFeatures = SubscriptionFeatureConfig::getAvailableFeatures();
+                            $featCount = count($availableFeatures);
+                            $fIndex = 0;
+                            foreach ($availableFeatures as $fKey => $fData): 
+                                $isChecked = !empty($featuresData[$fKey]) ? 'checked' : '';
+                            ?>
+                                <div class="component-group-item component-group-item--wrap">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title"><?php echo __($fData['title_key']) ?: $fKey; ?></h2>
+                                            <p class="component-card__description"><?php echo __($fData['desc_key']) ?: 'Activar/Desactivar'; ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--end">
+                                        <label class="component-toggle-switch">
+                                            <input type="checkbox" data-ref="feature-toggle" data-key="<?php echo $fKey; ?>" <?php echo $isChecked; ?>>
+                                            <span class="component-toggle-slider"></span>
+                                        </label>
                                     </div>
                                 </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" id="featAdvancedRoles" <?php echo !empty($featuresData['advanced_roles']) ? 'checked' : ''; ?>>
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-        
-                            <hr class="component-divider">
-        
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Plantillas en Vivo</h2>
-                                        <p class="component-card__description">Acceso a la biblioteca de templates exclusivos.</p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" id="featLiveTemplates" <?php echo !empty($featuresData['live_templates']) ? 'checked' : ''; ?>>
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-        
-                            <hr class="component-divider">
-        
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Paletas Extendidas</h2>
-                                        <p class="component-card__description">Disponibilidad de colores extendidos en la app.</p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" id="featExtendedPalettes" <?php echo !empty($featuresData['extended_palettes']) ? 'checked' : ''; ?>>
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-        
-                            <hr class="component-divider">
-        
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Guardar Paletas Personalizadas</h2>
-                                        <p class="component-card__description">Habilitar creación manual de paletas.</p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" id="featCustomPalettes" <?php echo !empty($featuresData['custom_palettes']) ? 'checked' : ''; ?>>
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-        
-                            <hr class="component-divider">
-        
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Chat en Vivo y Soporte</h2>
-                                        <p class="component-card__description">Canal prioritario de ayuda en la app.</p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" id="featAllowLiveChat" <?php echo !empty($featuresData['allow_live_chat']) ? 'checked' : ''; ?>>
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
+                                <?php if (++$fIndex < $featCount): ?>
+                                    <hr class="component-divider">
+                                <?php endif; ?>
+                            <?php endforeach; ?>
                         </div>
                     </div>
                 </div>

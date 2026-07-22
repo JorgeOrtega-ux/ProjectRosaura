@@ -292,6 +292,12 @@ class AdminSubscriptionBuilderController {
             this.updateLivePreview();
             this.checkMaxColorsLimit();
         }
+        
+        const addBenefitBtn = e.target.closest('[data-action="addBenefit"]');
+        if (addBenefitBtn) this.handleAddBenefit(addBenefitBtn);
+        
+        const removeBenefitBtn = e.target.closest('[data-action="removeBenefit"]');
+        if (removeBenefitBtn) this.handleRemoveBenefit(removeBenefitBtn);
     }
     handleApplyRoleName(btn) {
         if (this.isSystemTier) return;
@@ -438,20 +444,84 @@ class AdminSubscriptionBuilderController {
     detectModeAndLoad() {
         const tierIdNode = document.getElementById('tierId');
         if (tierIdNode) {
-            const id = parseInt(tierIdNode.value, 10);
-            this.tierId = id;
-            this.isEditing = id > 0;
-            this.isSystemTier = id <= 1;
+            const id = tierIdNode.value.trim();
+            this.tierId = id !== '' ? id : null;
+            this.isEditing = id !== '';
+            this.isSystemTier = false; 
+            // NOTE: the backend restricts deleting system tiers by checking tier_level <= 1.
+        }
+        
+        if (this.isEditing) {
+            const btnGradientTrigger = document.querySelector('[data-ref="gradientAngleTrigger"]');
+            if (btnGradientTrigger) {
+                this.currentColorType = btnGradientTrigger.closest('.component-card--grouped').classList.contains('disabled') ? 'solid' : 'gradient';
+            }
         }
 
-        const btnGradientTrigger = document.querySelector('[data-ref="gradientAngleTrigger"]');
-        if (btnGradientTrigger) {
-            this.currentColorType = btnGradientTrigger.closest('.component-card--grouped').classList.contains('disabled') ? 'solid' : 'gradient';
-        }
-
+        this.initBenefitsLists();
         this.updateLivePreview();
         this.checkMaxColorsLimit();
     }
+    
+    initBenefitsLists() {
+        const data1 = document.getElementById('benefitsList1Data');
+        const data2 = document.getElementById('benefitsList2Data');
+        
+        if (data1 && data1.value) {
+            try {
+                const list1 = JSON.parse(data1.value);
+                list1.forEach(item => this.renderBenefitRow(1, item));
+            } catch (e) { console.error('Error parsing benefits list 1', e); }
+        }
+        
+        if (data2 && data2.value) {
+            try {
+                const list2 = JSON.parse(data2.value);
+                list2.forEach(item => this.renderBenefitRow(2, item));
+            } catch (e) { console.error('Error parsing benefits list 2', e); }
+        }
+    }
+    
+    handleAddBenefit(btn) {
+        const listNum = btn.dataset.list;
+        this.renderBenefitRow(listNum, {icon: 'check', title_key: '', desc_key: ''});
+    }
+    
+    handleRemoveBenefit(btn) {
+        const row = btn.closest('.benefit-row');
+        if (row) row.remove();
+    }
+    
+    renderBenefitRow(listNum, data) {
+        const container = document.getElementById(`benefitsList2Container`.replace('2', listNum));
+        if (!container) return;
+        
+        const html = `
+            <div class="component-group-item component-group-item--stacked benefit-row" style="background: rgba(0,0,0,0.02); margin-bottom: 8px; border-radius: 8px; padding: 12px; border: 1px solid var(--border-color, #e0e0e0);">
+                <div style="display:flex; gap: 12px; width: 100%; align-items: flex-start;">
+                    <div class="component-input-group component-input-group--h34" style="flex: 0 0 60px;">
+                        <input type="text" class="component-input-field component-input-field--simple b-icon" placeholder="Icon" value="${data.icon || 'check'}" title="Material Symbol (ej. check, palette, stars)">
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="component-input-group component-input-group--h34">
+                            <input type="text" class="component-input-field component-input-field--simple b-title" placeholder="Clave de Título (ej. plan_card_canvases)" value="${data.title_key || ''}">
+                        </div>
+                        <div class="component-input-group component-input-group--h34">
+                            <input type="text" class="component-input-field component-input-field--simple b-desc" placeholder="Clave de Descripción (ej. plan_desc_canvases)" value="${data.desc_key || ''}">
+                        </div>
+                    </div>
+                    <button type="button" class="component-button component-button--icon component-button--h34" data-action="removeBenefit" style="flex: 0 0 34px;">
+                        <span class="material-symbols-rounded">delete</span>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        const temp = document.createElement('div');
+        temp.innerHTML = html.trim();
+        container.appendChild(temp.firstElementChild);
+    }
+
     checkMaxColorsLimit() {
         const rows = document.querySelectorAll('[data-ref="gradientColorsContainer"] [data-component="color-block"]');
         const addBtnWrapper = document.querySelector('[data-ref="btnAddGradientColorWrapper"]');
@@ -562,49 +632,76 @@ class AdminSubscriptionBuilderController {
         return { color_type: this.currentColorType, angle: angle, colors: colors };
     }
     extractFeaturesPayload() {
-        return {
-            max_canvases: parseInt(document.querySelector('[data-ref="val_featMaxCanvases"]')?.dataset.val || 0, 10),
-            max_storage_mb: parseInt(document.querySelector('[data-ref="val_featMaxStorage"]')?.dataset.val || 0, 10),
-            max_snapshots_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxSnapshots"]')?.dataset.val || 0, 10),
-            max_members_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxMembers"]')?.dataset.val || 0, 10),
-            max_custom_palettes: parseInt(document.querySelector('[data-ref="val_featMaxCustomPalettes"]')?.dataset.val || 0, 10),
-            advanced_roles: document.getElementById('featAdvancedRoles')?.checked || false,
-            live_templates: document.getElementById('featLiveTemplates')?.checked || false,
-            extended_palettes: document.getElementById('featExtendedPalettes')?.checked || false,
-            custom_palettes: document.getElementById('featCustomPalettes')?.checked || false,
-            allow_live_chat: document.getElementById('featAllowLiveChat')?.checked || false
+        const payload = {
+            is_popular: document.getElementById('featIsPopular')?.checked || false,
+            price_monthly: parseFloat(document.getElementById('priceMonthly')?.value || 0),
+            price_yearly: parseFloat(document.getElementById('priceYearly')?.value || 0),
+            limits: {
+                max_canvases: parseInt(document.querySelector('[data-ref="val_featMaxCanvases"]')?.dataset.val || 0, 10),
+                max_storage_mb: parseInt(document.querySelector('[data-ref="val_featMaxStorage"]')?.dataset.val || 0, 10),
+                max_snapshots_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxSnapshots"]')?.dataset.val || 0, 10),
+                max_members_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxMembers"]')?.dataset.val || 0, 10),
+                max_custom_palettes: parseInt(document.querySelector('[data-ref="val_featMaxCustomPalettes"]')?.dataset.val || 0, 10)
+            }
         };
+        
+        document.querySelectorAll('input[type="checkbox"][data-ref="feature-toggle"]').forEach(checkbox => {
+            if (checkbox.dataset.key) {
+                payload[checkbox.dataset.key] = checkbox.checked;
+            }
+        });
+
+        return payload;
     }
 
     async saveTier(btn) {
-        const nameInput = document.getElementById('tierName');
-        const stripeMonthly = document.querySelector('[data-ref="input-stripe-monthly"]');
-        const stripeYearly = document.querySelector('[data-ref="input-stripe-yearly"]');
-
-        const levelCenter = document.querySelector('[data-ref="val_tierLevel"]');
+        const tierName = document.getElementById('tierName')?.value.trim();
+        const tierLevel = document.querySelector('[data-ref="val_tierLevel"]')?.dataset.val;
+        const isActiveNode = document.getElementById('isActiveToggle');
         
-        const tierName = nameInput ? nameInput.value.trim() : '';
-        if (!tierName) {
-            showMessage('Nombre requerido', 'error');
+        const stripeMonthly = document.querySelector('[data-ref="input-stripe-monthly"]')?.value.trim();
+        const stripeYearly = document.querySelector('[data-ref="input-stripe-yearly"]')?.value.trim();
+        
+        if (!tierName || tierLevel === undefined || tierLevel === null) {
+            showMessage("El nombre de la suscripción y el nivel son obligatorios.", "warning");
+            return;
+        }
+
+        if (!stripeMonthly || !stripeYearly) {
+            showMessage("Los identificadores de Stripe (Mensual y Anual) son obligatorios.", "warning");
+            return;
+        }
+
+        const featuresPayload = this.extractFeaturesPayload();
+        
+        // Check if at least one feature is toggled on (ignoring limits, prices, is_popular)
+        const hasFeature = Object.keys(featuresPayload).some(key => {
+            if (['is_popular', 'price_monthly', 'price_yearly', 'limits'].includes(key)) return false;
+            return featuresPayload[key] === true;
+        });
+
+        if (!hasFeature) {
+            showMessage("Debes habilitar al menos una ventaja o permiso para esta suscripción.", "warning");
             return;
         }
 
         setButtonLoading(btn);
         
-        const colorPayload = this.extractTierColorPayload();
-        const featuresPayload = this.extractFeaturesPayload();
+        const colorData = this.extractTierColorPayload();
 
         const payload = {
-            id: this.tierId,
+            route: 'admin.subscriptions.save',
+            uuid: this.tierId,
             name: tierName,
-            tier_level: parseInt(levelCenter ? levelCenter.dataset.val : 1, 10),
-            color: colorPayload,
-            stripe_price_id_monthly: stripeMonthly ? stripeMonthly.value.trim() : '',
-            stripe_price_id_yearly: stripeYearly ? stripeYearly.value.trim() : '',
+            tier_level: parseInt(tierLevel, 10),
+            is_active: isActiveNode ? (isActiveNode.checked ? 1 : 0) : 1,
+            color: colorData,
+            stripe_price_id_monthly: stripeMonthly,
+            stripe_price_id_yearly: stripeYearly,
             features: featuresPayload
         };
 
-        const res = await this.api.post('/api.php?route=admin.subscriptions.save', payload, this.abortController.signal);
+        const res = await this.api.post('/api.php', payload, this.abortController.signal);
         if (res.aborted) return;
         restoreButton(btn);
 

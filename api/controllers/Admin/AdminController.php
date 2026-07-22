@@ -195,9 +195,10 @@ class AdminController extends BaseController {
         try {
             $this->requirePermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL);
             $safeInput = [
-                'id' => $input['id'] ?? 0,
+                'uuid' => $input['uuid'] ?? null,
                 'name' => $input['name'] ?? null,
                 'tier_level' => $input['tier_level'] ?? 1,
+                'is_active' => isset($input['is_active']) ? (int)$input['is_active'] : 1,
                 'color' => $input['color'] ?? null,
                 'stripe_price_id_monthly' => $input['stripe_price_id_monthly'] ?? null,
                 'stripe_price_id_yearly' => $input['stripe_price_id_yearly'] ?? null,
@@ -210,7 +211,7 @@ class AdminController extends BaseController {
     public function delete_subscription($input) {
         try {
             $this->requirePermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL);
-            $safeInput = ['id' => $input['id'] ?? null];
+            $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->deleteSubscription($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }

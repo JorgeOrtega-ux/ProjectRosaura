@@ -68,12 +68,7 @@ if ($activeAccountId !== null && isset($linkedAccounts[$activeAccountId])) {
 } else {
     $subscriptionTier = (int)($_SESSION['subscription_tier'] ?? 0);
 }
-$subscriptionPlanLabel = match ($subscriptionTier) {
-    SubscriptionPlanConstants::TIER_ULTRA => __('tier_ultra'),
-    SubscriptionPlanConstants::TIER_PRO => __('tier_pro'),
-    SubscriptionPlanConstants::TIER_PLUS => __('tier_plus'),
-    default => __('tier_free'),
-};
+$subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimits($subscriptionTier)['name'] ?? __('tier_free');
 
 $googleId = null;
 if ($isLoggedIn) {

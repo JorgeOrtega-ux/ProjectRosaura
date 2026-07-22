@@ -13,7 +13,7 @@ class PremiumMiddleware implements MiddlewareInterface {
         $this->sessionManager = $sessionManager;
     }
     public function handle(array $input, array $params = []): bool {
-        $requiredTier = $params['tier'] ?? SubscriptionPlanConstants::TIER_PRO;
+        $requiredTier = $params['tier'] ?? 2;
         $userTier = $this->sessionManager->getSubscriptionTier();
 
         if ($userTier < $requiredTier) {

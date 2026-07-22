@@ -1,7 +1,7 @@
 <?php
 
 use App\Core\System\SubscriptionPlanConstants;
-$userTier = (int) ($_SESSION['subscription_tier'] ?? $_SESSION['tier'] ?? $_SESSION['user_tier'] ?? SubscriptionPlanConstants::TIER_BASIC);
+$userTier = (int) ($_SESSION['subscription_tier'] ?? $_SESSION['tier'] ?? $_SESSION['user_tier'] ?? 0);
 $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates');
 ?>
 <div class="component-module component-module--sidebar component-module--sidebar-responsive disabled" data-module="moduleDesignTools">
