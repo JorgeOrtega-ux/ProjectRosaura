@@ -154,9 +154,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
                                 $stops = [];
                                 foreach ($colorData['colors'] as $c) {
                                     $hex = htmlspecialchars(is_string($c) ? $c : $c['hex']);
-                                    $stop = isset($c['stop']) ? $c['stop'] : (isset($c['percentage']) ? $c['percentage'] : 100);
-                                    $stops[] = "{$hex} {$prevStop}% {$stop}%";
-                                    $prevStop = $stop;
+                                    $percentage = isset($c['percentage']) ? (int)$c['percentage'] : (isset($c['stop']) ? (int)$c['stop'] : 100);
+                                    $endStop = $prevStop + $percentage;
+                                    $stops[] = "{$hex} {$prevStop}% {$endStop}%";
+                                    $prevStop = $endStop;
                                 }
                                 $cssColorValue = "conic-gradient(from {$angle}deg, " . implode(', ', $stops) . ")";
                             } else {

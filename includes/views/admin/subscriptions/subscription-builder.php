@@ -180,7 +180,7 @@ $featuresData = [
 ];
 
 ?>
-<div class="view-content" data-ref="admin-subscriptions-wrapper" data-tier-uuid="<?php echo htmlspecialchars($tierData['uuid']); ?>">
+<div class="view-content" data-ref="admin-subscriptions-wrapper" data-tier-uuid="<?php echo htmlspecialchars($tierData['uuid']); ?>" data-tier-active="<?php echo (int)($tierData['is_active'] ?? 1); ?>">
     
     <div class="component-top">
         <div class="component-top-left">
@@ -271,23 +271,7 @@ $featuresData = [
                                 </div>
                             </div>
 
-                            <hr class="component-divider">
 
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_status_title') ?: 'Estado de la Suscripción'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_status_desc') ?: 'Activa o desactiva la visibilidad pública de este plan.'; ?></p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" id="isActiveToggle" <?php echo (int)$tierData['is_active'] ? 'checked' : ''; ?>>
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                            </div>
         
                             <hr class="component-divider">
 

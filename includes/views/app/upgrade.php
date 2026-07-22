@@ -47,16 +47,14 @@ function formatStoragePremium(int $mb): string {
 
                 <div class="component-flex-center-gap">
                     <?php foreach ($allTiers as $tier): 
-                        $feats = $tier['features'];
-                        $isPopular = !empty($feats['is_popular']);
+                        $isPopular = !empty($tier['is_popular']);
                         $tierLevel = (int)$tier['tier_level'];
                         
-                        $monthly = number_format((float)($feats['price_monthly'] ?? 0), 2);
-                        $yearly = number_format((float)($feats['price_yearly'] ?? 0) / 12, 2);
-                        $oldPrice = number_format(((float)($feats['price_monthly'] ?? 0)) * 1.5, 2);
+                        $monthly = number_format((float)($tier['price_monthly'] ?? 0), 2);
+                        $yearly = number_format((float)($tier['price_yearly'] ?? 0) / 12, 2);
+                        $oldPrice = number_format(((float)($tier['price_monthly'] ?? 0)) * 1.5, 2);
 
-                        $limits = $feats['limits'] ?? $feats; // Backward compatibility
-                        $storage = (int)($limits['max_storage_mb'] ?? 0);
+                        $storage = (int)($tier['max_storage_mb'] ?? 0);
                         
                         $availableFeatures = \App\Core\System\SubscriptionFeatureConfig::getAvailableFeatures();
                         $cardClass = 'component-card component-plan-card component-card--grouped component-card--p18 component-card--w560 component-card--flow-top component-card--fw500';
@@ -137,21 +135,21 @@ function formatStoragePremium(int $mb): string {
                                 <li class="component-plan-card__feature-item">
                                     <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">dashboard</span>
                                     <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo $limits['max_canvases'] == -1 ? __('plan_limit_unlimited', 'Ilimitado') . ' ' . __('plan_limit_canvases', 'Lienzos') : $limits['max_canvases'] . ' ' . __('plan_limit_canvases', 'Lienzos'); ?></span>
+                                        <span class="component-plan-card__feature-name"><?php echo $tier['max_canvases'] == -1 ? __('plan_limit_unlimited', 'Ilimitado') . ' ' . __('plan_limit_canvases', 'Lienzos') : $tier['max_canvases'] . ' ' . __('plan_limit_canvases', 'Lienzos'); ?></span>
                                         <span class="component-plan-card__feature-desc"><?php echo __('plan_limit_canvases_desc', 'Proyectos simultáneos'); ?></span>
                                     </div>
                                 </li>
                                 <li class="component-plan-card__feature-item">
                                     <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">history</span>
                                     <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo $limits['max_snapshots_per_canvas'] == -1 ? __('plan_limit_unlimited', 'Ilimitado') . ' ' . __('plan_limit_snapshots', 'Snapshots') : $limits['max_snapshots_per_canvas'] . ' ' . __('plan_limit_snapshots', 'Snapshots'); ?></span>
+                                        <span class="component-plan-card__feature-name"><?php echo $tier['max_snapshots_per_canvas'] == -1 ? __('plan_limit_unlimited', 'Ilimitado') . ' ' . __('plan_limit_snapshots', 'Snapshots') : $tier['max_snapshots_per_canvas'] . ' ' . __('plan_limit_snapshots', 'Snapshots'); ?></span>
                                         <span class="component-plan-card__feature-desc"><?php echo __('plan_limit_snapshots_desc', 'Por lienzo'); ?></span>
                                     </div>
                                 </li>
                                 <li class="component-plan-card__feature-item">
                                     <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">group</span>
                                     <div class="component-plan-card__feature-text">
-                                        <span class="component-plan-card__feature-name"><?php echo $limits['max_members_per_canvas'] == -1 ? __('plan_limit_unlimited', 'Ilimitados') . ' ' . __('plan_limit_members', 'Miembros') : number_format($limits['max_members_per_canvas']) . ' ' . __('plan_limit_members', 'Miembros'); ?></span>
+                                        <span class="component-plan-card__feature-name"><?php echo $tier['max_members_per_canvas'] == -1 ? __('plan_limit_unlimited', 'Ilimitados') . ' ' . __('plan_limit_members', 'Miembros') : number_format($tier['max_members_per_canvas']) . ' ' . __('plan_limit_members', 'Miembros'); ?></span>
                                         <span class="component-plan-card__feature-desc"><?php echo __('plan_limit_members_desc', 'Por lienzo'); ?></span>
                                     </div>
                                 </li>
@@ -159,11 +157,11 @@ function formatStoragePremium(int $mb): string {
                                 <!-- Boolean Features -->
                                 <?php 
                                 foreach ($availableFeatures as $fKey => $fData): 
-                                    if (empty($feats[$fKey])) continue; // Only show enabled features
+                                    if (empty($tier[$fKey])) continue; // Only show enabled features
                                     
                                     $titleStr = __($fData['title_key']);
                                     if ($fKey === 'feat_custom_palettes') {
-                                        $titleStr = __($fData['title_key'], ['value' => $limits['max_custom_palettes'] ?? 0]);
+                                        $titleStr = __($fData['title_key']) . ' (' . ($tier['max_custom_palettes'] ?? 0) . ')';
                                     }
                                 ?>
                                 <li class="component-plan-card__feature-item">

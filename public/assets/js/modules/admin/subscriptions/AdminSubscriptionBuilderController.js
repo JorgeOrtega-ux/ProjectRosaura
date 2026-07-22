@@ -661,7 +661,8 @@ class AdminSubscriptionBuilderController {
     async saveTier(btn) {
         const tierName = document.getElementById('tierName')?.value.trim();
         const tierLevel = document.querySelector('[data-ref="val_tierLevel"]')?.dataset.val;
-        const isActiveNode = document.getElementById('isActiveToggle');
+        const wrapper = document.querySelector('[data-ref="admin-subscriptions-wrapper"]');
+        const isActive = wrapper && wrapper.dataset.tierActive !== undefined ? parseInt(wrapper.dataset.tierActive, 10) : 1;
         
         const stripeMonthly = document.querySelector('[data-ref="input-stripe-monthly"]')?.value.trim();
         const stripeYearly = document.querySelector('[data-ref="input-stripe-yearly"]')?.value.trim();
@@ -698,7 +699,7 @@ class AdminSubscriptionBuilderController {
             uuid: this.tierId,
             name: tierName,
             tier_level: parseInt(tierLevel, 10),
-            is_active: isActiveNode ? (isActiveNode.checked ? 1 : 0) : 1,
+            is_active: isActive,
             color: colorData,
             stripe_price_id_monthly: stripeMonthly,
             stripe_price_id_yearly: stripeYearly,
