@@ -52,7 +52,7 @@ $parseRoleColor = function($roleColorRaw) {
                     $activeAccPic = \App\Core\Helpers\Utils::getValidImage($activeAcc['user_pic'] ?? '', 'avatar');
                 ?>
                 <div class="component-menu-link component-menu-link--bordered component-account-item" data-action="showSubMenu" data-menu-target="account-switcher">
-                    <div class="component-avatar component-avatar--36 role-dynamic" data-role-bg="<?php echo $parseRoleColor($activeAcc['user_role_color'] ?? ''); ?>">
+                    <div class="component-avatar component-avatar--36 role-dynamic" data-role-bg="<?php echo $parseRoleColor($activeAcc['subscription_color'] ?? ''); ?>">
                         <img src="<?php echo htmlspecialchars($activeAccPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                              class="image-lazy-fade"
                              onload="this.classList.add('image-loaded')"
@@ -131,7 +131,7 @@ $parseRoleColor = function($roleColorRaw) {
                 $accPic = \App\Core\Helpers\Utils::getValidImage($acc['user_pic'] ?? '', 'avatar');
                 ?>
                 <div class="component-menu-link component-menu-link--bordered component-account-item <?php echo $isActive ? 'active' : ''; ?>" <?php if(!$isActive) echo 'data-action="switchAccount" data-id="'.$id.'"'; ?>>
-                    <div class="component-avatar component-avatar--36 role-dynamic" data-role-bg="<?php echo $parseRoleColor($acc['user_role_color'] ?? ''); ?>">
+                    <div class="component-avatar component-avatar--36 role-dynamic" data-role-bg="<?php echo $parseRoleColor($acc['subscription_color'] ?? ''); ?>">
                         <img src="<?php echo htmlspecialchars($accPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                              class="image-lazy-fade"
                              onload="this.classList.add('image-loaded')"

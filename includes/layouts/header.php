@@ -10,7 +10,7 @@ $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts = $_SESSION['accounts'] ?? [];
 
 if ($activeAccountId !== null && isset($linkedAccounts[$activeAccountId])) {
-    $linkedAccounts[$activeAccountId]['user_role_color'] = $_SESSION['user_role_color'] ?? ($linkedAccounts[$activeAccountId]['user_role_color'] ?? '');
+    $linkedAccounts[$activeAccountId]['subscription_color'] = $_SESSION['subscription_color'] ?? ($linkedAccounts[$activeAccountId]['subscription_color'] ?? '');
     $linkedAccounts[$activeAccountId]['user_pic'] = $_SESSION['user_pic'] ?? ($linkedAccounts[$activeAccountId]['user_pic'] ?? '');
     $_SESSION['accounts'] = $linkedAccounts;
 }
@@ -26,7 +26,7 @@ if ($activeAccountId !== null && isset($linkedAccounts[$activeAccountId])) {
 $isPremium = $subscriptionTier > 0;
 
 $userPermissions = $_SESSION['user_permissions'] ?? [];
-$userRoleColorRaw = $_SESSION['user_role_color'] ?? '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
+$subscriptionColorRaw = $_SESSION['subscription_color'] ?? '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
 
 $rawUserPic = $_SESSION['user_pic'] ?? '';
 $userPic = \App\Core\Helpers\Utils::getValidImage($rawUserPic, 'avatar');
@@ -42,7 +42,7 @@ $hasCanvasAccess = $canCreateCanvas || $canManageCanvases || $canJoinCanvas;
 
 $activeRoleBg = 'var(--text-muted)';
 if ($isLoggedIn) {
-    $colorData = json_decode($userRoleColorRaw, true);
+    $colorData = json_decode($subscriptionColorRaw, true);
     if (json_last_error() === JSON_ERROR_NONE && is_array($colorData)) {
         $firstColorObj = $colorData['colors'][0] ?? null;
         $activeRoleBg = is_string($firstColorObj) ? htmlspecialchars($firstColorObj) : htmlspecialchars($firstColorObj['hex'] ?? 'var(--text-muted)');
@@ -63,7 +63,7 @@ if ($isLoggedIn) {
             $activeRoleBg = "conic-gradient(from {$angle}deg, " . implode(', ', $stopsArray) . ")";
         }
     } else {
-        $activeRoleBg = htmlspecialchars($userRoleColorRaw);
+        $activeRoleBg = htmlspecialchars($subscriptionColorRaw);
     }
 }
 ?>

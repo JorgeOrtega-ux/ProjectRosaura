@@ -14,14 +14,15 @@ $isLoggedIn = isset($_SESSION['user_id']);
 $userId = $_SESSION['user_id'] ?? 0;
 $userName = $_SESSION['user_name'] ?? __('user');
 $userEmail = $_SESSION['user_email'] ?? '';
-$userRoleColorRaw = $_SESSION['user_role_color'] ?? '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
+$userRoleName = $_SESSION['user_role_name'] ?? __('user');
+$subscriptionColorRaw = $_SESSION['subscription_color'] ?? '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
 $activeRoleBg = 'var(--text-muted)';
 
 if ($isLoggedIn) {
-    $colorData = json_decode($userRoleColorRaw, true);
+    $colorData = json_decode($subscriptionColorRaw, true);
 
     if (json_last_error() !== JSON_ERROR_NONE || !is_array($colorData)) {
-        $colorData = ['type' => 'solid', 'colors' => [['hex' => $userRoleColorRaw, 'percentage' => 100]]];
+        $colorData = ['type' => 'solid', 'colors' => [['hex' => $subscriptionColorRaw, 'percentage' => 100]]];
     }
 
     $firstColorObj = $colorData['colors'][0] ?? null;
@@ -205,6 +206,19 @@ $googleClientId = $_ENV['GOOGLE_CLIENT_ID'] ?? '';
                         </div>
                     </div>
 
+                </div>
+
+                <hr class="component-divider">
+
+                <div class="component-group-item component-group-item--stateful">
+                    <div class="active component-state-box" data-state="role-view">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Rol en el Sistema</h2>
+                                <span class="component-display-value" data-ref="display-role"><?php echo htmlspecialchars($userRoleName); ?></span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <hr class="component-divider">

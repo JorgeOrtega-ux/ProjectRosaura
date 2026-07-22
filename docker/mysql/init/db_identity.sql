@@ -5,7 +5,6 @@ USE db_identity;
 CREATE TABLE IF NOT EXISTS `roles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL,
-  `color` varchar(512) NOT NULL DEFAULT '{"type":"solid","colors":["#808080"]}',
   `weight` int(11) NOT NULL DEFAULT 1,
   `is_system` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -13,6 +12,26 @@ CREATE TABLE IF NOT EXISTS `roles` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `subscription_tiers` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tier_level` tinyint(1) NOT NULL DEFAULT 0,
+  `name` varchar(50) NOT NULL,
+  `color` varchar(512) NOT NULL DEFAULT '{"type":"solid","colors":["#808080"]}',
+  `stripe_price_id_monthly` varchar(255) DEFAULT NULL,
+  `stripe_price_id_yearly` varchar(255) DEFAULT NULL,
+  `features` json DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tier_level` (`tier_level`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+INSERT IGNORE INTO subscription_tiers (id, tier_level, name, color, stripe_price_id_monthly, stripe_price_id_yearly, features) VALUES
+  (1, 0, 'Basic', '{"type":"solid","colors":["#808080"]}', NULL, NULL, '{"max_canvases": 1, "max_snapshots_per_canvas": 10, "max_storage_mb": 20, "max_members_per_canvas": 10, "advanced_roles": false, "live_templates": false, "extended_palettes": false, "custom_palettes": false, "max_custom_palettes": 0, "allow_live_chat": false}'),
+  (2, 1, 'Plus', '{"type":"gradient","angle":90,"colors":[{"hex":"#d32029","percentage":50},{"hex":"#206bd3","percentage":50}]}', 'price_plus_monthly', 'price_plus_yearly', '{"max_canvases": 3, "max_snapshots_per_canvas": 25, "max_storage_mb": 200, "max_members_per_canvas": 100, "advanced_roles": false, "live_templates": true, "extended_palettes": true, "custom_palettes": false, "max_custom_palettes": 0, "allow_live_chat": false}'),
+  (3, 2, 'Pro', '{"type":"gradient","angle":45,"colors":[{"hex":"#fd7e14","percentage":50},{"hex":"#ffc107","percentage":50}]}', 'price_pro_monthly', 'price_pro_yearly', '{"max_canvases": 10, "max_snapshots_per_canvas": 100, "max_storage_mb": 1000, "max_members_per_canvas": 2500, "advanced_roles": true, "live_templates": true, "extended_palettes": true, "custom_palettes": true, "max_custom_palettes": 5, "allow_live_chat": false}'),
+  (4, 3, 'Ultra', '{"type":"gradient","angle":135,"colors":[{"hex":"#8a2387","percentage":0},{"hex":"#e94057","percentage":50},{"hex":"#f27121","percentage":100}]}', 'price_ultra_monthly', 'price_ultra_yearly', '{"max_canvases": 50, "max_snapshots_per_canvas": -1, "max_storage_mb": 5000, "max_members_per_canvas": 50000, "advanced_roles": true, "live_templates": true, "extended_palettes": true, "custom_palettes": true, "max_custom_palettes": 25, "allow_live_chat": true}');
 
 CREATE TABLE IF NOT EXISTS `permissions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -31,11 +50,11 @@ CREATE TABLE IF NOT EXISTS `role_permissions` (
   CONSTRAINT `fk_rp_permission` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
-INSERT IGNORE INTO roles (id, name, color, weight, is_system) VALUES
-  (1, 'User', '{"type":"solid","colors":["#808080"]}', 1, 1),
-  (2, 'Moderator', '{"type":"solid","colors":["#28a745"]}', 50, 1),
-  (3, 'Administrator', '{"type":"solid","colors":["#fd7e14"]}', 80, 1),
-  (4, 'SuperAdministrator', '{"type":"solid","colors":["#dc3545"]}', 100, 1);
+INSERT IGNORE INTO roles (id, name, weight, is_system) VALUES
+  (1, 'User', 1, 1),
+  (2, 'Moderator', 50, 1),
+  (3, 'Administrator', 80, 1),
+  (4, 'SuperAdministrator', 100, 1);
 
 INSERT IGNORE INTO permissions (id, name, description, is_critical) VALUES
   (1, 'access_admin_panel', 'desc_access_admin_panel', 0),

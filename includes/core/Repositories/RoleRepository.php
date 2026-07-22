@@ -71,7 +71,7 @@ class RoleRepository implements RoleRepositoryInterface {
             if ($cached) return json_decode($cached, true);
 
             $tblRoles = DB::TBL_ROLES;
-            $stmt = $this->pdo->query("SELECT id, name, color, weight, is_system, created_at, updated_at FROM {$tblRoles} ORDER BY weight DESC, id ASC");
+            $stmt = $this->pdo->query("SELECT id, name, weight, is_system, created_at, updated_at FROM {$tblRoles} ORDER BY weight DESC, id ASC");
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
@@ -89,7 +89,7 @@ class RoleRepository implements RoleRepositoryInterface {
             if ($cached) return json_decode($cached, true);
 
             $tblRoles = DB::TBL_ROLES;
-            $stmt = $this->pdo->prepare("SELECT id, name, color, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE id = ? LIMIT 1");
+            $stmt = $this->pdo->prepare("SELECT id, name, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE id = ? LIMIT 1");
             $stmt->execute([$id]);
             $role = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -108,7 +108,7 @@ class RoleRepository implements RoleRepositoryInterface {
             if ($cached) return json_decode($cached, true);
 
             $tblRoles = DB::TBL_ROLES;
-            $stmt = $this->pdo->prepare("SELECT id, name, color, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE name = ? LIMIT 1");
+            $stmt = $this->pdo->prepare("SELECT id, name, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE name = ? LIMIT 1");
             $stmt->execute([$name]);
             $role = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -181,7 +181,7 @@ class RoleRepository implements RoleRepositoryInterface {
             $tblUserRoles = DB::TBL_USER_ROLES;
 
             $stmt = $this->pdo->prepare("
-                SELECT r.id, r.name, r.color, r.weight 
+                SELECT r.id, r.name, r.weight 
                 FROM {$tblRoles} r 
                 INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id 
                 WHERE ur.user_id = ? 
@@ -236,7 +236,7 @@ class RoleRepository implements RoleRepositoryInterface {
             $tblUserRoles = DB::TBL_USER_ROLES;
 
             $stmt = $this->pdo->prepare("
-                SELECT r.id, r.name, r.color, r.weight 
+                SELECT r.id, r.name, r.weight 
                 FROM {$tblRoles} r 
                 INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id 
                 WHERE ur.user_id = ? 
@@ -250,13 +250,12 @@ class RoleRepository implements RoleRepositoryInterface {
         });
     }
 
-    public function create(string $name, string $colorJson, int $weight = 1): bool {
+    public function create(string $name, int $weight = 1): bool {
+        $tblRoles = DB::TBL_ROLES;
         try {
             $this->pdo->beginTransaction();
-            $tblRoles = DB::TBL_ROLES;
-            
-            $stmt = $this->pdo->prepare("INSERT INTO {$tblRoles} (name, color, weight) VALUES (?, ?, ?)");
-            $stmt->execute([$name, $colorJson, $weight]);
+            $stmt = $this->pdo->prepare("INSERT INTO {$tblRoles} (name, weight) VALUES (?, ?)");
+            $stmt->execute([$name, $weight]);
             $this->pdo->commit();
             $this->invalidateGlobalRolesCache();
 
@@ -268,25 +267,30 @@ class RoleRepository implements RoleRepositoryInterface {
         }
     }
 
-    public function update(int $id, string $name, string $colorJson, int $weight, int $executorWeight): bool {
-        $role = $this->findById($id);
-        if (!$role) return false;
-
+    public function update(int $id, string $name, int $weight, int $executorWeight): bool {
         $tblRoles = DB::TBL_ROLES;
-
-        if ($executorWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && (int)$role['weight'] >= $executorWeight) {
-            throw new Exception("Security Violation: Attempted to modify a role of equal or higher hierarchy.");
-        }
-
         try {
-            $this->pdo->beginTransaction();
+            $stmtRole = $this->pdo->prepare("SELECT weight, is_system FROM {$tblRoles} WHERE id = ?");
+            $stmtRole->execute([$id]);
+            $role = $stmtRole->fetch(PDO::FETCH_ASSOC);
 
-            if ((int)$role['is_system'] === 1) {
-                $stmt = $this->pdo->prepare("UPDATE {$tblRoles} SET color = ? WHERE id = ?");
-                $stmt->execute([$colorJson, $id]);
+            if (!$role) return false;
+            
+            if ($executorWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && (int)$role['weight'] >= $executorWeight) {
+                return false; 
+            }
+            if ($executorWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && $weight > $executorWeight) {
+                return false;
+            }
+
+            $this->pdo->beginTransaction();
+            if ($role['is_system'] == 1) {
+                // System role: weight cannot be changed by non-superadmins
+                $stmt = $this->pdo->prepare("UPDATE {$tblRoles} SET weight = ? WHERE id = ?");
+                $stmt->execute([$weight, $id]);
             } else {
-                $stmt = $this->pdo->prepare("UPDATE {$tblRoles} SET name = ?, color = ?, weight = ? WHERE id = ?");
-                $stmt->execute([$name, $colorJson, $weight, $id]);
+                $stmt = $this->pdo->prepare("UPDATE {$tblRoles} SET name = ?, weight = ? WHERE id = ?");
+                $stmt->execute([$name, $weight, $id]);
             }
             $this->pdo->commit();
             $this->invalidateRoleCache($id);

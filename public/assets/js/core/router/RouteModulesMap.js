@@ -47,10 +47,14 @@ export const RouteModulesMap = {
     '/admin/messages': { path: './modules/admin/messages/AdminMessagesController.js', className: 'AdminMessagesController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/messages/visibility/:uuid': { path: './modules/admin/messages/AdminMessagesVisibilityController.js', className: 'AdminMessagesVisibilityController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/messages/reports/:uuid': { path: './modules/admin/messages/AdminMessagesReportsController.js', className: 'AdminMessagesReportsController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-    '/admin/users': { path: './modules/admin/users/AdminUsersController.js', className: 'AdminUsersController', requiresAdminLang: true, skeletonType: 'layout-table' },
+    '/admin/user-activity': { path: './modules/admin/users/AdminUserActivityController.js', className: 'AdminUserActivityController', requiresAdminLang: true, skeletonType: 'layout-list' },
     '/admin/roles': { path: './modules/admin/roles/AdminRolesController.js', className: 'AdminRolesController', requiresAdminLang: true, skeletonType: 'layout-table' }, 
-    
-    '/admin/role-create': { path: './modules/admin/roles/AdminRoleBuilderController.js', className: 'AdminRoleBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+    '/admin/role-create': { path: './modules/admin/roles/AdminRoleBuilderController.js', className: 'AdminRoleBuilderController', requiresAdminLang: true, skeletonType: 'layout-list' }, 
+    '/admin/role-edit': { path: './modules/admin/roles/AdminRoleBuilderController.js', className: 'AdminRoleBuilderController', requiresAdminLang: true, skeletonType: 'layout-list' }, 
+    '/admin/role-permissions': { path: './modules/admin/roles/AdminRolePermissionsController.js', className: 'AdminRolePermissionsController', requiresAdminLang: true, skeletonType: 'layout-list' }, 
+    '/admin/subscriptions': { path: './modules/admin/subscriptions/AdminSubscriptionsController.js', className: 'AdminSubscriptionsController', requiresAdminLang: true, skeletonType: 'layout-table' }, 
+    '/admin/subscription-create': { path: './modules/admin/subscriptions/AdminSubscriptionBuilderController.js', className: 'AdminSubscriptionBuilderController', requiresAdminLang: true, skeletonType: 'layout-list' }, 
+    '/admin/subscription-edit': { path: './modules/admin/subscriptions/AdminSubscriptionBuilderController.js', className: 'AdminSubscriptionBuilderController', requiresAdminLang: true, skeletonType: 'layout-list' },
     '/admin/role-edit/:uuid': { path: './modules/admin/roles/AdminRoleBuilderController.js', className: 'AdminRoleBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/role-permissions/:uuid': { path: './modules/admin/roles/AdminRolePermissionsController.js', className: 'AdminRolePermissionsController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 

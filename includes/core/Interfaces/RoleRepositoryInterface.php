@@ -7,8 +7,8 @@ interface RoleRepositoryInterface {
     public function findById(int $id): ?array;
     public function findByName(string $name): ?array;
     
-    public function create(string $name, string $colorJson, int $weight = 1): bool;
-    public function update(int $id, string $name, string $colorJson, int $weight, int $executorWeight): bool;
+    public function create(string $name, int $weight = 1): bool;
+    public function update(int $id, string $name, int $weight, int $executorWeight): bool;
     public function delete(int $id, int $executorWeight): bool;
 
     public function getAllPermissions(): array;

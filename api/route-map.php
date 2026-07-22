@@ -265,6 +265,31 @@ return [
     'admin.create_role' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
         'action' => 'create_role',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_CREATE_ROLE, 'max' => RL::MAX_15, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'admin.edit_role' => [
+        'controller' => 'App\Api\Controllers\Admin\AdminController',
+        'action' => 'edit_role',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_EDIT_ROLE, 'max' => RL::MAX_15, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'admin.delete_role' => [
+        'controller' => 'App\Api\Controllers\Admin\AdminController',
+        'action' => 'delete_role',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_DELETE_ROLE, 'max' => RL::MAX_10, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'admin.subscriptions.save' => [
+        'controller' => 'App\Api\Controllers\Admin\AdminController',
+        'action' => 'save_subscription',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_save_sub', 'max' => 15, 'time' => 1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'admin.subscriptions.delete' => [
+        'controller' => 'App\Api\Controllers\Admin\AdminController',
+        'action' => 'delete_subscription',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_del_sub', 'max' => 10, 'time' => 1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'admin.create_role' => [
+        'controller' => 'App\Api\Controllers\Admin\AdminController',
+        'action' => 'create_role',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_CREATE_ROLE, 'max' => RL::MAX_20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'admin.edit_role' => [

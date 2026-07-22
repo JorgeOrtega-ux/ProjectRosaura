@@ -681,6 +681,64 @@ class AdminServices {
         return ['valid' => true, 'color_string' => $colorJson];
     }
 
+    public function saveSubscription($data) {
+        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
+        $id = (int)($data['id'] ?? 0);
+        $name = Utils::sanitizeText($data['name'] ?? '');
+        $tier_level = (int)($data['tier_level'] ?? 1);
+        $stripeMonthly = Utils::sanitizeText($data['stripe_price_id_monthly'] ?? '');
+        $stripeYearly = Utils::sanitizeText($data['stripe_price_id_yearly'] ?? '');
+
+        // Validation
+        if (empty($name)) return ['success' => false, 'message' => 'Nombre requerido'];
+        
+        $colorData = $data['color'];
+        if (is_array($colorData)) {
+            $colorString = json_encode($colorData);
+        } else {
+            $colorString = $colorData;
+        }
+
+        $featuresData = $data['features'] ?? [];
+        if (is_array($featuresData)) {
+            $featuresString = json_encode($featuresData);
+        } else {
+            $featuresString = $featuresData;
+        }
+
+        try {
+            if ($id > 0) {
+                // Update
+                $stmt = $this->pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, color = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, features = ? WHERE id = ?");
+                $stmt->execute([$name, $tier_level, $colorString, $stripeMonthly, $stripeYearly, $featuresString, $id]);
+                return ['success' => true, 'message' => 'Suscripción actualizada'];
+            } else {
+                // Insert
+                $stmt = $this->pdo->prepare("INSERT INTO subscription_tiers (name, tier_level, color, stripe_price_id_monthly, stripe_price_id_yearly, features) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $tier_level, $colorString, $stripeMonthly, $stripeYearly, $featuresString]);
+                return ['success' => true, 'message' => 'Suscripción creada', 'data' => ['id' => $this->pdo->lastInsertId()]];
+            }
+        } catch (\PDOException $e) {
+            Logger::error("saveSubscription Error", ['exception' => $e]);
+            return ['success' => false, 'message' => 'Error de base de datos'];
+        }
+    }
+
+    public function deleteSubscription($data) {
+        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
+        $id = (int)($data['id'] ?? 0);
+        if ($id <= 1) return ['success' => false, 'message' => 'No se puede eliminar esta suscripción'];
+
+        try {
+            $stmt = $this->pdo->prepare("DELETE FROM subscription_tiers WHERE id = ?");
+            $stmt->execute([$id]);
+            return ['success' => true, 'message' => 'Suscripción eliminada'];
+        } catch (\PDOException $e) {
+            Logger::error("deleteSubscription Error", ['exception' => $e]);
+            return ['success' => false, 'message' => 'Error al eliminar'];
+        }
+    }
+
     public function getRoles() {
         if (!$this->hasPermission(\App\Core\System\PermissionsConstants::VIEW_ROLES)) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
@@ -704,12 +762,9 @@ class AdminServices {
 
         if (strlen($name) < 2 || strlen($name) > 50) return ['success' => false, 'message' => __('validation.invalid_length')];
 
-        $colorCheck = $this->validateAndFormatRoleColor($data);
-        if (!$colorCheck['valid']) return ['success' => false, 'message' => $colorCheck['message']];
-
         if ($this->roleRepository->findByName($name)) return ['success' => false, 'message' => __('validation.role_exists')];
 
-        if ($this->roleRepository->create($name, $colorCheck['color_string'], $weight)) {
+        if ($this->roleRepository->create($name, $weight)) {
             return ['success' => true, 'message' => __('admin.role_created')];
         }
 
@@ -747,11 +802,8 @@ class AdminServices {
             if ($existingByName && $existingByName['id'] !== $id) return ['success' => false, 'message' => __('validation.role_exists')];
         }
 
-        $colorCheck = $this->validateAndFormatRoleColor($data);
-        if (!$colorCheck['valid']) return ['success' => false, 'message' => $colorCheck['message']];
-
         try {
-            if ($this->roleRepository->update($id, $name, $colorCheck['color_string'], $weight, $currentWeight)) {
+            if ($this->roleRepository->update($id, $name, $weight, $currentWeight)) {
                 return ['success' => true, 'message' => __('admin.role_updated')];
             }
         } catch (\Exception $e) {

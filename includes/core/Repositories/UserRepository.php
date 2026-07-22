@@ -65,9 +65,11 @@ class UserRepository implements UserRepositoryInterface {
                     u.id, u.uuid, u.username, u.email, u.password, u.google_id, u.subscription_tier, u.profile_picture, u.purchase_preference,
                     u.two_factor_secret, u.two_factor_enabled, u.two_factor_recovery_codes, u.deletion_scheduled_at, u.created_at,
                     ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
-                    ur.deleted_by, ur.deleted_reason, ur.admin_notes
+                    ur.deleted_by, ur.deleted_reason, ur.admin_notes,
+                    st.color as subscription_color
                 FROM {$tblUsers} u 
                 LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id 
+                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 WHERE u.{$column} = ?
                 LIMIT 1
             ");
@@ -80,12 +82,10 @@ class UserRepository implements UserRepositoryInterface {
             if (!empty($roles)) {
                 $mainRole = $roles[0];
                 $user['role_name'] = $mainRole['name'];
-                $user['role_color'] = $mainRole['color'];
                 $user['role_weight'] = $mainRole['weight'];
                 $user['assigned_roles_ids'] = implode(',', array_column($roles, 'id'));
             } else {
                 $user['role_name'] = null;
-                $user['role_color'] = null;
                 $user['role_weight'] = null;
                 $user['assigned_roles_ids'] = null;
             }
@@ -119,9 +119,11 @@ class UserRepository implements UserRepositoryInterface {
         try {
             $stmtUsers = $this->pdo->prepare("
                 SELECT u.id, u.uuid, u.username, u.email, u.subscription_tier, u.profile_picture, u.created_at,
-                       ur.is_suspended, ur.suspension_type
+                       ur.is_suspended, ur.suspension_type,
+                       st.color as subscription_color
                 FROM {$tblUsers} u
                 LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id
+                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 ORDER BY u.id DESC
                 LIMIT :limit OFFSET :offset
             ");
@@ -136,7 +138,7 @@ class UserRepository implements UserRepositoryInterface {
             $placeholders = implode(',', array_fill(0, count($userIds), '?'));
 
             $stmtRoles = $this->pdo->prepare("
-                SELECT user_roles.user_id, r.id as role_id, r.name, r.color, r.weight
+                SELECT user_roles.user_id, r.id as role_id, r.name, r.weight
                 FROM {$tblUserRoles} user_roles
                 INNER JOIN {$tblRoles} r ON user_roles.role_id = r.id
                 WHERE user_roles.user_id IN ($placeholders)
@@ -157,12 +159,10 @@ class UserRepository implements UserRepositoryInterface {
                 if (isset($rolesByUser[$uid])) {
                     $mainRole = $rolesByUser[$uid][0];
                     $user['role_name'] = $mainRole['name'];
-                    $user['role_color'] = $mainRole['color'];
                     $user['role_weight'] = $mainRole['weight'];
                     $user['assigned_roles_ids'] = implode(',', array_column($rolesByUser[$uid], 'role_id'));
                 } else {
                     $user['role_name'] = null;
-                    $user['role_color'] = null;
                     $user['role_weight'] = null;
                     $user['assigned_roles_ids'] = null;
                 }

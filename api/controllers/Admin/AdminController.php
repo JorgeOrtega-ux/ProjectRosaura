@@ -191,6 +191,30 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
+    public function save_subscription($input) {
+        try {
+            $this->requirePermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $safeInput = [
+                'id' => $input['id'] ?? 0,
+                'name' => $input['name'] ?? null,
+                'tier_level' => $input['tier_level'] ?? 1,
+                'color' => $input['color'] ?? null,
+                'stripe_price_id_monthly' => $input['stripe_price_id_monthly'] ?? null,
+                'stripe_price_id_yearly' => $input['stripe_price_id_yearly'] ?? null,
+                'features' => $input['features'] ?? null
+            ];
+            return $this->respond($this->adminServices->saveSubscription($safeInput));
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function delete_subscription($input) {
+        try {
+            $this->requirePermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $safeInput = ['id' => $input['id'] ?? null];
+            return $this->respond($this->adminServices->deleteSubscription($safeInput));
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
     public function get_permissions() {
         try { 
             $this->requirePermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE);
