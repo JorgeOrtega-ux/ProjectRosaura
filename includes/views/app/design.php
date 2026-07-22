@@ -30,7 +30,7 @@ if (!empty($canvasUuid)) {
     try {
         $dbManager = new DatabaseManager();
         $db = $dbManager->getConnection(DB::CONN_CANVASES);
-        $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, 
+        $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, c.is_locked, 
                        c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat, c.allow_purchases,
                        r.is_active as reset_active, r.next_reset_at,
                        rs.is_active as resize_active, rs.next_resize_at, rs.target_size
@@ -89,56 +89,8 @@ if (!empty($canvasUuid)) {
             }
             $isBlockedInit = ($canvasPrivacy === 'private' && !$isMember);
             $isSpectatorInit = ($userRole === 'spectator');
-            $isPremiumBlockedInit = false;
-            try {
-                if (isset($canvas['owner_id']) && $canvas['owner_id']) {
-                    try {
-                        $dbIdentityManager = new \App\Config\Database\DatabaseManager();
-                        $roleRepo = new \App\Core\Repositories\RoleRepository($dbIdentityManager, new \App\Config\Database\RedisCache());
-                        $userRepo = new \App\Core\Repositories\UserRepository($dbIdentityManager, $roleRepo);
-                        $uRow = $userRepo->findById($canvas['owner_id']);
-                        $ownerTier = $uRow ? (int)$uRow['subscription_tier'] : 0;
-                    } catch (\Exception $e) {
-                        $ownerTier = 0;
-                    }
-                    
-                    $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($ownerTier);
-                    $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
-                    if ($planLimits['max_canvases'] !== -1) {
-                        $olderStmt = $db->prepare("SELECT COUNT(*) FROM canvases WHERE owner_id = :uid AND (created_at < :ca OR (created_at = :ca2 AND id < :id))");
-                        $olderStmt->execute([
-                            ':uid' => $canvas['owner_id'], 
-                            ':ca' => $canvas['created_at'], 
-                            ':ca2' => $canvas['created_at'], 
-                            ':id' => $canvasIntId
-                        ]);
-                        $olderCount = (int)$olderStmt->fetchColumn();
-                        
-                        if ($olderCount >= $planLimits['max_canvases']) {
-                            $isPremiumBlockedInit = true;
-                        }
-                    }
-                    if (!$isPremiumBlockedInit && $canvasPalette !== 'default' && empty($planLimits['custom_palettes'])) {
-                        $isPremiumBlockedInit = true;
-                    }
-                    if (!$isPremiumBlockedInit) {
-                        $requiredTier = $allSizes[$canvasSize]['tier'] ?? 0;
-                        if ($ownerTier < $requiredTier) {
-                            $isPremiumBlockedInit = true;
-                        }
-                    }
-                    if (!$isPremiumBlockedInit) {
-                        if ($planLimits['max_members_per_canvas'] !== -1 && isset($canvas['max_participants']) && $canvas['max_participants'] > $planLimits['max_members_per_canvas']) {
-                            $isPremiumBlockedInit = true;
-                        }
-                    }
-                    
-                    if ($isPremiumBlockedInit) {
-                        $isBlockedInit = true;
-                    }
-                }
-            } catch (\Throwable $e) {}
-            
+            $isPremiumBlockedInit = isset($canvas['is_locked']) ? (bool)$canvas['is_locked'] : false;
+
             $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
             $canvasInitialZoom = $allSizes[$canvasSize]['initial_zoom'] ?? 0.5;
             
@@ -228,7 +180,7 @@ if (!empty($canvasUuid)) {
                     $isBlockedInit = ($canvasPrivacy === 'private');
                     $isSpectatorInit = true;
                 }
-                $showSpectatorControls = ($isBlockedInit || $isSpectatorInit);
+                $showSpectatorControls = ($isBlockedInit || $isSpectatorInit || $isPremiumBlockedInit);
                 $showDesignTools = !$showSpectatorControls;
                 ?>
                 <div class="component-actions <?php echo $showSpectatorControls ? 'active' : 'disabled'; ?>" data-ref="spectator-controls">
@@ -240,7 +192,7 @@ if (!empty($canvasUuid)) {
 
                     <div class="component-badge component-badge--danger <?php echo (isset($isPremiumBlockedInit) && $isPremiumBlockedInit) ? '' : 'disabled'; ?>" data-ref="premium-status-badge" data-position="bottom">
                         <span class="material-symbols-rounded">warning</span>
-                        <span><?php echo __('lbl_requires_premium'); ?></span>
+                        <span><?php echo __('lbl_requires_subscription'); ?></span>
                     </div>
                     
                     <div class="component-badge component-badge--danger <?php echo (!$isBlockedInit || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit)) ? 'disabled' : ''; ?>" data-ref="private-status-badge" data-tooltip="<?php echo __('tooltip_not_member'); ?>" data-position="bottom">
@@ -248,11 +200,11 @@ if (!empty($canvasUuid)) {
                         <span><?php echo __('lbl_private_canvas'); ?></span>
                     </div>
                     
-                    <button class="component-button component-button--h34 <?php echo ($canvasApproval || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit)) ? 'disabled' : ''; ?>" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
+                    <button class="component-button component-button--h34 <?php echo ($canvasApproval || $isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
                         <?php echo __('btn_join'); ?>
                     </button>
                     
-                    <button class="component-button component-button--h34 component-button--dark <?php echo (!$canvasApproval || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit)) ? 'disabled' : ''; ?>" data-action="requestCanvasAccess" data-ref="btn-request-access">
+                    <button class="component-button component-button--h34 component-button--dark <?php echo (!$canvasApproval || $isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-action="requestCanvasAccess" data-ref="btn-request-access">
                         <span class="material-symbols-rounded">front_hand</span>
                         <?php echo __('btn_request_access'); ?>
                     </button>
@@ -346,7 +298,7 @@ if (!empty($canvasUuid)) {
             <div class="canvas-badges-right" data-ref="badges-right"></div>
             
             <?php if (!$isSnapshot): ?>
-            <div class="component-action-pill <?php echo ((isset($isBlockedInit) && $isBlockedInit) || (isset($isSpectatorInit) && $isSpectatorInit)) ? 'disabled' : ''; ?>">
+            <div class="component-action-pill <?php echo ($isBlockedInit || $isSpectatorInit || $isPremiumBlockedInit) ? 'disabled' : ''; ?>">
                 <button class="component-button component-button--dark component-button--h45 disabled-interaction" data-action="placePixels" data-ref="pixel-action-btn">
                     <span class="material-symbols-rounded">touch_app</span>
                     <span data-ref="pixel-action-text"><?php echo __('btn_select_pixels'); ?></span>

@@ -828,7 +828,19 @@ export const DesignNetwork = {
             if (response.aborted) return;
             
             const isPremiumLocked = response.locked_requires_downgrade || (response.data && response.data.locked_requires_downgrade);
-            if (isPremiumLocked) {
+            if (isPremiumLocked && response.data) {
+                this.isPremiumBlocked = true;
+                this.isPrivateBlocked = false;
+                this.isSpectator = true;
+                this.setRoleUI('premium_locked', response.data);
+                
+                if (typeof this.initCanvasData === 'function') {
+                    this.initCanvasData(response.data);
+                } else if (response.data.state_base64) {
+                    this.hydrateCanvasState(response.data.state_base64);
+                }
+                return;
+            } else if (isPremiumLocked) {
                 this.isPremiumBlocked = true;
                 this.isPrivateBlocked = true;
                 this.setRoleUI('blocked');
@@ -917,6 +929,28 @@ export const DesignNetwork = {
                     if (btnRequest) btnRequest.classList.add('disabled');
                 }
             }
+        } else if (role === 'premium_locked') {
+            if (this.canvas) {
+                this.canvas.classList.remove('component-canvas-blocked');
+                this.canvas.classList.remove('disabled-interaction');
+            }
+
+            if (specControls) {
+                specControls.classList.remove('disabled');
+                specControls.classList.add('active');
+            }
+            
+            if (designTools) {
+                designTools.classList.replace('active', 'disabled');
+            }
+            if (actionPill) actionPill.classList.add('disabled');
+
+            if (specBadge) specBadge.classList.add('disabled');
+            if (privBadge) privBadge.classList.add('disabled');
+            if (premBadge) premBadge.classList.remove('disabled');
+
+            if (btnJoin) btnJoin.classList.add('disabled');
+            if (btnRequest) btnRequest.classList.add('disabled');
         } else {
             if (this.canvas) {
                 this.canvas.classList.remove('component-canvas-blocked');

@@ -134,7 +134,7 @@ export const DesignSetup = {
         }
 
         if (this.isPremiumBlocked) {
-            this.setCanvasBadge('lock-premium', 'warning', __('badge_premium_expired'), 'left');
+            this.setCanvasBadge('lock-premium', 'warning', __('badge_subscription_expired'), 'left');
             this.removeCanvasBadge('lock-private', 'left');
         } else if (this.isPrivateBlocked) {
             this.setCanvasBadge('lock-private', 'lock', __('badge_member_required'), 'left');

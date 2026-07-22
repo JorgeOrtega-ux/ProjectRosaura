@@ -290,12 +290,17 @@ class CanvasCoreService {
                 $canvas['role'] = 'spectator';
             }
 
+            $canvas['locked_requires_downgrade'] = false;
+            $canvas['locked_reasons'] = [];
+
             if ($canvas['is_locked']) {
                 $lockedReasons = [];
                 if (!empty($canvas['locked_reasons'])) {
                     $lockedReasons = is_array($canvas['locked_reasons']) ? $canvas['locked_reasons'] : json_decode($canvas['locked_reasons'], true);
                 }
-                return ['success' => false, 'message' => __('err_plan_expired_downgrade') ?: __('err_premium_expired_downgrade'), 'locked_requires_downgrade' => true, 'locked_reasons' => $lockedReasons ?: []];
+                $canvas['locked_requires_downgrade'] = true;
+                $canvas['locked_reasons'] = $lockedReasons ?: [];
+                $canvas['role'] = 'spectator';
             }
 
             $sizeStr = strtolower($canvas['size']);

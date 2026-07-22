@@ -7,6 +7,8 @@ use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\System\SubscriptionPlanConstants;
 use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
+use App\Config\Database\RedisCache;
+use App\Core\System\CacheConstants;
 
 class CanvasLockManager {
     private $canvasRepository;
@@ -56,6 +58,11 @@ class CanvasLockManager {
             
             $updateStmt = $canvasesDb->prepare("UPDATE canvases SET is_locked = :is_locked, locked_reasons = :locked_reasons WHERE id = :id");
             $canvasesDb->beginTransaction();
+            
+            $redisClient = null;
+            if (class_exists(RedisCache::class)) {
+                $redisClient = (new RedisCache())->getClient();
+            }
 
             foreach ($canvases as $canvas) {
                 $isLocked = false;
@@ -89,6 +96,10 @@ class CanvasLockManager {
                     'locked_reasons' => $isLocked ? json_encode($lockedReasons) : null,
                     'id' => $canvas['id']
                 ]);
+                
+                if ($redisClient) {
+                    $redisClient->del(CacheConstants::PREFIX_CANVAS_DETAIL . $canvas['id']);
+                }
             }
 
             $canvasesDb->commit();
