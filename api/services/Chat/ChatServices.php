@@ -153,7 +153,7 @@ class ChatServices
         ];
 }
 
-    public function send($userId, $canvasId, $messageText, $files)
+    public function send($userId, $canvasId, $messageText, $files, $clientId = null)
     {
         if ($canvasId <= 0 || (empty($messageText) && empty($files['name'][0]))) {
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
@@ -256,6 +256,7 @@ class ChatServices
 
         $messageData = [
             'id' => $msgId,
+            'client_id' => $clientId,
             'user_id' => $userId,
             'username' => $userInfo['username'] ?? $defaultUsername,
             'avatar' => isset($userInfo['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($userInfo['profile_picture']) : null,

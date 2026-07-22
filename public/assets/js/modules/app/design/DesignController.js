@@ -142,6 +142,13 @@ class DesignController {
         await PerksRegistry.load();
         this.abortController = new AbortController();
         
+        this.selectedPixels = new Set();
+        this.isSelecting = false;
+        this.interactionMode = 'normal';
+        this.templates = [];
+        this.activeTemplateId = null;
+        this.templateInteraction = null;
+        
         this.canvas = document.querySelector('[data-ref="design-canvas"]');
         this.btnPlacePixels = document.querySelector('[data-ref="pixel-action-btn"]');
         this.txtPlacePixels = document.querySelector('[data-ref="pixel-action-text"]');
@@ -164,6 +171,9 @@ class DesignController {
             this.cooldownBalance = this.cooldownMax;
         }
 
+        this.lastCooldownHtml = null;
+        this.templatesLoaded = false;
+
         this.bindEvents();
         this.applyPremiumLocks(); 
         
@@ -175,14 +185,16 @@ class DesignController {
             
             const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
             if (uid) {
-                this.loadUserLibrary();
                 if (typeof this.loadUserPerks === 'function') {
                     this.loadUserPerks();
                 }
             }
             
             this.startCooldownLoop();
-
+            
+            if (this.chat && typeof this.chat.destroy === 'function') {
+                this.chat.destroy();
+            }
             this.chat = new DesignChat(this);
         }
     }
@@ -316,6 +328,10 @@ class DesignController {
     }
 
     destroy() {
+        if (this.chat && typeof this.chat.destroy === 'function') {
+            this.chat.destroy();
+            this.chat = null;
+        }
         if (this.abortController) this.abortController.abort();
         if (this.wsManager) this.wsManager.disconnect();
         

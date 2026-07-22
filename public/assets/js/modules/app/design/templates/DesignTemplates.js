@@ -17,6 +17,13 @@ export const DesignTemplates = {
             }
             return true;
         }
+        
+        const btnToggleTemplateMenu = e.target.closest('[data-menu-target="menu-templates"]');
+        if (btnToggleTemplateMenu) {
+            if (!this.templatesLoaded) {
+                this.loadUserLibrary();
+            }
+        }
 
         const btnToggleLiveMenu = e.target.closest('[data-menu-target="menu-live"]');
         if (btnToggleLiveMenu) {
@@ -223,16 +230,52 @@ export const DesignTemplates = {
         return false;
     },
 
+    renderSkeletonLibraryDOM() {
+        const container = document.querySelector('[data-ref="user-templates-grid"]');
+        if (!container) return;
+        const emptyState = container.parentNode.querySelector('[data-ref="empty-state-rendered"]');
+        
+        container.innerHTML = '';
+        container.classList.remove('disabled'); 
+        container.classList.add('active');
+        if (emptyState) {
+            emptyState.classList.remove('active'); 
+            emptyState.classList.add('disabled');
+        }
+        
+        for(let i=0; i<5; i++) {
+            const skeleton = document.createElement('div');
+            skeleton.className = 'component-library-card component-skeleton';
+            const imgArea = document.createElement('div');
+            imgArea.className = 'component-library-card__image';
+            imgArea.style.backgroundColor = 'var(--bg-surface-alt, #1c1c20)';
+            imgArea.style.width = '100%';
+            imgArea.style.height = '100%';
+            skeleton.appendChild(imgArea);
+            container.appendChild(skeleton);
+        }
+    },
+
     async loadUserLibrary() {
         if (this.isSpectator || this.isSnapshotMode) return;
+        if (this.templatesLoaded) return;
+        
         try {
+            this.renderSkeletonLibraryDOM();
+            
             const response = await this.api.post(ApiRoutes.Canvases.GetTemplates, {}, this.abortController.signal);
             if (response.aborted) return;
 
             if (response.success && response.data) {
+                this.templatesLoaded = true;
                 this.renderUserLibraryDOM(response.data);
+            } else {
+                this.templatesLoaded = false;
+                this.renderUserLibraryDOM([]);
             }
         } catch (error) {
+            this.templatesLoaded = false;
+            this.renderUserLibraryDOM([]);
         }
     },
 
@@ -266,7 +309,15 @@ export const DesignTemplates = {
             const img = document.createElement('img');
             img.src = tpl.file_path;
             img.alt = __('alt_saved_template');
-            img.className = 'component-library-card__image';
+            img.className = 'component-library-card__image image-lazy-fade';
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            img.onload = () => img.classList.add('image-loaded');
+            img.onerror = () => {
+                img.onerror = null;
+                img.src = (window.AppBasePath || '') + '/public/assets/img/fallbacks/canvas-default.png';
+                img.classList.add('image-loaded');
+            };
             
             img.setAttribute('data-action', 'addTemplateToCanvas');
             img.setAttribute('data-url', tpl.file_path);
@@ -383,23 +434,14 @@ export const DesignTemplates = {
         img.crossOrigin = 'anonymous';
 
         const loadBitmap = async (imageSource) => {
-            let imageBitmap = null;
-            try {
-                const res = await fetch(url, { mode: 'cors' });
-                if (res.ok) {
-                    const blob = await res.blob();
-                    imageBitmap = await createImageBitmap(blob);
-                }
-            } catch (e) {}
-
-            if (!imageBitmap && typeof createImageBitmap === 'function') {
+            if (typeof createImageBitmap === 'function') {
                 try {
-                    imageBitmap = await createImageBitmap(imageSource);
+                    return await createImageBitmap(imageSource);
                 } catch (e) {
                     console.warn('[DesignTemplates] Could not create ImageBitmap:', e);
                 }
             }
-            return imageBitmap;
+            return null;
         };
 
         img.onload = async () => {
