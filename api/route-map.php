@@ -282,6 +282,16 @@ return [
         'action' => 'save_subscription',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_save_sub', 'max' => 15, 'time' => 1, 'identifier' => RL::ID_USER_ID]]
     ],
+    'admin.subscriptions.toggle_visibility' => [
+        'controller' => 'App\Api\Controllers\Admin\AdminController',
+        'action' => 'toggle_subscription_visibility',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_toggle_sub', 'max' => 30, 'time' => 1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'admin.subscriptions.set_popular' => [
+        'controller' => 'App\Api\Controllers\Admin\AdminController',
+        'action' => 'set_subscription_popular',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_pop_sub', 'max' => 30, 'time' => 1, 'identifier' => RL::ID_USER_ID]]
+    ],
     'admin.subscriptions.delete' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
         'action' => 'delete_subscription',

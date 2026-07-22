@@ -207,6 +207,21 @@ class AdminController extends BaseController {
             return $this->respond($this->adminServices->saveSubscription($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
+    public function toggle_subscription_visibility($input) {
+        try {
+            $this->requirePermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $safeInput = ['uuid' => $input['uuid'] ?? null];
+            return $this->respond($this->adminServices->toggleSubscriptionVisibility($safeInput));
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function set_subscription_popular($input) {
+        try {
+            $this->requirePermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $safeInput = ['uuid' => $input['uuid'] ?? null];
+            return $this->respond($this->adminServices->setSubscriptionPopular($safeInput));
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
 
     public function delete_subscription($input) {
         try {

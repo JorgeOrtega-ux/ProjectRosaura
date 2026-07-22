@@ -633,7 +633,6 @@ class AdminSubscriptionBuilderController {
     }
     extractFeaturesPayload() {
         const payload = {
-            is_popular: document.getElementById('featIsPopular')?.checked || false,
             price_monthly: parseFloat(document.getElementById('priceMonthly')?.value || 0),
             price_yearly: parseFloat(document.getElementById('priceYearly')?.value || 0),
             limits: {
@@ -663,12 +662,12 @@ class AdminSubscriptionBuilderController {
         const stripeYearly = document.querySelector('[data-ref="input-stripe-yearly"]')?.value.trim();
         
         if (!tierName || tierLevel === undefined || tierLevel === null) {
-            showMessage("El nombre de la suscripción y el nivel son obligatorios.", "warning");
+            showMessage(_t('admin_tier_name_level_required', "El nombre de la suscripción y el nivel son obligatorios."), "warning");
             return;
         }
 
         if (!stripeMonthly || !stripeYearly) {
-            showMessage("Los identificadores de Stripe (Mensual y Anual) son obligatorios.", "warning");
+            showMessage(_t('admin_stripe_ids_required', "Los identificadores de Stripe (Mensual y Anual) son obligatorios."), "warning");
             return;
         }
 
@@ -676,12 +675,12 @@ class AdminSubscriptionBuilderController {
         
         // Check if at least one feature is toggled on (ignoring limits, prices, is_popular)
         const hasFeature = Object.keys(featuresPayload).some(key => {
-            if (['is_popular', 'price_monthly', 'price_yearly', 'limits'].includes(key)) return false;
+            if (['price_monthly', 'price_yearly', 'limits'].includes(key)) return false;
             return featuresPayload[key] === true;
         });
 
         if (!hasFeature) {
-            showMessage("Debes habilitar al menos una ventaja o permiso para esta suscripción.", "warning");
+            showMessage(_t('admin_tier_feature_required', "Debes habilitar al menos una ventaja o permiso para esta suscripción."), "warning");
             return;
         }
 

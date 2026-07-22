@@ -137,11 +137,16 @@ class AdminSubscriptionsController {
         const editBtn = e.target.closest('[data-action="editTier"]');
         const delBtn = e.target.closest('[data-action="deleteTier"]');
         
+        const toggleVisBtn = e.target.closest('[data-action="toggleVisibilityTier"]');
+        const setPopBtn = e.target.closest('[data-action="setPopularTier"]');
+        
         if (selectTarget) this.handleRowSelection(selectTarget);
         if (searchBtn) this.toggleSearchToolbar();
         if (addBtn) this.navigateToAddTier();
         if (editBtn) this.navigateToEditTier();
         if (delBtn) this.deleteTier();
+        if (toggleVisBtn) this.toggleVisibilityTier();
+        if (setPopBtn) this.setPopularTier();
         
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
@@ -270,16 +275,43 @@ class AdminSubscriptionsController {
             defaultMode.classList.replace('disabled', 'active');
         }
     }
+
+    async toggleVisibilityTier() {
+        if (!this.selectedTierId) return;
+        const payload = { uuid: this.selectedTierId };
+        const res = await this.api.post(ApiRoutes.Admin.ToggleVisibilityTier, payload, this.abortController.signal);
+        if (res.aborted) return;
+        if (res.success) {
+            showMessage(_t('visibility_updated', 'Visibilidad actualizada'), 'success');
+            setTimeout(() => window.location.reload(), 500);
+        } else {
+            showMessage(res.message || _t('error', 'Error'), 'error');
+        }
+    }
+
+    async setPopularTier() {
+        if (!this.selectedTierId) return;
+        const payload = { uuid: this.selectedTierId };
+        const res = await this.api.post(ApiRoutes.Admin.SetPopularTier, payload, this.abortController.signal);
+        if (res.aborted) return;
+        if (res.success) {
+            showMessage(_t('subscription_popular_marked', 'Suscripción marcada como popular'), 'success');
+            setTimeout(() => window.location.reload(), 500);
+        } else {
+            showMessage(res.message || _t('error', 'Error'), 'error');
+        }
+    }
+
     async deleteTier() {
         if (!this.selectedTierId || !window.dialogSystem) return;
         const tierId = this.selectedTierId;
         const selectedRow = document.querySelector(`[data-action="selectTierRow"][data-tier-id="${tierId}"]`);
         if (selectedRow && parseInt(selectedRow.getAttribute('data-is-system'), 10) === 1) {
-            showMessage(_t(), 'error');
+            showMessage(_t('cannot_delete_system_tier', 'No se puede eliminar una suscripción del sistema'), 'error');
             return; 
         }
-        const tierName = selectedRow ? selectedRow.getAttribute('data-tier-name') : _t();
-        const response = await window.dialogSystem.show('confirmDeleteRole', { roleName: tierName });
+        const tierName = selectedRow ? selectedRow.getAttribute('data-tier-name') : _t('unknown_tier', 'Suscripción desconocida');
+        const response = await window.dialogSystem.show('confirmDeleteTier', { tierName: tierName });
         if (response.confirmed) {
             await this.executeApiAction(ApiRoutes.Admin.DeleteTier, { uuid: tierId });
         }
@@ -288,14 +320,14 @@ class AdminSubscriptionsController {
         const res = await this.api.post(apiRoute, payload, this.abortController.signal);
         if (res.aborted) return;
         if (res.success) {
-            showMessage(_t(), 'success');
+            showMessage(_t('action_success', 'Acción realizada con éxito'), 'success');
             if (window.spaRouter) {
                 window.spaRouter.navigate(window.location.pathname + window.location.search);
             } else {
                 window.location.reload();
             }
         } else {
-            showMessage(_t() + res.message_key, 'error');
+            showMessage(res.message || _t('error', 'Error'), 'error');
         }
     }
 }

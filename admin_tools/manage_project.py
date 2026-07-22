@@ -445,9 +445,10 @@ def main():
     print("5 - Inyectar Imagen Instantáneamente (Saltar Límites, uso exclusivo de Admin)")
     print("6 - Prueba de Estrés (Load Testing de WebSocket y Lienzos)")
     print("7 - Verificar y Generar Avatares Predeterminados")
-    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4, 5, 6 o 7: {Colors.ENDC}").strip()
+    print("8 - Escanear claves de traducción (_t y __) y comprobar JSONs")
+    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4, 5, 6, 7 o 8: {Colors.ENDC}").strip()
 
-    if choice not in ('1', '2', '3', '4', '5', '6', '7'):
+    if choice not in ('1', '2', '3', '4', '5', '6', '7', '8'):
         print(f"{Colors.FAIL}Opción no válida. Saliendo.{Colors.ENDC}")
         return
 
@@ -471,6 +472,11 @@ def main():
     if choice == '7':
         import check_and_generate_avatars
         check_and_generate_avatars.run_avatar_generator()
+        return
+
+    if choice == '8':
+        import i18n_scanner
+        i18n_scanner.run_scanner(target_path, script_dir)
         return
 
     if choice == '1':

@@ -546,13 +546,26 @@ export const DialogTemplates = {
     confirmDeleteRole: {
         build: (data) => `
             <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-dialog-header">
-                <h2 class="component-dialog-title">${__('admin_role_delete_title')}</h2>
-                <p class="component-dialog-desc">${__('admin_role_delete_desc').replace('%s', data.roleName || '')}</p>
+            <div class="component-modal-header">
+                <h2 class="component-modal-title">${__('admin_role_delete_title')}</h2>
+                <p class="component-modal-desc">${__('admin_role_delete_desc').replace('%s', data.roleName || '')}</p>
             </div>
-            <div class="component-dialog-actions">
-                <button class="component-button component-button--h40" data-dialog-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h40 component-button--danger" data-dialog-action="confirm">${__('btn_confirm_delete')}</button>
+            <div class="component-modal-actions">
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_confirm_delete')}</button>
+            </div>
+        `
+    },
+    confirmDeleteTier: {
+        build: (data) => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-modal-header">
+                <h2 class="component-modal-title">${__('admin_tier_delete_title') || 'Eliminar Suscripción'}</h2>
+                <p class="component-modal-desc">${__('admin_tier_delete_desc') || '¿Estás seguro de que deseas eliminar la suscripción'} ${data.tierName || ''}?</p>
+            </div>
+            <div class="component-modal-actions">
+                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_confirm_delete')}</button>
             </div>
         `
     },

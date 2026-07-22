@@ -168,7 +168,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
     
     <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title"><?php echo $isEdit ? 'Editar Suscripción' : 'Nueva Suscripción'; ?></h1>
+            <h1 class="component-top-title"><?php echo $isEdit ? (__('admin_tier_edit_title') ?: 'Editar Suscripción') : (__('admin_tier_new_title') ?: 'Nueva Suscripción'); ?></h1>
         </div>
         <div class="component-top-right">
             <button type="button" class="component-button component-button--dark component-button--h40" data-action="saveSubscription">
@@ -191,8 +191,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                 <span class="material-symbols-rounded">diamond</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Detalles de Suscripción</h2>
-                                <p class="component-card__description">Configura los datos básicos e identificadores.</p>
+                                <h2 class="component-card__title"><?php echo __('admin_tier_details_title') ?: 'Detalles de Suscripción'; ?></h2>
+                                <p class="component-card__description"><?php echo __('admin_tier_details_desc') ?: 'Configura los datos básicos e identificadores.'; ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -205,8 +205,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                 <div class="active component-state-box" data-state="tier-name-view">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title">Nombre de Suscripción</h2>
-                                            <span class="component-display-value" data-ref="display-tier-name"><?php echo htmlspecialchars($tierData['name']) ?: 'No configurado'; ?></span>
+                                            <h2 class="component-card__title"><?php echo __('admin_tier_name') ?: 'Nombre de Suscripción'; ?></h2>
+                                            <span class="component-display-value" data-ref="display-tier-name"><?php echo htmlspecialchars($tierData['name']) ?: (__('admin_not_configured') ?: 'No configurado'); ?></span>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
@@ -216,7 +216,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                 <div class="disabled component-state-box" data-state="tier-name-edit">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title">Nombre de Suscripción</h2>
+                                            <h2 class="component-card__title"><?php echo __('admin_tier_name') ?: 'Nombre de Suscripción'; ?></h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
                                                     <input type="text" id="tierName" data-ref="input-tier-name" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['name']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['name']); ?>" placeholder="Ej. Pro, Ultra">
@@ -236,8 +236,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Nivel (Tier)</h2>
-                                        <p class="component-card__description">Jerarquía numérica (0 = free, 1 = plus, etc).</p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_level_title') ?: 'Nivel (Tier)'; ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_level_desc') ?: 'Jerarquía numérica (0 = free, 1 = plus, etc).'; ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -260,8 +260,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                             <div class="component-group-item component-group-item--wrap">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Estado de la Suscripción</h2>
-                                        <p class="component-card__description">Activa o desactiva la visibilidad pública de este plan.</p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_status_title') ?: 'Estado de la Suscripción'; ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_status_desc') ?: 'Activa o desactiva la visibilidad pública de este plan.'; ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--end">
@@ -278,8 +278,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                 <div class="active component-state-box" data-state="stripe-monthly-view">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title">Stripe Price ID (Mensual)</h2>
-                                            <span class="component-display-value" data-ref="display-stripe-monthly"><?php echo htmlspecialchars($tierData['stripe_price_id_monthly']) ?: 'No configurado'; ?></span>
+                                            <h2 class="component-card__title"><?php echo __('admin_tier_stripe_monthly') ?: 'Stripe Price ID (Mensual)'; ?></h2>
+                                            <span class="component-display-value" data-ref="display-stripe-monthly"><?php echo htmlspecialchars($tierData['stripe_price_id_monthly']) ?: (__('admin_not_configured') ?: 'No configurado'); ?></span>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
@@ -289,7 +289,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                 <div class="disabled component-state-box" data-state="stripe-monthly-edit">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title">Stripe Price ID (Mensual)</h2>
+                                            <h2 class="component-card__title"><?php echo __('admin_tier_stripe_monthly') ?: 'Stripe Price ID (Mensual)'; ?></h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
                                                     <input type="text" data-ref="input-stripe-monthly" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['stripe_price_id_monthly']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['stripe_price_id_monthly']); ?>" placeholder="ID Mensual">
@@ -310,8 +310,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                 <div class="active component-state-box" data-state="stripe-yearly-view">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title">Stripe Price ID (Anual)</h2>
-                                            <span class="component-display-value" data-ref="display-stripe-yearly"><?php echo htmlspecialchars($tierData['stripe_price_id_yearly']) ?: 'No configurado'; ?></span>
+                                            <h2 class="component-card__title"><?php echo __('admin_tier_stripe_yearly') ?: 'Stripe Price ID (Anual)'; ?></h2>
+                                            <span class="component-display-value" data-ref="display-stripe-yearly"><?php echo htmlspecialchars($tierData['stripe_price_id_yearly']) ?: (__('admin_not_configured') ?: 'No configurado'); ?></span>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
@@ -321,7 +321,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                 <div class="disabled component-state-box" data-state="stripe-yearly-edit">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title">Stripe Price ID (Anual)</h2>
+                                            <h2 class="component-card__title"><?php echo __('admin_tier_stripe_yearly') ?: 'Stripe Price ID (Anual)'; ?></h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
                                                     <input type="text" data-ref="input-stripe-yearly" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['stripe_price_id_yearly']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['stripe_price_id_yearly']); ?>" placeholder="ID Anual">
@@ -347,8 +347,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                 <span class="material-symbols-rounded">speed</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Límites y Beneficios</h2>
-                                <p class="component-card__description">Configura los beneficios que obtienen los usuarios con esta suscripción.</p>
+                                <h2 class="component-card__title"><?php echo __('admin_tier_limits_title') ?: 'Límites y Beneficios'; ?></h2>
+                                <p class="component-card__description"><?php echo __('admin_tier_limits_desc') ?: 'Configura los beneficios que obtienen los usuarios con esta suscripción.'; ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -360,8 +360,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Lienzos Máximos</h2>
-                                        <p class="component-card__description">Cantidad de lienzos permitidos (-1 para ilimitado).</p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_canvases') ?: 'Lienzos Máximos'; ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_canvases_desc') ?: 'Cantidad de lienzos permitidos (-1 para ilimitado).'; ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -370,7 +370,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCanvases" data-step="-10" data-min="-1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCanvases" data-step="-1" data-min="-1"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_featMaxCanvases" data-val="<?php echo (int)($featuresData['max_canvases'] ?? 0); ?>"><?php echo ((int)($featuresData['max_canvases'] ?? 0)) === -1 ? '∞' : (int)($featuresData['max_canvases'] ?? 0); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxCanvases" data-val="<?php echo (int)($featuresData['limits']['max_canvases'] ?? 0); ?>"><?php echo ((int)($featuresData['limits']['max_canvases'] ?? 0)) === -1 ? '∞' : (int)($featuresData['limits']['max_canvases'] ?? 0); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCanvases" data-step="1" data-max="999"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCanvases" data-step="10" data-max="999"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -384,8 +384,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Almacenamiento Máximo (MB)</h2>
-                                        <p class="component-card__description">Límite de espacio para assets del usuario.</p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_storage') ?: 'Almacenamiento Máximo (MB)'; ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_storage_desc') ?: 'Límite de espacio para assets del usuario.'; ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -394,7 +394,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxStorage" data-step="-100" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxStorage" data-step="-10" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_featMaxStorage" data-val="<?php echo (int)($featuresData['max_storage_mb'] ?? 0); ?>"><?php echo (int)($featuresData['max_storage_mb'] ?? 0); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxStorage" data-val="<?php echo (int)($featuresData['limits']['max_storage_mb'] ?? 0); ?>"><?php echo (int)($featuresData['limits']['max_storage_mb'] ?? 0); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxStorage" data-step="10" data-max="5000"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxStorage" data-step="100" data-max="5000"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -408,8 +408,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Snapshots por Lienzo</h2>
-                                        <p class="component-card__description">Historial máximo permitido (-1 = Ilimitado).</p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_snapshots') ?: 'Snapshots por Lienzo'; ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_snapshots_desc') ?: 'Historial máximo permitido (-1 = Ilimitado).'; ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -418,7 +418,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxSnapshots" data-step="-10" data-min="-1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxSnapshots" data-step="-1" data-min="-1"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_featMaxSnapshots" data-val="<?php echo (int)($featuresData['max_snapshots_per_canvas'] ?? 0); ?>"><?php echo ((int)($featuresData['max_snapshots_per_canvas'] ?? 0)) === -1 ? '∞' : (int)($featuresData['max_snapshots_per_canvas'] ?? 0); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxSnapshots" data-val="<?php echo (int)($featuresData['limits']['max_snapshots_per_canvas'] ?? 0); ?>"><?php echo ((int)($featuresData['limits']['max_snapshots_per_canvas'] ?? 0)) === -1 ? '∞' : (int)($featuresData['limits']['max_snapshots_per_canvas'] ?? 0); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxSnapshots" data-step="1" data-max="999"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxSnapshots" data-step="10" data-max="999"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -432,8 +432,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Miembros por Lienzo</h2>
-                                        <p class="component-card__description">Límite de usuarios invitados por lienzo.</p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_members') ?: 'Miembros por Lienzo'; ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_members_desc') ?: 'Límite de usuarios invitados por lienzo.'; ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -442,7 +442,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxMembers" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxMembers" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_featMaxMembers" data-val="<?php echo (int)($featuresData['max_members_per_canvas'] ?? 1); ?>"><?php echo (int)($featuresData['max_members_per_canvas'] ?? 1); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxMembers" data-val="<?php echo (int)($featuresData['limits']['max_members_per_canvas'] ?? 1); ?>"><?php echo (int)($featuresData['limits']['max_members_per_canvas'] ?? 1); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxMembers" data-step="1" data-max="100"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxMembers" data-step="10" data-max="100"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -456,8 +456,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Paletas Personalizadas</h2>
-                                        <p class="component-card__description">Límite máximo de paletas guardadas.</p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_palettes') ?: 'Paletas Personalizadas'; ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_palettes_desc') ?: 'Límite máximo de paletas guardadas.'; ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -466,7 +466,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCustomPalettes" data-step="-5" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCustomPalettes" data-step="-1" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_featMaxCustomPalettes" data-val="<?php echo (int)($featuresData['max_custom_palettes'] ?? 0); ?>"><?php echo (int)($featuresData['max_custom_palettes'] ?? 0); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxCustomPalettes" data-val="<?php echo (int)($featuresData['limits']['max_custom_palettes'] ?? 0); ?>"><?php echo (int)($featuresData['limits']['max_custom_palettes'] ?? 0); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCustomPalettes" data-step="1" data-max="50"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCustomPalettes" data-step="5" data-max="50"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -486,8 +486,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                                 <span class="material-symbols-rounded">stars</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Características</h2>
-                                <p class="component-card__description">Activa o desactiva módulos especiales del sistema.</p>
+                                <h2 class="component-card__title"><?php echo __('admin_tier_features_title') ?: 'Características'; ?></h2>
+                                <p class="component-card__description"><?php echo __('admin_tier_features_desc') ?: 'Activa o desactiva módulos especiales del sistema.'; ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -546,8 +546,8 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Tipo de Color</h2>
-                                        <p class="component-card__description">Sólido o degradado.</p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_color_type') ?: 'Tipo de Color'; ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_color_type_desc') ?: 'Sólido o degradado.'; ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">

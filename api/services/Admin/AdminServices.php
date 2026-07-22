@@ -729,6 +729,48 @@ class AdminServices {
         }
     }
 
+    public function toggleSubscriptionVisibility($data) {
+        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
+        $uuid = Utils::sanitizeText($data['uuid'] ?? '');
+        if (empty($uuid)) return ['success' => false, 'message' => 'UUID requerido'];
+
+        try {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmt = $pdo->prepare("UPDATE subscription_tiers SET is_active = NOT is_active WHERE uuid = ?");
+            $stmt->execute([$uuid]);
+            return ['success' => true, 'message' => 'Visibilidad actualizada'];
+        } catch (\PDOException $e) {
+            Logger::error("toggleSubscriptionVisibility Error", ['exception' => $e]);
+            return ['success' => false, 'message' => 'Error de base de datos'];
+        }
+    }
+
+    public function setSubscriptionPopular($data) {
+        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
+        $uuid = Utils::sanitizeText($data['uuid'] ?? '');
+        if (empty($uuid)) return ['success' => false, 'message' => 'UUID requerido'];
+
+        try {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $pdo->beginTransaction();
+            // Reset all to 0
+            $pdo->query("UPDATE subscription_tiers SET is_popular = 0");
+            // Set selected to 1
+            $stmt = $pdo->prepare("UPDATE subscription_tiers SET is_popular = 1 WHERE uuid = ?");
+            $stmt->execute([$uuid]);
+            $pdo->commit();
+            return ['success' => true, 'message' => 'Popularidad actualizada'];
+        } catch (\PDOException $e) {
+            if (isset($pdo) && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            Logger::error("setSubscriptionPopular Error", ['exception' => $e]);
+            return ['success' => false, 'message' => 'Error de base de datos'];
+        }
+    }
+
     public function deleteSubscription($data) {
         if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
         $uuid = Utils::sanitizeText($data['uuid'] ?? '');

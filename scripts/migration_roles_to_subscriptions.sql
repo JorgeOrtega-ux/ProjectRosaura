@@ -21,6 +21,10 @@ CREATE TABLE IF NOT EXISTS `subscription_tiers` (
 
 -- 3. Insert default tiers
 INSERT IGNORE INTO subscription_tiers (id, tier_level, name, color, stripe_price_id_monthly, stripe_price_id_yearly) VALUES
-  (1, 0, 'Basic', '{"type":"solid","colors":["#808080"]}', NULL, NULL),
-  (2, 1, 'Pro', '{"type":"gradient","angle":90,"colors":[{"hex":"#d32029","percentage":50},{"hex":"#206bd3","percentage":50}]}', 'price_pro_monthly', 'price_pro_yearly'),
-  (3, 2, 'Advanced', '{"type":"gradient","angle":45,"colors":[{"hex":"#fd7e14","percentage":50},{"hex":"#ffc107","percentage":50}]}', 'price_adv_monthly', 'price_adv_yearly');
+  (1, 0, 'Basic', '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}', NULL, NULL),
+  (2, 1, 'Plus', '{"type":"solid","colors":[{"hex":"#28a745","percentage":100}]}', 'price_plus_monthly', 'price_plus_yearly'),
+  (3, 2, 'Pro', '{"type":"solid","colors":[{"hex":"#ffc107","percentage":100}]}', 'price_pro_monthly', 'price_pro_yearly'),
+  (4, 3, 'Ultra', '{"type":"gradient","angle":0,"colors":[{"hex":"#ff0000","percentage":20},{"hex":"#ffff00","percentage":30},{"hex":"#00ff00","percentage":60},{"hex":"#0000ff","percentage":90},{"hex":"#ff0000","percentage":100}]}', 'price_ultra_monthly', 'price_ultra_yearly')
+ON DUPLICATE KEY UPDATE 
+  name = VALUES(name),
+  color = VALUES(color);

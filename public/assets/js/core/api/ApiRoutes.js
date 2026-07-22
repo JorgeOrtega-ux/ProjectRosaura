@@ -85,6 +85,10 @@ export const ApiRoutes = {
         UpdateMessageVisibility: 'admin.update_message_visibility',
         GetMessageReports: 'admin.get_message_reports',
         UpdateReportStatus: 'admin.update_report_status',
+
+        DeleteTier: 'admin.subscriptions.delete',
+        ToggleVisibilityTier: 'admin.subscriptions.toggle_visibility',
+        SetPopularTier: 'admin.subscriptions.set_popular',
     },
     Canvases: {
         GetHomeFeed: 'canvases.get_home_feed',

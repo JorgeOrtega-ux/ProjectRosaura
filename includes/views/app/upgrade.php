@@ -132,18 +132,37 @@ function formatStoragePremium(int $mb): string {
 
                         <div class="component-plan-card__footer">
                             <ul class="component-plan-card__features-list">
+                                
+                                <!-- Limits -->
+                                <li class="component-plan-card__feature-item">
+                                    <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">dashboard</span>
+                                    <div class="component-plan-card__feature-text">
+                                        <span class="component-plan-card__feature-name"><?php echo $limits['max_canvases'] == -1 ? __('plan_limit_unlimited', 'Ilimitado') . ' ' . __('plan_limit_canvases', 'Lienzos') : $limits['max_canvases'] . ' ' . __('plan_limit_canvases', 'Lienzos'); ?></span>
+                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_limit_canvases_desc', 'Proyectos simultáneos'); ?></span>
+                                    </div>
+                                </li>
+                                <li class="component-plan-card__feature-item">
+                                    <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">history</span>
+                                    <div class="component-plan-card__feature-text">
+                                        <span class="component-plan-card__feature-name"><?php echo $limits['max_snapshots_per_canvas'] == -1 ? __('plan_limit_unlimited', 'Ilimitado') . ' ' . __('plan_limit_snapshots', 'Snapshots') : $limits['max_snapshots_per_canvas'] . ' ' . __('plan_limit_snapshots', 'Snapshots'); ?></span>
+                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_limit_snapshots_desc', 'Por lienzo'); ?></span>
+                                    </div>
+                                </li>
+                                <li class="component-plan-card__feature-item">
+                                    <span class="material-symbols-rounded component-icon-sm component-plan-card__feature-icon">group</span>
+                                    <div class="component-plan-card__feature-text">
+                                        <span class="component-plan-card__feature-name"><?php echo $limits['max_members_per_canvas'] == -1 ? __('plan_limit_unlimited', 'Ilimitados') . ' ' . __('plan_limit_members', 'Miembros') : number_format($limits['max_members_per_canvas']) . ' ' . __('plan_limit_members', 'Miembros'); ?></span>
+                                        <span class="component-plan-card__feature-desc"><?php echo __('plan_limit_members_desc', 'Por lienzo'); ?></span>
+                                    </div>
+                                </li>
+
+                                <!-- Boolean Features -->
                                 <?php 
                                 foreach ($availableFeatures as $fKey => $fData): 
                                     if (empty($feats[$fKey])) continue; // Only show enabled features
                                     
-                                    // Parse value replacements if needed (e.g., max_canvases)
-                                    $titleStr = __($fData['title_key'], ['value' => $limits['max_canvases'] ?? 0]);
-                                    
-                                    if (strpos($fData['title_key'], 'snapshots') !== false) {
-                                        $titleStr = __($fData['title_key'], ['value' => $limits['max_snapshots_per_canvas'] ?? 0]);
-                                    } elseif (strpos($fData['title_key'], 'members') !== false) {
-                                        $titleStr = __($fData['title_key'], ['value' => number_format($limits['max_members_per_canvas'] ?? 0)]);
-                                    } elseif (strpos($fData['title_key'], 'palettes') !== false) {
+                                    $titleStr = __($fData['title_key']);
+                                    if ($fKey === 'feat_custom_palettes') {
                                         $titleStr = __($fData['title_key'], ['value' => $limits['max_custom_palettes'] ?? 0]);
                                     }
                                 ?>
