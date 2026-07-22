@@ -56,12 +56,37 @@ class CanvasCoreController extends BaseController {
             $canvasId = (int)($input['canvas_id'] ?? 0);
             $chunks = $input['chunks'] ?? [];
 
-            if ($canvasId <= 0 || empty($chunks) || !is_array($chunks)) {
+            $goUrl = 'http://rosaura_go_service:8080/api/go/canvases/get_chunks';
+            
+            $boardW = isset($input['board_w']) ? (int)$input['board_w'] : 0;
+            $boardH = isset($input['board_h']) ? (int)$input['board_h'] : 0;
+
+            if ($canvasId <= 0 || empty($chunks) || !is_array($chunks) || $boardW <= 0 || $boardH <= 0) {
                 return $this->respond(['success' => false, 'message' => __('err_invalid_params')]);
             }
 
-            $result = $this->canvasServices->getCanvasChunks($canvasId, $chunks);
-            return $this->respond($result);
+            $payload = json_encode([
+                'canvas_id' => $canvasId,
+                'board_w' => $boardW,
+                'board_h' => $boardH,
+                'chunks' => $chunks
+            ]);
+
+            header('Content-Type: application/json');
+            
+            $ch = curl_init($goUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($payload)
+            ]);
+            
+            // Bypass framework respond and stream directly from Go for max performance
+            curl_exec($ch);
+            curl_close($ch);
+            exit;
 
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

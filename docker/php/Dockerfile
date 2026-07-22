@@ -2,6 +2,8 @@ FROM php:8.2-apache
 
 RUN a2enmod rewrite
 
+RUN echo "upload_max_filesize = 100M\npost_max_size = 100M" > /usr/local/etc/php/conf.d/uploads.ini
+
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     unzip \

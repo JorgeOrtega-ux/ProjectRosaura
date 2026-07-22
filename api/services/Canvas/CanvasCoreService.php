@@ -232,6 +232,7 @@ class CanvasCoreService {
     }
 
     public function getCanvas(?int $userId, int $canvasId, bool $canManageOfficial = false): array {
+        $t0 = microtime(true);
         ini_set('memory_limit', '512M');
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
@@ -386,6 +387,7 @@ class CanvasCoreService {
 
                 $canvas['state_base64'] = base64_encode(gzencode($stateRaw, 6));
             } else {
+                $t1 = microtime(true);
                 $canvas['state_base64'] = null;
                 
                 // For progressive load, just ensure Redis has the state initialized
@@ -401,11 +403,13 @@ class CanvasCoreService {
                 } catch (Exception $e) {
                     Logger::error('Error initializing progressive canvas in Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
                 }
+                $t2 = microtime(true);
             }
 
             $canvas['is_compressed'] = true;
 
-            return ['success' => true, 'data' => $canvas];
+            $tEnd = microtime(true);
+            return ['success' => true, 'data' => $canvas, 'debug_timing' => ['total' => $tEnd - $t0, 'check_perms' => isset($t1) ? ($t1 - $t0) : null, 'redis_init' => isset($t2) ? ($t2 - $t1) : null]];
         } catch (Exception $e) {
             Logger::error('Error getting canvas.', [
                 'user_id' => $userId,

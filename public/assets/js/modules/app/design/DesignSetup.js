@@ -338,26 +338,48 @@ export const DesignSetup = {
         if (!chunkKeys || chunkKeys.length === 0) return;
         chunkKeys.forEach(k => this.loadedChunks.add(k));
 
-        console.log(`[ProgressiveLoad] 📥 Solicitando ${chunkKeys.length} chunk(s) al servidor:`, chunkKeys);
+        console.log(`[ProgressiveLoad] 📥 Solicitando ${chunkKeys.length} chunk(s) al servidor de Go directamente...`);
 
-        try {
-            const response = await this.api.post(ApiRoutes.Canvases.GetChunks, {
-                canvas_id: parseInt(this.canvasIntId, 10),
-                chunks: chunkKeys
-            });
+        // Batch chunk requests to prevent massive 48MB JSON payloads and blocking
+        const BATCH_SIZE = 4;
+        const fetchPromises = [];
 
-            if (response && response.success && response.data?.chunks) {
-                const receivedKeys = Object.keys(response.data.chunks);
-                console.log(`[ProgressiveLoad] 🎨 Recibidos y renderizados ${receivedKeys.length} chunk(s):`, receivedKeys);
+        for (let i = 0; i < chunkKeys.length; i += BATCH_SIZE) {
+            const batch = chunkKeys.slice(i, i + BATCH_SIZE);
+            
+            fetchPromises.push((async () => {
+                try {
+                    // Fetch directly from Nginx -> Go, bypassing PHP completely
+                    const response = await fetch('/api/go/canvases/get_chunks', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            canvas_id: parseInt(this.canvasIntId, 10),
+                            board_w: this.boardWidth,
+                            board_h: this.boardHeight,
+                            chunks: batch
+                        })
+                    });
+                    
+                    if (!response.ok) return;
+                    const result = await response.json();
+                    
+                    if (result && result.success && result.data?.chunks) {
+                        const receivedKeys = Object.keys(result.data.chunks);
+                        console.log(`[ProgressiveLoad] 🎨 Recibidos y renderizados ${receivedKeys.length} chunk(s):`, receivedKeys);
 
-                Object.entries(response.data.chunks).forEach(([key, base64]) => {
-                    const [cx, cy] = key.split(',').map(Number);
-                    this.hydrateChunk(cx, cy, base64);
-                });
-            }
-        } catch (e) {
-            console.error('[DesignSetup] Error fetching chunks:', e);
+                        Object.entries(result.data.chunks).forEach(([key, base64]) => {
+                            const [cx, cy] = key.split(',').map(Number);
+                            this.hydrateChunk(cx, cy, base64);
+                        });
+                    }
+                } catch (e) {
+                    console.error('[DesignSetup] Error fetching chunks batch:', e);
+                }
+            })());
         }
+
+        await Promise.all(fetchPromises);
     },
 
     async hydrateChunk(chunkX, chunkY, base64String) {
@@ -408,7 +430,8 @@ export const DesignSetup = {
                             canvas: offscreen,
                             boardWidth: this.boardWidth,
                             boardHeight: this.boardHeight,
-                            dpr: dpr
+                            dpr: dpr,
+                            isProgressive: this.isProgressive
                         }
                     }, [offscreen]);
                 }
@@ -482,13 +505,9 @@ export const DesignSetup = {
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = rect.width / this.boardWidth;
         const scaleY = rect.height / this.boardHeight;
-        let initialScale = Math.min(scaleX, scaleY) * 0.9; 
         
-        if (this.boardWidth >= 1024 || this.boardHeight >= 1024) {
-            initialScale = Math.max(initialScale, this.initialZoomConfig || 0.5);
-        }
-        
-        this.transform.scale = initialScale;
+        // El 90% para que el lienzo quepa en la pantalla
+        this.transform.scale = Math.min(scaleX, scaleY) * 0.9;
         
         this.transform.x = (rect.width - (this.boardWidth * this.transform.scale)) / 2;
         this.transform.y = (rect.height - (this.boardHeight * this.transform.scale)) / 2;

@@ -2,8 +2,8 @@
 ini_set('memory_limit', '1024M');
 set_time_limit(0);
 
-$usersCount = 500000;
-$canvasesCount = 500000;
+$usersCount = 1000;
+$canvasesCount = 2500;
 
 $adminHash = '$2y$10$D00BhdO6zjC2Mr5E4f.KDuXQCN9G4d0.TCvs.s2iZPXwf4Omc31Me';
 $adminEmail = 'al20328051890088@gmail.com';
@@ -34,7 +34,7 @@ $fu = fopen($usersFile, 'w');
 $fr = fopen($userRolesFile, 'w');
 
 fputcsv($fu, [1, generateUUID(), $adminUsername, $adminEmail, $adminHash, 2, 997689000, date('Y-m-d H:i:s')]);
-fputcsv($fr, [1, 1]); // superadministrator role
+fputcsv($fr, [1, 4]); // superadministrator role
 
 $dummyHash = password_hash('123456', PASSWORD_DEFAULT);
 

@@ -22,6 +22,10 @@ let activeTemplate = null;
 let nuclearWarnings = [];
 let explosions = [];
 
+let isProgressive = false;
+let hydratedChunks = new Set();
+let pendingProgressivePixels = {};
+
 let needsRender = false;
 let animFrameId = null;
 
@@ -97,12 +101,19 @@ async function hydrateChunkWorker(chunkX, chunkY, chunkSize, base64String) {
         const actualW = Math.min(chunkSize, boardWidth - chunkX * chunkSize);
         const actualH = Math.min(chunkSize, boardHeight - chunkY * chunkSize);
         if (actualW <= 0 || actualH <= 0) return;
-
         const imageData = offscreenCtx.createImageData(actualW, actualH);
         const totalBytes = Math.min(bytes.length, imageData.data.length);
         imageData.data.set(bytes.subarray(0, totalBytes));
 
         offscreenCtx.putImageData(imageData, chunkX * chunkSize, chunkY * chunkSize);
+        
+        const chunkKey = `${chunkX},${chunkY}`;
+        hydratedChunks.add(chunkKey);
+        if (pendingProgressivePixels[chunkKey]) {
+            pixelQueue.push(...pendingProgressivePixels[chunkKey]);
+            delete pendingProgressivePixels[chunkKey];
+        }
+        
         requestRender();
     } catch (e) {
         console.error('[CanvasRenderWorker] Error hydrating chunk:', e);
@@ -431,6 +442,7 @@ self.onmessage = function (e) {
             boardWidth = payload.boardWidth || 64;
             boardHeight = payload.boardHeight || 64;
             dpr = payload.dpr || 1;
+            isProgressive = !!payload.isProgressive;
 
             offscreenCanvas = new OffscreenCanvas(boardWidth, boardHeight);
             offscreenCtx = offscreenCanvas.getContext('2d', { alpha: true });
@@ -458,8 +470,8 @@ self.onmessage = function (e) {
 
         case 'UPDATE_TRANSFORM':
             transform = payload.transform;
-            isDarkMode = payload.isDarkMode;
-            currentColor = payload.currentColor;
+            isDarkMode = !!payload.isDarkMode;
+            currentColor = payload.currentColor || '#000000';
             isSpectator = payload.isSpectator;
             isResetLocked = payload.isResetLocked;
             requestRender();
@@ -475,12 +487,28 @@ self.onmessage = function (e) {
             requestRender();
             break;
 
-        case 'PUSH_PIXELS':
-            if (payload.pixels && Array.isArray(payload.pixels)) {
-                pixelQueue.push(...payload.pixels);
-                requestRender();
+        case 'PUSH_PIXELS': {
+            const pixels = e.data.payload.pixels;
+            if (isProgressive) {
+                pixels.forEach(p => {
+                    const cx = Math.floor(p.x / 512);
+                    const cy = Math.floor(p.y / 512);
+                    const key = `${cx},${cy}`;
+                    if (!hydratedChunks.has(key)) {
+                        if (!pendingProgressivePixels[key]) {
+                            pendingProgressivePixels[key] = [];
+                        }
+                        pendingProgressivePixels[key].push(p);
+                    } else {
+                        pixelQueue.push(p);
+                    }
+                });
+            } else {
+                pixelQueue.push(...pixels);
             }
+            requestRender();
             break;
+        }
 
         case 'HYDRATE_STATE':
             if (payload.boardWidth && payload.boardHeight) {

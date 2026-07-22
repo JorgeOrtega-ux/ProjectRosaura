@@ -62,6 +62,22 @@ services:
     networks:
       - rosaura_network
 
+  go_service:
+    build:
+      context: ./docker/go
+      dockerfile: Dockerfile
+    container_name: rosaura_go_service
+    restart: always
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
   db:
     image: mysql:8.0
     container_name: rosaura_db
