@@ -179,6 +179,8 @@ try {
                 $accounts[$activeId]['user_permissions'] = $permissions;
                 $accounts[$activeId]['user_pic'] = $liveUser['profile_picture'] ?? null;
                 $accounts[$activeId]['subscription_tier'] = (int)($liveUser['subscription_tier'] ?? 0);
+                $accounts[$activeId]['real_subscription_tier'] = (int)($liveUser['real_subscription_tier'] ?? ($liveUser['subscription_tier'] ?? 0));
+                $accounts[$activeId]['subscription_color'] = $liveUser['subscription_color'] ?? null;
                 $accounts[$activeId]['google_id'] = $liveUser['google_id'] ?? null;
                 $sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
                 $sessionManager->syncRootState();

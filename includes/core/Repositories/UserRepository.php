@@ -92,12 +92,26 @@ class UserRepository implements UserRepositoryInterface {
             $permissionsArray = $this->roleRepository->getMergedPermissionsForUser($user['id']);
             $user['permissions'] = !empty($permissionsArray) ? implode(',', $permissionsArray) : null;
 
+            $user['real_subscription_tier'] = (int)($user['subscription_tier'] ?? 0);
+
             if (
                 (isset($user['role_name']) && $user['role_name'] === 'SuperAdministrator') ||
                 (is_array($permissionsArray) && (in_array('canvases.create_official', $permissionsArray) || in_array('canvases.manage_official', $permissionsArray)))
             ) {
-                $user['subscription_tier'] = 99;
+                $maxTier = \App\Core\System\SubscriptionPlanConstants::getMaxTierLevel();
+                if ((int)($user['subscription_tier'] ?? 0) < $maxTier) {
+                    $user['subscription_tier'] = $maxTier;
+                }
             }
+
+            try {
+                $stmtCol = $this->pdo->prepare("SELECT color FROM subscription_tiers WHERE tier_level = ? LIMIT 1");
+                $stmtCol->execute([(int)$user['subscription_tier']]);
+                $colRow = $stmtCol->fetch(PDO::FETCH_ASSOC);
+                if ($colRow && !empty($colRow['color'])) {
+                    $user['subscription_color'] = $colRow['color'];
+                }
+            } catch (\Exception $e) {}
 
             if ($cacheKey && $this->redisClient) {
                 $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($user));

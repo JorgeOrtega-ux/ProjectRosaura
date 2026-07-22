@@ -679,14 +679,16 @@ class AdminSubscriptionBuilderController {
 
         const featuresPayload = this.extractFeaturesPayload();
         
-        // Check if at least one feature is toggled on (ignoring limits, prices, is_popular)
+        // Check if at least one boolean feature is toggled on OR numeric limits are configured
         const hasFeature = Object.keys(featuresPayload).some(key => {
             if (['price_monthly', 'price_yearly', 'limits'].includes(key)) return false;
             return featuresPayload[key] === true;
         });
 
-        if (!hasFeature) {
-            showMessage(_t('admin_tier_feature_required', "Debes habilitar al menos una ventaja o permiso para esta suscripción."), "warning");
+        const hasNumericLimits = featuresPayload.limits && Object.values(featuresPayload.limits).some(val => val !== undefined && val !== null && !isNaN(val) && val !== 0);
+
+        if (!hasFeature && !hasNumericLimits) {
+            showMessage(_t('admin_tier_feature_required', "Debes habilitar al menos una ventaja o configurar límites numéricos para esta suscripción."), "warning");
             return;
         }
 

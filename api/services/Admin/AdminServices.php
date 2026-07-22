@@ -730,12 +730,36 @@ class AdminServices {
                 // Update
                 $stmt = $pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, is_active = ?, color = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, price_monthly = ?, price_yearly = ?, max_canvases = ?, max_storage_mb = ?, max_snapshots_per_canvas = ?, max_members_per_canvas = ?, max_custom_palettes = ?, feat_advanced_roles = ?, feat_chat_restriction = ?, feat_custom_palettes = ?, feat_priority_rendering = ?, feat_unlimited_exports = ?, feat_beta_access = ? WHERE uuid = ?");
                 $stmt->execute([$name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featPriorityRendering, $featUnlimitedExports, $featBetaAccess, $uuid]);
+
+                try {
+                    $redisCache = new \App\Config\Database\RedisCache();
+                    $redis = $redisCache->getClient();
+                    if ($redis) {
+                        $keys = $redis->keys('user:*');
+                        if (!empty($keys)) {
+                            foreach ($keys as $k) { $redis->del($k); }
+                        }
+                    }
+                } catch (\Throwable $t) {}
+
                 return ['success' => true, 'message' => 'Suscripción actualizada'];
             } else {
                 // Insert
                 $uuid = \App\Core\Helpers\Utils::generateUUID();
                 $stmt = $pdo->prepare("INSERT INTO subscription_tiers (uuid, name, tier_level, is_active, color, stripe_price_id_monthly, stripe_price_id_yearly, price_monthly, price_yearly, max_canvases, max_storage_mb, max_snapshots_per_canvas, max_members_per_canvas, max_custom_palettes, feat_advanced_roles, feat_chat_restriction, feat_custom_palettes, feat_priority_rendering, feat_unlimited_exports, feat_beta_access) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([$uuid, $name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featPriorityRendering, $featUnlimitedExports, $featBetaAccess]);
+                
+                try {
+                    $redisCache = new \App\Config\Database\RedisCache();
+                    $redis = $redisCache->getClient();
+                    if ($redis) {
+                        $keys = $redis->keys('user:*');
+                        if (!empty($keys)) {
+                            foreach ($keys as $k) { $redis->del($k); }
+                        }
+                    }
+                } catch (\Throwable $t) {}
+
                 return ['success' => true, 'message' => 'Suscripción creada', 'data' => ['uuid' => $uuid]];
             }
         } catch (\PDOException $e) {

@@ -46,7 +46,7 @@ INSERT IGNORE INTO subscription_tiers (id, uuid, tier_level, is_active, is_popul
   (1, '23bfb9b0-4f5d-4f1a-b6ef-9f9e2b17f5a1', 0, 1, 0, 'Basic', '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 0.00, 0.00, 1, 20, 10, 10, 0, 0, 0, 0, 0, 0, 0),
   (2, '49bfa810-7b2c-4e81-a9f4-123456789abc', 1, 1, 0, 'Plus', '{"type":"solid","colors":[{"hex":"#28a745","percentage":100}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 4.99, 49.99, 3, 200, 25, 100, 0, 0, 0, 0, 0, 0, 0),
   (3, '1c9f2231-5f21-4d9a-b851-9f9f2f111222', 2, 1, 1, 'Pro', '{"type":"solid","colors":[{"hex":"#fd7e14","percentage":100}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 9.99, 99.99, 10, 1000, 100, 2500, 5, 1, 1, 1, 0, 0, 0),
-  (4, '87cf9a91-4c12-4d2c-a222-7f8f9a92231c', 3, 1, 0, 'Ultra', '{"type":"gradient","angle":0,"colors":[{"hex":"#ff0000","percentage":25},{"hex":"#0000ff","percentage":25},{"hex":"#00ff00","percentage":25},{"hex":"#ffff00","percentage":25}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 19.99, 199.99, 50, 5000, -1, 50000, 25, 1, 1, 1, 1, 1, 1);
+  (4, '87cf9a91-4c12-4d2c-a222-7f8f9a92231c', 3, 1, 0, 'Ultra', '{"type":"gradient","angle":295,"colors":[{"hex":"#E92D18","percentage":28},{"hex":"#306EE2","percentage":29},{"hex":"#249A41","percentage":28},{"hex":"#CD9308","percentage":15}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 19.99, 199.99, 50, 5000, -1, 50000, 25, 1, 1, 1, 1, 1, 1);
 
 CREATE TABLE IF NOT EXISTS `permissions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

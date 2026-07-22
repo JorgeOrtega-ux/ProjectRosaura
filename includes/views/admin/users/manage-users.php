@@ -26,7 +26,7 @@ $tblRoles = DB::TBL_ROLES;
 $tblUserRoles = DB::TBL_USER_ROLES;
 $tblUserRestr = DB::TBL_USER_RESTRICTIONS;
 
-$stmtRoles = $pdo->query("SELECT id, name, color FROM {$tblRoles} ORDER BY id ASC");
+$stmtRoles = $pdo->query("SELECT id, name FROM {$tblRoles} ORDER BY id ASC");
 $allRoles = $stmtRoles->fetchAll(PDO::FETCH_ASSOC);
 
 $searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
@@ -89,10 +89,12 @@ if ($page > $totalPages) {
 }
 
 $stmt = $pdo->prepare("
-    SELECT u.id, u.uuid, u.username, u.email, u.deletion_scheduled_at, 
-           ur.is_suspended, u.profile_picture, u.created_at
+    SELECT u.id, u.uuid, u.username, u.email, u.subscription_tier, u.deletion_scheduled_at, 
+           ur.is_suspended, u.profile_picture, u.created_at,
+           st.color as subscription_color
     FROM {$tblUsers} u
     LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id
+    LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
     $joinRole
     WHERE $whereClause
     GROUP BY u.id
@@ -107,7 +109,7 @@ if (!empty($users)) {
     $placeholders = implode(',', array_fill(0, count($userIds), '?'));
     
     $stmtRoles = $pdo->prepare("
-        SELECT ur.user_id, r.id, r.name, r.color
+        SELECT ur.user_id, r.id, r.name
         FROM {$tblUserRoles} ur
         INNER JOIN {$tblRoles} r ON ur.role_id = r.id
         WHERE ur.user_id IN ($placeholders)
@@ -120,7 +122,7 @@ if (!empty($users)) {
     foreach ($userRoles as $ur) {
         $uid = $ur['user_id'];
         if (!isset($rolesByUser[$uid])) {
-            $rolesByUser[$uid] = ['ids' => [], 'names' => [], 'color' => $ur['color']];
+            $rolesByUser[$uid] = ['ids' => [], 'names' => [], 'color' => '#808080'];
         }
         $rolesByUser[$uid]['ids'][] = $ur['id'];
         $rolesByUser[$uid]['names'][] = $ur['name'];
@@ -341,26 +343,28 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                     $roleNamesStr = $user['role_names'] ?? __('user');
                                     $roleNamesArray = explode(',', $roleNamesStr);
                                     
-                                    $roleColorRaw = !empty($user['role_color']) ? $user['role_color'] : '#6b7280';
-                                    $roleColorCSS = '#6b7280';
+                                    $subColorRaw = !empty($user['subscription_color']) ? $user['subscription_color'] : '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}';
+                                    $roleColorCSS = '#808080';
 
-                                    $parsedColor = json_decode($roleColorRaw, true);
+                                    $parsedColor = json_decode($subColorRaw, true);
                                     if (json_last_error() === JSON_ERROR_NONE && is_array($parsedColor) && isset($parsedColor['type'])) {
                                         if ($parsedColor['type'] === 'solid' && !empty($parsedColor['colors'][0])) {
                                             $firstColor = $parsedColor['colors'][0];
-                                            $roleColorCSS = is_array($firstColor) ? ($firstColor['hex'] ?? '#6b7280') : $firstColor;
+                                            $roleColorCSS = is_array($firstColor) ? ($firstColor['hex'] ?? '#808080') : $firstColor;
                                         } elseif ($parsedColor['type'] === 'gradient' && !empty($parsedColor['colors'])) {
                                             $angle = isset($parsedColor['angle']) ? $parsedColor['angle'] : 0;
                                             $stops = [];
+                                            $prev = 0;
                                             foreach ($parsedColor['colors'] as $colorStop) {
-                                                $hex = $colorStop['hex'] ?? '#000';
-                                                $stop = $colorStop['stop'] ?? '0';
-                                                $stops[] = "{$hex} {$stop}%";
+                                                $hex = $colorStop['hex'] ?? '#808080';
+                                                $end = $prev + ($colorStop['percentage'] ?? 0);
+                                                $stops[] = "{$hex} {$prev}% {$end}%";
+                                                $prev = $end;
                                             }
                                             $roleColorCSS = "conic-gradient(from {$angle}deg, " . implode(', ', $stops) . ")";
                                         }
                                     } else {
-                                        $roleColorCSS = $roleColorRaw;
+                                        $roleColorCSS = $subColorRaw;
                                     }
                                 ?>
                                 <tr class="component-table-row" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-user-uuid="<?php echo htmlspecialchars($user['uuid']); ?>" data-roles-ids="<?php echo htmlspecialchars($roleIds); ?>" data-status="<?php echo htmlspecialchars($dataStatus); ?>">

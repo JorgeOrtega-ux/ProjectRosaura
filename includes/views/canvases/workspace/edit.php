@@ -12,7 +12,7 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
 }
 $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
 $maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits['max_members_per_canvas'];
-$hasLiveChat = $planLimits['allow_live_chat'] ?? false;
+$hasLiveChat = SubscriptionPlanConstants::hasFeature($tier, 'chat_restriction') || SubscriptionPlanConstants::hasFeature($tier, 'allow_live_chat') || !empty($planLimits['allow_live_chat']) || !empty($planLimits['feat_chat_restriction']);
 
 $canvasUuid = $_GET['uuid'] ?? null;
 $canvasId = null;

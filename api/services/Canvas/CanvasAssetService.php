@@ -197,7 +197,10 @@ class CanvasAssetService {
             $stmt->execute([':user_id' => $userId]);
             $count = (int)$stmt->fetchColumn();
 
-            if ($count >= 5) {
+            $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+            $maxPalettes = $planLimits['max_custom_palettes'] ?? 0;
+
+            if ($maxPalettes !== -1 && $count >= $maxPalettes) {
                 return ['success' => false, 'message' => __('err_max_custom_palettes')];
             }
 

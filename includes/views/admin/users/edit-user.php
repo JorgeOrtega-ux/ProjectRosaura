@@ -47,7 +47,7 @@ if (!$user) {
 $targetUserId = (int)$user['id'];
 $prefs = $prefsManager->ensureDefaultPreferences($targetUserId);
 
-$roleColorRaw = $user['role_color'] ?? '';
+$roleColorRaw = $user['subscription_color'] ?? ($user['role_color'] ?? '');
 $activeRoleBg = 'var(--text-muted)';
 
 if (!empty($roleColorRaw)) {

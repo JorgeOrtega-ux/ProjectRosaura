@@ -81,7 +81,7 @@ class CanvasLockManager {
                     if (!in_array(\App\Core\System\CanvasConstants::LOCK_REASON_SIZE, $lockedReasons)) $lockedReasons[] = \App\Core\System\CanvasConstants::LOCK_REASON_SIZE;
                 }
 
-                if (isset($canvas['palette_id']) && $canvas['palette_id'] !== 'default' && empty($planLimits['custom_palettes'])) {
+                if (isset($canvas['palette_id']) && $canvas['palette_id'] !== 'default' && !SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')) {
                     $isLocked = true;
                     if (!in_array(\App\Core\System\CanvasConstants::LOCK_REASON_PALETTE, $lockedReasons)) $lockedReasons[] = \App\Core\System\CanvasConstants::LOCK_REASON_PALETTE;
                 }

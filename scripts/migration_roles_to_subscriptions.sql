@@ -40,7 +40,7 @@ INSERT IGNORE INTO subscription_tiers (id, uuid, tier_level, is_active, is_popul
   (1, NULL, 0, 1, 0, 'Basic', '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}', NULL, NULL, 0.00, 0.00, 1, 20, 10, 10, 0, 0, 0, 0, 0, 0, 0),
   (2, NULL, 1, 1, 0, 'Plus', '{"type":"solid","colors":[{"hex":"#28a745","percentage":100}]}', 'price_plus_monthly', 'price_plus_yearly', 4.99, 49.99, 3, 200, 25, 100, 0, 0, 0, 0, 0, 0, 0),
   (3, NULL, 2, 1, 1, 'Pro', '{"type":"solid","colors":[{"hex":"#fd7e14","percentage":100}]}', 'price_pro_monthly', 'price_pro_yearly', 9.99, 99.99, 10, 1000, 100, 2500, 5, 1, 1, 1, 0, 0, 0),
-  (4, NULL, 3, 1, 0, 'Ultra', '{"type":"gradient","angle":0,"colors":[{"hex":"#ff0000","percentage":25},{"hex":"#0000ff","percentage":25},{"hex":"#00ff00","percentage":25},{"hex":"#ffff00","percentage":25}]}', 'price_ultra_monthly', 'price_ultra_yearly', 19.99, 199.99, 50, 5000, -1, 50000, 25, 1, 1, 1, 1, 1, 1)
+  (4, NULL, 3, 1, 0, 'Ultra', '{"type":"gradient","angle":295,"colors":[{"hex":"#E92D18","percentage":28},{"hex":"#306EE2","percentage":29},{"hex":"#249A41","percentage":28},{"hex":"#CD9308","percentage":15}]}', 'price_ultra_monthly', 'price_ultra_yearly', 19.99, 199.99, 50, 5000, -1, 50000, 25, 1, 1, 1, 1, 1, 1)
 ON DUPLICATE KEY UPDATE 
   name = VALUES(name),
   color = VALUES(color);

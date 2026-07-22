@@ -10,6 +10,10 @@ class SubscriptionPlanConstants {
             return self::$tierLimitsCache[$tier];
         }
 
+        if ($tier >= 99) {
+            $tier = self::getMaxTierLevel();
+        }
+
         try {
             $db = new \App\Config\Database\DatabaseManager();
             $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
@@ -29,7 +33,9 @@ class SubscriptionPlanConstants {
                     'feat_custom_palettes' => (bool)$row['feat_custom_palettes'],
                     'feat_priority_rendering' => (bool)$row['feat_priority_rendering'],
                     'feat_unlimited_exports' => (bool)$row['feat_unlimited_exports'],
-                    'feat_beta_access' => (bool)$row['feat_beta_access']
+                    'feat_beta_access' => (bool)$row['feat_beta_access'],
+                    'allow_live_chat' => (bool)$row['feat_chat_restriction'],
+                    'custom_palettes' => (bool)$row['feat_custom_palettes']
                 ];
                 
                 self::$tierLimitsCache[$tier] = $limits;
@@ -44,15 +50,36 @@ class SubscriptionPlanConstants {
             'max_canvases' => 1,
             'max_snapshots_per_canvas' => 10,
             'max_storage_mb' => 20,
-            'max_members_per_canvas' => 10
+            'max_members_per_canvas' => 10,
+            'max_custom_palettes' => 0,
+            'feat_advanced_roles' => false,
+            'feat_chat_restriction' => false,
+            'feat_custom_palettes' => false,
+            'feat_priority_rendering' => false,
+            'feat_unlimited_exports' => false,
+            'feat_beta_access' => false,
+            'allow_live_chat' => false,
+            'custom_palettes' => false
         ];
         self::$tierLimitsCache[$tier] = $default;
         return $default;
     }
 
     public static function hasFeature(int $tier, string $featureKey): bool {
+        if ($featureKey === 'allow_live_chat') {
+            $featureKey = 'chat_restriction';
+        } elseif ($featureKey === 'live_templates' || $featureKey === 'live_sync') {
+            $featureKey = 'beta_access';
+        }
         $limits = self::getTierLimits($tier);
-        return isset($limits[$featureKey]) && $limits[$featureKey] === true;
+        if (isset($limits[$featureKey])) {
+            return $limits[$featureKey] === true;
+        }
+        $prefixedKey = 'feat_' . $featureKey;
+        if (isset($limits[$prefixedKey])) {
+            return $limits[$prefixedKey] === true;
+        }
+        return false;
     }
 
     public static function getTierPrices(): array {
@@ -71,6 +98,21 @@ class SubscriptionPlanConstants {
             // Silently fallback on error
         }
         return $prices;
+    }
+
+    public static function getMaxTierLevel(): int {
+        try {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmt = $pdo->query("SELECT MAX(tier_level) FROM subscription_tiers WHERE is_active = 1");
+            $max = $stmt->fetchColumn();
+            if ($max !== false && $max !== null) {
+                return (int)$max;
+            }
+        } catch (\Exception $e) {
+            // Silently fallback on error
+        }
+        return 3;
     }
 
     public static function getAllTiers(): array {

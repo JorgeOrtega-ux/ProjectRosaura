@@ -778,7 +778,37 @@ export class DesignChat {
         }
         
         const fallbackUrl = `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`;
-        const avatarStr = `<img src="${avatarUrl}" class="chat-message-avatar-img image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('image-loaded');">`;
+        
+        let subColorCSS = '#808080';
+        if (msg.subscription_color) {
+            try {
+                const parsed = typeof msg.subscription_color === 'string' ? JSON.parse(msg.subscription_color) : msg.subscription_color;
+                if (parsed && parsed.type === 'solid' && parsed.colors && parsed.colors[0]) {
+                    subColorCSS = typeof parsed.colors[0] === 'string' ? parsed.colors[0] : (parsed.colors[0].hex || '#808080');
+                } else if (parsed && parsed.type === 'gradient' && parsed.colors) {
+                    const angle = parsed.angle || 0;
+                    let prev = 0;
+                    const stops = parsed.colors.map(c => {
+                        const hex = c.hex || '#808080';
+                        const end = prev + (c.percentage || 0);
+                        const str = `${hex} ${prev}% ${end}%`;
+                        prev = end;
+                        return str;
+                    });
+                    subColorCSS = `conic-gradient(from ${angle}deg, ${stops.join(', ')})`;
+                } else if (typeof msg.subscription_color === 'string') {
+                    subColorCSS = msg.subscription_color;
+                }
+            } catch (e) {
+                subColorCSS = '#808080';
+            }
+        }
+
+        const avatarStr = `
+            <div class="component-button--profile role-dynamic component-avatar--static-sm" style="--active-role-bg: ${subColorCSS}">
+                <img src="${avatarUrl}" class="chat-message-avatar-img image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('image-loaded');">
+            </div>
+        `;
 
         const uniqueId = 'msg-menu-' + msg.id;
 

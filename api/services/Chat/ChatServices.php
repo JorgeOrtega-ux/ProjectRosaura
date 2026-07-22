@@ -65,7 +65,12 @@ class ChatServices
         if (!empty($messages)) {
             $userIds = array_values(array_unique(array_column($messages, 'user_id')));
             $placeholders = implode(',', array_fill(0, count($userIds), '?'));
-            $userStmt = $this->identityPdo->prepare("SELECT id, username, profile_picture FROM users WHERE id IN ($placeholders)");
+            $userStmt = $this->identityPdo->prepare("
+                SELECT u.id, u.username, u.profile_picture, st.color as subscription_color 
+                FROM users u 
+                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level 
+                WHERE u.id IN ($placeholders)
+            ");
             $userStmt->execute($userIds);
             $usersMap = [];
             while ($row = $userStmt->fetch(PDO::FETCH_ASSOC)) {
@@ -76,6 +81,7 @@ class ChatServices
                 $uid = $msg['user_id'];
                 $msg['username'] = $usersMap[$uid]['username'] ?? __('default_user');
                 $msg['avatar'] = isset($usersMap[$uid]['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($usersMap[$uid]['profile_picture']) : null;
+                $msg['subscription_color'] = $usersMap[$uid]['subscription_color'] ?? '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}';
                 
                 // Strip content for non-visible messages
                 $vis = $msg['visibility'] ?? 'visible';
@@ -246,7 +252,12 @@ class ChatServices
 
         $msgId = 'pending_' . uniqid();
 
-        $uStmt = $this->identityPdo->prepare("SELECT username, profile_picture FROM " . DB::TBL_USERS . " WHERE id = ?");
+        $uStmt = $this->identityPdo->prepare("
+            SELECT u.username, u.profile_picture, st.color as subscription_color 
+            FROM " . DB::TBL_USERS . " u 
+            LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level 
+            WHERE u.id = ?
+        ");
         $uStmt->execute([$userId]);
         $userInfo = $uStmt->fetch(PDO::FETCH_ASSOC);
 
@@ -260,6 +271,7 @@ class ChatServices
             'user_id' => $userId,
             'username' => $userInfo['username'] ?? $defaultUsername,
             'avatar' => isset($userInfo['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($userInfo['profile_picture']) : null,
+            'subscription_color' => $userInfo['subscription_color'] ?? '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}',
             'message' => htmlspecialchars($censoredMessageText, ENT_QUOTES, 'UTF-8'),
             'attachments' => $safeAttachments,
             'created_at' => date('Y-m-d H:i:s')
