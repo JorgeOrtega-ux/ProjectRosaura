@@ -354,7 +354,8 @@ class CanvasCoreService {
                     if ($redis) {
                         $redis->hMSet("canvas:{$canvasId}:config", [
                             'cooldown_batch' => $canvas['cooldown_pixels_batch'] ?? 5,
-                            'cooldown_seconds' => $canvas['cooldown_seconds'] ?? 10
+                            'cooldown_seconds' => $canvas['cooldown_seconds'] ?? 10,
+                            'is_locked' => $canvas['is_locked'] ? 1 : 0
                         ]);
                     }
                 }

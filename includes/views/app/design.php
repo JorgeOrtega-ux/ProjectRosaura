@@ -273,7 +273,7 @@ if (!empty($canvasUuid)) {
                 <?php if (isset($isPremiumBlockedInit) && $isPremiumBlockedInit): ?>
                 <div class="component-badge" data-badge-id="lock-premium">
                     <span class="material-symbols-rounded">warning</span>
-                    <span><?php echo __('lbl_premium_expired_attention'); ?></span>
+                    <span><?php echo __('badge_subscription_expired'); ?></span>
                 </div>
                 <?php elseif (isset($isBlockedInit) && $isBlockedInit): ?>
                 <div class="component-badge" data-badge-id="lock-private">

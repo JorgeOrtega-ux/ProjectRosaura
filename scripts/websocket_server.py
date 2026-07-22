@@ -138,14 +138,15 @@ def fetch_canvas_config_from_db(canvas_id):
         db = pool.get_connection()
         cursor = db.cursor(dictionary=True)
         tbl_canvases = os.getenv("DB_CANVASES_NAME", "db_canvases")
-        cursor.execute(f"SELECT cooldown_pixels_batch, cooldown_seconds FROM `{tbl_canvases}`.`canvases` WHERE id = %s LIMIT 1", (canvas_id,))
+        cursor.execute(f"SELECT cooldown_pixels_batch, cooldown_seconds, is_locked FROM `{tbl_canvases}`.`canvases` WHERE id = %s LIMIT 1", (canvas_id,))
         row = cursor.fetchone()
         cursor.close()
         db.close()
         if row:
             batch = int(row.get('cooldown_pixels_batch') or 5)
             sec = int(row.get('cooldown_seconds') or 10)
-            return batch, sec
+            is_locked = int(row.get('is_locked') or 0)
+            return batch, sec, is_locked
     except Exception as e:
         print(f"[!] Error fetching canvas config from DB: {e}")
     return 5, 10
@@ -156,11 +157,12 @@ async def get_canvas_config(r, canvas_id):
     if raw_config and b'cooldown_batch' in raw_config:
         batch = int(raw_config[b'cooldown_batch'])
         sec = int(raw_config.get(b'cooldown_seconds', b'10'))
-        return batch, sec
+        is_locked = int(raw_config.get(b'is_locked', b'0'))
+        return batch, sec, is_locked
     
-    batch, sec = await asyncio.to_thread(fetch_canvas_config_from_db, canvas_id)
-    await r.hset(config_key, mapping={'cooldown_batch': str(batch), 'cooldown_seconds': str(sec)})
-    return batch, sec
+    batch, sec, is_locked = await asyncio.to_thread(fetch_canvas_config_from_db, canvas_id)
+    await r.hset(config_key, mapping={'cooldown_batch': str(batch), 'cooldown_seconds': str(sec), 'is_locked': str(is_locked)})
+    return batch, sec, is_locked
 
 NODE_ID = str(uuid.uuid4())
 ROOMS = {}
@@ -425,7 +427,7 @@ async def handler(websocket):
                     user_id = WS_META[websocket].get('user_id')
                     print(f"[DEBUG PY] Processing INIT request. UserId: {user_id}")
                     
-                    config_batch, config_sec = await get_canvas_config(r, canvas_id)
+                    config_batch, config_sec, _ = await get_canvas_config(r, canvas_id)
                     print(f"[DEBUG PY] Canvas config -> batch: {config_batch}, sec: {config_sec}")
                     
                     if user_id:
@@ -577,7 +579,15 @@ async def handler(websocket):
                         # Invalid format, ignore
                         continue
 
-                    config_batch, config_sec = await get_canvas_config(r, canvas_id)
+                    config_batch, config_sec, is_premium_locked = await get_canvas_config(r, canvas_id)
+
+                    if is_premium_locked:
+                        print(f"[DEBUG PY] Canvas {canvas_id} is premium locked. Ignoring pixel.")
+                        error_msg = json.dumps({
+                            "type": "canvas_locked_error"
+                        })
+                        await websocket.send(error_msg)
+                        continue
 
                     if not user_id:
                         print(f"[DEBUG PY] Painting attempt by unidentified user. Denied.")

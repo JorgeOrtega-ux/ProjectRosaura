@@ -361,6 +361,16 @@ class DesignController {
             this.renderWorker.terminate();
             this.renderWorker = null;
         }
+
+        this.canvas = null;
+        this.ctx = null;
+        this.offscreenCanvas = null;
+        this.offscreenCtx = null;
+        this._lastCanvasW = null;
+        this._lastCanvasH = null;
+        this._lastDpr = null;
+        this.loadedChunks = null;
+        this.pixelQueue = null;
     }
 }
 
