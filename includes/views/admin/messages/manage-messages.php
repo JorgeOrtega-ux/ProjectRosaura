@@ -28,9 +28,10 @@ $orderBy = ($sort === 'most_reported') ? "report_count DESC, m.id DESC" : "m.id 
 $searchCondition = "";
 $searchParams = [];
 if ($searchQuery !== '') {
-    $searchCondition = "WHERE m.message LIKE :search OR m.id = :searchId OR m.uuid = :searchId";
+    $searchCondition = "WHERE m.message LIKE :search OR m.id = :searchId1 OR m.uuid = :searchId2";
     $searchParams[':search'] = '%' . $searchQuery . '%';
-    $searchParams[':searchId'] = $searchQuery;
+    $searchParams[':searchId1'] = $searchQuery;
+    $searchParams[':searchId2'] = $searchQuery;
 }
 
 if ($filter === 'reported') {

@@ -130,24 +130,36 @@ class CanvasRepository implements CanvasRepositoryInterface {
         }
 
         $fetchClosure = function() use ($limit, $currentUserId, $sort, $offset) {
-            $orderClause = "ORDER BY c.created_at DESC";
+            $orderClause = "ORDER BY c.created_at DESC, c.id DESC";
             if ($sort === 'oldest') {
-                $orderClause = "ORDER BY c.created_at ASC";
+                $orderClause = "ORDER BY c.created_at ASC, c.id ASC";
             } elseif ($sort === 'members') {
-                $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
+                $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC, c.id DESC";
+            }
+
+            $joinMemberSql = "";
+            $isMemberSelect = "0 as is_member";
+            if ($currentUserId) {
+                $joinMemberSql = "LEFT JOIN " . DB::TBL_CANVAS_MEMBERS . " cm ON c.id = cm.canvas_id AND cm.user_id = :current_user_id_member";
+                $isMemberSelect = "CASE WHEN cm.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_member";
             }
 
             $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.is_official, c.favorites_count,
                            CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                           c.members_count
+                           c.members_count,
+                           $isMemberSelect
                     FROM " . DB::TBL_CANVASES . " c
                     LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
+                    $joinMemberSql
                     WHERE c.privacy = 'public' AND c.is_official = 0 AND c.is_locked = 0
                     $orderClause 
                     LIMIT :limit OFFSET :offset";
             
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':current_user_id', $currentUserId ?? 0, PDO::PARAM_INT);
+            if ($currentUserId) {
+                $stmt->bindValue(':current_user_id_member', $currentUserId, PDO::PARAM_INT);
+            }
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
@@ -199,11 +211,14 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         $whereSql = implode(' AND ', $whereConditions);
 
-        $orderSql = "ORDER BY c.is_official DESC, c.created_at DESC";
+        $isMemberSelect = $userId ? "CASE WHEN cm_feed.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_member" : "0 as is_member";
+
+        $orderSql = "ORDER BY c.is_official DESC, c.created_at DESC, c.id DESC";
         
         $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.is_official, c.favorites_count, c.tags, c.is_locked, c.locked_reasons,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                       c.members_count
+                       c.members_count,
+                       $isMemberSelect
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id_fav
                 $joinMemberSql
@@ -249,24 +264,36 @@ class CanvasRepository implements CanvasRepositoryInterface {
         }
 
         $fetchClosure = function() use ($limit, $currentUserId, $sort, $offset) {
-            $orderClause = "ORDER BY c.created_at DESC";
+            $orderClause = "ORDER BY c.created_at DESC, c.id DESC";
             if ($sort === 'oldest') {
-                $orderClause = "ORDER BY c.created_at ASC";
+                $orderClause = "ORDER BY c.created_at ASC, c.id ASC";
             } elseif ($sort === 'members') {
-                $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
+                $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC, c.id DESC";
+            }
+
+            $joinMemberSql = "";
+            $isMemberSelect = "0 as is_member";
+            if ($currentUserId) {
+                $joinMemberSql = "LEFT JOIN " . DB::TBL_CANVAS_MEMBERS . " cm ON c.id = cm.canvas_id AND cm.user_id = :current_user_id_member";
+                $isMemberSelect = "CASE WHEN cm.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_member";
             }
 
             $sql = "SELECT c.id, c.uuid, c.name, c.size, c.palette_id, c.is_official, c.favorites_count,
                            CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                           c.members_count
+                           c.members_count,
+                           $isMemberSelect
                     FROM " . DB::TBL_CANVASES . " c
                     LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
+                    $joinMemberSql
                     WHERE c.is_official = 1 AND c.is_locked = 0
                     $orderClause
                     LIMIT :limit OFFSET :offset";
                     
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':current_user_id', $currentUserId ?? 0, PDO::PARAM_INT);
+            if ($currentUserId) {
+                $stmt->bindValue(':current_user_id_member', $currentUserId, PDO::PARAM_INT);
+            }
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
@@ -310,7 +337,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.owner_id, c.is_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count,
-                       CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner
+                       CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner,
+                       CASE WHEN cm2.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_member
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :uid2
                 $joinRolesSql

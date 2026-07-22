@@ -16,6 +16,12 @@ use App\Core\System\Logger;
 use App\Core\System\SubscriptionPlanConstants;
 use App\Config\Database\RedisCache;
 
+// --- Webhook IP Rate Limiting (60 requests per minute) ---
+if (class_exists('\App\Core\Helpers\Utils')) {
+    \App\Core\Helpers\Utils::enforceIpRateLimit('webhook:stripe', 60, 60, true);
+}
+// -----------------------------------------------------------
+
 $payload = @file_get_contents('php://input');
 $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
 $webhookSecret = $_ENV['STRIPE_WEBHOOK_SECRET'] ?? '';
@@ -111,6 +117,14 @@ try {
 
             $subRepo->updateUserTier($userId, $tier);
 
+            try {
+                $container = new \App\Core\Container();
+                $lockManager = $container->get(\App\Api\Services\Canvas\CanvasLockManager::class);
+                $lockManager->evaluateUserCanvases($userId);
+            } catch (\Exception $e) {
+                Logger::error("Failed to evaluate canvases on webhook upgrade", ['user_id' => $userId, 'error' => $e->getMessage()]);
+            }
+
             if (!empty($session->customer)) {
                 $subRepo->updateUserStripeCustomerId($userId, $session->customer);
             }
@@ -188,9 +202,10 @@ try {
         case 'customer.subscription.updated':
             $subscription = $event->data->object;
             $stripeSubId = $subscription->id;
+            $newStatus = $subscription->status;
 
             $updateData = [
-                'status' => $subscription->status === 'active' ? 'active' : ($subscription->status === 'past_due' ? 'past_due' : $subscription->status)
+                'status' => $newStatus === 'active' ? 'active' : ($newStatus === 'past_due' ? 'past_due' : $newStatus)
             ];
 
             if ($subscription->current_period_start) {
@@ -205,9 +220,24 @@ try {
 
             $subRepo->updateByStripeSubscriptionId($stripeSubId, $updateData);
 
+            if (in_array($newStatus, ['unpaid', 'canceled'])) {
+                $localSub = $subRepo->findByStripeSubscriptionId($stripeSubId);
+                if ($localSub) {
+                    $userId = (int) $localSub['user_id'];
+                    $subRepo->updateUserTier($userId, SubscriptionPlanConstants::TIER_BASIC);
+                    try {
+                        $container = new \App\Core\Container();
+                        $lockManager = $container->get(\App\Api\Services\Canvas\CanvasLockManager::class);
+                        $lockManager->evaluateUserCanvases($userId);
+                    } catch (\Exception $e) {
+                        Logger::error("Failed to evaluate canvases on webhook downgrade", ['user_id' => $userId, 'error' => $e->getMessage()]);
+                    }
+                }
+            }
+
             Logger::info("Stripe webhook: subscription updated", [
                 'stripe_subscription_id' => $stripeSubId,
-                'status' => $subscription->status
+                'status' => $newStatus
             ]);
             break;
 

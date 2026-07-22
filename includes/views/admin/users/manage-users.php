@@ -37,8 +37,11 @@ $whereConditions = ["1=1"];
 $params = [];
 
 if ($searchQuery !== '') {
-    $whereConditions[] = "(u.email LIKE :q OR u.username LIKE :q OR u.uuid LIKE :q)";
-    $params['q'] = '%' . $searchQuery . '%';
+    $whereConditions[] = "(u.email LIKE :q1 OR u.username LIKE :q2 OR u.uuid LIKE :q3)";
+    $qVal = '%' . $searchQuery . '%';
+    $params[':q1'] = $qVal;
+    $params[':q2'] = $qVal;
+    $params[':q3'] = $qVal;
 }
 
 if (!empty($statusFilter)) {
@@ -66,8 +69,8 @@ $joinRole = "";
 if (!empty($rolesFilter)) {
     $placeholders = [];
     foreach ($rolesFilter as $i => $rId) {
-        $key = "role_" . $i;
-        $placeholders[] = ":" . $key;
+        $key = ":role_" . $i;
+        $placeholders[] = $key;
         $params[$key] = $rId;
     }
     $placeholdersStr = implode(',', $placeholders);

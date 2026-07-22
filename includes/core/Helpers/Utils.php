@@ -6,6 +6,38 @@ class Utils {
     private static $s3Client = null;
     private static $canvasSizes = null;
 
+    public static function enforceIpRateLimit(string $actionKey, int $maxRequests = 60, int $windowSeconds = 60, bool $isJsonError = false): void {
+        try {
+            if (class_exists('\App\Config\Database\RedisCache')) {
+                $redisObj = new \App\Config\Database\RedisCache();
+                $redis = $redisObj->getClient();
+                if ($redis) {
+                    $ip = self::getIpAddress();
+                    $safeIp = md5(trim(explode(',', $ip)[0]));
+                    $rlKey = "rate_limit:{$actionKey}:{$safeIp}";
+                    
+                    $currentCount = $redis->incr($rlKey);
+                    if ($currentCount == 1) {
+                        $redis->expire($rlKey, $windowSeconds);
+                    }
+                    
+                    if ($currentCount > $maxRequests) {
+                        http_response_code(429);
+                        if ($isJsonError || !empty($_SERVER['HTTP_X_SPA_REQUEST']) || strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false) {
+                            header('Content-Type: application/json');
+                            echo json_encode(['error' => 'Too Many Requests', 'redirect' => '/']);
+                        } else {
+                            echo "<!DOCTYPE html><html><head><title>Too Many Requests</title><style>body{font-family:sans-serif;text-align:center;padding:50px;}</style></head><body><h1>429 Too Many Requests</h1><p>Please wait a moment before trying again.</p></body></html>";
+                        }
+                        exit;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fail open
+        }
+    }
+
     public static function getCanvasSizes(): array {
         if (self::$canvasSizes !== null) {
             return self::$canvasSizes;

@@ -24,6 +24,9 @@ export class CanvasCardInteractions {
         } else if (action === 'leaveCanvas') {
             this.leaveCanvas(btn);
             return true;
+        } else if (action === 'joinCanvas') {
+            this.joinCanvas(btn);
+            return true;
         } else if (action === 'viewCanvasSnapshots') {
             this.viewCanvasSnapshots(btn);
             return true;
@@ -168,6 +171,42 @@ export class CanvasCardInteractions {
         }
     }
 
+    async joinCanvas(btn) {
+        const id = btn.getAttribute('data-id');
+        const uuid = btn.getAttribute('data-uuid');
+        if (!uuid || !id) return;
+
+        this.closeDropdowns();
+
+        if (window.dialogSystem) {
+            const res = await window.dialogSystem.show('joinCanvasTerms');
+            if (!res || !res.confirmed) return;
+            
+            if (!res.data || !res.data.modal_join_terms) {
+                if (typeof showMessage === 'function') showMessage(window.__('err_accept_terms') || 'Debes aceptar los términos para unirte.', 'warning');
+                return;
+            }
+        }
+
+        if (typeof setButtonLoading === 'function') setButtonLoading(btn);
+
+        const response = await this.api.post(ApiRoutes.Canvases.RequestAccess, { canvas_id: id, terms_accepted: true }, this.abortController.signal);
+        
+        if (response.aborted) return;
+        if (typeof restoreButton === 'function') restoreButton(btn);
+
+        if (response.success) {
+            if (typeof showMessage === 'function') showMessage(response.message, 'success');
+            
+            const triggerBtn = document.querySelector(`button[data-action="toggleDynamicMenu"][data-id="${id}"]`);
+            if (triggerBtn) {
+                triggerBtn.setAttribute('data-member', '1');
+            }
+        } else {
+            if (typeof showMessage === 'function') showMessage(response.message, 'error');
+        }
+    }
+
     async downgradeCanvas(btn) {
         const id = btn.getAttribute('data-id');
         const uuid = btn.getAttribute('data-uuid');
@@ -236,18 +275,26 @@ export class CanvasCardInteractions {
         const uuid = btn.getAttribute('data-uuid');
         const isOwner = btn.getAttribute('data-owner') === '1';
         const isLocked = btn.getAttribute('data-locked') === '1';
+        const isMember = btn.getAttribute('data-member') === '1';
 
         let actionButtonHtml = '';
         if (window.activeUserId) {
-            actionButtonHtml = isOwner 
-                ? `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="deleteCanvas" data-id="${id}" data-uuid="${uuid}">
+            if (isOwner) {
+                actionButtonHtml = `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="deleteCanvas" data-id="${id}" data-uuid="${uuid}">
                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
                         <div class="component-menu-link-text"><span>${window.__('delete_canvas')}</span></div>
-                   </button>`
-                : `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="leaveCanvas" data-id="${id}" data-uuid="${uuid}">
+                   </button>`;
+            } else if (isMember) {
+                actionButtonHtml = `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="leaveCanvas" data-id="${id}" data-uuid="${uuid}">
                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
                         <div class="component-menu-link-text"><span>${window.__('leave_canvas')}</span></div>
                    </button>`;
+            } else {
+                actionButtonHtml = `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--info" data-action="joinCanvas" data-id="${id}" data-uuid="${uuid}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">login</span></div>
+                        <div class="component-menu-link-text"><span>${window.__('join_canvas') || 'Unirse al lienzo'}</span></div>
+                   </button>`;
+            }
         }
 
         let warningMenuOption = '';

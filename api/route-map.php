@@ -654,7 +654,7 @@ return [
     'telemetry.collect' => [
         'controller' => 'App\Api\Controllers\Telemetry\TelemetryController',
         'action' => 'collect',
-        'middleware' => [] 
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'telemetry_collect', 'max' => 60, 'time' => RL::TIME_5, 'identifier' => RL::ID_IP]] 
     ],
 
     'stripe.create_checkout' => [

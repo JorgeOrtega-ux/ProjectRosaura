@@ -94,6 +94,7 @@ class CanvasCoreService {
             
             $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts, $canManageOfficial) {
                 $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
+                $canvas['is_member'] = !empty($canvas['is_member']);
                 $canvas['is_locked'] = !empty($canvas['is_locked']);
                 $canvas['locked_requires_downgrade'] = !empty($canvas['is_locked']);
                 
@@ -133,6 +134,7 @@ class CanvasCoreService {
             
             $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts, $canManageOfficial) {
                 $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
+                $canvas['is_member'] = !empty($canvas['is_member']);
                 
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
                 
@@ -172,6 +174,7 @@ class CanvasCoreService {
             
             $formattedCanvases = array_map(function($canvas) use ($onlineCounts, $canManageOfficial) {
                 $canvas['is_owner'] = false;
+                $canvas['is_member'] = !empty($canvas['is_member']);
                 $canvas['privacy'] = 'public'; 
                 
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
@@ -215,6 +218,7 @@ class CanvasCoreService {
                     'is_official' => $canvas['is_official'] ?? 0,
                     'is_favorite' => $canvas['is_favorite'],
                     'is_owner' => $canvas['is_owner'],
+                    'is_member' => !empty($canvas['is_member']),
                     'online_players' => 0, 
                     'members_count' => $canvas['members_count'],
                     'favorites_count' => $canvas['favorites_count'] ?? 0,

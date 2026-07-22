@@ -21,6 +21,8 @@ export class MainController {
         this.handleThemeMediaQueryBound = this.handleThemeMediaQuery.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.handleMaintenanceBound = this.handleMaintenanceTriggered.bind(this);
+        this.handleVisibilityChangeBound = this.handleVisibilityChange.bind(this);
+        this.lastVisibleTime = Date.now();
         
         this.handlePointerDownBound = this.handlePointerDown.bind(this);
         this.handlePointerMoveBound = this.handlePointerMove.bind(this);
@@ -62,6 +64,7 @@ export class MainController {
         this.themeMediaQuery.removeEventListener('change', this.handleThemeMediaQueryBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
         window.removeEventListener('systemMaintenanceTriggered', this.handleMaintenanceBound);
+        document.removeEventListener('visibilitychange', this.handleVisibilityChangeBound);
     }
 
     bindEvents() {
@@ -79,12 +82,25 @@ export class MainController {
         window.addEventListener('viewLoaded', this.handleViewLoadedBound);
         window.addEventListener('systemMaintenanceTriggered', this.handleMaintenanceBound);
         this.themeMediaQuery.addEventListener('change', this.handleThemeMediaQueryBound);
+        document.addEventListener('visibilitychange', this.handleVisibilityChangeBound);
     }
 
     handleMaintenanceTriggered() {
         if (this.prefAbortController) this.prefAbortController.abort();
         if (this.logoutAbortController) this.logoutAbortController.abort();
         window.location.reload();
+    }
+
+    handleVisibilityChange() {
+        if (document.visibilityState === 'hidden') {
+            this.lastVisibleTime = Date.now();
+        } else if (document.visibilityState === 'visible') {
+            const timeHidden = Date.now() - this.lastVisibleTime;
+            // Recargar si la pestaña estuvo inactiva por más de 2 horas (caducidad típica de sesión/CSRF)
+            if (timeHidden > 7200000) {
+                window.location.reload();
+            }
+        }
     }
 
     handleViewLoaded() {

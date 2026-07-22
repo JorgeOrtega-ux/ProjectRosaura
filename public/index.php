@@ -10,6 +10,12 @@ try {
     }
 }
 
+// --- Global Page Rate Limiting (60 requests per minute) ---
+if (class_exists('\App\Core\Helpers\Utils')) {
+    \App\Core\Helpers\Utils::enforceIpRateLimit('global_page', 60, 60);
+}
+// -----------------------------------------------------------
+
 // 2. Procesar el Enrutamiento 
 try {
     require_once __DIR__ . '/../includes/core/route_handler.php';
