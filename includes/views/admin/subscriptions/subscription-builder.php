@@ -161,10 +161,26 @@ $gradientAngle = $colorData['angle'] ?? 90;
 $colorTypeLabel = $colorType === 'solid' ? __('admin_role_color_solid') : __('admin_role_color_gradient');
 $colorTypeIcon = $colorType === 'solid' ? 'circle' : 'pie_chart';
 
-$featuresData = json_decode($tierData['features'] ?? '{}', true);
+$featuresData = [
+    'price_monthly' => $tierData['price_monthly'] ?? 0,
+    'price_yearly' => $tierData['price_yearly'] ?? 0,
+    'limits' => [
+        'max_canvases' => $tierData['max_canvases'] ?? 1,
+        'max_storage_mb' => $tierData['max_storage_mb'] ?? 20,
+        'max_snapshots_per_canvas' => $tierData['max_snapshots_per_canvas'] ?? 10,
+        'max_members_per_canvas' => $tierData['max_members_per_canvas'] ?? 10,
+        'max_custom_palettes' => $tierData['max_custom_palettes'] ?? 0,
+    ],
+    'feat_advanced_roles' => $tierData['feat_advanced_roles'] ?? 0,
+    'feat_chat_restriction' => $tierData['feat_chat_restriction'] ?? 0,
+    'feat_custom_palettes' => $tierData['feat_custom_palettes'] ?? 0,
+    'feat_priority_rendering' => $tierData['feat_priority_rendering'] ?? 0,
+    'feat_unlimited_exports' => $tierData['feat_unlimited_exports'] ?? 0,
+    'feat_beta_access' => $tierData['feat_beta_access'] ?? 0,
+];
 
 ?>
-<div class="view-content" data-ref="admin-roles-wrapper">
+<div class="view-content" data-ref="admin-subscriptions-wrapper" data-tier-uuid="<?php echo htmlspecialchars($tierData['uuid']); ?>">
     
     <div class="component-top">
         <div class="component-top-left">
@@ -181,7 +197,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
         <div class="component-wrapper">
             <div class="component-bottom">
                 
-                <input type="hidden" id="tierId" value="<?php echo htmlspecialchars($tierData['uuid']); ?>">
+
                 
                 <!-- Detalles Accordion -->
                 <div class="component-card--grouped component-accordion">
@@ -274,28 +290,50 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                             </div>
         
                             <hr class="component-divider">
-        
-                            <div class="component-group-item component-group-item--wrap">
+
+                            <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('admin_tier_price_monthly') ?: 'Precio Mensual (USD)'; ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_price_monthly_desc') ?: 'Precio de suscripción mensual en dólares.'; ?></p>
                                     </div>
                                 </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <input type="number" id="priceMonthly" step="0.01" class="component-input-field component-input-field--simple" style="width: 120px;" value="<?php echo htmlspecialchars($featuresData['price_monthly'] ?? '0.00'); ?>" placeholder="0.00">
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="-5" data-min="0" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="-1" data-min="0" data-decimal="true"><span class="material-symbols-rounded">chevron_left</span></button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="val_priceMonthly" data-val="<?php echo (float)($tierData['price_monthly'] ?? 0); ?>"><?php echo number_format((float)($tierData['price_monthly'] ?? 0), 2); ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="1" data-max="999" data-decimal="true"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="5" data-max="999" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-        
+
                             <hr class="component-divider">
-        
-                            <div class="component-group-item component-group-item--wrap">
+
+                            <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('admin_tier_price_yearly') ?: 'Precio Anual (USD)'; ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_price_yearly_desc') ?: 'Precio de suscripción anual en dólares.'; ?></p>
                                     </div>
                                 </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <input type="number" id="priceYearly" step="0.01" class="component-input-field component-input-field--simple" style="width: 120px;" value="<?php echo htmlspecialchars($featuresData['price_yearly'] ?? '0.00'); ?>" placeholder="0.00">
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="-10" data-min="0" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="-1" data-min="0" data-decimal="true"><span class="material-symbols-rounded">chevron_left</span></button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="val_priceYearly" data-val="<?php echo (float)($tierData['price_yearly'] ?? 0); ?>"><?php echo number_format((float)($tierData['price_yearly'] ?? 0), 2); ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="1" data-max="9999" data-decimal="true"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="10" data-max="9999" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
         
@@ -367,7 +405,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                 </div>
 
                 <!-- Límites Accordion -->
-                <div class="component-card--grouped component-accordion mt-4">
+                <div class="component-card--grouped component-accordion">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
@@ -506,7 +544,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                 </div>
 
                 <!-- Características Accordion -->
-                <div class="component-card--grouped component-accordion mt-4">
+                <div class="component-card--grouped component-accordion">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
@@ -553,7 +591,7 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                 </div>
 
                 <!-- Estilo y Diseño Accordion -->
-                <div class="component-card--grouped component-accordion mt-4">
+                <div class="component-card--grouped component-accordion">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">

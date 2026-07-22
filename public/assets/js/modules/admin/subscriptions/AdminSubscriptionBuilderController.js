@@ -379,25 +379,31 @@ class AdminSubscriptionBuilderController {
     }
     handleAdjustConfig(btn) {
         const field = btn.dataset.field;
-        const step = parseInt(btn.dataset.step, 10);
-        const min = btn.dataset.min !== undefined ? parseInt(btn.dataset.min, 10) : -999999;
-        const max = btn.dataset.max !== undefined ? parseInt(btn.dataset.max, 10) : 999999;
+        const isDecimal = btn.dataset.decimal === 'true';
+        const step = isDecimal ? parseFloat(btn.dataset.step) : parseInt(btn.dataset.step, 10);
+        const min = btn.dataset.min !== undefined ? parseFloat(btn.dataset.min) : -999999;
+        const max = btn.dataset.max !== undefined ? parseFloat(btn.dataset.max) : 999999;
         
         const center = document.querySelector(`[data-ref="val_${field}"]`);
         if (!center) return;
         
-        let currentVal = parseInt(center.dataset.val || 0, 10);
+        let currentVal = isDecimal ? parseFloat(center.dataset.val || 0) : parseInt(center.dataset.val || 0, 10);
         let newVal = currentVal + step;
         
         if (newVal < min) newVal = min;
         if (newVal > max) newVal = max;
         
-        center.dataset.val = newVal;
-        
-        if (newVal === -1 && (field === 'featMaxCanvases' || field === 'featMaxSnapshots')) {
-            center.textContent = '∞';
+        if (isDecimal) {
+            newVal = Math.round(newVal * 100) / 100;
+            center.dataset.val = newVal;
+            center.textContent = newVal.toFixed(2);
         } else {
-            center.textContent = newVal;
+            center.dataset.val = newVal;
+            if (newVal === -1 && (field === 'featMaxCanvases' || field === 'featMaxSnapshots')) {
+                center.textContent = '∞';
+            } else {
+                center.textContent = newVal;
+            }
         }
     }
     handleAdjustColorStop(btn) {
@@ -442,13 +448,12 @@ class AdminSubscriptionBuilderController {
     }
 
     detectModeAndLoad() {
-        const tierIdNode = document.getElementById('tierId');
-        if (tierIdNode) {
-            const id = tierIdNode.value.trim();
-            this.tierId = id !== '' ? id : null;
-            this.isEditing = id !== '';
-            this.isSystemTier = false; 
-            // NOTE: the backend restricts deleting system tiers by checking tier_level <= 1.
+        const wrapper = document.querySelector('[data-ref="admin-subscriptions-wrapper"]');
+        if (wrapper) {
+            const uuid = (wrapper.dataset.tierUuid || '').trim();
+            this.tierId = uuid !== '' ? uuid : null;
+            this.isEditing = uuid !== '';
+            this.isSystemTier = false;
         }
         
         if (this.isEditing) {
@@ -633,8 +638,8 @@ class AdminSubscriptionBuilderController {
     }
     extractFeaturesPayload() {
         const payload = {
-            price_monthly: parseFloat(document.getElementById('priceMonthly')?.value || 0),
-            price_yearly: parseFloat(document.getElementById('priceYearly')?.value || 0),
+            price_monthly: parseFloat(document.querySelector('[data-ref="val_priceMonthly"]')?.dataset.val || 0),
+            price_yearly: parseFloat(document.querySelector('[data-ref="val_priceYearly"]')?.dataset.val || 0),
             limits: {
                 max_canvases: parseInt(document.querySelector('[data-ref="val_featMaxCanvases"]')?.dataset.val || 0, 10),
                 max_storage_mb: parseInt(document.querySelector('[data-ref="val_featMaxStorage"]')?.dataset.val || 0, 10),

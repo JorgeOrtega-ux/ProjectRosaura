@@ -13,15 +13,24 @@ class SubscriptionPlanConstants {
         try {
             $db = new \App\Config\Database\DatabaseManager();
             $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $stmt = $pdo->prepare("SELECT features, name FROM subscription_tiers WHERE tier_level = ?");
+            $stmt = $pdo->prepare("SELECT * FROM subscription_tiers WHERE tier_level = ?");
             $stmt->execute([$tier]);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             if ($row) {
-                $features = json_decode($row['features'], true) ?? [];
-                
-                // Compatibility for old code that assumes limits are in the root of features array
-                $limits = $features['limits'] ?? $features;
-                $limits['name'] = $row['name'];
+                $limits = [
+                    'name' => $row['name'],
+                    'max_canvases' => (int)$row['max_canvases'],
+                    'max_storage_mb' => (int)$row['max_storage_mb'],
+                    'max_snapshots_per_canvas' => (int)$row['max_snapshots_per_canvas'],
+                    'max_members_per_canvas' => (int)$row['max_members_per_canvas'],
+                    'max_custom_palettes' => (int)$row['max_custom_palettes'],
+                    'feat_advanced_roles' => (bool)$row['feat_advanced_roles'],
+                    'feat_chat_restriction' => (bool)$row['feat_chat_restriction'],
+                    'feat_custom_palettes' => (bool)$row['feat_custom_palettes'],
+                    'feat_priority_rendering' => (bool)$row['feat_priority_rendering'],
+                    'feat_unlimited_exports' => (bool)$row['feat_unlimited_exports'],
+                    'feat_beta_access' => (bool)$row['feat_beta_access']
+                ];
                 
                 self::$tierLimitsCache[$tier] = $limits;
                 return $limits;
@@ -51,12 +60,11 @@ class SubscriptionPlanConstants {
         try {
             $db = new \App\Config\Database\DatabaseManager();
             $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $stmt = $pdo->query("SELECT tier_level, features FROM subscription_tiers");
+            $stmt = $pdo->query("SELECT tier_level, price_monthly, price_yearly FROM subscription_tiers");
             while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $features = json_decode($row['features'], true) ?? [];
                 $prices[(int)$row['tier_level']] = [
-                    'monthly' => (float)($features['price_monthly'] ?? 0),
-                    'yearly'  => (float)($features['price_yearly'] ?? 0)
+                    'monthly' => (float)$row['price_monthly'],
+                    'yearly'  => (float)$row['price_yearly']
                 ];
             }
         } catch (\Exception $e) {
@@ -72,7 +80,6 @@ class SubscriptionPlanConstants {
             $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
             $stmt = $pdo->query("SELECT * FROM subscription_tiers ORDER BY tier_level ASC");
             while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $row['features'] = json_decode($row['features'], true) ?? [];
                 $row['color'] = json_decode($row['color'], true) ?? [];
                 $tiers[] = $row;
             }

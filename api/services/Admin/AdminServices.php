@@ -693,19 +693,34 @@ class AdminServices {
         // Validation
         if (empty($name)) return ['success' => false, 'message' => 'Nombre requerido'];
         
-        $colorData = $data['color'];
+        $colorData = $data['color'] ?? [];
         if (is_array($colorData)) {
-            $colorString = json_encode($colorData);
+            $colorValidation = $this->validateAndFormatRoleColor($colorData);
+            if (!$colorValidation['valid']) {
+                return ['success' => false, 'message' => $colorValidation['message']];
+            }
+            $colorString = $colorValidation['color_string'];
         } else {
             $colorString = $colorData;
         }
 
         $featuresData = $data['features'] ?? [];
-        if (is_array($featuresData)) {
-            $featuresString = json_encode($featuresData);
-        } else {
-            $featuresString = $featuresData;
-        }
+        $priceMonthly = (float)($featuresData['price_monthly'] ?? 0);
+        $priceYearly = (float)($featuresData['price_yearly'] ?? 0);
+        
+        $limits = $featuresData['limits'] ?? [];
+        $maxCanvases = (int)($limits['max_canvases'] ?? 1);
+        $maxStorageMb = (int)($limits['max_storage_mb'] ?? 20);
+        $maxSnapshots = (int)($limits['max_snapshots_per_canvas'] ?? 10);
+        $maxMembers = (int)($limits['max_members_per_canvas'] ?? 10);
+        $maxCustomPalettes = (int)($limits['max_custom_palettes'] ?? 0);
+        
+        $featAdvancedRoles = empty($featuresData['feat_advanced_roles']) ? 0 : 1;
+        $featChatRestriction = empty($featuresData['feat_chat_restriction']) ? 0 : 1;
+        $featCustomPalettes = empty($featuresData['feat_custom_palettes']) ? 0 : 1;
+        $featPriorityRendering = empty($featuresData['feat_priority_rendering']) ? 0 : 1;
+        $featUnlimitedExports = empty($featuresData['feat_unlimited_exports']) ? 0 : 1;
+        $featBetaAccess = empty($featuresData['feat_beta_access']) ? 0 : 1;
 
         try {
             $db = new \App\Config\Database\DatabaseManager();
@@ -713,14 +728,14 @@ class AdminServices {
             
             if (!empty($uuid)) {
                 // Update
-                $stmt = $pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, is_active = ?, color = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, features = ? WHERE uuid = ?");
-                $stmt->execute([$name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $featuresString, $uuid]);
+                $stmt = $pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, is_active = ?, color = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, price_monthly = ?, price_yearly = ?, max_canvases = ?, max_storage_mb = ?, max_snapshots_per_canvas = ?, max_members_per_canvas = ?, max_custom_palettes = ?, feat_advanced_roles = ?, feat_chat_restriction = ?, feat_custom_palettes = ?, feat_priority_rendering = ?, feat_unlimited_exports = ?, feat_beta_access = ? WHERE uuid = ?");
+                $stmt->execute([$name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featPriorityRendering, $featUnlimitedExports, $featBetaAccess, $uuid]);
                 return ['success' => true, 'message' => 'Suscripción actualizada'];
             } else {
                 // Insert
                 $uuid = \App\Core\Helpers\Utils::generateUUID();
-                $stmt = $pdo->prepare("INSERT INTO subscription_tiers (uuid, name, tier_level, is_active, color, stripe_price_id_monthly, stripe_price_id_yearly, features) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$uuid, $name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $featuresString]);
+                $stmt = $pdo->prepare("INSERT INTO subscription_tiers (uuid, name, tier_level, is_active, color, stripe_price_id_monthly, stripe_price_id_yearly, price_monthly, price_yearly, max_canvases, max_storage_mb, max_snapshots_per_canvas, max_members_per_canvas, max_custom_palettes, feat_advanced_roles, feat_chat_restriction, feat_custom_palettes, feat_priority_rendering, feat_unlimited_exports, feat_beta_access) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$uuid, $name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featPriorityRendering, $featUnlimitedExports, $featBetaAccess]);
                 return ['success' => true, 'message' => 'Suscripción creada', 'data' => ['uuid' => $uuid]];
             }
         } catch (\PDOException $e) {

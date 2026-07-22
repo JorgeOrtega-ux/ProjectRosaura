@@ -20,21 +20,33 @@ CREATE TABLE IF NOT EXISTS `subscription_tiers` (
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `is_popular` tinyint(1) NOT NULL DEFAULT 0,
   `name` varchar(50) NOT NULL,
-  `color` varchar(512) NOT NULL DEFAULT '{"type":"solid","colors":["#808080"]}',
+  `color` varchar(512) NOT NULL DEFAULT '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}',
   `stripe_price_id_monthly` varchar(255) DEFAULT NULL,
   `stripe_price_id_yearly` varchar(255) DEFAULT NULL,
-  `features` json DEFAULT NULL,
+  `price_monthly` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `price_yearly` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `max_canvases` INT NOT NULL DEFAULT 1,
+  `max_storage_mb` INT NOT NULL DEFAULT 20,
+  `max_snapshots_per_canvas` INT NOT NULL DEFAULT 10,
+  `max_members_per_canvas` INT NOT NULL DEFAULT 10,
+  `max_custom_palettes` INT NOT NULL DEFAULT 0,
+  `feat_advanced_roles` tinyint(1) NOT NULL DEFAULT 0,
+  `feat_chat_restriction` tinyint(1) NOT NULL DEFAULT 0,
+  `feat_custom_palettes` tinyint(1) NOT NULL DEFAULT 0,
+  `feat_priority_rendering` tinyint(1) NOT NULL DEFAULT 0,
+  `feat_unlimited_exports` tinyint(1) NOT NULL DEFAULT 0,
+  `feat_beta_access` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tier_level` (`tier_level`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
-INSERT IGNORE INTO subscription_tiers (id, uuid, tier_level, is_active, is_popular, name, color, stripe_price_id_monthly, stripe_price_id_yearly, features) VALUES
-  (1, '23bfb9b0-4f5d-4f1a-b6ef-9f9e2b17f5a1', 0, 1, 0, 'Basica', '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', '{"is_popular":false,"price_monthly":0,"price_yearly":0,"limits":{"max_canvases":1,"max_storage_mb":20,"max_snapshots_per_canvas":10,"max_members_per_canvas":10,"max_custom_palettes":0},"feat_advanced_roles":false,"feat_chat_restriction":false,"feat_custom_palettes":false,"feat_priority_rendering":false,"feat_unlimited_exports":false,"feat_beta_access":false}'),
-  (2, '49bfa810-7b2c-4e81-a9f4-123456789abc', 1, 1, 0, 'Plus', '{"type":"gradient","angle":90,"colors":[{"hex":"#d32029","percentage":50},{"hex":"#206bd3","percentage":50}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', '{"is_popular":false,"price_monthly":4.99,"price_yearly":49.99,"limits":{"max_canvases":3,"max_storage_mb":200,"max_snapshots_per_canvas":25,"max_members_per_canvas":100,"max_custom_palettes":0},"feat_advanced_roles":false,"feat_chat_restriction":false,"feat_custom_palettes":false,"feat_priority_rendering":false,"feat_unlimited_exports":false,"feat_beta_access":false}'),
-  (3, '1c9f2231-5f21-4d9a-b851-9f9f2f111222', 2, 1, 1, 'Pro', '{"type":"gradient","angle":45,"colors":[{"hex":"#fd7e14","percentage":50},{"hex":"#ffc107","percentage":50}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', '{"is_popular":true,"price_monthly":9.99,"price_yearly":99.99,"limits":{"max_canvases":10,"max_storage_mb":1000,"max_snapshots_per_canvas":100,"max_members_per_canvas":2500,"max_custom_palettes":5},"feat_advanced_roles":true,"feat_chat_restriction":true,"feat_custom_palettes":true,"feat_priority_rendering":false,"feat_unlimited_exports":false,"feat_beta_access":false}'),
-  (4, '87cf9a91-4c12-4d2c-a222-7f8f9a92231c', 3, 1, 0, 'Ultra', '{"type":"gradient","angle":135,"colors":[{"hex":"#8a2387","percentage":0},{"hex":"#e94057","percentage":50},{"hex":"#f27121","percentage":100}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', '{"is_popular":false,"price_monthly":19.99,"price_yearly":199.99,"limits":{"max_canvases":50,"max_storage_mb":5000,"max_snapshots_per_canvas":-1,"max_members_per_canvas":50000,"max_custom_palettes":25},"feat_advanced_roles":true,"feat_chat_restriction":true,"feat_custom_palettes":true,"feat_priority_rendering":true,"feat_unlimited_exports":true,"feat_beta_access":true}');
+INSERT IGNORE INTO subscription_tiers (id, uuid, tier_level, is_active, is_popular, name, color, stripe_price_id_monthly, stripe_price_id_yearly, price_monthly, price_yearly, max_canvases, max_storage_mb, max_snapshots_per_canvas, max_members_per_canvas, max_custom_palettes, feat_advanced_roles, feat_chat_restriction, feat_custom_palettes, feat_priority_rendering, feat_unlimited_exports, feat_beta_access) VALUES
+  (1, '23bfb9b0-4f5d-4f1a-b6ef-9f9e2b17f5a1', 0, 1, 0, 'Basic', '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 0.00, 0.00, 1, 20, 10, 10, 0, 0, 0, 0, 0, 0, 0),
+  (2, '49bfa810-7b2c-4e81-a9f4-123456789abc', 1, 1, 0, 'Plus', '{"type":"solid","colors":[{"hex":"#28a745","percentage":100}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 4.99, 49.99, 3, 200, 25, 100, 0, 0, 0, 0, 0, 0, 0),
+  (3, '1c9f2231-5f21-4d9a-b851-9f9f2f111222', 2, 1, 1, 'Pro', '{"type":"solid","colors":[{"hex":"#fd7e14","percentage":100}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 9.99, 99.99, 10, 1000, 100, 2500, 5, 1, 1, 1, 0, 0, 0),
+  (4, '87cf9a91-4c12-4d2c-a222-7f8f9a92231c', 3, 1, 0, 'Ultra', '{"type":"gradient","angle":0,"colors":[{"hex":"#ff0000","percentage":25},{"hex":"#0000ff","percentage":25},{"hex":"#00ff00","percentage":25},{"hex":"#ffff00","percentage":25}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 19.99, 199.99, 50, 5000, -1, 50000, 25, 1, 1, 1, 1, 1, 1);
 
 CREATE TABLE IF NOT EXISTS `permissions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
