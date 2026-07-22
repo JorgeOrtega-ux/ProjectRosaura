@@ -53,7 +53,10 @@ $parseRoleColor = function($roleColorRaw) {
                 ?>
                 <div class="component-menu-link component-menu-link--bordered component-account-item" data-action="showSubMenu" data-menu-target="account-switcher">
                     <div class="component-avatar component-avatar--36 role-dynamic" data-role-bg="<?php echo $parseRoleColor($activeAcc['user_role_color'] ?? ''); ?>">
-                        <img src="<?php echo htmlspecialchars($activeAccPic); ?>" alt="<?php echo __('alt_avatar'); ?>" onerror="this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'">
+                        <img src="<?php echo htmlspecialchars($activeAccPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
+                             class="image-lazy-fade"
+                             onload="this.classList.add('image-loaded')"
+                             onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
                     </div>
                     <div class="component-account-info">
                         <span class="component-account-name"><?php echo htmlspecialchars($activeAcc['user_name'] ?? __('user')); ?></span>
@@ -129,7 +132,10 @@ $parseRoleColor = function($roleColorRaw) {
                 ?>
                 <div class="component-menu-link component-menu-link--bordered component-account-item <?php echo $isActive ? 'active' : ''; ?>" <?php if(!$isActive) echo 'data-action="switchAccount" data-id="'.$id.'"'; ?>>
                     <div class="component-avatar component-avatar--36 role-dynamic" data-role-bg="<?php echo $parseRoleColor($acc['user_role_color'] ?? ''); ?>">
-                        <img src="<?php echo htmlspecialchars($accPic); ?>" alt="<?php echo __('alt_avatar'); ?>" onerror="this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'">
+                        <img src="<?php echo htmlspecialchars($accPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
+                             class="image-lazy-fade"
+                             onload="this.classList.add('image-loaded')"
+                             onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
                     </div>
                     <div class="component-account-info">
                         <span class="component-account-name"><?php echo htmlspecialchars($acc['user_name'] ?? __('user')); ?></span>

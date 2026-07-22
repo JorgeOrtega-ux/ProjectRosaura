@@ -143,12 +143,13 @@ if ($error) {
                         $nameLabel = htmlspecialchars($canvasName);
                         ?>
                         <div class="component-gallery-card">
-                            <img src="<?php echo $imageUrl; ?>"
-                                 alt="<?php echo $nameLabel; ?>"
-                                 class="component-gallery-card__image"
-                                 loading="lazy"
+                            <img src="<?php echo $imageUrl; ?>" 
+                                 alt="<?php echo __('alt_snapshot'); ?>" 
+                                 class="component-gallery-card__image image-lazy-fade" 
+                                 loading="lazy" 
                                  decoding="async"
-                                 onerror="this.src='<?php echo htmlspecialchars($fallbackImg); ?>'">
+                                 onload="this.classList.add('image-loaded')"
+                                 onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/canvas-default.png'; this.classList.add('image-loaded');">
                             <div class="component-gallery-badges-container">
                                 <div class="component-badge component-badge--glass">
                                     <span class="material-symbols-rounded">history</span>

@@ -12,9 +12,11 @@ class AdminLogsController {
         this.handleInputBound = this.handleInput.bind(this);
         this.handleChangeBound = this.handleChange.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
+        this.filterTimeout = null;
     }
     init() {
         this.bindEvents();
+        this.initializeFiltersFromURL();
     }
     destroy() {
         if (this.abortController) {
@@ -93,6 +95,7 @@ class AdminLogsController {
             window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
 
             this.resetViewState();
+            this.updateFilterButtonsState();
         } catch (error) {
             if (error.name === 'AbortError') return;
             if (window.spaRouter) {
@@ -107,17 +110,7 @@ class AdminLogsController {
         }
     }
     resetViewState() {
-        const searchInput = document.querySelector('[data-ref="log-search-input"]');
-        if (searchInput) searchInput.value = '';
-        document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = true);
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar) {
-            searchToolbar.classList.remove('active');
-            searchToolbar.classList.add('disabled');
-        }
-        this.backToMainFilters();
         this.deselectLogs();
-        this.applyAllFilters();
     }
     handleClick(e) {
         if (!window.location.pathname.includes('/admin/logs') || window.location.pathname.includes('viewer')) return;
@@ -178,8 +171,30 @@ class AdminLogsController {
     }
     handleViewLoaded(e) {
         if (e.detail.url.includes('/admin/logs') && !e.detail.url.includes('viewer')) {
-            this.resetViewState();
+            this.initializeFiltersFromURL();
         }
+    }
+    initializeFiltersFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        const searchInput = document.querySelector('[data-ref="log-search-input"]');
+        if (searchInput) searchInput.value = urlParams.get('q') || '';
+        
+        const catParam = urlParams.get('category');
+        const catList = catParam ? catParam.split(',') : null;
+        document.querySelectorAll('.filter-checkbox[data-filter-type="category"]').forEach(cb => {
+            cb.checked = catList ? catList.includes(cb.value) : true;
+        });
+
+        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
+        if (searchToolbar && searchInput && searchInput.value !== '') {
+            searchToolbar.classList.remove('disabled');
+            searchToolbar.classList.add('active');
+        }
+
+        this.backToMainFilters();
+        this.updateFilterButtonsState();
+        this.deselectLogs();
     }
     openFilterSubMenu(btn) {
         const targetId = btn.getAttribute('data-target');
@@ -295,11 +310,12 @@ class AdminLogsController {
             if (iconElement) iconElement.textContent = 'table_rows';
         }
     }
-    applyAllFilters() {
+    updateFilterButtonsState() {
         const queryInput = document.querySelector('[data-ref="log-search-input"]');
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
         const catCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="category"]'));
         const checkedCats = catCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        
         const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
         if (searchBtn) {
             if (query.length > 0) searchBtn.classList.add('has-active-filter');
@@ -310,42 +326,34 @@ class AdminLogsController {
             if (checkedCats.length < catCheckboxes.length) filtersBtn.classList.add('has-active-filter');
             else filtersBtn.classList.remove('has-active-filter');
         }
-        const processContainer = (containerRef, emptyRef) => {
-            const container = document.querySelector(`[data-ref="${containerRef}"]`);
-            if (!container) return;
-            let visibleCount = 0;
-            let lastVisibleItem = null;
-            const items = container.querySelectorAll('[data-action="selectLog"]');
-            items.forEach(item => {
-                item.classList.remove('last-visible-row');
-                const itemCat = item.getAttribute('data-category');
-                const textContent = Array.from(item.querySelectorAll('.search-target'))
-                    .map(el => el.textContent.toLowerCase())
-                    .join(' ');
-                const matchesSearch = textContent.includes(query);
-                const matchesCat = checkedCats.includes(itemCat);
-                if (matchesSearch && matchesCat) {
-                    item.classList.remove('disabled');
-                    visibleCount++;
-                    lastVisibleItem = item;
-                } else {
-                    item.classList.add('disabled');
-                }
-            });
-            if (lastVisibleItem) {
-                lastVisibleItem.classList.add('last-visible-row');
-            }
-            const emptyElement = document.querySelector(`[data-ref="${emptyRef}"]`);
-            if (emptyElement) {
-                if (visibleCount === 0 && items.length > 0) {
-                    emptyElement.classList.remove('disabled');
-                } else {
-                    emptyElement.classList.add('disabled');
-                }
-            }
-        };
-        processContainer('view-cards', 'empty-search-cards');
-        processContainer('view-table', 'empty-search-table');
+    }
+
+    applyAllFilters() {
+        if (this.filterTimeout) clearTimeout(this.filterTimeout);
+        this.filterTimeout = setTimeout(() => {
+            this.executeServerFilters();
+        }, 400);
+    }
+
+    executeServerFilters() {
+        const queryInput = document.querySelector('[data-ref="log-search-input"]');
+        const query = (queryInput ? queryInput.value : '').trim();
+        const catCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="category"]'));
+        const checkedCats = catCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        
+        this.updateFilterButtonsState();
+        
+        const urlParams = new URLSearchParams();
+        urlParams.set('page', '1');
+        
+        if (query) urlParams.set('q', query);
+        
+        if (checkedCats.length < catCheckboxes.length) {
+            urlParams.set('category', checkedCats.join(','));
+        }
+        
+        const url = `${this.basePath}/admin/logs?${urlParams.toString()}`;
+        this.handlePagination(url);
     }
     viewSelectedLogs() {
         if (this.selectedLogs.size === 0) return;

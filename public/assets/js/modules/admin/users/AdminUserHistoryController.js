@@ -7,13 +7,14 @@ class AdminUserHistoryController {
         this.handlePaginationClickBound = this.handlePaginationClick.bind(this);
         this.handleGlobalChangeBound = this.handleGlobalChange.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
+        this.filterTimeout = null;
     }
     init() {
         if (this.isInitialized) return;
         this.isInitialized = true;
         this.abortController = new AbortController();
         this.bindEvents();
-        this.resetViewState();
+        this.initializeFiltersFromURL();
     }
     destroy() {
         if (this.abortController) this.abortController.abort();
@@ -51,12 +52,22 @@ class AdminUserHistoryController {
     }
     handleViewLoaded(e) {
         if (e.detail.url.includes('/admin/user-activity')) {
-            this.resetViewState();
+            this.initializeFiltersFromURL();
         }
     }
+    initializeFiltersFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        const catParam = urlParams.get('category');
+        const catList = catParam ? catParam.split(',') : null;
+        document.querySelectorAll('.filter-checkbox[data-filter-type="category"]').forEach(cb => {
+            cb.checked = catList ? catList.includes(cb.value) : true;
+        });
+
+        this.updateFilterButtonsState();
+    }
     resetViewState() {
-        document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = true);
-        this.applyAllFilters();
+        // Nothing to reset, selection state is managed by URL
     }
     async handlePagination(url) {
         const tableContainer = document.querySelector('[data-ref="view-table"]');
@@ -89,7 +100,7 @@ class AdminUserHistoryController {
                 });
             }
             window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
-            this.resetViewState();
+            this.updateFilterButtonsState();
         } catch (error) {
             if (error.name === 'AbortError') return;
             if (window.spaRouter) window.spaRouter.navigate(url);
@@ -100,7 +111,7 @@ class AdminUserHistoryController {
             }
         }
     }
-    applyAllFilters() {
+    updateFilterButtonsState() {
         const categoryCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="category"]'));
         const checkedCategories = categoryCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
         const filtersBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
@@ -112,29 +123,37 @@ class AdminUserHistoryController {
                 filtersBtn.classList.remove('has-active-filter');
             }
         }
-        const container = document.querySelector(`[data-ref="view-table"]`);
-        if (!container) return;
-        let visibleCount = 0;
-        let lastVisibleItem = null;
-        const items = container.querySelectorAll('tr.log-row');
-        items.forEach(item => {
-            item.classList.remove('last-visible-row');
-            const itemCategory = item.getAttribute('data-log-category') || 'other';
-            const matchesCategory = checkedCategories.includes(itemCategory) || itemCategory === 'other';
-            if (matchesCategory) {
-                item.classList.remove('disabled');
-                visibleCount++;
-                lastVisibleItem = item;
-            } else {
-                item.classList.add('disabled');
-            }
-        });
-        if (lastVisibleItem) lastVisibleItem.classList.add('last-visible-row');
-        const emptyElement = document.querySelector(`[data-ref="empty-search-table"]`);
-        if (emptyElement) {
-            if (visibleCount === 0 && items.length > 0) emptyElement.classList.remove('disabled');
-            else emptyElement.classList.add('disabled');
+    }
+
+    applyAllFilters() {
+        if (this.filterTimeout) clearTimeout(this.filterTimeout);
+        this.filterTimeout = setTimeout(() => {
+            this.executeServerFilters();
+        }, 400);
+    }
+
+    executeServerFilters() {
+        const categoryCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="category"]'));
+        const checkedCategories = categoryCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        
+        this.updateFilterButtonsState();
+        
+        const viewContent = document.querySelector('.view-content');
+        const targetUserId = viewContent ? viewContent.getAttribute('data-user-id') : null;
+        if (!targetUserId) return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('page', '1');
+        urlParams.set('id', targetUserId);
+        
+        if (checkedCategories.length < categoryCheckboxes.length) {
+            urlParams.set('category', checkedCategories.join(','));
+        } else {
+            urlParams.delete('category');
         }
+        
+        const url = `${this.basePath}/admin/user-activity?${urlParams.toString()}`;
+        this.handlePagination(url);
     }
 }
 export { AdminUserHistoryController };

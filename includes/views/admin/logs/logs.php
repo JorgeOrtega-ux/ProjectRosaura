@@ -35,8 +35,17 @@ if (is_dir($logBaseDir)) {
         return strtotime($b['modified_at']) - strtotime($a['modified_at']);
     });
 }
+$searchQuery = isset($_GET['q']) ? strtolower(trim($_GET['q'])) : '';
+$categoryFilter = isset($_GET['category']) && $_GET['category'] !== '' ? explode(',', $_GET['category']) : [];
+
+$filteredLogs = array_filter($logFiles, function($log) use ($searchQuery, $categoryFilter) {
+    if ($searchQuery !== '' && strpos(strtolower($log['filename']), $searchQuery) === false) return false;
+    if (!empty($categoryFilter) && !in_array($log['category'], $categoryFilter)) return false;
+    return true;
+});
+
 $limit = 25; 
-$totalLogs = count($logFiles);
+$totalLogs = count($filteredLogs);
 $totalPages = ceil($totalLogs / $limit);
 if ($totalPages < 1) $totalPages = 1;
 
@@ -45,11 +54,16 @@ if ($page < 1) $page = 1;
 if ($page > $totalPages) $page = $totalPages;
 
 $offset = ($page - 1) * $limit;
-$pagedLogs = array_slice($logFiles, $offset, $limit);
+$pagedLogs = array_slice($filteredLogs, $offset, $limit);
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
-$prevPageUrl = $page > 1 ? $appUrl . '/admin/logs?page=' . ($page - 1) : '#';
-$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/logs?page=' . ($page + 1) : '#';
+
+$queryParams = $_GET;
+unset($queryParams['url'], $queryParams['page']);
+$queryString = !empty($queryParams) ? '&' . http_build_query($queryParams) : '';
+
+$prevPageUrl = $page > 1 ? $appUrl . '/admin/logs?page=' . ($page - 1) . $queryString : '#';
+$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/logs?page=' . ($page + 1) . $queryString : '#';
 ?>
 
 <div class="view-content">
@@ -108,16 +122,19 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/logs?page=' . ($page + 1)
                                     </div>
                                 </div>
                                 <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                    <?php 
+                                    $checkedCategories = empty($categoryFilter) ? ['app', 'database', 'security'] : $categoryFilter;
+                                    ?>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="app" checked></div>
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="app" <?php echo in_array('app', $checkedCategories) ? 'checked' : ''; ?>></div>
                                         <div class="component-menu-link-text"><span><?php echo __('log_category_app'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="database" checked></div>
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="database" <?php echo in_array('database', $checkedCategories) ? 'checked' : ''; ?>></div>
                                         <div class="component-menu-link-text"><span><?php echo __('log_category_database'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="security" checked></div>
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="security" <?php echo in_array('security', $checkedCategories) ? 'checked' : ''; ?>></div>
                                         <div class="component-menu-link-text"><span><?php echo __('log_category_security'); ?></span></div>
                                     </label>
                                 </div>
@@ -149,7 +166,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/logs?page=' . ($page + 1)
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="log-search-input" placeholder="<?php echo __('search_log_placeholder'); ?>">
+                        <input type="text" data-ref="log-search-input" placeholder="<?php echo __('search_log_placeholder'); ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
                     </div>
                 </div>
             </div>

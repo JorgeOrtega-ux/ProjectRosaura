@@ -13,12 +13,14 @@ class AdminBackupsController {
         this.handleInputBound = this.handleInput.bind(this);
         this.handleChangeBound = this.handleChange.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
+        this.filterTimeout = null;
     }
     init() {
         if (this.isInitialized) return;
         this.isInitialized = true;
         this.abortController = new AbortController();
         this.bindEvents();
+        this.initializeFiltersFromURL();
     }
     destroy() {
         if (this.abortController) {
@@ -105,8 +107,36 @@ class AdminBackupsController {
     }
     handleViewLoaded(e) {
         if (e.detail.url.includes('/admin/backups') && !e.detail.url.includes('/admin/backup-schedule') && !e.detail.url.includes('/admin/backup-create') && !e.detail.url.includes('/admin/backup-restore')) {
-            this.resetViewState();
+            this.initializeFiltersFromURL();
         }
+    }
+    initializeFiltersFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        const searchInput = document.querySelector('[data-ref="backup-search-input"]');
+        if (searchInput) searchInput.value = urlParams.get('q') || '';
+        
+        const typesParam = urlParams.get('types');
+        const typesList = typesParam ? typesParam.split(',') : null;
+        document.querySelectorAll('.filter-checkbox[data-filter-type="type"]').forEach(cb => {
+            cb.checked = typesList ? typesList.includes(cb.value) : true;
+        });
+
+        const statusParam = urlParams.get('status');
+        const statusList = statusParam ? statusParam.split(',') : null;
+        document.querySelectorAll('.filter-checkbox[data-filter-type="status"]').forEach(cb => {
+            cb.checked = statusList ? statusList.includes(cb.value) : true;
+        });
+
+        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
+        if (searchToolbar && searchInput && searchInput.value !== '') {
+            searchToolbar.classList.remove('disabled');
+            searchToolbar.classList.add('active');
+        }
+
+        this.backToMainFilters();
+        this.updateFilterButtonsState();
+        this.deselectBackup();
     }
     async handlePagination(url) {
         const tableContainer = document.querySelector('[data-ref="view-table"]');
@@ -143,6 +173,7 @@ class AdminBackupsController {
             }
             window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
             this.resetViewState();
+            this.updateFilterButtonsState();
         } catch (error) {
             if (error.name === 'AbortError') return;
             if (window.spaRouter) window.spaRouter.navigate(url);
@@ -154,17 +185,7 @@ class AdminBackupsController {
         }
     }
     resetViewState() {
-        const searchInput = document.querySelector('[data-ref="backup-search-input"]');
-        if (searchInput) searchInput.value = '';
-        document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = true);
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar) {
-            searchToolbar.classList.remove('active');
-            searchToolbar.classList.add('disabled');
-        }
-        this.backToMainFilters();
         this.deselectBackup();
-        this.applyAllFilters();
     }
     openFilterSubMenu(btn) {
         const targetId = btn.getAttribute('data-target');
@@ -248,18 +269,21 @@ class AdminBackupsController {
             }
         }
     }
-    applyAllFilters() {
+    updateFilterButtonsState() {
         const queryInput = document.querySelector('[data-ref="backup-search-input"]');
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
         const typeCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="type"]'));
         const statusCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="status"]'));
+        
         const checkedTypes = typeCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
         const checkedStatuses = statusCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        
         const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
         if (searchBtn) {
             if (query.length > 0) searchBtn.classList.add('has-active-filter');
             else searchBtn.classList.remove('has-active-filter');
         }
+        
         const filtersBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
         if (filtersBtn) {
             const hasTypeFilter = checkedTypes.length < typeCheckboxes.length;
@@ -267,34 +291,40 @@ class AdminBackupsController {
             if (hasTypeFilter || hasStatusFilter) filtersBtn.classList.add('has-active-filter');
             else filtersBtn.classList.remove('has-active-filter');
         }
-        const container = document.querySelector(`[data-ref="view-table"]`);
-        if (!container) return;
-        let visibleCount = 0;
-        let lastVisibleItem = null;
-        const items = container.querySelectorAll('[data-action="selectBackup"]');
-        items.forEach(item => {
-            item.classList.remove('last-visible-row');
-            const itemType = item.getAttribute('data-type');
-            const itemStatus = item.getAttribute('data-status');
-            const textContent = Array.from(item.querySelectorAll('.search-target'))
-                .map(el => el.textContent.toLowerCase()).join(' ');
-            const matchesSearch = textContent.includes(query);
-            const matchesType = checkedTypes.includes(itemType);
-            const matchesStatus = checkedStatuses.includes(itemStatus);
-            if (matchesSearch && matchesType && matchesStatus) {
-                item.classList.remove('disabled');
-                visibleCount++;
-                lastVisibleItem = item;
-            } else {
-                item.classList.add('disabled');
-            }
-        });
-        if (lastVisibleItem) lastVisibleItem.classList.add('last-visible-row');
-        const emptyElement = document.querySelector(`[data-ref="empty-search-table"]`);
-        if (emptyElement) {
-            if (visibleCount === 0 && items.length > 0) emptyElement.classList.remove('disabled');
-            else emptyElement.classList.add('disabled');
+    }
+
+    applyAllFilters() {
+        if (this.filterTimeout) clearTimeout(this.filterTimeout);
+        this.filterTimeout = setTimeout(() => {
+            this.executeServerFilters();
+        }, 400);
+    }
+
+    executeServerFilters() {
+        const queryInput = document.querySelector('[data-ref="backup-search-input"]');
+        const query = (queryInput ? queryInput.value : '').trim();
+        const typeCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="type"]'));
+        const statusCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="status"]'));
+        
+        const checkedTypes = typeCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        const checkedStatuses = statusCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        
+        this.updateFilterButtonsState();
+        
+        const urlParams = new URLSearchParams();
+        urlParams.set('page', '1');
+        
+        if (query) urlParams.set('q', query);
+        
+        if (checkedTypes.length < typeCheckboxes.length) {
+            urlParams.set('types', checkedTypes.join(','));
         }
+        if (checkedStatuses.length < statusCheckboxes.length) {
+            urlParams.set('status', checkedStatuses.join(','));
+        }
+        
+        const url = `${this.basePath}/admin/backups?${urlParams.toString()}`;
+        this.handlePagination(url);
     }
     prepareRestore(btn) {
         if (!this.selectedBackupId) return;

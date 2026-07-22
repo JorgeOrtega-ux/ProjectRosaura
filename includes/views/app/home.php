@@ -54,3 +54,4 @@ $initialCanvasesJson = $initialCanvasesJson ?? '[]';
                     </div>
     </div>
 </div>
+

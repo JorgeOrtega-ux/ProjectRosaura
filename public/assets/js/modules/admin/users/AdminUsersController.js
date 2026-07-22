@@ -13,13 +13,14 @@ class AdminUsersController {
         this.handleGlobalInputBound = this.handleGlobalInput.bind(this);
         this.handleGlobalChangeBound = this.handleGlobalChange.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
+        this.filterTimeout = null;
     }
     init() {
         if (this.isInitialized) return;
         this.isInitialized = true;
         this.abortController = new AbortController();
         this.bindEvents();
-        this.resetViewState();
+        this.initializeFiltersFromURL();
         this.translateRolesInTable(); 
     }
     destroy() {
@@ -114,21 +115,39 @@ class AdminUsersController {
     }
     handleViewLoaded(e) {
         if (e.detail.url.includes('/admin/users')) {
-            this.resetViewState();
+            this.initializeFiltersFromURL();
             this.translateRolesInTable();
         }
     }
-    resetViewState() {
+    initializeFiltersFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
         const searchInput = document.querySelector('[data-ref="user-search-input"]');
-        if (searchInput) searchInput.value = '';
-        document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = true);
+        if (searchInput) searchInput.value = urlParams.get('q') || '';
+        
+        const rolesParam = urlParams.get('roles');
+        const rolesList = rolesParam ? rolesParam.split(',') : null;
+        document.querySelectorAll('.filter-checkbox[data-filter-type="role_id"]').forEach(cb => {
+            cb.checked = rolesList ? rolesList.includes(cb.value) : true;
+        });
+
+        const statusParam = urlParams.get('status');
+        const statusList = statusParam ? statusParam.split(',') : null;
+        document.querySelectorAll('.filter-checkbox[data-filter-type="status"]').forEach(cb => {
+            cb.checked = statusList ? statusList.includes(cb.value) : true;
+        });
+
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar) {
-            searchToolbar.classList.remove('active');
-            searchToolbar.classList.add('disabled');
+        if (searchToolbar && searchInput && searchInput.value !== '') {
+            searchToolbar.classList.remove('disabled');
+            searchToolbar.classList.add('active');
         }
+
         this.backToMainFilters();
-        this.applyAllFilters();
+        this.updateFilterButtonsState();
+        this.deselectUser();
+    }
+    resetViewState() {
         this.deselectUser(); 
     }
     async handlePagination(url) {
@@ -163,6 +182,7 @@ class AdminUsersController {
             }
             window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
             this.resetViewState();
+            this.updateFilterButtonsState();
             this.translateRolesInTable(); 
         } catch (error) {
             if (error.name === 'AbortError') return;
@@ -334,18 +354,21 @@ class AdminUsersController {
             }
         }
     }
-    applyAllFilters() {
+    updateFilterButtonsState() {
         const queryInput = document.querySelector('[data-ref="user-search-input"]');
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
         const roleCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="role_id"]'));
         const statusCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="status"]'));
+        
         const checkedRoles = roleCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
         const checkedStatuses = statusCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        
         const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
         if (searchBtn) {
             if (query.length > 0) searchBtn.classList.add('has-active-filter');
             else searchBtn.classList.remove('has-active-filter');
         }
+        
         const filtersBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
         if (filtersBtn) {
             const hasRoleFilter = checkedRoles.length < roleCheckboxes.length;
@@ -356,36 +379,40 @@ class AdminUsersController {
                 filtersBtn.classList.remove('has-active-filter');
             }
         }
-        const container = document.querySelector(`[data-ref="view-table"]`);
-        if (!container) return;
-        let visibleCount = 0;
-        let lastVisibleItem = null;
-        const items = container.querySelectorAll('[data-action="selectUser"]');
-        items.forEach(item => {
-            item.classList.remove('last-visible-row');
-            const itemRolesStr = item.getAttribute('data-roles-ids') || '';
-            const itemRoleIds = itemRolesStr.split(',').map(id => id.trim());
-            const itemStatus = item.getAttribute('data-status');
-            const textContent = Array.from(item.querySelectorAll('.search-target'))
-                .map(el => el.textContent.toLowerCase())
-                .join(' ');
-            const matchesSearch = textContent.includes(query);
-            const matchesRole = itemRoleIds.some(id => checkedRoles.includes(id));
-            const matchesStatus = checkedStatuses.includes(itemStatus);
-            if (matchesSearch && matchesRole && matchesStatus) {
-                item.classList.remove('disabled');
-                visibleCount++;
-                lastVisibleItem = item;
-            } else {
-                item.classList.add('disabled');
-            }
-        });
-        if (lastVisibleItem) lastVisibleItem.classList.add('last-visible-row');
-        const emptyElement = document.querySelector(`[data-ref="empty-search-table"]`);
-        if (emptyElement) {
-            if (visibleCount === 0 && items.length > 0) emptyElement.classList.remove('disabled');
-            else emptyElement.classList.add('disabled');
+    }
+
+    applyAllFilters() {
+        if (this.filterTimeout) clearTimeout(this.filterTimeout);
+        this.filterTimeout = setTimeout(() => {
+            this.executeServerFilters();
+        }, 400);
+    }
+
+    executeServerFilters() {
+        const queryInput = document.querySelector('[data-ref="user-search-input"]');
+        const query = (queryInput ? queryInput.value : '').trim();
+        const roleCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="role_id"]'));
+        const statusCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="status"]'));
+        
+        const checkedRoles = roleCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        const checkedStatuses = statusCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        
+        this.updateFilterButtonsState();
+        
+        const urlParams = new URLSearchParams();
+        urlParams.set('page', '1');
+        
+        if (query) urlParams.set('q', query);
+        
+        if (checkedRoles.length < roleCheckboxes.length) {
+            urlParams.set('roles', checkedRoles.join(','));
         }
+        if (checkedStatuses.length < statusCheckboxes.length) {
+            urlParams.set('status', checkedStatuses.join(','));
+        }
+        
+        const url = `${this.basePath}/admin/users?${urlParams.toString()}`;
+        this.handlePagination(url);
     }
 }
 export { AdminUsersController };

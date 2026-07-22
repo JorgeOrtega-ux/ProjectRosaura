@@ -16,8 +16,10 @@ class AdminRolesController {
         this.isInitialized = false; 
         this.selectedRoleId = null;
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
+        this.handlePaginationClickBound = this.handlePaginationClick.bind(this);
         this.handleGlobalInputBound = this.handleGlobalInput.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
+        this.filterTimeout = null;
     }
     init() {
         if (this.isInitialized) return;
@@ -35,21 +37,97 @@ class AdminRolesController {
         this.isInitialized = false;
     }
     bindEvents() {
+        document.addEventListener('click', this.handlePaginationClickBound, true);
         document.addEventListener('click', this.handleGlobalClickBound);
         document.addEventListener('input', this.handleGlobalInputBound);
         window.addEventListener('viewLoaded', this.handleViewLoadedBound);
     }
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/roles')) {
-            const searchInput = document.querySelector('[data-ref="role-search-input"]');
-            if (searchInput) searchInput.value = '';
-            const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-            if (searchToolbar) {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
+        if (e.detail.url.includes('/admin/roles') && !e.detail.url.includes('/admin/role-')) {
+            this.initializeFiltersFromURL();
+        }
+    }
+    initializeFiltersFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchInput = document.querySelector('[data-ref="role-search-input"]');
+        if (searchInput) searchInput.value = urlParams.get('q') || '';
+        
+        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
+        if (searchToolbar && searchInput && searchInput.value !== '') {
+            searchToolbar.classList.remove('disabled');
+            searchToolbar.classList.add('active');
+        }
+
+        this.updateFilterButtonsState();
+        this.deselectAll();
+    }
+    handlePaginationClick(e) {
+        const target = e.target.closest('a[href], button[data-nav]');
+        if (!target) return;
+        const url = target.getAttribute('href') || target.getAttribute('data-nav') || '';
+        const isPaginationLink = url.includes('page=') || target.closest('[class*="pagin"]') || target.closest('[data-ref="pagination-container"]');
+        
+        if (isPaginationLink && url !== '#' && !url.includes('javascript:')) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            this.handlePagination(url);
+        }
+    }
+    async handlePagination(url) {
+        const tableContainer = document.querySelector('[data-ref="roles-table-wrapper"]');
+        const emptyState = document.querySelector('[data-ref="roles-empty-state"]');
+        const currentPaginations = document.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
+        
+        const containerToDisable = tableContainer || emptyState;
+        if (containerToDisable) {
+            containerToDisable.classList.add('disabled-interaction');
+        }
+
+        try {
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+                signal: this.abortController.signal
+            });
+            if (!response.ok) throw new Error(`HTTP Status ${response.status}`);
+            
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const viewContent = document.querySelector('[data-ref="manageRolesView"]');
+            const newContent = doc.querySelector('[data-ref="manageRolesView"]');
+
+            if (viewContent && newContent) {
+                const bottomContainer = viewContent.querySelector('.component-bottom');
+                const newBottomContainer = newContent.querySelector('.component-bottom');
+                if (bottomContainer && newBottomContainer) {
+                    bottomContainer.innerHTML = newBottomContainer.innerHTML;
+                }
+
+                const newPaginations = doc.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
+                if (newPaginations.length > 0 && currentPaginations.length > 0) {
+                    currentPaginations.forEach((container, index) => {
+                        if(newPaginations[index]) {
+                            container.innerHTML = newPaginations[index].innerHTML;
+                            if (newPaginations[index].hasAttribute('data-tooltip')) {
+                                container.setAttribute('data-tooltip', newPaginations[index].getAttribute('data-tooltip'));
+                            }
+                        }
+                    });
+                }
             }
-            this.applyAllFilters();
+            window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
+            this.updateFilterButtonsState();
             this.deselectAll();
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            if (window.spaRouter) window.spaRouter.navigate(url);
+            else window.location.href = url;
+        } finally {
+            if (containerToDisable) {
+                containerToDisable.classList.remove('disabled-interaction');
+            }
         }
     }
     handleGlobalClick(e) {
@@ -94,7 +172,7 @@ class AdminRolesController {
             }
         }
     }
-    applyAllFilters() {
+    updateFilterButtonsState() {
         const queryInput = document.querySelector('[data-ref="role-search-input"]');
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
         const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
@@ -102,31 +180,32 @@ class AdminRolesController {
             if (query.length > 0) searchBtn.classList.add('has-active-filter');
             else searchBtn.classList.remove('has-active-filter');
         }
-        const container = document.querySelector(`[data-ref="roles-table-body"]`);
-        if (!container) return;
-        let visibleCount = 0;
-        let lastVisibleItem = null;
-        const items = container.querySelectorAll('[data-action="selectRoleRow"]');
-        items.forEach(item => {
-            item.classList.remove('last-visible-row');
-            const textContent = Array.from(item.querySelectorAll('.search-target'))
-                .map(el => el.textContent.toLowerCase())
-                .join(' ');
-            const matchesSearch = textContent.includes(query);
-            if (matchesSearch) {
-                item.classList.remove('disabled');
-                visibleCount++;
-                lastVisibleItem = item;
-            } else {
-                item.classList.add('disabled');
-            }
-        });
-        if (lastVisibleItem) lastVisibleItem.classList.add('last-visible-row');
-        const emptyElement = document.querySelector(`[data-ref="empty-search-table"]`);
-        if (emptyElement) {
-            if (visibleCount === 0 && items.length > 0) emptyElement.classList.remove('disabled');
-            else emptyElement.classList.add('disabled');
+    }
+    
+    applyAllFilters() {
+        if (this.filterTimeout) clearTimeout(this.filterTimeout);
+        this.filterTimeout = setTimeout(() => {
+            this.executeServerFilters();
+        }, 400);
+    }
+    
+    executeServerFilters() {
+        const queryInput = document.querySelector('[data-ref="role-search-input"]');
+        const query = (queryInput ? queryInput.value : '').trim();
+        
+        this.updateFilterButtonsState();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('page', '1');
+        
+        if (query) {
+            urlParams.set('q', query);
+        } else {
+            urlParams.delete('q');
         }
+
+        const url = `${this.basePath}/admin/roles?${urlParams.toString()}`;
+        this.handlePagination(url);
     }
     navigateToAddRole() {
         if (window.spaRouter) {

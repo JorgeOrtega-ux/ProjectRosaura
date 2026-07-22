@@ -724,7 +724,7 @@ export class DesignChat {
         }
         
         const fallbackUrl = `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`;
-        const avatarStr = `<img src="${avatarUrl}" class="chat-message-avatar-img" onerror="this.src='${fallbackUrl}'">`;
+        const avatarStr = `<img src="${avatarUrl}" class="chat-message-avatar-img image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('image-loaded');">`;
 
         const uniqueId = 'msg-menu-' + msg.id;
 
@@ -806,7 +806,7 @@ export class DesignChat {
                 let fallbackUrl = (window.AppBasePath || '') + '/public/assets/img/fallbacks/canvas-default.png';
                 attachmentsHtml += `
                 <div class="chat-attachment-item component-skeleton" data-action="openChatImageViewer" data-message-id="${msg.id}" data-index="${i}" data-canvas-uuid="${extractedUuid}">
-                    <img src="${url}" loading="lazy" onerror="this.src='${fallbackUrl}'; this.parentElement.classList.remove('component-skeleton');" onload="this.parentElement.classList.remove('component-skeleton')" />
+                    <img src="${url}" loading="lazy" class="image-lazy-fade" onload="this.classList.add('image-loaded'); this.parentElement.classList.remove('component-skeleton')" onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('image-loaded'); this.parentElement.classList.remove('component-skeleton');" />
                     ${overlay}
                 </div>
                 `;

@@ -29,7 +29,53 @@ $tblUserRestr = DB::TBL_USER_RESTRICTIONS;
 $stmtRoles = $pdo->query("SELECT id, name, color FROM {$tblRoles} ORDER BY id ASC");
 $allRoles = $stmtRoles->fetchAll(PDO::FETCH_ASSOC);
 
-$stmtCount = $pdo->query("SELECT COUNT(*) FROM {$tblUsers}");
+$searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
+$rolesFilter = isset($_GET['roles']) && $_GET['roles'] !== '' ? array_filter(array_map('intval', explode(',', $_GET['roles']))) : [];
+$statusFilter = isset($_GET['status']) && $_GET['status'] !== '' ? array_filter(explode(',', $_GET['status'])) : [];
+
+$whereConditions = ["1=1"];
+$params = [];
+
+if ($searchQuery !== '') {
+    $whereConditions[] = "(u.email LIKE :q OR u.username LIKE :q OR u.uuid LIKE :q)";
+    $params['q'] = '%' . $searchQuery . '%';
+}
+
+if (!empty($statusFilter)) {
+    $statusConditions = [];
+    if (in_array('active', $statusFilter)) {
+        $statusConditions[] = "(u.deletion_scheduled_at IS NULL AND (ur.is_suspended = 0 OR ur.is_suspended IS NULL))";
+    }
+    if (in_array('suspended', $statusFilter)) {
+        $statusConditions[] = "(u.deletion_scheduled_at IS NULL AND ur.is_suspended = 1)";
+    }
+    if (in_array('deleted', $statusFilter)) {
+        $statusConditions[] = "(u.deletion_scheduled_at IS NOT NULL)";
+    }
+    
+    if (!empty($statusConditions)) {
+        $whereConditions[] = "(" . implode(" OR ", $statusConditions) . ")";
+    } else {
+        $whereConditions[] = "1=0";
+    }
+}
+
+$whereClause = implode(" AND ", $whereConditions);
+
+$joinRole = "";
+if (!empty($rolesFilter)) {
+    $placeholders = [];
+    foreach ($rolesFilter as $i => $rId) {
+        $key = "role_" . $i;
+        $placeholders[] = ":" . $key;
+        $params[$key] = $rId;
+    }
+    $placeholdersStr = implode(',', $placeholders);
+    $joinRole = "INNER JOIN {$tblUserRoles} ur2 ON u.id = ur2.user_id AND ur2.role_id IN ($placeholdersStr)";
+}
+
+$stmtCount = $pdo->prepare("SELECT COUNT(DISTINCT u.id) FROM {$tblUsers} u LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id $joinRole WHERE $whereClause");
+$stmtCount->execute($params);
 $totalUsers = (int)$stmtCount->fetchColumn();
 
 $totalPages = ceil($totalUsers / $limit);
@@ -38,14 +84,19 @@ if ($page > $totalPages) {
     $page = $totalPages;
     $offset = ($page - 1) * $limit;
 }
-$stmt = $pdo->query("
+
+$stmt = $pdo->prepare("
     SELECT u.id, u.uuid, u.username, u.email, u.deletion_scheduled_at, 
            ur.is_suspended, u.profile_picture, u.created_at
     FROM {$tblUsers} u
     LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id
+    $joinRole
+    WHERE $whereClause
+    GROUP BY u.id
     ORDER BY u.id DESC 
     LIMIT $limit OFFSET $offset
 ");
+$stmt->execute($params);
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if (!empty($users)) {
@@ -88,8 +139,13 @@ if (!empty($users)) {
 }
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
-$prevPageUrl = $page > 1 ? $appUrl . '/admin/users?page=' . ($page - 1) : '#';
-$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1) : '#';
+
+$queryParams = $_GET;
+unset($queryParams['url'], $queryParams['page']); // Remove router params
+$queryString = !empty($queryParams) ? '&' . http_build_query($queryParams) : '';
+
+$prevPageUrl = $page > 1 ? $appUrl . '/admin/users?page=' . ($page - 1) . $queryString : '#';
+$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1) . $queryString : '#';
 ?>
 
 <div class="view-content">
@@ -179,9 +235,13 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                     </div>
                                 </div>
                                 <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
-                                    <?php foreach ($allRoles as $r): ?>
+                                    <?php 
+                                    $checkedRoles = empty($rolesFilter) ? array_column($allRoles, 'id') : $rolesFilter;
+                                    foreach ($allRoles as $r): 
+                                        $isChecked = in_array($r['id'], $checkedRoles) ? 'checked' : '';
+                                    ?>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="role_id" value="<?php echo htmlspecialchars($r['id']); ?>" checked></div>
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="role_id" value="<?php echo htmlspecialchars($r['id']); ?>" <?php echo $isChecked; ?>></div>
                                         <div class="component-menu-link-text"><span><?php echo htmlspecialchars($r['name']); ?></span></div>
                                     </label>
                                     <?php endforeach; ?>
@@ -199,16 +259,19 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                     </div>
                                 </div>
                                 <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                    <?php 
+                                    $checkedStatuses = empty($statusFilter) ? ['active', 'suspended', 'deleted'] : $statusFilter;
+                                    ?>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="status" value="active" checked></div>
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="status" value="active" <?php echo in_array('active', $checkedStatuses) ? 'checked' : ''; ?>></div>
                                         <div class="component-menu-link-text"><span><?php echo __('status_active'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="status" value="suspended" checked></div>
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="status" value="suspended" <?php echo in_array('suspended', $checkedStatuses) ? 'checked' : ''; ?>></div>
                                         <div class="component-menu-link-text"><span><?php echo __('status_suspended'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="status" value="deleted" checked></div>
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="status" value="deleted" <?php echo in_array('deleted', $checkedStatuses) ? 'checked' : ''; ?>></div>
                                         <div class="component-menu-link-text"><span><?php echo __('status_deleted'); ?></span></div>
                                     </label>
                                 </div>
@@ -240,7 +303,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="user-search-input" placeholder="<?php echo __('search_user_placeholder'); ?>">
+                        <input type="text" data-ref="user-search-input" placeholder="<?php echo __('search_user_placeholder'); ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
                     </div>
                 </div>
             </div>
@@ -301,7 +364,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                     <td>
                                         <div class="td-user-info">
                                             <div class="component-button--profile role-dynamic component-avatar--static-sm" data-role-bg="<?php echo htmlspecialchars($roleColorCSS); ?>">
-                                                <img src="<?php echo $appUrl . '/' . htmlspecialchars($validUserPic); ?>" alt="<?php echo __('alt_avatar'); ?>" onerror="this.src='<?php echo $appUrl; ?>/public/assets/img/fallbacks/avatar-default.png'">
+                                                <img src="<?php echo $appUrl . '/' . htmlspecialchars($validUserPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
+                                                     class="image-lazy-fade"
+                                                     onload="this.classList.add('image-loaded')"
+                                                     onerror="this.onerror=null; this.src='<?php echo $appUrl; ?>/public/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">person</span>

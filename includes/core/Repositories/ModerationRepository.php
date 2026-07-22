@@ -66,7 +66,7 @@ class ModerationRepository implements ModerationRepositoryInterface {
         }
     }
 
-    public function getUnifiedKardex(int $userId, int $limit, int $offset): array {
+    public function getUnifiedKardex(int $userId, int $limit, int $offset, array $categoryFilter = []): array {
         $tblModLogs = DB::TBL_MODERATION_LOGS;
         $tblProfileLogs = DB::TBL_PROFILE_CHANGES_LOG;
         $tblUsers = DB::TBL_USERS;
@@ -74,48 +74,71 @@ class ModerationRepository implements ModerationRepositoryInterface {
         $tblUserRoles = DB::TBL_USER_ROLES;
 
         try {
-            $sql = "
-                SELECT 
-                    ml.created_at,
-                    ml.action_type,
-                    ml.reason,
-                    u.username as admin_username,
-                    u.profile_picture as admin_profile_picture,
-                    admin_roles.top_role_name as admin_role,
-                    admin_roles.top_role_color as admin_role_color
-                FROM {$tblModLogs} ml
-                LEFT JOIN {$tblUsers} u ON ml.admin_id = u.id
-                LEFT JOIN (
-                    SELECT ur_top.user_id,
-                           SUBSTRING_INDEX(GROUP_CONCAT(r_top.name ORDER BY r_top.weight DESC), ',', 1) as top_role_name,
-                           SUBSTRING_INDEX(GROUP_CONCAT(r_top.color ORDER BY r_top.weight DESC SEPARATOR '|||'), '|||', 1) as top_role_color
-                    FROM {$tblUserRoles} ur_top
-                    INNER JOIN {$tblRoles} r_top ON ur_top.role_id = r_top.id
-                    GROUP BY ur_top.user_id
-                ) admin_roles ON admin_roles.user_id = ml.admin_id
-                WHERE ml.user_id = :userId1
+            $includeModeration = empty($categoryFilter) || in_array('moderation', $categoryFilter);
+            $includeRole = empty($categoryFilter) || in_array('role', $categoryFilter);
+            $includeProfile = empty($categoryFilter) || in_array('profile', $categoryFilter);
 
-                UNION ALL
+            $modFilter = "";
+            if (!$includeModeration && $includeRole) {
+                $modFilter = " AND ml.action_type = 'role_changed' ";
+            } elseif ($includeModeration && !$includeRole) {
+                $modFilter = " AND ml.action_type != 'role_changed' ";
+            }
 
-                SELECT 
-                    pl.created_at,
-                    CONCAT('profile_', pl.change_type) as action_type,
-                    CONCAT('{\"field\": \"', pl.change_type, '\", \"old\": \"', COALESCE(pl.old_value, 'null'), '\", \"new\": \"', COALESCE(pl.new_value, 'null'), '\"}') as reason,
-                    'user_action' as admin_username,
-                    (SELECT profile_picture FROM {$tblUsers} WHERE id = :userId2) as admin_profile_picture,
-                    'user' as admin_role,
-                    '{\"type\":\"solid\",\"colors\":[\"#808080\"]}' as admin_role_color
-                FROM {$tblProfileLogs} pl
-                WHERE pl.user_id = :userId3
+            $unions = [];
+            
+            if ($includeModeration || $includeRole) {
+                $unions[] = "
+                    SELECT 
+                        ml.created_at,
+                        ml.action_type,
+                        ml.reason,
+                        u.username as admin_username,
+                        u.profile_picture as admin_profile_picture,
+                        admin_roles.top_role_name as admin_role,
+                        admin_roles.top_role_color as admin_role_color
+                    FROM {$tblModLogs} ml
+                    LEFT JOIN {$tblUsers} u ON ml.admin_id = u.id
+                    LEFT JOIN (
+                        SELECT ur_top.user_id,
+                               SUBSTRING_INDEX(GROUP_CONCAT(r_top.name ORDER BY r_top.weight DESC), ',', 1) as top_role_name,
+                               SUBSTRING_INDEX(GROUP_CONCAT(r_top.color ORDER BY r_top.weight DESC SEPARATOR '|||'), '|||', 1) as top_role_color
+                        FROM {$tblUserRoles} ur_top
+                        INNER JOIN {$tblRoles} r_top ON ur_top.role_id = r_top.id
+                        GROUP BY ur_top.user_id
+                    ) admin_roles ON admin_roles.user_id = ml.admin_id
+                    WHERE ml.user_id = :userId1 {$modFilter}
+                ";
+            }
 
-                ORDER BY created_at DESC
-                LIMIT :limit OFFSET :offset
-            ";
+            if ($includeProfile) {
+                $unions[] = "
+                    SELECT 
+                        pl.created_at,
+                        CONCAT('profile_', pl.change_type) as action_type,
+                        CONCAT('{\"field\": \"', pl.change_type, '\", \"old\": \"', COALESCE(pl.old_value, 'null'), '\", \"new\": \"', COALESCE(pl.new_value, 'null'), '\"}') as reason,
+                        'user_action' as admin_username,
+                        (SELECT profile_picture FROM {$tblUsers} WHERE id = :userId3) as admin_profile_picture,
+                        'user' as admin_role,
+                        '{\"type\":\"solid\",\"colors\":[\"#808080\"]}' as admin_role_color
+                    FROM {$tblProfileLogs} pl
+                    WHERE pl.user_id = :userId3
+                ";
+            }
+
+            if (empty($unions)) {
+                return [];
+            }
+
+            $sql = implode(" UNION ALL ", $unions) . " ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
 
             $stmt = $this->pdo->prepare($sql);
-            $stmt->bindValue(':userId1', $userId, PDO::PARAM_INT);
-            $stmt->bindValue(':userId2', $userId, PDO::PARAM_INT);
-            $stmt->bindValue(':userId3', $userId, PDO::PARAM_INT);
+            if ($includeModeration || $includeRole) {
+                $stmt->bindValue(':userId1', $userId, PDO::PARAM_INT);
+            }
+            if ($includeProfile) {
+                $stmt->bindValue(':userId3', $userId, PDO::PARAM_INT);
+            }
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
@@ -127,20 +150,50 @@ class ModerationRepository implements ModerationRepositoryInterface {
         }
     }
 
-    public function countUnifiedKardex(int $userId): int {
+    public function countUnifiedKardex(int $userId, array $categoryFilter = []): int {
         $tblModLogs = DB::TBL_MODERATION_LOGS;
         $tblProfileLogs = DB::TBL_PROFILE_CHANGES_LOG;
 
         try {
+            $includeModeration = empty($categoryFilter) || in_array('moderation', $categoryFilter);
+            $includeRole = empty($categoryFilter) || in_array('role', $categoryFilter);
+            $includeProfile = empty($categoryFilter) || in_array('profile', $categoryFilter);
+
+            $modFilter = "";
+            if (!$includeModeration && $includeRole) {
+                $modFilter = " AND action_type = 'role_changed' ";
+            } elseif ($includeModeration && !$includeRole) {
+                $modFilter = " AND action_type != 'role_changed' ";
+            }
+
+            $unions = [];
+            
+            if ($includeModeration || $includeRole) {
+                $unions[] = "SELECT COUNT(id) as total FROM {$tblModLogs} WHERE user_id = ? {$modFilter}";
+            }
+
+            if ($includeProfile) {
+                $unions[] = "SELECT COUNT(id) as total FROM {$tblProfileLogs} WHERE user_id = ?";
+            }
+
+            if (empty($unions)) {
+                return 0;
+            }
+
             $sql = "
                 SELECT SUM(total) as count FROM (
-                    SELECT COUNT(id) as total FROM {$tblModLogs} WHERE user_id = ?
-                    UNION ALL
-                    SELECT COUNT(id) as total FROM {$tblProfileLogs} WHERE user_id = ?
+                    " . implode(" UNION ALL ", $unions) . "
                 ) as combined_counts
             ";
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$userId, $userId]);
+            $params = [];
+            if ($includeModeration || $includeRole) {
+                $params[] = $userId;
+            }
+            if ($includeProfile) {
+                $params[] = $userId;
+            }
+            $stmt->execute($params);
             return (int) $stmt->fetchColumn();
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);

@@ -12,11 +12,53 @@ $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
 $tblRoles = DB::TBL_ROLES;
 
-$stmt = $pdo->query("SELECT id, name, color, weight, is_system, created_at FROM {$tblRoles} ORDER BY id ASC");
+$searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
+$limit = 25;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+
+$searchCondition = "";
+$searchParams = [];
+if ($searchQuery !== '') {
+    $searchCondition = "WHERE name LIKE :search";
+    $searchParams[':search'] = '%' . $searchQuery . '%';
+}
+
+$stmtCount = $pdo->prepare("SELECT COUNT(id) FROM {$tblRoles} {$searchCondition}");
+foreach ($searchParams as $key => $val) {
+    $stmtCount->bindValue($key, $val);
+}
+$stmtCount->execute();
+$totalRoles = (int)$stmtCount->fetchColumn();
+
+$totalPages = ceil($totalRoles / $limit);
+if ($totalPages < 1) $totalPages = 1;
+if ($page > $totalPages) {
+    $page = $totalPages;
+}
+$offset = ($page - 1) * $limit;
+
+$stmt = $pdo->prepare("SELECT id, name, color, weight, is_system, created_at FROM {$tblRoles} {$searchCondition} ORDER BY id ASC LIMIT :limit OFFSET :offset");
+foreach ($searchParams as $key => $val) {
+    $stmt->bindValue($key, $val);
+}
+$stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+$stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+$stmt->execute();
 $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 $currentUserWeight = isset($_SESSION['user_role_weight']) ? (int)$_SESSION['user_role_weight'] : 0;
 $userRolesArray = isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles']) ? $_SESSION['user_roles'] : [];
 $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
+
+$appUrl = defined('APP_URL') ? APP_URL : '';
+
+$queryParams = $_GET;
+unset($queryParams['url'], $queryParams['page']);
+$queryString = !empty($queryParams) ? '&' . http_build_query($queryParams) : '';
+
+$prevPageUrl = $page > 1 ? $appUrl . '/admin/roles?page=' . ($page - 1) . $queryString : '#';
+$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1) . $queryString : '#';
 ?>
 <div class="view-content" data-ref="manageRolesView" data-current-user-weight="<?php echo $currentUserWeight; ?>" data-is-superadmin="<?php echo $isSuperAdmin; ?>">
     <div class="component-wrapper component-wrapper--full no-padding h-full-flex">
@@ -47,7 +89,7 @@ $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="searchRole" data-ref="btn-toggle-search" data-tooltip="<?php echo __('btn_search'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 <?php echo !empty($_GET['q']) ? 'has-active-filter' : ''; ?>" data-action="searchRole" data-ref="btn-toggle-search" data-tooltip="<?php echo __('btn_search'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">search</span>
                     </button>
                     
@@ -56,6 +98,20 @@ $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
                         <span class="material-symbols-rounded">add</span>
                     </button>
                     <?php endif; ?>
+
+                    <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]); ?>" data-position="bottom">
+                        <div class="component-inline-control__group">
+                            <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interaction' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
+                                <span class="material-symbols-rounded">chevron_left</span>
+                            </button>
+                        </div>
+                        <div class="component-inline-control__center"><?php echo $page; ?></div>
+                        <div class="component-inline-control__group">
+                            <button class="component-inline-control__btn <?php echo $page >= $totalPages ? 'disabled-interaction' : ''; ?>" <?php echo $page < $totalPages ? 'data-nav="'.$nextPageUrl.'"' : ''; ?>>
+                                <span class="material-symbols-rounded">chevron_right</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -65,7 +121,7 @@ $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="role-search-input" placeholder="<?php echo __('search_role_placeholder'); ?>">
+                        <input type="text" data-ref="role-search-input" placeholder="<?php echo __('search_role_placeholder'); ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
                     </div>
                 </div>
             </div>
@@ -123,7 +179,9 @@ $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
                             <td>
                                 <div class="td-user-info">
                                     <div class="component-button--profile role-dynamic component-avatar--static-sm" data-role-bg="<?php echo htmlspecialchars($cssColorValue); ?>">
-                                        <img src="/public/assets/img/fallbacks/avatar-default.png" alt="<?php echo __('alt_role_avatar'); ?>">
+                                        <img src="/public/assets/img/fallbacks/avatar-default.png" alt="<?php echo __('alt_role_avatar'); ?>"
+                                             class="image-lazy-fade"
+                                             onload="this.classList.add('image-loaded')">
                                     </div>
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded">admin_panel_settings</span>

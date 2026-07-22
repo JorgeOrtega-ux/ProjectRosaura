@@ -333,6 +333,9 @@ class CanvasCoreService {
                 $canvas['target_size'] = null;
             }
 
+            $isProgressive = Utils::isProgressiveLoadRequired($canvas['size']);
+            $canvas['progressive_load'] = $isProgressive;
+
             $redisKey = "canvas:{$canvasId}:state";
             $stateRaw = null;
             $redis = null;
@@ -353,17 +356,17 @@ class CanvasCoreService {
                 Logger::error('Error setting canvas config in Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
             }
 
-            try {
-                if ($redis && $redis->exists($redisKey)) {
-                    $stateRaw = $redis->get($redisKey);
+            if (!$isProgressive) {
+                try {
+                    if ($redis && $redis->exists($redisKey)) {
+                        $stateRaw = $redis->get($redisKey);
+                    }
+                } catch (Exception $e) {
+                    Logger::error('Error reading canvas from Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
                 }
-            } catch (Exception $e) {
-                Logger::error('Error reading canvas from Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
-            }
 
-            if ($stateRaw === null || $stateRaw === false) {
+                if ($stateRaw === null || $stateRaw === false) {
                     $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
-
                     if ($stateRaw && $redis) {
                         try {
                             $redis->set($redisKey, $stateRaw);
@@ -374,7 +377,6 @@ class CanvasCoreService {
                 if (!$stateRaw) {
                     $totalPixels = $width * $height;
                     $stateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $totalPixels); 
-                    
                     if ($redis) {
                         try {
                             $redis->set($redisKey, $stateRaw);
@@ -382,15 +384,26 @@ class CanvasCoreService {
                     }
                 }
 
-                $isProgressive = Utils::isProgressiveLoadRequired($canvas['size']);
-                $canvas['progressive_load'] = $isProgressive;
-
-                if ($isProgressive) {
-                    $canvas['state_base64'] = null;
-                } else {
-                    $canvas['state_base64'] = base64_encode(gzencode($stateRaw, 6));
+                $canvas['state_base64'] = base64_encode(gzencode($stateRaw, 6));
+            } else {
+                $canvas['state_base64'] = null;
+                
+                // For progressive load, just ensure Redis has the state initialized
+                try {
+                    if ($redis && !$redis->exists($redisKey)) {
+                        $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
+                        if (!$stateRaw) {
+                            $totalPixels = $width * $height;
+                            $stateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $totalPixels);
+                        }
+                        $redis->set($redisKey, $stateRaw);
+                    }
+                } catch (Exception $e) {
+                    Logger::error('Error initializing progressive canvas in Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
                 }
-                $canvas['is_compressed'] = true;
+            }
+
+            $canvas['is_compressed'] = true;
 
             return ['success' => true, 'data' => $canvas];
         } catch (Exception $e) {
@@ -902,7 +915,7 @@ class CanvasCoreService {
 
             $extractedViaRedis = false;
 
-            if (count($validChunkKeys) <= 8 && class_exists(RedisCache::class)) {
+            if (class_exists(RedisCache::class)) {
                 try {
                     $redisInstance = new RedisCache();
                     $redis = $redisInstance->getClient();
@@ -942,16 +955,23 @@ end
 return res
 LUA;
 
-                        $evalArgs = array_merge([$redisKey, $boardW, $boardH, $chunkSize], $validChunkKeys);
-                        $luaResult = $redis->eval($luaScript, $evalArgs, 1);
+                        $chunkBatches = array_chunk($validChunkKeys, 8);
+                        $extractedViaRedis = true;
+                        
+                        foreach ($chunkBatches as $batch) {
+                            $evalArgs = array_merge([$redisKey, $boardW, $boardH, $chunkSize], $batch);
+                            $luaResult = $redis->eval($luaScript, $evalArgs, 1);
 
-                        if (is_array($luaResult)) {
-                            $extractedViaRedis = true;
-                            $count = count($luaResult);
-                            for ($i = 0; $i < $count; $i += 2) {
-                                $cKey = $luaResult[$i];
-                                $cBuffer = $luaResult[$i + 1] ?? '';
-                                $responseChunks[$cKey] = base64_encode(gzencode($cBuffer, 1));
+                            if (is_array($luaResult)) {
+                                $count = count($luaResult);
+                                for ($i = 0; $i < $count; $i += 2) {
+                                    $cKey = $luaResult[$i];
+                                    $cBuffer = $luaResult[$i + 1] ?? '';
+                                    $responseChunks[$cKey] = base64_encode(gzencode($cBuffer, 1));
+                                }
+                            } else {
+                                $extractedViaRedis = false;
+                                break;
                             }
                         }
                     }
@@ -960,6 +980,7 @@ LUA;
                         'canvas_id' => $canvasId,
                         'error' => $e->getMessage()
                     ]);
+                    $extractedViaRedis = false;
                 }
             }
 

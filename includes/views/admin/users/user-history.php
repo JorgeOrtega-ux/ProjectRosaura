@@ -42,7 +42,10 @@ $targetUserId = (int)$user['id'];
 $limit = 25; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
-$totalItems = $modRepo->countUnifiedKardex($targetUserId);
+
+$categoryFilter = isset($_GET['category']) && $_GET['category'] !== '' ? explode(',', $_GET['category']) : [];
+
+$totalItems = $modRepo->countUnifiedKardex($targetUserId, $categoryFilter);
 
 $totalPages = ceil($totalItems / $limit);
 if ($totalPages < 1) $totalPages = 1;
@@ -51,15 +54,20 @@ if ($page > $totalPages) {
 }
 
 $offset = ($page - 1) * $limit;
-$paginatedLogs = $modRepo->getUnifiedKardex($targetUserId, $limit, $offset);
+$paginatedLogs = $modRepo->getUnifiedKardex($targetUserId, $limit, $offset, $categoryFilter);
 
 if (!is_array($paginatedLogs)) {
     $paginatedLogs = [];
 }
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
-$prevPageUrl = $page > 1 ? $appUrl . '/admin/user-activity?id=' . $targetUserId . '&page=' . ($page - 1) : '#';
-$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity?id=' . $targetUserId . '&page=' . ($page + 1) : '#';
+
+$queryParams = $_GET;
+unset($queryParams['url'], $queryParams['page']);
+$queryString = !empty($queryParams) ? '&' . http_build_query($queryParams) : '';
+
+$prevPageUrl = $page > 1 ? $appUrl . '/admin/user-activity?id=' . $targetUserId . '&page=' . ($page - 1) . $queryString : '#';
+$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity?id=' . $targetUserId . '&page=' . ($page + 1) . $queryString : '#';
 ?>
 <div class="view-content" data-user-id="<?php echo $targetUserId; ?>">
     <div class="component-top">
@@ -84,16 +92,19 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity?id=' . $tar
                                 </div>
                             </div>
                             <div class="component-menu-list component-menu-list--compact">
+                                <?php 
+                                $checkedCategories = empty($categoryFilter) ? ['moderation', 'role', 'profile'] : $categoryFilter;
+                                ?>
                                 <label class="component-menu-link component-menu-link--bordered">
-                                    <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="moderation" checked></div>
+                                    <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="moderation" <?php echo in_array('moderation', $checkedCategories) ? 'checked' : ''; ?>></div>
                                     <div class="component-menu-link-text"><span><?php echo __('filter_category_moderation'); ?></span></div>
                                 </label>
                                 <label class="component-menu-link component-menu-link--bordered">
-                                    <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="role" checked></div>
+                                    <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="role" <?php echo in_array('role', $checkedCategories) ? 'checked' : ''; ?>></div>
                                     <div class="component-menu-link-text"><span><?php echo __('filter_category_roles'); ?></span></div>
                                 </label>
                                 <label class="component-menu-link component-menu-link--bordered">
-                                    <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="profile" checked></div>
+                                    <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="profile" <?php echo in_array('profile', $checkedCategories) ? 'checked' : ''; ?>></div>
                                     <div class="component-menu-link-text"><span><?php echo __('filter_category_profile'); ?></span></div>
                                 </label>
                             </div>
@@ -255,7 +266,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity?id=' . $tar
                                     <td>
                                         <div class="td-user-info">
                                             <div class="component-button--profile role-dynamic component-avatar--static-sm">
-                                                <img src="<?php echo htmlspecialchars($adminPic); ?>" alt="<?php echo __('alt_avatar'); ?>">
+                                                <img src="<?php echo htmlspecialchars($adminPic); ?>" alt="<?php echo __('alt_avatar'); ?>"
+                                                     class="image-lazy-fade"
+                                                     onload="this.classList.add('image-loaded')"
+                                                     onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/public/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded"><?php echo $adminBadgeIcon; ?></span>

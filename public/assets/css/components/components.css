@@ -3268,9 +3268,15 @@ input:checked + .component-toggle-slider:before {
     width: 100%;
 }
 
+.virtual-card-container {
+    min-height: 180px;
+    width: 100%;
+}
+
+
 .component-gallery-card {
     height: 180px;
-    background-color: #e9ecef;
+    background-color: var(--bg-surface-alt, #1c1c20);
     border-radius: 12px;
     position: relative;
     outline: 2px solid transparent;
@@ -3284,7 +3290,7 @@ input:checked + .component-toggle-slider:before {
     content: '';
     position: absolute;
     inset: 0;
-    box-shadow: inset 0px -70px 50px -20px rgba(0, 0, 0, 0.7);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 30%, rgba(0, 0, 0, 0) 60%);
     pointer-events: none;
     z-index: 2; 
     border-radius: inherit; 
@@ -3294,6 +3300,28 @@ input:checked + .component-toggle-slider:before {
     outline: 2px solid var(--text-primary, #000000);
     outline-offset: 2px;
 }
+
+
+
+/* --- IMAGE LAZY FADE IN --- */
+.image-lazy-fade {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-lazy-fade.image-loaded {
+    opacity: 1;
+}
+
+/* Backgrounds for skeletons */
+.component-button--profile,
+.chat-message-avatar-img,
+.admin-avatar-container,
+.component-image-viewer-image,
+.component-gallery-card__image {
+    background-color: var(--bg-surface-alt, #1c1c20);
+}
+/* -------------------------------- */
 
 .component-gallery-card__image {
     position: absolute;
@@ -4490,7 +4518,7 @@ html.dark-theme .component-skeleton::after {
 }
 
 .component-skeleton--card {
-    height: 100px;
+    height: 180px;
     width: 100%;
     border-radius: 12px;
 }
@@ -4869,7 +4897,7 @@ html.dark-theme .component-skeleton::after {
 /* Skeleton and Loader Components */
 .component-skeleton--card {
     width: 100%;
-    aspect-ratio: 2/1;
+    height: 180px;
     border-radius: 12px;
 }
 

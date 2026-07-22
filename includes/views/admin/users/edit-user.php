@@ -105,7 +105,13 @@ $themeMap = [
                     <div class="component-group-item">
                          <div class="component-card__content">
                             <div class="component-avatar role-dynamic" data-ref="admin-profile-avatar-container" data-role-bg="<?php echo htmlspecialchars($activeRoleBg); ?>">
-                                <img src="<?php echo htmlspecialchars($formattedAvatar); ?>" alt="<?php echo __('alt_avatar'); ?>" onerror="this.src='<?php echo (defined('APP_URL') ? APP_URL : ''); ?>/public/assets/img/fallbacks/avatar-default.png'" data-ref="admin-profile-avatar-img" data-original-src="<?php echo htmlspecialchars($formattedAvatar); ?>" data-is-default="<?php echo $isDefaultAvatar ? 'true' : 'false'; ?>">
+                                <img src="<?php echo htmlspecialchars($formattedAvatar); ?>" alt="<?php echo __('alt_avatar'); ?>" 
+                                     class="image-lazy-fade"
+                                     onload="this.classList.add('image-loaded')"
+                                     onerror="this.onerror=null; this.src='<?php echo (defined('APP_URL') ? APP_URL : ''); ?>/public/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');"
+                                     data-ref="admin-profile-avatar-img" 
+                                     data-original-src="<?php echo htmlspecialchars($formattedAvatar); ?>" 
+                                     data-is-default="<?php echo $isDefaultAvatar ? 'true' : 'false'; ?>">
                                 <div class="component-avatar__overlay" data-ref="admin-profile-avatar-overlay">
                                     <span class="material-symbols-rounded">photo_camera</span>
                                 </div>

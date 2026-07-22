@@ -193,7 +193,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                     <td>
                                         <div class="td-user-info">
                                             <div class="component-button--profile role-dynamic component-avatar--static-sm" data-role-bg="<?php echo $roleColor; ?>">
-                                                <img src="<?php echo htmlspecialchars($avatar); ?>" alt="alt_avatar">
+                                                <img src="<?php echo htmlspecialchars($avatar); ?>" alt="alt_avatar"
+                                                     class="image-lazy-fade"
+                                                     onload="this.classList.add('image-loaded')"
+                                                     onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/public/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">person</span>

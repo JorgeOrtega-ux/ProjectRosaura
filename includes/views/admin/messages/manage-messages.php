@@ -16,18 +16,42 @@ $offset = ($page - 1) * $limit;
 
 $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'recent';
+$searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
 
 $db = new DatabaseManager(); 
 $pdoCanvases = $db->getConnection(DB::CONN_CANVASES);
 $pdoIdentity = $db->getConnection(DB::CONN_IDENTITY);
 
-if ($filter === 'reported') {
-    $stmtCount = $pdoCanvases->query("SELECT COUNT(DISTINCT message_id) FROM canvas_chat_reports");
-    $totalMessages = (int)$stmtCount->fetchColumn();
-} else {
-    $stmtCount = $pdoCanvases->query("SELECT COUNT(*) FROM canvas_chat_messages");
-    $totalMessages = (int)$stmtCount->fetchColumn();
+$havingClause = ($filter === 'reported') ? "HAVING report_count > 0" : "";
+$orderBy = ($sort === 'most_reported') ? "report_count DESC, m.id DESC" : "m.id DESC";
+
+$searchCondition = "";
+$searchParams = [];
+if ($searchQuery !== '') {
+    $searchCondition = "WHERE m.message LIKE :search OR m.id = :searchId OR m.uuid = :searchId";
+    $searchParams[':search'] = '%' . $searchQuery . '%';
+    $searchParams[':searchId'] = $searchQuery;
 }
+
+if ($filter === 'reported') {
+    $stmtCount = $pdoCanvases->prepare("
+        SELECT COUNT(DISTINCT m.id) 
+        FROM canvas_chat_messages m
+        INNER JOIN canvas_chat_reports r ON r.message_id = m.id
+        {$searchCondition}
+    ");
+} else {
+    $stmtCount = $pdoCanvases->prepare("
+        SELECT COUNT(m.id) 
+        FROM canvas_chat_messages m
+        {$searchCondition}
+    ");
+}
+foreach ($searchParams as $key => $val) {
+    $stmtCount->bindValue($key, $val);
+}
+$stmtCount->execute();
+$totalMessages = (int)$stmtCount->fetchColumn();
 
 $totalPages = ceil($totalMessages / $limit);
 if ($totalPages < 1) $totalPages = 1;
@@ -36,9 +60,6 @@ if ($page > $totalPages) {
     $offset = ($page - 1) * $limit;
 }
 
-$havingClause = ($filter === 'reported') ? "HAVING report_count > 0" : "";
-$orderBy = ($sort === 'most_reported') ? "report_count DESC, m.id DESC" : "m.id DESC";
-
 $messages = [];
 try {
     $stmt = $pdoCanvases->prepare("
@@ -46,11 +67,15 @@ try {
                COUNT(r.id) AS report_count
         FROM canvas_chat_messages m
         LEFT JOIN canvas_chat_reports r ON r.message_id = m.id
+        {$searchCondition}
         GROUP BY m.id, m.uuid, m.user_id, m.message, m.attachments, m.visibility, m.created_at, m.canvas_id
         {$havingClause}
         ORDER BY {$orderBy}
         LIMIT :limit OFFSET :offset
     ");
+    foreach ($searchParams as $key => $val) {
+        $stmt->bindValue($key, $val);
+    }
     $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
     $stmt->execute();
@@ -131,15 +156,16 @@ if (!empty($messages)) {
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
 
-function buildMessagesUrl($appUrl, $page, $filter, $sort) {
+function buildMessagesUrl($appUrl, $page, $filter, $sort, $searchQuery = '') {
     $params = ['page' => $page];
     if ($filter !== 'all') $params['filter'] = $filter;
     if ($sort !== 'recent') $params['sort'] = $sort;
+    if ($searchQuery !== '') $params['q'] = $searchQuery;
     return $appUrl . '/admin/messages?' . http_build_query($params);
 }
 
-$prevPageUrl = $page > 1 ? buildMessagesUrl($appUrl, $page - 1, $filter, $sort) : '#';
-$nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filter, $sort) : '#';
+$prevPageUrl = $page > 1 ? buildMessagesUrl($appUrl, $page - 1, $filter, $sort, $searchQuery) : '#';
+$nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filter, $sort, $searchQuery) : '#';
 ?>
 
 <div class="view-content">
@@ -158,7 +184,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                 </div>
                 <div class="component-actions active" data-ref="header-default-actions">
                     
-                    <button class="component-button component-button--icon component-button--h40 <?php echo !empty($_GET['search']) ? 'has-active-filter' : ''; ?>" data-action="searchMessages" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_placeholder'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 <?php echo !empty($_GET['q']) ? 'has-active-filter' : ''; ?>" data-action="searchMessages" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_placeholder'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">search</span>
                     </button>
 
@@ -201,11 +227,11 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                     </div>
                                 </div>
                                 <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
-                                    <a class="component-menu-link component-menu-link--bordered <?php echo $filter === 'all' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, 'all', $sort); ?>">
+                                    <a class="component-menu-link component-menu-link--bordered <?php echo $filter === 'all' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, 'all', $sort, $searchQuery); ?>">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">chat</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('filter_all'); ?></span></div>
                                     </a>
-                                    <a class="component-menu-link component-menu-link--bordered <?php echo $filter === 'reported' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, 'reported', $sort); ?>">
+                                    <a class="component-menu-link component-menu-link--bordered <?php echo $filter === 'reported' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, 'reported', $sort, $searchQuery); ?>">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">report</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('filter_reported'); ?></span></div>
                                     </a>
@@ -223,11 +249,11 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                     </div>
                                 </div>
                                 <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
-                                    <a class="component-menu-link component-menu-link--bordered <?php echo $sort === 'recent' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, $filter, 'recent'); ?>">
+                                    <a class="component-menu-link component-menu-link--bordered <?php echo $sort === 'recent' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, $filter, 'recent', $searchQuery); ?>">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('sort_recent'); ?></span></div>
                                     </a>
-                                    <a class="component-menu-link component-menu-link--bordered <?php echo $sort === 'most_reported' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, $filter, 'most_reported'); ?>">
+                                    <a class="component-menu-link component-menu-link--bordered <?php echo $sort === 'most_reported' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, $filter, 'most_reported', $searchQuery); ?>">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">bar_chart</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('sort_most_reported'); ?></span></div>
                                     </a>
@@ -260,7 +286,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="message-search-input" placeholder="<?php echo __('search_placeholder'); ?>">
+                        <input type="text" data-ref="message-search-input" placeholder="<?php echo __('search_placeholder'); ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
                     </div>
                 </div>
             </div>

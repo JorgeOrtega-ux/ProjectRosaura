@@ -10,12 +10,13 @@ class AdminMessagesController {
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
         this.handleGlobalInputBound = this.handleGlobalInput.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
+        this.filterTimeout = null;
     }
     init() {
         if (this.isInitialized) return;
         this.isInitialized = true;
         this.bindEvents();
-        this.resetViewState();
+        this.initializeFiltersFromURL();
     }
     destroy() {
         document.removeEventListener('click', this.handleGlobalClickBound);
@@ -66,19 +67,25 @@ class AdminMessagesController {
     }
     handleViewLoaded(e) {
         if (e.detail.url.includes('/admin/messages') && !e.detail.url.includes('/admin/messages/visibility') && !e.detail.url.includes('/admin/messages/reports')) {
-            this.resetViewState();
+            this.initializeFiltersFromURL();
         }
     }
-    resetViewState() {
+    initializeFiltersFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
         const searchInput = document.querySelector('[data-ref="message-search-input"]');
-        if (searchInput) searchInput.value = '';
+        if (searchInput) searchInput.value = urlParams.get('q') || '';
+        
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar) {
-            searchToolbar.classList.remove('active');
-            searchToolbar.classList.add('disabled');
+        if (searchToolbar && searchInput && searchInput.value !== '') {
+            searchToolbar.classList.remove('disabled');
+            searchToolbar.classList.add('active');
         }
+
         this.backToMainFilters();
-        this.applyAllFilters();
+        this.updateFilterButtonsState();
+        this.deselectMessage();
+    }
+    resetViewState() {
         this.deselectMessage();
     }
     openFilterSubMenu(btn) {
@@ -124,7 +131,7 @@ class AdminMessagesController {
             }
         }
     }
-    applyAllFilters() {
+    updateFilterButtonsState() {
         const queryInput = document.querySelector('[data-ref="message-search-input"]');
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
 
@@ -133,27 +140,37 @@ class AdminMessagesController {
             if (query.length > 0) searchBtn.classList.add('has-active-filter');
             else searchBtn.classList.remove('has-active-filter');
         }
+    }
 
-        const container = document.querySelector(`[data-ref="view-table"]`);
-        if (!container) return;
-        let visibleCount = 0;
-        const items = container.querySelectorAll('[data-action="selectMessage"]');
-        items.forEach(item => {
-            const textContent = Array.from(item.querySelectorAll('.search-target'))
-                .map(el => el.textContent.toLowerCase())
-                .join(' ');
-            const matchesSearch = textContent.includes(query);
-            if (matchesSearch) {
-                item.classList.remove('disabled');
-                visibleCount++;
-            } else {
-                item.classList.add('disabled');
-            }
-        });
-        const emptyElement = document.querySelector(`[data-ref="empty-search-table"]`);
-        if (emptyElement) {
-            if (visibleCount === 0 && items.length > 0) emptyElement.classList.remove('disabled');
-            else emptyElement.classList.add('disabled');
+    applyAllFilters() {
+        if (this.filterTimeout) clearTimeout(this.filterTimeout);
+        this.filterTimeout = setTimeout(() => {
+            this.executeServerFilters();
+        }, 400);
+    }
+
+    executeServerFilters() {
+        const queryInput = document.querySelector('[data-ref="message-search-input"]');
+        const query = (queryInput ? queryInput.value : '').trim();
+
+        this.updateFilterButtonsState();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('page', '1');
+        
+        if (query) {
+            urlParams.set('q', query);
+        } else {
+            urlParams.delete('q');
+        }
+
+        const basePath = window.AppBasePath || '';
+        const url = `${basePath}/admin/messages?${urlParams.toString()}`;
+        
+        if (window.spaRouter) {
+            window.spaRouter.navigate(url);
+        } else {
+            window.location.href = url;
         }
     }
     handleMessageSelection(rowElement) {

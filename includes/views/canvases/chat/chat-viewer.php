@@ -108,7 +108,9 @@ $attachmentsJson = json_encode($attachments);
             <div><?php echo htmlspecialchars($errorMsg); ?></div>
         <?php elseif ($totalImages > 0 || $isPending): ?>
             <div class="component-image-viewer-container">
-                <img id="cv-main-image" class="component-image-viewer-image" src="<?php echo $totalImages > 0 ? htmlspecialchars($attachments[$idx]) : ''; ?>">
+                <img id="cv-main-image" class="component-image-viewer-image image-lazy-fade" src="<?php echo $totalImages > 0 ? htmlspecialchars($attachments[$idx]) : ''; ?>"
+                     onload="this.classList.add('image-loaded')"
+                     onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/canvas-default.png'; this.classList.add('image-loaded');">
             </div>
         <?php else: ?>
             <div><?php echo __('lbl_no_images'); ?></div>

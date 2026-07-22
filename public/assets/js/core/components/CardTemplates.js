@@ -12,10 +12,11 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const imgHtml = `
             <img src="${srcUrl}" 
                  alt="${name}" 
-                 class="component-gallery-card__image" 
+                 class="component-gallery-card__image image-lazy-fade" 
                  loading="lazy" 
                  decoding="async" 
-                 onerror="this.src='${fallbackImg}'">`;
+                 onload="this.classList.add('image-loaded')"
+                 onerror="this.onerror=null; this.src='${fallbackImg}'; this.classList.add('image-loaded');">`;
 
         const onlinePlayers = parseInt(canvas.online_players || 0, 10);
         const membersCount = parseInt(canvas.members_count || 0, 10);

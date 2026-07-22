@@ -34,8 +34,19 @@ if (is_dir($backupDir)) {
     });
 }
 
+$searchQuery = isset($_GET['q']) ? strtolower(trim($_GET['q'])) : '';
+$typesFilter = isset($_GET['types']) && $_GET['types'] !== '' ? explode(',', $_GET['types']) : [];
+$statusFilter = isset($_GET['status']) && $_GET['status'] !== '' ? explode(',', $_GET['status']) : [];
+
+$filteredBackups = array_filter($backups, function($b) use ($searchQuery, $typesFilter, $statusFilter) {
+    if ($searchQuery !== '' && strpos(strtolower($b['filename']), $searchQuery) === false) return false;
+    if (!empty($typesFilter) && !in_array($b['type'], $typesFilter)) return false;
+    if (!empty($statusFilter) && !in_array($b['status'], $statusFilter)) return false;
+    return true;
+});
+
 $limit = 25; 
-$totalBackups = count($backups);
+$totalBackups = count($filteredBackups);
 $totalPages = ceil($totalBackups / $limit);
 if ($totalPages < 1) $totalPages = 1;
 
@@ -44,11 +55,16 @@ if ($page < 1) $page = 1;
 if ($page > $totalPages) $page = $totalPages;
 
 $offset = ($page - 1) * $limit;
-$pagedBackups = array_slice($backups, $offset, $limit);
+$pagedBackups = array_slice($filteredBackups, $offset, $limit);
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
-$prevPageUrl = $page > 1 ? $appUrl . '/admin/backups?page=' . ($page - 1) : '#';
-$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page + 1) : '#';
+
+$queryParams = $_GET;
+unset($queryParams['url'], $queryParams['page']);
+$queryString = !empty($queryParams) ? '&' . http_build_query($queryParams) : '';
+
+$prevPageUrl = $page > 1 ? $appUrl . '/admin/backups?page=' . ($page - 1) . $queryString : '#';
+$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page + 1) . $queryString : '#';
 ?>
 
 <div class="view-content">
@@ -114,12 +130,15 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                                     </div>
                                 </div>
                                 <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                    <?php 
+                                    $checkedTypes = empty($typesFilter) ? ['manual', 'auto'] : $typesFilter;
+                                    ?>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="type" value="manual" checked></div>
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="type" value="manual" <?php echo in_array('manual', $checkedTypes) ? 'checked' : ''; ?>></div>
                                         <div class="component-menu-link-text"><span><?php echo __('backup_type_manual'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="type" value="auto" checked></div>
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="type" value="auto" <?php echo in_array('auto', $checkedTypes) ? 'checked' : ''; ?>></div>
                                         <div class="component-menu-link-text"><span><?php echo __('backup_type_auto'); ?></span></div>
                                     </label>
                                 </div>
@@ -136,12 +155,15 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                                     </div>
                                 </div>
                                 <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                    <?php 
+                                    $checkedStatuses = empty($statusFilter) ? ['success', 'failed'] : $statusFilter;
+                                    ?>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="status" value="success" checked></div>
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="status" value="success" <?php echo in_array('success', $checkedStatuses) ? 'checked' : ''; ?>></div>
                                         <div class="component-menu-link-text"><span><?php echo __('status_completed'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="status" value="failed" checked></div>
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="status" value="failed" <?php echo in_array('failed', $checkedStatuses) ? 'checked' : ''; ?>></div>
                                         <div class="component-menu-link-text"><span><?php echo __('status_failed'); ?></span></div>
                                     </label>
                                 </div>
@@ -182,7 +204,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="backup-search-input" placeholder="<?php echo __('search_backup_placeholder'); ?>">
+                        <input type="text" data-ref="backup-search-input" placeholder="<?php echo __('search_backup_placeholder'); ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
                     </div>
                 </div>
             </div>

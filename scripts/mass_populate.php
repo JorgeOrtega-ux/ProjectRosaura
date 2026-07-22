@@ -2,8 +2,8 @@
 ini_set('memory_limit', '1024M');
 set_time_limit(0);
 
-$usersCount = 2000000;
-$canvasesCount = 2000000;
+$usersCount = 500000;
+$canvasesCount = 500000;
 
 $adminHash = '$2y$10$D00BhdO6zjC2Mr5E4f.KDuXQCN9G4d0.TCvs.s2iZPXwf4Omc31Me';
 $adminEmail = 'al20328051890088@gmail.com';
@@ -101,6 +101,9 @@ try {
     $pdoCanvases->exec("LOAD DATA LOCAL INFILE '$canvasesFile' INTO TABLE canvases FIELDS TERMINATED BY ',' ENCLOSED BY '\"' (id, uuid, owner_id, name, privacy, size, created_at)");
     
     $pdoCanvases->exec("SET FOREIGN_KEY_CHECKS = 1;");
+    
+    echo "Creando índice para el feed...\n";
+    $pdoCanvases->exec("CREATE INDEX idx_feed_sort ON canvases (is_official, created_at)");
     
     echo "Población masiva completada con éxito.\n";
     

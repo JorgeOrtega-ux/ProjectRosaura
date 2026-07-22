@@ -105,6 +105,8 @@ if ($isLoggedIn) {
                     <span class="material-symbols-rounded">warning</span>
                 </button>
             <?php endif; ?>
+            
+
 
             <?php if ($isLoggedIn && $hasCanvasAccess): ?>
                 <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleCanvases" data-tooltip="<?php echo __('tooltip_canvases'); ?>" data-position="bottom">
@@ -129,7 +131,9 @@ if ($isLoggedIn) {
                     <img src="<?php echo htmlspecialchars($userPic); ?>" 
                          alt="<?php echo __('alt_profile'); ?>"
                          decoding="async"
-                         onerror="this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'">
+                         class="image-lazy-fade"
+                         onload="this.classList.add('image-loaded')"
+                         onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
                 </button>
             <?php endif; ?>
         </div>
