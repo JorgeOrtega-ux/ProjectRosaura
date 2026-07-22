@@ -74,8 +74,8 @@ class AdminSubscriptionBuilderController {
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title" data-ref="blockTitle">${_t()}</h2>
-                            <p class="component-card__description" data-ref="blockDesc">${_t()}</p>
+                            <h2 class="component-card__title" data-ref="blockTitle">${_t('admin_color_block_title', 'Color')}</h2>
+                            <p class="component-card__description" data-ref="blockDesc">${_t('admin_color_block_desc', 'Selecciona un color para este bloque.')}</p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--start">
@@ -271,10 +271,14 @@ class AdminSubscriptionBuilderController {
         if (e.target.closest('[data-action="applyRoleName"]')) {
             this.handleApplyRoleName(e.target.closest('[data-action="applyRoleName"]'));
         }
+        const applyInlineBtn = e.target.closest('[data-action="applyInlineSetting"]');
+        if (applyInlineBtn) this.handleApplyInlineSetting(applyInlineBtn);
         const setColorTypeBtn = e.target.closest('[data-action="setColorType"]');
         if (setColorTypeBtn) this.handleSetColorType(setColorTypeBtn);
         const setAngleBtn = e.target.closest('[data-action="setGradientAngle"]');
         if (setAngleBtn) this.handleSetGradientAngle(setAngleBtn);
+        const adjustConfigBtn = e.target.closest('[data-action="adjustConfig"]');
+        if (adjustConfigBtn) this.handleAdjustConfig(adjustConfigBtn);
         const adjustColorBtn = e.target.closest('[data-action="adjustColorStop"]');
         if (adjustColorBtn) this.handleAdjustColorStop(adjustColorBtn);
         const addColorBtn = e.target.closest('[data-action="addGradientColor"]');
@@ -296,11 +300,21 @@ class AdminSubscriptionBuilderController {
         if (input && display) display.textContent = input.value.trim() || _t();
         const viewState = document.querySelector('[data-state="role-name-view"]');
         const editState = document.querySelector('[data-state="role-name-edit"]');
-        if (viewState && editState) {
-            editState.classList.remove('active');
-            editState.classList.add('disabled');
-            viewState.classList.remove('disabled');
-            viewState.classList.add('active'); 
+        if (viewState) { viewState.classList.remove('disabled'); viewState.classList.add('active'); }
+        if (editState) { editState.classList.remove('active'); editState.classList.add('disabled'); }
+    }
+    handleApplyInlineSetting(btn) {
+        const field = btn.getAttribute('data-field');
+        if (!field) return;
+        const input = document.querySelector(`[data-ref="input-${field}"]`);
+        const display = document.querySelector(`[data-ref="display-${field}"]`);
+        if (input && display) {
+            const val = input.value.trim();
+            display.textContent = val || 'No configurado';
+            input.setAttribute('data-original-value', val);
+        }
+        if (window.appInstance && typeof window.appInstance.toggleEditState === 'function') {
+            window.appInstance.toggleEditState(field);
         }
     }
     handleSetColorType(btn) {
@@ -356,6 +370,29 @@ class AdminSubscriptionBuilderController {
             btn.classList.add('active');
         }
         this.updateLivePreview();
+    }
+    handleAdjustConfig(btn) {
+        const field = btn.dataset.field;
+        const step = parseInt(btn.dataset.step, 10);
+        const min = btn.dataset.min !== undefined ? parseInt(btn.dataset.min, 10) : -999999;
+        const max = btn.dataset.max !== undefined ? parseInt(btn.dataset.max, 10) : 999999;
+        
+        const center = document.querySelector(`[data-ref="val_${field}"]`);
+        if (!center) return;
+        
+        let currentVal = parseInt(center.dataset.val || 0, 10);
+        let newVal = currentVal + step;
+        
+        if (newVal < min) newVal = min;
+        if (newVal > max) newVal = max;
+        
+        center.dataset.val = newVal;
+        
+        if (newVal === -1 && (field === 'featMaxCanvases' || field === 'featMaxSnapshots')) {
+            center.textContent = '∞';
+        } else {
+            center.textContent = newVal;
+        }
     }
     handleAdjustColorStop(btn) {
         const step = parseInt(btn.dataset.step, 10);
@@ -440,8 +477,8 @@ class AdminSubscriptionBuilderController {
             if (controlsContainer) controlsContainer.classList.add('disabled');
             const titleText = block.querySelector('[data-ref="blockTitle"]');
             const descText = block.querySelector('[data-ref="blockDesc"]');
-            if (titleText) titleText.textContent = _t();
-            if (descText) descText.textContent = _t();
+            if (titleText) titleText.textContent = _t('admin_solid_color_title', 'Color Principal');
+            if (descText) descText.textContent = _t('admin_solid_color_desc', 'El color único para esta suscripción.');
         } else {
             const actualPercentage = percentage !== null ? percentage : 0;
             const pCenter = block.querySelector('[data-ref="percentageCenter"]');
@@ -526,11 +563,11 @@ class AdminSubscriptionBuilderController {
     }
     extractFeaturesPayload() {
         return {
-            max_canvases: parseInt(document.getElementById('featMaxCanvases')?.value || 0, 10),
-            max_storage_mb: parseInt(document.getElementById('featMaxStorage')?.value || 0, 10),
-            max_snapshots_per_canvas: parseInt(document.getElementById('featMaxSnapshots')?.value || 0, 10),
-            max_members_per_canvas: parseInt(document.getElementById('featMaxMembers')?.value || 0, 10),
-            max_custom_palettes: parseInt(document.getElementById('featMaxCustomPalettes')?.value || 0, 10),
+            max_canvases: parseInt(document.querySelector('[data-ref="val_featMaxCanvases"]')?.dataset.val || 0, 10),
+            max_storage_mb: parseInt(document.querySelector('[data-ref="val_featMaxStorage"]')?.dataset.val || 0, 10),
+            max_snapshots_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxSnapshots"]')?.dataset.val || 0, 10),
+            max_members_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxMembers"]')?.dataset.val || 0, 10),
+            max_custom_palettes: parseInt(document.querySelector('[data-ref="val_featMaxCustomPalettes"]')?.dataset.val || 0, 10),
             advanced_roles: document.getElementById('featAdvancedRoles')?.checked || false,
             live_templates: document.getElementById('featLiveTemplates')?.checked || false,
             extended_palettes: document.getElementById('featExtendedPalettes')?.checked || false,
@@ -541,10 +578,11 @@ class AdminSubscriptionBuilderController {
 
     async saveTier(btn) {
         const nameInput = document.getElementById('tierName');
-        const levelInput = document.getElementById('tierLevel');
-        const stripeMonthly = document.getElementById('stripeMonthly');
-        const stripeYearly = document.getElementById('stripeYearly');
+        const stripeMonthly = document.querySelector('[data-ref="input-stripe-monthly"]');
+        const stripeYearly = document.querySelector('[data-ref="input-stripe-yearly"]');
 
+        const levelCenter = document.querySelector('[data-ref="val_tierLevel"]');
+        
         const tierName = nameInput ? nameInput.value.trim() : '';
         if (!tierName) {
             showMessage('Nombre requerido', 'error');
@@ -559,7 +597,7 @@ class AdminSubscriptionBuilderController {
         const payload = {
             id: this.tierId,
             name: tierName,
-            tier_level: parseInt(levelInput.value || 1, 10),
+            tier_level: parseInt(levelCenter ? levelCenter.dataset.val : 1, 10),
             color: colorPayload,
             stripe_price_id_monthly: stripeMonthly ? stripeMonthly.value.trim() : '',
             stripe_price_id_yearly: stripeYearly ? stripeYearly.value.trim() : '',

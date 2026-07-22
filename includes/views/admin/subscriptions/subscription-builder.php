@@ -1,4 +1,4 @@
-<?php
+<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\Database\DatabaseManager;
@@ -75,24 +75,77 @@ function renderColorBlock($hex, $percentage, $isSolid = false) {
     $hue = $hsv['h'];
     $sat = $hsv['s'];
     $val = $hsv['v'];
-    $html = '<div class="component-color-item" data-hue="' . $hue . '" data-saturation="' . $sat . '" data-value="' . $val . '">';
-    $html .= '<div class="component-color-item__drag" ' . ($isSolid ? 'style="display:none;"' : '') . '><span class="material-symbols-rounded">drag_indicator</span></div>';
-    $html .= '<div class="component-color-item__preview" style="background-color: ' . htmlspecialchars($hex) . ';"></div>';
-    $html .= '<div class="component-color-item__content">';
-    $html .= '<div class="component-color-item__hex">';
-    $html .= '<span>HEX</span>';
-    $html .= '<input type="text" class="component-input component-input--h32 hex-input" value="' . htmlspecialchars($hex) . '" maxlength="7">';
-    $html .= '</div>';
-    if (!$isSolid) {
-        $html .= '<div class="component-color-item__percentage">';
-        $html .= '<span>%</span>';
-        $html .= '<input type="number" class="component-input component-input--h32 percentage-input" value="' . (int)$percentage . '" min="0" max="100">';
-        $html .= '</div>';
+    $id = 'cp_' . uniqid();
+    
+    $title = $isSolid ? __('admin_solid_color_title') : __('admin_color_block_title');
+    if (!$title || $title === 'admin_solid_color_title' || $title === 'admin_color_block_title') {
+        $title = $isSolid ? 'Color Principal' : 'Color';
     }
-    $html .= '</div>';
-    if (!$isSolid) {
-        $html .= '<button type="button" class="component-button component-button--icon component-button--h32 component-button--ghost component-color-item__remove" data-action="removeGradientColor"><span class="material-symbols-rounded">close</span></button>';
+    $desc = $isSolid ? __('admin_solid_color_desc') : __('admin_color_block_desc');
+    if (!$desc || $desc === 'admin_solid_color_desc' || $desc === 'admin_color_block_desc') {
+        $desc = $isSolid ? 'El color único para esta suscripción.' : 'Selecciona un color para este bloque.';
     }
+    
+    $actualPercentage = $percentage !== null ? (int)$percentage : 0;
+    $controlsClass = $isSolid ? 'component-color-picker__controls disabled' : 'component-color-picker__controls';
+    
+    $html = '<div class="component-color-row" data-component="color-block">';
+    $html .= '  <div class="component-group-item component-group-item--stacked">';
+    $html .= '      <div class="component-card__content">';
+    $html .= '          <div class="component-card__text">';
+    $html .= '              <h2 class="component-card__title" data-ref="blockTitle">' . htmlspecialchars($title) . '</h2>';
+    $html .= '              <p class="component-card__description" data-ref="blockDesc">' . htmlspecialchars($desc) . '</p>';
+    $html .= '          </div>';
+    $html .= '      </div>';
+    $html .= '      <div class="component-card__actions component-card__actions--start">';
+    $html .= '          <div class="component-dropdown-wrapper component-dropdown-wrapper--color" data-ref="dropdownWrapper">';
+    $html .= '              <div class="component-dropdown-trigger component-dropdown-trigger--color" data-action="toggleModule" data-target="' . $id . '">';
+    $html .= '                  <div class="component-dropdown-trigger__left">';
+    $html .= '                      <div class="component-color-swatch" data-ref="triggerPreview" style="background-color: ' . htmlspecialchars($hex) . ';"></div>';
+    $html .= '                      <span class="component-dropdown-text component-text--mono" data-ref="triggerHex">' . htmlspecialchars(strtoupper($hex)) . '</span>';
+    $html .= '                  </div>';
+    $html .= '                  <span class="material-symbols-rounded">expand_more</span>';
+    $html .= '              </div>';
+    $html .= '              <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="' . $id . '" data-ref="componentModule">';
+    $html .= '                  <div class="component-menu component-menu--w-full component-menu--h-auto">';
+    $html .= '                      <div class="pill-container"><div class="drag-handle"></div></div>';
+    $html .= '                      <div class="component-color-picker" data-ref="customColorPicker" data-h="' . $hue . '" data-s="' . $sat . '" data-v="' . $val . '">';
+    $html .= '                          <div class="component-color-picker__sv-area" data-action="dragSV" style="background-color: hsl(' . $hue . ', 100%, 50%);">';
+    $html .= '                              <div class="component-color-picker__sv-bg"></div>';
+    $html .= '                              <div class="component-color-picker__sv-thumb" data-ref="svThumb" style="left: ' . $sat . '%; top: ' . (100 - $val) . '%;"></div>';
+    $html .= '                          </div>';
+    $html .= '                          <div class="component-color-picker__hue-area" data-action="dragHue">';
+    $html .= '                              <div class="component-color-picker__hue-thumb" data-ref="hueThumb" style="left: ' . ($hue / 360 * 100) . '%;"></div>';
+    $html .= '                          </div>';
+    $html .= '                          <div class="component-input-group component-input-group--h34 component-input-group--color">';
+    $html .= '                              <div class="component-color-swatch component-color-swatch--sm" data-ref="hexInputPreview" style="background-color: ' . htmlspecialchars($hex) . ';"></div>';
+    $html .= '                              <input type="text" class="component-input-field component-input-field--mono" data-ref="hexInput" value="' . htmlspecialchars(strtoupper($hex)) . '" readonly>';
+    $html .= '                          </div>';
+    $html .= '                          <div class="' . $controlsClass . '" data-ref="controlsContainer">';
+    $html .= '                              <div class="component-inline-control component-inline-control--fixed component-color-picker__percentage" data-ref="percentageControl">';
+    $html .= '                                  <div class="component-inline-control__group">';
+    $html .= '                                      <button type="button" class="component-inline-control__btn" data-action="adjustColorStop" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>';
+    $html .= '                                      <button type="button" class="component-inline-control__btn" data-action="adjustColorStop" data-step="-5"><span class="material-symbols-rounded">chevron_left</span></button>';
+    $html .= '                                  </div>';
+    $html .= '                                  <div class="component-inline-control__center" data-val="' . $actualPercentage . '" data-ref="percentageCenter">';
+    $html .= '                                      <span data-ref="stopValueDisplay">' . $actualPercentage . '</span>%';
+    $html .= '                                  </div>';
+    $html .= '                                  <div class="component-inline-control__group">';
+    $html .= '                                      <button type="button" class="component-inline-control__btn" data-action="adjustColorStop" data-step="5"><span class="material-symbols-rounded">chevron_right</span></button>';
+    $html .= '                                      <button type="button" class="component-inline-control__btn" data-action="adjustColorStop" data-step="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>';
+    $html .= '                                  </div>';
+    $html .= '                              </div>';
+    $html .= '                              <button type="button" class="component-button component-button--icon component-button--h40 btn-delete-color" data-action="removeGradientColor" data-ref="deleteBtn">';
+    $html .= '                                  <span class="material-symbols-rounded">delete</span>';
+    $html .= '                              </button>';
+    $html .= '                          </div>';
+    $html .= '                      </div>';
+    $html .= '                  </div>';
+    $html .= '              </div>';
+    $html .= '          </div>';
+    $html .= '      </div>';
+    $html .= '  </div>';
+    $html .= '  <hr class="component-divider" data-ref="blockDivider">';
     $html .= '</div>';
     return $html;
 }
@@ -122,274 +175,125 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
     </div>
 
     <div class="component-viewport">
-        <div class="component-wrapper component-wrapper--full">
+        <div class="component-wrapper">
             <div class="component-bottom">
                 
                 <input type="hidden" id="tierId" value="<?php echo $tierData['id']; ?>">
                 
-                <div style="display: grid; grid-template-columns: 1fr 400px; gap: 24px; align-items: start;">
-                <div class="section-details">
-                <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--wrap">
+                <!-- Detalles Accordion -->
+                <div class="component-card--grouped component-accordion">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">diamond</span>
+                            </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Nombre de Suscripción</h2>
-                                <p class="component-card__description">Identificador principal para esta suscripción.</p>
+                                <h2 class="component-card__title">Detalles de Suscripción</h2>
+                                <p class="component-card__description">Configura los datos básicos e identificadores.</p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <div class="component-input-group component-input-group--h34">
-                                <input type="text" id="tierName" class="component-input-field component-input-field--simple" placeholder="Ej. Pro, Ultra" value="<?php echo htmlspecialchars($tierData['name']); ?>">
-                            </div>
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
                         </div>
                     </div>
-                    
-                    <hr class="component-divider">
-                    
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Nivel (Tier)</h2>
-                                <p class="component-card__description">Jerarquía numérica (0 = free, 1 = plus, etc).</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <div class="component-input-group component-input-group--h34">
-                                <input type="number" id="tierLevel" class="component-input-field component-input-field--simple" value="<?php echo (int)$tierData['tier_level']; ?>" min="0" style="width:100px;text-align:center;">
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Stripe Price IDs</h2>
-                                <p class="component-card__description">Identificadores para la facturación en Stripe (Mensual / Anual).</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <div class="component-input-group component-input-group--h34" style="margin-right: 8px;">
-                                <input type="text" id="stripeMonthly" class="component-input-field component-input-field--simple" placeholder="Mensual" value="<?php echo htmlspecialchars($tierData['stripe_price_id_monthly']); ?>">
-                            </div>
-                            <div class="component-input-group component-input-group--h34">
-                                <input type="text" id="stripeYearly" class="component-input-field component-input-field--simple" placeholder="Anual" value="<?php echo htmlspecialchars($tierData['stripe_price_id_yearly']); ?>">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="component-header-card" style="margin-top: 32px; padding: 0 16px 16px;">
-                    <h2 class="component-page-title" style="font-size: 1.1rem;">Límites y Beneficios</h2>
-                    <p class="component-page-description">Configura los beneficios que obtienen los usuarios con esta suscripción.</p>
-                </div>
-
-                <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Lienzos Máximos</h2>
-                                <p class="component-card__description">Cantidad de lienzos permitidos (-1 para ilimitado).</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <div class="component-input-group component-input-group--h34">
-                                <input type="number" id="featMaxCanvases" class="component-input-field component-input-field--simple" value="<?php echo (int)($featuresData['max_canvases'] ?? 0); ?>" min="-1" style="width:100px;text-align:center;">
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Almacenamiento Máximo (MB)</h2>
-                                <p class="component-card__description">Límite de espacio para assets del usuario.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <div class="component-input-group component-input-group--h34">
-                                <input type="number" id="featMaxStorage" class="component-input-field component-input-field--simple" value="<?php echo (int)($featuresData['max_storage_mb'] ?? 0); ?>" min="0" style="width:100px;text-align:center;">
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Snapshots por Lienzo</h2>
-                                <p class="component-card__description">Historial máximo permitido (-1 = Ilimitado).</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <div class="component-input-group component-input-group--h34">
-                                <input type="number" id="featMaxSnapshots" class="component-input-field component-input-field--simple" value="<?php echo (int)($featuresData['max_snapshots_per_canvas'] ?? 0); ?>" min="-1" style="width:100px;text-align:center;">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Miembros por Lienzo</h2>
-                                <p class="component-card__description">Límite de usuarios invitados por lienzo.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <div class="component-input-group component-input-group--h34">
-                                <input type="number" id="featMaxMembers" class="component-input-field component-input-field--simple" value="<?php echo (int)($featuresData['max_members_per_canvas'] ?? 0); ?>" min="1" style="width:100px;text-align:center;">
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Paletas Personalizadas</h2>
-                                <p class="component-card__description">Límite máximo de paletas guardadas.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <div class="component-input-group component-input-group--h34">
-                                <input type="number" id="featMaxCustomPalettes" class="component-input-field component-input-field--simple" value="<?php echo (int)($featuresData['max_custom_palettes'] ?? 0); ?>" min="0" style="width:100px;text-align:center;">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="component-header-card" style="margin-top: 32px; padding: 0 16px 16px;">
-                    <h2 class="component-page-title" style="font-size: 1.1rem;">Características</h2>
-                    <p class="component-page-description">Activa o desactiva módulos especiales del sistema para esta suscripción.</p>
-                </div>
-
-                <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Roles Avanzados</h2>
-                                <p class="component-card__description">Permitir la creación de roles de equipo personalizados en el lienzo.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <label class="component-toggle-switch">
-                                <input type="checkbox" id="featAdvancedRoles" <?php echo !empty($featuresData['advanced_roles']) ? 'checked' : ''; ?>>
-                                <span class="component-toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Plantillas en Vivo</h2>
-                                <p class="component-card__description">Acceso a la biblioteca de templates exclusivos.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <label class="component-toggle-switch">
-                                <input type="checkbox" id="featLiveTemplates" <?php echo !empty($featuresData['live_templates']) ? 'checked' : ''; ?>>
-                                <span class="component-toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Paletas Extendidas</h2>
-                                <p class="component-card__description">Disponibilidad de colores extendidos en la app.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <label class="component-toggle-switch">
-                                <input type="checkbox" id="featExtendedPalettes" <?php echo !empty($featuresData['extended_palettes']) ? 'checked' : ''; ?>>
-                                <span class="component-toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Guardar Paletas Personalizadas</h2>
-                                <p class="component-card__description">Habilitar creación manual de paletas.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <label class="component-toggle-switch">
-                                <input type="checkbox" id="featCustomPalettes" <?php echo !empty($featuresData['custom_palettes']) ? 'checked' : ''; ?>>
-                                <span class="component-toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Chat en Vivo y Soporte</h2>
-                                <p class="component-card__description">Canal prioritario de ayuda en la app.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <label class="component-toggle-switch">
-                                <input type="checkbox" id="featAllowLiveChat" <?php echo !empty($featuresData['allow_live_chat']) ? 'checked' : ''; ?>>
-                                <span class="component-toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                        </div>
-                    </div>
-                </div>
-                </div> <!-- End Left Column -->
-
-                <div class="section-style">
-                <div class="component-header-card" style="padding: 0 16px 16px;">
-                    <h2 class="component-page-title" style="font-size: 1.1rem;"><?php echo __('admin_role_style_title'); ?></h2>
-                    <p class="component-page-description"><?php echo __('admin_role_style_desc'); ?></p>
-                </div>
-
-                <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Tipo de Color</h2>
-                                <p class="component-card__description">Sólido o degradado.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleColorType">
-                                    <span class="material-symbols-rounded" data-ref="colorTypeIcon"><?php echo $colorTypeIcon; ?></span>
-                                    <span class="component-dropdown-text" data-ref="colorTypeText"><?php echo $colorTypeLabel; ?></span>
-                                    <span class="material-symbols-rounded">expand_more</span>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Nombre de Suscripción</h2>
+                                        <p class="component-card__description">Identificador principal para esta suscripción.</p>
+                                    </div>
                                 </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-right disabled" data-module="moduleColorType">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list">
-                                            <div class="component-menu-link <?php echo $colorType === 'solid' ? 'active' : ''; ?>" data-action="setColorType" data-value="solid">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">circle</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('admin_role_color_solid'); ?></span></div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-input-group component-input-group--h34">
+                                        <input type="text" id="tierName" class="component-input-field component-input-field--simple" placeholder="Ej. Pro, Ultra" value="<?php echo htmlspecialchars($tierData['name']); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="component-divider">
+                            
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Nivel (Tier)</h2>
+                                        <p class="component-card__description">Jerarquía numérica (0 = free, 1 = plus, etc).</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="-5" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="-1" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="val_tierLevel" data-val="<?php echo (int)$tierData['tier_level']; ?>"><?php echo (int)$tierData['tier_level']; ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="1" data-max="99"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="5" data-max="99"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+        
+                            <hr class="component-divider">
+        
+                            <div class="component-group-item component-group-item--stateful">
+                                <div class="active component-state-box" data-state="stripe-monthly-view">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Stripe Price ID (Mensual)</h2>
+                                            <span class="component-display-value" data-ref="display-stripe-monthly"><?php echo htmlspecialchars($tierData['stripe_price_id_monthly']) ?: 'No configurado'; ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--stretch">
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-monthly"><?php echo __('btn_edit') ?: 'Editar'; ?></button>
+                                    </div>
+                                </div>
+                                <div class="disabled component-state-box" data-state="stripe-monthly-edit">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Stripe Price ID (Mensual)</h2>
+                                            <div class="component-edit-row">
+                                                <div class="component-input-group component-input-group--h34">
+                                                    <input type="text" data-ref="input-stripe-monthly" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['stripe_price_id_monthly']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['stripe_price_id_monthly']); ?>" placeholder="ID Mensual">
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--stretch">
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-monthly"><?php echo __('btn_cancel') ?: 'Cancelar'; ?></button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="stripe-monthly"><?php echo __('btn_save') ?: 'Aplicar'; ?></button>
+                                                </div>
                                             </div>
-                                            <div class="component-menu-link <?php echo $colorType === 'gradient' ? 'active' : ''; ?>" data-action="setColorType" data-value="gradient">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">pie_chart</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('admin_role_color_gradient'); ?></span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="component-divider">
+                            
+                            <div class="component-group-item component-group-item--stateful">
+                                <div class="active component-state-box" data-state="stripe-yearly-view">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Stripe Price ID (Anual)</h2>
+                                            <span class="component-display-value" data-ref="display-stripe-yearly"><?php echo htmlspecialchars($tierData['stripe_price_id_yearly']) ?: 'No configurado'; ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--stretch">
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-yearly"><?php echo __('btn_edit') ?: 'Editar'; ?></button>
+                                    </div>
+                                </div>
+                                <div class="disabled component-state-box" data-state="stripe-yearly-edit">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Stripe Price ID (Anual)</h2>
+                                            <div class="component-edit-row">
+                                                <div class="component-input-group component-input-group--h34">
+                                                    <input type="text" data-ref="input-stripe-yearly" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['stripe_price_id_yearly']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['stripe_price_id_yearly']); ?>" placeholder="ID Anual">
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--stretch">
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-yearly"><?php echo __('btn_cancel') ?: 'Cancelar'; ?></button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="stripe-yearly"><?php echo __('btn_save') ?: 'Aplicar'; ?></button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -399,86 +303,377 @@ $featuresData = json_decode($tierData['features'] ?? '{}', true);
                     </div>
                 </div>
 
-                <div data-ref="solidMasterContainer" class="component-card--grouped <?php echo $colorType !== 'solid' ? 'disabled' : ''; ?>" style="margin-top: 16px;">
-                    <div data-ref="solidColorContainer" class="component-color-list">
-                        <?php if ($colorType === 'solid') echo renderColorBlock($colors[0]['hex'], 100, true); ?>
-                    </div>
-                </div>
-
-                <div data-ref="gradientMasterContainer" class="component-card--grouped <?php echo $colorType !== 'gradient' ? 'disabled' : ''; ?>">
-                    
-                    <div class="component-group-item component-group-item--stacked">
+                <!-- Límites Accordion -->
+                <div class="component-card--grouped component-accordion mt-4">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">speed</span>
+                            </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('admin_role_rotation_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('admin_role_rotation_desc'); ?></p>
+                                <h2 class="component-card__title">Límites y Beneficios</h2>
+                                <p class="component-card__description">Configura los beneficios que obtienen los usuarios con esta suscripción.</p>
                             </div>
                         </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleGradientAngle" data-val="<?php echo $gradientAngle; ?>" data-ref="gradientAngleTrigger">
-                                    <span class="material-symbols-rounded">rotate_right</span>
-                                    <span class="component-dropdown-text" data-ref="gradientAngleText"><?php echo $gradientAngle; ?>Â°</span>
-                                    <span class="material-symbols-rounded">expand_more</span>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
+                    </div>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Lienzos Máximos</h2>
+                                        <p class="component-card__description">Cantidad de lienzos permitidos (-1 para ilimitado).</p>
+                                    </div>
                                 </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleGradientAngle">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list">
-                                            <?php 
-                                            $angles = [
-                                                0 => 'north', 45 => 'north_east', 90 => 'east', 135 => 'south_east', 
-                                                180 => 'south', 225 => 'south_west', 270 => 'west', 315 => 'north_west'
-                                            ];
-                                            foreach ($angles as $ang => $icon) {
-                                                $active = $gradientAngle === $ang ? 'active' : '';
-                                                echo '
-                                                <div class="component-menu-link ' . $active . '" data-action="setGradientAngle" data-value="' . $ang . '">
-                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">' . $icon . '</span></div>
-                                                    <div class="component-menu-link-text"><span>' . $ang . 'Â°</span></div>
-                                                </div>';
-                                            }
-                                            ?>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCanvases" data-step="-10" data-min="-1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCanvases" data-step="-1" data-min="-1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxCanvases" data-val="<?php echo (int)($featuresData['max_canvases'] ?? 0); ?>"><?php echo ((int)($featuresData['max_canvases'] ?? 0)) === -1 ? '∞' : (int)($featuresData['max_canvases'] ?? 0); ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCanvases" data-step="1" data-max="999"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCanvases" data-step="10" data-max="999"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+        
+                            <hr class="component-divider">
+        
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Almacenamiento Máximo (MB)</h2>
+                                        <p class="component-card__description">Límite de espacio para assets del usuario.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxStorage" data-step="-100" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxStorage" data-step="-10" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxStorage" data-val="<?php echo (int)($featuresData['max_storage_mb'] ?? 0); ?>"><?php echo (int)($featuresData['max_storage_mb'] ?? 0); ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxStorage" data-step="10" data-max="5000"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxStorage" data-step="100" data-max="5000"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+        
+                            <hr class="component-divider">
+        
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Snapshots por Lienzo</h2>
+                                        <p class="component-card__description">Historial máximo permitido (-1 = Ilimitado).</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxSnapshots" data-step="-10" data-min="-1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxSnapshots" data-step="-1" data-min="-1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxSnapshots" data-val="<?php echo (int)($featuresData['max_snapshots_per_canvas'] ?? 0); ?>"><?php echo ((int)($featuresData['max_snapshots_per_canvas'] ?? 0)) === -1 ? '∞' : (int)($featuresData['max_snapshots_per_canvas'] ?? 0); ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxSnapshots" data-step="1" data-max="999"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxSnapshots" data-step="10" data-max="999"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="component-divider">
+        
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Miembros por Lienzo</h2>
+                                        <p class="component-card__description">Límite de usuarios invitados por lienzo.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxMembers" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxMembers" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxMembers" data-val="<?php echo (int)($featuresData['max_members_per_canvas'] ?? 1); ?>"><?php echo (int)($featuresData['max_members_per_canvas'] ?? 1); ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxMembers" data-step="1" data-max="100"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxMembers" data-step="10" data-max="100"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+        
+                            <hr class="component-divider">
+        
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Paletas Personalizadas</h2>
+                                        <p class="component-card__description">Límite máximo de paletas guardadas.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCustomPalettes" data-step="-5" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCustomPalettes" data-step="-1" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxCustomPalettes" data-val="<?php echo (int)($featuresData['max_custom_palettes'] ?? 0); ?>"><?php echo (int)($featuresData['max_custom_palettes'] ?? 0); ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCustomPalettes" data-step="1" data-max="50"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCustomPalettes" data-step="5" data-max="50"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <hr class="component-divider">
+                <!-- Características Accordion -->
+                <div class="component-card--grouped component-accordion mt-4">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">stars</span>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Características</h2>
+                                <p class="component-card__description">Activa o desactiva módulos especiales del sistema.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
+                    </div>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <div class="component-group-item component-group-item--wrap">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Roles Avanzados</h2>
+                                        <p class="component-card__description">Permitir la creación de roles de equipo personalizados en el lienzo.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" id="featAdvancedRoles" <?php echo !empty($featuresData['advanced_roles']) ? 'checked' : ''; ?>>
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+        
+                            <hr class="component-divider">
+        
+                            <div class="component-group-item component-group-item--wrap">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Plantillas en Vivo</h2>
+                                        <p class="component-card__description">Acceso a la biblioteca de templates exclusivos.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" id="featLiveTemplates" <?php echo !empty($featuresData['live_templates']) ? 'checked' : ''; ?>>
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+        
+                            <hr class="component-divider">
+        
+                            <div class="component-group-item component-group-item--wrap">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Paletas Extendidas</h2>
+                                        <p class="component-card__description">Disponibilidad de colores extendidos en la app.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" id="featExtendedPalettes" <?php echo !empty($featuresData['extended_palettes']) ? 'checked' : ''; ?>>
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+        
+                            <hr class="component-divider">
+        
+                            <div class="component-group-item component-group-item--wrap">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Guardar Paletas Personalizadas</h2>
+                                        <p class="component-card__description">Habilitar creación manual de paletas.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" id="featCustomPalettes" <?php echo !empty($featuresData['custom_palettes']) ? 'checked' : ''; ?>>
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+        
+                            <hr class="component-divider">
+        
+                            <div class="component-group-item component-group-item--wrap">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Chat en Vivo y Soporte</h2>
+                                        <p class="component-card__description">Canal prioritario de ayuda en la app.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" id="featAllowLiveChat" <?php echo !empty($featuresData['allow_live_chat']) ? 'checked' : ''; ?>>
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <div class="component-group-item component-group-item--wrap">
+                <!-- Estilo y Diseño Accordion -->
+                <div class="component-card--grouped component-accordion mt-4">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">palette</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('admin_role_blocks_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('admin_role_blocks_desc'); ?></p>
+                                <h2 class="component-card__title"><?php echo __('admin_role_style_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('admin_role_style_desc'); ?></p>
                             </div>
                         </div>
-                        <div class="component-card__actions component-card__actions--end" data-ref="btnAddGradientColorWrapper">
-                            <button type="button" class="component-button component-button--h36" data-ref="btnAddGradientColor" data-action="addGradientColor">
-                                <?php echo __('btn_add_block'); ?>
-                            </button>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
                         </div>
                     </div>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Tipo de Color</h2>
+                                        <p class="component-card__description">Sólido o degradado.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-wrapper">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleColorType">
+                                            <span class="material-symbols-rounded" data-ref="colorTypeIcon"><?php echo $colorTypeIcon; ?></span>
+                                            <span class="component-dropdown-text" data-ref="colorTypeText"><?php echo $colorTypeLabel; ?></span>
+                                            <span class="material-symbols-rounded">expand_more</span>
+                                        </div>
+                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleColorType">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto">
+                                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                                <div class="component-menu-list">
+                                                    <div class="component-menu-link <?php echo $colorType === 'solid' ? 'active' : ''; ?>" data-action="setColorType" data-value="solid">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">circle</span></div>
+                                                        <div class="component-menu-link-text"><span><?php echo __('admin_role_color_solid'); ?></span></div>
+                                                    </div>
+                                                    <div class="component-menu-link <?php echo $colorType === 'gradient' ? 'active' : ''; ?>" data-action="setColorType" data-value="gradient">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">pie_chart</span></div>
+                                                        <div class="component-menu-link-text"><span><?php echo __('admin_role_color_gradient'); ?></span></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div data-ref="solidMasterContainer" class="<?php echo $colorType !== 'solid' ? 'disabled' : ''; ?>">
+                                <hr class="component-divider">
+                                <div data-ref="solidColorContainer" class="component-color-list">
+                                    <?php if ($colorType === 'solid') echo renderColorBlock($colors[0]['hex'], 100, true); ?>
+                                </div>
+                            </div>
 
-                    <hr class="component-divider">
+                            <div data-ref="gradientMasterContainer" class="<?php echo $colorType !== 'gradient' ? 'disabled' : ''; ?>">
+                                <hr class="component-divider">
+                                <div class="component-group-item component-group-item--stacked">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title"><?php echo __('admin_role_rotation_title'); ?></h2>
+                                            <p class="component-card__description"><?php echo __('admin_role_rotation_desc'); ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--start">
+                                        <div class="component-dropdown-wrapper">
+                                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleGradientAngle" data-val="<?php echo $gradientAngle; ?>" data-ref="gradientAngleTrigger">
+                                                <span class="material-symbols-rounded">rotate_right</span>
+                                                <span class="component-dropdown-text" data-ref="gradientAngleText"><?php echo $gradientAngle; ?>°</span>
+                                                <span class="material-symbols-rounded">expand_more</span>
+                                            </div>
+                                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleGradientAngle">
+                                                <div class="component-menu component-menu--w-full component-menu--h-auto">
+                                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                                    <div class="component-menu-list">
+                                                        <?php 
+                                                        $angles = [
+                                                            0 => 'north', 45 => 'north_east', 90 => 'east', 135 => 'south_east', 
+                                                            180 => 'south', 225 => 'south_west', 270 => 'west', 315 => 'north_west'
+                                                        ];
+                                                        foreach ($angles as $ang => $icon) {
+                                                            $active = $gradientAngle === $ang ? 'active' : '';
+                                                            echo '
+                                                            <div class="component-menu-link ' . $active . '" data-action="setGradientAngle" data-value="' . $ang . '">
+                                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">' . $icon . '</span></div>
+                                                                <div class="component-menu-link-text"><span>' . $ang . '°</span></div>
+                                                            </div>';
+                                                        }
+                                                        ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                    <div data-ref="gradientColorsContainer" class="component-color-list">
-                        <?php 
-                        if ($colorType === 'gradient') {
-                            foreach ($colors as $c) echo renderColorBlock($c['hex'], $c['percentage'], false);
-                        }
-                        ?>
+                                <hr class="component-divider">
+
+                                <div class="component-group-item component-group-item--wrap">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title"><?php echo __('admin_role_blocks_title'); ?></h2>
+                                            <p class="component-card__description"><?php echo __('admin_role_blocks_desc'); ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--end" data-ref="btnAddGradientColorWrapper">
+                                        <button type="button" class="component-button component-button--h36" data-ref="btnAddGradientColor" data-action="addGradientColor">
+                                            <?php echo __('btn_add_block'); ?>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <hr class="component-divider">
+
+                                <div data-ref="gradientColorsContainer" class="component-color-list">
+                                    <?php 
+                                    if ($colorType === 'gradient') {
+                                        foreach ($colors as $c) echo renderColorBlock($c['hex'], $c['percentage'], false);
+                                    }
+                                    ?>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
-
                 </div>
-
-                </div> <!-- End Right Column -->
-                </div> <!-- End Grid -->
 
             </div>
         </div>
