@@ -193,11 +193,6 @@ if (!empty($canvasUuid)) {
                 ?>
                 <div class="component-actions <?php echo $showSpectatorControls ? 'active' : 'disabled'; ?>" data-ref="spectator-controls">
                     
-                    <div class="component-badge component-badge--warning <?php echo $isBlockedInit && !isset($isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-ref="spectator-status-badge" data-tooltip="<?php echo __('tooltip_spectator'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">visibility</span>
-                        <span><?php echo __('lbl_spectator'); ?></span>
-                    </div>
-
                     <div class="component-badge component-badge--danger <?php echo (isset($isPremiumBlockedInit) && $isPremiumBlockedInit) ? '' : 'disabled'; ?>" data-ref="premium-status-badge" data-position="bottom">
                         <span class="material-symbols-rounded">warning</span>
                         <span><?php echo __('lbl_requires_subscription'); ?></span>
@@ -209,6 +204,7 @@ if (!empty($canvasUuid)) {
                     </div>
                     
                     <button class="component-button component-button--h34 <?php echo ($canvasApproval || $isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
+                        <span class="material-symbols-rounded">group_add</span>
                         <?php echo __('btn_join'); ?>
                     </button>
                     
@@ -285,6 +281,11 @@ if (!empty($canvasUuid)) {
                     <span>- , -</span>
                 </div>
 
+                <div class="component-badge component-badge--warning <?php echo !$isSpectatorInit ? 'disabled' : ''; ?>" data-ref="spectator-status-badge" data-tooltip="<?php echo __('tooltip_spectator'); ?>" data-position="top">
+                    <span class="material-symbols-rounded">visibility</span>
+                    <span><?php echo __('lbl_spectator'); ?></span>
+                </div>
+
                 <?php if (isset($isPremiumBlockedInit) && $isPremiumBlockedInit): ?>
                 <div class="component-badge" data-badge-id="lock-premium">
                     <span class="material-symbols-rounded">warning</span>
@@ -298,7 +299,7 @@ if (!empty($canvasUuid)) {
                 <?php endif; ?>
 
                 <?php if (!$isSnapshot): ?>
-                <div class="component-badge" data-ref="cooldown-badge">
+                <div class="component-badge <?php echo ($isBlockedInit || $isSpectatorInit || $isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-ref="cooldown-badge">
                     <span class="material-symbols-rounded">bolt</span>
                     <span data-ref="cooldown-counter">--/--</span>
                     

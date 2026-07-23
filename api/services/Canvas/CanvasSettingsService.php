@@ -327,10 +327,16 @@ class CanvasSettingsService {
                     if ($redis) {
                         $redis->hset("canvases:force_resets_options", (string)$canvasId, json_encode(['take_snapshot' => $takeSnapshot ? 1 : 0]));
                         $redis->sadd("canvases:force_resets", [$canvasId]);
+                        
+                        $websocketMsg = [
+                            'type' => 'canvas_locked',
+                            'canvas_id' => $canvasId
+                        ];
+                        $redis->publish("admin:canvas_events", json_encode($websocketMsg));
                     }
                 }
             } catch (Exception $e) {
-                Logger::error('Error insertando orden de reseteo forzado en Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+                Logger::error('Error insertando orden de reseteo forzado en Redis o notificando bloqueo.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
             }
 
             return ['success' => true, 'message' => __('msg_reset_order_sent')];

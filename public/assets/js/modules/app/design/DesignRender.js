@@ -72,19 +72,13 @@ export const DesignRender = {
                 const hoverKey = this.hoveredPixel ? ((this.hoveredPixel.y << 16) | this.hoveredPixel.x) : -1;
                 
                 this.renderWorker.postMessage({
-                    type: 'UPDATE_TRANSFORM',
+                    type: 'UPDATE_RENDER_STATE',
                     payload: {
                         transform: this.transform,
                         isDarkMode: this.isDarkMode(),
                         currentColor: this.currentColor,
                         isSpectator: this.isSpectator,
-                        isResetLocked: this.isResetLocked
-                    }
-                });
-
-                this.renderWorker.postMessage({
-                    type: 'UPDATE_SELECTION',
-                    payload: {
+                        isResetLocked: this.isResetLocked,
                         selectedPixels: selArray,
                         hoveredPixelKey: hoverKey,
                         ownerEraserBox: this.ownerEraserBox || null
@@ -104,6 +98,7 @@ export const DesignRender = {
                                     .then(bmp => {
                                         if (bmp) {
                                             tpl.imageBitmap = bmp;
+                                            tpl._bitmapSentToWorker = false; // Reset to force send
                                             this.requestRender();
                                         }
                                     })
@@ -113,6 +108,7 @@ export const DesignRender = {
                         }
 
                         try {
+                            const sendBitmap = !tpl._bitmapSentToWorker && tpl.imageBitmap;
                             this.renderWorker.postMessage({
                                 type: 'UPDATE_TEMPLATE',
                                 payload: {
@@ -124,10 +120,13 @@ export const DesignRender = {
                                         angle: tpl.angle || 0,
                                         opacity: tpl.opacity !== undefined ? tpl.opacity : 0.5,
                                         locked: !!tpl.locked,
-                                        imageBitmap: tpl.imageBitmap || null
+                                        imageBitmap: sendBitmap || null
                                     }
                                 }
                             });
+                            if (sendBitmap) {
+                                tpl._bitmapSentToWorker = true;
+                            }
                         } catch (err) {
                             console.warn('[DesignRender] DataCloneError sending ImageBitmap to worker, fallback to null bitmap:', err);
                             tpl.imageBitmap = null;
@@ -381,7 +380,7 @@ export const DesignRender = {
             const now = Date.now();
             this.nuclearWarnings = this.nuclearWarnings.filter(w => !isNaN(w.endTime) && now < w.endTime);
             if (this.nuclearWarnings.length > 0) {
-                requestAnimationFrame(this.renderBound);
+                this.requestRender();
             }
 
             const scale = this.transform.scale || 1;
@@ -435,7 +434,7 @@ export const DesignRender = {
             const now = Date.now();
             this.explosions = this.explosions.filter(exp => (now - exp.startTime) < exp.duration);
             if (this.explosions.length > 0) {
-                requestAnimationFrame(this.renderBound);
+                this.requestRender();
             }
 
             this.explosions.forEach(exp => {

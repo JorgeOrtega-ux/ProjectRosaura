@@ -1345,7 +1345,7 @@ export const DesignInteractions = {
             });
         }
         
-        if (!this.isExplosionLoopRunning) {
+        if (!this.renderWorker && !this.isExplosionLoopRunning) {
             this.isExplosionLoopRunning = true;
             const loop = () => {
                 if (this.explosions && this.explosions.length > 0) {

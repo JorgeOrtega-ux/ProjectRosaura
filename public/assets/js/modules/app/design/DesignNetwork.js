@@ -264,7 +264,10 @@ export const DesignNetwork = {
                     const jitter = Math.floor(Math.random() * 2000); // 0 to 2 seconds of random jitter
                     const delay = baseDelayCalc + jitter;
                     
-                    setTimeout(async () => {
+                    if (this.wsReconnectTimeout) clearTimeout(this.wsReconnectTimeout);
+                    this.wsReconnectTimeout = setTimeout(async () => {
+                        if (this._destroyed || (this.wsManager && this.wsManager.isIntentionalDisconnect)) return;
+                        
                         this.wsManager.reconnectAttempts++;
                         let newToken = null;
                         if (!uid) {
@@ -275,7 +278,7 @@ export const DesignNetwork = {
                         if (newToken) p['cf-turnstile-response'] = newToken;
 
                         const res = await this.api.post(route, p, this.abortController.signal);
-                        if (res.aborted) return;
+                        if (res.aborted || this._destroyed || (this.wsManager && this.wsManager.isIntentionalDisconnect)) return;
                         
                         if (res.success && res.data?.ticket) {
                             this.wsManager.connect(this.canvasIntId, res.data.ticket);
@@ -448,7 +451,9 @@ export const DesignNetwork = {
         this.updateSelectionUI();
         this.requestRender();
 
-        showMessage(__('info_stamping_template'), 'warning');
+        if (this.lastInjectedTemplate) {
+            showMessage(__('info_stamping_template'), 'warning');
+        }
 
         if (this.injectTimeout) clearTimeout(this.injectTimeout);
         this.injectTimeout = setTimeout(() => {
@@ -472,27 +477,63 @@ export const DesignNetwork = {
             this.updateTemplateUI();
         }
 
+        const isOwner = !!this.lastInjectedTemplate;
+        let tempCoords = null;
+
+        if (isOwner) {
+            tempCoords = this.lastInjectedTemplate;
+        } else if (data.x !== undefined && data.y !== undefined && data.w && data.h && data.image_url) {
+            try {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                const loadPromise = new Promise((resolve, reject) => {
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                });
+                img.src = data.image_url;
+                await loadPromise;
+                const bitmap = await createImageBitmap(img);
+                tempCoords = {
+                    x: parseInt(data.x, 10),
+                    y: parseInt(data.y, 10),
+                    w: parseInt(data.w, 10),
+                    h: parseInt(data.h, 10),
+                    imageBitmap: bitmap
+                };
+            } catch (e) {
+                console.error('[DesignNetwork] Error loading template image for spectator animation:', e);
+            }
+        }
+
         try {
             const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
             if (response.aborted) return;
 
             if (response.success && response.data) {
-                if (this.loadedChunks) {
-                    this.loadedChunks.clear();
+                if (tempCoords && this.renderWorker) {
+                    const payload = {
+                        templateCoords: {
+                            x: tempCoords.x,
+                            y: tempCoords.y,
+                            w: tempCoords.w,
+                            h: tempCoords.h
+                        },
+                        imageBitmap: tempCoords.imageBitmap
+                    };
+                    const transfers = tempCoords.imageBitmap ? [tempCoords.imageBitmap] : [];
+                    this.renderWorker.postMessage({
+                        type: 'TRIGGER_INJECT_ANIMATION',
+                        payload: payload
+                    }, transfers);
                 }
+
                 if (typeof this.initCanvasData === 'function') {
                     this.initCanvasData(response.data, true);
                 } else if (response.data.state_base64) {
                     this.hydrateCanvasState(response.data.state_base64);
                 }
                 
-                if (this.lastInjectedTemplate && this.renderWorker) {
-                    this.renderWorker.postMessage({
-                        type: 'TRIGGER_INJECT_ANIMATION',
-                        payload: { template: this.lastInjectedTemplate }
-                    });
-                    this.lastInjectedTemplate = null;
-                }
+                this.lastInjectedTemplate = null;
             }
         } catch (error) {
         }
@@ -507,7 +548,9 @@ export const DesignNetwork = {
         this.updateLockBadges();
         this.requestRender();
 
-        showMessage(__('msg_template_stamped'), 'success');
+        if (isOwner) {
+            showMessage(__('msg_template_stamped'), 'success');
+        }
     },
 
     handleCanvasInjectError(data) {
@@ -902,17 +945,29 @@ export const DesignNetwork = {
         
         this.selectedPixels.clear();
         this.updateSelectionUI();
+        
+        this.hasPlayedResetAnimation = true;
+        if (this.renderWorker) {
+            console.log('[DEBUG WS] Iniciando animación de reinicio instantáneo por canvas_locked');
+            this.renderWorker.postMessage({ type: 'DRAW_IMAGE_BUFFER', payload: { imageBitmap: null } });
+        } else if (this.offscreenCtx) {
+            this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+        }
+        
         this.requestRender();
     },
     
     handleCanvasCleared(data) {
         console.log('[DEBUG WS] Ejecutando handleCanvasCleared');
-        if (this.renderWorker) {
-            console.log('[DEBUG WS] Enviando postMessage DRAW_IMAGE_BUFFER al worker de canvas (null payload para resetAnimation)');
-            this.renderWorker.postMessage({ type: 'DRAW_IMAGE_BUFFER', payload: { imageBitmap: null } });
-        } else if (this.offscreenCtx) {
-            this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+        if (!this.hasPlayedResetAnimation) {
+            if (this.renderWorker) {
+                console.log('[DEBUG WS] Enviando postMessage DRAW_IMAGE_BUFFER al worker de canvas (null payload para resetAnimation)');
+                this.renderWorker.postMessage({ type: 'DRAW_IMAGE_BUFFER', payload: { imageBitmap: null } });
+            } else if (this.offscreenCtx) {
+                this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+            }
         }
+        this.hasPlayedResetAnimation = false;
         this.requestRender();
         
         this.isResetLocked = false;
@@ -999,6 +1054,7 @@ export const DesignNetwork = {
         const specBadge = document.querySelector('[data-ref="spectator-status-badge"]');
         const privBadge = document.querySelector('[data-ref="private-status-badge"]');
         const premBadge = document.querySelector('[data-ref="premium-status-badge"]');
+        const cooldownBadge = document.querySelector('[data-ref="cooldown-badge"]');
 
         this.updateLockBadges(); 
 
@@ -1019,6 +1075,7 @@ export const DesignNetwork = {
             if (actionPill) actionPill.classList.add('disabled');
 
             if (specBadge) specBadge.classList.add('disabled');
+            if (cooldownBadge) cooldownBadge.classList.add('disabled');
             if (this.isPremiumBlocked) {
                 if (privBadge) privBadge.classList.add('disabled');
                 if (premBadge) premBadge.classList.remove('disabled');
@@ -1053,6 +1110,7 @@ export const DesignNetwork = {
             if (actionPill) actionPill.classList.add('disabled');
 
             if (specBadge) specBadge.classList.add('disabled');
+            if (cooldownBadge) cooldownBadge.classList.add('disabled');
             if (privBadge) privBadge.classList.add('disabled');
             if (premBadge) premBadge.classList.remove('disabled');
 
@@ -1075,6 +1133,7 @@ export const DesignNetwork = {
                 if (actionPill) actionPill.classList.add('disabled');
                 
                 if (specBadge) specBadge.classList.remove('disabled');
+                if (cooldownBadge) cooldownBadge.classList.add('disabled');
                 if (privBadge) privBadge.classList.add('disabled');
                 if (premBadge) premBadge.classList.add('disabled');
 
@@ -1095,6 +1154,8 @@ export const DesignNetwork = {
                     designTools.classList.replace('disabled', 'active');
                 }
                 if (actionPill) actionPill.classList.remove('disabled');
+                if (cooldownBadge) cooldownBadge.classList.remove('disabled');
+                if (specBadge) specBadge.classList.add('disabled');
             }
         }
     },

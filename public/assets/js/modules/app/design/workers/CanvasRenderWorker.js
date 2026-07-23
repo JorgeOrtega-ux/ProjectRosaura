@@ -27,10 +27,14 @@ let activeTemplate = null;
 
 let nuclearWarnings = [];
 let explosions = [];
+let eraserAnimations = [];
 
 let resetAnimation = null;
 let resizeAnimation = null;
 let injectAnimation = null;
+let pendingImageBitmap = null;
+let pendingHydrateStateBase64 = null;
+let pendingChunks = [];
 
 let isProgressive = false;
 let hydratedChunks = new Set();
@@ -105,6 +109,27 @@ function flushDirtyRect() {
     }
     
     resetDirtyRect();
+}
+
+function clearSinglePixel(x, y) {
+    if (!pixelBuffer) return;
+    if (x < 0 || x >= boardWidth || y < 0 || y >= boardHeight) return;
+    const idx = y * boardWidth + x;
+    pixelBuffer[idx] = 0;
+    markDirty(x, y);
+}
+
+function getZigzagCoord(idx, W, H) {
+    const y = Math.floor(idx / W);
+    const x = (y % 2 === 0) ? (idx % W) : ((W - 1) - (idx % W));
+    return { x, y };
+}
+
+function getSymmetricZigzagCoord(idx, W, H) {
+    const y = Math.floor(idx / W);
+    const x = (y % 2 === 0) ? ((W - 1) - (idx % W)) : (idx % W);
+    const absY = H - 1 - y;
+    return { x, y: absY };
 }
 
 function colorToAbgr(color) {
@@ -182,21 +207,29 @@ async function hydrateChunkWorker(chunkX, chunkY, chunkSize, base64String) {
         const actualH = Math.min(chunkSize, boardHeight - chunkY * chunkSize);
         if (actualW <= 0 || actualH <= 0) return;
         
-        // El array viene como UInt8 contiguo, lo copiamos a mainImageData línea por línea
+        // Cast bytes buffer to Uint32Array for fast 32-bit pixel copies
+        let chunkUint32;
+        if (bytes.byteOffset % 4 === 0) {
+            chunkUint32 = new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4);
+        } else {
+            const alignedBuffer = bytes.slice().buffer;
+            chunkUint32 = new Uint32Array(alignedBuffer);
+        }
+        
         for (let cy = 0; cy < actualH; cy++) {
             const destY = chunkY * chunkSize + cy;
-            const destX = chunkX * chunkSize;
+            const destIdx = destY * boardWidth + (chunkX * chunkSize);
+            const srcIdx = cy * actualW;
             
-            const destIdx = (destY * boardWidth + destX) * 4;
-            const srcIdx = (cy * actualW) * 4;
-            const length = actualW * 4;
-            
-            if (destIdx + length <= mainImageData.data.length && srcIdx + length <= bytes.length) {
-                mainImageData.data.set(bytes.subarray(srcIdx, srcIdx + length), destIdx);
+            if (pixelBuffer && destIdx + actualW <= pixelBuffer.length && srcIdx + actualW <= chunkUint32.length) {
+                pixelBuffer.set(chunkUint32.subarray(srcIdx, srcIdx + actualW), destIdx);
             }
         }
 
-        offscreenCtx.putImageData(mainImageData, 0, 0, chunkX * chunkSize, chunkY * chunkSize, actualW, actualH);
+        // Draw the chunk directly on offscreenCtx instead of transferring the whole board
+        const chunkClamped = new Uint8ClampedArray(bytes.buffer, bytes.byteOffset, bytes.length);
+        const chunkImageData = new ImageData(chunkClamped, actualW, actualH);
+        offscreenCtx.putImageData(chunkImageData, chunkX * chunkSize, chunkY * chunkSize);
         
         const chunkKey = `${chunkX},${chunkY}`;
         hydratedChunks.add(chunkKey);
@@ -292,6 +325,225 @@ function render() {
 
     processPixelQueue();
 
+    // Actualizar animación de reinicio de lienzo en memoria (Espiral)
+    if (resetAnimation) {
+        const now = Date.now();
+        const elapsed = now - resetAnimation.startTime;
+        const progress = Math.min(1, elapsed / resetAnimation.duration);
+        
+        const targetClearCount = Math.floor(progress * resetAnimation.totalPixels / 2);
+        let needsFlush = false;
+        
+        const halfTotal = Math.ceil(resetAnimation.totalPixels / 2);
+        while (resetAnimation.clearedCount < targetClearCount && resetAnimation.clearedCount < halfTotal) {
+            const idx = resetAnimation.clearedCount;
+            
+            // Clear Spiral 1
+            const p1 = getZigzagCoord(idx, resetAnimation.w, resetAnimation.h);
+            if (p1) {
+                const bufferIdx = p1.y * boardWidth + p1.x;
+                if (pixelBuffer && pixelBuffer[bufferIdx] !== 0) {
+                    pixelBuffer[bufferIdx] = 0;
+                    markDirty(p1.x, p1.y);
+                    needsFlush = true;
+                }
+            }
+            
+            // Clear Spiral 2
+            const p2 = getSymmetricZigzagCoord(idx, resetAnimation.w, resetAnimation.h);
+            if (p2) {
+                const bufferIdx = p2.y * boardWidth + p2.x;
+                if (pixelBuffer && pixelBuffer[bufferIdx] !== 0) {
+                    pixelBuffer[bufferIdx] = 0;
+                    markDirty(p2.x, p2.y);
+                    needsFlush = true;
+                }
+            }
+            
+            resetAnimation.clearedCount++;
+        }
+        
+        if (needsFlush) {
+            flushDirtyRect();
+        }
+        
+        if (progress >= 1) {
+            if (pixelBuffer) pixelBuffer.fill(0);
+            if (offscreenCtx && mainImageData) {
+                if (pendingImageBitmap) {
+                    offscreenCtx.drawImage(pendingImageBitmap, 0, 0, boardWidth, boardHeight);
+                    mainImageData = offscreenCtx.getImageData(0, 0, boardWidth, boardHeight);
+                    pixelBuffer = new Uint32Array(mainImageData.data.buffer);
+                    pendingImageBitmap = null;
+                } else {
+                    offscreenCtx.putImageData(mainImageData, 0, 0);
+                }
+            }
+            resetAnimation = null;
+        } else {
+            requestRender();
+        }
+    }
+
+    // Actualizar animación de inyección de template en memoria (Z)
+    if (injectAnimation) {
+        const now = Date.now();
+        const elapsed = now - injectAnimation.startTime;
+        const progress = Math.min(1, elapsed / injectAnimation.duration);
+        
+        const targetClearCount = Math.floor(progress * injectAnimation.totalPixels / 2);
+        let needsFlush = false;
+        
+        const halfTotal = Math.ceil(injectAnimation.totalPixels / 2);
+        while (injectAnimation.clearedCount < targetClearCount && injectAnimation.clearedCount < halfTotal) {
+            const idx = injectAnimation.clearedCount;
+            
+            // Clear / Draw Spiral 1
+            const p1 = getZigzagCoord(idx, injectAnimation.w, injectAnimation.h);
+            if (p1) {
+                const absX = injectAnimation.x + p1.x;
+                const absY = injectAnimation.y + p1.y;
+                if (absX >= 0 && absX < boardWidth && absY >= 0 && absY < boardHeight) {
+                    const bufferIdx = absY * boardWidth + absX;
+                    let color = 0;
+                    if (injectAnimation.templatePixels) {
+                        const templateIdx = p1.y * injectAnimation.w + p1.x;
+                        color = injectAnimation.templatePixels[templateIdx];
+                    }
+                    if (pixelBuffer && pixelBuffer[bufferIdx] !== color) {
+                        pixelBuffer[bufferIdx] = color;
+                        markDirty(absX, absY);
+                        needsFlush = true;
+                    }
+                }
+            }
+            
+            // Clear / Draw Spiral 2
+            const p2 = getSymmetricZigzagCoord(idx, injectAnimation.w, injectAnimation.h);
+            if (p2) {
+                const absX = injectAnimation.x + p2.x;
+                const absY = injectAnimation.y + p2.y;
+                if (absX >= 0 && absX < boardWidth && absY >= 0 && absY < boardHeight) {
+                    const bufferIdx = absY * boardWidth + absX;
+                    let color = 0;
+                    if (injectAnimation.templatePixels) {
+                        const templateIdx = p2.y * injectAnimation.w + p2.x;
+                        color = injectAnimation.templatePixels[templateIdx];
+                    }
+                    if (pixelBuffer && pixelBuffer[bufferIdx] !== color) {
+                        pixelBuffer[bufferIdx] = color;
+                        markDirty(absX, absY);
+                        needsFlush = true;
+                    }
+                }
+            }
+            
+            injectAnimation.clearedCount++;
+        }
+        
+        if (needsFlush) {
+            flushDirtyRect();
+        }
+        
+        if (progress >= 1) {
+            if (pendingHydrateStateBase64) {
+                hydrateState(pendingHydrateStateBase64);
+                pendingHydrateStateBase64 = null;
+            }
+            if (pendingChunks.length > 0) {
+                pendingChunks.forEach(chk => {
+                    hydrateChunkWorker(chk.chunkX, chk.chunkY, chk.chunkSize, chk.base64String);
+                });
+                pendingChunks = [];
+            }
+            injectAnimation = null;
+        } else {
+            requestRender();
+        }
+    }
+
+    // Actualizar animaciones de borrador en memoria (Espiral)
+    if (eraserAnimations.length > 0) {
+        const now = Date.now();
+        let needsFlush = false;
+        
+        eraserAnimations.forEach(anim => {
+            const elapsed = now - anim.startTime;
+            const progress = Math.min(1, elapsed / anim.duration);
+            
+            const targetClearCount = Math.floor(progress * anim.totalPixels / 2);
+            const halfTotal = Math.ceil(anim.totalPixels / 2);
+            
+            while (anim.clearedCount < targetClearCount && anim.clearedCount < halfTotal) {
+                const idx = anim.clearedCount;
+                
+                // Clear Spiral 1
+                const p1 = getZigzagCoord(idx, anim.w, anim.h);
+                if (p1) {
+                    const absX = anim.x1 + p1.x;
+                    const absY = anim.y1 + p1.y;
+                    if (absX >= 0 && absX < boardWidth && absY >= 0 && absY < boardHeight) {
+                        const bufferIdx = absY * boardWidth + absX;
+                        if (pixelBuffer && pixelBuffer[bufferIdx] !== 0) {
+                            pixelBuffer[bufferIdx] = 0;
+                            markDirty(absX, absY);
+                            needsFlush = true;
+                        }
+                    }
+                }
+                
+                // Clear Spiral 2
+                const p2 = getSymmetricZigzagCoord(idx, anim.w, anim.h);
+                if (p2) {
+                    const absX = anim.x1 + p2.x;
+                    const absY = anim.y1 + p2.y;
+                    if (absX >= 0 && absX < boardWidth && absY >= 0 && absY < boardHeight) {
+                        const bufferIdx = absY * boardWidth + absX;
+                        if (pixelBuffer && pixelBuffer[bufferIdx] !== 0) {
+                            pixelBuffer[bufferIdx] = 0;
+                            markDirty(absX, absY);
+                            needsFlush = true;
+                        }
+                    }
+                }
+                
+                anim.clearedCount++;
+            }
+        });
+        
+        if (needsFlush) {
+            flushDirtyRect();
+        }
+        
+        // Remove finished animations and ensure everything is fully cleared
+        eraserAnimations = eraserAnimations.filter(anim => {
+            const finished = (now - anim.startTime) >= anim.duration;
+            if (finished) {
+                let areaCleared = false;
+                for (let y = anim.y1; y <= anim.y2; y++) {
+                    for (let x = anim.x1; x <= anim.x2; x++) {
+                        if (x >= 0 && x < boardWidth && y >= 0 && y < boardHeight) {
+                            const bufferIdx = y * boardWidth + x;
+                            if (pixelBuffer && pixelBuffer[bufferIdx] !== 0) {
+                                pixelBuffer[bufferIdx] = 0;
+                                markDirty(x, y);
+                                areaCleared = true;
+                            }
+                        }
+                    }
+                }
+                if (areaCleared) {
+                    flushDirtyRect();
+                }
+            }
+            return !finished;
+        });
+        
+        if (eraserAnimations.length > 0) {
+            requestRender();
+        }
+    }
+
     const bgColor = isDarkMode ? '#0e0e11' : '#f5f5fa';
     const gridColor = 'rgba(0, 0, 0, 0.15)';
 
@@ -317,7 +569,73 @@ function render() {
         drawW = resizeAnimation.startW + (resizeAnimation.endW - resizeAnimation.startW) * easeProgress;
         drawH = resizeAnimation.startH + (resizeAnimation.endH - resizeAnimation.startH) * easeProgress;
         
+        const targetClearCount = Math.floor(progress * resizeAnimation.totalPixels / 2);
+        let needsFlush = false;
+        
+        const halfTotal = Math.ceil(resizeAnimation.totalPixels / 2);
+        while (resizeAnimation.clearedCount < targetClearCount && resizeAnimation.clearedCount < halfTotal) {
+            const idx = resizeAnimation.clearedCount;
+            
+            const p1 = getZigzagCoord(idx, resizeAnimation.startW, resizeAnimation.startH);
+            if (p1) {
+                const bufferIdx = p1.y * resizeAnimation.startW + p1.x;
+                if (pixelBuffer && pixelBuffer[bufferIdx] !== 0) {
+                    pixelBuffer[bufferIdx] = 0;
+                    markDirty(p1.x, p1.y);
+                    needsFlush = true;
+                }
+            }
+            
+            const p2 = getSymmetricZigzagCoord(idx, resizeAnimation.startW, resizeAnimation.startH);
+            if (p2) {
+                const bufferIdx = p2.y * resizeAnimation.startW + p2.x;
+                if (pixelBuffer && pixelBuffer[bufferIdx] !== 0) {
+                    pixelBuffer[bufferIdx] = 0;
+                    markDirty(p2.x, p2.y);
+                    needsFlush = true;
+                }
+            }
+            
+            resizeAnimation.clearedCount++;
+        }
+        
+        if (needsFlush) {
+            flushDirtyRect();
+        }
+        
         if (progress >= 1) {
+            const newW = resizeAnimation.endW;
+            const newH = resizeAnimation.endH;
+            const newImgData = new ImageData(newW, newH);
+            const newBuffer = new Uint32Array(newImgData.data.buffer);
+            
+            if (pixelBuffer) {
+                const minH = Math.min(resizeAnimation.startH, newH);
+                const minW = Math.min(resizeAnimation.startW, newW);
+                for (let y = 0; y < minH; y++) {
+                    const srcIdx = y * resizeAnimation.startW;
+                    const destIdx = y * newW;
+                    newBuffer.set(pixelBuffer.subarray(srcIdx, srcIdx + minW), destIdx);
+                }
+            }
+            
+            boardWidth = newW;
+            boardHeight = newH;
+            mainImageData = newImgData;
+            pixelBuffer = newBuffer;
+            if (offscreenCanvas) {
+                offscreenCanvas.width = boardWidth;
+                offscreenCanvas.height = boardHeight;
+                if (pendingImageBitmap) {
+                    offscreenCtx.drawImage(pendingImageBitmap, 0, 0, boardWidth, boardHeight);
+                    mainImageData = offscreenCtx.getImageData(0, 0, boardWidth, boardHeight);
+                    pixelBuffer = new Uint32Array(mainImageData.data.buffer);
+                    pendingImageBitmap = null;
+                } else {
+                    offscreenCtx.putImageData(mainImageData, 0, 0);
+                }
+            }
+            
             resizeAnimation = null;
         } else {
             requestRender();
@@ -362,36 +680,6 @@ function render() {
     // Copiar buffer offscreen (siempre y cuando sea válido)
     if (offscreenCanvas && offscreenCanvas.width > 0 && offscreenCanvas.height > 0) {
         ctx.drawImage(offscreenCanvas, 0, 0);
-    }
-    
-    // Animación de reinicio de lienzo (Barrido circular visual)
-    if (resetAnimation) {
-        const now = Date.now();
-        const elapsed = now - resetAnimation.startTime;
-        const progress = Math.min(1, elapsed / resetAnimation.duration);
-        const easeProgress = 1 - Math.pow(1 - progress, 3);
-        const currentRadius = resetAnimation.maxRadius * easeProgress;
-        
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.beginPath();
-        ctx.arc(boardWidth / 2, boardHeight / 2, currentRadius, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.globalCompositeOperation = 'source-over';
-        
-        ctx.beginPath();
-        ctx.arc(boardWidth / 2, boardHeight / 2, currentRadius, 0, 2 * Math.PI);
-        ctx.lineWidth = Math.max(1, 6 / transform.scale);
-        ctx.strokeStyle = '#ef4444';
-        ctx.stroke();
-        
-        if (progress >= 1) {
-            // Aplicar la limpieza masiva en memoria a velocidad luz
-            if (pixelBuffer) pixelBuffer.fill(0);
-            if (offscreenCtx && mainImageData) offscreenCtx.putImageData(mainImageData, 0, 0);
-            resetAnimation = null;
-        } else {
-            requestRender();
-        }
     }
     
     ctx.restore();
@@ -559,37 +847,7 @@ function render() {
         });
     }
 
-    // Animación de Inyección de Template
-    if (injectAnimation) {
-        const now = Date.now();
-        const elapsed = now - injectAnimation.startTime;
-        const progress = Math.min(1, elapsed / injectAnimation.duration);
-        const easeProgress = 1 - Math.pow(1 - progress, 2);
-        
-        const t = injectAnimation.template;
-        const scanY = t.y + (t.h * easeProgress);
-        
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(t.x, scanY);
-        ctx.lineTo(t.x + t.w, scanY);
-        ctx.lineWidth = Math.max(1, 3 / transform.scale);
-        ctx.strokeStyle = '#4ade80';
-        ctx.shadowColor = '#4ade80';
-        ctx.shadowBlur = 10;
-        ctx.stroke();
-        
-        ctx.strokeStyle = 'rgba(74, 222, 128, 0.4)';
-        ctx.lineWidth = Math.max(1, 1 / transform.scale);
-        ctx.strokeRect(t.x, t.y, t.w, t.h);
-        ctx.restore();
-        
-        if (progress >= 1) {
-            injectAnimation = null;
-        } else {
-            requestRender();
-        }
-    }
+
 
     ctx.restore();
 }
@@ -614,39 +872,21 @@ self.onmessage = function (e) {
             break;
 
         case 'RESIZE_BOARD': {
-            resizeAnimation = {
-                startTime: Date.now(),
-                duration: 1500,
-                startW: boardWidth,
-                startH: boardHeight,
-                endW: payload.boardWidth,
-                endH: payload.boardHeight
-            };
-            
-            const newW = payload.boardWidth;
-            const newH = payload.boardHeight;
-            const newImgData = new ImageData(newW, newH);
-            const newBuffer = new Uint32Array(newImgData.data.buffer);
-            
-            if (pixelBuffer) {
-                // Copy old buffer to new buffer respecting boundaries
-                const minH = Math.min(boardHeight, newH);
-                const minW = Math.min(boardWidth, newW);
-                for (let y = 0; y < minH; y++) {
-                    const srcIdx = y * boardWidth;
-                    const destIdx = y * newW;
-                    newBuffer.set(pixelBuffer.subarray(srcIdx, srcIdx + minW), destIdx);
-                }
-            }
-            
-            boardWidth = newW;
-            boardHeight = newH;
-            mainImageData = newImgData;
-            pixelBuffer = newBuffer;
-            if (offscreenCanvas) {
-                offscreenCanvas.width = boardWidth;
-                offscreenCanvas.height = boardHeight;
-                offscreenCtx.putImageData(mainImageData, 0, 0);
+            resetAnimation = null;
+            injectAnimation = null;
+            eraserAnimations = [];
+
+            if (!resizeAnimation) {
+                resizeAnimation = {
+                    startTime: Date.now(),
+                    duration: 1500,
+                    startW: boardWidth,
+                    startH: boardHeight,
+                    endW: payload.boardWidth,
+                    endH: payload.boardHeight,
+                    totalPixels: boardWidth * boardHeight,
+                    clearedCount: 0
+                };
             }
             requestRender();
             break;
@@ -681,22 +921,44 @@ self.onmessage = function (e) {
             requestRender();
             break;
 
+        case 'UPDATE_RENDER_STATE':
+            transform = payload.transform;
+            isDarkMode = !!payload.isDarkMode;
+            currentColor = payload.currentColor || '#000000';
+            isSpectator = payload.isSpectator;
+            isResetLocked = payload.isResetLocked;
+            if (payload.selectedPixels) {
+                selectedPixelsArray = new Uint32Array(payload.selectedPixels);
+            } else {
+                selectedPixelsArray = new Uint32Array(0);
+            }
+            hoveredPixelKey = payload.hoveredPixelKey !== undefined ? payload.hoveredPixelKey : -1;
+            ownerEraserBox = payload.ownerEraserBox || null;
+            requestRender();
+            break;
+
         case 'CLEAR_AREA': {
             const { x1, y1, x2, y2 } = e.data.payload;
-            if (pixelBuffer) {
-                const startY = Math.max(0, y1);
-                const endY = Math.min(boardHeight - 1, y2);
-                const startX = Math.max(0, x1);
-                const endX = Math.min(boardWidth - 1, x2);
-                
-                for (let y = startY; y <= endY; y++) {
-                    const idx = y * boardWidth + startX;
-                    pixelBuffer.fill(0, idx, idx + (endX - startX + 1));
-                }
-                
-                markDirty(startX, startY);
-                markDirty(endX, endY);
-                flushDirtyRect();
+            const minX = Math.max(0, x1);
+            const maxX = Math.min(boardWidth - 1, x2);
+            const minY = Math.max(0, y1);
+            const maxY = Math.min(boardHeight - 1, y2);
+            const w = maxX - minX + 1;
+            const h = maxY - minY + 1;
+            
+            if (w > 0 && h > 0) {
+                eraserAnimations.push({
+                    startTime: Date.now(),
+                    duration: 1000,
+                    x1: minX,
+                    y1: minY,
+                    x2: maxX,
+                    y2: maxY,
+                    w: w,
+                    h: h,
+                    totalPixels: w * h,
+                    clearedCount: 0
+                });
                 requestRender();
             }
             break;
@@ -725,6 +987,36 @@ self.onmessage = function (e) {
             break;
         }
 
+        case 'TRIGGER_INJECT_ANIMATION':
+            if (!injectAnimation) {
+                let templatePixels = null;
+                const tc = payload.templateCoords;
+                if (payload.imageBitmap) {
+                    try {
+                        const tempCanvas = new OffscreenCanvas(tc.w, tc.h);
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCtx.drawImage(payload.imageBitmap, 0, 0, tc.w, tc.h);
+                        const imgData = tempCtx.getImageData(0, 0, tc.w, tc.h);
+                        templatePixels = new Uint32Array(imgData.data.buffer);
+                    } catch (e) {
+                        console.error('[CanvasRenderWorker] Error extracting template pixels:', e);
+                    }
+                }
+                injectAnimation = {
+                    startTime: Date.now(),
+                    duration: 1200,
+                    x: tc.x,
+                    y: tc.y,
+                    w: tc.w,
+                    h: tc.h,
+                    totalPixels: tc.w * tc.h,
+                    clearedCount: 0,
+                    templatePixels: templatePixels
+                };
+            }
+            requestRender();
+            break;
+
         case 'HYDRATE_STATE':
             if (payload.boardWidth && payload.boardHeight) {
                 boardWidth = payload.boardWidth;
@@ -734,41 +1026,50 @@ self.onmessage = function (e) {
                     offscreenCanvas.height = boardHeight;
                 }
             }
-            hydrateState(payload.base64String);
+            if (injectAnimation) {
+                pendingHydrateStateBase64 = payload.base64String;
+            } else {
+                hydrateState(payload.base64String);
+            }
             break;
 
         case 'HYDRATE_CHUNK':
-            hydrateChunkWorker(payload.chunkX, payload.chunkY, payload.chunkSize || 512, payload.base64String);
+            if (injectAnimation) {
+                pendingChunks.push({
+                    chunkX: payload.chunkX,
+                    chunkY: payload.chunkY,
+                    chunkSize: payload.chunkSize || 512,
+                    base64String: payload.base64String
+                });
+            } else {
+                hydrateChunkWorker(payload.chunkX, payload.chunkY, payload.chunkSize || 512, payload.base64String);
+            }
             break;
 
         case 'DRAW_IMAGE_BUFFER':
             if (payload.imageBitmap && offscreenCtx) {
-                // Inyección de imagen completa al lienzo (Template finalizado)
-                offscreenCtx.clearRect(0, 0, boardWidth, boardHeight);
-                offscreenCtx.drawImage(payload.imageBitmap, 0, 0, boardWidth, boardHeight);
-                
-                // Extraer a memoria compartida central O(1)
-                mainImageData = offscreenCtx.getImageData(0, 0, boardWidth, boardHeight);
-                pixelBuffer = new Uint32Array(mainImageData.data.buffer);
-                requestRender();
+                if (resetAnimation || resizeAnimation) {
+                    pendingImageBitmap = payload.imageBitmap;
+                } else {
+                    offscreenCtx.clearRect(0, 0, boardWidth, boardHeight);
+                    offscreenCtx.drawImage(payload.imageBitmap, 0, 0, boardWidth, boardHeight);
+                    mainImageData = offscreenCtx.getImageData(0, 0, boardWidth, boardHeight);
+                    pixelBuffer = new Uint32Array(mainImageData.data.buffer);
+                    requestRender();
+                }
             } else if (!payload.imageBitmap && offscreenCtx) {
-                // Reinicio de lienzo (Animación masiva + Limpieza Memoria)
-                resetAnimation = {
-                    startTime: Date.now(),
-                    duration: 2000,
-                    maxRadius: Math.sqrt(boardWidth*boardWidth + boardHeight*boardHeight)
-                };
+                if (!resetAnimation) {
+                    resetAnimation = {
+                        startTime: Date.now(),
+                        duration: 1500,
+                        w: boardWidth,
+                        h: boardHeight,
+                        totalPixels: boardWidth * boardHeight,
+                        clearedCount: 0
+                    };
+                }
                 requestRender();
             }
-            break;
-            
-        case 'TRIGGER_INJECT_ANIMATION':
-            injectAnimation = {
-                startTime: Date.now(),
-                duration: 2000,
-                template: payload.template
-            };
-            requestRender();
             break;
 
         case 'BOMB_WARNING':
@@ -823,7 +1124,15 @@ self.onmessage = function (e) {
             break;
 
         case 'UPDATE_TEMPLATE':
-            activeTemplate = payload.template;
+            if (payload.template) {
+                const prevBitmap = activeTemplate ? activeTemplate.imageBitmap : null;
+                activeTemplate = payload.template;
+                if (!activeTemplate.imageBitmap && prevBitmap) {
+                    activeTemplate.imageBitmap = prevBitmap;
+                }
+            } else {
+                activeTemplate = null;
+            }
             requestRender();
             break;
 

@@ -249,7 +249,7 @@ export const DesignSetup = {
         }
     },
 
-    async hydrateCanvasState(base64String) {
+    async hydrateCanvasState(base64String, templateCoords = null) {
         try {
             if (this.renderWorker) {
                 this.renderWorker.postMessage({
@@ -257,7 +257,8 @@ export const DesignSetup = {
                     payload: {
                         base64String,
                         boardWidth: this.boardWidth,
-                        boardHeight: this.boardHeight
+                        boardHeight: this.boardHeight,
+                        templateCoords
                     }
                 });
                 return;
@@ -343,16 +344,27 @@ export const DesignSetup = {
 
     async fetchChunks(chunkKeys) {
         if (!chunkKeys || chunkKeys.length === 0) return;
-        chunkKeys.forEach(k => this.loadedChunks.add(k));
+        
+        if (!this.loadingChunks) {
+            this.loadingChunks = new Set();
+        }
+        if (!this.loadedChunks) {
+            this.loadedChunks = new Set();
+        }
+        
+        const validKeys = chunkKeys.filter(k => !this.loadedChunks.has(k) && !this.loadingChunks.has(k));
+        if (validKeys.length === 0) return;
+        
+        validKeys.forEach(k => this.loadingChunks.add(k));
 
-        console.log(`[ProgressiveLoad] 📥 Solicitando ${chunkKeys.length} chunk(s) al servidor de Go directamente...`);
+        console.log(`[ProgressiveLoad] 📥 Solicitando ${validKeys.length} chunk(s) al servidor de Go directamente...`);
 
         // Batch chunk requests to prevent massive 48MB JSON payloads and blocking
         const BATCH_SIZE = 4;
         const fetchPromises = [];
 
-        for (let i = 0; i < chunkKeys.length; i += BATCH_SIZE) {
-            const batch = chunkKeys.slice(i, i + BATCH_SIZE);
+        for (let i = 0; i < validKeys.length; i += BATCH_SIZE) {
+            const batch = validKeys.slice(i, i + BATCH_SIZE);
             
             fetchPromises.push((async () => {
                 try {
@@ -368,7 +380,10 @@ export const DesignSetup = {
                         })
                     });
                     
-                    if (!response.ok) return;
+                    if (!response.ok) {
+                        batch.forEach(k => this.loadingChunks.delete(k));
+                        return;
+                    }
                     const result = await response.json();
                     
                     if (result && result.success && result.data?.chunks) {
@@ -377,11 +392,22 @@ export const DesignSetup = {
 
                         Object.entries(result.data.chunks).forEach(([key, base64]) => {
                             const [cx, cy] = key.split(',').map(Number);
+                            this.loadedChunks.add(key);
+                            this.loadingChunks.delete(key);
                             this.hydrateChunk(cx, cy, base64);
                         });
+
+                        batch.forEach(k => {
+                            if (!result.data.chunks[k]) {
+                                this.loadingChunks.delete(k);
+                            }
+                        });
+                    } else {
+                        batch.forEach(k => this.loadingChunks.delete(k));
                     }
                 } catch (e) {
                     console.error('[DesignSetup] Error fetching chunks batch:', e);
+                    batch.forEach(k => this.loadingChunks.delete(k));
                 }
             })());
         }

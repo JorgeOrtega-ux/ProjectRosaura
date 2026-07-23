@@ -683,12 +683,21 @@ export const DesignTemplates = {
         setButtonLoading(btn);
 
         try {
-            if (typeof this.designContext.setLastInjectedTemplate === 'function') {
-                this.designContext.setLastInjectedTemplate({
+            if (typeof this.setLastInjectedTemplate === 'function') {
+                let bitmapClone = null;
+                if (tpl.imageBitmap) {
+                    try {
+                        bitmapClone = await createImageBitmap(tpl.imageBitmap);
+                    } catch (e) {
+                        console.error('[DesignTemplates] Error cloning template bitmap:', e);
+                    }
+                }
+                this.setLastInjectedTemplate({
                     x: Math.round(tpl.x),
                     y: Math.round(tpl.y),
                     w: tpl.w,
-                    h: tpl.h
+                    h: tpl.h,
+                    imageBitmap: bitmapClone
                 });
             }
 

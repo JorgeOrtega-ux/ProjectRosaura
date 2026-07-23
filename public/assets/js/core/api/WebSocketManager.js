@@ -111,6 +111,10 @@ export class WebSocketManager {
     disconnect() {
         this.isIntentionalDisconnect = true;
         this.stopHeartbeat();
+        if (this.reconnectTimeoutId) {
+            clearTimeout(this.reconnectTimeoutId);
+            this.reconnectTimeoutId = null;
+        }
         document.removeEventListener('visibilitychange', this.visibilityHandler);
         if (this.ws) {
             this.ws.close();

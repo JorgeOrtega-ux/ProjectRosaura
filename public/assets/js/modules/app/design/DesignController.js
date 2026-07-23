@@ -308,6 +308,11 @@ class DesignController {
     }
 
     destroy() {
+        this._destroyed = true;
+        if (this.wsReconnectTimeout) {
+            clearTimeout(this.wsReconnectTimeout);
+            this.wsReconnectTimeout = null;
+        }
         if (this.chat && typeof this.chat.destroy === 'function') {
             this.chat.destroy();
             this.chat = null;

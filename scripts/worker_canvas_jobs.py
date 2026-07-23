@@ -764,7 +764,13 @@ def draw_image_listener_thread():
                     # Broadcast completed event so frontend reloads the canvas state
                     r.publish("admin:canvas_events", json.dumps({
                         "type": "canvas_inject_completed", "canvas_id": canvas_id,
-                        "affected_chunks": affected_chunks
+                        "affected_chunks": affected_chunks,
+                        "x": x,
+                        "y": y,
+                        "w": w,
+                        "h": h,
+                        "angle": angle,
+                        "image_url": url
                     }))
                     
                     stream_key = f"canvas:{canvas_id}:stream"
