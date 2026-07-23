@@ -506,7 +506,7 @@ async def handler(websocket):
                     user_id = WS_META[websocket].get('user_id')
                     print(f"[DEBUG PY] Processing INIT request. UserId: {user_id}")
                     
-                    config_batch, config_sec, _ = await get_canvas_config(r, canvas_id)
+                    config_batch, config_sec, _, _ = await get_canvas_config(r, canvas_id)
                     print(f"[DEBUG PY] Canvas config -> batch: {config_batch}, sec: {config_sec}")
                     
                     if user_id:
@@ -1129,7 +1129,8 @@ async def handler(websocket):
                         await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": typing_msg}))
 
             except Exception as e:
-                print(f"[!] Error processing WS message or writing to Redis: {e}")
+                import traceback
+                print(f"[!] Error processing WS message or writing to Redis: {e}\n{traceback.format_exc()}")
 
     except websockets.exceptions.ConnectionClosed:
         pass

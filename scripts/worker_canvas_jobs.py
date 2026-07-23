@@ -58,7 +58,7 @@ REDIS_PORT = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else 6379
 REDIS_PASS = os.getenv("REDIS_PASS")
 
 SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR") or "/var/www/html/storage/private/snapshots"
-SYNC_INTERVAL = int(os.getenv("WORKER_RESETS_SYNC_INTERVAL") or 10)
+SYNC_INTERVAL = int(os.getenv("WORKER_CANVAS_SYNC_INTERVAL") or os.getenv("WORKER_RESETS_SYNC_INTERVAL") or 10)
 THUMBNAILS_DIR = os.getenv("THUMBNAILS_DIR") or "/var/www/html/storage/public/thumbnails"
 ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR") or "/var/www/html/storage/private/backups"
 
