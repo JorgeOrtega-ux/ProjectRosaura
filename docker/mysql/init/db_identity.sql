@@ -150,6 +150,8 @@ CREATE TABLE IF NOT EXISTS `user_roles` (
   CONSTRAINT `fk_ur_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
+INSERT IGNORE INTO `user_roles` (`user_id`, `role_id`) VALUES (1, 4);
+
 CREATE TABLE IF NOT EXISTS `subscriptions` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
   `user_id` INT(11) NOT NULL,

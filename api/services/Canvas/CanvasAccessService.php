@@ -63,8 +63,8 @@ class CanvasAccessService {
 
             if ($canvas['owner_id'] !== null) {
                 $owner = $this->userRepository->findById($canvas['owner_id']);
-                $tier = $owner['subscription_tier'] ?? 0;
-                if ($tier < 2) {
+                $tier = (int)($owner['subscription_tier'] ?? 0);
+                if (!SubscriptionPlanConstants::hasFeature($tier, 'advanced_roles')) {
                     return ['success' => false, 'message' => __('err_plan_custom_roles')];
                 }
             }

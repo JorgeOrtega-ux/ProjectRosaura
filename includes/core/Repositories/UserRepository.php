@@ -95,16 +95,6 @@ class UserRepository implements UserRepositoryInterface {
 
             $user['real_subscription_tier'] = (int)($user['subscription_tier'] ?? 0);
 
-            if (
-                (isset($user['role_name']) && $user['role_name'] === 'SuperAdministrator') ||
-                (is_array($permissionsArray) && (in_array('canvases.create_official', $permissionsArray) || in_array('canvases.manage_official', $permissionsArray)))
-            ) {
-                $maxTier = \App\Core\System\SubscriptionPlanConstants::getMaxTierLevel();
-                if ((int)($user['subscription_tier'] ?? 0) < $maxTier) {
-                    $user['subscription_tier'] = $maxTier;
-                }
-            }
-
             try {
                 $stmtCol = $this->pdo->prepare("SELECT color FROM subscription_tiers WHERE tier_level = ? LIMIT 1");
                 $stmtCol->execute([(int)$user['subscription_tier']]);

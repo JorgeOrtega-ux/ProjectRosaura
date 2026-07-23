@@ -8,6 +8,11 @@ from zlib import compress
 import boto3
 import botocore
 import uuid
+from dotenv import load_dotenv
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENV_PATH = os.path.join(BASE_DIR, '.env')
+load_dotenv(dotenv_path=ENV_PATH)
 
 S3_ENDPOINT = os.getenv("AWS_ENDPOINT")
 if S3_ENDPOINT and not S3_ENDPOINT.startswith("http"):
@@ -26,58 +31,47 @@ def get_s3_client():
     )
 
 REDIS_HOST = os.getenv("REDIS_HOST")
-REDIS_PORT = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else None
+REDIS_PORT = int(os.getenv("REDIS_PORT") or 6379)
 REDIS_PASS = os.getenv("REDIS_PASS")
 
 DB_HOST = os.getenv("DB_HOST")
+DB_PORT = int(os.getenv("DB_PORT") or 3306)
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_NAME = os.getenv("DB_CANVASES_NAME")
 
 # Canvas Persistence Config
-CANVAS_SYNC_INTERVAL = int(os.getenv("WORKER_CANVAS_SYNC_INTERVAL") or os.getenv("WORKER_TIMELAPSE_SYNC_INTERVAL") or 5)
-CANVAS_BATCH_SIZE = int(os.getenv("WORKER_CANVAS_BATCH_SIZE") or os.getenv("WORKER_TIMELAPSE_BATCH_SIZE") or 5000)
+CANVAS_SYNC_INTERVAL = int(os.getenv("WORKER_CANVAS_SYNC_INTERVAL") or 5)
+CANVAS_BATCH_SIZE = int(os.getenv("WORKER_CANVAS_BATCH_SIZE") or 5000)
 
 CONSUMER_GROUP = "canvas_workers"
 CONSUMER_NAME = "worker-1"
 
 # Chat Persistence Config
-CHAT_SYNC_INTERVAL = int(os.getenv("WORKER_CHAT_SYNC_INTERVAL")) if os.getenv("WORKER_CHAT_SYNC_INTERVAL") else 2
-CHAT_BATCH_SIZE = int(os.getenv("WORKER_CHAT_BATCH_SIZE")) if os.getenv("WORKER_CHAT_BATCH_SIZE") else 50
+CHAT_SYNC_INTERVAL = int(os.getenv("WORKER_CHAT_SYNC_INTERVAL") or 2)
+CHAT_BATCH_SIZE = int(os.getenv("WORKER_CHAT_BATCH_SIZE") or 50)
 
 def get_db_connection():
-    candidate_hosts = [DB_HOST, "127.0.0.1", "localhost"] if DB_HOST else ["127.0.0.1", "localhost"]
-    seen = set()
-    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
-    
-    last_err = None
-    for host in hosts:
-        try:
-            return mysql.connector.connect(
-                host=host,
-                port=int(os.getenv("DB_PORT", 3306)),
-                user=DB_USER,
-                password=DB_PASS,
-                database=DB_NAME
-            )
-        except Exception as e:
-            last_err = e
-    print(f"[!] Error connecting to MySQL: {last_err}")
-    return None
+    try:
+        return mysql.connector.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASS,
+            database=DB_NAME
+        )
+    except Exception as e:
+        print(f"[!] Error connecting to MySQL: {e}")
+        return None
 
 def get_redis_client():
-    candidate_hosts = [REDIS_HOST, "127.0.0.1", "localhost"] if REDIS_HOST else ["127.0.0.1", "localhost"]
-    seen = set()
-    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
-    
-    for host in hosts:
-        try:
-            r = redis.Redis(host=host, port=REDIS_PORT or 6379, password=REDIS_PASS, db=0, decode_responses=False)
-            r.ping()
-            return r
-        except Exception:
-            pass
-    return None
+    try:
+        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS, db=0, decode_responses=False)
+        r.ping()
+        return r
+    except Exception as e:
+        print(f"[!] Error connecting to Redis: {e}")
+        return None
 
 def canvas_persistence_thread():
     print("[*] Starting Canvas Persistence Thread (Files + DB)...")

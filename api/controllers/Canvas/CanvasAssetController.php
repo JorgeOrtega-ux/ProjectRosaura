@@ -41,8 +41,7 @@ class CanvasAssetController extends BaseController {
         }
 
 
-        return in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms) || 
-               in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms);
+        return in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms);
     }
 
     public function upload_template($input) {
@@ -65,17 +64,11 @@ class CanvasAssetController extends BaseController {
         }
     }
 
-    public function get_templates($input) {
+    public function list_templates($input) {
         try {
-            if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
-            }
-            
-            $userId = $this->session->getActiveAccountId();
-            $result = $this->canvasServices->getUserTemplates($userId);
-            
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+            $result = $this->canvasServices->listTemplates($userId);
             return $this->respond($result);
-            
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -91,7 +84,7 @@ class CanvasAssetController extends BaseController {
             $templateId = $input['id'] ?? null;
             
             if (!$templateId) {
-                return $this->respond(['success' => false, 'message' => __('err_template_id_missing')]);
+                return $this->respond(['success' => false, 'message' => __('err_invalid_template_id')]);
             }
 
             $result = $this->canvasServices->deleteTemplate($userId, (int)$templateId);
@@ -101,6 +94,20 @@ class CanvasAssetController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
+
+    public function get_template_pixel_data($input) {
+        try {
+            $id = (int)($input['id'] ?? 0);
+            if ($id <= 0) {
+                return $this->respond(['success' => false, 'message' => __('err_invalid_id')]);
+            }
+            $result = $this->canvasServices->getTemplatePixelData($id);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function get_custom_palettes($input) {
         try {
             if (!$this->session->isLoggedIn()) {
@@ -188,22 +195,16 @@ class CanvasAssetController extends BaseController {
                 $perms = [];
             }
             
-            $canInject = ($tier >= 3) ||
-                         in_array(\App\Core\System\PermissionsConstants::INJECT_TEMPLATE, $perms) || 
-                         in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms);
+            $canInject = \App\Core\System\SubscriptionPlanConstants::hasFeature($tier, 'inject_templates');
             
             if (!$canInject) {
-                return $this->respond(['success' => false, 'message' => 'Esta función requiere una suscripción Ultra (Nivel 3).']);
+                return $this->respond(['success' => false, 'message' => __('err_requires_inject_templates_plan') ?: 'Esta función requiere un plan de suscripción que incluya inyección de plantillas.']);
             }
 
             // --- TOKEN LIMIT CHECK (5 Hours Window) ---
             $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($tier);
-            $maxTokens = (int)($planLimits['max_template_tokens'] ?? 5000);
-            if ($maxTokens <= 0 && $tier < 3) {
-                return $this->respond(['success' => false, 'message' => 'Tu plan actual no incluye cuota de tokens para inyección de plantillas.']);
-            }
             if ($maxTokens <= 0) {
-                $maxTokens = 5000;
+                return $this->respond(['success' => false, 'message' => 'Tu plan actual no incluye cuota de tokens para inyección de plantillas.']);
             }
 
             $w = (int)($input['w'] ?? 500);

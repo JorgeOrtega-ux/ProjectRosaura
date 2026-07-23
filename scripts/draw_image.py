@@ -5,6 +5,11 @@ import argparse
 from PIL import Image
 import redis
 import mysql.connector
+from dotenv import load_dotenv
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENV_PATH = os.path.join(BASE_DIR, '.env')
+load_dotenv(dotenv_path=ENV_PATH)
 
 CHUNK_SIZE = 512
 
@@ -69,28 +74,17 @@ def main():
 
     # DB Connection
     DB_HOST = os.getenv("DB_HOST")
+    DB_PORT = int(os.getenv("DB_PORT") or 3306)
     DB_USER = os.getenv("DB_USER")
     DB_PASS = os.getenv("DB_PASS")
     DB_NAME = os.getenv("DB_CANVASES_NAME")
 
-    candidate_db_hosts = [DB_HOST, "127.0.0.1", "localhost"] if DB_HOST else ["127.0.0.1", "localhost"]
-    seen = set()
-    db_hosts = [h for h in candidate_db_hosts if h and not (h in seen or seen.add(h))]
-
     print("[*] Connecting to MySQL to fetch canvas information...")
-    db = None
-    cursor = None
-    last_db_err = None
-    for host in db_hosts:
-        try:
-            db = mysql.connector.connect(host=host, port=int(os.getenv("DB_PORT", 3306)), user=DB_USER, password=DB_PASS, database=DB_NAME)
-            cursor = db.cursor(dictionary=True)
-            break
-        except Exception as e:
-            last_db_err = e
-
-    if not db or not cursor:
-        print(f"[!] MySQL connection error: {last_db_err}")
+    try:
+        db = mysql.connector.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASS, database=DB_NAME)
+        cursor = db.cursor(dictionary=True)
+    except Exception as e:
+        print(f"[!] MySQL connection error: {e}")
         return
 
     cursor.execute("SELECT size FROM canvases WHERE id = %s", (args.canvas_id,))
@@ -131,27 +125,18 @@ def main():
 
     # Redis Connection
     REDIS_HOST = os.getenv("REDIS_HOST")
-    REDIS_PORT = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else 6379
+    REDIS_PORT = int(os.getenv("REDIS_PORT") or 6379)
     REDIS_PASS = os.getenv("REDIS_PASS")
     
     print("[*] Connecting to Redis...")
-    candidate_redis_hosts = [REDIS_HOST, "127.0.0.1", "localhost"] if REDIS_HOST else ["127.0.0.1", "localhost"]
-    seen_r = set()
-    redis_hosts = [h for h in candidate_redis_hosts if h and not (h in seen_r or seen_r.add(h))]
-
-    r = None
-    for r_host in redis_hosts:
-        try:
-            r_temp = redis.Redis(host=r_host, port=REDIS_PORT, password=REDIS_PASS, db=0)
-            r_temp.ping()
-            r = r_temp
-            break
-        except Exception:
-            pass
-
-    if not r:
-        print("[!] Could not connect to Redis on any host.")
+    try:
+        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS, db=0)
+        r.ping()
+    except Exception as e:
+        print(f"[!] Could not connect to Redis: {e}")
         return
+
+    draw_finite(r, args, img, width, height)
 
     draw_finite(r, args, img, width, height)
 

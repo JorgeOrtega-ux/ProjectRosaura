@@ -82,6 +82,7 @@ def get_required_env(var_name):
 
 try:
     DB_HOST = get_required_env('DB_HOST')
+    DB_PORT = int(get_required_env('DB_PORT'))
     DB_USER = get_required_env('DB_USER')
     DB_PASS = os.getenv('DB_PASS')
     DB_IDENTITY_NAME = get_required_env('DB_IDENTITY_NAME')
@@ -97,25 +98,20 @@ except ValueError as e:
 WORKER_TICK_SECONDS = 3 
 
 def get_db_connection_with_retries(max_retries=5):
-    candidate_hosts = [DB_HOST, "127.0.0.1", "localhost"] if DB_HOST else ["127.0.0.1", "localhost"]
-    seen = set()
-    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
-
     retries = 0
     while retries < max_retries:
-        for host in hosts:
-            try:
-                connection = mysql.connector.connect(
-                    host=host,
-                    port=int(os.getenv("DB_PORT", 3306)),
-                    user=DB_USER,
-                    password=DB_PASS,
-                    database=DB_IDENTITY_NAME
-                )
-                if connection.is_connected():
-                    return connection
-            except Error:
-                pass
+        try:
+            connection = mysql.connector.connect(
+                host=DB_HOST,
+                port=DB_PORT,
+                user=DB_USER,
+                password=DB_PASS,
+                database=DB_IDENTITY_NAME
+            )
+            if connection.is_connected():
+                return connection
+        except Error:
+            pass
         retries += 1
         wait_time = 2 ** retries 
         Logger.warning(f"Network failure detected with MySQL. Retrying in {wait_time}s. Attempt {retries}/{max_retries}")

@@ -13,7 +13,7 @@ $maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits
 $hasLiveChat = SubscriptionPlanConstants::hasFeature($tier, 'chat_restriction') || SubscriptionPlanConstants::hasFeature($tier, 'allow_live_chat') || !empty($planLimits['allow_live_chat']) || !empty($planLimits['feat_chat_restriction']);
 
 $userPerms = $_SESSION['user_permissions'] ?? [];
-$canCreateOfficial = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPerms) || in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
+$canCreateOfficial = in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
 $canvasSizesList = Utils::getCanvasSizes();
 $defaultSizeKey = '64x64';
 if (!isset($canvasSizesList[$defaultSizeKey])) {
@@ -201,7 +201,7 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                                                 $isAllowed = ($tier >= $requiredTier);
                                                 $disabledClass = $isAllowed ? '' : 'disabled-interaction';
                                                 $action = $isAllowed ? 'selectValue' : '';
-                                                $tierName = SubscriptionPlanConstants::getTierLimits($requiredTier)['name'] ?? 'Pro';
+                                                $tierName = SubscriptionPlanConstants::getTierName($requiredTier);
                                                 $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ' . htmlspecialchars($tierName) . '</span>';
                                                 $activeClass = ($val === $defaultSizeKey && $isAllowed) ? 'active' : '';
                                             ?>
@@ -445,12 +445,14 @@ if (!isset($canvasSizesList[$defaultSizeKey])) {
                         </div>
                     </div>
                             <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_ultra') ?: __('lbl_requires_premium_advanced')) . '" data-position="top"'; ?>>
+                            <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
                                     <?php echo __('lbl_allow_live_chat'); ?>
-                                    <?php if(!$hasLiveChat): ?><span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Ultra</span><?php endif; ?>
+                                    <?php if(!$hasLiveChat): 
+                                        $lowestChatTier = SubscriptionPlanConstants::getLowestTierNameForFeature('allow_live_chat');
+                                    ?><span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> <?php echo htmlspecialchars($lowestChatTier); ?></span><?php endif; ?>
                                 </h2>
                                 <p class="component-card__description"><?php echo __('desc_allow_live_chat'); ?></p>
                             </div>

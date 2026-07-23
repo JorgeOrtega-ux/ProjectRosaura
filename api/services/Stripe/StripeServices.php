@@ -1164,7 +1164,7 @@ class StripeServices {
             'used_percentage' => $tokensPercentage,
             'reset_at' => $tokenUsage['reset_at'],
             'reset_in_seconds' => $tokenUsage['reset_in_seconds'],
-            'has_feature' => ($maxTokens > 0 || $userTier >= 3)
+            'has_feature' => ($maxTokens > 0)
         ];
 
         return [

@@ -26,7 +26,14 @@ export const DialogTemplates = {
                 }
                 badgeText = `${formattedCoins} ${__('coins')}`;
             } else {
-                const tierName = data.tier == 1 ? 'Plus' : (data.tier == 2 ? 'Pro' : (data.tier == 3 ? 'Ultra' : 'Premium'));
+                let tierName = data.tier_name || '';
+                if (!tierName && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+                    const found = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === parseInt(data.tier, 10));
+                    if (found && found.name) tierName = found.name;
+                }
+                if (!tierName) {
+                    tierName = data.tier == 1 ? 'Plus' : (data.tier == 2 ? 'Pro' : (data.tier == 3 ? 'Ultra' : 'Premium'));
+                }
                 badgeIcon = 'stars';
                 badgeText = `${__('subscription')} ${tierName}`;
             }

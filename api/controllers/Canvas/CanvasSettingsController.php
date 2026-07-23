@@ -41,8 +41,7 @@ class CanvasSettingsController extends BaseController {
         }
 
 
-        return in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms) || 
-               in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms);
+        return in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms);
     }
 
  public function resize($input) {

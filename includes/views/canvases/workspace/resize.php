@@ -22,9 +22,7 @@ if (!$canvasUuid) {
 }
 
 $userPermissions = $_SESSION['user_permissions'] ?? [];
-$canManageOfficial = in_array('manage_canvases', $userPermissions)
-    || in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions)
-    || in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPermissions);
+$canManageOfficial = in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPermissions);
 
 $db = new DatabaseManager();
 $pdo = $db->getConnection(DB::CONN_CANVASES);
@@ -193,7 +191,7 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                                     $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
                                                     $disabledClass = $isAllowed ? '' : 'disabled-interaction';
                                                     $action = $isAllowed ? 'selectValue' : '';
-                                                    $tierName = SubscriptionPlanConstants::getTierLimits($requiredTier)['name'] ?? 'Pro';
+                                                    $tierName = SubscriptionPlanConstants::getTierName($requiredTier);
                                                     $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ' . htmlspecialchars($tierName) . '</span>';
                                                     $activeClass = ((string)$instantSize === (string)$val && $isAllowed) ? 'active' : '';
                                                 ?>
@@ -303,7 +301,7 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                                         $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
                                                         $disabledClass = $isAllowed ? '' : 'disabled-interaction';
                                                         $action = $isAllowed ? 'selectValue' : '';
-                                                        $tierName = SubscriptionPlanConstants::getTierLimits($requiredTier)['name'] ?? 'Pro';
+                                                        $tierName = SubscriptionPlanConstants::getTierName($requiredTier);
                                                      $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ' . htmlspecialchars($tierName) . '</span>';
                                                         $activeClass = ((string)$scheduledSize === (string)$val && $isAllowed) ? 'active' : '';
                                                     ?>

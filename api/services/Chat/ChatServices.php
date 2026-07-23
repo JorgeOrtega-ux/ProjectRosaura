@@ -396,10 +396,7 @@ class ChatServices
 
         $canvasId = (int)$canvas['id'];
         $hasAccess = false;
-        
-        $isAdmin = is_array($userPermissions) && in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions);
-
-        if ($canvas['privacy'] !== \App\Core\System\CanvasConstants::PRIVACY_PRIVATE || $isAdmin) {
+        if ($canvas['privacy'] !== \App\Core\System\CanvasConstants::PRIVACY_PRIVATE) {
             $hasAccess = true;
         } else if ($userId && $canvas['owner_id'] == $userId) {
             $hasAccess = true;

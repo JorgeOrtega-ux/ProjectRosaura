@@ -48,7 +48,7 @@ if ($canvasUuid) {
             $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
             
             $userPerms = $_SESSION['user_permissions'] ?? [];
-            $canCreateOfficial = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPerms) || in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
+            $canCreateOfficial = in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
             $cOfficial = (bool)($canvasData['is_official'] ?? 0);
 
             $cTags = [];
@@ -460,12 +460,14 @@ if (!$canvasId) {
                         </div>
                     </div>
                             <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_ultra') ?: __('lbl_requires_premium_advanced')) . '" data-position="top"'; ?>>
+                            <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
                                     <?php echo __('lbl_allow_live_chat'); ?>
-                                    <?php if(!$hasLiveChat): ?><span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> Ultra</span><?php endif; ?>
+                                    <?php if(!$hasLiveChat): 
+                                        $lowestChatTier = SubscriptionPlanConstants::getLowestTierNameForFeature('allow_live_chat');
+                                    ?><span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> <?php echo htmlspecialchars($lowestChatTier); ?></span><?php endif; ?>
                                 </h2>
                                 <p class="component-card__description"><?php echo __('desc_allow_live_chat'); ?></p>
                             </div>

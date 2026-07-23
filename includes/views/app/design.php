@@ -112,22 +112,10 @@ if (!empty($canvasUuid)) {
             $uStmt = $dbManager->getConnection(DB::CONN_IDENTITY)->prepare("SELECT subscription_tier FROM users WHERE id = :uid LIMIT 1");
             $uStmt->execute([':uid' => $userId]);
             $userTier = (int)($uStmt->fetchColumn() ?: 0);
-            if ($userTier >= 3) {
-                $canInjectTemplate = true;
-            }
+            $canInjectTemplate = \App\Core\System\SubscriptionPlanConstants::hasFeature($userTier, 'inject_templates');
         }
 
-        if (!$canInjectTemplate && $session && method_exists($session, 'getPermissions')) {
-            $perms = $session->getPermissions();
-            if (empty($perms) && isset($_SESSION['user_permissions'])) {
-                $perms = $_SESSION['user_permissions'];
-            } elseif (empty($perms) && isset($_SESSION['permissions'])) {
-                $perms = $_SESSION['permissions'];
-            }
-            if (is_array($perms)) {
-                $canInjectTemplate = in_array(\App\Core\System\PermissionsConstants::INJECT_TEMPLATE, $perms) || in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms);
-            }
-        }
+
     } catch (Exception $e) {
         \App\Core\System\Logger::error('err_design_view_load', ['exception' => $e->getMessage()]);
     }

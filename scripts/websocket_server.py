@@ -75,28 +75,19 @@ IS_DOCKER = os.path.exists('/.dockerenv') or os.getenv('DOCKER_CONTAINER') == 't
 def get_db_pool():
     global DB_POOL
     if DB_POOL is None:
-        candidate_hosts = [os.getenv("DB_HOST"), "127.0.0.1", "localhost"]
-        seen = set()
-        hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
-        
-        last_e = None
-        for db_host in hosts:
-            try:
-                DB_POOL = pooling.MySQLConnectionPool(
-                    pool_name="chunk_pool",
-                    pool_size=32,
-                    pool_reset_session=True,
-                    host=db_host,
-                    port=int(os.getenv("DB_PORT", 3306)),
-                    user=os.getenv("DB_USER"),
-                    password=os.getenv("DB_PASS"),
-                    database=os.getenv("DB_CANVASES_NAME")
-                )
-                break
-            except Exception as e:
-                last_e = e
-        if DB_POOL is None and last_e:
-            print(f"[!] Error creating DB pool: {last_e}")
+        try:
+            DB_POOL = pooling.MySQLConnectionPool(
+                pool_name="chunk_pool",
+                pool_size=32,
+                pool_reset_session=True,
+                host=os.getenv("DB_HOST"),
+                port=int(os.getenv("DB_PORT")),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASS"),
+                database=os.getenv("DB_CANVASES_NAME")
+            )
+        except Exception as e:
+            print(f"[!] Error creating DB pool: {e}")
     return DB_POOL
 
 def consume_user_perk(user_id, perk_id):
@@ -107,7 +98,7 @@ def consume_user_perk(user_id, perk_id):
             return False
         db = pool.get_connection()
         cursor = db.cursor()
-        identity_db = os.getenv("DB_IDENTITY_NAME") or "db_identity"
+        identity_db = os.getenv("DB_IDENTITY_NAME")
         
         query_sel = f"SELECT id FROM `{identity_db}`.`user_perks` WHERE user_id = %s AND perk_id = %s AND is_used = 0 ORDER BY created_at ASC LIMIT 1"
         cursor.execute(query_sel, (user_id, perk_id))
@@ -268,10 +259,8 @@ def get_perks_config():
 async def get_redis_client():
     global REDIS_CLIENT
     if REDIS_CLIENT is None:
-        redis_host = os.getenv("REDIS_HOST", "redis" if IS_DOCKER else "127.0.0.1")
-        if not IS_DOCKER and redis_host == "redis":
-            redis_host = "127.0.0.1"
-        redis_port = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else 6379
+        redis_host = os.getenv("REDIS_HOST")
+        redis_port = int(os.getenv("REDIS_PORT"))
         redis_pass = os.getenv("REDIS_PASS")
         
         print(f"[DEBUG REDIS] Connecting to redis on {redis_host}:{redis_port}")
@@ -445,8 +434,8 @@ async def handler(websocket):
         await websocket.close(code=1008, reason="Corrupt ticket data.")
         return
 
-    MAX_CONNECTIONS = int(os.getenv("WS_MAX_CONNECTIONS") or 1000)
-    QOS_THRESHOLD = int(os.getenv("WS_QOS_THRESHOLD") or 800)
+    MAX_CONNECTIONS = int(os.getenv("WS_MAX_CONNECTIONS"))
+    QOS_THRESHOLD = int(os.getenv("WS_QOS_THRESHOLD"))
 
     if len(WS_META) >= QOS_THRESHOLD:
         if user_type == 'guest':
@@ -1176,7 +1165,7 @@ async def handler(websocket):
 
 async def main():
     host = os.getenv("WS_HOST")
-    port = int(os.getenv("WS_PORT")) if os.getenv("WS_PORT") else None
+    port = int(os.getenv("WS_PORT"))
     
     print(f"Starting WebSocket server on ws://{host}:{port}")
     

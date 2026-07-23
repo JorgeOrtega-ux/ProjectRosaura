@@ -11,12 +11,10 @@ if (!$userId) {
     return;
 }
 $userPermissions = $_SESSION['user_permissions'] ?? [];
-$isAdmin = in_array('manage_canvases', $userPermissions) || 
-           in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions) || 
-           in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPermissions);
+$isAdmin = in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPermissions);
 
 $subscriptionTier = (int)($_SESSION['subscription_tier'] ?? 0);
-$hasAdvancedRoles = $isAdmin || \App\Core\System\SubscriptionPlanConstants::hasFeature($subscriptionTier, 'advanced_roles');
+$hasAdvancedRoles = \App\Core\System\SubscriptionPlanConstants::hasFeature($subscriptionTier, 'advanced_roles');
 
 $limit = 25; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;

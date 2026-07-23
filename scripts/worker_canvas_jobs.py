@@ -40,65 +40,36 @@ def get_s3_client():
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(threadName)s] %(levelname)s: %(message)s')
 
-IS_DOCKER = os.path.exists('/.dockerenv') or os.getenv('DOCKER_CONTAINER') == 'true'
-
-DB_HOST = os.getenv("DB_HOST", "db" if IS_DOCKER else "127.0.0.1")
-if not IS_DOCKER and DB_HOST == "db":
-    DB_HOST = "127.0.0.1"
-DB_PORT = int(os.getenv("DB_PORT")) if os.getenv("DB_PORT") else 3306
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = int(os.getenv("DB_PORT") or 3306)
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_NAME = os.getenv("DB_CANVASES_NAME")
 DB_IDENTITY_NAME = os.getenv("DB_IDENTITY_NAME")
 
-REDIS_HOST = os.getenv("REDIS_HOST", "redis" if IS_DOCKER else "127.0.0.1")
-if not IS_DOCKER and REDIS_HOST == "redis":
-    REDIS_HOST = "127.0.0.1"
-REDIS_PORT = int(os.getenv("REDIS_PORT")) if os.getenv("REDIS_PORT") else 6379
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = int(os.getenv("REDIS_PORT") or 6379)
 REDIS_PASS = os.getenv("REDIS_PASS")
 
 SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR") or "/var/www/html/storage/private/snapshots"
-SYNC_INTERVAL = int(os.getenv("WORKER_CANVAS_SYNC_INTERVAL") or os.getenv("WORKER_RESETS_SYNC_INTERVAL") or 10)
+SYNC_INTERVAL = int(os.getenv("WORKER_CANVAS_SYNC_INTERVAL") or 10)
 THUMBNAILS_DIR = os.getenv("THUMBNAILS_DIR") or "/var/www/html/storage/public/thumbnails"
 ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR") or "/var/www/html/storage/private/backups"
 
 SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR") or 2)
 
 def get_redis_client():
-    candidate_hosts = [REDIS_HOST, "127.0.0.1", "localhost"] if REDIS_HOST else ["127.0.0.1", "localhost"]
-    seen = set()
-    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
-    for host in hosts:
-        try:
-            r = redis.Redis(
-                host=host, port=REDIS_PORT or 6379, password=REDIS_PASS,
-                socket_keepalive=True, retry_on_timeout=True,
-                health_check_interval=60, socket_timeout=60
-            )
-            r.ping()
-            return r
-        except Exception:
-            pass
-    return redis.Redis(
-        host=REDIS_HOST, port=REDIS_PORT or 6379, password=REDIS_PASS,
+    r = redis.Redis(
+        host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS,
         socket_keepalive=True, retry_on_timeout=True,
         health_check_interval=60, socket_timeout=60
     )
+    r.ping()
+    return r
 
 def get_db_connection():
-    candidate_hosts = [DB_HOST, "127.0.0.1", "localhost"] if DB_HOST else ["127.0.0.1", "localhost"]
-    seen = set()
-    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
-    for host in hosts:
-        try:
-            return pymysql.connect(
-                host=host, port=DB_PORT or 3306, user=DB_USER, password=DB_PASS, database=DB_NAME,
-                cursorclass=pymysql.cursors.DictCursor
-            )
-        except Exception:
-            pass
     return pymysql.connect(
-        host=DB_HOST, port=DB_PORT or 3306, user=DB_USER, password=DB_PASS, database=DB_NAME,
+        host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASS, database=DB_NAME,
         cursorclass=pymysql.cursors.DictCursor
     )
 

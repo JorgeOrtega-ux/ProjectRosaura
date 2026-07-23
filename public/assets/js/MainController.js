@@ -96,7 +96,13 @@ export class MainController {
         window.addEventListener('subscription-updated', (e) => {
             if (e.detail && e.detail.tier !== undefined) {
                 window.appUserTier = parseInt(e.detail.tier, 10);
-                const tierName = window.appUserTier === 3 ? 'Ultra' : (window.appUserTier === 2 ? 'Pro' : (window.appUserTier === 1 ? 'Plus' : 'Free'));
+                let tierName = 'Free';
+                if (window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+                    const found = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === window.appUserTier);
+                    if (found && found.name) tierName = found.name;
+                } else {
+                    tierName = window.appUserTier === 3 ? 'Ultra' : (window.appUserTier === 2 ? 'Pro' : (window.appUserTier === 1 ? 'Plus' : 'Free'));
+                }
                 document.querySelectorAll('[data-ref="user-tier-badge"]').forEach(b => {
                     b.textContent = tierName;
                 });

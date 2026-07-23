@@ -20,6 +20,8 @@ import logging
 from dotenv import load_dotenv
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENV_PATH = os.path.join(BASE_DIR, '.env')
+load_dotenv(dotenv_path=ENV_PATH)
 
 class Logger:
     @staticmethod
@@ -63,6 +65,7 @@ class Logger:
     def critical(message): Logger.write('critical', message, 'worker')
 
 DB_HOST = os.getenv('DB_HOST')
+DB_PORT = int(os.getenv('DB_PORT') or 3306)
 DB_USER = os.getenv('DB_USER')
 DB_PASS = os.getenv('DB_PASS')
 DB_NAME = os.getenv('DB_IDENTITY_NAME')
@@ -73,7 +76,7 @@ DB_TEL_USER = os.getenv('DB_TELEMETRY_USER')
 DB_TEL_PASS = os.getenv('DB_TELEMETRY_PASSWORD')
 
 REDIS_HOST = os.getenv('REDIS_HOST')
-REDIS_PORT = int(os.getenv('REDIS_PORT')) if os.getenv('REDIS_PORT') else None
+REDIS_PORT = int(os.getenv('REDIS_PORT') or 6379)
 REDIS_PASS = os.getenv('REDIS_PASS')
 
 S3_ENDPOINT = os.getenv("AWS_ENDPOINT")
@@ -91,70 +94,44 @@ QUEUE_ACCOUNT_DELETION = 'queue:account_deletion'
 QUEUE_EMAILS = 'queue:emails'
 
 SMTP_HOST = os.getenv('SMTP_HOST')
-SMTP_PORT = int(os.getenv('SMTP_PORT')) if os.getenv('SMTP_PORT') else None
+SMTP_PORT = int(os.getenv('SMTP_PORT') or 465)
 SMTP_USER = os.getenv('SMTP_USER')
 SMTP_PASS = os.getenv('SMTP_PASS')
 SMTP_FROM_EMAIL = os.getenv('SMTP_FROM_EMAIL')
 SMTP_FROM_NAME = os.getenv('SMTP_FROM_NAME')
 
 def get_db_connection():
-    candidate_hosts = [DB_HOST, "127.0.0.1", "localhost"] if DB_HOST else ["127.0.0.1", "localhost"]
-    seen = set()
-    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
-    for host in hosts:
-        try:
-            return mysql.connector.connect(
-                host=host,
-                port=int(os.getenv("DB_PORT", 3306)),
-                user=DB_USER,
-                password=DB_PASS,
-                database=DB_NAME
-            )
-        except Exception:
-            pass
-    return mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
+    return mysql.connector.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASS,
+        database=DB_NAME
+    )
 
 def get_telemetry_db_connection():
-    candidate_hosts = [DB_TEL_HOST, "127.0.0.1", "localhost"] if DB_TEL_HOST else ["127.0.0.1", "localhost"]
-    seen = set()
-    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
-    for host in hosts:
-        try:
-            return mysql.connector.connect(
-                host=host,
-                port=int(os.getenv("DB_PORT", 3306)),
-                user=DB_TEL_USER,
-                password=DB_TEL_PASS,
-                database=DB_TEL_NAME
-            )
-        except Exception:
-            pass
-    return mysql.connector.connect(host=DB_TEL_HOST, user=DB_TEL_USER, password=DB_TEL_PASS, database=DB_TEL_NAME)
+    return mysql.connector.connect(
+        host=DB_TEL_HOST,
+        port=DB_PORT,
+        user=DB_TEL_USER,
+        password=DB_TEL_PASS,
+        database=DB_TEL_NAME
+    )
 
 def get_redis_connection():
-    candidate_hosts = [REDIS_HOST, "127.0.0.1", "localhost"] if REDIS_HOST else ["127.0.0.1", "localhost"]
-    seen = set()
-    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
-    for host in hosts:
-        try:
-            client_args = {
-                'host': host,
-                'port': REDIS_PORT or 6379,
-                'decode_responses': True,
-                'socket_timeout': 30,
-                'socket_connect_timeout': 10,
-                'socket_keepalive': True
-            }
-            if REDIS_PASS:
-                client_args['password'] = REDIS_PASS
-            
-            client = redis.Redis(**client_args)
-            client.ping()
-            return client
-        except Exception:
-            pass
-    Logger.error("Redis connection initialization failed on all candidate hosts.")
-    return None
+    client_args = {
+        'host': REDIS_HOST,
+        'port': REDIS_PORT,
+        'decode_responses': True,
+        'socket_timeout': 30,
+        'socket_connect_timeout': 10,
+        'retry_on_timeout': True
+    }
+    if REDIS_PASS:
+        client_args['password'] = REDIS_PASS
+    r = redis.Redis(**client_args)
+    r.ping()
+    return r
 
 def process_deletion(payload):
     user_id = payload.get('user_id')

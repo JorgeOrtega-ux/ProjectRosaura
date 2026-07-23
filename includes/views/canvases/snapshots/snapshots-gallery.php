@@ -42,7 +42,7 @@ if ($uuid) {
 
             $userId = $_SESSION['user_id'] ?? null;
             $isOwner = ($canvas['owner_id'] == $userId);
-            $isPrivileged = isset($_SESSION['user_permissions']) && in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $_SESSION['user_permissions']);
+            $isPrivileged = false;
 
             if ($canvas['privacy'] === DB::PRIVACY_PRIVATE) {
                 $isMember = false;
@@ -53,7 +53,7 @@ if ($uuid) {
                     $isMember = (bool) $memberStmt->fetch(PDO::FETCH_ASSOC);
                 }
 
-                if (!$isOwner && !$isMember && !$isPrivileged) {
+                if (!$isOwner && !$isMember) {
                     $isAuthorized = false;
                     $error = true;
                     $errorMessage = __('err_unauthorized');
@@ -64,7 +64,7 @@ if ($uuid) {
             if ($isAuthorized) {
                 $userIdParam = $_SESSION['user_id'] ?? 0;
                 $privacyCondition = '';
-                if (!$isOwner && !$isPrivileged) {
+                if (!$isOwner) {
                     $privacyCondition = ' AND s.privacy = \'public\'';
                 }
 

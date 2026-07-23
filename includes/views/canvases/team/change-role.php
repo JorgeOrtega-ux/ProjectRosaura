@@ -64,11 +64,9 @@ try {
             } catch (\Exception $e) {}
         }
 
-        $isAdmin = in_array('manage_canvases', $_SESSION['user_permissions'] ?? []) || 
-                   in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $_SESSION['user_permissions'] ?? []) || 
-                   in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $_SESSION['user_permissions'] ?? []);
+        $isAdmin = in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $_SESSION['user_permissions'] ?? []);
 
-        $hasAdvancedRoles = $isAdmin || ($ownerTier >= 2);
+        $hasAdvancedRoles = \App\Core\System\SubscriptionPlanConstants::hasFeature($ownerTier, 'advanced_roles');
         if (!$hasAdvancedRoles) {
             echo "<div class='view-content'><p>".__('err_plan_custom_roles')."</p></div>";
             return;

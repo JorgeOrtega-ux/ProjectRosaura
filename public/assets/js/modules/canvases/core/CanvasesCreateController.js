@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, getDynamicTierName } from '../../../core/utils/uiUtils.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 
 function getAllPalettes() {
@@ -67,7 +67,7 @@ class CanvasesCreateController {
         let hasPerm = false;
         if (window.APP_CONFIG && window.APP_CONFIG.permissions) {
             const p = window.APP_CONFIG.permissions;
-            hasPerm = p.includes('canvases.create_official') || p.includes('access_admin_panel');
+            hasPerm = p.includes('canvases.create_official');
         }
 
         const officialToggle = document.querySelector('[data-ref="val_is_official"]');
@@ -129,7 +129,7 @@ class CanvasesCreateController {
                 btn.title = window.__('tooltip_upgrade_palette');
             }
 
-            const tierName = reqTier === 3 ? 'Ultra' : (reqTier === 1 ? 'Plus' : 'Pro');
+            const tierName = getDynamicTierName(reqTier);
             const lockHtml = isLocked ? `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${tierName}</span>` : '';
 
             btn.innerHTML = `
@@ -246,7 +246,7 @@ class CanvasesCreateController {
                 let lockIcon = link.querySelector('.component-badge');
                 if (!lockIcon) {
                     const reqTier = parseInt(requiredTier, 10);
-                    const tierName = reqTier === 3 ? 'Ultra' : (reqTier === 1 ? 'Plus' : 'Pro');
+                    const tierName = getDynamicTierName(reqTier);
                     link.insertAdjacentHTML('beforeend', `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${tierName}</span>`);
                 }
             }

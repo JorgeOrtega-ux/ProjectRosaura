@@ -29,8 +29,7 @@ class CanvasCoreController extends BaseController {
         if (!is_array($perms)) {
             $perms = [];
         }
-        return in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms) || 
-               in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $perms);
+        return in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $perms);
     }
 
     public function get($input) {

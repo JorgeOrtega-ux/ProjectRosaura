@@ -14,7 +14,9 @@ except ImportError:
 
 def load_env_vars():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    env_path = os.path.abspath(os.path.join(script_dir, '../.env'))
+    env_path = os.path.abspath(os.path.join(script_dir, '../../.env'))
+    if not os.path.exists(env_path):
+        env_path = os.path.abspath(os.path.join(script_dir, '../.env'))
     if os.path.exists(env_path):
         with open(env_path, 'r', encoding='utf-8') as f:
             for line in f:

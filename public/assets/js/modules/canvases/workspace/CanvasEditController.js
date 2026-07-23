@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, getDynamicTierName } from '../../../core/utils/uiUtils.js';
 
 function getAllPalettes() {
     let palettes = [];
@@ -168,7 +168,7 @@ class CanvasEditController {
                 btn.title = window.__('tooltip_upgrade_palette');
             }
 
-            const tierName = reqTier === 3 ? 'Ultra' : (reqTier === 1 ? 'Plus' : 'Pro');
+            const tierName = getDynamicTierName(reqTier);
             const lockHtml = isLocked ? `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${tierName}</span>` : '';
 
             btn.innerHTML = `

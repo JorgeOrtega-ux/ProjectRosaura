@@ -35,7 +35,7 @@ class SubscriptionPlanConstants {
                     'feat_unlimited_exports' => (bool)$row['feat_unlimited_exports'],
                     'feat_beta_access' => (bool)$row['feat_beta_access'],
                     'feat_inject_templates' => (bool)($row['feat_inject_templates'] ?? false),
-                    'max_template_tokens' => ((bool)($row['feat_inject_templates'] ?? false) || $tier >= 3) ? 5000 : 0,
+                    'max_template_tokens' => ((bool)($row['feat_inject_templates'] ?? false)) ? 5000 : 0,
                     'allow_live_chat' => (bool)$row['feat_chat_restriction'],
                     'custom_palettes' => (bool)$row['feat_custom_palettes']
                 ];
@@ -61,7 +61,7 @@ class SubscriptionPlanConstants {
             'feat_unlimited_exports' => false,
             'feat_beta_access' => false,
             'feat_inject_templates' => false,
-            'max_template_tokens' => ($tier >= 3) ? 5000 : 0,
+            'max_template_tokens' => 0,
             'allow_live_chat' => false,
             'custom_palettes' => false
         ];
@@ -133,6 +133,60 @@ class SubscriptionPlanConstants {
             // Silently fallback on error
         }
         return $tiers;
+    }
+
+    public static function getTierName(int $tierLevel): string {
+        $limits = self::getTierLimits($tierLevel);
+        if (!empty($limits['name'])) {
+            return $limits['name'];
+        }
+        $allTiers = self::getAllTiers();
+        foreach ($allTiers as $t) {
+            if ((int)$t['tier_level'] === $tierLevel) {
+                return $t['name'];
+            }
+        }
+        return 'Pro';
+    }
+
+    public static function getLowestTierForFeature(string $featureKey): ?array {
+        if ($featureKey === 'allow_live_chat') {
+            $featureKey = 'feat_chat_restriction';
+        } elseif ($featureKey === 'live_templates' || $featureKey === 'live_sync') {
+            $featureKey = 'feat_beta_access';
+        }
+        if (strpos($featureKey, 'feat_') !== 0 && !in_array($featureKey, ['custom_palettes', 'allow_live_chat'])) {
+            $featureKey = 'feat_' . $featureKey;
+        }
+
+        $allTiers = self::getAllTiers();
+        foreach ($allTiers as $t) {
+            if (isset($t['is_active']) && (int)$t['is_active'] === 0) {
+                continue;
+            }
+            $hasFeat = false;
+            if (isset($t[$featureKey]) && ((bool)$t[$featureKey] === true || (int)$t[$featureKey] === 1)) {
+                $hasFeat = true;
+            }
+            if (!$hasFeat && strpos($featureKey, 'feat_') === 0) {
+                $rawKey = substr($featureKey, 5);
+                if (isset($t[$rawKey]) && ((bool)$t[$rawKey] === true || (int)$t[$rawKey] === 1)) {
+                    $hasFeat = true;
+                }
+            }
+            if ($hasFeat) {
+                return $t;
+            }
+        }
+        return null;
+    }
+
+    public static function getLowestTierNameForFeature(string $featureKey): string {
+        $lowest = self::getLowestTierForFeature($featureKey);
+        if ($lowest && !empty($lowest['name'])) {
+            return $lowest['name'];
+        }
+        return 'Pro';
     }
 }
 ?>

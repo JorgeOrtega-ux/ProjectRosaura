@@ -88,7 +88,14 @@ export class BillingController {
     updateSubscriptionData(data) {
         if (!this.subscriptionArea) return;
 
-        const tierName = data.tier === 3 ? 'Ultra' : (data.tier === 2 ? 'Pro' : (data.tier === 1 ? 'Plus' : 'Free'));
+        let tierName = data.tier_name || '';
+        if (!tierName && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+            const found = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === parseInt(data.tier, 10));
+            if (found && found.name) tierName = found.name;
+        }
+        if (!tierName) {
+            tierName = data.tier === 3 ? 'Ultra' : (data.tier === 2 ? 'Pro' : (data.tier === 1 ? 'Plus' : 'Free'));
+        }
         const status = data.status || 'active';
         const cancelAtEnd = data.cancel_at_period_end;
         let dateLabel = cancelAtEnd ? (window.__('ends_on') || 'Finaliza el') : (window.__('next_billing') || 'Próxima facturación');
@@ -176,7 +183,7 @@ export class BillingController {
         const tokensDivider = this.subscriptionArea.querySelector('[data-ref="sub-tokens-divider"]');
 
         if (tokensContainer) {
-            if (tokens.has_feature || tokens.max_tokens > 0 || data.tier >= 3) {
+            if (tokens.has_feature || tokens.max_tokens > 0) {
                 if (tokensDivider) tokensDivider.style.display = 'block';
                 tokensContainer.style.display = 'block';
 
