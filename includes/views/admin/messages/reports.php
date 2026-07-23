@@ -189,10 +189,10 @@ $backUrl = $appUrl . '/admin/messages';
                     <tbody data-ref="reports-tbody">
                         <?php if (empty($reports)): ?>
                         <tr>
-                            <td colspan="6" class="component-table-empty">
-                                <div class="component-table-empty__content">
-                                    <span class="material-symbols-rounded component-table-empty__icon">check_circle</span>
-                                    <p class="component-table-empty__text"><?php echo __('admin_no_reports'); ?></p>
+                            <td colspan="6" class="component-empty-table-cell">
+                                <div class="component-empty-state component-empty-state--table">
+                                    <span class="material-symbols-rounded component-empty-state-icon">check_circle</span>
+                                    <p class="component-empty-state-text"><?php echo __('admin_no_reports'); ?></p>
                                 </div>
                             </td>
                         </tr>

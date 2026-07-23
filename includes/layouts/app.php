@@ -168,6 +168,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         console.log("[APP_USER Debug]", window.APP_USER);
         window.APP_LIMITS = <?php echo json_encode($planLimits); ?>;
         window.APP_PRICES = <?php echo json_encode(\App\Core\System\SubscriptionPlanConstants::getTierPrices()); ?>;
+        window.APP_TIERS = <?php echo json_encode(\App\Core\System\SubscriptionPlanConstants::getAllTiers()); ?>;
 
 
         window.APP_CONFIG = {

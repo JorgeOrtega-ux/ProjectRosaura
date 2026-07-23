@@ -910,13 +910,15 @@ textarea.component-input-field::placeholder {
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 500px;
+    min-height: 480px;
+    max-height: 90vh;
     background: var(--bg-surface);
+    overflow: hidden;
 }
 
 .step-modal-banner {
     width: 100%;
-    height: 200px;
+    height: 180px;
     flex-shrink: 0;
     background: var(--bg-base);
 }
@@ -933,6 +935,7 @@ textarea.component-input-field::placeholder {
     display: flex;
     flex-direction: column;
     flex: 1;
+    overflow-y: auto;
 }
 
 .step-modal-step {
@@ -949,10 +952,155 @@ textarea.component-input-field::placeholder {
 .step-modal-desc {
     color: var(--text-secondary);
     margin-top: 8px;
-    margin-bottom: 24px;
-    flex: 1;
-    font-size: 0.8rem;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
     line-height: 1.5;
+}
+
+.welcome-features-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 8px 0 16px 0;
+    width: 100%;
+}
+
+.welcome-feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--bg-base, rgba(0, 0, 0, 0.02));
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+}
+
+.dark-theme .welcome-feature-item,
+[data-theme="dark"] .welcome-feature-item {
+    background-color: var(--bg-card, rgba(255, 255, 255, 0.03));
+    border-color: var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.welcome-feature-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+    color: var(--text-accent, #3b82f6);
+    flex-shrink: 0;
+}
+
+.welcome-feature-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.welcome-feature-title {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.welcome-feature-desc {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+.component-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    margin: 12px 0 18px 0;
+    width: 100%;
+}
+
+.component-card--selectable {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 14px;
+    border-radius: var(--radius-lg, 12px);
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+    background-color: var(--bg-base, rgba(0, 0, 0, 0.02));
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.component-card--selectable:hover {
+    border-color: var(--text-accent, #3b82f6);
+    background-color: var(--bg-surface-hover, rgba(59, 130, 246, 0.04));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.component-card--selectable.component-card--featured {
+    border-color: var(--text-accent, #3b82f6);
+    background-color: var(--bg-surface, #ffffff);
+    box-shadow: 0 0 0 1px var(--text-accent, #3b82f6), 0 4px 14px rgba(59, 130, 246, 0.12);
+}
+
+/* Dark Theme Support */
+.dark-theme .component-card--selectable,
+[data-theme="dark"] .component-card--selectable {
+    border-color: var(--border-color, rgba(255, 255, 255, 0.12));
+    background-color: var(--bg-card, rgba(255, 255, 255, 0.04));
+}
+
+.dark-theme .component-card--selectable:hover,
+[data-theme="dark"] .component-card--selectable:hover {
+    border-color: var(--text-accent, #60a5fa);
+    background-color: rgba(96, 165, 250, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.dark-theme .component-card--selectable.component-card--featured,
+[data-theme="dark"] .component-card--selectable.component-card--featured {
+    border-color: var(--text-accent, #60a5fa);
+    background-color: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 0 0 1px var(--text-accent, #60a5fa), 0 4px 18px rgba(0, 0, 0, 0.5);
+}
+
+.component-card__title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    color: var(--text-primary);
+}
+
+.component-card__price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.component-card__price .component-text-secondary {
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.welcome-plan-badge {
+    position: absolute;
+    top: -10px;
+    right: 10px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
 }
 
 .step-modal-dots {
@@ -960,7 +1108,9 @@ textarea.component-input-field::placeholder {
     justify-content: center;
     align-items: center;
     gap: 12px;
-    margin-bottom: 24px;
+    margin-top: auto;
+    padding-top: 12px;
+    margin-bottom: 20px;
     min-height: 16px;
 }
 
@@ -968,7 +1118,7 @@ textarea.component-input-field::placeholder {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--border-color);
+    background: var(--border-color, rgba(128, 128, 128, 0.3));
     transition: background 0.2s ease;
     position: relative;
     cursor: pointer;

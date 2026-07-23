@@ -1,6 +1,8 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+use App\Core\Helpers\Utils;
+
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 
 $canManageRoles = in_array(\App\Core\System\PermissionsConstants::VIEW_ROLES, $userPermissions);

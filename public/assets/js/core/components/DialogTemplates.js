@@ -94,26 +94,41 @@ export const DialogTemplates = {
                         <!-- Step 3 -->
                         <div class="step-modal-step" id="welcome-step-3">
                             <h2 class="component-modal-title">${window.__('welcome_modal_step3_title')}</h2>
-                            <p class="component-modal-desc step-modal-desc">
+                            <p class="component-modal-desc step-modal-desc" style="margin-bottom: 12px;">
                                 ${window.__('welcome_modal_step3_desc')}
                             </p>
                             
-                            <div class="component-card-grid">
-                                <div class="component-card--selectable"
-                                     onclick="if(window.spaRouter){window.spaRouter.navigate('/upgrade');}else{window.location.href='/upgrade';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
-                                    <h4 class="component-card__title">${window.__('plan_pro') || window.__('premium_plan_pro')}</h4>
-                                    <div class="component-card__price">$${window.APP_PRICES && window.APP_PRICES[2] ? window.APP_PRICES[2].monthly : '8.99'}<span class="component-text-secondary">${window.__('plan_period_month') || window.__('premium_period_month')}</span></div>
+                            <div class="welcome-features-list">
+                                <div class="welcome-feature-item">
+                                    <div class="welcome-feature-icon">
+                                        <span class="material-symbols-rounded component-icon-sm">cloud</span>
+                                    </div>
+                                    <div class="welcome-feature-text">
+                                        <span class="welcome-feature-title">${window.__('welcome_adv_storage_title') || 'Almacenamiento y Lienzos Ilimitados'}</span>
+                                        <span class="welcome-feature-desc">${window.__('welcome_adv_storage_desc') || 'Aumenta tu capacidad de almacenamiento en la nube y crea múltiples proyectos sin restricciones.'}</span>
+                                    </div>
                                 </div>
-                                <div class="component-card--selectable"
-                                     onclick="if(window.spaRouter){window.spaRouter.navigate('/upgrade');}else{window.location.href='/upgrade';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
-                                    <h4 class="component-card__title">${window.__('plan_ultra') || window.__('premium_plan_ultra')}</h4>
-                                    <div class="component-card__price">$${window.APP_PRICES && window.APP_PRICES[3] ? window.APP_PRICES[3].monthly : '19.99'}<span class="component-text-secondary">${window.__('plan_period_month') || window.__('premium_period_month')}</span></div>
+
+                                <div class="welcome-feature-item">
+                                    <div class="welcome-feature-icon">
+                                        <span class="material-symbols-rounded component-icon-sm">palette</span>
+                                    </div>
+                                    <div class="welcome-feature-text">
+                                        <span class="welcome-feature-title">${window.__('welcome_adv_tools_title') || 'Herramientas y Paletas Exclusivas'}</span>
+                                        <span class="welcome-feature-desc">${window.__('welcome_adv_tools_desc') || 'Diseña con paletas de colores personalizadas y accede a herramientas avanzadas para tus diseños.'}</span>
+                                    </div>
+                                </div>
+
+                                <div class="welcome-feature-item">
+                                    <div class="welcome-feature-icon">
+                                        <span class="material-symbols-rounded component-icon-sm">bolt</span>
+                                    </div>
+                                    <div class="welcome-feature-text">
+                                        <span class="welcome-feature-title">${window.__('welcome_adv_speed_title') || 'Renderizado Prioritario y Funciones Beta'}</span>
+                                        <span class="welcome-feature-desc">${window.__('welcome_adv_speed_desc') || 'Exporta tus lienzos a máxima velocidad y prueba las nuevas características antes que los demás.'}</span>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <p class="component-modal-desc component-text-secondary">
-                                ${window.__('upgrade_monthly_disclaimer') || window.__('premium_monthly_disclaimer')}
-                            </p>
                             
                             <div class="step-modal-dots">
                                 <div class="step-modal-dot" onclick="document.getElementById('welcome-step-3').classList.remove('active'); document.getElementById('welcome-step-1').classList.add('active');"></div>
@@ -121,7 +136,10 @@ export const DialogTemplates = {
                                 <div class="step-modal-dot active"></div>
                             </div>
 
-                            <div class="step-modal-actions">
+                            <div class="step-modal-actions" style="gap: 8px;">
+                                <button class="component-button component-button--h40 component-button--ghost" onclick="if(window.spaRouter){window.spaRouter.navigate('/upgrade');}else{window.location.href='/upgrade';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
+                                    ${window.__('btn_more_info') || 'Más información'}
+                                </button>
                                 <button class="component-button component-button--h40 component-button--dark" data-modal-action="finish">
                                     ${window.__('welcome_modal_btn_finish')}
                                 </button>

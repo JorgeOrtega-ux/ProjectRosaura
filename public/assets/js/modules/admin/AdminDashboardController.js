@@ -1,5 +1,5 @@
 import { ApiService } from '../../core/api/ApiServices.js';
-import { showMessage } from '../../core/utils/uiUtils.js';
+import { showMessage, formatNumber } from '../../core/utils/uiUtils.js';
 
 export class AdminDashboardController {
     constructor() {
@@ -117,15 +117,15 @@ export class AdminDashboardController {
     }
 
     updateStatsCards(summary) {
-        if (this.dom.statNewUsers) this.dom.statNewUsers.textContent = summary.new_users;
-        if (this.dom.statLogins) this.dom.statLogins.textContent = summary.logins;
-        if (this.dom.statPageviews) this.dom.statPageviews.textContent = summary.pageviews;
-        if (this.dom.statPixels) this.dom.statPixels.textContent = summary.pixels ?? 0;
-        if (this.dom.statMessages) this.dom.statMessages.textContent = summary.messages ?? 0;
-        if (this.dom.statPerks) this.dom.statPerks.textContent = summary.perks_used ?? 0;
-        if (this.dom.statCanvases) this.dom.statCanvases.textContent = summary.canvases ?? 0;
-        if (this.dom.statBanned) this.dom.statBanned.textContent = summary.banned_users ?? 0;
-        if (this.dom.statLatency) this.dom.statLatency.textContent = (summary.avg_latency ?? 0) + ' ms';
+        if (this.dom.statNewUsers) this.dom.statNewUsers.textContent = formatNumber(summary.new_users ?? 0);
+        if (this.dom.statLogins) this.dom.statLogins.textContent = formatNumber(summary.logins ?? 0);
+        if (this.dom.statPageviews) this.dom.statPageviews.textContent = formatNumber(summary.pageviews ?? 0);
+        if (this.dom.statPixels) this.dom.statPixels.textContent = formatNumber(summary.pixels ?? 0);
+        if (this.dom.statMessages) this.dom.statMessages.textContent = formatNumber(summary.messages ?? 0);
+        if (this.dom.statPerks) this.dom.statPerks.textContent = formatNumber(summary.perks_used ?? 0);
+        if (this.dom.statCanvases) this.dom.statCanvases.textContent = formatNumber(summary.canvases ?? 0);
+        if (this.dom.statBanned) this.dom.statBanned.textContent = formatNumber(summary.banned_users ?? 0);
+        if (this.dom.statLatency) this.dom.statLatency.textContent = formatNumber(summary.avg_latency ?? 0) + ' ms';
     }
 
     async renderChart(chartsData) {

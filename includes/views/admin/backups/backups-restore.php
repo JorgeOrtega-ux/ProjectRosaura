@@ -1,8 +1,20 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-$backupId = isset($_GET['id']) ? $_GET['id'] : '';
+$backupId = $_GET['id'] ?? '';
+if (empty($backupId)) {
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    $path = parse_url($uri, PHP_URL_PATH) ?? '';
+    $parts = array_filter(explode('/', $path));
+    $last = end($parts);
+    if ($last && $last !== 'backup-restore') {
+        $backupId = urldecode($last);
+    }
+}
 $filename = base64_decode($backupId);
+if (empty($filename)) {
+    $filename = $backupId;
+}
 ?>
 
 <div class="view-content">

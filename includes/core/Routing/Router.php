@@ -254,8 +254,8 @@ class Router {
             ];
         }
 
-        if (preg_match('#^/admin/backup-restore/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['id'] = $matches[1];
+        if (preg_match('#^/admin/backup-restore/([^/]+)$#', $relativePath, $matches)) {
+            $_GET['id'] = urldecode($matches[1]);
             return $this->routes['/admin/backup-restore/:uuid'] ?? [
                 'view' => 'admin/backups/backups-restore.php',
                 'auth' => true,

@@ -401,7 +401,7 @@
     "admin_config_redis_flush_attempts_desc": "Intentos de vaciado de caché Redis.",
     "admin.config_updated": "Configuración del servidor guardada con éxito.",
     "admin_config_code_expire_title": "Expiración de Códigos",
-    "admin.cannot_edit_superadmin_permissions": "No se pueden modificar permisos de Super Admin.",
+    "admin.cannot_edit_superadmin_permissions": "No se pueden modificar permisos de SuperAdministrator.",
     "admin_config_admin_read_attempts_desc": "Límite de lectura de registros administrativos.",
     "admin_config_admin_notes_attempts_title": "Límite Notas Admin",
     "admin.user_not_found": "Usuario no encontrado.",

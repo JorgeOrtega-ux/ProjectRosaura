@@ -311,10 +311,10 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                     <tbody data-ref="messages-tbody">
                         <?php if (empty($messages)): ?>
                         <tr>
-                            <td colspan="7" class="component-table-empty">
-                                <div class="component-table-empty__content">
-                                    <span class="material-symbols-rounded component-table-empty__icon">chat</span>
-                                    <p class="component-table-empty__text"><?php echo __('admin_msg_empty_list'); ?></p>
+                            <td colspan="7" class="component-empty-table-cell">
+                                <div class="component-empty-state component-empty-state--table">
+                                    <span class="material-symbols-rounded component-empty-state-icon">chat</span>
+                                    <p class="component-empty-state-text"><?php echo __('admin_msg_empty_list'); ?></p>
                                 </div>
                             </td>
                         </tr>

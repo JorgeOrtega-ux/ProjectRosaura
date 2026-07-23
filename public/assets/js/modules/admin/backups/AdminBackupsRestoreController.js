@@ -52,8 +52,24 @@ class AdminBackupsRestoreController {
         }
     }
     async handleConfirmRestore(btn) {
+        let backupId = null;
         const urlParams = new URLSearchParams(window.location.search);
-        const backupId = urlParams.get('id');
+        if (urlParams.has('id') && urlParams.get('id')) {
+            backupId = urlParams.get('id');
+        }
+        if (!backupId) {
+            const dataEl = document.querySelector('[data-backup-id]');
+            if (dataEl && dataEl.getAttribute('data-backup-id')) {
+                backupId = dataEl.getAttribute('data-backup-id');
+            }
+        }
+        if (!backupId) {
+            const pathSegments = window.location.pathname.split('/').filter(Boolean);
+            const lastSegment = pathSegments[pathSegments.length - 1];
+            if (lastSegment && lastSegment !== 'backup-restore') {
+                backupId = decodeURIComponent(lastSegment);
+            }
+        }
         if (!backupId) {
             showMessage(window.__('err_backup_id_missing'), 'error');
             return;

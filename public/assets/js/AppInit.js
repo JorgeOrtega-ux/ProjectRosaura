@@ -187,17 +187,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const result = await window.dialogSystem.show('welcomeUserModal');
-        if (result.action === 'finish') {
-            try {
-                const api = new ApiService();
-                const res = await api.post(ApiRoutes.Settings.SetFlag, { flag_key: 'welcome_modal_seen' });
-                if (res && res.success) {
-                    window.AppUserFlags.push('welcome_modal_seen');
-                }
-            } catch (e) {
-            }
+        // Mark flag immediately so regardless of how modal is closed, it is saved in DB
+        if (!window.AppUserFlags.includes('welcome_modal_seen')) {
+            window.AppUserFlags.push('welcome_modal_seen');
         }
+
+        try {
+            const api = new ApiService();
+            await api.post(ApiRoutes.Settings.SetFlag, { flag_key: 'welcome_modal_seen' });
+        } catch (e) {
+        }
+
+        await window.dialogSystem.show('welcomeUserModal');
     };
 
     setTimeout(() => {
