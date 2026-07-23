@@ -37,7 +37,7 @@ export class ApiService {
             if (!ApiService.isRefreshingCsrf) {
                 ApiService.isRefreshingCsrf = true;
                 
-                fetch(window.location.href)
+                fetch(window.location.href, { cache: 'no-store', credentials: 'same-origin', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } })
                     .then(res => res.text())
                     .then(text => {
                         const match = text.match(/<meta name="csrf-token" content="([^"]+)">/);
