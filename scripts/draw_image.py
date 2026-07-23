@@ -16,7 +16,7 @@ def draw_finite(r, args, img, width, height):
     expected_size = width * height * 4
     if not raw_state or len(raw_state) != expected_size:
         print(f"[*] El estado en Redis no existe o su tamaño ({len(raw_state) if raw_state else 0} bytes) no coincide con {expected_size} bytes (4-byte RGBA). Inicializando de cero...")
-        raw_state = bytes([0, 0, 0, 0] * (width * height))
+        raw_state = b'\x00\x00\x00\x00' * (width * height)
 
     state = bytearray(raw_state)
     original_pixels = img.load()

@@ -441,6 +441,14 @@ export const DesignSetup = {
                             isProgressive: this.isProgressive
                         }
                     }, [offscreen]);
+                } else {
+                    this.renderWorker.postMessage({
+                        type: 'RESIZE_BOARD',
+                        payload: {
+                            boardWidth: this.boardWidth,
+                            boardHeight: this.boardHeight
+                        }
+                    });
                 }
             } catch (e) {
                 console.warn('[DesignSetup] Worker OffscreenCanvas initialization fallback to main thread:', e);

@@ -55,12 +55,19 @@ export const DesignInteractions = {
             e.preventDefault();
             this.showInventoryPerks = !this.showInventoryPerks;
             if (this.showInventoryPerks) {
+                btnPerks.classList.add('active');
+                if (this.showOwnerTools) {
+                    this.showOwnerTools = false;
+                    const btnOwnerTools = document.querySelector('[data-action="toggleOwnerTools"]');
+                    if (btnOwnerTools) btnOwnerTools.classList.remove('active');
+                }
                 if (!this.inventoryPerks) {
                     this.loadUserPerks();
                 } else {
                     this.updatePerkBadges();
                 }
             } else {
+                btnPerks.classList.remove('active');
                 this.updatePerkBadges();
             }
             return;
@@ -81,6 +88,11 @@ export const DesignInteractions = {
             this.showOwnerTools = !this.showOwnerTools;
             if (this.showOwnerTools) {
                 btnOwnerTools.classList.add('active');
+                if (this.showInventoryPerks) {
+                    this.showInventoryPerks = false;
+                    const btnPerksElement = document.querySelector('[data-action="togglePerksInventory"]');
+                    if (btnPerksElement) btnPerksElement.classList.remove('active');
+                }
             } else {
                 btnOwnerTools.classList.remove('active');
             }
@@ -348,7 +360,11 @@ export const DesignInteractions = {
                     this.ownerEraserStep = 2;
                     this.selectOwnerArea(this.ownerEraserStart.x, this.ownerEraserStart.y, coords.x, coords.y, false);
                     if (typeof showMessage === 'function') {
-                        showMessage(`Zona fijada (${this.selectedPixels.size} px). Haz clic en 'Vaciar zona' abajo para confirmar.`, 'success');
+                        let areaSize = 0;
+                        if (this.ownerEraserBox) {
+                            areaSize = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
+                        }
+                        showMessage(`Zona fijada (${areaSize} px). Haz clic en 'Vaciar zona' abajo para confirmar.`, 'success');
                     }
                 }
                 return;
@@ -1001,12 +1017,18 @@ export const DesignInteractions = {
         if (this.interactionMode === 'owner_erasing') {
             this.btnPlacePixels.classList.replace('component-button--primary', 'component-button--danger');
             this.btnPlacePixels.classList.replace('component-button--success', 'component-button--danger');
-            if (this.selectedPixels.size > 0 && this.ownerEraserStep === 2) {
+            
+            let areaSize = 0;
+            if (this.ownerEraserBox) {
+                areaSize = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
+            }
+
+            if (this.ownerEraserBox && this.ownerEraserStep === 2) {
                 this.btnPlacePixels.classList.remove('disabled-interaction');
-                this.txtPlacePixels.textContent = `Vaciar zona (${this.selectedPixels.size} px)`;
+                this.txtPlacePixels.textContent = `Vaciar zona (${areaSize} px)`;
             } else if (this.ownerEraserStep === 1) {
                 this.btnPlacePixels.classList.add('disabled-interaction');
-                this.txtPlacePixels.textContent = `Definiendo zona (${this.selectedPixels.size} px)...`;
+                this.txtPlacePixels.textContent = `Definiendo zona (${areaSize} px)...`;
             } else {
                 this.btnPlacePixels.classList.add('disabled-interaction');
                 this.txtPlacePixels.textContent = 'Haz clic en el lienzo';
@@ -1053,10 +1075,11 @@ export const DesignInteractions = {
     },
 
     placePixels() {
-        if (this.selectedPixels.size === 0 || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+        if ((this.selectedPixels.size === 0 && this.interactionMode !== 'owner_erasing') || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
         
         if (this.interactionMode === 'owner_erasing') {
-            const count = this.selectedPixels.size;
+            if (!this.ownerEraserBox) return;
+            const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
             if (window.dialogSystem) {
                 window.dialogSystem.show('confirmClearAreaModal', { count }).then(result => {
                     if (result && result.confirmed) {
@@ -1543,41 +1566,33 @@ export const DesignInteractions = {
         const minY = Math.max(0, Math.min(y1, y2));
         const maxY = Math.min(bh - 1, Math.max(y1, y2));
 
-        const count = (maxX - minX + 1) * (maxY - minY + 1);
-
         if (!append) {
             this.selectedPixels.clear();
         }
 
-        for (let y = minY; y <= maxY; y++) {
-            for (let x = minX; x <= maxX; x++) {
-                const key = (y << 16) | x;
-                this.selectedPixels.add(key);
-            }
-        }
-
+        // Optimization: Do NOT populate this.selectedPixels.
+        // It freezes the browser for large selections. 
+        // We only use ownerEraserBox.
         this.ownerEraserBox = { x1: minX, y1: minY, x2: maxX, y2: maxY };
         this.updateSelectionUI();
         this.requestRender();
     },
 
     executeOwnerClearArea() {
-        if (!this.selectedPixels || this.selectedPixels.size === 0) return;
+        if (!this.ownerEraserBox) return;
 
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        this.selectedPixels.forEach(key => {
-            const x = key & 0xFFFF;
-            const y = key >> 16;
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-        });
-
-        // 1. Clear local canvas buffer optimistically (< 1ms UI response)
-        if (typeof this.handleClearAreaEvent === 'function') {
-            this.handleClearAreaEvent({ x1: minX, y1: minY, x2: maxX, y2: maxY });
+        // Implement cooldown of 5 seconds
+        const now = Date.now();
+        if (this.lastOwnerEraseTime && now - this.lastOwnerEraseTime < 5000) {
+            const secondsLeft = Math.ceil((5000 - (now - this.lastOwnerEraseTime)) / 1000);
+            if (typeof showMessage === 'function') {
+                showMessage(`Espera ${secondsLeft} segundos antes de usar el borrador de nuevo.`, 'warning');
+            }
+            return;
         }
+        this.lastOwnerEraseTime = now;
+
+        const { x1: minX, y1: minY, x2: maxX, y2: maxY } = this.ownerEraserBox;
 
         // 2. Broadcast via WebSocket server
         if (this.wsManager) {

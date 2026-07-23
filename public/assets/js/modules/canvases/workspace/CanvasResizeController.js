@@ -156,10 +156,6 @@ class CanvasResizeController {
             this.handleSizeSelect(sizeInstantItem, 'instant');
         }
 
-        if (timerActionItem) {
-            e.preventDefault();
-            this.handleTimerActionSelect(timerActionItem);
-        }
 
         if (applyNowBtn && !applyNowBtn.classList.contains('disabled-interaction')) {
             e.preventDefault();

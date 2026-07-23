@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 use App\Config\Database\DatabaseManager;
 use App\Core\Helpers\Utils;
 use App\Core\System\DatabaseConstants as DB;
+use App\Core\System\SubscriptionPlanConstants;
 use PDO;
 
 $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;

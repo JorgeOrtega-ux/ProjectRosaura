@@ -200,16 +200,15 @@ def resize_listener_thread():
             if r is None: r = get_redis_client()
             if db is None: db = get_db_connection()
             
-            try:
-                db.ping(reconnect=False)
-            except Exception:
-                db = get_db_connection()
-            
             result = r.blpop("canvases:pending_resizes", timeout=30)
             
             if result:
                 _, task_json = result
                 task_data = json.loads(task_json.decode('utf-8') if isinstance(task_json, bytes) else task_json)
+                try:
+                    db.ping(reconnect=False)
+                except Exception:
+                    db = get_db_connection()
                 process_resize_task(r, db, task_data)
                 
         except Exception as e:
@@ -229,29 +228,18 @@ def process_reset_task(r, db, task_data):
         state_key = f"canvas:{canvas_id}:state"
         current_state = r.get(state_key)
         
-        with db.cursor() as cursor:
-            if current_state:
-                compressed_state = zlib.compress(current_state)
-                cursor.execute("""
-                    INSERT INTO canvas_snapshots (canvas_id, snapshot_data, last_updated)
-                    VALUES (%s, %s, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE snapshot_data = %s, last_updated = CURRENT_TIMESTAMP
-                """, (canvas_id, compressed_state, compressed_state))
-                db.commit()
-
-        if take_snapshot:
+        if take_snapshot and current_state:
+            compressed_state = zlib.compress(current_state)
+            r.set(f"canvas:{canvas_id}:temp_snapshot", compressed_state)
             r.sadd("canvases:pending_snapshots", canvas_id)
-            snapshot_done_key = f"canvas:{canvas_id}:snapshot_done"
-            waited = 0
-            while not r.exists(snapshot_done_key) and waited < 60:
-                time.sleep(1)
-                waited += 1
-            if r.exists(snapshot_done_key):
-                r.delete(snapshot_done_key)
-            else:
-                logging.warning(f"Timeout waiting for HQ snapshot of canvas {canvas_id}.")
+
+        try:
+            db.ping(reconnect=False)
+        except Exception:
+            db = get_db_connection()
 
         size_w, size_h = parse_size(canvas_size)
-        empty_state = bytes([0, 0, 0, 0] * (size_w * size_h))
+        empty_state = b'\x00\x00\x00\x00' * (size_w * size_h)
         compressed_empty = zlib.compress(empty_state)
         
         with db.cursor() as cursor:
@@ -296,16 +284,15 @@ def reset_listener_thread():
             if r is None: r = get_redis_client()
             if db is None: db = get_db_connection()
             
-            try:
-                db.ping(reconnect=False)
-            except Exception:
-                db = get_db_connection()
-            
             result = r.blpop("canvases:pending_resets", timeout=30)
             
             if result:
                 _, task_json = result
                 task_data = json.loads(task_json.decode('utf-8') if isinstance(task_json, bytes) else task_json)
+                try:
+                    db.ping(reconnect=False)
+                except Exception:
+                    db = get_db_connection()
                 process_reset_task(r, db, task_data)
                 
         except Exception as e:
@@ -500,7 +487,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         expected_size = width * height * 4
         
         if len(raw_bytes) < expected_size:
-            raw_bytes += bytes([0, 0, 0, 0] * ((expected_size - len(raw_bytes)) // 4))
+            raw_bytes += b'\x00\x00\x00\x00' * ((expected_size - len(raw_bytes)) // 4)
             
         img = Image.new('RGBA', (width, height), color=(0, 0, 0, 0))
         pixels = img.load()
@@ -678,7 +665,14 @@ def thumbnails_thread():
                         result = cursor.fetchone()
                         
                         if result:
-                            snapshot_data = result[0]
+                            r_bin = get_redis_client()
+                            temp_snap = r_bin.get(f"canvas:{canvas_id}:temp_snapshot")
+                            if temp_snap:
+                                snapshot_data = temp_snap
+                                r_bin.delete(f"canvas:{canvas_id}:temp_snapshot")
+                            else:
+                                snapshot_data = result[0]
+                                
                             size_str = result[1] if result[1] else '64'
                             palette_id = result[2] if result[2] else 'default'
                             owner_tier = result[3]

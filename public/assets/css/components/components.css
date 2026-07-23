@@ -4194,8 +4194,8 @@ input:checked + .component-toggle-slider:before {
 
 .component-canvas-blocked,
 .component-canvas-blur {
-    filter: blur(8px);
-    transition: filter 0.3s ease;
+    opacity: 1 !important;
+    transition: opacity 0.3s ease;
 }
 
 .component-overlay-reset {

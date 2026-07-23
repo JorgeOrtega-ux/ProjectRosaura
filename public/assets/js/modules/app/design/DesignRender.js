@@ -86,7 +86,8 @@ export const DesignRender = {
                     type: 'UPDATE_SELECTION',
                     payload: {
                         selectedPixels: selArray,
-                        hoveredPixelKey: hoverKey
+                        hoveredPixelKey: hoverKey,
+                        ownerEraserBox: this.ownerEraserBox || null
                     }
                 });
 

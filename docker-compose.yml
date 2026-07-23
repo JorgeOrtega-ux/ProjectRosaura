@@ -82,6 +82,7 @@ services:
     image: mysql:8.0
     container_name: rosaura_db
     restart: always
+    command: --max_allowed_packet=512M
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_IDENTITY_NAME}

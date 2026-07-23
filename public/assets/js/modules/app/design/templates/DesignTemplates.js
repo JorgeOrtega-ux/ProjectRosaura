@@ -683,6 +683,15 @@ export const DesignTemplates = {
         setButtonLoading(btn);
 
         try {
+            if (typeof this.designContext.setLastInjectedTemplate === 'function') {
+                this.designContext.setLastInjectedTemplate({
+                    x: Math.round(tpl.x),
+                    y: Math.round(tpl.y),
+                    w: tpl.w,
+                    h: tpl.h
+                });
+            }
+
             const res = await this.api.post(ApiRoutes.Canvases.InjectTemplate, {
                 canvas_id: this.canvasId,
                 url: tpl.src,

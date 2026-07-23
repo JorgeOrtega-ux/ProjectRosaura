@@ -167,7 +167,7 @@ async def ensure_canvas_state_loaded(r, canvas_id):
                     print(f"[!] Error decompressing snapshot for canvas {canvas_id}: {e}")
             
             if not raw_state or len(raw_state) != expected_size:
-                raw_state = bytes([0, 0, 0, 0] * expected_size)
+                raw_state = b'\x00' * expected_size
                 
             await r.set(state_key, raw_state)
             print(f"[+] Successfully loaded state into Redis for canvas {canvas_id} ({width}x{height}, {len(raw_state)} bytes)")

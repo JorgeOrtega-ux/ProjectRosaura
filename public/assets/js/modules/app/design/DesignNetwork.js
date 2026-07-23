@@ -164,9 +164,11 @@ export const DesignNetwork = {
                     this.handleCooldownSync(data);
                 }
                 else if (data.type === 'canvas_locked') {
+                    console.log('[DEBUG WS] Recibido: canvas_locked', data);
                     this.handleCanvasLocked(data);
                 } 
                 else if (data.type === 'canvas_cleared') {
+                    console.log('[DEBUG WS] Recibido: canvas_cleared', data);
                     this.handleCanvasCleared(data);
                 }
                 else if (data.type === 'init_protected_pixels') {
@@ -482,6 +484,14 @@ export const DesignNetwork = {
                     this.initCanvasData(response.data, true);
                 } else if (response.data.state_base64) {
                     this.hydrateCanvasState(response.data.state_base64);
+                }
+                
+                if (this.lastInjectedTemplate && this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'TRIGGER_INJECT_ANIMATION',
+                        payload: { template: this.lastInjectedTemplate }
+                    });
+                    this.lastInjectedTemplate = null;
                 }
             }
         } catch (error) {
@@ -876,6 +886,16 @@ export const DesignNetwork = {
         }
     },
 
+    triggerRefresh() {
+        if (typeof this.onNeedsRefresh === 'function') {
+            this.onNeedsRefresh();
+        }
+    },
+
+    setLastInjectedTemplate(template) {
+        this.lastInjectedTemplate = template;
+    },
+
     handleCanvasLocked(data) {
         this.isResetLocked = true;
         this.updateLockBadges(); 
@@ -886,7 +906,9 @@ export const DesignNetwork = {
     },
     
     handleCanvasCleared(data) {
+        console.log('[DEBUG WS] Ejecutando handleCanvasCleared');
         if (this.renderWorker) {
+            console.log('[DEBUG WS] Enviando postMessage DRAW_IMAGE_BUFFER al worker de canvas (null payload para resetAnimation)');
             this.renderWorker.postMessage({ type: 'DRAW_IMAGE_BUFFER', payload: { imageBitmap: null } });
         } else if (this.offscreenCtx) {
             this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
@@ -895,6 +917,7 @@ export const DesignNetwork = {
         
         this.isResetLocked = false;
         this.updateLockBadges(); 
+        console.log('[DEBUG WS] Desbloqueo completado isResetLocked=false');
         
         showMessage(__('info_canvas_cleared'), 'info');
         
