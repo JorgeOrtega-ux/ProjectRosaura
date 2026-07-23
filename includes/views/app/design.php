@@ -65,25 +65,23 @@ if (!empty($canvasUuid)) {
             $isMember = false;
             $userRole = 'spectator';
             $userId = null;
+            $isOwner = false;
             global $sessionManager;
             $session = $sessionManager ?? null;
             if ($session && method_exists($session, 'isLoggedIn') && $session->isLoggedIn()) {
                 $userId = $session->getActiveAccountId();
+                if (isset($canvas['owner_id']) && (int)$canvas['owner_id'] === (int)$userId) {
+                    $isOwner = true;
+                    $isMember = true;
+                    $userRole = 'admin';
+                }
                 $memberSql = "SELECT r.name as role FROM canvas_user_roles cur JOIN canvas_roles r ON cur.role_id = r.id WHERE cur.canvas_id = :cid AND cur.user_id = :uid LIMIT 1";
                 $mStmt = $db->prepare($memberSql);
                 $mStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
                 if ($mRow = $mStmt->fetch(PDO::FETCH_ASSOC)) {
                     $isMember = true;
-                    $userRole = 'editor';
-                } else {
-                    $ownerSql = "SELECT owner_id FROM canvases WHERE id = :cid LIMIT 1";
-                    $oStmt = $db->prepare($ownerSql);
-                    $oStmt->execute([':cid' => $canvasIntId]);
-                    if ($oRow = $oStmt->fetch(PDO::FETCH_ASSOC)) {
-                        if ($oRow['owner_id'] == $userId) {
-                            $isMember = true;
-                            $userRole = 'admin';
-                        }
+                    if (!$isOwner) {
+                        $userRole = 'editor';
                     }
                 }
             }
@@ -140,6 +138,7 @@ if (!empty($canvasUuid)) {
          data-initial-zoom="<?php echo htmlspecialchars($canvasInitialZoom ?? '0.5'); ?>"
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
+         data-is-owner="<?php echo (isset($isOwner) && $isOwner) ? '1' : '0'; ?>"
          data-is-blocked="<?php echo isset($isBlockedInit) && $isBlockedInit ? '1' : '0'; ?>"
          data-premium-blocked="<?php echo isset($isPremiumBlockedInit) && $isPremiumBlockedInit ? '1' : '0'; ?>"
          data-is-spectator="<?php echo isset($isSpectatorInit) && $isSpectatorInit ? '1' : '0'; ?>"
@@ -247,6 +246,13 @@ if (!empty($canvasUuid)) {
                     <div class="component-divider-vertical" data-ref="advantages-actions-divider"></div>
                     <button class="component-button component-button--icon component-button--h40" data-action="togglePerksInventory" data-tooltip="<?php echo __('tooltip_active_advantages'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">stars</span>
+                    </button>
+                    <?php endif; ?>
+
+                    <?php if (isset($isOwner) && $isOwner): ?>
+                    <div class="component-divider-vertical" data-ref="owner-eraser-actions-divider"></div>
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="toggleOwnerEraser" data-ref="btn-owner-eraser" data-tooltip="Borrador de Zona (Solo Dueño)" data-position="bottom">
+                        <span class="material-symbols-rounded">cleaning_services</span>
                     </button>
                     <?php endif; ?>
                     

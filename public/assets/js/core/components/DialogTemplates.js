@@ -981,5 +981,27 @@ export const DialogTemplates = {
                 </div>
             `;
         }
+    },
+
+    confirmClearAreaModal: {
+        build: (data = {}) => {
+            const count = data.count || 0;
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-content--centered">
+                    <div class="component-card__icon-container component-text-danger">
+                        <span class="material-symbols-rounded component-icon--64">cleaning_services</span>
+                    </div>
+                    <h2 class="component-modal-title">¿Vaciar zona seleccionada?</h2>
+                    <p class="component-modal-desc component-text-secondary">
+                        Se borrarán <strong>${count}</strong> píxeles de esta área para todos los usuarios. Esta acción no se puede deshacer.
+                    </p>
+                </div>
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="cancel">Cancelar</button>
+                    <button type="button" class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">Vaciar Zona</button>
+                </div>
+            `;
+        }
     }
 };

@@ -164,6 +164,27 @@ async def get_canvas_config(r, canvas_id):
     await r.hset(config_key, mapping={'cooldown_batch': str(batch), 'cooldown_seconds': str(sec), 'is_locked': str(is_locked)})
     return batch, sec, is_locked
 
+def check_is_canvas_owner(user_id, canvas_id):
+    if not user_id or not canvas_id:
+        return False
+    try:
+        pool = get_db_pool()
+        if not pool:
+            return False
+        db = pool.get_connection()
+        cursor = db.cursor()
+        tbl_canvases = os.getenv("DB_CANVASES_NAME", "db_canvases")
+        cursor.execute(f"SELECT owner_id FROM `{tbl_canvases}`.`canvases` WHERE id = %s LIMIT 1", (canvas_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        db.close()
+        if row and row[0] is not None:
+            return int(row[0]) == int(user_id)
+        return False
+    except Exception as e:
+        print(f"[!] Error in check_is_canvas_owner: {e}")
+        return False
+
 NODE_ID = str(uuid.uuid4())
 ROOMS = {}
 LIVE_ROOMS = {} # Para las sesiones live share: { code: set(websockets) }
@@ -543,6 +564,69 @@ async def handler(websocket):
                         if websocket in OWNER_CONNS:
                             del OWNER_CONNS[websocket]
                         print(f"[DEBUG LIVE] Room {code} intentionally destroyed by owner.")
+
+                elif data.get("type") == "clear_area":
+                    user_id = WS_META[websocket].get('user_id')
+                    if not user_id:
+                        print(f"[DEBUG PY] clear_area requested by unauthenticated user.")
+                        continue
+
+                    is_owner = await asyncio.to_thread(check_is_canvas_owner, user_id, canvas_id)
+                    if not is_owner:
+                        print(f"[DEBUG PY] User {user_id} is not owner of canvas {canvas_id}. clear_area denied.")
+                        continue
+
+                    x1 = int(data.get("x1", 0))
+                    y1 = int(data.get("y1", 0))
+                    x2 = int(data.get("x2", 0))
+                    y2 = int(data.get("y2", 0))
+                    width = int(data.get("width", 64))
+
+                    min_x = max(0, min(x1, x2))
+                    max_x = min(width - 1, max(x1, x2))
+                    min_y = max(0, min(y1, y2))
+                    max_y = min(width - 1, max(y1, y2))
+
+                    count = (max_x - min_x + 1) * (max_y - min_y + 1)
+
+                    # 1. BROADCAST LOCK EVENT so all clients show badge and lock UI
+                    lock_msg = json.dumps({
+                        "type": "canvas_locked_clear",
+                        "canvas_id": canvas_id
+                    })
+                    clients_in_room = ROOMS.get(canvas_id, set())
+                    if clients_in_room:
+                        websockets.broadcast(clients_in_room, lock_msg)
+                    await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": lock_msg}))
+
+                    # 2. FAST BULK PIPELINE REDIS UPDATE (row-by-row in 1 pipeline)
+                    redis_state_key = f"canvas:{canvas_id}:state"
+                    row_len = (max_x - min_x + 1)
+                    row_transparent_bytes = b'\x00\x00\x00\x00' * row_len
+
+                    async with r.pipeline(transaction=False) as pipe:
+                        for cur_y in range(min_y, max_y + 1):
+                            start_byte_offset = (cur_y * width + min_x) * 4
+                            pipe.setrange(redis_state_key, start_byte_offset, row_transparent_bytes)
+                            for cur_x in range(min_x, max_x + 1):
+                                offset_key = (cur_y * width) + cur_x
+                                pipe.delete(f"canvas:{canvas_id}:protected_pixels:{offset_key}")
+                        await pipe.execute()
+
+                    # 3. BROADCAST COMPLETED EVENT so all clients re-fetch & unlock canvas
+                    completed_msg = json.dumps({
+                        "type": "canvas_clear_completed",
+                        "canvas_id": canvas_id,
+                        "x1": min_x,
+                        "y1": min_y,
+                        "x2": max_x,
+                        "y2": max_y
+                    })
+                    if clients_in_room:
+                        websockets.broadcast(clients_in_room, completed_msg)
+                    await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": completed_msg}))
+
+                    print(f"[DEBUG PY] clear_area executed instantly for owner {user_id} on canvas {canvas_id}: ({min_x},{min_y}) to ({max_x},{max_y}). Total: {count} px.")
 
                 elif data.get("type") == "pixel":
                     

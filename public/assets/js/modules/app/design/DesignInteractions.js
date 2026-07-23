@@ -34,6 +34,7 @@ export const DesignInteractions = {
     },
 
     getMaxBalance() {
+        if (this.interactionMode === 'owner_erasing') return Infinity;
         if (this.perkNoCooldown) return Infinity;
         if (this.interactionMode === 'protecting') return this.perkProtectionLeft || 0;
         if (this.interactionMode === 'erasing') return this.perkEraserLeft || 0;
@@ -71,6 +72,13 @@ export const DesignInteractions = {
             if (typeof this.activatePerk === 'function') {
                 this.activatePerk(btnActivatePerk.getAttribute('data-perk-id'), btnActivatePerk);
             }
+            return;
+        }
+
+        const btnOwnerEraser = e.target.closest('[data-action="toggleOwnerEraser"]');
+        if (btnOwnerEraser) {
+            e.preventDefault();
+            this.toggleOwnerEraser();
             return;
         }
 
@@ -313,6 +321,24 @@ export const DesignInteractions = {
 
         const coords = this.getBoardCoords(e.clientX, e.clientY);
         if (coords) {
+            if (this.interactionMode === 'owner_erasing') {
+                if (this.ownerEraserStep === 0 || this.ownerEraserStep === 2) {
+                    this.ownerEraserStep = 1;
+                    this.ownerEraserStart = { x: coords.x, y: coords.y };
+                    this.selectOwnerArea(coords.x, coords.y, coords.x, coords.y, false);
+                    if (typeof showMessage === 'function') {
+                        showMessage(`Esquina 1 fijada en (${coords.x}, ${coords.y}). Mueve el cursor y haz clic de nuevo para fijar la zona.`, 'info');
+                    }
+                } else if (this.ownerEraserStep === 1) {
+                    this.ownerEraserStep = 2;
+                    this.selectOwnerArea(this.ownerEraserStart.x, this.ownerEraserStart.y, coords.x, coords.y, false);
+                    if (typeof showMessage === 'function') {
+                        showMessage(`Zona fijada (${this.selectedPixels.size} px). Haz clic en 'Vaciar zona' abajo para confirmar.`, 'success');
+                    }
+                }
+                return;
+            }
+
             const key = (coords.y << 16) | coords.x;
             if (this.selectedPixels.has(key)) {
                 this.selectionMode = 'remove';
@@ -334,6 +360,14 @@ export const DesignInteractions = {
 
     handleMouseMove(e) {
         if (this.isResizeLocked) return;
+
+        if (this.interactionMode === 'owner_erasing' && this.ownerEraserStep === 1 && this.ownerEraserStart) {
+            const coords = this.getBoardCoords(e.clientX, e.clientY);
+            if (coords) {
+                this.selectOwnerArea(this.ownerEraserStart.x, this.ownerEraserStart.y, coords.x, coords.y, false);
+            }
+            return;
+        }
         
         if (this.isDragging) {
             const dx = e.clientX - this.lastMouse.x;
@@ -519,6 +553,16 @@ export const DesignInteractions = {
 
             this.requestRender();
             return; 
+        }
+
+        if (this.isOwnerSelecting) {
+            if (!this.isOwnerDragActive && this.ownerEraserStart) {
+                if (this.selectedPixels.size === 0) {
+                    this.selectOwnerArea(this.ownerEraserStart.x, this.ownerEraserStart.y, this.ownerEraserStart.x, this.ownerEraserStart.y, false);
+                }
+            }
+            this.isOwnerSelecting = false;
+            this.isOwnerDragActive = false;
         }
 
         if (this.isSelecting) {
@@ -939,6 +983,22 @@ export const DesignInteractions = {
     updateSelectionUI() {
         if (!this.btnPlacePixels || !this.txtPlacePixels) return;
 
+        if (this.interactionMode === 'owner_erasing') {
+            this.btnPlacePixels.classList.replace('component-button--primary', 'component-button--danger');
+            this.btnPlacePixels.classList.replace('component-button--success', 'component-button--danger');
+            if (this.selectedPixels.size > 0 && this.ownerEraserStep === 2) {
+                this.btnPlacePixels.classList.remove('disabled-interaction');
+                this.txtPlacePixels.textContent = `Vaciar zona (${this.selectedPixels.size} px)`;
+            } else if (this.ownerEraserStep === 1) {
+                this.btnPlacePixels.classList.add('disabled-interaction');
+                this.txtPlacePixels.textContent = `Definiendo zona (${this.selectedPixels.size} px)...`;
+            } else {
+                this.btnPlacePixels.classList.add('disabled-interaction');
+                this.txtPlacePixels.textContent = 'Haz clic en el lienzo';
+            }
+            return;
+        }
+
         let maxBalance = this.getMaxBalance();
         
         if (this.interactionMode === 'protecting') {
@@ -980,6 +1040,20 @@ export const DesignInteractions = {
     placePixels() {
         if (this.selectedPixels.size === 0 || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
         
+        if (this.interactionMode === 'owner_erasing') {
+            const count = this.selectedPixels.size;
+            if (window.dialogSystem) {
+                window.dialogSystem.show('confirmClearAreaModal', { count }).then(result => {
+                    if (result && result.confirmed) {
+                        this.executeOwnerClearArea();
+                    }
+                });
+            } else if (confirm(`¿Estás seguro de vaciar esta zona de ${count} píxeles?`)) {
+                this.executeOwnerClearArea();
+            }
+            return;
+        }
+
         let maxBalance = this.getMaxBalance();
 
         if (this.selectedPixels.size > maxBalance) {
@@ -1510,5 +1584,114 @@ export const DesignInteractions = {
             emptyBadge.innerHTML = `<span class="material-symbols-rounded">info</span><span>${displayLabel}</span>`;
             badgesRight.appendChild(emptyBadge);
         }
+
+        if (this.isOwner) {
+            const isToggledOn = (this.interactionMode === 'owner_erasing');
+            const colorClass = isToggledOn ? 'component-text-danger' : '';
+            const badgeEl = document.createElement('div');
+            badgeEl.className = 'component-badge component-badge--clickable';
+            badgeEl.style.cursor = 'pointer';
+            if (isToggledOn) {
+                badgeEl.style.border = '1px solid var(--color-error)';
+                badgeEl.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+            }
+            badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>Borrador</span>`;
+            badgeEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleOwnerEraser();
+            });
+            badgesRight.appendChild(badgeEl);
+        }
+    },
+
+    toggleOwnerEraser() {
+        if (!this.isOwner || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        if (this.interactionMode === 'owner_erasing') {
+            this.interactionMode = 'normal';
+            this.selectedPixels.clear();
+            this.ownerEraserBox = null;
+            this.ownerEraserStep = 0;
+            this.ownerEraserStart = null;
+            if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_off') || 'Modo Borrador desactivado', 'info');
+        } else {
+            this.interactionMode = 'owner_erasing';
+            this.activeBomb = null;
+            this.selectedPixels.clear();
+            this.ownerEraserBox = null;
+            this.ownerEraserStep = 0;
+            this.ownerEraserStart = null;
+            if (typeof showMessage === 'function') showMessage('Modo Borrador activado. Haz clic en la primera esquina para definir la zona.', 'info');
+        }
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
+    },
+
+    selectOwnerArea(x1, y1, x2, y2, append = false) {
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+
+        const minX = Math.max(0, Math.min(x1, x2));
+        const maxX = Math.min(bw - 1, Math.max(x1, x2));
+        const minY = Math.max(0, Math.min(y1, y2));
+        const maxY = Math.min(bh - 1, Math.max(y1, y2));
+
+        const count = (maxX - minX + 1) * (maxY - minY + 1);
+
+        if (!append) {
+            this.selectedPixels.clear();
+        }
+
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                const key = (y << 16) | x;
+                this.selectedPixels.add(key);
+            }
+        }
+
+        this.ownerEraserBox = { x1: minX, y1: minY, x2: maxX, y2: maxY };
+        this.updateSelectionUI();
+        this.requestRender();
+    },
+
+    executeOwnerClearArea() {
+        if (!this.selectedPixels || this.selectedPixels.size === 0) return;
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        this.selectedPixels.forEach(key => {
+            const x = key & 0xFFFF;
+            const y = key >> 16;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+        });
+
+        // 1. Clear local canvas buffer optimistically (< 1ms UI response)
+        if (typeof this.handleClearAreaEvent === 'function') {
+            this.handleClearAreaEvent({ x1: minX, y1: minY, x2: maxX, y2: maxY });
+        }
+
+        // 2. Broadcast via WebSocket server
+        if (this.wsManager) {
+            this.wsManager.send({
+                type: 'clear_area',
+                x1: minX,
+                y1: minY,
+                x2: maxX,
+                y2: maxY,
+                width: this.boardWidth || 64,
+                canvasId: this.canvasIntId
+            });
+        }
+
+        this.selectedPixels.clear();
+        this.ownerEraserBox = null;
+        this.ownerEraserStep = 0;
+        this.ownerEraserStart = null;
+        this.updateSelectionUI();
+        this.requestRender();
+        if (typeof showMessage === 'function') showMessage('Zona vaciada con éxito', 'success');
     }
 };

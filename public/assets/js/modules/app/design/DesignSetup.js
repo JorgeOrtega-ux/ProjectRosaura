@@ -64,6 +64,7 @@ export const DesignSetup = {
             this.isPrivateBlocked = wrapper.getAttribute('data-is-blocked') === '1';
             this.isPremiumBlocked = wrapper.getAttribute('data-premium-blocked') === '1';
             this.isSpectator = wrapper.getAttribute('data-is-spectator') === '1';
+            this.isOwner = wrapper.getAttribute('data-is-owner') === '1';
             this.canvasApproval = wrapper.getAttribute('data-approval') === '1';
 
             this.resetActive = wrapper.getAttribute('data-reset-active') === '1';
@@ -131,6 +132,12 @@ export const DesignSetup = {
             this.setCanvasBadge('lock-inject', 'brush', __('badge_stamping'), 'left');
         } else {
             this.removeCanvasBadge('lock-inject', 'left');
+        }
+
+        if (this.isClearLocked) {
+            this.setCanvasBadge('lock-clear', 'cleaning_services', 'Vaciando zona...', 'left');
+        } else {
+            this.removeCanvasBadge('lock-clear', 'left');
         }
 
         if (this.isPremiumBlocked) {

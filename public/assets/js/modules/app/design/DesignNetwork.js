@@ -243,6 +243,15 @@ export const DesignNetwork = {
                 else if (data.type === 'live_session_ended') {
                     this.handleLiveSessionEnded(data);
                 }
+                else if (data.type === 'canvas_locked_clear') {
+                    this.handleCanvasLockedClear(data);
+                }
+                else if (data.type === 'canvas_clear_completed') {
+                    this.handleCanvasClearCompleted(data);
+                }
+                else if (data.type === 'clear_area') {
+                    this.handleClearAreaEvent(data);
+                }
             });
 
             this.wsManager.connect(this.canvasIntId, wsTicket);
@@ -503,6 +512,85 @@ export const DesignNetwork = {
 
         this.updateLockBadges();
         showMessage(data.error || __('err_stamp_failed'), 'error');
+    },
+
+    handleCanvasLockedClear(data) {
+        this.isClearLocked = true;
+
+        if (this.canvas) {
+            this.canvas.classList.add('component-canvas-blur');
+            this.canvas.classList.add('disabled-interaction');
+        }
+
+        this.updateLockBadges();
+
+        this.selectedPixels.clear();
+        this.updateSelectionUI();
+        this.requestRender();
+
+        if (this.clearTimeout) clearTimeout(this.clearTimeout);
+        this.clearTimeout = setTimeout(() => {
+            if (this.isClearLocked) {
+                this.isClearLocked = false;
+                if (this.canvas) {
+                    this.canvas.classList.remove('component-canvas-blur');
+                    this.canvas.classList.remove('disabled-interaction');
+                }
+                this.updateLockBadges();
+            }
+        }, 15000);
+    },
+
+    async handleCanvasClearCompleted(data) {
+        if (this.clearTimeout) clearTimeout(this.clearTimeout);
+
+        // 1. Clear area on worker & offscreenCtx immediately
+        if (data.x1 !== undefined && data.y1 !== undefined && data.x2 !== undefined && data.y2 !== undefined) {
+            const x1 = parseInt(data.x1, 10);
+            const y1 = parseInt(data.y1, 10);
+            const x2 = parseInt(data.x2, 10);
+            const y2 = parseInt(data.y2, 10);
+
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'CLEAR_AREA',
+                    payload: { x1, y1, x2, y2 }
+                });
+            }
+
+            if (this.offscreenCtx) {
+                const w = Math.max(1, x2 - x1 + 1);
+                const h = Math.max(1, y2 - y1 + 1);
+                this.offscreenCtx.clearRect(x1, y1, w, h);
+            }
+        }
+
+        // 2. Re-fetch full canvas state to guarantee 100% data sync across all clients
+        try {
+            const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
+            if (!response.aborted && response.success && response.data) {
+                if (this.loadedChunks) {
+                    this.loadedChunks.clear();
+                }
+                if (typeof this.initCanvasData === 'function') {
+                    this.initCanvasData(response.data, true);
+                } else if (response.data.state_base64) {
+                    this.hydrateCanvasState(response.data.state_base64);
+                }
+            }
+        } catch (error) {}
+
+        this.isClearLocked = false;
+
+        if (this.canvas && !this.isPrivateBlocked) {
+            this.canvas.classList.remove('component-canvas-blur');
+            this.canvas.classList.remove('disabled-interaction');
+        }
+
+        this.updateLockBadges();
+        this.requestRender();
+
+        showMessage('Zona vaciada con éxito', 'success');
     },
 
     async startLiveShare() {
@@ -1179,5 +1267,27 @@ export const DesignNetwork = {
         }, 3500);
     },
 
+    handleClearAreaEvent(data) {
+        const x1 = parseInt(data.x1, 10);
+        const y1 = parseInt(data.y1, 10);
+        const x2 = parseInt(data.x2, 10);
+        const y2 = parseInt(data.y2, 10);
 
+        if (isNaN(x1) || isNaN(y1) || isNaN(x2) || isNaN(y2)) return;
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'CLEAR_AREA',
+                payload: { x1, y1, x2, y2 }
+            });
+        }
+
+        if (this.offscreenCtx) {
+            const w = Math.max(1, x2 - x1 + 1);
+            const h = Math.max(1, y2 - y1 + 1);
+            this.offscreenCtx.clearRect(x1, y1, w, h);
+        }
+
+        this.requestRender();
+    }
 };

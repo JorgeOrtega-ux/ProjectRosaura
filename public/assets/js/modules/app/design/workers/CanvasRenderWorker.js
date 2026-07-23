@@ -487,6 +487,17 @@ self.onmessage = function (e) {
             requestRender();
             break;
 
+        case 'CLEAR_AREA': {
+            const { x1, y1, x2, y2 } = e.data.payload;
+            if (offscreenCtx) {
+                const w = Math.max(1, x2 - x1 + 1);
+                const h = Math.max(1, y2 - y1 + 1);
+                offscreenCtx.clearRect(x1, y1, w, h);
+                requestRender();
+            }
+            break;
+        }
+
         case 'PUSH_PIXELS': {
             const pixels = e.data.payload.pixels;
             if (isProgressive) {
