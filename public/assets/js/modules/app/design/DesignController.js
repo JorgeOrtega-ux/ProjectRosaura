@@ -269,27 +269,7 @@ class DesignController {
 
                 if (this.uiCooldownBadge) {
                     let newHtml = '';
-                    if (this.perkNoCooldown) {
-                        newHtml = `
-                            <span class="material-symbols-rounded">bolt</span>
-                            <span>∞/${this.cooldownMax}</span>
-                            <span>|</span>
-                            <span class="material-symbols-rounded">timer</span>
-                            <span><span class="material-symbols-rounded component-icon--16">all_inclusive</span></span>
-                        `;
-                    } else if (this.interactionMode === 'protecting') {
-                        const maxProt = Math.ceil(this.perkProtectionLeft / 25) * 25 || 25;
-                        newHtml = `
-                            <span class="material-symbols-rounded">shield</span>
-                            <span>${this.perkProtectionLeft}/${maxProt}</span>
-                        `;
-                    } else if (this.interactionMode === 'erasing') {
-                        const maxEraser = Math.ceil(this.perkEraserLeft / 25) * 25 || 25;
-                        newHtml = `
-                            <span class="material-symbols-rounded">ink_eraser</span>
-                            <span>${this.perkEraserLeft}/${maxEraser}</span>
-                        `;
-                    } else if (this.interactionMode === 'bombing' && this.activeBomb) {
+                    if (this.interactionMode === 'bombing' && this.activeBomb) {
                         const icon = PerksRegistry.getIcon(this.activeBomb);
                         const targetMax = PerksRegistry.getTargetCount(this.activeBomb);
                         const currentSel = this.selectedPixels ? this.selectedPixels.size : 0;

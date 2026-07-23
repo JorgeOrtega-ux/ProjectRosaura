@@ -866,10 +866,6 @@ export const DesignNetwork = {
             this.lastSyncTime = Date.now();
         }
 
-        if (data.perk_no_cooldown !== undefined) this.perkNoCooldown = data.perk_no_cooldown;
-        if (data.perk_protection_left !== undefined) this.perkProtectionLeft = data.perk_protection_left;
-        if (data.perk_eraser_left !== undefined) this.perkEraserLeft = data.perk_eraser_left;
-
         if (data.type === 'cooldown_error') {
             showMessage(__('err_sync_limit'), 'warning');
         }

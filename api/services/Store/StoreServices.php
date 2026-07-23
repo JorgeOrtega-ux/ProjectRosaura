@@ -11,9 +11,6 @@ class StoreServices {
     private $storeRepo;
 
     private const PERK_PRICES = [
-        'no_cooldown_10s' => 1500,
-        'pixel_protection_25' => 3000,
-        'elite_eraser_25' => 5000,
         'pixel_misil_1' => 2000,
         'bomba_pixel_1' => 5000,
         'bomba_atomica_1' => 25000,
@@ -150,22 +147,7 @@ class StoreServices {
             }
             $perkType = $perksConfig[$perkId]['type'] ?? '';
 
-            if ($perkId === 'no_cooldown_10s') {
-                $key = "user:{$userId}:perk:no_cooldown";
-                if ($redis->exists($key)) {
-                    return ['success' => false, 'message_key' => 'err_perk_already_active'];
-                }
-            } elseif ($perkId === 'pixel_protection_25') {
-                $key = "user:{$userId}:perk:protection";
-                if ($redis->exists($key) && (int)$redis->get($key) > 0) {
-                    return ['success' => false, 'message_key' => 'err_perk_already_active'];
-                }
-            } elseif ($perkId === 'elite_eraser_25') {
-                $key = "user:{$userId}:perk:eraser";
-                if ($redis->exists($key) && (int)$redis->get($key) > 0) {
-                    return ['success' => false, 'message_key' => 'err_perk_already_active'];
-                }
-            } elseif ($perkType === 'bomb') {
+            if ($perkType === 'bomb') {
                 return ['success' => false, 'message_key' => 'store.bomb_perks_use_direct'];
             }
         } catch (\Throwable $e) {
@@ -173,34 +155,7 @@ class StoreServices {
             return ['success' => false, 'message_key' => 'error.server_error'];
         }
 
-        if (!$this->storeRepo->markPerkAsUsed($userId, $perkId)) {
-            return ['success' => false, 'message_key' => 'store.perk_not_owned'];
-        }
-
-        try {
-            if (isset($redis)) {
-                if ($perkId === 'no_cooldown_10s') {
-                    $duration = $perksConfig['no_cooldown_10s']['duration_seconds'] ?? 10;
-                    $key = "user:{$userId}:perk:no_cooldown";
-                    $redis->setex($key, $duration, "1"); 
-                } elseif ($perkId === 'pixel_protection_25') {
-                    $duration = $perksConfig['pixel_protection_25']['duration_seconds'] ?? 86400;
-                    $amount = $perksConfig['pixel_protection_25']['amount'] ?? 25;
-                    $key = "user:{$userId}:perk:protection";
-                    $redis->setex($key, $duration, (string)$amount);
-                } elseif ($perkId === 'elite_eraser_25') {
-                    $duration = $perksConfig['elite_eraser_25']['duration_seconds'] ?? 86400;
-                    $amount = $perksConfig['elite_eraser_25']['amount'] ?? 25;
-                    $key = "user:{$userId}:perk:eraser";
-                    $redis->setex($key, $duration, (string)$amount);
-                }
-            }
-        } catch (\Throwable $e) {
-            Logger::error("Redis Error en activatePerk (Set): " . $e->getMessage());
-            // Rollback the perk consumption since Redis failed to assign the benefit
-            $this->storeRepo->refundPerk($userId, $perkId);
-            return ['success' => false, 'message_key' => 'error.server_error'];
-        }
+        return ['success' => false, 'message_key' => 'store.bomb_perks_use_direct'];
 
         Logger::info("User activated perk", [
             'user_id' => $userId,

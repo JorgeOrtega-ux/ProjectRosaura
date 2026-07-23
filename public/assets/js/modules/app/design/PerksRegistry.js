@@ -14,9 +14,6 @@ let _perksConfig = null;
 let _loadPromise = null;
 
 const PERK_DISPLAY_ORDER = [
-    'no_cooldown_10s',
-    'pixel_protection_25',
-    'elite_eraser_25',
     'pixel_misil_1',
     'bomba_pixel_1',
     'bomba_atomica_1',

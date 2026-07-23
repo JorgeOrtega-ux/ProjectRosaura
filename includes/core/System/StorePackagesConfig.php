@@ -69,30 +69,6 @@ class StorePackagesConfig {
     }
     public static function getContentPackages(): array {
         return [
-            'no_cooldown_10s' => [
-                'id' => 'no_cooldown_10s',
-                'name' => __('store_content_no_cooldown_10s_name'),
-                'description' => __('store_content_no_cooldown_10s_desc'),
-                'price_coins' => 1500,
-                'icon' => 'timer_off',
-                'is_single_use' => true,
-            ],
-            'pixel_protection_25' => [
-                'id' => 'pixel_protection_25',
-                'name' => __('store_content_pixel_protection_25_name'),
-                'description' => __('store_content_pixel_protection_25_desc'),
-                'price_coins' => 3000,
-                'icon' => 'security',
-                'is_single_use' => true,
-            ],
-            'elite_eraser_25' => [
-                'id' => 'elite_eraser_25',
-                'name' => __('store_content_elite_eraser_25_name'),
-                'description' => __('store_content_elite_eraser_25_desc'),
-                'price_coins' => 4000,
-                'icon' => 'ink_eraser',
-                'is_single_use' => true,
-            ],
             'pixel_misil_1' => [
                 'id' => 'pixel_misil_1',
                 'name' => __('store_content_pixel_misil_1_name'),

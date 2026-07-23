@@ -1,34 +1,4 @@
 {
-  "no_cooldown_10s": {
-    "id": "no_cooldown_10s",
-    "duration_seconds": 60,
-    "type": "cooldown_modifier",
-    "amount": 0,
-    "icon": "bolt",
-    "label_key": "perk_no_cooldown",
-    "short_label_key": "perk_no_cooldown",
-    "category": "buff"
-  },
-  "pixel_protection_25": {
-    "id": "pixel_protection_25",
-    "duration_seconds": 86400,
-    "type": "protection",
-    "amount": 25,
-    "icon": "shield",
-    "label_key": "perk_pixel_prot",
-    "short_label_key": "perk_pixel_prot",
-    "category": "buff"
-  },
-  "elite_eraser_25": {
-    "id": "elite_eraser_25",
-    "duration_seconds": 86400,
-    "type": "bypass_protection",
-    "amount": 25,
-    "icon": "ink_eraser",
-    "label_key": "perk_elite_eraser",
-    "short_label_key": "perk_elite_eraser",
-    "category": "buff"
-  },
   "pixel_misil_1": {
     "id": "pixel_misil_1",
     "duration_seconds": 86400,

@@ -1345,28 +1345,6 @@ export const DesignInteractions = {
     async activatePerk(perkId, btn) {
         if (!perkId) return;
 
-        if (perkId === 'no_cooldown_10s') {
-            try {
-                if (btn) btn.classList.add('loading');
-                const result = await this.api.post('store.activate_perk', { perk_id: 'no_cooldown_10s' });
-                if (btn) btn.classList.remove('loading');
-                if (result && result.success) {
-                    this.perkNoCooldown = true;
-                    this.perkNoCooldownExpires = Date.now() + 10000;
-                    if (typeof showMessage === 'function') showMessage(window.__('msg_no_cooldown_10s_active') || '¡10s Sin Cooldown activado!', 'success');
-                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-                    this.updateSelectionUI();
-                    this.loadUserPerks();
-                } else {
-                    if (typeof showMessage === 'function') showMessage(result?.message_key || window.__('err_activate_perk'), 'error');
-                }
-            } catch (error) {
-                if (btn) btn.classList.remove('loading');
-                if (typeof showMessage === 'function') showMessage(window.__('err_server_connection'), 'error');
-            }
-            return;
-        }
-
         if (PerksRegistry.isBomb(perkId)) {
             const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
             const count = owned ? parseInt(owned.count, 10) : 0;
@@ -1388,40 +1366,6 @@ export const DesignInteractions = {
 
             if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
             this.updateSelectionUI();
-            return;
-        }
-
-        if (perkId === 'pixel_protection_25') {
-            const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === 'pixel_protection_25') : null;
-            const count = owned ? parseInt(owned.count, 10) : 0;
-            if ((this.perkProtectionLeft || 0) <= 0 && count <= 0) {
-                if (typeof showMessage === 'function') showMessage(window.__('err_perk_not_owned') || 'No tienes usos disponibles de protección', 'warning');
-                return;
-            }
-            if ((this.perkProtectionLeft || 0) <= 0 && count > 0) {
-                this.perkProtectionLeft = 25;
-            }
-            this.interactionMode = this.interactionMode === 'protecting' ? 'normal' : 'protecting';
-            if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-            this.updateSelectionUI();
-            if (typeof showMessage === 'function') showMessage(this.interactionMode === 'protecting' ? window.__('msg_prot_mode_on') : window.__('msg_prot_mode_off'), 'info');
-            return;
-        }
-
-        if (perkId === 'elite_eraser_25') {
-            const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === 'elite_eraser_25') : null;
-            const count = owned ? parseInt(owned.count, 10) : 0;
-            if ((this.perkEraserLeft || 0) <= 0 && count <= 0) {
-                if (typeof showMessage === 'function') showMessage(window.__('err_perk_not_owned') || 'No tienes usos disponibles de borrador', 'warning');
-                return;
-            }
-            if ((this.perkEraserLeft || 0) <= 0 && count > 0) {
-                this.perkEraserLeft = 25;
-            }
-            this.interactionMode = this.interactionMode === 'erasing' ? 'normal' : 'erasing';
-            if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-            this.updateSelectionUI();
-            if (typeof showMessage === 'function') showMessage(this.interactionMode === 'erasing' ? window.__('msg_eraser_mode_on') : window.__('msg_eraser_mode_off'), 'info');
             return;
         }
 
@@ -1460,60 +1404,7 @@ export const DesignInteractions = {
             let icon = PerksRegistry.getIcon(perkId);
             let clickHandler = null;
 
-            if (perkId === 'no_cooldown_10s') {
-                if (this.perkNoCooldown || this.isNoCooldownActive) {
-                    isActive = true;
-                    isToggledOn = true;
-                    activeHtml = `<span class="material-symbols-rounded component-text-success">${icon}</span><span>${window.__('badge_no_cooldown')}</span>`;
-                    clickHandler = null;
-                } else if (this.showInventoryPerks) {
-                    const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === 'no_cooldown_10s') : null;
-                    const totalAmount = owned ? parseInt(owned.count, 10) : 0;
-                    if (totalAmount > 0) {
-                        isActive = true;
-                        isToggledOn = false;
-                        const titleText = PerksRegistry.getLabel(perkId);
-                        activeHtml = `<span class="material-symbols-rounded component-text-secondary">${icon}</span><span>${titleText} (${totalAmount})</span>`;
-                        clickHandler = (e) => {
-                            this.activatePerk('no_cooldown_10s', e.currentTarget);
-                        };
-                        renderedInventoryCount++;
-                    }
-                }
-            } 
-            else if (perkId === 'pixel_protection_25') {
-                const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === 'pixel_protection_25') : null;
-                const totalAmount = owned ? parseInt(owned.count, 10) : 0;
-                if (this.interactionMode === 'protecting' || (this.showInventoryPerks && (this.perkProtectionLeft > 0 || totalAmount > 0))) {
-                    isActive = true;
-                    isToggledOn = this.interactionMode === 'protecting';
-                    const colorClass = isToggledOn ? 'component-text-success' : '';
-                    const perkAmount = PerksRegistry.get('pixel_protection_25')?.amount || 25;
-                    const left = this.perkProtectionLeft > 0 ? this.perkProtectionLeft : perkAmount;
-                    activeHtml = `<span class="material-symbols-rounded ${colorClass}">${icon}</span><span>${window.__('badge_protection')}: ${left}</span>`;
-                    clickHandler = () => {
-                        this.activatePerk('pixel_protection_25');
-                    };
-                    if (this.showInventoryPerks && !isToggledOn) renderedInventoryCount++;
-                }
-            }
-            else if (perkId === 'elite_eraser_25') {
-                const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === 'elite_eraser_25') : null;
-                const totalAmount = owned ? parseInt(owned.count, 10) : 0;
-                if (this.interactionMode === 'erasing' || (this.showInventoryPerks && (this.perkEraserLeft > 0 || totalAmount > 0))) {
-                    isActive = true;
-                    isToggledOn = this.interactionMode === 'erasing';
-                    const colorClass = isToggledOn ? 'component-text-success' : 'component-text-danger';
-                    const perkAmount = PerksRegistry.get('elite_eraser_25')?.amount || 25;
-                    const left = this.perkEraserLeft > 0 ? this.perkEraserLeft : perkAmount;
-                    activeHtml = `<span class="material-symbols-rounded ${colorClass}">${icon}</span><span>${window.__('badge_eraser')}: ${left}</span>`;
-                    clickHandler = () => {
-                        this.activatePerk('elite_eraser_25');
-                    };
-                    if (this.showInventoryPerks && !isToggledOn) renderedInventoryCount++;
-                }
-            }
-            else if (PerksRegistry.isBomb(perkId)) {
+            if (PerksRegistry.isBomb(perkId)) {
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 const totalAmount = owned ? parseInt(owned.count, 10) : 0;
                 
