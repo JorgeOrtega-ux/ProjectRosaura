@@ -100,6 +100,27 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 </div>
                             </div>
 
+                            <hr class="component-divider" data-ref="sub-tokens-divider" style="display: none;">
+
+                            <!-- Uso de Tokens de Inyección de Plantillas -->
+                            <div class="component-group-item component-group-item--stacked" data-ref="sub-tokens-container" style="padding: 24px; gap: 14px; display: none;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 16px;">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Inyección de Plantillas (Tokens de 5 horas)</h2>
+                                            <p class="component-card__description" data-ref="sub-tokens-subtitle">Uso de tokens · -- / -- Tokens consumidos</p>
+                                        </div>
+                                    </div>
+                                    <div class="component-storage-usage__percentage" style="align-self: flex-start; padding-top: 2px;">
+                                        <span data-ref="sub-tokens-percentage">0%</span>
+                                    </div>
+                                </div>
+
+                                <div class="component-progress-track">
+                                    <div class="component-progress-fill" data-ref="sub-tokens-progress-fill" style="width: 0%;"></div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>

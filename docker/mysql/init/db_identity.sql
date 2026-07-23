@@ -129,6 +129,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   `google_id` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `storage_used_bytes` bigint(20) NOT NULL DEFAULT 0,
+  `template_tokens_used` INT DEFAULT 0,
+  `template_tokens_reset_at` DATETIME DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
   UNIQUE KEY `email` (`email`),

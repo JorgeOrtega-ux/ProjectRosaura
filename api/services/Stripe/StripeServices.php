@@ -232,7 +232,8 @@ class StripeServices {
             $tierName = SubscriptionPlanConstants::getTierLimits($tier)['name'];
             $periodLabel = $billingPeriod === 'yearly' ? 'Anual' : 'Mensual';
 
-            $purchasePreference = $this->sessionManager->get('purchase_preference', 'verify');
+            $forceCheckout = (bool)($input['force_checkout'] ?? false);
+            $purchasePreference = $forceCheckout ? 'verify' : ($user['purchase_preference'] ?? $this->sessionManager->get('purchase_preference', 'verify'));
             
             if ($purchasePreference === 'fast') {
                 try {
@@ -601,6 +602,16 @@ class StripeServices {
         $activeLocalSub = $this->subscriptionRepo->findActiveByUserId($userId);
         if (!$activeLocalSub || empty($activeLocalSub['stripe_subscription_id'])) {
             return ['success' => false, 'message_key' => 'stripe.no_active_subscription'];
+        }
+
+        $user = $this->userRepo->findById($userId);
+        $purchasePreference = $user['purchase_preference'] ?? $this->sessionManager->get('purchase_preference', 'verify');
+
+        if ($purchasePreference === 'verify') {
+            $submittedPassword = trim($input['password'] ?? '');
+            if (empty($submittedPassword) || !password_verify($submittedPassword, $user['password'] ?? '')) {
+                return ['success' => false, 'message' => __('auth.incorrect_password') ?: 'Contraseña incorrecta. Por favor inténtalo de nuevo.'];
+            }
         }
 
         if ($tier <= 0) {
@@ -1138,6 +1149,22 @@ class StripeServices {
             'max_mb' => $maxStorageMB,
             'remaining_mb' => $remainingStorageMB,
             'used_percentage' => $usedPercentage
+        ];
+
+        $tokenUsage = $this->userRepo->getTemplateTokenUsage($userId);
+        $maxTokens = (int)($planLimits['max_template_tokens'] ?? 0);
+        $usedTokens = (int)($tokenUsage['used'] ?? 0);
+        $remainingTokens = max(0, $maxTokens - $usedTokens);
+        $tokensPercentage = $maxTokens > 0 ? min(100, round(($usedTokens / $maxTokens) * 100, 1)) : 0;
+
+        $subscription['tokens'] = [
+            'used_tokens' => $usedTokens,
+            'max_tokens' => $maxTokens,
+            'remaining_tokens' => $remainingTokens,
+            'used_percentage' => $tokensPercentage,
+            'reset_at' => $tokenUsage['reset_at'],
+            'reset_in_seconds' => $tokenUsage['reset_in_seconds'],
+            'has_feature' => ($maxTokens > 0 || $userTier >= 3)
         ];
 
         return [

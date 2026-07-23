@@ -64,6 +64,7 @@ class UserRepository implements UserRepositoryInterface {
                 SELECT 
                     u.id, u.uuid, u.username, u.email, u.password, u.google_id, u.subscription_tier, u.profile_picture, u.purchase_preference,
                     u.two_factor_secret, u.two_factor_enabled, u.two_factor_recovery_codes, u.deletion_scheduled_at, u.created_at,
+                    u.template_tokens_used, u.template_tokens_reset_at,
                     ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
                     ur.deleted_by, ur.deleted_reason, ur.admin_notes,
                     st.color as subscription_color
@@ -543,6 +544,74 @@ class UserRepository implements UserRepositoryInterface {
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
             return [];
+        }
+    }
+
+    public function getTemplateTokenUsage(int $userId): array {
+        $tblUsers = DB::TBL_USERS;
+        try {
+            $stmt = $this->pdo->prepare("SELECT template_tokens_used, template_tokens_reset_at FROM {$tblUsers} WHERE id = ?");
+            $stmt->execute([$userId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                return ['used' => 0, 'reset_at' => null, 'reset_in_seconds' => 0];
+            }
+
+            $used = (int)($row['template_tokens_used'] ?? 0);
+            $resetAtStr = $row['template_tokens_reset_at'] ?? null;
+            $resetInSeconds = 0;
+
+            if ($resetAtStr) {
+                $resetTime = strtotime($resetAtStr);
+                $now = time();
+                if ($resetTime <= $now) {
+                    $stmtReset = $this->pdo->prepare("UPDATE {$tblUsers} SET template_tokens_used = 0, template_tokens_reset_at = NULL WHERE id = ?");
+                    $stmtReset->execute([$userId]);
+                    $used = 0;
+                    $resetAtStr = null;
+                } else {
+                    $resetInSeconds = $resetTime - $now;
+                }
+            }
+
+            return [
+                'used' => $used,
+                'reset_at' => $resetAtStr,
+                'reset_in_seconds' => $resetInSeconds
+            ];
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
+            return ['used' => 0, 'reset_at' => null, 'reset_in_seconds' => 0];
+        }
+    }
+
+    public function consumeTemplateTokens(int $userId, int $tokensToConsume, int $windowHours = 5): array {
+        $tblUsers = DB::TBL_USERS;
+        try {
+            $usage = $this->getTemplateTokenUsage($userId);
+            $currentUsed = $usage['used'];
+            $resetAt = $usage['reset_at'];
+
+            if (!$resetAt) {
+                $resetAt = date('Y-m-d H:i:s', strtotime("+{$windowHours} hours"));
+                $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET template_tokens_used = template_tokens_used + ?, template_tokens_reset_at = ? WHERE id = ?");
+                $stmt->execute([$tokensToConsume, $resetAt, $userId]);
+            } else {
+                $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET template_tokens_used = template_tokens_used + ? WHERE id = ?");
+                $stmt->execute([$tokensToConsume, $userId]);
+            }
+
+            $this->invalidateProfileCache($userId);
+
+            return [
+                'success' => true,
+                'new_used' => $currentUsed + $tokensToConsume,
+                'reset_at' => $resetAt
+            ];
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
+            return ['success' => false, 'message' => 'Error al actualizar tokens'];
         }
     }
 }

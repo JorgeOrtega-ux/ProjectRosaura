@@ -196,6 +196,52 @@ class CanvasAssetController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'Esta función requiere una suscripción Ultra (Nivel 3).']);
             }
 
+            // --- TOKEN LIMIT CHECK (5 Hours Window) ---
+            $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($tier);
+            $maxTokens = (int)($planLimits['max_template_tokens'] ?? 5000);
+            if ($maxTokens <= 0 && $tier < 3) {
+                return $this->respond(['success' => false, 'message' => 'Tu plan actual no incluye cuota de tokens para inyección de plantillas.']);
+            }
+            if ($maxTokens <= 0) {
+                $maxTokens = 5000;
+            }
+
+            $w = (int)($input['w'] ?? 500);
+            $h = (int)($input['h'] ?? 500);
+            // Dynamic token cost based on dimension or minimum base cost of 500 tokens
+            $tokensCost = max(500, min(2500, (int)round(($w * $h) / 2000)));
+
+            $stmtUsage = $pdoIdentity->prepare("SELECT template_tokens_used, template_tokens_reset_at FROM users WHERE id = :id LIMIT 1");
+            $stmtUsage->execute([':id' => $userId]);
+            $userRow = $stmtUsage->fetch(\PDO::FETCH_ASSOC) ?: [];
+
+            $usedTokens = (int)($userRow['template_tokens_used'] ?? 0);
+            $resetAt = $userRow['template_tokens_reset_at'] ?? null;
+
+            if ($resetAt && strtotime($resetAt) <= time()) {
+                $usedTokens = 0;
+                $resetAt = null;
+            }
+
+            if (($usedTokens + $tokensCost) > $maxTokens) {
+                $resetInSecs = $resetAt ? max(0, strtotime($resetAt) - time()) : 0;
+                $hoursLeft = ceil($resetInSecs / 3600);
+                return $this->respond([
+                    'success' => false,
+                    'message' => "Límite de tokens alcanzado ({$usedTokens}/{$maxTokens} tokens consumidos). Se restablecerá en aproximadamente {$hoursLeft} hora(s)."
+                ]);
+            }
+
+            // Initialize 5-hour window on first consumption
+            if (!$resetAt) {
+                $resetAt = date('Y-m-d H:i:s', strtotime('+5 hours'));
+            }
+
+            $newUsedTokens = $usedTokens + $tokensCost;
+            $stmtDeduct = $pdoIdentity->prepare("UPDATE users SET template_tokens_used = ?, template_tokens_reset_at = ? WHERE id = ?");
+            $stmtDeduct->execute([$newUsedTokens, $resetAt, $userId]);
+            // --- END TOKEN LIMIT CHECK ---
+
             $canvasUuid = $input['canvas_id'] ?? null;
             $url = $input['url'] ?? null;
             $x = $input['x'] ?? 0;

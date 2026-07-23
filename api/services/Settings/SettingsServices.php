@@ -346,6 +346,15 @@ class SettingsServices
 
         if ($key === 'purchase_preference') {
             if (!in_array($value, ['fast', 'verify'])) return ['success' => false, 'message' => __('validation.invalid_preference')];
+            
+            if ($value === 'fast') {
+                $user = $this->userRepository->findById($userId);
+                $password = trim($data['password'] ?? '');
+                if (!$user || empty($password) || !password_verify($password, $user['password'] ?? '')) {
+                    return ['success' => false, 'message' => __('auth.incorrect_password') ?: 'Contraseña incorrecta.'];
+                }
+            }
+
             if ($this->userRepository->updatePurchasePreference($userId, $value)) {
                 $this->sessionManager->set('purchase_preference', $value);
                 $accounts = $this->sessionManager->getLinkedAccounts();

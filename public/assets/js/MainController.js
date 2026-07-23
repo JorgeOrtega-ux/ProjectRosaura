@@ -183,8 +183,27 @@ export class MainController {
         return null;
     }
 
-    async savePreference(key, value) {
+    async savePreference(key, value, password = '') {
         const previousValue = this.getPref(key);
+
+        if (key === 'purchase_preference' && value === 'fast' && !password) {
+            if (window.dialogSystem) {
+                const res = await window.dialogSystem.show('confirmPasswordModal', {
+                    title: window.__('title_confirm_fast_payment') || 'Autorizar Pago Rápido',
+                    desc: window.__('desc_confirm_fast_payment') || 'Ingresa tu contraseña para activar el pago en 1 clic sin confirmación.'
+                });
+
+                if (res && (res.confirmed || res.action === 'confirm' || res.action === true)) {
+                    password = (res.data && res.data.confirmSecPasswordInput) || res.confirmSecPasswordInput || '';
+                    if (!password) {
+                        this.showToast(window.__('auth_incorrect_password') || 'Contraseña requerida.', 'error');
+                        return;
+                    }
+                } else {
+                    return;
+                }
+            }
+        }
 
         if (key === 'theme') this.applyTheme(value);
         if (key === 'language') document.cookie = "pr_language=" + value + "; path=/; max-age=31536000";
@@ -208,7 +227,10 @@ export class MainController {
             this.prefAbortController = new AbortController();
 
             try {
-                const response = await this.api.post(ApiRoutes.Settings.UpdatePreferences, { key: key, value: value }, this.prefAbortController.signal);
+                const payload = { key: key, value: value };
+                if (password) payload.password = password;
+
+                const response = await this.api.post(ApiRoutes.Settings.UpdatePreferences, payload, this.prefAbortController.signal);
                 
                 if (response && response.aborted) return;
 
@@ -223,7 +245,7 @@ export class MainController {
                     localStorage.setItem('pr_' + key, previousValue);
                     if (key === 'theme') this.applyTheme(previousValue);
                     this.syncUIPreferences();
-                    this.showToast(__('pref_save_network_error'), 'error');
+                    this.showToast((response && response.message) ? response.message : __('pref_save_network_error'), 'error');
                 }
             } catch (err) {
                 if (err.name === 'AbortError') return;

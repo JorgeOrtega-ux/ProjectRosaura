@@ -1002,11 +1002,43 @@ export const DialogTemplates = {
                             </div>
                         </div>
                         ` : ''}
+                        <div style="margin-top: 14px;">
+                            <div class="component-input-group">
+                                <input type="password" id="confirmPurchasePasswordInput" data-ref="confirmPurchasePasswordInput" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="current-password">
+                                <label class="component-input-label">Contraseña de tu cuenta</label>
+                                <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">Cancelar</button>
                     <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">Confirmar Pago</button>
+                </div>
+            `;
+        }
+    },
+
+    confirmPasswordModal: {
+        build: (data = {}) => {
+            const title = data.title || 'Verificación de Seguridad';
+            const desc = data.desc || 'Ingresa tu contraseña para autorizar este cambio.';
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${title}</h2>
+                    <p class="component-modal-desc">${desc}</p>
+                </div>
+                <div class="component-modal-body">
+                    <div class="component-input-group">
+                        <input type="password" id="confirmSecPasswordInput" data-ref="confirmSecPasswordInput" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="current-password">
+                        <label class="component-input-label">Contraseña de tu cuenta</label>
+                        <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
+                    </div>
+                </div>
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">Cancelar</button>
+                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">Confirmar</button>
                 </div>
             `;
         }

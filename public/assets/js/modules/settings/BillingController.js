@@ -169,6 +169,52 @@ export class BillingController {
         if (progressFill) {
             progressFill.style.width = `${percentage}%`;
         }
+
+        // 4. Tokens section
+        const tokens = data.tokens || { used_tokens: 0, max_tokens: 0, remaining_tokens: 0, used_percentage: 0, reset_in_seconds: 0, has_feature: false };
+        const tokensContainer = this.subscriptionArea.querySelector('[data-ref="sub-tokens-container"]');
+        const tokensDivider = this.subscriptionArea.querySelector('[data-ref="sub-tokens-divider"]');
+
+        if (tokensContainer) {
+            if (tokens.has_feature || tokens.max_tokens > 0 || data.tier >= 3) {
+                if (tokensDivider) tokensDivider.style.display = 'block';
+                tokensContainer.style.display = 'block';
+
+                const usedTok = tokens.used_tokens || 0;
+                const maxTok = tokens.max_tokens || 5000;
+                const remainingTok = tokens.remaining_tokens !== undefined ? tokens.remaining_tokens : Math.max(0, maxTok - usedTok);
+                const tokPercentage = tokens.used_percentage !== undefined ? tokens.used_percentage : 0;
+                
+                let resetText = '';
+                if (tokens.reset_in_seconds && tokens.reset_in_seconds > 0) {
+                    const hrs = Math.floor(tokens.reset_in_seconds / 3600);
+                    const mins = Math.floor((tokens.reset_in_seconds % 3600) / 60);
+                    resetText = ` · Restablece en ${hrs}h ${mins}m`;
+                } else if (usedTok > 0) {
+                    resetText = ' · Restableciendo pronto';
+                } else {
+                    resetText = ' · Ventana de 5h activa';
+                }
+
+                const tokensSubtitleEl = tokensContainer.querySelector('[data-ref="sub-tokens-subtitle"]');
+                if (tokensSubtitleEl) {
+                    tokensSubtitleEl.textContent = `Tokens consumidos · ${usedTok.toLocaleString()} / ${maxTok.toLocaleString()} Tokens (Quedan ${remainingTok.toLocaleString()})${resetText}`;
+                }
+
+                const tokensPercentageEl = tokensContainer.querySelector('[data-ref="sub-tokens-percentage"]');
+                if (tokensPercentageEl) {
+                    tokensPercentageEl.textContent = `${tokPercentage}% ${window.__('used') || 'usado'}`;
+                }
+
+                const tokensProgressFill = tokensContainer.querySelector('[data-ref="sub-tokens-progress-fill"]');
+                if (tokensProgressFill) {
+                    tokensProgressFill.style.width = `${tokPercentage}%`;
+                }
+            } else {
+                if (tokensDivider) tokensDivider.style.display = 'none';
+                tokensContainer.style.display = 'none';
+            }
+        }
     }
 
     async loadPaymentMethods() {

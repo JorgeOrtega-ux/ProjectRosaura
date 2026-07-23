@@ -206,12 +206,13 @@ export class UpgradeController {
             isUpgrade: isUpgrade
         });
 
-        if (confirmRes && (confirmRes.action === 'confirm' || confirmRes.action === true)) {
-            this._processActualSubscription(tier, billingPeriod, btn);
+        if (confirmRes && (confirmRes.action === 'confirm' || confirmRes.action === true || confirmRes.confirmed)) {
+            const password = (confirmRes.data && confirmRes.data.confirmPurchasePasswordInput) || confirmRes.confirmPurchasePasswordInput || '';
+            this._processActualSubscription(tier, billingPeriod, btn, password);
         }
     }
 
-    async _processActualSubscription(tier, billingPeriod, btn) {
+    async _processActualSubscription(tier, billingPeriod, btn, password = '') {
         setButtonLoading(btn);
 
         try {
@@ -228,12 +229,23 @@ export class UpgradeController {
             if (hasActiveStripeSub) {
                 const result = await this.api.post(ApiRoutes.Stripe.UpdateSubscription, {
                     tier: tier,
-                    billing_period: billingPeriod
+                    billing_period: billingPeriod,
+                    password: password
                 });
 
-                if (result.success && result.updated) {
-                    showMessage(window.__('msg_sub_updated'), 'success');
-                    setTimeout(() => { window.location.reload(); }, 1500);
+                if (result.success && result.checkout_url) {
+                    window.location.href = result.checkout_url;
+                } else if (result.success && result.updated) {
+                    window.appUserTier = tier;
+                    window.dispatchEvent(new CustomEvent('subscription-updated', { detail: { tier: tier } }));
+                    if (window.dialogSystem) {
+                        window.dialogSystem.show('welcomePremiumModal', { tier: tier, item_type: 'subscription' }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        showMessage(window.__('msg_sub_updated') || '¡Suscripción actualizada!', 'success');
+                        setTimeout(() => { window.location.reload(); }, 1500);
+                    }
                 } else {
                     restoreButton(btn);
                     const msg = result.message || window.__('err_update_subscription');
@@ -249,8 +261,16 @@ export class UpgradeController {
                 if (result.success && result.checkout_url) {
                     window.location.href = result.checkout_url;
                 } else if (result.success && result.updated) {
-                    showMessage(window.__('msg_sub_updated'), 'success');
-                    setTimeout(() => { window.location.reload(); }, 1500);
+                    window.appUserTier = tier;
+                    window.dispatchEvent(new CustomEvent('subscription-updated', { detail: { tier: tier } }));
+                    if (window.dialogSystem) {
+                        window.dialogSystem.show('welcomePremiumModal', { tier: tier, item_type: 'subscription' }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        showMessage(window.__('msg_sub_updated') || '¡Suscripción actualizada!', 'success');
+                        setTimeout(() => { window.location.reload(); }, 1500);
+                    }
                 } else {
                     restoreButton(btn);
                     const msg = result.message || window.__('stripe_checkout_error');

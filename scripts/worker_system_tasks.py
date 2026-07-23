@@ -945,12 +945,33 @@ def typesense_thread():
 
         time.sleep(TS_SYNC_INTERVAL)
 
+def template_tokens_reset_thread():
+    Logger.info("Starting Template Tokens Reset Thread (running every 60s)...")
+    while True:
+        try:
+            conn = get_db_connection()
+            if conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        UPDATE users 
+                        SET template_tokens_used = 0, template_tokens_reset_at = NULL 
+                        WHERE template_tokens_reset_at IS NOT NULL 
+                          AND template_tokens_reset_at <= NOW()
+                    """)
+                    conn.commit()
+                conn.close()
+        except Exception as e:
+            Logger.error(f"Error in template_tokens_reset_thread: {e}")
+
+        time.sleep(60)
+
 if __name__ == "__main__":
     Logger.info("STARTING UNIFIED SYSTEM TASKS WORKER...")
     threading.Thread(target=scheduler_loop, daemon=True, name="Thread-Scheduler").start()
     threading.Thread(target=system_tasks_thread, daemon=True, name="Thread-SystemTasks").start()
     threading.Thread(target=telemetry_thread, daemon=True, name="Thread-Telemetry").start()
     threading.Thread(target=typesense_thread, daemon=True, name="Thread-Typesense").start()
+    threading.Thread(target=template_tokens_reset_thread, daemon=True, name="Thread-TemplateTokensReset").start()
     
     while True:
         time.sleep(1)
