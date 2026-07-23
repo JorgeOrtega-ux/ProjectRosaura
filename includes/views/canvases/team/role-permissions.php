@@ -80,7 +80,7 @@ if (!$canManageRoles) {
 }
 $allPermissions = [];
 try {
-    $stmt = $pdoCanvases->query("SELECT id, name FROM canvas_permissions ORDER BY id ASC");
+    $stmt = $pdoCanvases->query("SELECT id, name, description FROM canvas_permissions ORDER BY id ASC");
     $allPermissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (\Exception $e) {}
 
@@ -136,10 +136,18 @@ if (trim($rawName) !== '') {
                                 $permNameTranslated = __('perm.' . $cleanPermName);
                                 if ($permNameTranslated === 'perm.' . $cleanPermName) $permNameTranslated = str_replace('_', ' ', ucfirst($permName));
 
-                                $permDescTranslated = __('desc_' . $permName);
-                                if ($permDescTranslated === 'desc_' . $permName) {
-                                    $permDescTranslated = __('perm.desc_' . $cleanPermName);
-                                    if ($permDescTranslated === 'perm.desc_' . $cleanPermName) $permDescTranslated = '';
+                                $permDescTranslated = '';
+                                if (!empty($p['description'])) {
+                                    $t = __($p['description']);
+                                    if ($t !== $p['description']) $permDescTranslated = $t;
+                                }
+                                if (!$permDescTranslated) {
+                                    $t = __('perm.desc_' . $cleanPermName);
+                                    if ($t !== 'perm.desc_' . $cleanPermName) $permDescTranslated = $t;
+                                }
+                                if (!$permDescTranslated) {
+                                    $t = __('desc_' . $cleanPermName);
+                                    if ($t !== 'desc_' . $cleanPermName) $permDescTranslated = $t;
                                 }
                             ?>
                             <div class="component-card--grouped">

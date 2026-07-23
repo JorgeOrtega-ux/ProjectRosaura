@@ -102,9 +102,6 @@ if (trim($rawName) !== '') {
     
     <div class="component-top">
         <div class="component-top-left">
-            <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo $backUrl; ?>" data-tooltip="<?php echo __('btn_back'); ?>" data-position="bottom">
-                <span class="material-symbols-rounded">arrow_back</span>
-            </button>
             <h1 class="component-top-title" data-ref="builderTitle"><?php echo $isEdit ? __('admin_edit_role') : __('admin_role_builder'); ?></h1>
             <?php if ($isSystemRole): ?>
             <h1 class="component-top-title" data-ref="systemIndicator"><?php echo __('admin_role_system_limited_edit'); ?></h1>

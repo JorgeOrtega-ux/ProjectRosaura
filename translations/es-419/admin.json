@@ -547,7 +547,7 @@
     "admin_tier_limit_storage": "Almacenamiento (MB)",
     "admin_tier_limit_storage_desc": "Espacio máximo para recursos del usuario.",
     "admin_tier_limits_desc": "Define los límites técnicos de esta suscripción.",
-    "admin_tier_limits_title": "Límites",
+    "admin_tier_limits_title": "Límites y Beneficios",
     "admin_tier_name": "Nombre de Suscripción",
     "admin_tier_name_level_required": "El nombre y el nivel son obligatorios.",
     "admin_tier_new_title": "Nueva Suscripción",

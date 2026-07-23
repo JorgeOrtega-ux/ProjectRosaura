@@ -14,9 +14,10 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
 $maxImages = \App\Core\System\ChatConstants::CHAT_MAX_IMAGES;
 $maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
 ?>
-<div class="component-module component-module--sidebar component-module--sidebar-right disabled" data-module="moduleLiveChat" data-user-id="<?php echo htmlspecialchars((string)($userId ?? '')); ?>" data-username="<?php echo htmlspecialchars($chatUsername); ?>" data-can-moderate="<?php echo $canModerateChat; ?>" data-max-images="<?php echo $maxImages; ?>" data-max-size-mb="<?php echo $maxUploadMB; ?>">
+<div class="component-module component-module--sidebar component-module--sidebar-responsive component-module--sidebar-right disabled" data-module="moduleLiveChat" data-user-id="<?php echo htmlspecialchars((string)($userId ?? '')); ?>" data-username="<?php echo htmlspecialchars($chatUsername); ?>" data-can-moderate="<?php echo $canModerateChat; ?>" data-max-images="<?php echo $maxImages; ?>" data-max-size-mb="<?php echo $maxUploadMB; ?>">
     
     <div class="component-menu component-menu--w335 component-menu--chat component-menu--h-full component-menu--no-padding disabled" data-ref="menu-chat">
+        <div class="pill-container"><div class="drag-handle"></div></div>
         
         <div class="component-menu-header">
             <div class="component-menu-header-box">
