@@ -35,6 +35,30 @@ if (!$canvasId) {
     return;
 }
 
+$ownerTier = 0;
+if ($canvasOwnerId !== null) {
+    try {
+        $connNameIdentity = defined('App\Core\System\DatabaseConstants::CONN_IDENTITY') ? App\Core\System\DatabaseConstants::CONN_IDENTITY : 'identity';
+        $pdoIdentity = $db->getConnection($connNameIdentity);
+        $stmtUser = $pdoIdentity->prepare("SELECT subscription_tier FROM users WHERE id = :uid LIMIT 1");
+        $stmtUser->execute(['uid' => $canvasOwnerId]);
+        $tierVal = $stmtUser->fetchColumn();
+        if ($tierVal !== false) {
+            $ownerTier = (int)$tierVal;
+        }
+    } catch (\Exception $e) {}
+}
+
+$isAdmin = in_array('manage_canvases', $_SESSION['user_permissions'] ?? []) || 
+           in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $_SESSION['user_permissions'] ?? []) || 
+           in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $_SESSION['user_permissions'] ?? []);
+
+$hasAdvancedRoles = $isAdmin || ($ownerTier >= 2);
+if (!$hasAdvancedRoles) {
+    echo "<div class='view-content'><p>".__('err_plan_custom_roles')."</p></div>";
+    return;
+}
+
 $isEdit = false;
 $roleData = [
     'id' => 0,

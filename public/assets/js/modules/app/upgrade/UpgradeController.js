@@ -49,6 +49,8 @@ export class UpgradeController {
         }
     }
 
+
+
     _toggleBilling() {
         window.isYearlyPremium = !window.isYearlyPremium;
         this._updateUIBilling();

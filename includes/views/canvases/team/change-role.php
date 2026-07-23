@@ -50,6 +50,30 @@ try {
     
     if ($canvasData) {
         $canvasId = (int)$canvasData['id'];
+        $canvasOwnerId = (int)$canvasData['owner_id'];
+
+        $ownerTier = 0;
+        if ($canvasOwnerId !== null) {
+            try {
+                $stmtUserTier = $pdoIdentity->prepare("SELECT subscription_tier FROM users WHERE id = :uid LIMIT 1");
+                $stmtUserTier->execute(['uid' => $canvasOwnerId]);
+                $tierVal = $stmtUserTier->fetchColumn();
+                if ($tierVal !== false) {
+                    $ownerTier = (int)$tierVal;
+                }
+            } catch (\Exception $e) {}
+        }
+
+        $isAdmin = in_array('manage_canvases', $_SESSION['user_permissions'] ?? []) || 
+                   in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $_SESSION['user_permissions'] ?? []) || 
+                   in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $_SESSION['user_permissions'] ?? []);
+
+        $hasAdvancedRoles = $isAdmin || ($ownerTier >= 2);
+        if (!$hasAdvancedRoles) {
+            echo "<div class='view-content'><p>".__('err_plan_custom_roles')."</p></div>";
+            return;
+        }
+
         if ($canvasData['owner_id'] == $targetUserId) {
             $isOwner = true;
         }

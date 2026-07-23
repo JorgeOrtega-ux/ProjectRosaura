@@ -15,6 +15,9 @@ $isAdmin = in_array('manage_canvases', $userPermissions) ||
            in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions) || 
            in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPermissions);
 
+$subscriptionTier = (int)($_SESSION['subscription_tier'] ?? 0);
+$hasAdvancedRoles = $isAdmin || \App\Core\System\SubscriptionPlanConstants::hasFeature($subscriptionTier, 'advanced_roles');
+
 $limit = 25; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
@@ -95,9 +98,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                         <span class="material-symbols-rounded">group</span>
                     </button>
 
+                    <?php if ($hasAdvancedRoles): ?>
                     <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-roles" data-nav="" data-tooltip="<?php echo __('tooltip_manage_roles'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">shield_person</span>
                     </button>
+                    <?php endif; ?>
 
                     <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-invites" data-nav="" data-tooltip="<?php echo __('tooltip_manage_invites'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">link</span>

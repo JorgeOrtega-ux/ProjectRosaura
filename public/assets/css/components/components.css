@@ -323,15 +323,16 @@ html.dark-theme .component-top.shadow {
 }
 
 .component-disclaimer {
-    margin-top: auto;
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 500px;
     text-align: center;
     color: var(--text-tertiary);
     font-size: 0.6rem;
     line-height: 1.5;
-    padding: 24px;
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
 }
 
 .component-link:hover {
@@ -5568,3 +5569,93 @@ html.dark-theme .component-skeleton::after {
 }
 
 
+
+
+/* Premium segmented controller styles */
+.component-toggle-group__button.active {
+    background-color: var(--action-primary) !important;
+    color: var(--text-on-primary) !important;
+}
+
+/* Premium Table styles */
+.upgrade-table-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.upgrade-table-desc {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.upgrade-table-plan-header {
+    text-align: center !important;
+    padding: 24px 16px !important;
+    vertical-align: top;
+    min-width: 180px;
+}
+
+.upgrade-table-plan-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.upgrade-table-plan-price {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 12px;
+}
+
+.upgrade-table-plan-period {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.upgrade-table-cell-check {
+    color: var(--status-success, #22c55e);
+    font-weight: bold;
+}
+
+.upgrade-table-cell-cross {
+    color: var(--text-tertiary, #64748b);
+    opacity: 0.5;
+}
+
+/* Grouped Layout enhancements */
+.upgrade-grouped-container {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.upgrade-grouped-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 24px;
+    gap: 20px;
+}
+
+/* Spacing for plan accordions */
+.upgrade-accordion-card {
+    margin-bottom: 16px;
+}
+
+/* Flex wrap container for features badges */
+.upgrade-badges-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+/* Relative position wrapper with bottom padding to protect absolute disclaimer */
+.upgrade-wrapper {
+    position: relative;
+    padding-bottom: 80px;
+}

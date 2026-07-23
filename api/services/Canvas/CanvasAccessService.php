@@ -61,6 +61,14 @@ class CanvasAccessService {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                if ($tier < 2) {
+                    return ['success' => false, 'message' => __('err_plan_custom_roles')];
+                }
+            }
+
             if ($canvas['owner_id'] === $targetUserId) {
                 return ['success' => false, 'message' => __('err_cannot_change_owner_roles')];
             }
