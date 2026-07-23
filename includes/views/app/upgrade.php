@@ -20,32 +20,44 @@ function formatStoragePremium(int $mb): string {
 ?>
 <div class="view-content" data-ref="premium-wrapper">
     
-    <div class="component-top">
-        <div class="component-top-left">
-            <h1 class="component-top-title"><?php echo __('upgrade_page_title'); ?>&nbsp;<span class="component-text-gradient-blue">ProjectRosaura</span></h1>
-        </div>
-        <div class="component-top-right">
-        </div>
-    </div>
-
-    <div class="component-viewport">
-        <div class="component-wrapper component-wrapper--full">
-            <div class="component-bottom">
-
-                <div class="component-page-intro">
-                    <h1 class="component-page-intro__title"><?php echo __('upgrade_page_title'); ?>&nbsp;<span class="component-text-gradient-blue">ProjectRosaura</span></h1>
-                    <p class="component-page-intro__desc"><?php echo __('upgrade_page_desc'); ?></p>
-
-                    <div class="component-toggle-group" id="billingToggle">
-                        <div class="component-toggle-group__wrapper">
-                            <button type="button" class="component-button component-button--dark component-button--rounded-pill component-button--h40 component-toggle-group__button component-toggle-group__button--w145" id="lblMonthly"><?php echo __('upgrade_billing_monthly'); ?></button>
-                            <button type="button" class="component-button component-button--ghost component-button--rounded-pill component-button--h40 component-toggle-group__button component-toggle-group__button--w145 component-text-notice--muted" id="lblYearly"><?php echo __('upgrade_billing_yearly'); ?></button>
-                        </div>
-                        <input type="checkbox" id="billingCheckboxToggle" autocomplete="off" hidden>
+    <?php if (empty($allTiers)): ?>
+        <div class="component-viewport">
+            <div class="component-wrapper component-wrapper--full">
+                <div class="component-bottom" data-ref="dynamic-content-area">
+                    <div class="component-empty-state" data-ref="empty-state-rendered">
+                        <span class="material-symbols-rounded component-empty-state-icon">dashboard_customize</span>
+                        <p class="component-empty-state-text"><?php echo __('upgrade_empty_plans'); ?></p>
                     </div>
                 </div>
+            </div>
+        </div>
+    <?php else: ?>
+        <div class="component-top">
+            <div class="component-top-left">
+                <h1 class="component-top-title"><?php echo __('upgrade_page_title'); ?>&nbsp;<span class="component-text-gradient-blue">ProjectRosaura</span></h1>
+            </div>
+            <div class="component-top-right">
+            </div>
+        </div>
 
-                <div class="component-flex-center-gap">
+        <div class="component-viewport">
+            <div class="component-wrapper component-wrapper--full">
+                <div class="component-bottom">
+
+                    <div class="component-page-intro">
+                        <h1 class="component-page-intro__title"><?php echo __('upgrade_page_title'); ?>&nbsp;<span class="component-text-gradient-blue">ProjectRosaura</span></h1>
+                        <p class="component-page-intro__desc"><?php echo __('upgrade_page_desc'); ?></p>
+
+                        <div class="component-toggle-group" id="billingToggle">
+                            <div class="component-toggle-group__wrapper">
+                                <button type="button" class="component-button component-button--dark component-button--rounded-pill component-button--h40 component-toggle-group__button component-toggle-group__button--w145" id="lblMonthly"><?php echo __('upgrade_billing_monthly'); ?></button>
+                                <button type="button" class="component-button component-button--ghost component-button--rounded-pill component-button--h40 component-toggle-group__button component-toggle-group__button--w145 component-text-notice--muted" id="lblYearly"><?php echo __('upgrade_billing_yearly'); ?></button>
+                            </div>
+                            <input type="checkbox" id="billingCheckboxToggle" autocomplete="off" hidden>
+                        </div>
+                    </div>
+
+                    <div class="component-flex-center-gap">
                     <?php foreach ($allTiers as $tier): 
                         $isPopular = !empty($tier['is_popular']);
                         $tierLevel = (int)$tier['tier_level'];
@@ -186,4 +198,5 @@ function formatStoragePremium(int $mb): string {
             </div>
         </div>
     </div>
+    <?php endif; ?>
 </div>

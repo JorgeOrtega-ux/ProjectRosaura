@@ -434,6 +434,7 @@
     "upgrade_billing_yearly": "Anual",
     "upgrade_billing_save": "Ahorra 20%",
     "upgrade_billing_currency_note": "Todos los precios mostrados están en dólares estadounidenses (USD).",
+    "upgrade_empty_plans": "No hay planes de suscripción disponibles en este momento. Por favor, vuelve más tarde.",
     "plan_basic": "Plus",
     "plan_plus": "Plus",
     "plan_pro": "Pro",

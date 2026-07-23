@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 const _t = (key, fallback) => {
     if (typeof window.__ === 'function') {
         const trans = window.__(key);
@@ -144,9 +144,9 @@ class AdminSubscriptionsController {
         if (searchBtn) this.toggleSearchToolbar();
         if (addBtn) this.navigateToAddTier();
         if (editBtn) this.navigateToEditTier();
-        if (delBtn) this.deleteTier();
-        if (toggleVisBtn) this.toggleVisibilityTier();
-        if (setPopBtn) this.setPopularTier();
+        if (delBtn) this.deleteTier(delBtn);
+        if (toggleVisBtn) this.toggleVisibilityTier(toggleVisBtn);
+        if (setPopBtn) this.setPopularTier(setPopBtn);
         
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
@@ -276,33 +276,51 @@ class AdminSubscriptionsController {
         }
     }
 
-    async toggleVisibilityTier() {
+    async toggleVisibilityTier(btn = null) {
         if (!this.selectedTierId) return;
-        const payload = { uuid: this.selectedTierId };
-        const res = await this.api.post(ApiRoutes.Admin.ToggleVisibilityTier, payload, this.abortController.signal);
-        if (res.aborted) return;
-        if (res.success) {
-            showMessage(_t('visibility_updated', 'Visibilidad actualizada'), 'success');
-            setTimeout(() => window.location.reload(), 500);
-        } else {
-            showMessage(res.message || _t('error', 'Error'), 'error');
+        if (btn) setButtonLoading(btn);
+        try {
+            const payload = { uuid: this.selectedTierId };
+            const res = await this.api.post(ApiRoutes.Admin.ToggleVisibilityTier, payload, this.abortController.signal);
+            if (res.aborted) return;
+            if (res.success) {
+                showMessage(_t('visibility_updated', 'Visibilidad actualizada'), 'success');
+                await this.handlePagination(window.location.href);
+            } else {
+                showMessage(res.message || _t('error', 'Error'), 'error');
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                showMessage(_t('error', 'Error al cambiar visibilidad'), 'error');
+            }
+        } finally {
+            if (btn) restoreButton(btn);
         }
     }
 
-    async setPopularTier() {
+    async setPopularTier(btn = null) {
         if (!this.selectedTierId) return;
-        const payload = { uuid: this.selectedTierId };
-        const res = await this.api.post(ApiRoutes.Admin.SetPopularTier, payload, this.abortController.signal);
-        if (res.aborted) return;
-        if (res.success) {
-            showMessage(_t('subscription_popular_marked', 'Suscripción marcada como popular'), 'success');
-            setTimeout(() => window.location.reload(), 500);
-        } else {
-            showMessage(res.message || _t('error', 'Error'), 'error');
+        if (btn) setButtonLoading(btn);
+        try {
+            const payload = { uuid: this.selectedTierId };
+            const res = await this.api.post(ApiRoutes.Admin.SetPopularTier, payload, this.abortController.signal);
+            if (res.aborted) return;
+            if (res.success) {
+                showMessage(_t('subscription_popular_marked', 'Suscripción marcada como popular'), 'success');
+                await this.handlePagination(window.location.href);
+            } else {
+                showMessage(res.message || _t('error', 'Error'), 'error');
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                showMessage(_t('error', 'Error al cambiar opción popular'), 'error');
+            }
+        } finally {
+            if (btn) restoreButton(btn);
         }
     }
 
-    async deleteTier() {
+    async deleteTier(btn = null) {
         if (!this.selectedTierId || !window.dialogSystem) return;
         const tierId = this.selectedTierId;
         const selectedRow = document.querySelector(`[data-action="selectTierRow"][data-tier-id="${tierId}"]`);
@@ -313,21 +331,27 @@ class AdminSubscriptionsController {
         const tierName = selectedRow ? selectedRow.getAttribute('data-tier-name') : _t('unknown_tier', 'Suscripción desconocida');
         const response = await window.dialogSystem.show('confirmDeleteTier', { tierName: tierName });
         if (response.confirmed) {
-            await this.executeApiAction(ApiRoutes.Admin.DeleteTier, { uuid: tierId });
+            await this.executeApiAction(btn, ApiRoutes.Admin.DeleteTier, { uuid: tierId });
         }
     }
-    async executeApiAction(apiRoute, payload) {
-        const res = await this.api.post(apiRoute, payload, this.abortController.signal);
-        if (res.aborted) return;
-        if (res.success) {
-            showMessage(_t('action_success', 'Acción realizada con éxito'), 'success');
-            if (window.spaRouter) {
-                window.spaRouter.navigate(window.location.pathname + window.location.search);
+
+    async executeApiAction(btn = null, apiRoute, payload) {
+        if (btn) setButtonLoading(btn);
+        try {
+            const res = await this.api.post(apiRoute, payload, this.abortController.signal);
+            if (res.aborted) return;
+            if (res.success) {
+                showMessage(_t('action_success', 'Acción realizada con éxito'), 'success');
+                await this.handlePagination(window.location.href);
             } else {
-                window.location.reload();
+                showMessage(res.message || _t('error', 'Error'), 'error');
             }
-        } else {
-            showMessage(res.message || _t('error', 'Error'), 'error');
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                showMessage(_t('error', 'Error al procesar la acción'), 'error');
+            }
+        } finally {
+            if (btn) restoreButton(btn);
         }
     }
 }
