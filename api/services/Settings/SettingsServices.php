@@ -544,9 +544,13 @@ class SettingsServices
 
         $userId = $this->sessionManager->get('user_id');
         $ga = new GoogleAuthenticator();
-        $secret = $ga->createSecret();
 
-        $this->sessionManager->set('2fa_setup_secret', $secret);
+        if ($this->sessionManager->has('2fa_setup_secret') && !empty($this->sessionManager->get('2fa_setup_secret'))) {
+            $secret = $this->sessionManager->get('2fa_setup_secret');
+        } else {
+            $secret = $ga->createSecret();
+            $this->sessionManager->set('2fa_setup_secret', $secret);
+        }
 
         $totpUrl = $ga->getQRCodeUrl('ProjectRosaura', $this->sessionManager->get('user_email'), $secret);
 
@@ -560,6 +564,7 @@ class SettingsServices
                     'circleRadius'        => 0.45,
                     'addQuietzone'        => false,
                     'svgAddXmlHeader'     => false,
+                    'imageBase64'         => false,
                 ]);
                 $qrcode = new \chillerlan\QRCode\QRCode($options);
                 $qrSvg = $qrcode->render($totpUrl);
@@ -595,7 +600,7 @@ class SettingsServices
         if (empty($secret) || empty($code)) return ['success' => false, 'message' => __('validation.missing_fields')];
 
         $ga = new GoogleAuthenticator();
-        if ($ga->verifyCode($secret, $code, 2)) {
+        if ($ga->verifyCode($secret, $code, 4)) {
             $codes = Utils::generateRecoveryCodes(10, 8);
             
             $hashedCodes = array_map(function($c) {

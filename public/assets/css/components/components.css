@@ -1413,7 +1413,7 @@ textarea.component-input-field::placeholder {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-inverse);
+    color: #ffffff;
     opacity: 0;
     cursor: pointer;
     z-index: 3;
@@ -1427,13 +1427,13 @@ textarea.component-input-field::placeholder {
 html[data-theme="dark"] .component-avatar__overlay,
 html.dark-theme .component-avatar__overlay {
     background-color: var(--overlay-dark);
-    color: var(--text-inverse);
+    color: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
     html:not([data-theme="light"]):not(.light-theme) .component-avatar__overlay {
         background-color: var(--overlay-dark);
-        color: var(--text-inverse);
+        color: #ffffff;
     }
 }
 

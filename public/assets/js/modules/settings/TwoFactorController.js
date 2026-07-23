@@ -99,15 +99,22 @@ class TwoFactorController {
                 const qrContainer = document.querySelector('[data-ref="2fa-qr-container"]');
                 if (qrContainer) {
                     if (res.qr_svg) {
-                        qrContainer.innerHTML = res.qr_svg;
-                        const svgElem = qrContainer.querySelector('svg');
-                        if (svgElem) {
-                            svgElem.setAttribute('width', '150');
-                            svgElem.setAttribute('height', '150');
-                            svgElem.classList.add('component-qr');
+                        const trimmedSvg = res.qr_svg.trim();
+                        if (trimmedSvg.startsWith('<svg')) {
+                            qrContainer.innerHTML = trimmedSvg;
+                            const svgElem = qrContainer.querySelector('svg');
+                            if (svgElem) {
+                                svgElem.setAttribute('width', '150');
+                                svgElem.setAttribute('height', '150');
+                                svgElem.classList.add('component-qr');
+                            }
+                        } else if (trimmedSvg.startsWith('data:image/') || trimmedSvg.startsWith('http')) {
+                            qrContainer.innerHTML = `<img src="${trimmedSvg}" alt="QR Code" style="width:150px;height:150px;display:block;margin:auto;" class="component-qr">`;
+                        } else {
+                            qrContainer.innerHTML = `<img src="data:image/svg+xml;base64,${trimmedSvg}" alt="QR Code" style="width:150px;height:150px;display:block;margin:auto;" class="component-qr">`;
                         }
                     } else if (res.qr_url) {
-                        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(res.qr_url)}" alt="QR Code" style="width:150px;height:150px;display:block;margin:auto;">`;
+                        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(res.qr_url)}" alt="QR Code" style="width:150px;height:150px;display:block;margin:auto;" class="component-qr">`;
                     }
                 }
                 

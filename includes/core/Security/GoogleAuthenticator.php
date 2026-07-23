@@ -3,87 +3,95 @@
 namespace App\Core\Security;
 
 class GoogleAuthenticator {
-    private $codeLength = 6;
-    
-    public function createSecret($secretLength = 16) {
-        $validChars = $this->getBase32LookupTable();
+    private int $codeLength = 6;
+    private static string $base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+    public function createSecret(int $secretLength = 16): string {
         $secret = '';
         for ($i = 0; $i < $secretLength; $i++) {
-            $secret .= $validChars[random_int(0, 31)];
+            $secret .= self::$base32Chars[random_int(0, 31)];
         }
         return $secret;
     }
 
-    public function getQRCodeUrl($name, $email, $secret) {
+    public function getQRCodeUrl(string $name, string $email, string $secret): string {
         return "otpauth://totp/" . rawurlencode($name) . ":" . rawurlencode($email) . "?secret=" . $secret . "&issuer=" . rawurlencode($name);
     }
 
-    public function verifyCode($secret, $code, $discrepancy = 1, $currentTimeSlice = null) {
+    public function verifyCode(string $secret, string $code, int $discrepancy = 4, ?int $currentTimeSlice = null): bool {
         if ($currentTimeSlice === null) {
-            $currentTimeSlice = floor(time() / 30);
+            $currentTimeSlice = (int) floor(time() / 30);
         }
-        if (strlen($code) != 6) {
+        
+        $code = trim($code);
+        if (strlen($code) !== 6 || !ctype_digit($code)) {
             return false;
         }
+
+        $calculatedCodes = [];
         for ($i = -$discrepancy; $i <= $discrepancy; $i++) {
-            $calculatedCode = $this->getCode($secret, $currentTimeSlice + $i);
-            if (hash_equals($calculatedCode, $code)) {
+            $calculated = $this->getCode($secret, $currentTimeSlice + $i);
+            $calculatedCodes[] = $calculated;
+            if (hash_equals($calculated, $code)) {
                 return true;
             }
         }
+
+        if (class_exists('\\App\\Core\\System\\Logger')) {
+            \App\Core\System\Logger::security("2FA verification failed", 'warning', [
+                'provided_code' => $code,
+                'secret_preview' => substr($secret, 0, 4) . '***',
+                'time_slice' => $currentTimeSlice,
+                'server_time' => date('Y-m-d H:i:s'),
+                'expected_codes' => $calculatedCodes
+            ]);
+        }
+
         return false;
     }
 
-    public function getCode($secret, $timeSlice = null) {
+    public function getCode(string $secret, ?int $timeSlice = null): string {
         if ($timeSlice === null) {
-            $timeSlice = floor(time() / 30);
+            $timeSlice = (int) floor(time() / 30);
         }
-        $secretkey = $this->base32Decode($secret);
-        $time = chr(0).chr(0).chr(0).chr(0).pack('N*', $timeSlice);
-        $hm = hash_hmac('SHA1', $time, $secretkey, true);
+
+        $secretKey = $this->base32Decode($secret);
+        if ($secretKey === false || $secretKey === '') {
+            return '';
+        }
+
+        $time = pack('N*', 0) . pack('N*', $timeSlice);
+        $hm = hash_hmac('sha1', $time, $secretKey, true);
         $offset = ord(substr($hm, -1)) & 0x0F;
         $hashpart = substr($hm, $offset, 4);
-        $value = unpack('N', $hashpart);
-        $value = $value[1];
-        $value = $value & 0x7FFFFFFF;
-        $modulo = pow(10, $this->codeLength);
-        return str_pad($value % $modulo, $this->codeLength, '0', STR_PAD_LEFT);
+        $value = unpack('N', $hashpart)[1] & 0x7FFFFFFF;
+        $modulo = 10 ** $this->codeLength;
+
+        return str_pad((string) ($value % $modulo), $this->codeLength, '0', STR_PAD_LEFT);
     }
 
-    private function base32Decode($secret) {
+    private function base32Decode(string $secret) {
+        $secret = strtoupper(trim(str_replace(['=', ' '], '', $secret)));
         if (empty($secret)) return '';
-        $base32chars = $this->getBase32LookupTable();
-        $base32charsFlipped = array_flip($base32chars);
-        $paddingCharCount = substr_count($secret, '=');
-        $allowedValues = array(6, 4, 3, 1, 0);
-        if (!in_array($paddingCharCount, $allowedValues)) return false;
-        for ($i = 0; $i < 4; $i++) {
-            if ($paddingCharCount == $allowedValues[$i] && substr($secret, -($allowedValues[$i])) != str_repeat('=', $allowedValues[$i])) return false;
-        }
-        $secret = str_replace('=', '', $secret);
-        $secret = str_split($secret);
-        $binaryString = '';
-        for ($i = 0; $i < count($secret); $i = $i + 8) {
-            $x = '';
-            if (!in_array($secret[$i], $base32chars)) return false;
-            for ($j = 0; $j < 8; $j++) {
-                $x .= str_pad(base_convert(@$base32charsFlipped[@$secret[$i + $j]], 10, 2), 5, '0', STR_PAD_LEFT);
-            }
-            $eightBits = str_split($x, 8);
-            for ($z = 0; $z < count($eightBits); $z++) {
-                $binaryString .= (($y = chr(base_convert($eightBits[$z], 2, 10))) || ord($y) == 48) ? $y : '';
-            }
-        }
-        return $binaryString;
-    }
 
-    private function getBase32LookupTable() {
-        return array(
-            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 
-            'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 
-            'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 
-            'Y', 'Z', '2', '3', '4', '5', '6', '7', '='
-        );
+        $lookupTable = array_flip(str_split(self::$base32Chars));
+        $binaryString = '';
+
+        foreach (str_split($secret) as $char) {
+            if (!isset($lookupTable[$char])) {
+                return false;
+            }
+            $binaryString .= str_pad(decbin($lookupTable[$char]), 5, '0', STR_PAD_LEFT);
+        }
+
+        $bytes = '';
+        foreach (str_split($binaryString, 8) as $chunk) {
+            if (strlen($chunk) === 8) {
+                $bytes .= chr((int) bindec($chunk));
+            }
+        }
+
+        return $bytes;
     }
 }
 ?>

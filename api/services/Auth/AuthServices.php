@@ -903,7 +903,7 @@ class AuthServices {
             }
         } else {
             $ga = new GoogleAuthenticator();
-            $isValid = $ga->verifyCode($user['two_factor_secret'], $code, 2);
+            $isValid = $ga->verifyCode($user['two_factor_secret'], $code, 4);
         }
 
         if ($isValid) {

@@ -78,9 +78,17 @@ export class PurchaseHistoryController {
         if (toggleModuleBtn) {
             e.stopPropagation();
             const targetModuleName = toggleModuleBtn.getAttribute('data-target');
-            const module = this.container.querySelector(`[data-module="${targetModuleName}"]`);
-            if (module) {
-                module.classList.toggle('disabled');
+            if (window.appInstance && typeof window.appInstance.toggleModule === 'function') {
+                window.appInstance.toggleModule(targetModuleName);
+            } else {
+                const module = this.container.querySelector(`[data-module="${targetModuleName}"]`);
+                if (module) {
+                    if (module.classList.contains('active')) {
+                        module.classList.replace('active', 'disabled');
+                    } else {
+                        module.classList.replace('disabled', 'active');
+                    }
+                }
             }
             return;
         }
@@ -154,7 +162,13 @@ export class PurchaseHistoryController {
         // Close dropdown if clicking outside
         if (!e.target.closest('.component-dropdown-wrapper')) {
             const dropdownModules = this.container.querySelectorAll('[data-module="modulePurchaseFilters"]');
-            dropdownModules.forEach(m => m.classList.add('disabled'));
+            dropdownModules.forEach(m => {
+                if (window.appInstance && typeof window.appInstance.closeModule === 'function') {
+                    window.appInstance.closeModule(m);
+                } else {
+                    m.classList.replace('active', 'disabled');
+                }
+            });
         }
     }
 

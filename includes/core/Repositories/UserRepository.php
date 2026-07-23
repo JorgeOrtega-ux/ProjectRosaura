@@ -339,7 +339,11 @@ class UserRepository implements UserRepositoryInterface {
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET two_factor_secret = ?, two_factor_enabled = ?, two_factor_recovery_codes = ? WHERE id = ?");
-            return $stmt->execute([$secret, $enabled, $recoveryCodes, $id]);
+            $res = $stmt->execute([$secret, $enabled, $recoveryCodes, $id]);
+            if ($res) {
+                $this->invalidateProfileCache($id);
+            }
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'enabled' => $enabled, 'exception' => $e]);
             return false;
@@ -350,7 +354,11 @@ class UserRepository implements UserRepositoryInterface {
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET two_factor_recovery_codes = ? WHERE id = ?");
-            return $stmt->execute([$recoveryCodes, $id]);
+            $res = $stmt->execute([$recoveryCodes, $id]);
+            if ($res) {
+                $this->invalidateProfileCache($id);
+            }
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'exception' => $e]);
             return false;
