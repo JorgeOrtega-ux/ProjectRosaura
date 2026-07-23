@@ -459,7 +459,7 @@ class AdminSubscriptionBuilderController {
         if (this.isEditing) {
             const btnGradientTrigger = document.querySelector('[data-ref="gradientAngleTrigger"]');
             if (btnGradientTrigger) {
-                this.currentColorType = btnGradientTrigger.closest('.component-card--grouped').classList.contains('disabled') ? 'solid' : 'gradient';
+                this.currentColorType = btnGradientTrigger.closest('[data-ref="gradientMasterContainer"]').classList.contains('disabled') ? 'solid' : 'gradient';
             }
         }
 

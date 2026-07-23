@@ -110,7 +110,12 @@ class CanvasesCreateController {
 
         palettes.forEach(palette => {
             const isDefault = palette.id === 'default';
-            const reqTier = palette.tier !== undefined ? palette.tier : (isDefault ? 0 : 2);
+            let fallbackTier = 0;
+            if (!isDefault && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+                const paid = [...window.APP_TIERS].filter(t => parseInt(t.tier_level, 10) > 0 && t.is_active !== 0 && t.is_active !== false).sort((a,b) => parseInt(a.tier_level, 10) - parseInt(b.tier_level, 10));
+                if (paid.length > 0) fallbackTier = parseInt(paid[0].tier_level, 10);
+            }
+            const reqTier = palette.tier !== undefined ? palette.tier : (isDefault ? 0 : fallbackTier);
             const isLocked = isDefault ? false : (palette.id.startsWith('custom_') || palette.is_custom ? !canUseCustomPalettes : (userTier < reqTier));
             
             const translatedName = window.__ ? window.__(palette.name_key) : palette.id;
@@ -227,8 +232,22 @@ class CanvasesCreateController {
         const sizeLinks = document.querySelectorAll('.component-menu-link[data-type="size"]');
         
         sizeLinks.forEach(link => {
-            const requiredTier = parseInt(link.getAttribute('data-tier') || '0', 10);
-            const isAllowed = isOfficial || (userTier >= requiredTier);
+            let reqTier = parseInt(link.getAttribute('data-tier') || '0', 10);
+            
+            if (reqTier > 0) {
+                if (window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+                    const paid = [...window.APP_TIERS].filter(t => parseInt(t.tier_level, 10) > 0 && t.is_active !== 0 && t.is_active !== false).sort((a,b) => parseInt(a.tier_level, 10) - parseInt(b.tier_level, 10));
+                    const exactTier = paid.find(t => parseInt(t.tier_level, 10) === reqTier);
+                    
+                    if (!exactTier) {
+                        reqTier = paid.length > 0 ? parseInt(paid[0].tier_level, 10) : 0;
+                    }
+                } else {
+                    reqTier = 0;
+                }
+            }
+            
+            const isAllowed = isOfficial || (userTier >= reqTier);
             
             if (isAllowed) {
                 link.classList.remove('disabled-interaction');
@@ -245,9 +264,11 @@ class CanvasesCreateController {
                 
                 let lockIcon = link.querySelector('.component-badge');
                 if (!lockIcon) {
-                    const reqTier = parseInt(requiredTier, 10);
                     const tierName = getDynamicTierName(reqTier);
                     link.insertAdjacentHTML('beforeend', `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${tierName}</span>`);
+                } else {
+                    const tierName = getDynamicTierName(reqTier);
+                    lockIcon.innerHTML = `<span class="material-symbols-rounded">stars</span> ${tierName}`;
                 }
             }
         });

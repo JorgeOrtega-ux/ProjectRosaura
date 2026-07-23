@@ -146,7 +146,7 @@ class SubscriptionPlanConstants {
                 return $t['name'];
             }
         }
-        return 'Pro';
+        return '';
     }
 
     public static function getLowestTierForFeature(string $featureKey): ?array {
@@ -186,7 +186,7 @@ class SubscriptionPlanConstants {
         if ($lowest && !empty($lowest['name'])) {
             return $lowest['name'];
         }
-        return 'Pro';
+        return '';
     }
 }
 ?>

@@ -636,7 +636,7 @@ class AdminServices {
         }
 
         if (!is_array($rawColors) || empty($rawColors)) {
-            return ['valid' => false, 'message' => __('validation.invalid_color')];
+            return ['valid' => false, 'message' => __('validation.invalid_color') . ' (DEBUG1: rawColors is empty or not array)'];
         }
 
         $validColors = [];
@@ -663,7 +663,7 @@ class AdminServices {
         }
 
         if (empty($validColors)) {
-            return ['valid' => false, 'message' => __('validation.invalid_color')];
+            return ['valid' => false, 'message' => __('validation.invalid_color') . ' (DEBUG: ' . json_encode($rawColors) . ')'];
         }
 
         if ($type === 'solid') {

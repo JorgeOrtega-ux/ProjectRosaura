@@ -222,9 +222,6 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             const found = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === parseInt(data.tier, 10));
             if (found && found.name) tierName = found.name;
         }
-        if (!tierName) {
-            tierName = data.tier === 3 ? 'Ultra' : (data.tier === 2 ? 'Pro' : (data.tier === 1 ? 'Plus' : 'Free'));
-        }
         const status = escapeHTML(data.status || 'active');
         const cancelAtEnd = data.cancel_at_period_end;
         let dateLabel = cancelAtEnd ? window.__('ends_on') : window.__('next_billing');

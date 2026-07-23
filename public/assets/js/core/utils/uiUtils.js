@@ -48,17 +48,17 @@ function getDynamicTierName(tierLevel) {
         const found = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === level);
         if (found && found.name) return found.name;
     }
-    return level === 3 ? 'Ultra' : (level === 1 ? 'Plus' : 'Pro');
+    return '';
 }
 
 function getLowestTierForFeature(featureKey) {
-    if (!window.APP_TIERS || !Array.isArray(window.APP_TIERS)) return 'Pro';
+    if (!window.APP_TIERS || !Array.isArray(window.APP_TIERS)) return '';
     const sorted = [...window.APP_TIERS].sort((a, b) => parseInt(a.tier_level, 10) - parseInt(b.tier_level, 10));
     const match = sorted.find(t => {
         if (t.is_active !== undefined && (parseInt(t.is_active, 10) === 0 || t.is_active === false)) return false;
         return t[featureKey] === 1 || t['feat_' + featureKey] === 1 || t[featureKey] === true || t['feat_' + featureKey] === true;
     });
-    return match ? match.name : 'Pro';
+    return match ? match.name : '';
 }
 
 export { showMessage, setButtonLoading, restoreButton, renderSkeleton, escapeHTML, formatNumber, getDynamicTierName, getLowestTierForFeature };

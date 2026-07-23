@@ -149,7 +149,12 @@ class CanvasEditController {
 
         palettes.forEach(palette => {
             const isDefault = palette.id === 'default';
-            const reqTier = palette.tier !== undefined ? palette.tier : (isDefault ? 0 : 2);
+            let fallbackTier = 0;
+            if (!isDefault && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+                const paid = [...window.APP_TIERS].filter(t => parseInt(t.tier_level, 10) > 0 && t.is_active !== 0 && t.is_active !== false).sort((a,b) => parseInt(a.tier_level, 10) - parseInt(b.tier_level, 10));
+                if (paid.length > 0) fallbackTier = parseInt(paid[0].tier_level, 10);
+            }
+            const reqTier = palette.tier !== undefined ? palette.tier : (isDefault ? 0 : fallbackTier);
             const isLocked = isDefault ? false : (palette.id.startsWith('custom_') || palette.is_custom ? !canUseCustomPalettes : (userTier < reqTier));
 
             const translatedName = window.__ ? window.__(palette.name_key) : palette.id;
