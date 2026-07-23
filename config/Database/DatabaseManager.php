@@ -49,10 +49,10 @@ class DatabaseManager {
             
             return $pdo;
         } catch (PDOException $e) {
-            Logger::error('Critical database connection failure.', [
+            Logger::database('Critical database connection failure.', 'critical', [
                 'dbname' => $dbname, 
                 'context' => $connectionName, 
-                'exception' => $e->getMessage()
+                'exception' => $e
             ]);
             
             throw new Exception('SYSTEM_DB_OFFLINE');
@@ -87,8 +87,8 @@ class DatabaseManager {
             
             return $pdo;
         } catch (PDOException $e) {
-            Logger::error('Global MySQL server connection failure.', [
-                'exception' => $e->getMessage()
+            Logger::database('Global MySQL server connection failure.', 'critical', [
+                'exception' => $e
             ]);
             throw new Exception('SYSTEM_DB_OFFLINE');
         }

@@ -40,7 +40,6 @@ export const DesignSetup = {
                         payload: { imageBitmap }
                     }, [imageBitmap]);
                 } catch (e) {
-                    console.error('[DesignSetup] Error creating image bitmap for worker:', e);
                 }
             } else if (this.offscreenCtx) {
                 this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
@@ -244,7 +243,6 @@ export const DesignSetup = {
             }
             return bytes;
         } catch (err) {
-            console.error('[DesignSetup] Error decompressing canvas state:', err);
             return null;
         }
     },
@@ -269,7 +267,6 @@ export const DesignSetup = {
             const w = parseInt(this.boardWidth, 10);
             const h = parseInt(this.boardHeight, 10);
             if (isNaN(w) || isNaN(h) || w <= 0 || h <= 0) {
-                console.error('[DesignSetup] Invalid canvas dimensions in hydrateCanvasState:', this.boardWidth, this.boardHeight);
                 return;
             }
 
@@ -285,7 +282,6 @@ export const DesignSetup = {
             this.requestRender();
 
         } catch (e) {
-            console.error('[DesignSetup] hydrateCanvasState error:', e);
         }
     },
 
@@ -297,13 +293,11 @@ export const DesignSetup = {
         }
 
         if (this.isProgressive) {
-            console.log(`[ProgressiveLoad] Modo activado para lienzo ID ${this.canvasIntId} (${this.boardWidth}x${this.boardHeight}). Solicitando chunks iniciales del Viewport...`);
             if (canvasData.thumbnail_url && !forceReload) {
                 this.drawImageOnCanvas(canvasData.thumbnail_url);
             }
             this.updateVisibleChunks();
         } else if (canvasData.state_base64) {
-            console.log(`[ProgressiveLoad] Modo desactivado. Usando hidratación monolítica tradicional (state_base64).`);
             this.hydrateCanvasState(canvasData.state_base64);
         }
     },
@@ -357,7 +351,6 @@ export const DesignSetup = {
         
         validKeys.forEach(k => this.loadingChunks.add(k));
 
-        console.log(`[ProgressiveLoad] 📥 Solicitando ${validKeys.length} chunk(s) al servidor de Go directamente...`);
 
         // Batch chunk requests to prevent massive 48MB JSON payloads and blocking
         const BATCH_SIZE = 4;
@@ -388,7 +381,6 @@ export const DesignSetup = {
                     
                     if (result && result.success && result.data?.chunks) {
                         const receivedKeys = Object.keys(result.data.chunks);
-                        console.log(`[ProgressiveLoad] 🎨 Recibidos y renderizados ${receivedKeys.length} chunk(s):`, receivedKeys);
 
                         Object.entries(result.data.chunks).forEach(([key, base64]) => {
                             const [cx, cy] = key.split(',').map(Number);
@@ -406,7 +398,6 @@ export const DesignSetup = {
                         batch.forEach(k => this.loadingChunks.delete(k));
                     }
                 } catch (e) {
-                    console.error('[DesignSetup] Error fetching chunks batch:', e);
                     batch.forEach(k => this.loadingChunks.delete(k));
                 }
             })());
@@ -441,7 +432,6 @@ export const DesignSetup = {
             this.offscreenCtx.putImageData(imageData, chunkX * chunkSize, chunkY * chunkSize);
             this.requestRender();
         } catch (e) {
-            console.error('[DesignSetup] hydrateChunk error:', e);
         }
     },
 
@@ -477,7 +467,6 @@ export const DesignSetup = {
                     });
                 }
             } catch (e) {
-                console.warn('[DesignSetup] Worker OffscreenCanvas initialization fallback to main thread:', e);
                 this.renderWorker = null;
             }
         }

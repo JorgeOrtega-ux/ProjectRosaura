@@ -165,7 +165,6 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
             is_google: <?php echo $isGoogleUser ? 'true' : 'false'; ?>,
             email: <?php echo json_encode($userEmail); ?>
         };
-        console.log("[APP_USER Debug]", window.APP_USER);
         window.APP_LIMITS = <?php echo json_encode($planLimits); ?>;
         window.APP_PRICES = <?php echo json_encode(\App\Core\System\SubscriptionPlanConstants::getTierPrices()); ?>;
         window.APP_TIERS = <?php echo json_encode(\App\Core\System\SubscriptionPlanConstants::getAllTiers()); ?>;
@@ -196,7 +195,6 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
             else document.documentElement.classList.add('light-theme');
         })();
 
-        console.info("%cðŸš€ [Load Balancer] PeticiÃ³n atendida por el nodo (VPS): <?php echo gethostname(); ?>", "color: #4CAF50; font-weight: bold; background: #222; padding: 4px; border-radius: 4px;");
     </script>
 </head>
 <body>

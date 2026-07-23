@@ -279,7 +279,6 @@ export class BillingController {
                 showMessage(response.message || window.__('err_delete_card'), 'error');
             }
         } catch (error) {
-            console.error('[BillingController] Error deleting payment method:', error);
             if (error.name !== 'AbortError') {
                 showMessage(error.message || window.__('err_network'), 'error');
             }

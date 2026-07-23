@@ -178,7 +178,6 @@ async function decompressIfNeeded(base64String) {
         }
         return bytes;
     } catch (err) {
-        console.error('[CanvasRenderWorker] Error decompressing:', err);
         return null;
     }
 }
@@ -194,7 +193,6 @@ async function hydrateState(base64String) {
         offscreenCtx.putImageData(mainImageData, 0, 0);
         requestRender();
     } catch (e) {
-        console.error('[CanvasRenderWorker] Error hydrating state:', e);
     }
 }
 
@@ -240,7 +238,6 @@ async function hydrateChunkWorker(chunkX, chunkY, chunkSize, base64String) {
         
         requestRender();
     } catch (e) {
-        console.error('[CanvasRenderWorker] Error hydrating chunk:', e);
     }
 }
 
@@ -999,7 +996,6 @@ self.onmessage = function (e) {
                         const imgData = tempCtx.getImageData(0, 0, tc.w, tc.h);
                         templatePixels = new Uint32Array(imgData.data.buffer);
                     } catch (e) {
-                        console.error('[CanvasRenderWorker] Error extracting template pixels:', e);
                     }
                 }
                 injectAnimation = {

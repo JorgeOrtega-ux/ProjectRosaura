@@ -109,7 +109,6 @@ class AdminBackupsCreateController {
             this.buildInitialHTML(container);
             this.updateUIState();
         } catch (error) {
-            console.error('[AdminBackupsCreateController] Error loading schema:', error);
         } finally {
             const schemaAccordion = document.querySelector('[data-ref="custom-schema-accordion"]');
             if (schemaAccordion) {

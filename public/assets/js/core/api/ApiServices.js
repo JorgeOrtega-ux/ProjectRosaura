@@ -122,7 +122,6 @@ export class ApiService {
                 try {
                     const parsed = JSON.parse(possibleJson);
                     const leadingWarning = text.substring(0, jsonStart).replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
-                    console.warn('[ApiServices] Stripped PHP warning/HTML output before JSON payload:', leadingWarning);
                     return parsed;
                 } catch (e2) {
                     // Fallthrough to logging error below
@@ -130,7 +129,6 @@ export class ApiService {
             }
 
             const cleanSnippet = text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
-            console.error(`[ApiServices error] Non-JSON response received (HTTP ${response.status}):`, cleanSnippet || text);
             throw new SyntaxError(`Unexpected non-JSON response from server (HTTP ${response.status}): ${cleanSnippet}`);
         }
     }
@@ -152,12 +150,10 @@ export class ApiService {
             const result = await this._parseJsonResponse(response);
             if (result && (result.message || result.message_key || result.success !== undefined)) {
                 if (result.error_details) {
-                    console.error(`[ApiServices ${response.status}]${routeLabel}`, result.error_details, result.file ? `at ${result.file}` : '');
                 }
                 return this._processResponse(result);
             }
         } catch (parseErr) {
-            console.error(`[ApiServices ${response.status}]${routeLabel} Failed to parse error response:`, parseErr.message);
         }
 
         return null;
@@ -220,7 +216,6 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
-            console.error('[ApiServices error]', error);
             return { success: false, message: window.__('api_connection_error') };
         }
     }
@@ -278,7 +273,6 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
-            console.error('[ApiServices error]', error);
             return { success: false, message: window.__('api_connection_error') };
         }
     }
@@ -344,7 +338,6 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
-            console.error('[ApiServices error]', error);
             return { success: false, message: window.__('api_connection_error') };
         }
     }
@@ -504,7 +497,6 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true };
             }
-            console.error('[ApiServices download error]', error);
             return { success: false, message: window.__('api_connection_error') };
         }
     }

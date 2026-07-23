@@ -215,7 +215,6 @@ export class CanvasCardInteractions {
         this.closeDropdowns();
 
         if (window.dialogSystem && window.dialogSystem.show) {
-            console.log("[CanvasCardInteractions Debug] Calling window.dialogSystem.show('downgradeCanvasModal')");
             const confirmRes = await window.dialogSystem.show('downgradeCanvasModal');
 
             if (!confirmRes || !confirmRes.confirmed) return;

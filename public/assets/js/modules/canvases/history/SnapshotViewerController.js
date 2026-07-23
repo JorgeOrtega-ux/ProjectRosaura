@@ -266,7 +266,6 @@ class SnapshotViewerController {
             }
         };
         img.onerror = () => {
-            console.error('[SnapshotViewer] Failed to load image from URL:', url);
         };
         img.src = url;
     }

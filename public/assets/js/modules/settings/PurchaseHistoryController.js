@@ -350,7 +350,6 @@ export class PurchaseHistoryController {
 
         } catch (error) {
             if (error.name !== 'AbortError') {
-                console.error('[PurchaseHistoryController] Error al descargar comprobante:', error);
                 showMessage(window.__('err_download_receipt') || 'Error al descargar el comprobante.', 'error');
             }
         } finally {
@@ -430,7 +429,6 @@ export class PurchaseHistoryController {
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                console.error('[PurchaseHistoryController] Error loading history:', error);
             }
         }
     }

@@ -19,6 +19,13 @@ class Logger {
     public static function info($message, array $context = [], string $category = 'app'): void { self::write('info', $message, $context, $category); }
     public static function debug($message, array $context = [], string $category = 'app'): void { self::write('debug', $message, $context, $category); }
     private static function write($level, $message, array $context = [], string $category = 'app'): void {
+        // Auto-detect database category if default 'app' category was passed
+        if ($category === 'app') {
+            if (self::isDatabaseError($message, $context)) {
+                $category = 'database';
+            }
+        }
+
         $date = date('Y-m-d');
         $time = date('H:i:s');
         
@@ -30,7 +37,7 @@ class Logger {
         }
 
         $logFile = $logDir . '/' . $date . '.log';
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5);
         $callerFile = 'Unknown';
         $callerLine = 'Unknown';
         
@@ -70,6 +77,39 @@ class Logger {
         $formattedMessage = json_encode($logData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
 
         file_put_contents($logFile, $formattedMessage, FILE_APPEND);
+    }
+
+    private static function isDatabaseError($message, array $context): bool {
+        if (isset($context['exception']) && $context['exception'] instanceof \Throwable) {
+            $e = $context['exception'];
+            if ($e instanceof \PDOException || ($e->getPrevious() && $e->getPrevious() instanceof \PDOException)) {
+                return true;
+            }
+        }
+
+        $searchString = (is_string($message) ? $message : '') . ' ' . json_encode($context);
+        $dbKeywords = [
+            'Database error',
+            'Database Exception',
+            'PDOException',
+            'SQLSTATE',
+            'Base table or view not found',
+            'Unknown column',
+            'Syntax error or access violation',
+            'Table doesn\'t exist',
+            'Column not found',
+            'Connection refused',
+            'SYSTEM_DB_OFFLINE',
+            'database failure'
+        ];
+
+        foreach ($dbKeywords as $keyword) {
+            if (stripos($searchString, $keyword) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 ?>

@@ -106,7 +106,11 @@ function render_fatal_error_view() {
 
 set_exception_handler(function (\Throwable $e) {
     if (class_exists('\App\Core\System\Logger')) {
-        \App\Core\System\Logger::security("Fatal Exception: " . $e->getMessage(), 'critical', ['trace' => $e->getTraceAsString()]);
+        if ($e instanceof \PDOException || ($e->getPrevious() && $e->getPrevious() instanceof \PDOException)) {
+            \App\Core\System\Logger::database("Fatal Database Exception: " . $e->getMessage(), 'critical', ['exception' => $e]);
+        } else {
+            \App\Core\System\Logger::critical("Fatal Exception: " . $e->getMessage(), ['exception' => $e]);
+        }
     }
     render_fatal_error_view();
 });
@@ -115,7 +119,7 @@ register_shutdown_function(function () {
     $error = error_get_last();
     if ($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
         if (class_exists('\App\Core\System\Logger')) {
-            \App\Core\System\Logger::security("Fatal Error: " . $error['message'], 'critical');
+            \App\Core\System\Logger::critical("Fatal Error: " . $error['message'], ['error' => $error]);
         }
         render_fatal_error_view();
     }

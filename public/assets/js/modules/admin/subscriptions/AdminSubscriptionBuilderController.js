@@ -476,14 +476,14 @@ class AdminSubscriptionBuilderController {
             try {
                 const list1 = JSON.parse(data1.value);
                 list1.forEach(item => this.renderBenefitRow(1, item));
-            } catch (e) { console.error('Error parsing benefits list 1', e); }
+            } catch (e) {  }
         }
         
         if (data2 && data2.value) {
             try {
                 const list2 = JSON.parse(data2.value);
                 list2.forEach(item => this.renderBenefitRow(2, item));
-            } catch (e) { console.error('Error parsing benefits list 2', e); }
+            } catch (e) {  }
         }
     }
     

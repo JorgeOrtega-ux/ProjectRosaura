@@ -407,7 +407,6 @@ export const DesignNetwork = {
                 }
             }
         } catch (error) {
-            console.error('[DesignNetwork] handleCanvasResizeCompleted error:', error);
         }
 
         this.isResizeLocked = false;
@@ -501,7 +500,6 @@ export const DesignNetwork = {
                     imageBitmap: bitmap
                 };
             } catch (e) {
-                console.error('[DesignNetwork] Error loading template image for spectator animation:', e);
             }
         }
 
@@ -1195,7 +1193,6 @@ export const DesignNetwork = {
 
 
     handleBombWarning(data) {
-        console.log('[BombWarning] handleBombWarning payload received:', data);
         const cx = parseInt(data.x || 0, 10);
         const cy = parseInt(data.y || 0, 10);
         const perkId = data.perk || 'bomba_atomica_1';
@@ -1217,12 +1214,10 @@ export const DesignNetwork = {
         if (!this.nuclearWarnings) this.nuclearWarnings = [];
         const existing = this.nuclearWarnings.find(w => w.key === targetKey && now < w.endTime);
         if (existing) {
-            console.log(`[BombWarning] Warning already active for target (${cx}, ${cy}), skipping duplicate registration.`);
             return;
         }
 
         const durationMs = durationSecs * 1000;
-        console.log(`[BombWarning] Registering active warning -> key:${targetKey}, x:${cx}, y:${cy}, r:${r}, durationSecs:${durationSecs}s`);
 
         const warningObj = {
             key: targetKey,
@@ -1236,7 +1231,6 @@ export const DesignNetwork = {
         this.nuclearWarnings.push(warningObj);
 
         if (this.renderWorker) {
-            console.log('[BombWarning] Sending BOMB_WARNING to Web Worker (renderWorker)');
             this.renderWorker.postMessage({
                 type: 'BOMB_WARNING',
                 payload: { key: targetKey, x: cx, y: cy, radius: r, durationMs: durationMs }

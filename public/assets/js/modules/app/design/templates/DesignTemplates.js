@@ -438,7 +438,6 @@ export const DesignTemplates = {
                 try {
                     return await createImageBitmap(imageSource);
                 } catch (e) {
-                    console.warn('[DesignTemplates] Could not create ImageBitmap:', e);
                 }
             }
             return null;
@@ -689,7 +688,6 @@ export const DesignTemplates = {
                     try {
                         bitmapClone = await createImageBitmap(tpl.imageBitmap);
                     } catch (e) {
-                        console.error('[DesignTemplates] Error cloning template bitmap:', e);
                     }
                 }
                 this.setLastInjectedTemplate({

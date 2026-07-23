@@ -1118,7 +1118,6 @@ export const DesignInteractions = {
                 ? PerksRegistry.getExplosionRadius(usedPerk, this.boardWidth, this.boardHeight) 
                 : 10;
 
-            console.log(`[BombWarning] Clicked launch -> Perk: ${usedPerk}, targets: ${targets.length}, durationSecs: ${durationSecs}s, radius: ${perkRadius}`);
 
             targets.forEach(tgt => {
                 const warningData = {

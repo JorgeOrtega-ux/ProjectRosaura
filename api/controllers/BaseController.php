@@ -9,7 +9,11 @@ class BaseController {
     protected function handleException(\Throwable $e, $methodName) {
         $className = (new \ReflectionClass($this))->getShortName();
         
-        Logger::critical("Unhandled exception in {$className}::{$methodName}: " . $e->getMessage(), ['exception' => $e]);
+        if ($e instanceof \PDOException || ($e->getPrevious() && $e->getPrevious() instanceof \PDOException)) {
+            Logger::database("Database Exception in {$className}::{$methodName}: " . $e->getMessage(), 'error', ['exception' => $e]);
+        } else {
+            Logger::critical("Unhandled exception in {$className}::{$methodName}: " . $e->getMessage(), ['exception' => $e]);
+        }
         
         $translateSafe = function($key, $fallback = '') {
             try {
@@ -27,9 +31,8 @@ class BaseController {
         http_response_code(500);
         return [
             'success' => false, 
-            'message' => $translateSafe('err_internal_server_error', 'Internal server error'),
-            'error_details' => $e->getMessage(),
-            'file' => $e->getFile() . ':' . $e->getLine()
+            'message_key' => 'error.internal_server_error',
+            'message' => $translateSafe('err_internal_server_error', 'Internal server error')
         ];
     }
 

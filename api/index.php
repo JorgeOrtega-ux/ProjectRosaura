@@ -29,9 +29,7 @@ register_shutdown_function(function() {
         
         echo json_encode([
             'success' => false,
-            'message_key' => 'error.internal_server_error',
-            'error_details' => $error['message'],
-            'file' => $error['file'] . ':' . $error['line']
+            'message_key' => 'error.internal_server_error'
         ]);
     }
 });
@@ -311,31 +309,25 @@ if (array_key_exists($route, $routes)) {
             echo json_encode(['success' => false, 'message_key' => 'error.internal_server_error']);
         }
     } catch (\PDOException $e) {
-        Logger::database("Database Exception in route {$route}: " . $e->getMessage(), 'error', ['exception' => $e, 'trace' => $e->getTraceAsString()]);
+        Logger::database("Database Exception in route {$route}: " . $e->getMessage(), 'error', ['exception' => $e]);
         http_response_code(500);
         echo json_encode([
             'success' => false, 
-            'message_key' => 'error.internal_server_error',
-            'error_details' => $e->getMessage(),
-            'file' => $e->getFile() . ':' . $e->getLine()
+            'message_key' => 'error.internal_server_error'
         ]);
     } catch (\Exception $e) {
-        Logger::security("General Exception in route {$route}: " . $e->getMessage(), 'error', ['exception' => $e, 'trace' => $e->getTraceAsString()]);
+        Logger::error("General Exception in route {$route}: " . $e->getMessage(), 'error', ['exception' => $e]);
         http_response_code(500);
         echo json_encode([
             'success' => false, 
-            'message_key' => 'error.internal_server_error',
-            'error_details' => $e->getMessage(),
-            'file' => $e->getFile() . ':' . $e->getLine()
+            'message_key' => 'error.internal_server_error'
         ]);
     } catch (\Error $e) {
-        Logger::security("Fatal Error in route {$route}: " . $e->getMessage(), 'error', ['exception' => $e, 'trace' => $e->getTraceAsString()]);
+        Logger::error("Fatal Error in route {$route}: " . $e->getMessage(), 'error', ['exception' => $e]);
         http_response_code(500);
         echo json_encode([
             'success' => false, 
-            'message_key' => 'error.internal_server_error',
-            'error_details' => $e->getMessage(),
-            'file' => $e->getFile() . ':' . $e->getLine()
+            'message_key' => 'error.internal_server_error'
         ]);
     }
 } else {

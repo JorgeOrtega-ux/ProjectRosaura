@@ -128,7 +128,6 @@ export const DesignRender = {
                                 tpl._bitmapSentToWorker = true;
                             }
                         } catch (err) {
-                            console.warn('[DesignRender] DataCloneError sending ImageBitmap to worker, fallback to null bitmap:', err);
                             tpl.imageBitmap = null;
                             try {
                                 this.renderWorker.postMessage({

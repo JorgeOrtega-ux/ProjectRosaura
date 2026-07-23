@@ -165,7 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
             } catch (error) {
-                console.error(`[AppInit] Error initializing controller module ${className}:`, error);
             } finally {
                 delete window.importLocks[className];
             }

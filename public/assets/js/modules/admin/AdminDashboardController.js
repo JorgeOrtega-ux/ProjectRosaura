@@ -18,7 +18,6 @@ export class AdminDashboardController {
         try {
             await this.ensureChartScriptLoaded();
         } catch (e) {
-            console.error('[AdminDashboardController] Error loading chart.js:', e);
         }
         await this.fetchAndRenderData();
     }

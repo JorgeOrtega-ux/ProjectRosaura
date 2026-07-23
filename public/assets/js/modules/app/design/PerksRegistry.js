@@ -39,7 +39,6 @@ const PerksRegistry = {
                 return data;
             })
             .catch(err => {
-                console.error('[PerksRegistry] Failed to load perks.json:', err);
                 _loadPromise = null;
                 return {};
             });
