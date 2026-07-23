@@ -133,13 +133,17 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `uuid` (`uuid`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `username` (`username`),
-  UNIQUE KEY `google_id` (`google_id`)
+  UNIQUE KEY `google_id` (`google_id`),
+  INDEX `idx_users_deletion_scheduled` (`deletion_scheduled_at`),
+  INDEX `idx_users_tier` (`subscription_tier`),
+  INDEX `idx_users_created_at` (`created_at`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `user_roles` (
   `user_id` int(11) NOT NULL,
   `role_id` int(11) NOT NULL,
   PRIMARY KEY (`user_id`, `role_id`),
+  INDEX `idx_ur_role_id` (`role_id`),
   CONSTRAINT `fk_ur_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_ur_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
@@ -159,6 +163,7 @@ CREATE TABLE IF NOT EXISTS `subscriptions` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_sub_user_id (`user_id`),
+  INDEX idx_sub_user_status (`user_id`, `status`),
   INDEX idx_sub_stripe_customer (`stripe_customer_id`),
   INDEX idx_sub_stripe_subscription (`stripe_subscription_id`),
   INDEX idx_sub_checkout_session (`stripe_checkout_session_id`),
@@ -176,6 +181,7 @@ CREATE TABLE IF NOT EXISTS `payment_history` (
   `status` ENUM('succeeded', 'pending', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_ph_user (`user_id`),
+  INDEX idx_ph_user_created (`user_id`, `created_at` DESC),
   CONSTRAINT fk_ph_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -202,6 +208,7 @@ CREATE TABLE IF NOT EXISTS user_restrictions (
   deleted_reason TEXT DEFAULT NULL,
   admin_notes TEXT DEFAULT NULL,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_restrictions_suspended (is_suspended, suspension_end_date),
   CONSTRAINT fk_user_restrictions FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
@@ -214,6 +221,8 @@ CREATE TABLE IF NOT EXISTS moderation_logs (
   end_date DATETIME DEFAULT NULL,
   admin_notes TEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_mod_log_user_created (user_id, created_at DESC),
+  INDEX idx_mod_log_admin (admin_id),
   CONSTRAINT fk_mod_log_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_mod_log_admin FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
@@ -360,6 +369,7 @@ CREATE TABLE IF NOT EXISTS `store_purchases` (
   `status` ENUM('succeeded', 'pending', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_store_purchases_user (`user_id`),
+  INDEX idx_sp_user_created (`user_id`, `created_at` DESC),
   UNIQUE INDEX idx_store_purchases_session (`stripe_checkout_session_id`),
   CONSTRAINT fk_store_purchases_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -373,5 +383,6 @@ CREATE TABLE IF NOT EXISTS `user_perks` (
   `used_at` DATETIME DEFAULT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_user_perks_user (`user_id`),
+  INDEX idx_user_perk_active (`user_id`, `perk_id`, `is_used`),
   CONSTRAINT fk_user_perks_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

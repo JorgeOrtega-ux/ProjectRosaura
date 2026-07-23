@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS api_latency (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_created_at (created_at),
     INDEX idx_endpoint (endpoint),
-    INDEX idx_user (user_uuid)
+    INDEX idx_user (user_uuid),
+    INDEX idx_latency_endpoint_created (endpoint, created_at),
+    INDEX idx_latency_status (status_code, created_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS pageviews (

@@ -238,135 +238,234 @@ def run_auth_tests(target_url="http://localhost"):
     print(f"{Colors.GREEN}{Colors.BOLD}[OK] Todas las pruebas de Autenticación pasaron exitosamente.{Colors.ENDC}")
     print(f"{Colors.HEADER}======================================={Colors.ENDC}\n")
 
-    img_width, img_height = img.size
-    print(f"[+] Imagen original: {img_width}x{img_height}")
-
-    if start_x + img_width > canvas_width or start_y + img_height > canvas_height:
-        print(f"{Colors.WARNING}[!] La imagen ({img_width}x{img_height}) excede los límites del canvas ({canvas_width}x{canvas_height}) en las coordenadas ({start_x}, {start_y}).{Colors.ENDC}")
-        resp = input("¿Deseas redimensionarla para que encaje automáticamente manteniendo la proporción? (s/n): ").strip().lower()
-        if resp == 's':
-            max_w = canvas_width - start_x
-            max_h = canvas_height - start_y
-            ratio = min(max_w / img_width, max_h / img_height)
-            new_w = max(1, int(img_width * ratio))
-            new_h = max(1, int(img_height * ratio))
-            print(f"[*] Redimensionando imagen a {new_w}x{new_h}...")
-            # En versiones antiguas de Pillow es Image.ANTIALIAS, en nuevas es Image.Resampling.LANCZOS
-            resample_filter = getattr(Image, 'Resampling', Image).LANCZOS
-            img = img.resize((new_w, new_h), resample_filter)
-            img_width, img_height = img.size
-        else:
-            print(f"{Colors.FAIL}[-] Operación cancelada.{Colors.ENDC}")
-            return
-
-    def hex_to_rgb(hex_str):
-        hex_str = hex_str.lstrip('#')
-        if len(hex_str) == 3:
-            hex_str = ''.join(c + c for c in hex_str)
-        return tuple(int(hex_str[i:i+2], 16) for i in (0, 2, 4))
-
-    # Pre-calcular colores RGB de la paleta
-    palette_rgb = [(i, hex_to_rgb(c['hex'])) for i, c in enumerate(palette_colors)]
-    color_cache = {}
-
-    def get_closest_color_index(rgb):
-        if rgb in color_cache:
-            return color_cache[rgb]
-        min_dist = float('inf')
-        closest_idx = 0
-        for i, c_rgb in palette_rgb:
-            dist = (rgb[0] - c_rgb[0])**2 + (rgb[1] - c_rgb[1])**2 + (rgb[2] - c_rgb[2])**2
-            if dist < min_dist:
-                min_dist = dist
-                closest_idx = i
-        color_cache[rgb] = closest_idx
-        return closest_idx
-
-    pixels_to_draw = []
-    print("[*] Mapeando colores a la paleta... esto puede tomar unos segundos.")
-    for y in range(img_height):
-        for x in range(img_width):
-            r, g, b, a = img.getpixel((x, y))
-            if a < 128:
-                continue
-            c_idx = get_closest_color_index((r, g, b))
-            pixels_to_draw.append((start_x + x, start_y + y, c_idx))
-    
-    total_pixels = len(pixels_to_draw)
-    print(f"[+] Se procesaron {total_pixels} píxeles a dibujar.")
-
-    print("[*] Solicitando ticket WebSocket...")
-    res_ticket = api_request("canvases.get_ws_ticket", {"id": numeric_id})
-    if not res_ticket.get('success'):
-        print(f"{Colors.FAIL}[-] Error solicitando ticket: {res_ticket}{Colors.ENDC}")
+    print(f"[*] Re-iniciando sesión para continuar con Pruebas de Configuración (Settings)...")
+    res_relogin = api_request2("auth.login", {"email": email, "password": new_password, "turnstile_token": "dummy"})
+    if not res_relogin.get('success'):
+        print(f"{Colors.FAIL}[-] Error re-iniciando sesión para Settings: {res_relogin}{Colors.ENDC}")
         return
 
-    ticket = None
-    if 'data' in res_ticket and 'ticket' in res_ticket['data']:
-        ticket = res_ticket['data']['ticket']
-    
-    if not ticket:
-        print(f"{Colors.FAIL}[-] Error: No se recibió un ticket en la respuesta. {res_ticket}{Colors.ENDC}")
-        return
+    # Ejecutar Pruebas de Settings
+    run_settings_tests(target_url, opener2, csrf_token2, email, new_password, username)
 
-    ws_url = target_url.replace("http", "ws").replace("https", "wss")
-    from urllib.parse import urlparse
-    parsed = urlparse(ws_url)
-    ws_url = f"{parsed.scheme}://{parsed.hostname}:8765/canvas/{numeric_id}?ticket={urllib.parse.quote(ticket)}"
+def run_settings_tests(target_url, opener, csrf_token, email, password, username):
+    print(f"\n{Colors.HEADER}{Colors.BOLD}Iniciando Pruebas Automatizadas de Settings / Configuración{Colors.ENDC}")
+    print(f"Target: {target_url}\n")
     
-    print(f"[*] Conectando a WebSocket: {ws_url}...")
-    ws = websocket.WebSocket()
-    try:
-        ws.connect(ws_url, origin=target_url)
-    except Exception as e:
-        print(f"{Colors.FAIL}[-] Error de conexión WS: {e}{Colors.ENDC}")
-        return
-    print(f"{Colors.GREEN}[+] Conectado a WebSocket.{Colors.ENDC}")
-
-    placed_count = 0
-    total_pixels = len(pixels_to_draw)
-    balance = cooldown_batch
-    
-    for px, py, pcolor in pixels_to_draw:
-        while balance <= 0:
-            print(f"\r[*] Cooldown alcanzado. Esperando {cooldown_sec} segundos...    ", end="")
-            time.sleep(cooldown_sec)
-            balance += cooldown_batch 
-
-        msg = {
-            "type": "pixel",
-            "x": px,
-            "y": py,
-            "color": pcolor,
-            "width": canvas_width,
-            "userId": user_id
-        }
+    def api_req(route, payload):
+        url = target_url + "/api.php"
+        payload['route'] = route
+        data = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(url, data=data)
+        req.add_header('Content-Type', 'application/json')
+        req.add_header('X-CSRF-TOKEN', csrf_token)
         try:
-            ws.send(json.dumps(msg))
-            placed_count += 1
-            balance -= 1
-            print(f"\r[+] Dibujado ({px}, {py}) con color_idx {pcolor}. Progreso: {placed_count}/{total_pixels}  ", end="")
-            # Throttling preventivo para no activar el anti-spam del servidor (>200 msg/s)
-            time.sleep(0.01)
+            r = opener.open(req)
+            return json.loads(r.read().decode('utf-8'))
+        except urllib.error.HTTPError as e:
+            try:
+                return json.loads(e.read().decode('utf-8'))
+            except:
+                return {"success": False, "error": str(e)}
         except Exception as e:
-            print(f"\n{Colors.FAIL}[-] Error enviando pixel: {e}{Colors.ENDC}")
-            break
+            return {"success": False, "error": str(e)}
+
+    def multipart_api_req(route, field_name, filename, file_bytes):
+        boundary = '----WebKitFormBoundary' + random_string(16)
+        body = []
         
-        try:
-            ws.settimeout(0.2)
-            resp = ws.recv()
-            if resp:
-                data = json.loads(resp)
-                if data.get('type') == 'error':
-                    print(f"\n{Colors.WARNING}[!] Servidor devolvió error: {data.get('message')}. Pausando un momento...{Colors.ENDC}")
-                    time.sleep(cooldown_sec)
-        except websocket.WebSocketTimeoutException:
-            pass
-        except Exception as e:
-            pass
+        body.append(f'--{boundary}'.encode('utf-8'))
+        body.append(f'Content-Disposition: form-data; name="route"'.encode('utf-8'))
+        body.append(b'')
+        body.append(route.encode('utf-8'))
 
-    ws.close()
-    print(f"\n{Colors.GREEN}{Colors.BOLD}✅ Bot Painter finalizó exitosamente. Se dibujaron {placed_count} píxeles.{Colors.ENDC}")
+        body.append(f'--{boundary}'.encode('utf-8'))
+        body.append(f'Content-Disposition: form-data; name="{field_name}"; filename="{filename}"'.encode('utf-8'))
+        body.append(b'Content-Type: image/png')
+        body.append(b'')
+        body.append(file_bytes)
+        
+        body.append(f'--{boundary}--'.encode('utf-8'))
+        body.append(b'')
+        
+        payload_bytes = b'\r\n'.join(body)
+        
+        url = target_url + "/api.php"
+        req = urllib.request.Request(url, data=payload_bytes)
+        req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
+        req.add_header('X-CSRF-TOKEN', csrf_token)
+        try:
+            r = opener.open(req)
+            return json.loads(r.read().decode('utf-8'))
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # 1. Avatar (Actualizar y Eliminar)
+    print(f"[*] [1/7] Probando subida y eliminación de foto de perfil (Avatar)...")
+    dummy_png = (
+        b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x06\x00\x00\x00\x1f\xf3\xffa'
+        b'\x00\x00\x00\x19IDATx\x9cc\xfc\xcf\x80\x0f\x30\x03\x03\x03\x13\x03\x03\x03\x03\x03\x03\x00\x00\x29\x85\x01\x05'
+        b'\x8e\x12\x8e\x90\x00\x00\x00\x00IEND\xaeB`\x82'
+    )
+    res_avatar = multipart_api_req("settings.update_avatar", "avatar", "test_avatar.png", dummy_png)
+    if not res_avatar.get('success'):
+        print(f"{Colors.FAIL}[-] Subida de avatar falló: {res_avatar}{Colors.ENDC}")
+    else:
+        print(f"{Colors.GREEN}[+] Avatar subido correctamente.{Colors.ENDC}")
+
+    res_del_avatar = api_req("settings.delete_avatar", {})
+    if not res_del_avatar.get('success'):
+        print(f"{Colors.FAIL}[-] Borrado de avatar falló: {res_del_avatar}{Colors.ENDC}")
+    else:
+        print(f"{Colors.GREEN}[+] Avatar eliminado correctamente (revertido a default).{Colors.ENDC}")
+
+    # 2. Cambio de Nombre de Usuario
+    new_username = f"usr_{random_string(6)}"
+    print(f"\n[*] [2/7] Probando actualización de nombre de usuario a '{new_username}'...")
+    res_usr = api_req("settings.update_username", {"username": new_username})
+    if not res_usr.get('success'):
+        print(f"{Colors.FAIL}[-] Cambio de usuario falló: {res_usr}{Colors.ENDC}")
+    else:
+        print(f"{Colors.GREEN}[+] Usuario actualizado exitosamente.{Colors.ENDC}")
+        username = new_username
+
+    # 3. Cambio de Correo Electrónico (Solicitud, Verificación y Actualización)
+    print(f"\n[*] [3/7] Probando flujo de actualización de correo electrónico...")
+    res_req_code = api_req("settings.request_email_code", {})
+    if not res_req_code.get('success') and not res_req_code.get('skip_verification'):
+        print(f"{Colors.FAIL}[-] Solicitud de código de correo falló: {res_req_code}{Colors.ENDC}")
+    else:
+        print(f"{Colors.GREEN}[+] Solicitud de código de correo procesada.{Colors.ENDC}")
+        email_code = get_code_from_redis(email, 'email_update')
+        if email_code:
+            print(f"{Colors.GREEN}[+] Código de actualización extraído de Redis: {email_code}{Colors.ENDC}")
+            res_ver_email = api_req("settings.verify_email_code", {"code": email_code})
+            if not res_ver_email.get('success'):
+                print(f"{Colors.FAIL}[-] Verificación de código de correo falló: {res_ver_email}{Colors.ENDC}")
+            else:
+                print(f"{Colors.GREEN}[+] Código de correo verificado.{Colors.ENDC}")
+        
+        new_email = f"new_email_{random_string(6)}@gmail.com"
+        print(f"[*] Cambiando correo a '{new_email}'...")
+        res_upd_email = api_req("settings.update_email", {"email": new_email})
+        if not res_upd_email.get('success'):
+            print(f"{Colors.FAIL}[-] Actualización de correo falló: {res_upd_email}{Colors.ENDC}")
+        else:
+            print(f"{Colors.GREEN}[+] Correo electrónico actualizado exitosamente a '{new_email}'.{Colors.ENDC}")
+            email = new_email
+
+    # 4. Preferencias de Usuario (Idioma, Tema, Switches y Banderas)
+    print(f"\n[*] [4/7] Probando actualización de preferencias de usuario...")
+    prefs_to_test = [
+        ("language", "es-419"),
+        ("language", "en-US"),
+        ("language", "es-419"),
+        ("open_links_new_tab", 0),
+        ("open_links_new_tab", 1),
+        ("allow_telemetry", 0),
+        ("allow_telemetry", 1),
+        ("extended_alerts", 0),
+        ("extended_alerts", 1),
+        ("theme", "dark"),
+        ("theme", "light"),
+        ("theme", "system"),
+        ("purchase_preference", "fast"),
+        ("purchase_preference", "verify")
+    ]
+    for key, val in prefs_to_test:
+        res_pref = api_req("settings.update_preferences", {"key": key, "value": val})
+        if not res_pref.get('success'):
+            print(f"{Colors.FAIL}[-] Falló preferencia {key}={val}: {res_pref}{Colors.ENDC}")
+        else:
+            print(f"{Colors.GREEN}[+] Preferencia actualizada: {key} => {val}{Colors.ENDC}")
+
+    res_flag = api_req("settings.set_flag", {"flag_key": "test_automation_flag"})
+    if not res_flag.get('success'):
+        print(f"{Colors.FAIL}[-] Falló asignación de flag: {res_flag}{Colors.ENDC}")
+    else:
+        print(f"{Colors.GREEN}[+] Flag asignada correctamente: test_automation_flag{Colors.ENDC}")
+
+    # 5. Seguridad: Verificación de Contraseña Actual y Cambio de Contraseña
+    print(f"\n[*] [5/7] Probando flujo de verificación y cambio de contraseña...")
+    res_ver_pwd = api_req("settings.verify_current_password", {"password": password})
+    if not res_ver_pwd.get('success'):
+        print(f"{Colors.FAIL}[-] Verificación de contraseña actual falló: {res_ver_pwd}{Colors.ENDC}")
+    else:
+        print(f"{Colors.GREEN}[+] Contraseña actual verificada.{Colors.ENDC}")
+        new_password = "UpdatedSecurePassword789!"
+        res_upd_pwd = api_req("settings.update_password", {"new_password": new_password, "confirm_password": new_password})
+        if not res_upd_pwd.get('success'):
+            print(f"{Colors.FAIL}[-] Cambio de contraseña falló: {res_upd_pwd}{Colors.ENDC}")
+        else:
+            print(f"{Colors.GREEN}[+] Contraseña cambiada exitosamente.{Colors.ENDC}")
+            password = new_password
+            
+            # Re-autenticar al haber invalidado la sesión anterior por cambio de contraseña
+            print(f"[*] Re-autenticando sesión tras cambio de contraseña...")
+            res_relogin = api_req("auth.login", {"email": email, "password": password, "turnstile_token": "dummy"})
+            if res_relogin.get('success'):
+                print(f"{Colors.GREEN}[+] Re-autenticación exitosa.{Colors.ENDC}")
+            else:
+                print(f"{Colors.FAIL}[-] Re-autenticación falló: {res_relogin}{Colors.ENDC}")
+
+    # 6. Autenticación en dos factores (2FA: Setup, Enable, Regenerate Recovery, Disable)
+    print(f"\n[*] [6/7] Probando módulo de Autenticación de Dos Factores (2FA)...")
+    res_2fa_gen = api_req("settings.2fa_generate", {})
+    if not res_2fa_gen.get('success'):
+        print(f"{Colors.FAIL}[-] Generación de setup 2FA falló: {res_2fa_gen}{Colors.ENDC}")
+    else:
+        secret = res_2fa_gen.get('secret')
+        print(f"{Colors.GREEN}[+] Setup 2FA generado. Secret: {secret}{Colors.ENDC}")
+        
+        def generate_totp(s):
+            import hmac, hashlib, struct, time, base64
+            key = base64.b32decode(s.upper() + '=' * ((8 - len(s) % 8) % 8))
+            intervals_no = int(time.time()) // 30
+            msg = struct.pack(">Q", intervals_no)
+            h = hmac.new(key, msg, hashlib.sha1).digest()
+            o = h[19] & 15
+            h = (struct.unpack(">I", h[o:o+4])[0] & 0x7fffffff) % 1000000
+            return f"{h:06d}"
+
+        totp_code = generate_totp(secret)
+        print(f"[*] Activando 2FA con código TOTP {totp_code} ...")
+        res_2fa_en = api_req("settings.2fa_enable", {"code": totp_code})
+        if not res_2fa_en.get('success'):
+            print(f"{Colors.FAIL}[-] Activación 2FA falló: {res_2fa_en}{Colors.ENDC}")
+        else:
+            print(f"{Colors.GREEN}[+] 2FA activado exitosamente.{Colors.ENDC}")
+            
+            print(f"[*] Regenerando códigos de recuperación 2FA...")
+            res_2fa_reg = api_req("settings.2fa_regenerate_recovery", {"password": password})
+            if not res_2fa_reg.get('success'):
+                print(f"{Colors.FAIL}[-] Regeneración de códigos 2FA falló: {res_2fa_reg}{Colors.ENDC}")
+            else:
+                print(f"{Colors.GREEN}[+] Códigos de recuperación 2FA regenerados.{Colors.ENDC}")
+
+            print(f"[*] Desactivando 2FA...")
+            res_2fa_dis = api_req("settings.2fa_disable", {"password": password})
+            if not res_2fa_dis.get('success'):
+                print(f"{Colors.FAIL}[-] Desactivación 2FA falló: {res_2fa_dis}{Colors.ENDC}")
+            else:
+                print(f"{Colors.GREEN}[+] 2FA desactivado correctamente.{Colors.ENDC}")
+
+    # 7. Dispositivos y Sesiones Activas
+    print(f"\n[*] [7/7] Probando gestión de dispositivos y sesiones activas...")
+    res_devices = api_req("settings.get_devices", {})
+    if not res_devices.get('success'):
+        print(f"{Colors.FAIL}[-] Consulta de dispositivos falló: {res_devices}{Colors.ENDC}")
+    else:
+        devices_count = len(res_devices.get('devices', []))
+        print(f"{Colors.GREEN}[+] Dispositivos activos obtenidos: {devices_count}{Colors.ENDC}")
+
+    res_revoke = api_req("settings.revoke_all_devices", {"type": "revoke_other"})
+    if not res_revoke.get('success'):
+        print(f"{Colors.FAIL}[-] Revocación de otras sesiones falló: {res_revoke}{Colors.ENDC}")
+    else:
+        print(f"{Colors.GREEN}[+] Revocación de otras sesiones ejecutada exitosamente.{Colors.ENDC}")
+
+    print(f"\n{Colors.HEADER}======================================={Colors.ENDC}")
+    print(f"{Colors.GREEN}{Colors.BOLD}[OK] ¡Todas las pruebas de Configuración (Settings) se ejecutaron con éxito!{Colors.ENDC}")
+    print(f"{Colors.HEADER}======================================={Colors.ENDC}\n")
 
 def run_admin_image_injector():
     print(f"\n{Colors.HEADER}{Colors.BOLD}Inyector Instantáneo de Imágenes (Admin Bypass){Colors.ENDC}")

@@ -88,6 +88,22 @@ $themeMap = [
     DB::THEME_LIGHT => __('theme_light'), 
     DB::THEME_DARK => __('theme_dark')
 ];
+
+$rawRoleName = $user['role_name'] ?? '';
+$translatedRoleName = '';
+if (trim($rawRoleName) !== '') {
+    $roleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower(trim($rawRoleName)));
+    $translatedRoleName = __($roleKey);
+    if ($translatedRoleName === $roleKey) {
+        $translatedRoleName = htmlspecialchars($rawRoleName);
+    }
+}
+if ($translatedRoleName === '') {
+    $translatedRoleName = __('admin_role_undefined');
+}
+
+$userTier = (int)($user['subscription_tier'] ?? 0);
+$subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimits($userTier)['name'] ?? __('tier_free');
 ?>
 <div class="view-content" data-user-id="<?php echo $targetUserId; ?>">
     
@@ -192,6 +208,32 @@ $themeMap = [
                                             <button type="button" class="component-button component-button--h34 component-button--dark" data-action="adminSaveEmail"><?php echo __('btn_save'); ?></button>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider">
+
+                    <div class="component-group-item component-group-item--stateful">
+                        <div class="active component-state-box" data-state="admin-role-view">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title"><?php echo __('lbl_system_role'); ?></h2>
+                                    <span class="component-display-value" data-ref="admin-display-role"><?php echo htmlspecialchars($translatedRoleName); ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider">
+
+                    <div class="component-group-item component-group-item--stateful">
+                        <div class="active component-state-box" data-state="admin-subscription-view">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title"><?php echo __('lbl_subscription_plan'); ?></h2>
+                                    <span class="component-display-value" data-ref="admin-display-subscription"><?php echo htmlspecialchars($subscriptionPlanLabel); ?></span>
                                 </div>
                             </div>
                         </div>
