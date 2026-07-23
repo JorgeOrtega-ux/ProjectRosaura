@@ -164,11 +164,9 @@ export const DesignNetwork = {
                     this.handleCooldownSync(data);
                 }
                 else if (data.type === 'canvas_locked') {
-                    console.log('[DEBUG WS] Recibido: canvas_locked', data);
                     this.handleCanvasLocked(data);
                 } 
                 else if (data.type === 'canvas_cleared') {
-                    console.log('[DEBUG WS] Recibido: canvas_cleared', data);
                     this.handleCanvasCleared(data);
                 }
                 else if (data.type === 'init_protected_pixels') {
@@ -946,7 +944,6 @@ export const DesignNetwork = {
         
         this.hasPlayedResetAnimation = true;
         if (this.renderWorker) {
-            console.log('[DEBUG WS] Iniciando animación de reinicio instantáneo por canvas_locked');
             this.renderWorker.postMessage({ type: 'DRAW_IMAGE_BUFFER', payload: { imageBitmap: null } });
         } else if (this.offscreenCtx) {
             this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
@@ -956,10 +953,8 @@ export const DesignNetwork = {
     },
     
     handleCanvasCleared(data) {
-        console.log('[DEBUG WS] Ejecutando handleCanvasCleared');
         if (!this.hasPlayedResetAnimation) {
             if (this.renderWorker) {
-                console.log('[DEBUG WS] Enviando postMessage DRAW_IMAGE_BUFFER al worker de canvas (null payload para resetAnimation)');
                 this.renderWorker.postMessage({ type: 'DRAW_IMAGE_BUFFER', payload: { imageBitmap: null } });
             } else if (this.offscreenCtx) {
                 this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
@@ -970,7 +965,6 @@ export const DesignNetwork = {
         
         this.isResetLocked = false;
         this.updateLockBadges(); 
-        console.log('[DEBUG WS] Desbloqueo completado isResetLocked=false');
         
         showMessage(__('info_canvas_cleared'), 'info');
         

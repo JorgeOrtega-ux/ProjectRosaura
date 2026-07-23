@@ -55,7 +55,6 @@ export class WebSocketManager {
 
             if (event.code === 4001) {
                 this.isIntentionalDisconnect = true;
-                console.warn('Evicted (4001). Blocking reconnection.');
                 this.trigger('qos_evicted', event.reason);
             } 
             else if (!this.isIntentionalDisconnect) {
