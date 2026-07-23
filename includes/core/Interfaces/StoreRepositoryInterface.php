@@ -13,5 +13,6 @@ interface StoreRepositoryInterface {
     public function markPerkAsUsed(int $userId, string $perkId): bool;
     public function processCoinPurchaseSession(array $data): bool;
     public function purchasePerkAtomic(int $userId, string $perkId, int $price): array;
+    public function purchasePerksBulkAtomic(int $userId, array $perkItems): array;
     public function refundPerk(int $userId, string $perkId): bool;
 }

@@ -12,8 +12,8 @@ export const RouteModulesMap = {
     
     '/canvases/chat-viewer': { path: './modules/app/canvases/ChatViewerController.js', className: 'ChatViewerController', skeletonType: 'layout-basic' },
 
-    '/store/coins': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-grid' },
-    '/store/content': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-grid' },
+    '/store/coins': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-table' },
+    '/store/content': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-table' },
 
     '/login': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-basic' },
     '/login/two-factor': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-basic' },

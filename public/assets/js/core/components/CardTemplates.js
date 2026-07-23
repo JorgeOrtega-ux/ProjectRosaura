@@ -62,7 +62,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         
         if (canvas.locked_requires_downgrade) {
             warningOverlay = `
-                <div class="component-gallery-warning-overlay">
+                <div class="component-gallery-warning-overlay" data-nav="${basePath}/design/${uuid}">
                     <div class="component-gallery-warning-content">
                         <span class="material-symbols-rounded">warning</span>
                         <div class="component-gallery-warning-title">${window.__('plan_expired') || window.__('premium_plan_expired')}</div>
@@ -72,8 +72,8 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             `;
         }
 
-        const navAction = canvas.locked_requires_downgrade ? '' : `data-nav="${basePath}/design/${uuid}"`;
-        const linkClass = canvas.locked_requires_downgrade ? 'component-gallery-link--disabled' : '';
+        const navAction = `data-nav="${basePath}/design/${uuid}"`;
+        const linkClass = '';
 
         return `
             <div class="component-gallery-card" data-card-id="${canvas.id}">

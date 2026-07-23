@@ -7,7 +7,10 @@ import { RouteModulesMap } from './core/router/RouteModulesMap.js';
 import { ApiService } from './core/api/ApiServices.js';
 import { ApiRoutes } from './core/api/ApiRoutes.js';
 
+import { formatNumber } from './core/utils/uiUtils.js';
+
 document.addEventListener('DOMContentLoaded', () => {
+    window.formatNumber = formatNumber;
     window.appUserTier = window.APP_USER ? window.APP_USER.subscription_tier : 0;
 
     const app = new MainController();

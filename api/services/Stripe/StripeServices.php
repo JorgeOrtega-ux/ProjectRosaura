@@ -1037,9 +1037,58 @@ class StripeServices {
         }
 
         $userId = $this->sessionManager->getActiveAccountId();
+
+        $sessionId = $input['session_id'] ?? ($_GET['session_id'] ?? null);
+        if ($sessionId) {
+            try {
+                \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+                $stripeSession = \Stripe\Checkout\Session::retrieve($sessionId);
+                if ($stripeSession && $stripeSession->payment_status === 'paid') {
+                    $metadata = $stripeSession->metadata;
+                    $tier = isset($metadata->tier) ? (int)$metadata->tier : 0;
+                    $billingPeriod = $metadata->billing_period ?? 'monthly';
+
+                    if ($tier > 0) {
+                        $this->subscriptionRepo->updateByCheckoutSessionId($sessionId, [
+                            'status' => 'active',
+                            'stripe_subscription_id' => $stripeSession->subscription ?? null,
+                            'stripe_customer_id' => $stripeSession->customer ?? null
+                        ]);
+
+                        $this->subscriptionRepo->updateUserTier($userId, $tier);
+
+                        $accounts = $this->sessionManager->getLinkedAccounts();
+                        if (isset($accounts[$userId])) {
+                            $accounts[$userId]['subscription_tier'] = $tier;
+                            $accounts[$userId]['real_subscription_tier'] = $tier;
+                            $this->sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+                            $this->sessionManager->syncRootState();
+                        }
+
+                        try {
+                            $redisCache = new \App\Config\Database\RedisCache();
+                            $redisClient = $redisCache->getClient();
+                            if ($redisClient) {
+                                $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . $userId);
+                            }
+                        } catch (\Throwable $e) {}
+
+                        try {
+                            $container = new \App\Core\Container();
+                            $lockManager = $container->get(\App\Api\Services\Canvas\CanvasLockManager::class);
+                            $lockManager->evaluateUserCanvases($userId);
+                        } catch (\Throwable $e) {}
+                    }
+                }
+            } catch (\Throwable $e) {
+                Logger::error("Stripe API Error retrieving checkout session for status check", ['session_id' => $sessionId, 'error' => $e->getMessage()]);
+            }
+        }
+
         $subscription = $this->subscriptionRepo->findActiveByUserId($userId);
 
-        $userTier = (int)($_SESSION['subscription_tier'] ?? 0);
+        $user = $this->userRepo->findById($userId);
+        $userTier = (int)($user['subscription_tier'] ?? ($_SESSION['subscription_tier'] ?? 0));
 
         if ($subscription && !empty($subscription['stripe_subscription_id'])) {
             try {

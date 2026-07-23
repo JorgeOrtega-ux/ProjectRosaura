@@ -79,7 +79,7 @@ class AuthServices {
         }
         
         $encodedTokens = json_encode($tokens);
-        $cookiePath = parse_url(APP_URL, PHP_URL_PATH) ?: '/';
+        $cookiePath = rtrim(parse_url(APP_URL, PHP_URL_PATH) ?: '/', '/') ?: '/';
         $isSecure = Utils::isSecureConnection();
 
         setcookie('remember_tokens', $encodedTokens, [
@@ -87,7 +87,7 @@ class AuthServices {
             'path' => $cookiePath,
             'secure' => $isSecure,
             'httponly' => true,
-            'samesite' => 'Strict'
+            'samesite' => 'Lax'
         ]);
 
         $_COOKIE['remember_tokens'] = $encodedTokens;
@@ -131,7 +131,7 @@ class AuthServices {
     }
 
     public function clearRememberToken($userId = null) {
-        $cookiePath = parse_url(APP_URL, PHP_URL_PATH) ?: '/';
+        $cookiePath = rtrim(parse_url(APP_URL, PHP_URL_PATH) ?: '/', '/') ?: '/';
         $isSecure = Utils::isSecureConnection();
 
         if ($userId === null) {
@@ -143,8 +143,8 @@ class AuthServices {
                 if (count($parts) === 2) $this->tokenRepository->deleteBySelector($parts[0]);
             }
 
-            setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
-            setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
+            setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Lax']);
+            setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Lax']);
             
             unset($_COOKIE['remember_tokens']);
             unset($_COOKIE['remember_token']);
@@ -166,14 +166,14 @@ class AuthServices {
                     }
 
                     if (empty($cleanTokens)) {
-                        setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
+                        setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Lax']);
                         unset($_COOKIE['remember_tokens']);
                     } else {
                         $days = (int)($this->config['remember_me_days'] ?? 30);
                         $encodedTokens = json_encode($cleanTokens);
                         
                         setcookie('remember_tokens', $encodedTokens, [
-                            'expires' => time() + (CacheConstants::TTL_ONE_DAY * $days), 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict'
+                            'expires' => time() + (CacheConstants::TTL_ONE_DAY * $days), 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Lax'
                         ]);
                         $_COOKIE['remember_tokens'] = $encodedTokens;
                     }

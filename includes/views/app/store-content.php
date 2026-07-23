@@ -45,32 +45,45 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
                         <tr>
                             <th><?php echo __('th_item') ?: 'Ítem / Ventaja'; ?></th>
                             <th><?php echo __('th_description') ?: 'Descripción'; ?></th>
+                            <th><?php echo __('th_usage') ?: 'Tipo / Uso'; ?></th>
                             <th><?php echo __('th_price') ?: 'Precio (Monedas)'; ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($contentPackages as $pkg): ?>
-                        <tr class="component-table-row clickable" data-action="selectContentPackage" data-perkid="<?= $pkg['id'] ?>" data-price="<?= $pkg['price_coins'] ?>">
+                        <tr class="component-table-row clickable" data-action="selectContentPackage" data-perkid="<?= $pkg['id'] ?>" data-price="<?= $pkg['price_coins'] ?>" data-name="<?= htmlspecialchars($pkg['name'], ENT_QUOTES, 'UTF-8') ?>" data-icon="<?= htmlspecialchars($pkg['icon'], ENT_QUOTES, 'UTF-8') ?>">
                             <td>
                                 <div class="td-user-info">
-                                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                                    <div class="component-card__icon-container component-card__icon-container--bordered component-card__icon-container--round">
                                         <span class="material-symbols-rounded"><?= $pkg['icon'] ?></span>
                                     </div>
-                                    <span class="component-text-bold"><?= $pkg['name'] ?></span>
+                                    <div class="component-badge component-badge--sm">
+                                        <span class="component-text-bold"><?= $pkg['name'] ?></span>
+                                    </div>
                                 </div>
                             </td>
                             <td>
-                                <span><?= $pkg['description'] ?></span>
+                                <div class="component-badge component-badge--sm">
+                                    <span><?= $pkg['description'] ?></span>
+                                </div>
+                            </td>
+                            <td>
                                 <?php if (!empty($pkg['is_single_use'])): ?>
-                                <span class="component-badge component-badge--sm ml-2">
-                                    <span class="material-symbols-rounded">info</span> <?= __('single_use') ?>
-                                </span>
+                                <div class="component-badge component-badge--sm">
+                                    <span class="material-symbols-rounded">info</span>
+                                    <span><?= __('single_use') ?: 'Un solo uso'; ?></span>
+                                </div>
+                                <?php else: ?>
+                                <div class="component-badge component-badge--sm component-badge--muted">
+                                    <span>-</span>
+                                </div>
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <span class="component-badge component-badge--warning">
-                                    <span class="material-symbols-rounded">toll</span> <?= \App\Core\Helpers\Utils::formatNumber($pkg['price_coins']) ?>
-                                </span>
+                                <div class="component-badge component-badge--sm component-badge--warning">
+                                    <span class="material-symbols-rounded">toll</span>
+                                    <span><?= \App\Core\Helpers\Utils::formatNumber($pkg['price_coins']) ?></span>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>

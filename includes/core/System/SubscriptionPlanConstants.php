@@ -34,6 +34,7 @@ class SubscriptionPlanConstants {
                     'feat_priority_rendering' => (bool)$row['feat_priority_rendering'],
                     'feat_unlimited_exports' => (bool)$row['feat_unlimited_exports'],
                     'feat_beta_access' => (bool)$row['feat_beta_access'],
+                    'feat_inject_templates' => (bool)($row['feat_inject_templates'] ?? false),
                     'allow_live_chat' => (bool)$row['feat_chat_restriction'],
                     'custom_palettes' => (bool)$row['feat_custom_palettes']
                 ];
@@ -58,6 +59,7 @@ class SubscriptionPlanConstants {
             'feat_priority_rendering' => false,
             'feat_unlimited_exports' => false,
             'feat_beta_access' => false,
+            'feat_inject_templates' => false,
             'allow_live_chat' => false,
             'custom_palettes' => false
         ];

@@ -127,7 +127,7 @@ if (session_status() === PHP_SESSION_NONE) {
         'lifetime' => $cookieParams['lifetime'],
         'path' => '/',
         'domain' => $cookieParams['domain'],
-        'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+        'secure' => Utils::isSecureConnection(),
         'httponly' => true,
         'samesite' => 'Lax'
     ]);

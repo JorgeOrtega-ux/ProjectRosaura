@@ -1,41 +1,70 @@
 export const DialogTemplates = {
     welcomePremiumModal: {
-        build: (data) => {
-            const tierName = data.tier == 1 ? 'Premium' : (data.tier == 2 ? 'Pro' : 'Max');
-            let endDate = '';
-            if (data.current_period_end) {
-                const dt = new Date(data.current_period_end * 1000);
-                endDate = dt.toLocaleDateString();
+        fullScreen: true,
+        build: (data = {}) => DialogTemplates.purchaseSuccessModal.build({ ...data, item_type: 'subscription' })
+    },
+
+    purchaseSuccessModal: {
+        fullScreen: true,
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const isCoins = data.item_type === 'coins' || (data.coins !== undefined && data.coins > 0);
+            
+            let badgeIcon = 'stars';
+            let badgeText = '';
+            
+            if (isCoins) {
+                badgeIcon = 'toll';
+                const coinAmount = data.coins || data.amount || 0;
+                let formattedCoins = '0';
+                if (typeof window.formatNumber === 'function') {
+                    formattedCoins = window.formatNumber(coinAmount);
+                } else if (!isNaN(Number(coinAmount))) {
+                    formattedCoins = Number(coinAmount).toLocaleString('en-US');
+                } else {
+                    formattedCoins = coinAmount;
+                }
+                badgeText = `${formattedCoins} ${__('coins')}`;
             } else {
-                endDate = 'N/A';
+                const tierName = data.tier == 1 ? 'Plus' : (data.tier == 2 ? 'Pro' : (data.tier == 3 ? 'Ultra' : 'Premium'));
+                badgeIcon = 'stars';
+                badgeText = `${__('subscription')} ${tierName}`;
             }
+
+            const thanksTitle = __('thank_you_purchase');
+            const momentsDesc = __('in_few_moments_items');
+            const supportText = __('need_help_contact');
+            const continueText = __('btn_continue');
+
             return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-content--centered">
-                    <div class="component-card__icon-container component-text-accent">
-                        <span class="material-symbols-rounded component-icon--64">stars</span>
-                    </div>
-                    <h2 class="component-modal-title">${window.__('welcome_to')} ${tierName}!</h2>
-                    <p class="component-modal-desc component-text-secondary">
-                        ${window.__('subscription_activated')}
-                    </p>
-                </div>
-                <div class="component-modal-body">
-                    <div class="component-card--grouped">
-                        <div class="component-group-item">
-                            <span class="component-text-secondary">${window.__('current_level')}</span>
-                            <strong class="component-text-accent">${tierName}</strong>
+                <div class="component-modal-fullscreen-container">
+                    <div class="component-modal-fullscreen-center">
+                        <div class="component-card__icon-container component-text-accent component-modal-hero-icon-wrapper">
+                            <span class="material-symbols-rounded">shopping_cart</span>
                         </div>
-                        <div class="component-group-item">
-                            <span class="component-text-secondary">${window.__('next_renewal')}</span>
-                            <strong>${endDate}</strong>
+
+                        <h1 class="component-modal-title--hero">${thanksTitle}</h1>
+                        <p class="component-modal-desc--hero">${momentsDesc}</p>
+
+                        <div class="component-hero-badge-container">
+                            <div class="component-badge">
+                                <span class="material-symbols-rounded">${badgeIcon}</span>
+                                <span>${badgeText}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40 component-button--dark" onclick="window.location.reload()">
-                        ${window.__('start_exploring')}
-                    </button>
+
+                    <div class="component-modal-fullscreen-bottom-actions">
+                        <button class="component-button component-button--h45 component-button--dark component-button--pill component-button--wide" data-modal-action="confirm">
+                            ${continueText}
+                        </button>
+
+                        <p class="component-hero-support-text">
+                            <a href="/support" onclick="if(window.spaRouter){window.spaRouter.navigate('/support');} if(window.dialogSystem){window.dialogSystem.closeCurrent();} return false;">
+                                ${supportText}
+                            </a>
+                        </p>
+                    </div>
                 </div>
             `;
         }
@@ -1000,6 +1029,44 @@ export const DialogTemplates = {
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="cancel">Cancelar</button>
                     <button type="button" class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">Vaciar Zona</button>
+                </div>
+            `;
+        }
+    },
+
+    confirmBulkPerkPurchaseModal: {
+        build: (data = {}) => {
+            const items = data.items || [];
+            const totalCoins = data.totalCoins || 0;
+            const formattedTotal = (typeof window.formatNumber === 'function') ? window.formatNumber(totalCoins) : totalCoins;
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+
+            const badgesHtml = items.map(item => {
+                const formattedPrice = (typeof window.formatNumber === 'function') ? window.formatNumber(item.price) : item.price;
+                return `
+                    <div class="component-badge component-badge--warning" style="margin-bottom: 4px;">
+                        <span class="material-symbols-rounded">${item.icon || 'star'}</span>
+                        <span>${item.name} (${formattedPrice} ${__('coins')})</span>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">¿Estás seguro de gastar ${formattedTotal} monedas?</h2>
+                    <p class="component-modal-desc">
+                        Estás a punto de adquirir los siguientes elementos para tu cuenta:
+                    </p>
+                </div>
+                <div class="component-modal-body">
+                    <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start; margin-top: 8px;">
+                        ${badgesHtml}
+                    </div>
+                </div>
+                <div class="component-modal-actions" style="margin-top: 16px;">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_confirm')}</button>
                 </div>
             `;
         }

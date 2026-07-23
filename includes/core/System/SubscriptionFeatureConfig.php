@@ -44,6 +44,11 @@ class SubscriptionFeatureConfig {
                 'icon'      => 'science',
                 'title_key' => 'plan_feat_beta_access_title',
                 'desc_key'  => 'plan_feat_beta_access_desc'
+            ],
+            'feat_inject_templates' => [
+                'icon'      => 'brush',
+                'title_key' => 'plan_feat_inject_templates_title',
+                'desc_key'  => 'plan_feat_inject_templates_desc'
             ]
         ];
     }

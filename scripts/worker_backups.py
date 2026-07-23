@@ -97,41 +97,54 @@ except ValueError as e:
 WORKER_TICK_SECONDS = 3 
 
 def get_db_connection_with_retries(max_retries=5):
+    candidate_hosts = [DB_HOST, "127.0.0.1", "localhost"] if DB_HOST else ["127.0.0.1", "localhost"]
+    seen = set()
+    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
+
     retries = 0
     while retries < max_retries:
-        try:
-            connection = mysql.connector.connect(
-                host=DB_HOST,
-                user=DB_USER,
-                password=DB_PASS,
-                database=DB_IDENTITY_NAME
-            )
-            if connection.is_connected():
-                return connection
-        except Error as e:
-            retries += 1
-            wait_time = 2 ** retries 
-            Logger.warning(f"Network failure detected with MySQL. Retrying in {wait_time}s. Attempt {retries}/{max_retries}")
-            time.sleep(wait_time)
+        for host in hosts:
+            try:
+                connection = mysql.connector.connect(
+                    host=host,
+                    port=int(os.getenv("DB_PORT", 3306)),
+                    user=DB_USER,
+                    password=DB_PASS,
+                    database=DB_IDENTITY_NAME
+                )
+                if connection.is_connected():
+                    return connection
+            except Error:
+                pass
+        retries += 1
+        wait_time = 2 ** retries 
+        Logger.warning(f"Network failure detected with MySQL. Retrying in {wait_time}s. Attempt {retries}/{max_retries}")
+        time.sleep(wait_time)
     raise Exception("Failed to establish database connection after multiple attempts.")
 
 def get_redis_connection():
-    try:
-        client = redis.Redis(
-            host=REDIS_HOST,
-            port=REDIS_PORT,
-            password=REDIS_PASS,
-            decode_responses=True,
-            socket_timeout=30,
-            socket_connect_timeout=10,
-            socket_keepalive=True,
-            retry_on_timeout=True
-        )
-        client.ping()
-        return client
-    except Exception as e:
-        Logger.error(f"Redis connection initialization failed: {str(e)}")
-        return None
+    candidate_hosts = [REDIS_HOST, "127.0.0.1", "localhost"] if REDIS_HOST else ["127.0.0.1", "localhost"]
+    seen = set()
+    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
+
+    for host in hosts:
+        try:
+            client = redis.Redis(
+                host=host,
+                port=REDIS_PORT or 6379,
+                password=REDIS_PASS,
+                decode_responses=True,
+                socket_timeout=30,
+                socket_connect_timeout=10,
+                socket_keepalive=True,
+                retry_on_timeout=True
+            )
+            client.ping()
+            return client
+        except Exception:
+            pass
+    Logger.error("Redis connection initialization failed on all candidate hosts.")
+    return None
 
 def get_server_config():
     try:

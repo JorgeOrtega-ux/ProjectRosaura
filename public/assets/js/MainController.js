@@ -83,6 +83,25 @@ export class MainController {
         window.addEventListener('systemMaintenanceTriggered', this.handleMaintenanceBound);
         this.themeMediaQuery.addEventListener('change', this.handleThemeMediaQueryBound);
         document.addEventListener('visibilitychange', this.handleVisibilityChangeBound);
+
+        window.addEventListener('coins-updated', (e) => {
+            if (e.detail && e.detail.balance !== undefined) {
+                const displays = document.querySelectorAll('[data-ref="user-coins-balance"]');
+                displays.forEach(d => {
+                    d.textContent = formatNumber(e.detail.balance);
+                });
+            }
+        });
+
+        window.addEventListener('subscription-updated', (e) => {
+            if (e.detail && e.detail.tier !== undefined) {
+                window.appUserTier = parseInt(e.detail.tier, 10);
+                const tierName = window.appUserTier === 3 ? 'Ultra' : (window.appUserTier === 2 ? 'Pro' : (window.appUserTier === 1 ? 'Plus' : 'Free'));
+                document.querySelectorAll('[data-ref="user-tier-badge"]').forEach(b => {
+                    b.textContent = tierName;
+                });
+            }
+        });
     }
 
     handleMaintenanceTriggered() {

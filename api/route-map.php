@@ -751,7 +751,7 @@ return [
     'store.buy_perk' => [
         'controller' => 'App\Api\Controllers\Store\StoreController',
         'action' => 'buy_perk',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'store_buy_perk', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'store_buy_perk', 'max' => 50, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'store.get_balance' => [
         'controller' => 'App\Api\Controllers\Store\StoreController',

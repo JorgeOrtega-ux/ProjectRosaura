@@ -10,13 +10,14 @@ class StoreServices {
     private $sessionManager;
     private $storeRepo;
 
-    private const PERK_PRICES = [
-        'pixel_misil_1' => 2000,
-        'bomba_pixel_1' => 5000,
-        'bomba_atomica_1' => 25000,
-        'bomba_racimo_1' => 15000,
-        'lluvia_meteoritos_1' => 45000
-    ];
+    private function getPerkPrices(): array {
+        $packages = \App\Core\System\StorePackagesConfig::getContentPackages();
+        $prices = [];
+        foreach ($packages as $id => $pkg) {
+            $prices[$id] = (int)($pkg['price_coins'] ?? 0);
+        }
+        return $prices;
+    }
 
     public function __construct(
         SessionManagerInterface $sessionManager,
@@ -33,9 +34,38 @@ class StoreServices {
         }
 
         $userId = $this->sessionManager->getActiveAccountId();
+        $perkPrices = $this->getPerkPrices();
+
+        // Bulk atomic purchase support
+        if (!empty($input['perk_ids']) && is_array($input['perk_ids'])) {
+            $perkItems = [];
+            foreach ($input['perk_ids'] as $pId) {
+                if (isset($perkPrices[$pId])) {
+                    $perkItems[] = [
+                        'id' => $pId,
+                        'price' => $perkPrices[$pId]
+                    ];
+                }
+            }
+
+            if (empty($perkItems)) {
+                return ['success' => false, 'message_key' => 'store.invalid_perk'];
+            }
+
+            $result = $this->storeRepo->purchasePerksBulkAtomic($userId, $perkItems);
+            if ($result['success']) {
+                Logger::info("User bought perks bulk atomically", [
+                    'user_id' => $userId,
+                    'items_count' => count($perkItems),
+                    'total_spent' => $result['total_spent']
+                ]);
+            }
+            return $result;
+        }
+
         $perkId = $input['perk_id'] ?? '';
 
-        if (empty($perkId) || !isset(self::PERK_PRICES[$perkId])) {
+        if (empty($perkId) || !isset($perkPrices[$perkId])) {
             return ['success' => false, 'message_key' => 'store.invalid_perk'];
         }
 
@@ -69,7 +99,7 @@ class StoreServices {
             }
         }
 
-        $price = self::PERK_PRICES[$perkId];
+        $price = $perkPrices[$perkId];
         $result = $this->storeRepo->purchasePerkAtomic($userId, $perkId, $price);
 
         if ($result['success']) {
@@ -90,12 +120,63 @@ class StoreServices {
         }
 
         $userId = $this->sessionManager->getActiveAccountId();
+
+        $sessionId = $input['session_id'] ?? ($_GET['session_id'] ?? null);
+        $purchasedCoins = 0;
+        if ($sessionId) {
+            try {
+                \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+                $stripeSession = \Stripe\Checkout\Session::retrieve($sessionId);
+                if ($stripeSession && $stripeSession->payment_status === 'paid') {
+                    $metadata = $stripeSession->metadata;
+                    if (isset($metadata->type) && $metadata->type === 'coins') {
+                        $amountCoins = isset($metadata->amount) ? (int) $metadata->amount : 0;
+                        if ($amountCoins > 0) {
+                            $purchasedCoins = $amountCoins;
+                            $processed = $this->storeRepo->processCoinPurchaseSession([
+                                'user_id' => $userId,
+                                'stripe_payment_intent_id' => $stripeSession->payment_intent ?? null,
+                                'stripe_checkout_session_id' => $sessionId,
+                                'item_type' => 'coins',
+                                'item_amount' => $amountCoins,
+                                'amount_cents' => $stripeSession->amount_total ?? 0,
+                                'currency' => strtolower($stripeSession->currency ?? 'usd'),
+                                'status' => 'succeeded'
+                            ]);
+
+                            if ($processed) {
+                                try {
+                                    $subRepo = new \App\Core\Repositories\SubscriptionRepository(new \App\Config\Database\DatabaseManager());
+                                    $subRepo->createPaymentRecord([
+                                        'user_id' => $userId,
+                                        'stripe_payment_intent_id' => $stripeSession->payment_intent ?? null,
+                                        'stripe_invoice_id' => null,
+                                        'amount_cents' => $stripeSession->amount_total ?? 0,
+                                        'currency' => strtolower($stripeSession->currency ?? 'usd'),
+                                        'description' => "Purchase of {$amountCoins} coins",
+                                        'status' => 'succeeded'
+                                    ]);
+                                } catch (\Throwable $e) {}
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                Logger::error("Stripe API Error retrieving coin session for balance check", ['session_id' => $sessionId, 'error' => $e->getMessage()]);
+            }
+        }
+
         $coins = $this->storeRepo->getCoins($userId);
 
-        return [
+        $resData = [
             'success' => true,
             'coins' => $coins
         ];
+        if ($purchasedCoins > 0) {
+            $resData['purchased_coins'] = $purchasedCoins;
+        }
+
+        return $resData;
     }
 
     public function getMyPerks(array $input): array {

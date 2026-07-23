@@ -73,6 +73,8 @@ export class DialogSystem {
 
             const container = this._getContainer();
 
+            const template = this.templates[templateName];
+
             this.activeOverlay = document.createElement('div');
             this.activeOverlay.className = 'component-modal-overlay';
             
@@ -81,17 +83,27 @@ export class DialogSystem {
             
             this.activeBox = document.createElement('div');
             this.activeBox.className = 'component-modal-box';
-            if (this.templates[templateName].noPadding) {
+
+            if (template.fullScreen) {
+                this.activeOverlay.classList.add('component-modal-overlay--fullscreen');
+                this.activeWrapper.classList.add('component-modal-wrapper--fullscreen');
+                this.activeBox.classList.add('component-modal-box--fullscreen');
+            }
+
+            if (template.noPadding) {
                 this.activeBox.classList.add('component-modal-box--no-padding');
             }
-            this.activeBox.innerHTML = this.templates[templateName].build(data);
-            
-            const closeBtn = document.createElement('button');
-            closeBtn.className = 'component-modal-close-btn';
-            closeBtn.innerHTML = '<span class="material-symbols-rounded">close</span>';
+            this.activeBox.innerHTML = template.build(data);
             
             this.activeWrapper.appendChild(this.activeBox);
-            this.activeWrapper.appendChild(closeBtn);
+
+            if (!template.fullScreen && !template.hideCloseBtn) {
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'component-modal-close-btn';
+                closeBtn.innerHTML = '<span class="material-symbols-rounded">close</span>';
+                this.activeWrapper.appendChild(closeBtn);
+            }
+
             this.activeOverlay.appendChild(this.activeWrapper);
             container.appendChild(this.activeOverlay);
 

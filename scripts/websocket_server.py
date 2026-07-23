@@ -75,21 +75,28 @@ IS_DOCKER = os.path.exists('/.dockerenv') or os.getenv('DOCKER_CONTAINER') == 't
 def get_db_pool():
     global DB_POOL
     if DB_POOL is None:
-        try:
-            db_host = os.getenv("DB_HOST", "db" if IS_DOCKER else "127.0.0.1")
-            if not IS_DOCKER and db_host == "db":
-                db_host = "127.0.0.1"
-            DB_POOL = pooling.MySQLConnectionPool(
-                pool_name="chunk_pool",
-                pool_size=32,
-                pool_reset_session=True,
-                host=db_host,
-                user=os.getenv("DB_USER"),
-                password=os.getenv("DB_PASS"),
-                database=os.getenv("DB_CANVASES_NAME")
-            )
-        except Exception as e:
-            print(f"[!] Error creating DB pool: {e}")
+        candidate_hosts = [os.getenv("DB_HOST"), "127.0.0.1", "localhost"]
+        seen = set()
+        hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
+        
+        last_e = None
+        for db_host in hosts:
+            try:
+                DB_POOL = pooling.MySQLConnectionPool(
+                    pool_name="chunk_pool",
+                    pool_size=32,
+                    pool_reset_session=True,
+                    host=db_host,
+                    port=int(os.getenv("DB_PORT", 3306)),
+                    user=os.getenv("DB_USER"),
+                    password=os.getenv("DB_PASS"),
+                    database=os.getenv("DB_CANVASES_NAME")
+                )
+                break
+            except Exception as e:
+                last_e = e
+        if DB_POOL is None and last_e:
+            print(f"[!] Error creating DB pool: {last_e}")
     return DB_POOL
 
 def consume_user_perk(user_id, perk_id):
@@ -124,15 +131,58 @@ def consume_user_perk(user_id, perk_id):
         print(f"[!] Error consuming perk {perk_id} for user {user_id}: {e}")
         return False
 
+async def ensure_canvas_state_loaded(r, canvas_id):
+    try:
+        state_key = f"canvas:{canvas_id}:state"
+        if not await r.exists(state_key):
+            pool = get_db_pool()
+            if not pool:
+                return
+            db = pool.get_connection()
+            cursor = db.cursor(dictionary=True)
+            cursor.execute("SELECT size FROM canvases WHERE id = %s", (canvas_id,))
+            c_row = cursor.fetchone()
+            
+            width, height = 64, 64
+            if c_row and c_row.get('size'):
+                try:
+                    parts = str(c_row['size']).lower().split('x')
+                    width = int(parts[0])
+                    height = int(parts[1]) if len(parts) > 1 else width
+                except Exception:
+                    pass
+            
+            expected_size = width * height * 4
+            
+            cursor.execute("SELECT snapshot_data FROM canvas_snapshots WHERE canvas_id = %s LIMIT 1", (canvas_id,))
+            snap_row = cursor.fetchone()
+            cursor.close()
+            db.close()
+            
+            raw_state = None
+            if snap_row and snap_row.get('snapshot_data'):
+                try:
+                    raw_state = zlib.decompress(snap_row['snapshot_data'])
+                except Exception as e:
+                    print(f"[!] Error decompressing snapshot for canvas {canvas_id}: {e}")
+            
+            if not raw_state or len(raw_state) != expected_size:
+                raw_state = bytes([0, 0, 0, 0] * expected_size)
+                
+            await r.set(state_key, raw_state)
+            print(f"[+] Successfully loaded state into Redis for canvas {canvas_id} ({width}x{height}, {len(raw_state)} bytes)")
+    except Exception as e:
+        print(f"[!] Error in ensure_canvas_state_loaded for canvas {canvas_id}: {e}")
+
 def fetch_canvas_config_from_db(canvas_id):
     try:
         pool = get_db_pool()
         if not pool:
-            return 5, 10
+            return 5, 10, 0, 64
         db = pool.get_connection()
         cursor = db.cursor(dictionary=True)
         tbl_canvases = os.getenv("DB_CANVASES_NAME", "db_canvases")
-        cursor.execute(f"SELECT cooldown_pixels_batch, cooldown_seconds, is_locked FROM `{tbl_canvases}`.`canvases` WHERE id = %s LIMIT 1", (canvas_id,))
+        cursor.execute(f"SELECT cooldown_pixels_batch, cooldown_seconds, is_locked, size FROM `{tbl_canvases}`.`canvases` WHERE id = %s LIMIT 1", (canvas_id,))
         row = cursor.fetchone()
         cursor.close()
         db.close()
@@ -140,23 +190,36 @@ def fetch_canvas_config_from_db(canvas_id):
             batch = int(row.get('cooldown_pixels_batch') or 5)
             sec = int(row.get('cooldown_seconds') or 10)
             is_locked = int(row.get('is_locked') or 0)
-            return batch, sec, is_locked
+            width = 64
+            if row.get('size'):
+                try:
+                    parts = str(row['size']).lower().split('x')
+                    width = int(parts[0])
+                except Exception:
+                    pass
+            return batch, sec, is_locked, width
     except Exception as e:
         print(f"[!] Error fetching canvas config from DB: {e}")
-    return 5, 10
+    return 5, 10, 0, 64
 
 async def get_canvas_config(r, canvas_id):
     config_key = f"canvas:{canvas_id}:config"
     raw_config = await r.hgetall(config_key)
-    if raw_config and b'cooldown_batch' in raw_config:
+    if raw_config and b'cooldown_batch' in raw_config and b'width' in raw_config:
         batch = int(raw_config[b'cooldown_batch'])
         sec = int(raw_config.get(b'cooldown_seconds', b'10'))
         is_locked = int(raw_config.get(b'is_locked', b'0'))
-        return batch, sec, is_locked
+        width = int(raw_config.get(b'width', b'64'))
+        return batch, sec, is_locked, width
     
-    batch, sec, is_locked = await asyncio.to_thread(fetch_canvas_config_from_db, canvas_id)
-    await r.hset(config_key, mapping={'cooldown_batch': str(batch), 'cooldown_seconds': str(sec), 'is_locked': str(is_locked)})
-    return batch, sec, is_locked
+    batch, sec, is_locked, width = await asyncio.to_thread(fetch_canvas_config_from_db, canvas_id)
+    await r.hset(config_key, mapping={
+        'cooldown_batch': str(batch),
+        'cooldown_seconds': str(sec),
+        'is_locked': str(is_locked),
+        'width': str(width)
+    })
+    return batch, sec, is_locked, width
 
 def check_is_canvas_owner(user_id, canvas_id):
     if not user_id or not canvas_id:
@@ -439,6 +502,7 @@ async def handler(websocket):
                 data = json.loads(message)
                 
                 if data.get("type") == "init":
+                    await ensure_canvas_state_loaded(r, canvas_id)
                     user_id = WS_META[websocket].get('user_id')
                     print(f"[DEBUG PY] Processing INIT request. UserId: {user_id}")
                     
@@ -646,7 +710,8 @@ async def handler(websocket):
                         # Invalid format, ignore
                         continue
 
-                    config_batch, config_sec, is_premium_locked = await get_canvas_config(r, canvas_id)
+                    config_batch, config_sec, is_premium_locked, board_w = await get_canvas_config(r, canvas_id)
+                    width = board_w if board_w > 0 else int(data.get("width", 64))
 
                     if is_premium_locked:
                         print(f"[DEBUG PY] Canvas {canvas_id} is premium locked. Ignoring pixel.")
@@ -795,12 +860,14 @@ async def handler(websocket):
                     if not user_id or not pixels_list:
                         continue
 
-                    config_batch, config_sec = await get_canvas_config(r, canvas_id)
+                    config_batch, config_sec, is_premium_locked, board_w = await get_canvas_config(r, canvas_id)
+                    width = board_w if board_w > 0 else int(data.get("width", 64))
 
                     if user_id not in USER_LOCKS:
                         USER_LOCKS[user_id] = asyncio.Lock()
 
                     async with USER_LOCKS[user_id]:
+                        await ensure_canvas_state_loaded(r, canvas_id)
                         for px in pixels_list:
                             x = int(px.get("x", 0))
                             y = int(px.get("y", 0))
@@ -816,9 +883,6 @@ async def handler(websocket):
                                 f"canvas:{canvas_id}:state",
                                 protected_key,
                                 f"canvas:{canvas_id}:user:{user_id}:cooldown",
-                                f"user:{user_id}:perk:no_cooldown",
-                                f"user:{user_id}:perk:protection",
-                                f"user:{user_id}:perk:eraser",
                                 f"canvas:{canvas_id}:stream"
                             ]
                             args = [
@@ -832,7 +896,7 @@ async def handler(websocket):
                                 str(y),
                                 color_hex
                             ]
-                            await r.eval(PAINT_PIXEL_LUA, 7, *keys, *args)
+                            await r.eval(PAINT_PIXEL_LUA, 4, *keys, *args)
 
                         clients_in_room = ROOMS.get(canvas_id, set()) - {websocket}
                         broadcast_msg = json.dumps({

@@ -350,16 +350,19 @@ class HomeController {
 
     async checkCheckoutSuccess() {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('checkout') === 'success' && urlParams.get('session_id')) {
+        const sessionId = urlParams.get('session_id');
+        if (urlParams.get('checkout') === 'success' && sessionId) {
             const newUrl = window.location.pathname;
             window.history.replaceState({}, document.title, newUrl);
 
             for (let i = 0; i < 5; i++) {
                 try {
-                    const result = await this.api.post(ApiRoutes.Stripe.GetSubscriptionStatus, {}, this.abortController.signal);
-                    if (result && result.success && result.data && result.data.status === 'active') {
+                    const result = await this.api.post(ApiRoutes.Stripe.GetSubscriptionStatus, { session_id: sessionId }, this.abortController.signal);
+                    if (result && result.success && result.data && (result.data.status === 'active' || result.data.tier > 0)) {
+                        window.appUserTier = result.data.tier;
+                        window.dispatchEvent(new CustomEvent('subscription-updated', { detail: result.data }));
                         if (window.dialogSystem) {
-                            window.dialogSystem.show('welcomePremiumModal', result.data);
+                            window.dialogSystem.show('purchaseSuccessModal', { ...result.data, item_type: 'subscription' });
                         }
                         break;
                     }

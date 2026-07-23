@@ -1767,9 +1767,16 @@
     "plan_feat_advanced_roles_title": "Roles Avanzados",
     "plan_feat_advanced_roles_desc": "Gestiona roles y permisos a nivel granular.",
     "plan_feat_chat_restriction_title": "Chat en tiempo real",
-    "plan_feat_chat_restriction_desc": "Comun�cate con los miembros de tu grupo directamente desde el lienzo.",
+    "plan_feat_chat_restriction_desc": "Comuncate con los miembros de tu grupo directamente desde el lienzo.",
     "plan_feat_custom_palettes_title": "Paletas Personalizadas",
     "plan_feat_custom_palettes_desc": "Guarda tus propios colores y personaliza tu entorno de trabajo.",
     "plan_feat_beta_access_title": "Acceso Beta",
-    "plan_feat_beta_access_desc": "Prueba las nuevas caracter�sticas antes que nadie."
+    "plan_feat_beta_access_desc": "Prueba las nuevas caractersticas antes que nadie.",
+    "plan_feat_inject_templates_title": "Inyección de Plantillas de Imagen",
+    "plan_feat_inject_templates_desc": "Inyecta plantillas e imágenes directamente sobre los lienzos.",
+    "thank_you_purchase": "¡Gracias por tu compra!",
+    "in_few_moments_items": "En unos momentos verás los siguientes ítems en tu cuenta:",
+    "need_help_contact": "¿Necesitas ayuda? Contacta a nuestro equipo de soporte",
+    "coins": "Monedas",
+    "subscription": "Suscripción"
 }

@@ -14,6 +14,11 @@ class StoreRepository implements StoreRepositoryInterface {
 
     public function __construct(DatabaseManager $db, RedisCache $redisCache = null) {
         $this->db = $db->getConnection(DB::CONN_IDENTITY);
+        if ($redisCache === null) {
+            try {
+                $redisCache = new RedisCache();
+            } catch (\Throwable $e) {}
+        }
         $this->redisClient = $redisCache ? $redisCache->getClient() : null;
     }
 
@@ -22,6 +27,7 @@ class StoreRepository implements StoreRepositoryInterface {
         $res = $stmt->execute([$amount, $userId]);
         if ($res && $this->redisClient) {
             $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+            $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
         }
         return $res;
     }
@@ -32,6 +38,7 @@ class StoreRepository implements StoreRepositoryInterface {
         $res = $stmt->rowCount() > 0;
         if ($res && $this->redisClient) {
             $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+            $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
         }
         return $res;
     }
@@ -100,6 +107,7 @@ class StoreRepository implements StoreRepositoryInterface {
 
             if ($this->redisClient) {
                 $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $data['user_id']);
+                $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $data['user_id']);
             }
             return true;
         } catch (\Throwable $e) {
@@ -151,6 +159,64 @@ class StoreRepository implements StoreRepositoryInterface {
                 $this->db->rollBack();
             }
             \App\Core\System\Logger::error("Error atómico en purchasePerkAtomic: " . $e->getMessage());
+            return ['success' => false, 'message_key' => 'store.purchase_failed'];
+        }
+    }
+
+    public function purchasePerksBulkAtomic(int $userId, array $perkItems): array {
+        try {
+            $this->db->beginTransaction();
+
+            $stmt = $this->db->prepare("SELECT coins FROM users WHERE id = ? FOR UPDATE");
+            $stmt->execute([$userId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $currentCoins = $row ? (int)$row['coins'] : 0;
+
+            $totalPrice = 0;
+            foreach ($perkItems as $item) {
+                $totalPrice += (int)($item['price'] ?? 0);
+            }
+
+            if ($currentCoins < $totalPrice) {
+                $this->db->rollBack();
+                return ['success' => false, 'message_key' => 'store.insufficient_coins'];
+            }
+
+            $deductStmt = $this->db->prepare("UPDATE users SET coins = coins - ? WHERE id = ? AND coins >= ?");
+            $deductStmt->execute([$totalPrice, $userId, $totalPrice]);
+            if ($deductStmt->rowCount() === 0) {
+                $this->db->rollBack();
+                return ['success' => false, 'message_key' => 'store.insufficient_coins'];
+            }
+
+            $perkStmt = $this->db->prepare("INSERT INTO user_perks (user_id, perk_id, coins_spent) VALUES (?, ?, ?)");
+            foreach ($perkItems as $item) {
+                $perkId = $item['id'];
+                $price = (int)($item['price'] ?? 0);
+                $perkStmt->execute([$userId, $perkId, $price]);
+            }
+
+            $this->db->commit();
+
+            if ($this->redisClient) {
+                $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+                $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+            }
+
+            $newBalance = $currentCoins - $totalPrice;
+
+            return [
+                'success' => true,
+                'message_key' => 'store.bulk_purchased',
+                'items_count' => count($perkItems),
+                'total_spent' => $totalPrice,
+                'new_balance' => $newBalance
+            ];
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            \App\Core\System\Logger::error("Error atómico en purchasePerksBulkAtomic: " . $e->getMessage());
             return ['success' => false, 'message_key' => 'store.purchase_failed'];
         }
     }

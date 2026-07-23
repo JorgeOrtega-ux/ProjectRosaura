@@ -75,6 +75,21 @@ export const DesignInteractions = {
             return;
         }
 
+        const btnOwnerTools = e.target.closest('[data-action="toggleOwnerTools"]');
+        if (btnOwnerTools) {
+            e.preventDefault();
+            this.showOwnerTools = !this.showOwnerTools;
+            if (this.showOwnerTools) {
+                btnOwnerTools.classList.add('active');
+            } else {
+                btnOwnerTools.classList.remove('active');
+            }
+            if (typeof this.updatePerkBadges === 'function') {
+                this.updatePerkBadges();
+            }
+            return;
+        }
+
         const btnOwnerEraser = e.target.closest('[data-action="toggleOwnerEraser"]');
         if (btnOwnerEraser) {
             e.preventDefault();
@@ -1476,11 +1491,11 @@ export const DesignInteractions = {
             badgesRight.appendChild(emptyBadge);
         }
 
-        if (this.isOwner) {
+        if (this.isOwner && (this.showOwnerTools || this.interactionMode === 'owner_erasing')) {
             const isToggledOn = (this.interactionMode === 'owner_erasing');
             const colorClass = isToggledOn ? 'component-text-danger' : '';
             const badgeEl = document.createElement('div');
-            badgeEl.className = 'component-badge component-badge--clickable';
+            badgeEl.className = 'component-badge component-badge--clickable owner-tool-badge';
             badgeEl.style.cursor = 'pointer';
             if (isToggledOn) {
                 badgeEl.style.border = '1px solid var(--color-error)';

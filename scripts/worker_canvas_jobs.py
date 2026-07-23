@@ -65,15 +65,40 @@ ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR") or "/var/www/html/storage/priva
 SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR") or 2)
 
 def get_redis_client():
+    candidate_hosts = [REDIS_HOST, "127.0.0.1", "localhost"] if REDIS_HOST else ["127.0.0.1", "localhost"]
+    seen = set()
+    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
+    for host in hosts:
+        try:
+            r = redis.Redis(
+                host=host, port=REDIS_PORT or 6379, password=REDIS_PASS,
+                socket_keepalive=True, retry_on_timeout=True,
+                health_check_interval=60, socket_timeout=60
+            )
+            r.ping()
+            return r
+        except Exception:
+            pass
     return redis.Redis(
-        host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS,
+        host=REDIS_HOST, port=REDIS_PORT or 6379, password=REDIS_PASS,
         socket_keepalive=True, retry_on_timeout=True,
         health_check_interval=60, socket_timeout=60
     )
 
 def get_db_connection():
+    candidate_hosts = [DB_HOST, "127.0.0.1", "localhost"] if DB_HOST else ["127.0.0.1", "localhost"]
+    seen = set()
+    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
+    for host in hosts:
+        try:
+            return pymysql.connect(
+                host=host, port=DB_PORT or 3306, user=DB_USER, password=DB_PASS, database=DB_NAME,
+                cursorclass=pymysql.cursors.DictCursor
+            )
+        except Exception:
+            pass
     return pymysql.connect(
-        host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASS, database=DB_NAME,
+        host=DB_HOST, port=DB_PORT or 3306, user=DB_USER, password=DB_PASS, database=DB_NAME,
         cursorclass=pymysql.cursors.DictCursor
     )
 
@@ -717,7 +742,7 @@ def draw_image_listener_thread():
                         temp_path = temp_file.name
                         s3_client.download_file(bucket, key, temp_path)
                     
-                    script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'admin_tools', 'image_tools', 'admin_draw_image.py'))
+                    script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'draw_image.py'))
                     cmd = ["python", script_path, temp_path, str(canvas_id), "--x", str(x), "--y", str(y), "--w", str(w), "--h", str(h), "--angle", str(angle)]
                     logging.info(f"Executing: {' '.join(cmd)}")
                     

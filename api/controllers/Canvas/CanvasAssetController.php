@@ -171,6 +171,13 @@ class CanvasAssetController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
             
+            $userId = $this->session->getActiveAccountId();
+            $dbManager = new \App\Config\Database\DatabaseManager();
+            $pdoIdentity = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmtUser = $pdoIdentity->prepare("SELECT subscription_tier FROM users WHERE id = :id LIMIT 1");
+            $stmtUser->execute([':id' => $userId]);
+            $tier = (int)($stmtUser->fetchColumn() ?: 0);
+
             $perms = $this->session->getPermissions();
             if (empty($perms) && isset($_SESSION['user_permissions'])) {
                 $perms = $_SESSION['user_permissions'];
@@ -181,11 +188,12 @@ class CanvasAssetController extends BaseController {
                 $perms = [];
             }
             
-            $canInject = in_array(\App\Core\System\PermissionsConstants::INJECT_TEMPLATE, $perms) || 
+            $canInject = ($tier >= 3) ||
+                         in_array(\App\Core\System\PermissionsConstants::INJECT_TEMPLATE, $perms) || 
                          in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $perms);
             
             if (!$canInject) {
-                return $this->respond(['success' => false, 'message' => 'No tienes permiso para inyectar plantillas.']);
+                return $this->respond(['success' => false, 'message' => 'Esta función requiere una suscripción Ultra (Nivel 3).']);
             }
 
             $canvasUuid = $input['canvas_id'] ?? null;

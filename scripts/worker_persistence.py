@@ -46,26 +46,45 @@ CHAT_SYNC_INTERVAL = int(os.getenv("WORKER_CHAT_SYNC_INTERVAL")) if os.getenv("W
 CHAT_BATCH_SIZE = int(os.getenv("WORKER_CHAT_BATCH_SIZE")) if os.getenv("WORKER_CHAT_BATCH_SIZE") else 50
 
 def get_db_connection():
-    try:
-        return mysql.connector.connect(
-            host=DB_HOST,
-            user=DB_USER,
-            password=DB_PASS,
-            database=DB_NAME
-        )
-    except Exception as e:
-        print(f"[!] Error connecting to MySQL: {e}")
-        return None
+    candidate_hosts = [DB_HOST, "127.0.0.1", "localhost"] if DB_HOST else ["127.0.0.1", "localhost"]
+    seen = set()
+    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
+    
+    last_err = None
+    for host in hosts:
+        try:
+            return mysql.connector.connect(
+                host=host,
+                port=int(os.getenv("DB_PORT", 3306)),
+                user=DB_USER,
+                password=DB_PASS,
+                database=DB_NAME
+            )
+        except Exception as e:
+            last_err = e
+    print(f"[!] Error connecting to MySQL: {last_err}")
+    return None
+
+def get_redis_client():
+    candidate_hosts = [REDIS_HOST, "127.0.0.1", "localhost"] if REDIS_HOST else ["127.0.0.1", "localhost"]
+    seen = set()
+    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
+    
+    for host in hosts:
+        try:
+            r = redis.Redis(host=host, port=REDIS_PORT or 6379, password=REDIS_PASS, db=0, decode_responses=False)
+            r.ping()
+            return r
+        except Exception:
+            pass
+    return None
 
 def canvas_persistence_thread():
     print("[*] Starting Canvas Persistence Thread (Files + DB)...")
     
-    
-    try:
-        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS, db=0, decode_responses=False)
-        r.ping()
-    except Exception as e:
-        print(f"[!] Canvas thread could not connect to Redis: {e}")
+    r = get_redis_client()
+    if not r:
+        print("[!] Canvas thread could not connect to Redis on any host.")
         return
 
     canvas_uuid_cache = {}
@@ -168,11 +187,9 @@ def canvas_persistence_thread():
 
 def chat_persistence_thread():
     print("[*] Starting Chat Persistence Thread...")
-    try:
-        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS, db=0, decode_responses=False)
-        r.ping()
-    except Exception as e:
-        print(f"[!] Chat thread could not connect to Redis: {e}")
+    r = get_redis_client()
+    if not r:
+        print("[!] Chat thread could not connect to Redis on any host.")
         return
 
     while True:

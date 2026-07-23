@@ -83,6 +83,12 @@ func getChunksHandler(w http.ResponseWriter, r *http.Request) {
 	response.Data.ChunkSize = chunkSize
 	response.Data.Chunks = make(map[string]string)
 
+	exists, _ := rdb.Exists(ctx, redisKey).Result()
+	if exists == 0 {
+		expectedLen := req.BoardW * req.BoardH * 4
+		rdb.Set(ctx, redisKey, make([]byte, expectedLen), 0)
+	}
+
 	// Build Redis pipeline to fetch all required rows for all chunks
 	pipe := rdb.Pipeline()
 

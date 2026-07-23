@@ -115,32 +115,38 @@ export class UpgradeController {
 
     _handleUrlParams() {
         const urlParams = new URLSearchParams(window.location.search);
-        const status = urlParams.get('status');
+        const status = urlParams.get('status') || urlParams.get('checkout');
         const sessionId = urlParams.get('session_id');
 
-        if (status === 'success' && sessionId) {
-            showMessage(window.__('msg_payment_success'), 'success');
+        if ((status === 'success' || urlParams.get('checkout') === 'success') && sessionId) {
+            showMessage(window.__('msg_payment_success') || '¡Pago completado con éxito!', 'success');
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
-            this._pollSubscriptionStatus(3);
+            this._pollSubscriptionStatus(3, sessionId);
         } else if (status === 'cancel') {
-            showMessage(window.__('payment_cancelled'), 'warning');
+            showMessage(window.__('payment_cancelled') || 'Pago cancelado', 'warning');
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
         }
     }
 
-    async _pollSubscriptionStatus(maxAttempts) {
+    async _pollSubscriptionStatus(maxAttempts, sessionId = null) {
         for (let i = 0; i < maxAttempts; i++) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
             try {
-                const result = await this.api.post(ApiRoutes.Stripe.GetSubscriptionStatus);
-                if (result.success && result.data && result.data.status === 'active') {
-                    showMessage(window.__('msg_plan_updated'), 'success');
-                    setTimeout(() => { window.location.reload(); }, 1500);
+                const payload = sessionId ? { session_id: sessionId } : {};
+                const result = await this.api.post(ApiRoutes.Stripe.GetSubscriptionStatus, payload);
+                if (result.success && result.data && (result.data.status === 'active' || result.data.tier > 0)) {
+                    window.appUserTier = result.data.tier;
+                    window.dispatchEvent(new CustomEvent('subscription-updated', { detail: result.data }));
+                    if (window.dialogSystem) {
+                        window.dialogSystem.show('welcomePremiumModal', result.data);
+                    } else {
+                        showMessage(window.__('msg_plan_updated') || '¡Suscripción actualizada!', 'success');
+                    }
                     return;
                 }
             } catch (e) {}
+            await new Promise(resolve => setTimeout(resolve, 1500));
         }
     }
 

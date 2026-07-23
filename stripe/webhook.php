@@ -51,8 +51,9 @@ try {
 
 // 3. Procesar el evento
 $db = new DatabaseManager();
+$redisCache = new RedisCache();
 $subRepo = new SubscriptionRepository($db);
-$storeRepo = new StoreRepository($db);
+$storeRepo = new StoreRepository($db, $redisCache);
 
 try {
     switch ($event->type) {
@@ -118,6 +119,14 @@ try {
             $subRepo->updateUserTier($userId, $tier);
 
             try {
+                $redisCache = new RedisCache();
+                $redisClient = $redisCache->getClient();
+                if ($redisClient) {
+                    $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . $userId);
+                }
+            } catch (\Throwable $e) {}
+
+            try {
                 $container = new \App\Core\Container();
                 $lockManager = $container->get(\App\Api\Services\Canvas\CanvasLockManager::class);
                 $lockManager->evaluateUserCanvases($userId);
@@ -181,6 +190,13 @@ try {
                 ]);
 
                 $subRepo->updateUserTier((int) $localSub['user_id'], 0);
+                try {
+                    $redisCache = new RedisCache();
+                    $redisClient = $redisCache->getClient();
+                    if ($redisClient) {
+                        $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . (int) $localSub['user_id']);
+                    }
+                } catch (\Throwable $e) {}
 
                 try {
                     $container = new \App\Core\Container();
@@ -220,11 +236,18 @@ try {
 
             $subRepo->updateByStripeSubscriptionId($stripeSubId, $updateData);
 
-            if (in_array($newStatus, ['unpaid', 'canceled'])) {
+            if (in_array($newStatus, ['past_due', 'unpaid', 'canceled', 'incomplete_expired'])) {
                 $localSub = $subRepo->findByStripeSubscriptionId($stripeSubId);
                 if ($localSub) {
                     $userId = (int) $localSub['user_id'];
                     $subRepo->updateUserTier($userId, 0);
+                    try {
+                        $redisCache = new RedisCache();
+                        $redisClient = $redisCache->getClient();
+                        if ($redisClient) {
+                            $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . $userId);
+                        }
+                    } catch (\Throwable $e) {}
                     try {
                         $container = new \App\Core\Container();
                         $lockManager = $container->get(\App\Api\Services\Canvas\CanvasLockManager::class);
@@ -277,12 +300,23 @@ try {
             if (!empty($invoice->subscription)) {
                 $localSub = $subRepo->findByStripeSubscriptionId($invoice->subscription);
                 if ($localSub) {
+                    $userId = (int) $localSub['user_id'];
                     $subRepo->updateByStripeSubscriptionId($invoice->subscription, [
-                        'status' => 'past_due'
+                        'status' => 'canceled',
+                        'canceled_at' => date('Y-m-d H:i:s')
                     ]);
+                    $subRepo->updateUserTier($userId, 0);
 
-                    Logger::warning("Stripe webhook: payment failed for subscription", [
-                        'user_id' => $localSub['user_id'],
+                    try {
+                        $container = new \App\Core\Container();
+                        $lockManager = $container->get(\App\Api\Services\Canvas\CanvasLockManager::class);
+                        $lockManager->evaluateUserCanvases($userId);
+                    } catch (\Exception $e) {
+                        Logger::error("Failed to evaluate canvases on payment failed", ['user_id' => $userId, 'error' => $e->getMessage()]);
+                    }
+
+                    Logger::warning("Stripe webhook: payment failed for subscription, canceled immediately and user downgraded to Tier 0", [
+                        'user_id' => $userId,
                         'invoice_id' => $invoice->id
                     ]);
                 }

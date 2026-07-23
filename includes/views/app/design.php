@@ -108,7 +108,16 @@ if (!empty($canvasUuid)) {
         }
 
         $canInjectTemplate = false;
-        if ($session && method_exists($session, 'getPermissions')) {
+        if ($userId) {
+            $uStmt = $dbManager->getConnection(DB::CONN_IDENTITY)->prepare("SELECT subscription_tier FROM users WHERE id = :uid LIMIT 1");
+            $uStmt->execute([':uid' => $userId]);
+            $userTier = (int)($uStmt->fetchColumn() ?: 0);
+            if ($userTier >= 3) {
+                $canInjectTemplate = true;
+            }
+        }
+
+        if (!$canInjectTemplate && $session && method_exists($session, 'getPermissions')) {
             $perms = $session->getPermissions();
             if (empty($perms) && isset($_SESSION['user_permissions'])) {
                 $perms = $_SESSION['user_permissions'];
@@ -250,9 +259,9 @@ if (!empty($canvasUuid)) {
                     <?php endif; ?>
 
                     <?php if (isset($isOwner) && $isOwner): ?>
-                    <div class="component-divider-vertical" data-ref="owner-eraser-actions-divider"></div>
-                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="toggleOwnerEraser" data-ref="btn-owner-eraser" data-tooltip="Borrador de Zona (Solo Dueño)" data-position="bottom">
-                        <span class="material-symbols-rounded">cleaning_services</span>
+                    <div class="component-divider-vertical" data-ref="owner-tools-actions-divider"></div>
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools', 'Herramientas de Dueño'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">construction</span>
                     </button>
                     <?php endif; ?>
                     

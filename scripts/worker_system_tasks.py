@@ -98,40 +98,63 @@ SMTP_FROM_EMAIL = os.getenv('SMTP_FROM_EMAIL')
 SMTP_FROM_NAME = os.getenv('SMTP_FROM_NAME')
 
 def get_db_connection():
-    return mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PASS,
-        database=DB_NAME
-    )
+    candidate_hosts = [DB_HOST, "127.0.0.1", "localhost"] if DB_HOST else ["127.0.0.1", "localhost"]
+    seen = set()
+    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
+    for host in hosts:
+        try:
+            return mysql.connector.connect(
+                host=host,
+                port=int(os.getenv("DB_PORT", 3306)),
+                user=DB_USER,
+                password=DB_PASS,
+                database=DB_NAME
+            )
+        except Exception:
+            pass
+    return mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
 
 def get_telemetry_db_connection():
-    return mysql.connector.connect(
-        host=DB_TEL_HOST,
-        user=DB_TEL_USER,
-        password=DB_TEL_PASS,
-        database=DB_TEL_NAME
-    )
+    candidate_hosts = [DB_TEL_HOST, "127.0.0.1", "localhost"] if DB_TEL_HOST else ["127.0.0.1", "localhost"]
+    seen = set()
+    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
+    for host in hosts:
+        try:
+            return mysql.connector.connect(
+                host=host,
+                port=int(os.getenv("DB_PORT", 3306)),
+                user=DB_TEL_USER,
+                password=DB_TEL_PASS,
+                database=DB_TEL_NAME
+            )
+        except Exception:
+            pass
+    return mysql.connector.connect(host=DB_TEL_HOST, user=DB_TEL_USER, password=DB_TEL_PASS, database=DB_TEL_NAME)
 
 def get_redis_connection():
-    try:
-        client_args = {
-            'host': REDIS_HOST,
-            'port': REDIS_PORT,
-            'decode_responses': True,
-            'socket_timeout': 30,
-            'socket_connect_timeout': 10,
-            'socket_keepalive': True
-        }
-        if REDIS_PASS:
-            client_args['password'] = REDIS_PASS
-        
-        client = redis.Redis(**client_args)
-        client.ping()
-        return client
-    except Exception as e:
-        Logger.error(f"Redis connection initialization failed: {str(e)}")
-        return None
+    candidate_hosts = [REDIS_HOST, "127.0.0.1", "localhost"] if REDIS_HOST else ["127.0.0.1", "localhost"]
+    seen = set()
+    hosts = [h for h in candidate_hosts if h and not (h in seen or seen.add(h))]
+    for host in hosts:
+        try:
+            client_args = {
+                'host': host,
+                'port': REDIS_PORT or 6379,
+                'decode_responses': True,
+                'socket_timeout': 30,
+                'socket_connect_timeout': 10,
+                'socket_keepalive': True
+            }
+            if REDIS_PASS:
+                client_args['password'] = REDIS_PASS
+            
+            client = redis.Redis(**client_args)
+            client.ping()
+            return client
+        except Exception:
+            pass
+    Logger.error("Redis connection initialization failed on all candidate hosts.")
+    return None
 
 def process_deletion(payload):
     user_id = payload.get('user_id')
@@ -520,6 +543,8 @@ def scheduler_loop():
     DELETION_INTERVAL = 3600
     MAINTENANCE_INTERVAL = 86400
     RENEWAL_CHECK_INTERVAL = 86400
+    EXPIRATION_CHECK_INTERVAL = 3600
+    last_expiration_check = 0
     
     while True:
         current_time = time.time()
@@ -586,6 +611,34 @@ def scheduler_loop():
                 last_renewal_check = time.time()
             except Exception as e:
                 Logger.error(f"Scheduler fault during renewal evaluation: {e}")
+            finally:
+                if conn and conn.is_connected():
+                    cursor.close()
+                    conn.close()
+
+        if current_time - last_expiration_check >= EXPIRATION_CHECK_INTERVAL:
+            Logger.info("Scheduler evaluating expired subscriptions for immediate cancellation (zero grace days).")
+            conn = None
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor(dictionary=True)
+                cursor.execute("""
+                    SELECT id, user_id FROM subscriptions 
+                    WHERE status IN ('active', 'past_due') 
+                    AND current_period_end IS NOT NULL 
+                    AND current_period_end <= NOW()
+                """)
+                expired_subs = cursor.fetchall()
+                for sub in expired_subs:
+                    s_id = sub['id']
+                    u_id = sub['user_id']
+                    cursor.execute("UPDATE subscriptions SET status = 'canceled', canceled_at = NOW() WHERE id = %s", (s_id,))
+                    cursor.execute("UPDATE users SET subscription_tier = 0 WHERE id = %s", (u_id,))
+                    conn.commit()
+                    Logger.info(f"Subscription ID {s_id} for User ID {u_id} reached end of period and was canceled immediately.")
+                last_expiration_check = time.time()
+            except Exception as e:
+                Logger.error(f"Scheduler fault during subscription expiration evaluation: {e}")
             finally:
                 if conn and conn.is_connected():
                     cursor.close()

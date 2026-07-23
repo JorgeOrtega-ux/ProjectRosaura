@@ -26,7 +26,7 @@ class SessionManager implements SessionManagerInterface {
                     'lifetime' => $cookieParams['lifetime'],
                     'path' => '/',
                     'domain' => $cookieParams['domain'],
-                    'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                    'secure' => \App\Core\Helpers\Utils::isSecureConnection(),
                     'httponly' => true,
                     'samesite' => 'Lax'
                 ]);
@@ -72,7 +72,7 @@ class SessionManager implements SessionManagerInterface {
                     'lifetime' => $cookieParams['lifetime'],
                     'path' => '/',
                     'domain' => $cookieParams['domain'],
-                    'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                    'secure' => \App\Core\Helpers\Utils::isSecureConnection(),
                     'httponly' => true,
                     'samesite' => 'Lax'
                 ]);

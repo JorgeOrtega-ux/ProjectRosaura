@@ -15,6 +15,7 @@ export class StoreController {
     init() {
         document.addEventListener('click', this.handleDocumentClickBound);
         this.pendingPurchaseBtn = null;
+        this.checkCheckoutSuccess();
     }
 
     destroy() {
@@ -79,27 +80,17 @@ export class StoreController {
 
     handleContentRowSelection(row) {
         const selectionActions = document.querySelector('[data-ref="store-content-selection-actions"]');
-        const perkId = row.getAttribute('data-perkid');
 
-        if (row.classList.contains('selected')) {
-            row.classList.remove('selected');
-            this.selectedPerkRow = null;
-            this.selectedPerkId = null;
-            if (selectionActions) {
-                selectionActions.classList.add('disabled');
-                selectionActions.classList.remove('active');
-            }
-        } else {
-            const tbody = row.closest('tbody');
-            if (tbody) {
-                tbody.querySelectorAll('tr.component-table-row').forEach(r => r.classList.remove('selected'));
-            }
-            row.classList.add('selected');
-            this.selectedPerkRow = row;
-            this.selectedPerkId = perkId;
-            if (selectionActions) {
+        row.classList.toggle('selected');
+
+        const selectedRows = document.querySelectorAll('tr.component-table-row.selected[data-perkid]');
+        if (selectionActions) {
+            if (selectedRows.length > 0) {
                 selectionActions.classList.remove('disabled');
                 selectionActions.classList.add('active');
+            } else {
+                selectionActions.classList.add('disabled');
+                selectionActions.classList.remove('active');
             }
         }
     }
@@ -113,11 +104,78 @@ export class StoreController {
     }
 
     async handleBuySelectedPerk(btn) {
-        if (!this.selectedPerkId) {
-            showMessage(window.__('err_select_item') || 'Por favor, selecciona un ítem o ventaja.', 'warning');
+        const selectedRows = Array.from(document.querySelectorAll('tr.component-table-row.selected[data-perkid]'));
+        if (selectedRows.length === 0) {
+            showMessage(window.__('err_select_item') || 'Por favor, selecciona al menos un ítem o ventaja.', 'warning');
             return;
         }
-        await this.handleBuyPerk(this.selectedPerkId, btn);
+
+        if (selectedRows.length === 1) {
+            const perkId = selectedRows[0].getAttribute('data-perkid');
+            await this.handleBuyPerk(perkId, btn);
+            return;
+        }
+
+        const items = selectedRows.map(r => ({
+            perkId: r.getAttribute('data-perkid'),
+            name: r.getAttribute('data-name') || 'Ítem',
+            icon: r.getAttribute('data-icon') || 'star',
+            price: parseInt(r.getAttribute('data-price') || '0', 10)
+        }));
+        const totalCoins = items.reduce((sum, item) => sum + item.price, 0);
+
+        if (window.dialogSystem) {
+            const res = await window.dialogSystem.show('confirmBulkPerkPurchaseModal', { items, totalCoins });
+            if (res && res.confirmed) {
+                await this.processBulkPerkPurchase(items, btn, selectedRows);
+            }
+        } else {
+            if (confirm(`¿Estás seguro de gastar ${totalCoins} monedas en estos ${items.length} ítems?`)) {
+                await this.processBulkPerkPurchase(items, btn, selectedRows);
+            }
+        }
+    }
+
+    async processBulkPerkPurchase(items, btn, selectedRows) {
+        if (!items.length || btn.dataset.loading === 'true') return;
+
+        setButtonLoading(btn, (window.__('loading') || 'Cargando') + '...');
+
+        try {
+            const perkIds = items.map(item => item.perkId);
+            const idempotencyKey = crypto.randomUUID();
+            const result = await this.api.post(ApiRoutes.Store.BuyPerk, {
+                perk_ids: perkIds,
+                idempotency_key: idempotencyKey
+            });
+
+            restoreButton(btn);
+
+            if (result && result.success) {
+                if (result.new_balance !== undefined) {
+                    this.updateCoinsDisplay(result.new_balance);
+                }
+                if (selectedRows) {
+                    selectedRows.forEach(r => r.classList.remove('selected'));
+                    const selectionActions = document.querySelector('[data-ref="store-content-selection-actions"]');
+                    if (selectionActions) {
+                        selectionActions.classList.add('disabled');
+                        selectionActions.classList.remove('active');
+                    }
+                }
+                showMessage(window.__('msg_bulk_purchase_success') || `¡Se han adquirido ${items.length} elementos con éxito!`, 'success');
+            } else {
+                if (result && result.message_key === 'store.insufficient_coins') {
+                    showMessage(window.__('err_insufficient_coins') || 'Monedas insuficientes', 'error');
+                } else {
+                    const msg = (result && result.message_key) ? window.__(result.message_key) : 'No se pudo procesar la compra en lote.';
+                    showMessage(msg, 'error');
+                }
+            }
+        } catch (err) {
+            restoreButton(btn);
+            showMessage(window.__('err_network') || 'Error de conexión', 'error');
+        }
     }
 
     async handleBuyPerk(perkId, btn) {
@@ -131,6 +189,13 @@ export class StoreController {
             if (result && result.success) {
                 showMessage(window.__('msg_perk_purchased')?.replace(':balance', result.new_balance) || '¡Compra realizada con éxito!', 'success');
                 this.updateCoinsDisplay(result.new_balance);
+                const selectedRows = document.querySelectorAll('tr.component-table-row.selected[data-perkid]');
+                selectedRows.forEach(r => r.classList.remove('selected'));
+                const selectionActions = document.querySelector('[data-ref="store-content-selection-actions"]');
+                if (selectionActions) {
+                    selectionActions.classList.add('disabled');
+                    selectionActions.classList.remove('active');
+                }
             } else if (result) {
                 if (result.message_key === 'store.insufficient_coins') {
                     showMessage(window.__('err_insufficient_coins') || 'Monedas insuficientes', 'error');
@@ -175,5 +240,37 @@ export class StoreController {
             }
         });
         window.dispatchEvent(new CustomEvent('coins-updated', { detail: { balance: newBalance } }));
+    }
+
+    async checkCheckoutSuccess() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+        if (urlParams.get('checkout') === 'success' && sessionId) {
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+
+            let purchasedCoins = 0;
+            try {
+                const res = await this.api.post(ApiRoutes.Store.GetBalance, { session_id: sessionId });
+                if (res && res.success) {
+                    if (res.coins !== undefined) {
+                        this.updateCoinsDisplay(res.coins);
+                    }
+                    if (res.purchased_coins !== undefined && res.purchased_coins > 0) {
+                        purchasedCoins = res.purchased_coins;
+                    }
+                }
+            } catch (e) {}
+
+            if (window.dialogSystem) {
+                window.dialogSystem.show('purchaseSuccessModal', {
+                    item_type: 'coins',
+                    coins: purchasedCoins || 0
+                });
+            } else {
+                const msgSuccess = (window.__ && window.__('msg_purchase_success')) || '¡Pago completado con éxito!';
+                showMessage(msgSuccess, 'success');
+            }
+        }
     }
 }

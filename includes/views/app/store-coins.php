@@ -45,6 +45,7 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
                         <tr>
                             <th><?php echo __('th_package') ?: 'Paquete'; ?></th>
                             <th><?php echo __('th_amount') ?: 'Cantidad'; ?></th>
+                            <th><?php echo __('th_bonus') ?: 'Bonificación'; ?></th>
                             <th><?php echo __('th_price') ?: 'Precio'; ?></th>
                         </tr>
                     </thead>
@@ -53,22 +54,37 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
                         <tr class="component-table-row clickable" data-action="selectCoinPackage" data-amount="<?= $pkg['amount'] ?>" data-price="<?= $pkg['price_usd'] ?>">
                             <td>
                                 <div class="td-user-info">
-                                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                                    <div class="component-card__icon-container component-card__icon-container--bordered component-card__icon-container--round">
                                         <span class="material-symbols-rounded"><?= $pkg['icon'] ?></span>
                                     </div>
-                                    <span class="component-text-bold"><?= $pkg['name'] ?></span>
+                                    <div class="component-badge component-badge--sm">
+                                        <span class="component-text-bold"><?= $pkg['name'] ?></span>
+                                    </div>
                                 </div>
                             </td>
                             <td>
-                                <span><?= \App\Core\Helpers\Utils::formatNumber($pkg['amount']) ?> <?= __('coins') ?: 'Monedas'; ?></span>
+                                <div class="component-badge component-badge--sm">
+                                    <span class="material-symbols-rounded">toll</span>
+                                    <span><?= \App\Core\Helpers\Utils::formatNumber($pkg['amount']) ?> <?= __('coins') ?: 'Monedas'; ?></span>
+                                </div>
+                            </td>
+                            <td>
                                 <?php if (!empty($pkg['bonus_text'])): ?>
-                                <span class="component-badge component-badge--success component-badge--sm ml-2">
-                                    <span class="material-symbols-rounded">stars</span> <?= $pkg['bonus_text'] ?>
-                                </span>
+                                <div class="component-badge component-badge--sm component-badge--success">
+                                    <span class="material-symbols-rounded">stars</span>
+                                    <span><?= $pkg['bonus_text'] ?></span>
+                                </div>
+                                <?php else: ?>
+                                <div class="component-badge component-badge--sm component-badge--muted">
+                                    <span>-</span>
+                                </div>
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <span class="component-text-bold">$<?= \App\Core\Helpers\Utils::formatNumber($pkg['price_usd'], 2) ?> USD</span>
+                                <div class="component-badge component-badge--sm">
+                                    <span class="material-symbols-rounded">payments</span>
+                                    <span class="component-text-bold">$<?= \App\Core\Helpers\Utils::formatNumber($pkg['price_usd'], 2) ?> USD</span>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
