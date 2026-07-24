@@ -1,57 +1,22 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Canvas\CanvasViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Core\Repositories\UserRepository;
-use App\Core\Repositories\RoleRepository;
-use App\Config\Database\RedisCache;
-use App\Core\System\DatabaseConstants as DB;
+$canvasService = new CanvasViewService();
+$restrData = $canvasService->getCanvasChatRestrictionData($_GET['uuid'] ?? '', $_GET['user_uuid'] ?? '');
 
-$canvasUuid = $_GET['uuid'] ?? '';
-$targetUserUuid = $_GET['user_uuid'] ?? '';
-
-if (empty($canvasUuid) || empty($targetUserUuid)) {
-    header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/");
+if (!empty($restrData['redirect'])) {
+    header("Location: " . $restrData['redirect']);
     exit;
 }
 
-$db = new DatabaseManager();
-$pdo = $db->getConnection(DB::CONN_CANVASES);
-$stmt = $pdo->prepare("SELECT id, owner_id as user_id FROM canvases WHERE id = ?");
-$stmt->execute([$canvasUuid]);
-$canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-if (!$canvas || $canvas['user_id'] !== $_SESSION['active_account']) {
-    header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/");
-    exit;
-}
-$redis = new RedisCache();
-$roleRepo = new RoleRepository($db, $redis);
-$userRepo = new UserRepository($db, $roleRepo);
-$targetUser = $userRepo->findById($targetUserUuid);
-
-if (!$targetUser) {
-    header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/canvases/manage/{$canvasUuid}");
-    exit;
-}
-$stmt = $pdo->prepare("SELECT * FROM canvas_chat_restrictions WHERE canvas_id = ? AND user_id = ?");
-$stmt->execute([$canvasUuid, $targetUserUuid]);
-$restriction = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-$initialState = [
-    'isSuspended' => $restriction ? '1' : '0',
-    'suspensionReason' => '',
-    'customSuspensionReason' => '',
-    'suspendedType' => $restriction ? $restriction['suspension_type'] : 'temporary',
-    'suspensionDuration' => '7',
-    'endDate' => ''
-];
+extract($restrData);
 
 $predefinedSuspension = [
     'reason_terms', 'reason_fake_info', 'reason_illegal', 'reason_fraud_use',
     'reason_abuse', 'reason_prohibited_content', 'reason_ip_violation',
     'reason_spam_bot', 'reason_security_breach', 'reason_unauthorized_commercial', 'reason_other'
 ];
+?>
 
 if ($restriction && $restriction['suspension_reason']) {
     if (in_array($restriction['suspension_reason'], $predefinedSuspension)) {

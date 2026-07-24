@@ -1,42 +1,15 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Canvas\CanvasViewService;
 
-use App\Config\Database\DatabaseManager;
+$canvasService = new CanvasViewService();
+$reqData = $canvasService->getCanvasRequestsData($_GET['uuid'] ?? null);
 
-$userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
-
-if (!$userId) {
-    echo "<div class='view-content'><p>".__('err_unauthorized')."</p></div>";
+if (!empty($reqData['error'])) {
+    echo "<div class='view-content'><p>".htmlspecialchars($reqData['error'])."</p></div>";
     return;
 }
 
-$canvasUuid = $_GET['uuid'] ?? null;
-$canvasId = null;
-$pendingRequests = [];
-
-if ($canvasUuid) {
-    try {
-        $db = new DatabaseManager();
-        $pdo = $db->getConnection(defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
-        
-        $stmt = $pdo->prepare("SELECT id FROM canvases WHERE uuid = :uuid LIMIT 1");
-        $stmt->execute(['uuid' => $canvasUuid]);
-        $canvasId = (int)$stmt->fetchColumn();
-        if ($canvasId) {
-            $stmtReq = $pdo->prepare("SELECT id, user_id, status, created_at FROM canvas_access_requests WHERE canvas_id = :cid AND status = 'pending' ORDER BY created_at ASC");
-            $stmtReq->execute(['cid' => $canvasId]);
-            $pendingRequests = $stmtReq->fetchAll(\PDO::FETCH_ASSOC);
-        }
-    } catch (\Exception $e) {
-    }
-}
-
-if (!$canvasId) {
-    echo "<div class='view-content'><p>".__('err_invalid_canvas_id')."</p></div>";
-    return;
-}
-
-$appUrl = defined('APP_URL') ? APP_URL : '';
+extract($reqData);
 ?>
 
 <div class="view-content" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>" data-ref="canvas-requests-container">

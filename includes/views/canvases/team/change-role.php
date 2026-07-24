@@ -1,110 +1,15 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Canvas\CanvasViewService;
 
-use App\Config\Database\DatabaseManager;
+$canvasService = new CanvasViewService();
+$changeRoleData = $canvasService->getCanvasChangeRoleData($_GET['uuid'] ?? null, $_GET['user_uuid'] ?? null);
 
-$userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
-$canvasUuid = isset($_GET['uuid']) ? $_GET['uuid'] : null;
-$targetUserUuid = isset($_GET['user_uuid']) ? $_GET['user_uuid'] : null;
-
-$db = new DatabaseManager();
-$connNameCanvases = defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
-$connNameIdentity = defined('App\Core\System\DatabaseConstants::CONN_IDENTITY') ? App\Core\System\DatabaseConstants::CONN_IDENTITY : 'identity';
-
-$canvasId = null;
-$targetUserId = null;
-$targetCurrentRole = null;
-$targetUsername = '';
-$targetAvatar = defined('APP_URL') ? APP_URL . '/public/assets/img/fallbacks/avatar-default.png' : '';
-$isOwner = false;
-
-if (!$userId || !$canvasUuid || !$targetUserUuid) {
-    echo "<div class='view-content'><p>".__('err_unauthorized_or_missing_id')."</p></div>";
+if (!empty($changeRoleData['error'])) {
+    echo "<div class='view-content'><p>".htmlspecialchars($changeRoleData['error'])."</p></div>";
     return;
 }
-try {
-    $pdoIdentity = $db->getConnection($connNameIdentity);
-    $stmtUser = $pdoIdentity->prepare("SELECT id, username, profile_picture FROM users WHERE uuid = :uuid LIMIT 1");
-    $stmtUser->execute(['uuid' => $targetUserUuid]);
-    $userData = $stmtUser->fetch(PDO::FETCH_ASSOC);
-    
-    if ($userData) {
-        $targetUserId = (int)$userData['id'];
-        $targetUsername = !empty($userData['username']) ? $userData['username'] : (__('user') ?: 'User') . ' #' . $targetUserId;
-        if (!empty($userData['profile_picture'])) {
-            $targetAvatar = $userData['profile_picture'];
-        }
-    } else {
-        echo "<div class='view-content'><p>".__('err_invalid_user')."</p></div>";
-        return;
-    }
-} catch (\Exception $e) {
-    echo "<div class='view-content'><p>".__('err_identity_conn')."</p></div>";
-    return;
-}
-try {
-    $pdoCanvases = $db->getConnection($connNameCanvases);
-    $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
-    $stmt->execute(['uuid' => $canvasUuid]);
-    $canvasData = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($canvasData) {
-        $canvasId = (int)$canvasData['id'];
-        $canvasOwnerId = (int)$canvasData['owner_id'];
 
-        $ownerTier = 0;
-        if ($canvasOwnerId !== null) {
-            try {
-                $stmtUserTier = $pdoIdentity->prepare("SELECT subscription_tier FROM users WHERE id = :uid LIMIT 1");
-                $stmtUserTier->execute(['uid' => $canvasOwnerId]);
-                $tierVal = $stmtUserTier->fetchColumn();
-                if ($tierVal !== false) {
-                    $ownerTier = (int)$tierVal;
-                }
-            } catch (\Exception $e) {}
-        }
-
-        $isAdmin = in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $_SESSION['user_permissions'] ?? []);
-
-        $hasAdvancedRoles = \App\Core\System\SubscriptionPlanConstants::hasFeature($ownerTier, 'advanced_roles');
-        if (!$hasAdvancedRoles) {
-            echo "<div class='view-content'><p>".__('err_plan_custom_roles')."</p></div>";
-            return;
-        }
-
-        if ($canvasData['owner_id'] == $targetUserId) {
-            $isOwner = true;
-        }
-        $stmtMember = $pdoCanvases->prepare("SELECT role_id FROM canvas_user_roles WHERE canvas_id = :cid AND user_id = :uid");
-        $stmtMember->execute(['cid' => $canvasId, 'uid' => $targetUserId]);
-        $memberRoles = $stmtMember->fetchAll(PDO::FETCH_COLUMN);
-        
-        if (!empty($memberRoles)) {
-            $targetCurrentRoles = array_map('intval', $memberRoles);
-        } else {
-            if ($isOwner) {
-                $targetCurrentRoles = [-1];
-            } else {
-                echo "<div class='view-content'><p>".__('err_user_not_member')."</p></div>";
-                return;
-            }
-        }
-    } else {
-        echo "<div class='view-content'><p>".__('err_canvas_not_found')."</p></div>";
-        return;
-    }
-} catch (\Exception $e) {
-    echo "<div class='view-content'><p>".__('err_internal_membership')."</p></div>";
-    return;
-}
-$availableRoles = [];
-try {
-    $stmt = $pdoCanvases->prepare("SELECT * FROM canvas_roles WHERE canvas_id IS NULL OR canvas_id = :cid ORDER BY weight DESC");
-    $stmt->execute(['cid' => $canvasId]);
-    $availableRoles = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (\Exception $e) {}
-
-$appUrl = defined('APP_URL') ? APP_URL : '';
+extract($changeRoleData);
 ?>
 
 <div class="view-content" data-ref="change-role-wrapper" 

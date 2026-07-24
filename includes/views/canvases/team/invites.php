@@ -1,62 +1,15 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Canvas\CanvasViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Core\Helpers\Utils;
-use PDO;
+$canvasService = new CanvasViewService();
+$invitesData = $canvasService->getCanvasInvitesData($_GET['uuid'] ?? null);
 
-$userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
-$canvasUuid = isset($_GET['uuid']) ? $_GET['uuid'] : null;
-
-$db = new DatabaseManager();
-$connNameCanvases = defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
-
-$canvasId = null;
-$canvasOwnerId = null;
-
-if ($canvasUuid) {
-    try {
-        $pdoCanvases = $db->getConnection($connNameCanvases);
-        $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
-        $stmt->execute(['uuid' => $canvasUuid]);
-        $canvasData = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($canvasData) {
-            $canvasId = (int)$canvasData['id'];
-            $canvasOwnerId = (int)$canvasData['owner_id'];
-        }
-    } catch (\Exception $e) {
-    }
-}
-
-if (!$userId || !$canvasId) {
-    echo "<div class='view-content'><p>".__('err_canvas_not_found_or_no_access')."</p></div>";
+if (!empty($invitesData['error'])) {
+    echo "<div class='view-content'><p>".htmlspecialchars($invitesData['error'])."</p></div>";
     return;
 }
 
-// Verify ownership: only the canvas owner can manage invites
-if ((int)$userId !== $canvasOwnerId) {
-    $userPerms = $_SESSION['user_permissions'] ?? $_SESSION['permissions'] ?? [];
-    $isAdmin = is_array($userPerms) && in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPerms);
-    if (!$isAdmin || $canvasOwnerId !== null) {
-        echo "<div class='view-content'><p>".__('err_unauthorized')."</p></div>";
-        return;
-    }
-}
-
-$invites = [];
-try {
-    $stmt = $pdoCanvases->prepare("
-        SELECT * 
-        FROM canvas_invites 
-        WHERE canvas_id = :cid 
-        ORDER BY created_at DESC
-    ");
-    $stmt->execute(['cid' => $canvasId]);
-    $invites = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (\Exception $e) {
-}
-
-$appUrl = defined('APP_URL') ? APP_URL : '';
+extract($invitesData);
 ?>
 
 <div class="view-content">

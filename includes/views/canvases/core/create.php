@@ -1,27 +1,10 @@
 <?php 
-use \App\Core\System\SubscriptionPlanConstants;
-use \App\Core\Helpers\Utils;
+use App\Api\Services\Canvas\CanvasViewService;
 
-$activeAccountId = $_SESSION['active_account'] ?? null;
-$linkedAccounts = $_SESSION['accounts'] ?? [];
-$tier = 0;
-if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
-    $tier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
-}
-$planLimits = SubscriptionPlanConstants::getTierLimits($tier);
-$maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits['max_members_per_canvas'];
-$hasLiveChat = SubscriptionPlanConstants::hasFeature($tier, 'chat_restriction') || SubscriptionPlanConstants::hasFeature($tier, 'allow_live_chat') || !empty($planLimits['allow_live_chat']) || !empty($planLimits['feat_chat_restriction']);
+$canvasService = new CanvasViewService();
+$createData = $canvasService->getCanvasCreateData();
 
-$userPerms = $_SESSION['user_permissions'] ?? [];
-$canCreateOfficial = in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
-$canvasSizesList = Utils::getCanvasSizes();
-$defaultSizeKey = '64x64';
-if (!isset($canvasSizesList[$defaultSizeKey])) {
-    $defaultSizeData = reset($canvasSizesList);
-    $defaultSizeKey = key($canvasSizesList);
-} else {
-    $defaultSizeData = $canvasSizesList[$defaultSizeKey];
-}
+extract($createData);
 ?>
 <div class="view-content" data-ref="canvas-create-wrapper" data-user-tier="<?php echo $tier; ?>">
     

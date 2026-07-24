@@ -1,69 +1,18 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Canvas\CanvasViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Core\Helpers\Utils;
-use PDO;
+$canvasService = new CanvasViewService();
+$rolesData = $canvasService->getCanvasRolesData($_GET['uuid'] ?? null);
 
-$userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
-$canvasUuid = isset($_GET['uuid']) ? $_GET['uuid'] : null;
-
-if (!$userId || !$canvasUuid) {
-    echo "<div class='view-content'><p>".__('err_unauthorized_or_missing_id')."</p></div>";
+if (!empty($rolesData['error'])) {
+    echo "<div class='view-content'><p>" . htmlspecialchars($rolesData['error']) . "</p></div>";
     return;
 }
 
-$db = new DatabaseManager();
-$connNameCanvases = defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
-$pdoCanvases = $db->getConnection($connNameCanvases);
-
-$canvasId = null;
-$canvasOwnerId = null;
-try {
-    $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
-    $stmt->execute(['uuid' => $canvasUuid]);
-    $canvasData = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($canvasData) {
-        $canvasId = (int)$canvasData['id'];
-        $canvasOwnerId = (int)$canvasData['owner_id'];
-    }
-} catch (\Exception $e) {}
-
-if (!$canvasId) {
-    echo "<div class='view-content'><p>".__('err_canvas_not_found')."</p></div>";
-    return;
-}
-
-$ownerTier = 0;
-if ($canvasOwnerId !== null) {
-    try {
-        $connNameIdentity = defined('App\Core\System\DatabaseConstants::CONN_IDENTITY') ? App\Core\System\DatabaseConstants::CONN_IDENTITY : 'identity';
-        $pdoIdentity = $db->getConnection($connNameIdentity);
-        $stmtUser = $pdoIdentity->prepare("SELECT subscription_tier FROM users WHERE id = :uid LIMIT 1");
-        $stmtUser->execute(['uid' => $canvasOwnerId]);
-        $tierVal = $stmtUser->fetchColumn();
-        if ($tierVal !== false) {
-            $ownerTier = (int)$tierVal;
-        }
-    } catch (\Exception $e) {}
-}
-
-$isAdmin = in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $_SESSION['user_permissions'] ?? []);
-
-$hasAdvancedRoles = \App\Core\System\SubscriptionPlanConstants::hasFeature($ownerTier, 'advanced_roles');
-if (!$hasAdvancedRoles) {
-    echo "<div class='view-content'><p>".__('err_plan_custom_roles')."</p></div>";
-    return;
-}
-
-$roles = [];
-try {
-    $stmt = $pdoCanvases->prepare("SELECT * FROM canvas_roles WHERE canvas_id IS NULL OR canvas_id = :cid ORDER BY weight DESC");
-    $stmt->execute(['cid' => $canvasId]);
-    $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (\Exception $e) {}
+extract($rolesData);
 $userRolesWeight = 0;
 $canManageRoles = ($canvasOwnerId === $userId);
+?>
 
 if (!$canManageRoles) {
     try {

@@ -1,42 +1,12 @@
 <?php
-use App\Config\Database\DatabaseManager;
-use App\Core\System\DatabaseConstants as DB;
-use PDO;
+use App\Api\Services\Canvas\CanvasViewService;
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+$canvasService = new CanvasViewService();
+$viewerData = $canvasService->getSnapshotViewerData($_GET['id'] ?? null);
 
-try {
-    $snapshotId = isset($_GET['id']) ? $_GET['id'] : null;
-    if (!$snapshotId && !empty($_SERVER['REQUEST_URI'])) {
-        $pathParts = array_values(array_filter(explode('/', parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH))));
-        $lastPart = end($pathParts);
-        if ($lastPart && $lastPart !== 'view' && $lastPart !== 'snapshot') {
-            $snapshotId = $lastPart;
-        }
-    }
-
-    $title = __('lbl_snapshot_viewer_title');
-    $canvasSize = '64x64';
-    
-    if ($snapshotId) {
-        $dbManager = new DatabaseManager();
-        $db = $dbManager->getConnection(DB::CONN_CANVASES);
-        
-        $sql = "SELECT c.size FROM canvas_snapshots_history s
-                JOIN canvases c ON s.canvas_id = c.id
-                WHERE s.snapshot_uuid = :uuid LIMIT 1";
-        $stmt = $db->prepare($sql);
-        $stmt->execute([':uuid' => $snapshotId]);
-        if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $canvasSize = $row['size'];
-        }
-    }
-
-} catch (\Throwable $e) {
-    $phpError = $e->getMessage();
-}
+$snapshotId = $viewerData['snapshotId'];
+$title = $viewerData['title'];
+$canvasSize = $viewerData['canvasSize'];
 ?>
 
 

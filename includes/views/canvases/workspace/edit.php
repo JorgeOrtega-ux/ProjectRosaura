@@ -1,69 +1,15 @@
 <?php 
-use \App\Core\System\SubscriptionPlanConstants;
-use App\Config\Database\DatabaseManager;
+use App\Api\Services\Canvas\CanvasViewService;
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+$canvasService = new CanvasViewService();
+$editData = $canvasService->getWorkspaceEditData($_GET['uuid'] ?? null);
 
-$activeAccountId = $_SESSION['active_account'] ?? null;
-$linkedAccounts = $_SESSION['accounts'] ?? [];
-$tier = 0;
-if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
-    $tier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
-}
-$planLimits = SubscriptionPlanConstants::getTierLimits($tier);
-$maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits['max_members_per_canvas'];
-$hasLiveChat = SubscriptionPlanConstants::hasFeature($tier, 'chat_restriction') || SubscriptionPlanConstants::hasFeature($tier, 'allow_live_chat') || !empty($planLimits['allow_live_chat']) || !empty($planLimits['feat_chat_restriction']);
-
-$canvasUuid = $_GET['uuid'] ?? null;
-$canvasId = null;
-$cName = '';
-$cDesc = '';
-$cSize = '64';
-$cPrivacy = 'private';
-$cApproval = 0;
-$cPalette = 'default';
-$cBatch = 5;
-$cCooldown = 10;
-$cLimit = 10;
-
-if ($canvasUuid) {
-    try {
-        $db = new DatabaseManager();
-        $pdo = $db->getConnection(defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
-        $stmt = $pdo->prepare("SELECT * FROM canvases WHERE uuid = :uuid LIMIT 1");
-        $stmt->execute(['uuid' => $canvasUuid]);
-        $canvasData = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        if ($canvasData) {
-            $canvasId = (int)$canvasData['id'];
-            $cName = htmlspecialchars($canvasData['name'] ?? '');
-            $cSize = htmlspecialchars($canvasData['size'] ?? '64');
-            $cPrivacy = $canvasData['privacy'] ?? 'private';
-            $cApproval = (int)($canvasData['requires_approval'] ?? 0);
-            $cPalette = htmlspecialchars($canvasData['palette_id'] ?? 'default');
-            $cBatch = (int)($canvasData['cooldown_pixels_batch'] ?? 5);
-            $cCooldown = (int)($canvasData['cooldown_seconds'] ?? 10);
-            $cLimit = (int)($canvasData['max_participants'] ?? 10);
-            $cAllowPurchases = (int)($canvasData['allow_purchases'] ?? 1);
-            $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
-            
-            $userPerms = $_SESSION['user_permissions'] ?? [];
-            $canCreateOfficial = in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
-            $cOfficial = (bool)($canvasData['is_official'] ?? 0);
-
-            $cTags = [];
-            if (!empty($canvasData['tags'])) {
-                $cTags = json_decode($canvasData['tags'], true) ?? [];
-            }
-        }
-    } catch (\Exception $e) {
-    }
-}
-
-if (!$canvasId) {
+if (!$editData['canvasId']) {
     echo "<div class='view-content'><p>".__('err_invalid_canvas_id')."</p></div>";
     return;
 }
+
+extract($editData);
 ?>
 <div class="view-content" data-ref="canvas-edit-wrapper" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>">
     

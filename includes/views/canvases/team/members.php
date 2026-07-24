@@ -1,113 +1,16 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Canvas\CanvasViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Core\Helpers\Utils;
-use PDO;
-$userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
-$canvasUuid = isset($_GET['uuid']) ? $_GET['uuid'] : null;
+$canvasService = new CanvasViewService();
+$membersData = $canvasService->getCanvasMembersData($_GET['uuid'] ?? null, (int)($_GET['page'] ?? 1));
 
-$db = new DatabaseManager();
-$connNameCanvases = defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
-$connNameIdentity = defined('App\Core\System\DatabaseConstants::CONN_IDENTITY') ? App\Core\System\DatabaseConstants::CONN_IDENTITY : 'identity';
-
-$canvasId = null;
-$canvasOwnerId = null;
-
-if ($canvasUuid) {
-    try {
-        $pdoCanvases = $db->getConnection($connNameCanvases);
-        $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
-        $stmt->execute(['uuid' => $canvasUuid]);
-        $canvasData = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($canvasData) {
-            $canvasId = (int)$canvasData['id'];
-            $canvasOwnerId = (int)$canvasData['owner_id'];
-        }
-    } catch (\Exception $e) {
-    }
-}
-
-if (!$userId || !$canvasId) {
+if (!empty($membersData['unauthorized'])) {
     echo "<div class='view-content'><p>".__('err_unauthorized_or_missing_id')."</p></div>";
     return;
 }
 
-$limit = 25; 
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($page < 1) $page = 1;
-$offset = ($page - 1) * $limit;
-
-$tblMembers = 'canvas_members'; 
-
-$members = [];
-$totalMembers = 0;
-$userDetails = [];
-try {
-    $stmtCount = $pdoCanvases->prepare("SELECT COUNT(*) FROM {$tblMembers} WHERE canvas_id = :cid");
-    $stmtCount->execute(['cid' => $canvasId]);
-    $totalMembers = (int)$stmtCount->fetchColumn();
-    $stmt = $pdoCanvases->prepare("
-        SELECT user_id, joined_at 
-        FROM {$tblMembers} 
-        WHERE canvas_id = :cid 
-        ORDER BY joined_at DESC 
-        LIMIT $limit OFFSET $offset
-    ");
-    $stmt->execute(['cid' => $canvasId]);
-    $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $memberRoles = [];
-    if (!empty($members)) {
-        $userIds = array_column($members, 'user_id');
-        $inQuery = implode(',', array_fill(0, count($userIds), '?'));
-        
-        $stmtRoles = $pdoCanvases->prepare("
-            SELECT cur.user_id, r.name, r.is_system, r.weight
-            FROM canvas_user_roles cur
-            JOIN canvas_roles r ON cur.role_id = r.id
-            WHERE cur.canvas_id = ? AND cur.user_id IN ($inQuery)
-            ORDER BY r.weight DESC, r.name ASC
-        ");
-        $params = array_merge([$canvasId], $userIds);
-        $stmtRoles->execute($params);
-        
-        while ($row = $stmtRoles->fetch(PDO::FETCH_ASSOC)) {
-            $memberRoles[$row['user_id']][] = $row;
-        }
-    }
-
-} catch (\Exception $e) {
-    $members = [];
-    $memberRoles = [];
-}
-if (!empty($members)) {
-    try {
-        $userIds = array_column($members, 'user_id');
-        $pdoIdentity = $db->getConnection($connNameIdentity);
-        
-        $inQuery = implode(',', array_fill(0, count($userIds), '?'));
-        $stmtUsers = $pdoIdentity->prepare("SELECT id, uuid, username, profile_picture FROM users WHERE id IN ($inQuery)");
-        $stmtUsers->execute($userIds);
-        
-        while ($row = $stmtUsers->fetch(PDO::FETCH_ASSOC)) {
-            $userDetails[$row['id']] = $row;
-        }
-    } catch (\Exception $e) {
-    }
-}
-
-$totalPages = ceil($totalMembers / $limit);
-if ($totalPages < 1) $totalPages = 1;
-if ($page > $totalPages) {
-    $page = $totalPages;
-    $offset = ($page - 1) * $limit;
-}
-
-$appUrl = defined('APP_URL') ? APP_URL : '';
-$prevPageUrl = $page > 1 ? $appUrl . '/canvases/members/' . $canvasUuid . '?page=' . ($page - 1) : '#';
-$nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUuid . '?page=' . ($page + 1) : '#';
+extract($membersData);
 ?>
-
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="manage-members-wrapper" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>">
         
@@ -185,9 +88,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                     $username = !empty($uInfo['username']) ? $uInfo['username'] : __('lbl_user') . ' #' . $member['user_id'];
                                     $avatar = !empty($uInfo['profile_picture']) ? $uInfo['profile_picture'] : $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
                                     $userUuidStr = !empty($uInfo['uuid']) ? $uInfo['uuid'] : '';
-                                    $mRoles = $memberRoles[$member['user_id']] ?? [];
-                                    $primaryRoleName = !empty($mRoles) ? $mRoles[0]['name'] : '';
-                                    $roleColor = ($primaryRoleName === 'SuperAdministrator' || $primaryRoleName === 'Administrator') ? '#dc3545' : '#6b7280';
+                                    $roleColor = !empty($uInfo['role_bg']) ? $uInfo['role_bg'] : 'var(--text-muted)';
                                 ?>
                                 <tr class="component-table-row" data-action="selectMember" data-member-id="<?php echo htmlspecialchars($member['user_id']); ?>" data-member-uuid="<?php echo htmlspecialchars($userUuidStr); ?>">
                                     <td>

@@ -1,112 +1,17 @@
 <?php
+use App\Api\Services\Canvas\CanvasViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Core\System\DatabaseConstants as DB;
-use PDO;
+$canvasService = new CanvasViewService();
+$galleryData = $canvasService->getSnapshotsGalleryData($_GET['uuid'] ?? null);
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-$uuid = $_GET['uuid'] ?? null;
-if (!$uuid && !empty($_SERVER['REQUEST_URI'])) {
-    $pathParts = array_values(array_filter(explode('/', parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH))));
-    $lastPart = end($pathParts);
-    if ($lastPart && $lastPart !== 'snapshots' && $lastPart !== 'canvas') {
-        $uuid = $lastPart;
-    }
-}
-$snapshots = [];
-$canvasName = __('default_canvas_name');
-$error = false;
-$errorMessage = '';
-$errorIcon = 'error';
-
-$appUrl = defined('APP_URL') ? APP_URL : '';
-$fallbackImg = $appUrl . '/assets/img/fallbacks/canvas-default.png';
-
-if ($uuid) {
-    try {
-        $db = (new DatabaseManager())->getConnection(DB::CONN_CANVASES);
-
-        $stmt = $db->prepare('SELECT id, name, privacy, owner_id FROM ' . DB::TBL_CANVASES . ' WHERE uuid = :uuid LIMIT 1');
-        $stmt->execute([':uuid' => $uuid]);
-        $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$canvas) {
-            $error = true;
-            $errorMessage = __('err_canvas_not_found');
-        } else {
-            $canvasName = $canvas['name'];
-            $isAuthorized = true;
-
-            $userId = $_SESSION['user_id'] ?? null;
-            $isOwner = ($canvas['owner_id'] == $userId);
-            $isPrivileged = false;
-
-            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE) {
-                $isMember = false;
-
-                if ($userId && !$isOwner) {
-                    $memberStmt = $db->prepare('SELECT role FROM canvas_members WHERE canvas_id = :canvas_id AND user_id = :user_id LIMIT 1');
-                    $memberStmt->execute([':canvas_id' => $canvas['id'], ':user_id' => $userId]);
-                    $isMember = (bool) $memberStmt->fetch(PDO::FETCH_ASSOC);
-                }
-
-                if (!$isOwner && !$isMember) {
-                    $isAuthorized = false;
-                    $error = true;
-                    $errorMessage = __('err_unauthorized');
-                    $errorIcon = 'lock';
-                }
-            }
-
-            if ($isAuthorized) {
-                $userIdParam = $_SESSION['user_id'] ?? 0;
-                $privacyCondition = '';
-                if (!$isOwner) {
-                    $privacyCondition = ' AND s.privacy = \'public\'';
-                }
-
-                $stmtHist = $db->prepare('
-                    SELECT s.id, s.file_path, s.snapshot_uuid, s.created_at, s.privacy,
-                           (SELECT COUNT(*) FROM canvas_snapshots_likes l WHERE l.snapshot_id = s.id) as likes_count,
-                           (SELECT COUNT(*) FROM canvas_snapshots_likes l WHERE l.snapshot_id = s.id AND l.user_id = :user_id) as user_liked
-                    FROM canvas_snapshots_history s
-                    WHERE s.canvas_id = :canvas_id' . $privacyCondition . '
-                    ORDER BY s.created_at DESC
-                ');
-                $stmtHist->execute([':canvas_id' => $canvas['id'], ':user_id' => $userIdParam]);
-                $history = $stmtHist->fetchAll(PDO::FETCH_ASSOC);
-
-                foreach ($history as $item) {
-                    $imageUrl = $item['file_path'];
-                    $imageUrl = \App\Core\Helpers\Utils::getS3PublicUrl($imageUrl);
-                    $snapshots[] = [
-                        'id' => $item['id'],
-                        'url' => $imageUrl,
-                        'date' => date('d/m/Y H:i', strtotime($item['created_at'])),
-                        'snapshot_uuid' => $item['snapshot_uuid'],
-                        'privacy' => $item['privacy'],
-                        'likes_count' => $item['likes_count'],
-                        'user_liked' => $item['user_liked'] > 0
-                    ];
-                }
-            }
-        }
-    } catch (Exception $e) {
-        $error = true;
-        $errorMessage = __('err_load_snapshots');
-    }
-} else {
-    $error = true;
-    $errorMessage = __('err_canvas_uuid_missing');
-}
-
-$galleryTitle = str_replace('{name}', $canvasName, __('snapshots_gallery_title'));
-if ($error) {
-    $galleryTitle = __('snapshots_gallery_title_error');
-}
+$uuid = $galleryData['uuid'];
+$snapshots = $galleryData['snapshots'];
+$canvasName = $galleryData['canvasName'];
+$galleryTitle = $galleryData['galleryTitle'];
+$error = $galleryData['error'];
+$errorMessage = $galleryData['errorMessage'];
+$errorIcon = $galleryData['errorIcon'];
+$fallbackImg = $galleryData['fallbackImg'];
 ?>
 
 <div class="view-content">

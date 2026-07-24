@@ -1,120 +1,16 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-
-use App\Config\Database\DatabaseManager;
-use App\Core\Helpers\Utils;
-use App\Core\System\DatabaseConstants as DB;
+use App\Api\Services\Canvas\CanvasViewService;
 use App\Core\System\SubscriptionPlanConstants;
-use PDO;
 
-$userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
+$canvasService = new CanvasViewService();
+$resizeData = $canvasService->getWorkspaceResizeData($_GET['uuid'] ?? null);
 
-if (!$userId) {
-    echo "<div class='view-content'><p>" . __('err_unauthorized') . "</p></div>";
+if (!empty($resizeData['error'])) {
+    echo "<div class='view-content'><p>" . htmlspecialchars($resizeData['error']) . "</p></div>";
     return;
 }
 
-$canvasUuid = $_GET['uuid'] ?? null;
-
-if (!$canvasUuid) {
-    echo "<div class='view-content'><p>" . __('err_unspecified_canvas') . "</p></div>";
-    return;
-}
-
-$userPermissions = $_SESSION['user_permissions'] ?? [];
-$canManageOfficial = in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPermissions);
-
-$db = new DatabaseManager();
-$pdo = $db->getConnection(DB::CONN_CANVASES);
-
-if ($canManageOfficial) {
-    $stmt = $pdo->prepare('SELECT id, uuid, name, size, owner_id FROM ' . DB::TBL_CANVASES . ' WHERE uuid = :uuid LIMIT 1');
-    $stmt->execute(['uuid' => $canvasUuid]);
-} else {
-    $stmt = $pdo->prepare('SELECT id, uuid, name, size, owner_id FROM ' . DB::TBL_CANVASES . ' WHERE uuid = :uuid AND owner_id = :uid LIMIT 1');
-    $stmt->execute(['uuid' => $canvasUuid, 'uid' => $userId]);
-}
-
-$canvas = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$canvas) {
-    echo "<div class='view-content'><p>" . __('err_canvas_not_found') . "</p></div>";
-    return;
-}
-
-$canvasId = (int)$canvas['id'];
-$resizeSettings = [
-    'is_active' => false,
-    'next_resize_at' => null,
-    'target_size' => '64x64',
-];
-
-$stmtSettings = $pdo->prepare('SELECT is_active, next_resize_at, target_size FROM canvas_resize_settings WHERE canvas_id = :cid LIMIT 1');
-$stmtSettings->execute(['cid' => $canvasId]);
-$row = $stmtSettings->fetch(PDO::FETCH_ASSOC);
-
-if ($row) {
-    $resizeSettings['is_active'] = (bool)$row['is_active'];
-    $resizeSettings['next_resize_at'] = $row['next_resize_at'];
-    $resizeSettings['target_size'] = $row['target_size'] ?: '64x64';
-}
-
-$ownerTier = 0;
-if ($canvas['owner_id'] !== null) {
-    try {
-        $dbIdentityManager = new \App\Config\Database\DatabaseManager();
-        $roleRepo = new \App\Core\Repositories\RoleRepository($dbIdentityManager, new \App\Config\Database\RedisCache());
-        $userRepo = new \App\Core\Repositories\UserRepository($dbIdentityManager, $roleRepo);
-        $uRow = $userRepo->findById($canvas['owner_id']);
-        if ($uRow) {
-            $ownerTier = (int)$uRow['subscription_tier'];
-        }
-    } catch (\Exception $e) {
-        $ownerTier = 0;
-    }
-}
-
-$sizesList = Utils::getCanvasSizes();
-$currentSizeRaw = (string)$canvas['size'];
-
-if (!str_contains($currentSizeRaw, 'x') && is_numeric($currentSizeRaw)) {
-    $currentSizeRaw = $currentSizeRaw . 'x' . $currentSizeRaw;
-}
-
-if (!isset($sizesList[$currentSizeRaw])) {
-    $sizesList[$currentSizeRaw] = ['label' => $currentSizeRaw, 'icon' => 'crop_square'];
-}
-
-$scheduledSize = $resizeSettings['target_size'];
-if (!isset($sizesList[$scheduledSize])) {
-    $sizesList[$scheduledSize] = ['label' => $scheduledSize, 'icon' => 'crop_square'];
-}
-
-$instantSize = $currentSizeRaw;
-$scheduledMeta = $sizesList[$scheduledSize];
-$instantMeta = $sizesList[$instantSize];
-
-$isResizeActive = $resizeSettings['is_active'];
-
-$monthShort = [
-    __('month_jan'), __('month_feb'), __('month_mar'), __('month_apr'),
-    __('month_may'), __('month_jun'), __('month_jul'), __('month_aug'),
-    __('month_sep'), __('month_oct'), __('month_nov'), __('month_dec'),
-];
-
-$resizeDateLocal = '';
-$resizeDateDisplay = __('lbl_select_date');
-
-if (!empty($resizeSettings['next_resize_at'])) {
-    try {
-        $dt = new DateTime($resizeSettings['next_resize_at'], new DateTimeZone('UTC'));
-        $dt->setTimezone(new DateTimeZone(date_default_timezone_get()));
-        $resizeDateLocal = $dt->format('Y-m-d\TH:i');
-        $resizeDateDisplay = $dt->format('j') . ' ' . __('lbl_of') . ' ' . $monthShort[(int)$dt->format('n') - 1] . ' ' . $dt->format('Y') . ', ' . $dt->format('H:i');
-    } catch (\Exception $e) {
-        $resizeDateLocal = '';
-    }
-}
+extract($resizeData);
 
 $currWidth = (int)explode('x', $currentSizeRaw)[0];
 $instantWidth = (int)explode('x', $instantSize)[0];

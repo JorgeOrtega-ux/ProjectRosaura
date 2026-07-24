@@ -1,77 +1,10 @@
 <?php
-use App\Config\Database\DatabaseManager;
-use App\Core\System\DatabaseConstants as DB;
+use App\Api\Services\Canvas\CanvasViewService;
 
-$canvasUuid = $_GET['canvas'] ?? '';
-$msgIdRaw = $_GET['msg'] ?? '';
-$msgId = (int)$msgIdRaw;
-$isPending = (strpos($msgIdRaw, 'pending_') === 0);
-$idx = (int)($_GET['idx'] ?? 0);
+$canvasService = new CanvasViewService();
+$chatViewerData = $canvasService->getCanvasChatViewerData($_GET['canvas'] ?? '', $_GET['msg'] ?? '', (int)($_GET['idx'] ?? 0));
 
-$hasAccess = false;
-$attachments = [];
-$errorMsg = null;
-
-global $sessionManager;
-$userId = $sessionManager && $sessionManager->isLoggedIn() ? $sessionManager->getActiveAccountId() : null;
-
-if ($userId && !empty($canvasUuid) && ($msgId > 0 || $isPending)) {
-    try {
-        $dbManager = new DatabaseManager();
-        $pdo = $dbManager->getConnection(DB::CONN_CANVASES);
-        
-        $stmt = $pdo->prepare("SELECT id, privacy, owner_id FROM " . DB::TBL_CANVASES . " WHERE uuid = ?");
-        $stmt->execute([$canvasUuid]);
-        $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($canvas) {
-            $canvasId = (int)$canvas['id'];
-            if ($canvas['privacy'] !== 'private' || $canvas['owner_id'] == $userId) {
-                $hasAccess = true;
-            } else {
-                $stmt = $pdo->prepare("SELECT id FROM canvas_user_roles WHERE canvas_id = ? AND user_id = ? LIMIT 1");
-                $stmt->execute([$canvasId, $userId]);
-                if ($stmt->fetch()) {
-                    $hasAccess = true;
-                }
-            }
-        }
-        
-        if ($hasAccess) {
-            if ($isPending) {
-                $attachments = [];
-            } else {
-                $stmt = $pdo->prepare("SELECT attachments FROM canvas_chat_messages WHERE id = ? AND canvas_id = ?");
-                $stmt->execute([$msgId, $canvasId]);
-                $msg = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($msg && !empty($msg['attachments'])) {
-                    $decoded = is_string($msg['attachments']) ? json_decode($msg['attachments'], true) : $msg['attachments'];
-                    if (is_array($decoded)) {
-                        foreach ($decoded as $att) {
-                            if (strpos($att, '/public/') === 0) {
-                                $attachments[] = $att;
-                            } else {
-                                $attachments[] = '/api/index.php?route=chat.attachment&canvas_uuid=' . $canvasUuid . '&file=' . urlencode(basename($att));
-                            }
-                        }
-                    }
-                } else {
-                    $errorMsg = __('err_msg_no_attachments');
-                }
-            }
-        } else {
-            $errorMsg = __('err_no_permission_images');
-        }
-    } catch (\Exception $e) {
-        $errorMsg = __('err_load_image');
-    }
-} else {
-    $errorMsg = __('err_invalid_params');
-}
-
-$totalImages = count($attachments);
-if ($idx < 0 || $idx >= $totalImages) $idx = 0;
-$attachmentsJson = json_encode($attachments);
+extract($chatViewerData);
 ?>
 
 <div class="view-content" data-ref="chat-viewer-wrapper" data-images='<?php echo htmlspecialchars($attachmentsJson, ENT_QUOTES); ?>' data-idx="<?php echo $idx; ?>">

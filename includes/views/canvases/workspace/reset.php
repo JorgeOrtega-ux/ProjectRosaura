@@ -1,102 +1,15 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Canvas\CanvasViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Core\System\DatabaseConstants as DB;
-use App\Core\System\SubscriptionPlanConstants;
-use PDO;
+$canvasService = new CanvasViewService();
+$resetData = $canvasService->getWorkspaceResetData($_GET['uuid'] ?? null);
 
-$canvasUuid = $_GET['uuid'] ?? null;
-$canvasId = null;
-$resetSettings = [
-    'is_active' => false,
-    'next_reset_at' => null,
-    'take_snapshot' => true,
-];
-
-$userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
-$userPermissions = $_SESSION['user_permissions'] ?? [];
-$canManageOfficial = in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPermissions);
-
-if ($canvasUuid && $userId) {
-    try {
-        $db = new DatabaseManager();
-        $pdo = $db->getConnection(DB::CONN_CANVASES);
-
-        $stmt = $pdo->prepare('SELECT id, owner_id FROM ' . DB::TBL_CANVASES . ' WHERE uuid = :uuid LIMIT 1');
-        $stmt->execute(['uuid' => $canvasUuid]);
-        $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($canvas) {
-            $isOwner = ((int)$canvas['owner_id'] === (int)$userId)
-                || ($canvas['owner_id'] === null && $canManageOfficial);
-
-            if ($isOwner) {
-                $canvasId = (int)$canvas['id'];
-
-                $stmtSettings = $pdo->prepare('SELECT is_active, next_reset_at, take_snapshot FROM canvas_reset_settings WHERE canvas_id = :cid LIMIT 1');
-                $stmtSettings->execute(['cid' => $canvasId]);
-                $row = $stmtSettings->fetch(PDO::FETCH_ASSOC);
-
-                if ($row) {
-                    $resetSettings['is_active'] = (bool)$row['is_active'];
-                    $resetSettings['next_reset_at'] = $row['next_reset_at'];
-                    $resetSettings['take_snapshot'] = (bool)$row['take_snapshot'];
-                }
-                
-                $maxSnapshots = -1;
-                $currentSnapshots = 0;
-                
-                if ($canvas['owner_id'] !== null) {
-                    try {
-                        $dbIdentityManager = new \App\Config\Database\DatabaseManager();
-                        $roleRepo = new \App\Core\Repositories\RoleRepository($dbIdentityManager, new \App\Config\Database\RedisCache());
-                        $userRepo = new \App\Core\Repositories\UserRepository($dbIdentityManager, $roleRepo);
-                        $uRow = $userRepo->findById($canvas['owner_id']);
-                        $ownerTier = $uRow ? (int)$uRow['subscription_tier'] : 0;
-                    } catch (\Exception $e) {
-                        $ownerTier = 0;
-                    }
-                    $planLimits = SubscriptionPlanConstants::getTierLimits($ownerTier);
-                    $maxSnapshots = $planLimits['max_snapshots_per_canvas'];
-                }
-                
-                $stmtSnapCount = $pdo->prepare('SELECT COUNT(*) FROM canvas_snapshots_history WHERE canvas_id = :cid');
-                $stmtSnapCount->execute(['cid' => $canvasId]);
-                $currentSnapshots = (int)$stmtSnapCount->fetchColumn();
-                
-                $canTakeSnapshot = ($maxSnapshots === -1 || $currentSnapshots < $maxSnapshots);
-            }
-        }
-    } catch (\Exception $e) {
-    }
-}
-
-if (!$canvasId) {
+if (!$resetData['canvasId']) {
     echo "<div class='view-content'><p>" . __('err_invalid_canvas_id') . "</p></div>";
     return;
 }
 
-$monthShort = [
-    __('month_jan'), __('month_feb'), __('month_mar'), __('month_apr'),
-    __('month_may'), __('month_jun'), __('month_jul'), __('month_aug'),
-    __('month_sep'), __('month_oct'), __('month_nov'), __('month_dec'),
-];
-
-$resetDateLocal = '';
-$resetDateDisplay = __('lbl_select_date');
-
-if (!empty($resetSettings['next_reset_at'])) {
-    try {
-        $dt = new DateTime($resetSettings['next_reset_at'], new DateTimeZone('UTC'));
-        $dt->setTimezone(new DateTimeZone(date_default_timezone_get()));
-        $resetDateLocal = $dt->format('Y-m-d\TH:i');
-        $resetDateDisplay = $dt->format('j') . ' de ' . $monthShort[(int)$dt->format('n') - 1] . ' ' . $dt->format('Y') . ', ' . $dt->format('H:i');
-    } catch (\Exception $e) {
-        $resetDateLocal = '';
-    }
-}
-
+extract($resetData);
 $isResetActive = $resetSettings['is_active'];
 ?>
 

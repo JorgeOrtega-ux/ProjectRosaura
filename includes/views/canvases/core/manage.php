@@ -1,59 +1,20 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Canvas\CanvasViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Core\Helpers\Utils;
-use PDO;
-$userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
+$canvasService = new CanvasViewService();
+$manageData = $canvasService->getCanvasManageData(isset($_GET['page']) ? (int)$_GET['page'] : 1);
 
-if (!$userId) {
+if (!empty($manageData['unauthorized'])) {
     echo "<div class='view-content'><p>".__('err_unauthorized')."</p></div>";
     return;
 }
-$userPermissions = $_SESSION['user_permissions'] ?? [];
-$isAdmin = in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPermissions);
 
-$subscriptionTier = (int)($_SESSION['subscription_tier'] ?? 0);
-$hasAdvancedRoles = \App\Core\System\SubscriptionPlanConstants::hasFeature($subscriptionTier, 'advanced_roles');
-
-$limit = 25; 
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($page < 1) $page = 1;
-$offset = ($page - 1) * $limit;
-
-$db = new DatabaseManager();
-$connName = defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
-$pdo = $db->getConnection($connName); 
-
-$tblCanvases = defined('App\Core\System\DatabaseConstants::TBL_CANVASES') ? App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
-if ($isAdmin) {
-    $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid OR is_official = 1";
-    $sqlSelect = "SELECT id, uuid, name, privacy, size, max_participants, created_at, is_official, favorites_count 
-                  FROM {$tblCanvases} 
-                  WHERE owner_id = :uid OR is_official = 1
-                  ORDER BY id DESC 
-                  LIMIT $limit OFFSET $offset";
-} else {
-    $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid";
-    $sqlSelect = "SELECT id, uuid, name, privacy, size, max_participants, created_at, is_official, favorites_count 
-                  FROM {$tblCanvases} 
-                  WHERE owner_id = :uid 
-                  ORDER BY id DESC 
-                  LIMIT $limit OFFSET $offset";
-}
-$stmtCount = $pdo->prepare($sqlCount);
-$stmtCount->execute(['uid' => $userId]);
-$totalCanvases = (int)$stmtCount->fetchColumn();
-
-$totalPages = ceil($totalCanvases / $limit);
-if ($totalPages < 1) $totalPages = 1;
-if ($page > $totalPages) {
-    $page = $totalPages;
-    $offset = ($page - 1) * $limit;
-}
-$stmt = $pdo->prepare($sqlSelect);
-$stmt->execute(['uid' => $userId]);
-$canvases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$canvases = $manageData['canvases'];
+$totalCanvases = $manageData['totalItems'];
+$totalPages = $manageData['totalPages'];
+$page = $manageData['page'];
+$isAdmin = $manageData['isAdmin'];
+$hasAdvancedRoles = $manageData['hasAdvancedRoles'];
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
 $prevPageUrl = $page > 1 ? $appUrl . '/canvases/manage?page=' . ($page - 1) : '#';
