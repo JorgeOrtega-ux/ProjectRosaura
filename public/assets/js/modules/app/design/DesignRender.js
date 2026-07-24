@@ -88,78 +88,68 @@ export const DesignRender = {
                     }
                 });
 
-                if (this.activeTemplateId && this.templates) {
-                    const tpl = this.templates.find(t => t.id === this.activeTemplateId);
-                    if (tpl) {
-                        if (!tpl.imageBitmap && (tpl.src || tpl.id)) {
-                            const targetUrl = tpl.src || tpl.id;
-                            if (!tpl._isFetchingBitmap) {
-                                tpl._isFetchingBitmap = true;
-                                fetch(targetUrl, { mode: 'cors' })
-                                    .then(res => res.ok ? res.blob() : null)
-                                    .then(blob => blob ? createImageBitmap(blob) : null)
-                                    .then(bmp => {
-                                        if (bmp) {
-                                            tpl.imageBitmap = bmp;
-                                            tpl._bitmapSentToWorker = false; // Reset to force send
-                                            this.requestRender();
-                                        }
-                                    })
-                                    .catch(() => {})
-                                    .finally(() => { tpl._isFetchingBitmap = false; });
-                            }
+                if (this.templates && this.templates.length > 0) {
+                    const templatesPayload = this.templates.map(tpl => {
+                        if (!tpl.imageBitmap && tpl.img && tpl.img.complete && tpl.img.naturalWidth > 0 && !tpl._isFetchingBitmap) {
+                            tpl._isFetchingBitmap = true;
+                            createImageBitmap(tpl.img).then(bmp => {
+                                tpl.imageBitmap = bmp;
+                                tpl._bitmapSentToWorker = false;
+                                this.requestRender();
+                            }).catch(() => {}).finally(() => { tpl._isFetchingBitmap = false; });
                         }
 
+                        const sendBitmap = !tpl._bitmapSentToWorker && tpl.imageBitmap ? tpl.imageBitmap : null;
+                        if (sendBitmap) {
+                            tpl._bitmapSentToWorker = true;
+                        }
+                        return {
+                            id: tpl.id,
+                            x: tpl.x,
+                            y: tpl.y,
+                            w: tpl.w,
+                            h: tpl.h,
+                            angle: tpl.angle || 0,
+                            opacity: tpl.opacity !== undefined ? tpl.opacity : 0.5,
+                            locked: !!tpl.locked,
+                            imageBitmap: sendBitmap
+                        };
+                    });
+
+                    try {
+                        this.renderWorker.postMessage({
+                            type: 'UPDATE_TEMPLATES',
+                            payload: {
+                                activeTemplateId: this.activeTemplateId,
+                                templates: templatesPayload
+                            }
+                        });
+                    } catch (err) {
+                        const safePayload = this.templates.map(tpl => ({
+                            id: tpl.id,
+                            x: tpl.x,
+                            y: tpl.y,
+                            w: tpl.w,
+                            h: tpl.h,
+                            angle: tpl.angle || 0,
+                            opacity: tpl.opacity !== undefined ? tpl.opacity : 0.5,
+                            locked: !!tpl.locked,
+                            imageBitmap: null
+                        }));
                         try {
-                            const sendBitmap = !tpl._bitmapSentToWorker && tpl.imageBitmap;
                             this.renderWorker.postMessage({
-                                type: 'UPDATE_TEMPLATE',
+                                type: 'UPDATE_TEMPLATES',
                                 payload: {
-                                    template: {
-                                        x: tpl.x,
-                                        y: tpl.y,
-                                        w: tpl.w,
-                                        h: tpl.h,
-                                        angle: tpl.angle || 0,
-                                        opacity: tpl.opacity !== undefined ? tpl.opacity : 0.5,
-                                        locked: !!tpl.locked,
-                                        imageBitmap: sendBitmap || null
-                                    }
+                                    activeTemplateId: this.activeTemplateId,
+                                    templates: safePayload
                                 }
                             });
-                            if (sendBitmap) {
-                                tpl._bitmapSentToWorker = true;
-                            }
-                        } catch (err) {
-                            tpl.imageBitmap = null;
-                            try {
-                                this.renderWorker.postMessage({
-                                    type: 'UPDATE_TEMPLATE',
-                                    payload: {
-                                        template: {
-                                            x: tpl.x,
-                                            y: tpl.y,
-                                            w: tpl.w,
-                                            h: tpl.h,
-                                            angle: tpl.angle || 0,
-                                            opacity: tpl.opacity !== undefined ? tpl.opacity : 0.5,
-                                            locked: !!tpl.locked,
-                                            imageBitmap: null
-                                        }
-                                    }
-                                });
-                            } catch (e2) {}
-                        }
-                    } else {
-                        this.renderWorker.postMessage({
-                            type: 'UPDATE_TEMPLATE',
-                            payload: { template: null }
-                        });
+                        } catch (e2) {}
                     }
                 } else {
                     this.renderWorker.postMessage({
-                        type: 'UPDATE_TEMPLATE',
-                        payload: { template: null }
+                        type: 'UPDATE_TEMPLATES',
+                        payload: { activeTemplateId: null, templates: [] }
                     });
                 }
             });
@@ -279,11 +269,11 @@ export const DesignRender = {
             this.ctx.drawImage(this.offscreenCanvas, 0, 0);
         }
 
-        if (this.activeTemplateId && !this.isSpectator && !this.isResetLocked) {
-            const tpl = this.templates.find(t => t.id === this.activeTemplateId);
-            if (tpl) {
+        if (this.templates && this.templates.length > 0 && !this.isSpectator && !this.isResetLocked) {
+            this.templates.forEach(tpl => {
+                if (!tpl || !tpl.img) return;
                 this.ctx.save();
-                this.ctx.globalAlpha = tpl.opacity;
+                this.ctx.globalAlpha = tpl.opacity !== undefined ? tpl.opacity : 0.5;
                 
                 const cx = Math.round(tpl.x + tpl.w / 2);
                 const cy = Math.round(tpl.y + tpl.h / 2);
@@ -295,7 +285,8 @@ export const DesignRender = {
                 const hh = Math.round(tpl.h / 2);
                 
                 this.ctx.drawImage(tpl.img, -hw, -hh, tpl.w, tpl.h);
-                if (!tpl.locked) {
+
+                if (tpl.id === this.activeTemplateId && !tpl.locked) {
                     this.ctx.strokeStyle = '#2196F3';
                     this.ctx.lineWidth = 2 / this.transform.scale;
                     this.ctx.strokeRect(-hw, -hh, tpl.w, tpl.h);
@@ -309,20 +300,16 @@ export const DesignRender = {
                         [hw, hh]
                     ];
                     handles.forEach(([hx, hy]) => {
-                        this.ctx.fillRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
-                        this.ctx.strokeRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
+                        this.ctx.fillRect(hx - handleSize / 2, hy - handleSize / 2, handleSize, handleSize);
+                        this.ctx.strokeRect(hx - handleSize / 2, hy - handleSize / 2, handleSize, handleSize);
                     });
                 }
-                
                 this.ctx.restore();
-                if (typeof this.positionTemplateToolbar === 'function') {
-                    this.positionTemplateToolbar();
-                }
-            }
-        } else {
-            if (typeof this.positionTemplateToolbar === 'function') {
-                this.positionTemplateToolbar();
-            }
+            });
+        }
+        
+        if (typeof this.positionTemplateToolbar === 'function') {
+            this.positionTemplateToolbar();
         }
 
         const selCount = this.selectedPixels ? this.selectedPixels.size : 0;

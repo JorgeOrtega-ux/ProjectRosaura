@@ -215,6 +215,6 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     </div>
     
     <script src="https://unpkg.com/@popperjs/core@2"></script>
-    <script type="module" src="<?php echo $appPath; ?>/assets/js/AppInit.js"></script>
+    <script type="module" src="<?php echo $appPath; ?>/assets/js/AppInit.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/AppInit.js'); ?>"></script>
 </body>
 </html>

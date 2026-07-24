@@ -165,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
             } catch (error) {
+                console.error('[AppInit Module Loading Error]', error);
             } finally {
                 delete window.importLocks[className];
             }

@@ -178,6 +178,16 @@ export const DesignInteractions = {
             }
             return;
         }
+
+        const btnUnlockTop = e.target.closest('[data-action="unlockTemplateTop"]');
+        if (btnUnlockTop) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof this.unlockTemplateTop === 'function') {
+                this.unlockTemplateTop();
+            }
+            return;
+        }
         
         const btnRotate = e.target.closest('[data-action="rotateTemplate"]');
         if (btnRotate) {
@@ -235,6 +245,9 @@ export const DesignInteractions = {
 
     handleKeyDown(e) {
         if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        // Skip shortcuts if user is typing in inputs or textareas
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable) return;
         
         if (e.key === 'Escape') {
             if (this.interactionMode !== 'normal') {
@@ -248,6 +261,46 @@ export const DesignInteractions = {
                 this.updateSelectionUI();
                 if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                 if (typeof this.requestRender === 'function') this.requestRender();
+            }
+            return;
+        }
+
+        const keyUpper = e.key.toUpperCase();
+
+        if (keyUpper === 'J') {
+            const btn = document.querySelector('[data-action="openJoinLiveModal"]');
+            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'S') {
+            const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-live"]');
+            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'C') {
+            const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-colors"]');
+            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'T') {
+            const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-templates"]');
+            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'U') {
+            const btn = document.querySelector('[data-action="unlockTemplateTop"]');
+            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'P') {
+            const btn = document.querySelector('[data-action="togglePerksInventory"]');
+            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'O') {
+            const btn = document.querySelector('[data-action="toggleOwnerTools"]');
+            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'H') {
+            const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-chat"]');
+            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'L') {
+            if (typeof this.toggleTemplateLock === 'function') { e.preventDefault(); this.toggleTemplateLock(); }
+        } else if (keyUpper === 'R') {
+            if (typeof this.rotateTemplate === 'function') { e.preventDefault(); this.rotateTemplate(); }
+        } else if (keyUpper === 'B') {
+            if (typeof this.injectTemplate === 'function') { e.preventDefault(); this.injectTemplate(); }
+        } else if (e.key === 'Delete' || e.key === 'Backspace') {
+            if (this.activeTemplateId && typeof this.deleteTemplate === 'function') {
+                e.preventDefault();
+                this.deleteTemplate();
             }
         }
     },
@@ -299,6 +352,23 @@ export const DesignInteractions = {
         if (!exact) return;
 
         const isOperationalLocked = !!(this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked);
+
+        // Check Shift + Click to unlock a locked template directly on the canvas
+        if (e.shiftKey && this.templates && this.templates.length > 0) {
+            const lockedHit = this.templates.find(t => t.locked && exact.x >= t.x && exact.x <= t.x + t.w && exact.y >= t.y && exact.y <= t.y + t.h);
+            if (lockedHit) {
+                e.preventDefault();
+                lockedHit.locked = false;
+                this.activeTemplateId = lockedHit.id;
+                this.updateTemplateUI();
+                this.requestRender();
+                if (typeof showMessage === 'function') {
+                    const msg = (typeof window.__ === 'function' ? window.__('msg_template_unlocked') : null) || 'Plantilla Desbloqueada';
+                    showMessage(msg, 'info');
+                }
+                return;
+            }
+        }
 
         if (this.activeTemplateId && !this.isSpectator && !isOperationalLocked) {
             const handleHit = typeof this.checkTemplateHandleHit === 'function' ? this.checkTemplateHandleHit(exact.x, exact.y) : null;

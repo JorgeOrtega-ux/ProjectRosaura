@@ -477,9 +477,16 @@ export const DesignNetwork = {
             try {
                 const img = new Image();
                 img.crossOrigin = 'anonymous';
-                const loadPromise = new Promise((resolve, reject) => {
+                const loadPromise = new Promise((resolve) => {
                     img.onload = () => resolve(img);
-                    img.onerror = reject;
+                    img.onerror = () => {
+                        if (img.crossOrigin) {
+                            img.crossOrigin = null;
+                            img.src = data.image_url;
+                        } else {
+                            resolve(null);
+                        }
+                    };
                 });
                 img.src = data.image_url;
                 await loadPromise;

@@ -140,7 +140,12 @@ class DesignController {
     }
 
     async init() {
-        await PerksRegistry.load();
+        console.log('%c[Rosaura App] DesignController initializing...', 'color: #2196f3; font-weight: bold;');
+        try {
+            await PerksRegistry.load();
+        } catch (e) {
+            console.warn('[DesignController] PerksRegistry.load error:', e);
+        }
         this.abortController = new AbortController();
         
         this.selectedPixels = new Set();
@@ -203,6 +208,7 @@ class DesignController {
             }
             this.chat = new DesignChat(this);
         }
+        console.log('%c[Rosaura App] DesignController ready!', 'color: #4caf50; font-weight: bold;');
     }
 
     applyPremiumLocks() {

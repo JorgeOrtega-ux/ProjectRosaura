@@ -24,6 +24,8 @@ let ownerEraserBox = null;
 let isSpectator = false;
 let isResetLocked = false;
 let activeTemplate = null;
+let activeTemplateId = null;
+let templatesList = [];
 
 let nuclearWarnings = [];
 let explosions = [];
@@ -681,36 +683,40 @@ function render() {
     
     ctx.restore();
 
-    // Plantillas activas
-    if (activeTemplate && !isSpectator && !isResetLocked) {
-        ctx.save();
-        ctx.globalAlpha = activeTemplate.opacity;
-        const cx = Math.round(activeTemplate.x + activeTemplate.w / 2);
-        const cy = Math.round(activeTemplate.y + activeTemplate.h / 2);
-        ctx.translate(cx, cy);
-        if (activeTemplate.angle) {
-            ctx.rotate((activeTemplate.angle * Math.PI) / 180);
-        }
-        const hw = Math.round(activeTemplate.w / 2);
-        const hh = Math.round(activeTemplate.h / 2);
+    // Render all templates concurrently
+    if (templatesList && templatesList.length > 0 && !isSpectator && !isResetLocked) {
+        templatesList.forEach(tpl => {
+            if (!tpl) return;
+            ctx.save();
+            ctx.globalAlpha = tpl.opacity !== undefined ? tpl.opacity : 0.5;
+            const cx = Math.round(tpl.x + tpl.w / 2);
+            const cy = Math.round(tpl.y + tpl.h / 2);
+            ctx.translate(cx, cy);
+            if (tpl.angle) {
+                ctx.rotate((tpl.angle * Math.PI) / 180);
+            }
+            const hw = Math.round(tpl.w / 2);
+            const hh = Math.round(tpl.h / 2);
 
-        if (activeTemplate.imageBitmap) {
-            ctx.drawImage(activeTemplate.imageBitmap, -hw, -hh, activeTemplate.w, activeTemplate.h);
-        }
+            if (tpl.imageBitmap) {
+                ctx.drawImage(tpl.imageBitmap, -hw, -hh, tpl.w, tpl.h);
+            }
 
-        if (!activeTemplate.locked) {
-            ctx.strokeStyle = '#2196F3';
-            ctx.lineWidth = 2 / transform.scale;
-            ctx.strokeRect(-hw, -hh, activeTemplate.w, activeTemplate.h);
-            const handleSize = 8 / transform.scale;
-            ctx.fillStyle = '#FFFFFF';
-            const handles = [[-hw, -hh], [hw, -hh], [-hw, hh], [hw, hh]];
-            handles.forEach(([hx, hy]) => {
-                ctx.fillRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
-                ctx.strokeRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
-            });
-        }
-        ctx.restore();
+            // Draw selection outline & corner handles ONLY for the active un-locked template
+            if (tpl.id === activeTemplateId && !tpl.locked) {
+                ctx.strokeStyle = '#2196F3';
+                ctx.lineWidth = 2 / transform.scale;
+                ctx.strokeRect(-hw, -hh, tpl.w, tpl.h);
+                const handleSize = 8 / transform.scale;
+                ctx.fillStyle = '#FFFFFF';
+                const handles = [[-hw, -hh], [hw, -hh], [-hw, hh], [hw, hh]];
+                handles.forEach(([hx, hy]) => {
+                    ctx.fillRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
+                    ctx.strokeRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
+                });
+            }
+            ctx.restore();
+        });
     }
 
     // Dibujado de contornos de selección optimizado vía Bitmask O(1)
@@ -1119,15 +1125,32 @@ self.onmessage = function (e) {
             }
             break;
 
+        case 'UPDATE_TEMPLATES':
         case 'UPDATE_TEMPLATE':
-            if (payload.template) {
+            if (payload.templates) {
+                const prevMap = new Map();
+                if (templatesList) {
+                    templatesList.forEach(t => { if (t.imageBitmap) prevMap.set(t.id, t.imageBitmap); });
+                }
+                activeTemplateId = payload.activeTemplateId || null;
+                templatesList = payload.templates.map(tpl => {
+                    if (!tpl.imageBitmap && prevMap.has(tpl.id)) {
+                        tpl.imageBitmap = prevMap.get(tpl.id);
+                    }
+                    return tpl;
+                });
+            } else if (payload.template) {
                 const prevBitmap = activeTemplate ? activeTemplate.imageBitmap : null;
                 activeTemplate = payload.template;
                 if (!activeTemplate.imageBitmap && prevBitmap) {
                     activeTemplate.imageBitmap = prevBitmap;
                 }
+                activeTemplateId = activeTemplate.id || null;
+                templatesList = [activeTemplate];
             } else {
                 activeTemplate = null;
+                activeTemplateId = null;
+                templatesList = [];
             }
             requestRender();
             break;

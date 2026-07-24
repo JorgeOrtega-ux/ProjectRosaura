@@ -203,40 +203,44 @@ if (!empty($canvasUuid)) {
                 </div>
 
                 <div class="component-actions <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="design-tools-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="openJoinLiveModal" data-tooltip="<?php echo __('tooltip_join_live'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="openJoinLiveModal" data-tooltip="<?php echo __('tooltip_join_live'); ?> [J]" data-position="bottom">
                         <span class="material-symbols-rounded">sensors</span>
                     </button>
                     
                     <div class="component-divider-vertical" data-ref="main-actions-divider"></div>
 
-                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-live" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-live" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom">
                         <span class="material-symbols-rounded">stream</span>
                     </button>
                     
-                    <button class="component-button component-button--icon component-button--h40 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?> [C]" data-position="bottom">
                         <span class="material-symbols-rounded">palette</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?> [T]" data-position="bottom">
                         <span class="material-symbols-rounded">photo_library</span>
+                    </button>
+
+                    <button class="component-button component-button--icon component-button--h40 component-button--warning disabled" data-action="unlockTemplateTop" data-ref="btn-top-unlock-template" data-tooltip="Desfijar Plantilla [U]" data-position="bottom" style="display: none;">
+                        <span class="material-symbols-rounded">lock_open</span>
                     </button>
                     
                     <?php if ($canvasAllowPurchases == '1'): ?>
                     <div class="component-divider-vertical" data-ref="advantages-actions-divider"></div>
-                    <button class="component-button component-button--icon component-button--h40" data-action="togglePerksInventory" data-tooltip="<?php echo __('tooltip_active_advantages'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="togglePerksInventory" data-tooltip="<?php echo __('tooltip_active_advantages'); ?> [P]" data-position="bottom">
                         <span class="material-symbols-rounded">stars</span>
                     </button>
                     <?php endif; ?>
 
                     <?php if (isset($isOwner) && $isOwner): ?>
                     <div class="component-divider-vertical" data-ref="owner-tools-actions-divider"></div>
-                    <button class="component-button component-button--icon component-button--h40" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools', 'Herramientas de Dueño'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools', 'Herramientas de Dueño'); ?> [O]" data-position="bottom">
                         <span class="material-symbols-rounded">construction</span>
                     </button>
                     <?php endif; ?>
                     
                     <?php if ($canvasAllowChat == '1'): ?>
                     <div class="component-divider-vertical" data-ref="chat-actions-divider"></div>
-                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom">
                         <span class="material-symbols-rounded">chat</span>
                     </button>
                     <?php endif; ?>

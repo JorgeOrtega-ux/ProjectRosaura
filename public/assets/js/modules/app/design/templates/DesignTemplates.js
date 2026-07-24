@@ -471,6 +471,11 @@ export const DesignTemplates = {
             showMessage(__('msg_template_added'), 'success');
         };
         img.onerror = () => {
+            if (img.crossOrigin) {
+                img.crossOrigin = null;
+                img.src = url;
+                return;
+            }
             showMessage(__('err_download_library_image'), 'error');
         };
         img.src = url;
@@ -540,6 +545,18 @@ export const DesignTemplates = {
         const btnDel = document.querySelector('[data-ref="btn-template-delete"]');
         const btnLive = document.querySelector('[data-ref="btn-start-live"]');
 
+        const btnTopUnlock = document.querySelector('[data-ref="btn-top-unlock-template"]');
+        const hasLockedTemplate = this.templates && this.templates.some(t => t.locked);
+        if (btnTopUnlock) {
+            if (hasLockedTemplate) {
+                btnTopUnlock.classList.remove('disabled');
+                btnTopUnlock.style.display = 'inline-flex';
+            } else {
+                btnTopUnlock.classList.add('disabled');
+                btnTopUnlock.style.display = 'none';
+            }
+        }
+
         if (this.activeTemplateId) {
             const tpl = this.templates ? this.templates.find(t => t.id === this.activeTemplateId) : null;
             if (tpl) {
@@ -570,6 +587,26 @@ export const DesignTemplates = {
         }
     },
 
+    unlockTemplateTop() {
+        if (!this.templates) return;
+        let unlockedAny = false;
+        this.templates.forEach(t => {
+            if (t.locked) {
+                t.locked = false;
+                unlockedAny = true;
+                this.activeTemplateId = t.id;
+            }
+        });
+        if (unlockedAny) {
+            this.updateTemplateUI();
+            this.requestRender();
+            if (typeof showMessage === 'function') {
+                const msg = (typeof window.__ === 'function' ? window.__('msg_template_unlocked') : null) || 'Plantilla Desbloqueada';
+                showMessage(msg, 'info');
+            }
+        }
+    },
+
     positionTemplateToolbar() {
         const toolbarEl = document.querySelector('[data-ref="template-floating-toolbar"]');
         if (!toolbarEl) return;
@@ -586,7 +623,7 @@ export const DesignTemplates = {
         }
 
         const tpl = this.templates.find(t => t.id === this.activeTemplateId);
-        if (!tpl || !this.canvas || !this.transform) {
+        if (!tpl || tpl.locked || !this.canvas || !this.transform) {
             toolbarEl.style.display = 'none';
             toolbarEl.classList.remove('active');
             return;
