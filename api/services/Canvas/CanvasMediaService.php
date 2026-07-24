@@ -245,7 +245,9 @@ class CanvasMediaService {
                 $s3Key = ltrim($data['file_path'], '/');
                 try {
                     $s3Client->deleteObject(['Bucket' => $bucket, 'Key' => $s3Key]);
-                } catch (\Exception $e) {}
+                } catch (\Exception $e) {
+                    Logger::warning("Failed deleting S3 object for snapshot", ['key' => $s3Key, 'exception' => $e]);
+                }
             }
 
             return ['success' => true, 'message' => __('msg_snapshot_deleted')];

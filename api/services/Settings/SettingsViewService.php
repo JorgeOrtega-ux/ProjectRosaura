@@ -93,7 +93,9 @@ class SettingsViewService {
                         $googleId = $currentUserDb['google_id'] ?? null;
                     }
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                Logger::error("Failed to fetch Google ID in SettingsViewService: " . $e->getMessage(), ['user_id' => $userId, 'exception' => $e]);
+            }
         }
         $isGoogleConnected = !empty($googleId);
         $googleClientId = $_ENV['GOOGLE_CLIENT_ID'] ?? '';

@@ -4,6 +4,7 @@ namespace App\Api\Services\Auth;
 use App\Core\Container;
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
 use App\Core\System\DatabaseConstants;
+use App\Core\System\Logger;
 
 class AuthViewService {
 
@@ -102,6 +103,7 @@ class AuthViewService {
                     }
                 }
             } catch (\Throwable $e) {
+                Logger::error("Error in reset password view data validation: " . $e->getMessage(), ['exception' => $e]);
                 $isValid = false;
             }
         }

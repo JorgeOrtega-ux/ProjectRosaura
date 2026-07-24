@@ -11,6 +11,7 @@ use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\PermissionsConstants;
 use App\Core\System\SubscriptionPlanConstants;
 use App\Core\Helpers\Utils;
+use App\Core\System\Logger;
 
 class AdminViewService {
 
@@ -81,7 +82,9 @@ class AdminViewService {
             if ($row) {
                 $config = $row;
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getServerConfigData error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         return [
             'config' => $config,
@@ -118,7 +121,9 @@ class AdminViewService {
         try {
             $stmtRoles = $pdo->query("SELECT id, name FROM {$tblRoles} ORDER BY id ASC");
             $allRoles = $stmtRoles->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getManageUsersData allRoles error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         $searchQuery = trim($searchQuery ?? '');
         $whereConditions = ["1=1"];
@@ -162,7 +167,7 @@ class AdminViewService {
             $stmtCount->execute();
             $totalUsers = (int)$stmtCount->fetchColumn();
         } catch (\Throwable $e) {
-            error_log("getManageUsersData count error: " . $e->getMessage());
+            Logger::error("getManageUsersData count error: " . $e->getMessage(), ['exception' => $e]);
         }
 
         $totalPages = ceil($totalUsers / $limit);
@@ -232,7 +237,7 @@ class AdminViewService {
                 unset($uRow);
             }
         } catch (\Throwable $e) {
-            error_log("getManageUsersData select error: " . $e->getMessage());
+            Logger::error("getManageUsersData select error: " . $e->getMessage(), ['exception' => $e]);
         }
 
         return [
@@ -374,7 +379,9 @@ class AdminViewService {
         try {
             $stmtRoles = $pdo->query("SELECT id, name, weight FROM " . DB::TBL_ROLES . " ORDER BY weight DESC");
             $allRoles = $stmtRoles->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getEditUserRoleData allRoles error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         $currentUserRoleId = null;
         try {
@@ -384,7 +391,9 @@ class AdminViewService {
             if ($currentUserRoleId !== false) {
                 $currentUserRoleId = (int)$currentUserRoleId;
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getEditUserRoleData currentUserRoleId error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         $currentUserWeight = isset($_SESSION['user_role_weight']) ? (int)$_SESSION['user_role_weight'] : 0;
 
@@ -431,7 +440,9 @@ class AdminViewService {
             $stmtCount = $pdo->prepare("SELECT COUNT(id) FROM user_security_history WHERE user_id = :uid");
             $stmtCount->execute(['uid' => $targetUserId]);
             $totalHistory = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getUserHistoryData totalHistory error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         $totalPages = ceil($totalHistory / $limit);
         if ($totalPages < 1) $totalPages = 1;
@@ -446,7 +457,9 @@ class AdminViewService {
             $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
             $stmt->execute();
             $historyItems = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getUserHistoryData historyItems error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         return [
             'redirect' => null,
@@ -493,7 +506,9 @@ class AdminViewService {
             }
             $stmtCount->execute();
             $totalTiers = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getManageSubscriptionsData totalTiers error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         $totalPages = ceil($totalTiers / $limit);
         if ($totalPages < 1) $totalPages = 1;
@@ -510,7 +525,9 @@ class AdminViewService {
             $stmt->bindValue(':offset', (int)$offset, \PDO::PARAM_INT);
             $stmt->execute();
             $tiers = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getManageSubscriptionsData tiers error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         return [
             'canManageTiers' => $canManageTiers,
@@ -550,7 +567,9 @@ class AdminViewService {
                 if ($tier) {
                     $isEdit = true;
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                Logger::error("getSubscriptionBuilderData error: " . $e->getMessage(), ['exception' => $e]);
+            }
         }
 
         $allFeatures = SubscriptionPlanConstants::ALL_FEATURES;
@@ -597,7 +616,9 @@ class AdminViewService {
             }
             $stmtCount->execute();
             $totalRoles = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getManageRolesData totalRoles error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         $totalPages = ceil($totalRoles / $limit);
         if ($totalPages < 1) $totalPages = 1;
@@ -614,7 +635,9 @@ class AdminViewService {
             $stmt->bindValue(':offset', (int)$offset, \PDO::PARAM_INT);
             $stmt->execute();
             $roles = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getManageRolesData roles error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         $currentUserWeight = isset($_SESSION['user_role_weight']) ? (int)$_SESSION['user_role_weight'] : 0;
 
@@ -656,7 +679,9 @@ class AdminViewService {
                 $stmtPerms->execute(['rid' => $roleId]);
                 $rolePermissions = $stmtPerms->fetchAll(\PDO::FETCH_COLUMN);
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getRolePermissionsData role fetch error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         if (!$role) {
             return ['error' => __('err_role_not_found')];
@@ -666,7 +691,9 @@ class AdminViewService {
         try {
             $stmtAll = $pdo->query("SELECT * FROM permissions ORDER BY category, id ASC");
             $allPermissions = $stmtAll->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getRolePermissionsData allPermissions error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         return [
             'redirect' => null,
@@ -698,7 +725,9 @@ class AdminViewService {
         try {
             $stmtCount = $pdo->query("SELECT COUNT(id) FROM canvas_chat_messages");
             $totalMessages = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getManageMessagesData totalMessages error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         $totalPages = ceil($totalMessages / $limit);
         if ($totalPages < 1) $totalPages = 1;
@@ -711,7 +740,9 @@ class AdminViewService {
             $stmt->bindValue(':offset', (int)$offset, \PDO::PARAM_INT);
             $stmt->execute();
             $messages = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getManageMessagesData select messages error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         return [
             'messages' => $messages,
@@ -741,7 +772,9 @@ class AdminViewService {
         try {
             $stmtCount = $pdo->query("SELECT COUNT(id) FROM canvas_chat_reports");
             $totalReports = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getReportsData totalReports error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         $totalPages = ceil($totalReports / $limit);
         if ($totalPages < 1) $totalPages = 1;
@@ -754,7 +787,9 @@ class AdminViewService {
             $stmt->bindValue(':offset', (int)$offset, \PDO::PARAM_INT);
             $stmt->execute();
             $reports = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getReportsData select reports error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         return [
             'reports' => $reports,
@@ -783,7 +818,9 @@ class AdminViewService {
         try {
             $stmtCount = $pdo->query("SELECT COUNT(id) FROM user_security_history");
             $totalLogs = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getLogsData totalLogs error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         $totalPages = ceil($totalLogs / $limit);
         if ($totalPages < 1) $totalPages = 1;
@@ -796,7 +833,9 @@ class AdminViewService {
             $stmt->bindValue(':offset', (int)$offset, \PDO::PARAM_INT);
             $stmt->execute();
             $logs = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getLogsData select logs error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         return [
             'logs' => $logs,

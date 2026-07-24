@@ -580,7 +580,9 @@ class SettingsServices
                 $qrcode = new \chillerlan\QRCode\QRCode($options);
                 $qrSvg = $qrcode->render($totpUrl);
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::warning("QR code SVG rendering failed in generate2faSetup", ['user_id' => $userId, 'exception' => $e]);
+        }
 
         return [
             'success' => true,

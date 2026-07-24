@@ -229,14 +229,28 @@ if (!function_exists('__')) {
     } 
 }
 
+$requestRoute = $_GET['route'] ?? ($_POST['route'] ?? '');
+if ($requestRoute === 'csrf.refresh' || $requestRoute === 'auth.csrf') {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'csrf_token' => $sessionManager->getCsrfToken()
+    ]);
+    exit;
+}
+
 $requestToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_GET['csrf_token'] ?? '');
-$isChatAttachment = ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['route'] ?? '') === 'chat.attachment');
-$isReceiptDownload = (($_GET['route'] ?? '') === 'stripe.download_receipt');
+$isChatAttachment = ($_SERVER['REQUEST_METHOD'] === 'GET' && ($requestRoute === 'chat.attachment'));
+$isReceiptDownload = ($requestRoute === 'stripe.download_receipt');
 
 if (!$isChatAttachment && !$isReceiptDownload && !Utils::validateCSRFToken($requestToken, $sessionManager)) {
     Logger::security("CSRF validation failed.", 'warning', ['ip' => Utils::getIpAddress(), 'token_provided' => $requestToken]);
     http_response_code(403);
-    echo json_encode(['success' => false, 'message_key' => 'error.invalid_csrf_token']);
+    echo json_encode([
+        'success' => false, 
+        'message_key' => 'error.invalid_csrf_token',
+        'csrf_token' => $sessionManager->getCsrfToken()
+    ]);
     exit;
 }
 

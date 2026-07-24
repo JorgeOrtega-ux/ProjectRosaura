@@ -4,6 +4,7 @@ namespace App\Api\Services\App;
 use App\Core\System\StorePackagesConfig;
 use App\Core\System\SubscriptionPlanConstants;
 use App\Core\System\SubscriptionFeatureConfig;
+use App\Core\System\Logger;
 
 class AppViewService {
 
@@ -16,6 +17,7 @@ class AppViewService {
                 $packages = StorePackagesConfig::getCoinPackages();
                 return is_array($packages) ? $packages : [];
             } catch (\Throwable $e) {
+                Logger::error("Error loading store coin packages: " . $e->getMessage(), ['exception' => $e]);
                 return [];
             }
         }
@@ -31,6 +33,7 @@ class AppViewService {
                 $packages = StorePackagesConfig::getContentPackages();
                 return is_array($packages) ? $packages : [];
             } catch (\Throwable $e) {
+                Logger::error("Error loading store content packages: " . $e->getMessage(), ['exception' => $e]);
                 return [];
             }
         }

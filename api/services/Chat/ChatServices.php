@@ -6,6 +6,7 @@ use App\Config\Database\DatabaseManager;
 use App\Config\Database\RedisCache;
 use App\Core\System\CacheConstants;
 use App\Core\Helpers\Utils;
+use App\Core\System\Logger;
 use PDO;
 
 class ChatServices
@@ -451,6 +452,7 @@ class ChatServices
                 'presigned_url' => $presignedUrl
             ];
         } catch (\Exception $e) {
+            Logger::error("Error generating presigned URL for attachment in ChatServices", ['s3_key' => $s3Key, 'exception' => $e]);
             return ['success' => false, 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
         }
     }

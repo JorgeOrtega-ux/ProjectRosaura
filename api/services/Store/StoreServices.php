@@ -156,7 +156,9 @@ class StoreServices {
                                         'description' => "Purchase of {$amountCoins} coins",
                                         'status' => 'succeeded'
                                     ]);
-                                } catch (\Throwable $e) {}
+                                } catch (\Throwable $e) {
+                                    Logger::error("Failed to create payment record in StoreServices", ['user_id' => $userId, 'session_id' => $sessionId, 'exception' => $e]);
+                                }
                             }
                         }
                     }

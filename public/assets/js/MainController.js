@@ -118,10 +118,13 @@ export class MainController {
         if (document.visibilityState === 'hidden') {
             this.lastVisibleTime = Date.now();
         } else if (document.visibilityState === 'visible') {
-            const timeHidden = Date.now() - this.lastVisibleTime;
+            const timeHidden = Date.now() - (this.lastVisibleTime || Date.now());
             // Recargar si la pestaña estuvo inactiva por más de 2 horas (caducidad típica de sesión/CSRF)
             if (timeHidden > 7200000) {
                 window.location.reload();
+            } else if (timeHidden > 5000) {
+                // Refrescar el token CSRF de forma proactiva al volver a la pestaña antes de cualquier llamada POST
+                ApiService.refreshCsrfTokenProactively();
             }
         }
     }

@@ -5,6 +5,7 @@ use App\Config\Database\DatabaseManager;
 use App\Core\Helpers\Utils;
 use App\Core\System\PermissionsConstants;
 use App\Core\System\SubscriptionPlanConstants;
+use App\Core\System\Logger;
 
 class CanvasViewService {
 
@@ -218,6 +219,7 @@ class CanvasViewService {
                     }
                 }
             } catch (\Throwable $e) {
+                Logger::error("Error loading snapshots gallery: " . $e->getMessage(), ['exception' => $e]);
                 $error = true;
                 $errorMessage = __('err_load_snapshots');
             }
@@ -270,7 +272,9 @@ class CanvasViewService {
                 if ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
                     $canvasSize = $row['size'];
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                Logger::error("Error loading snapshot viewer size: " . $e->getMessage(), ['exception' => $e]);
+            }
         }
 
         return [
@@ -309,7 +313,9 @@ class CanvasViewService {
                     $canvasId = (int)$canvasData['id'];
                     $canvasOwnerId = (int)$canvasData['owner_id'];
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                Logger::error("getCanvasMembersData canvas query error: " . $e->getMessage(), ['exception' => $e]);
+            }
         }
 
         if (!$userId || !$canvasId) {
@@ -373,7 +379,9 @@ class CanvasViewService {
                         $memberRoles[$row['user_id']][] = $row;
                     }
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                Logger::error("getCanvasMembersData roles query error: " . $e->getMessage(), ['exception' => $e]);
+            }
         }
 
         if (!empty($members)) {
@@ -394,7 +402,9 @@ class CanvasViewService {
                     $row['role_bg'] = self::parseSubscriptionColor($row['subscription_color'] ?? null);
                     $userDetails[$row['id']] = $row;
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                Logger::error("getCanvasMembersData users query error: " . $e->getMessage(), ['exception' => $e]);
+            }
         }
 
         $totalPages = (int)ceil($totalMembers / $limit);
@@ -523,7 +533,9 @@ class CanvasViewService {
                         $cTags = json_decode($canvasData['tags'], true) ?? [];
                     }
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                Logger::error("getWorkspaceEditData canvas query error: " . $e->getMessage(), ['exception' => $e]);
+            }
         }
 
         return [
@@ -617,7 +629,9 @@ class CanvasViewService {
                         $canTakeSnapshot = ($maxSnapshots === -1 || $currentSnapshots < $maxSnapshots);
                     }
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                Logger::error("getWorkspaceResetData query error: " . $e->getMessage(), ['exception' => $e]);
+            }
         }
 
         $monthShort = [
@@ -703,7 +717,9 @@ class CanvasViewService {
                 $resizeSettings['next_resize_at'] = $row['next_resize_at'];
                 $resizeSettings['target_size'] = $row['target_size'] ?? '64x64';
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getWorkspaceResizeData settings query error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         $sizesList = Utils::getCanvasSizes();
         $currentSizeRaw = (string)$canvas['size'];
@@ -835,7 +851,9 @@ class CanvasViewService {
             $stmt = $pdoCanvases->prepare("SELECT * FROM canvas_roles WHERE canvas_id IS NULL OR canvas_id = :cid ORDER BY weight DESC");
             $stmt->execute(['cid' => $canvasId]);
             $roles = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getCanvasRolesData roles query error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         return [
             'error' => null,
@@ -891,6 +909,7 @@ class CanvasViewService {
                 return ['error' => __('err_invalid_user')];
             }
         } catch (\Throwable $e) {
+            Logger::error("getCanvasChangeRoleData identity error: " . $e->getMessage(), ['exception' => $e]);
             return ['error' => __('err_identity_conn')];
         }
 
@@ -949,6 +968,7 @@ class CanvasViewService {
                 return ['error' => __('err_canvas_not_found')];
             }
         } catch (\Throwable $e) {
+            Logger::error("getCanvasChangeRoleData membership error: " . $e->getMessage(), ['exception' => $e]);
             return ['error' => __('err_internal_membership')];
         }
 
@@ -957,7 +977,9 @@ class CanvasViewService {
             $stmt = $pdoCanvases->prepare("SELECT * FROM canvas_roles WHERE canvas_id IS NULL OR canvas_id = :cid ORDER BY weight DESC");
             $stmt->execute(['cid' => $canvasId]);
             $availableRoles = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getCanvasChangeRoleData availableRoles error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         return [
             'error' => null,
@@ -1060,7 +1082,9 @@ class CanvasViewService {
                     $canvasId = (int)$canvasData['id'];
                     $canvasOwnerId = isset($canvasData['owner_id']) ? (int)$canvasData['owner_id'] : null;
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                Logger::error("getCanvasInvitesData canvas query error: " . $e->getMessage(), ['exception' => $e]);
+            }
         }
 
         if (!$userId || !$canvasId) {
@@ -1085,7 +1109,9 @@ class CanvasViewService {
             ");
             $stmt->execute(['cid' => $canvasId]);
             $invites = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            Logger::error("getCanvasInvitesData invites query error: " . $e->getMessage(), ['exception' => $e]);
+        }
 
         return [
             'error' => null,
@@ -1126,7 +1152,9 @@ class CanvasViewService {
                     $stmtReq->execute(['cid' => $canvasId]);
                     $pendingRequests = $stmtReq->fetchAll(\PDO::FETCH_ASSOC);
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                Logger::error("getCanvasRequestsData error: " . $e->getMessage(), ['exception' => $e]);
+            }
         }
 
         if (!$canvasId) {
@@ -1385,6 +1413,7 @@ class CanvasViewService {
                     $errorMsg = __('err_no_permission_images');
                 }
             } catch (\Throwable $e) {
+                Logger::error("getCanvasChatViewerData error: " . $e->getMessage(), ['exception' => $e]);
                 $errorMsg = __('err_load_image');
             }
         } else {
