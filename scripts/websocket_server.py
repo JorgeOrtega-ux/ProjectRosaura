@@ -468,6 +468,7 @@ async def handler(websocket):
 
     lock_key = f"canvas:{canvas_id}:reset_lock"
     resize_lock_key = f"canvas:{canvas_id}:resize_lock"
+    inject_lock_key = f"canvas:{canvas_id}:inject_lock"
     config_key = f"canvas:{canvas_id}:config"
 
     try:
@@ -635,18 +636,51 @@ async def handler(websocket):
                         websockets.broadcast(clients_in_room, lock_msg)
                     await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": lock_msg}))
 
-                    # 2. FAST BULK PIPELINE REDIS UPDATE (row-by-row in 1 pipeline)
+                    # 2. FAST BULK REDIS UPDATE
                     redis_state_key = f"canvas:{canvas_id}:state"
-                    row_len = (max_x - min_x + 1)
-                    row_transparent_bytes = b'\x00\x00\x00\x00' * row_len
+                    await ensure_canvas_state_loaded(r, canvas_id)
+
+                    # Filter protected_zset to remove ONLY actually protected pixels in this region
+                    zset_key = f"canvas:{canvas_id}:protected_zset"
+                    protected_offsets = await r.zrange(zset_key, 0, -1)
+                    to_remove_protected = []
+                    protected_keys_to_del = []
+                    if protected_offsets:
+                        for offset_bytes in protected_offsets:
+                            offset_str = offset_bytes.decode('utf-8') if isinstance(offset_bytes, bytes) else str(offset_bytes)
+                            px, py = 0, 0
+                            if width == 0:
+                                if "," in offset_str:
+                                    px, py = map(int, offset_str.split(","))
+                                else: continue
+                            else:
+                                off_int = int(offset_str)
+                                px = off_int % width
+                                py = off_int // width
+                            if min_x <= px <= max_x and min_y <= py <= max_y:
+                                protected_key = f"canvas:{canvas_id}:protected_pixels:{offset_str}"
+                                protected_keys_to_del.append(protected_key)
+                                to_remove_protected.append(offset_bytes)
 
                     async with r.pipeline(transaction=False) as pipe:
-                        for cur_y in range(min_y, max_y + 1):
-                            start_byte_offset = (cur_y * width + min_x) * 4
-                            pipe.setrange(redis_state_key, start_byte_offset, row_transparent_bytes)
-                            for cur_x in range(min_x, max_x + 1):
-                                offset_key = (cur_y * width) + cur_x
-                                pipe.delete(f"canvas:{canvas_id}:protected_pixels:{offset_key}")
+                        if to_remove_protected:
+                            pipe.zrem(zset_key, *to_remove_protected)
+                            for pk in protected_keys_to_del:
+                                pipe.delete(pk)
+
+                        # If full width selection (or entire canvas), zero out in one contiguous byte setrange
+                        if min_x == 0 and max_x == width - 1:
+                            start_byte_offset = (min_y * width) * 4
+                            total_bytes = count * 4
+                            pipe.setrange(redis_state_key, start_byte_offset, b'\x00' * total_bytes)
+                        else:
+                            row_len = (max_x - min_x + 1)
+                            row_transparent_bytes = b'\x00\x00\x00\x00' * row_len
+                            for cur_y in range(min_y, max_y + 1):
+                                start_byte_offset = (cur_y * width + min_x) * 4
+                                pipe.setrange(redis_state_key, start_byte_offset, row_transparent_bytes)
+
+                        pipe.sadd("canvases:dirty_states", canvas_id)
                         await pipe.execute()
 
                     # 3. BROADCAST COMPLETED EVENT so all clients re-fetch & unlock canvas
@@ -662,15 +696,26 @@ async def handler(websocket):
                         websockets.broadcast(clients_in_room, completed_msg)
                     await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": completed_msg}))
 
+                    # Push event to Redis stream for logging/sync
+                    stream_key = f"canvas:{canvas_id}:stream"
+                    await r.xadd(stream_key, {
+                        "type": "canvas_clear_area",
+                        "x1": str(min_x),
+                        "y1": str(min_y),
+                        "x2": str(max_x),
+                        "y2": str(max_y)
+                    })
+
                     print(f"[DEBUG PY] clear_area executed instantly for owner {user_id} on canvas {canvas_id}: ({min_x},{min_y}) to ({max_x},{max_y}). Total: {count} px.")
 
-                elif data.get("type") == "pixel":
+                elif data.get("type") in ("pixel", "erase_pixel"):
                     
                     is_locked = await r.exists(lock_key)
                     is_resize_locked = await r.exists(resize_lock_key)
+                    is_inject_locked = await r.exists(inject_lock_key)
                     
-                    if is_locked or is_resize_locked:
-                        print(f"[DEBUG PY] Canvas blocked for maintenance or expansion. Ignoring pixel.")
+                    if is_locked or is_resize_locked or is_inject_locked:
+                        print(f"[DEBUG PY] Canvas blocked for maintenance, expansion or injection. Ignoring pixel.")
                         error_msg = json.dumps({
                             "type": "canvas_locked_error"
                         })
@@ -821,10 +866,11 @@ async def handler(websocket):
                                 })
                                 await websocket.send(error_msg)
 
-                elif data.get("type") == "batch_pixels":
+                elif data.get("type") in ("batch_pixels", "batch_erase_pixels"):
                     is_locked = await r.exists(lock_key)
                     is_resize_locked = await r.exists(resize_lock_key)
-                    if is_locked or is_resize_locked:
+                    is_inject_locked = await r.exists(inject_lock_key)
+                    if is_locked or is_resize_locked or is_inject_locked:
                         await websocket.send(json.dumps({"type": "canvas_locked_error"}))
                         continue
 

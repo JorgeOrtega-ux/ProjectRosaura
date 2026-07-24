@@ -257,7 +257,6 @@ export const DesignInteractions = {
         if (!target) return;
         
         e.preventDefault(); 
-        if (this.isResizeLocked) return; 
         
         const rect = this.canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
@@ -287,12 +286,14 @@ export const DesignInteractions = {
 
     handleMouseDown(e) {
         const target = e.target.closest('[data-ref="design-canvas"]');
-        if (!target || this.isResizeLocked) return;
+        if (!target) return;
 
         const exact = this.getExactBoardCoords(e.clientX, e.clientY);
         if (!exact) return;
 
-        if (this.activeTemplateId && !this.isSpectator && !this.isResetLocked) {
+        const isOperationalLocked = !!(this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked);
+
+        if (this.activeTemplateId && !this.isSpectator && !isOperationalLocked) {
             const handleHit = typeof this.checkTemplateHandleHit === 'function' ? this.checkTemplateHandleHit(exact.x, exact.y) : null;
             if (handleHit) {
                 e.preventDefault();
@@ -313,7 +314,7 @@ export const DesignInteractions = {
             }
         }
 
-        if (e.shiftKey || e.button === 1 || this.isSpectator || this.isResetLocked) {
+        if (e.shiftKey || e.button === 1 || this.isSpectator || isOperationalLocked) {
             this.isDragging = true;
             this.lastMouse = { x: e.clientX, y: e.clientY };
             this.canvas.classList.add('component-cursor-grabbing');
@@ -388,7 +389,6 @@ export const DesignInteractions = {
     },
 
     handleMouseMove(e) {
-        if (this.isResizeLocked) return;
 
         if (this.interactionMode === 'owner_erasing' && this.ownerEraserStep === 1 && this.ownerEraserStart) {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
@@ -682,7 +682,6 @@ export const DesignInteractions = {
     },
 
     handleMouseUp(e) {
-        if (this.isResizeLocked) return;
 
         if (this.templateInteraction) {
             this.templateInteraction = null;
@@ -712,7 +711,7 @@ export const DesignInteractions = {
 
     handleTouchStart(e) {
         const target = e.target.closest('[data-ref="design-canvas"]');
-        if (!target || this.isResizeLocked) return;
+        if (!target) return;
 
         if (e.touches.length === 2) {
             e.preventDefault();
@@ -734,8 +733,10 @@ export const DesignInteractions = {
             this.touchStartY = e.touches[0].clientY;
             this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
 
+            const isOperationalLocked = !!(this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked);
+
             const exact = this.getExactBoardCoords(this.touchStartX, this.touchStartY);
-            if (exact && !this.isSpectator && !this.isResetLocked) {
+            if (exact && !this.isSpectator && !isOperationalLocked) {
                 let hit = null;
                 if (typeof this.checkTemplateHit === 'function') {
                     hit = this.checkTemplateHit(exact.x, exact.y);
@@ -767,7 +768,6 @@ export const DesignInteractions = {
     },
 
     handleTouchMove(e) {
-        if (this.isResizeLocked) return;
 
         if (this.isPinching && e.touches.length === 2) {
             e.preventDefault(); 

@@ -688,7 +688,9 @@ def draw_image_listener_thread():
                 
                 logging.info(f"Received draw_image task for canvas {canvas_id} at {x},{y} w={w} h={h} a={angle}")
                 
-                # Broadcast lock event so frontend blocks the canvas
+                # Broadcast lock event so frontend blocks the canvas & set Redis inject lock
+                inject_lock_key = f"canvas:{canvas_id}:inject_lock"
+                r.setex(inject_lock_key, 60, "1")
                 r.publish("admin:canvas_events", json.dumps({
                     "type": "canvas_locked_inject", "canvas_id": canvas_id
                 }))
@@ -761,6 +763,8 @@ def draw_image_listener_thread():
                     r.publish("admin:canvas_events", json.dumps({
                         "type": "canvas_inject_error", "canvas_id": canvas_id, "error": str(draw_err)
                     }))
+                finally:
+                    r.delete(inject_lock_key)
                 
         except Exception as e:
             logging.error(f"Error in Draw Image listener: {e}")

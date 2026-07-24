@@ -342,7 +342,6 @@ export const DesignNetwork = {
         
         if (this.canvas) {
             this.canvas.classList.add('component-canvas-blur');
-            this.canvas.classList.add('disabled-interaction');
         }
 
         this.updateLockBadges(); 
@@ -359,7 +358,6 @@ export const DesignNetwork = {
                 this.isResizeLocked = false;
                 if (this.canvas) {
                     this.canvas.classList.remove('component-canvas-blur');
-                    this.canvas.classList.remove('disabled-interaction');
                 }
                 this.updateLockBadges();
                 showMessage(__('err_server_timeout'), 'error');
@@ -411,7 +409,6 @@ export const DesignNetwork = {
         
         if (this.canvas && !this.isPrivateBlocked) {
             this.canvas.classList.remove('component-canvas-blur');
-            this.canvas.classList.remove('disabled-interaction');
         }
         
         this.updateLockBadges();
@@ -427,7 +424,6 @@ export const DesignNetwork = {
         
         if (this.canvas) {
             this.canvas.classList.remove('component-canvas-blur');
-            this.canvas.classList.remove('disabled-interaction');
         }
 
         this.updateLockBadges(); 
@@ -439,7 +435,6 @@ export const DesignNetwork = {
 
         if (this.canvas) {
             this.canvas.classList.add('component-canvas-blur');
-            this.canvas.classList.add('disabled-interaction');
         }
 
         this.updateLockBadges();
@@ -458,7 +453,6 @@ export const DesignNetwork = {
                 this.isInjectLocked = false;
                 if (this.canvas) {
                     this.canvas.classList.remove('component-canvas-blur');
-                    this.canvas.classList.remove('disabled-interaction');
                 }
                 this.updateLockBadges();
                 showMessage(__('err_server_timeout'), 'error');
@@ -538,7 +532,6 @@ export const DesignNetwork = {
 
         if (this.canvas && !this.isPrivateBlocked) {
             this.canvas.classList.remove('component-canvas-blur');
-            this.canvas.classList.remove('disabled-interaction');
         }
 
         this.updateLockBadges();
@@ -556,7 +549,6 @@ export const DesignNetwork = {
 
         if (this.canvas) {
             this.canvas.classList.remove('component-canvas-blur');
-            this.canvas.classList.remove('disabled-interaction');
         }
 
         this.updateLockBadges();
@@ -568,7 +560,6 @@ export const DesignNetwork = {
 
         if (this.canvas) {
             this.canvas.classList.add('component-canvas-blur');
-            this.canvas.classList.add('disabled-interaction');
         }
 
         this.updateLockBadges();
@@ -583,7 +574,6 @@ export const DesignNetwork = {
                 this.isClearLocked = false;
                 if (this.canvas) {
                     this.canvas.classList.remove('component-canvas-blur');
-                    this.canvas.classList.remove('disabled-interaction');
                 }
                 this.updateLockBadges();
             }
@@ -633,7 +623,6 @@ export const DesignNetwork = {
 
         if (this.canvas && !this.isPrivateBlocked) {
             this.canvas.classList.remove('component-canvas-blur');
-            this.canvas.classList.remove('disabled-interaction');
         }
 
         this.updateLockBadges();
