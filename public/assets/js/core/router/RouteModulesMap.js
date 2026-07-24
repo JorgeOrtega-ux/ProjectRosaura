@@ -87,6 +87,7 @@ export const RouteModulesMap = {
     '/canvases/manage/roles/:uuid': { path: './modules/canvases/team/CanvasRolesController.js', className: 'CanvasRolesController', skeletonType: 'layout-basic' },
     '/canvases/manage/role-builder/:uuid': { path: './modules/canvases/team/CanvasRoleBuilderController.js', className: 'CanvasRoleBuilderController', skeletonType: 'layout-basic' },
     '/canvases/manage/chat-restriction/:uuid/:user_uuid': { path: './modules/canvases/workspace/CanvasChatRestrictionController.js', className: 'CanvasChatRestrictionController', skeletonType: 'layout-basic' },
+    '/canvases/manage/sanctions/:uuid': { path: './modules/canvases/team/CanvasSanctionsController.js', className: 'CanvasSanctionsController', skeletonType: 'layout-table' },
     '/canvases/manage/role-permissions/:uuid': { path: './modules/canvases/team/CanvasRolePermissionsController.js', className: 'CanvasRolePermissionsController', skeletonType: 'layout-basic' },
 
     '/canvases/members/:uuid': { path: './modules/canvases/team/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-table' },

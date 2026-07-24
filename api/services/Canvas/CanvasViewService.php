@@ -1449,4 +1449,111 @@ class CanvasViewService {
             'errorMsg' => $errorMsg
         ];
     }
+
+    /**
+     * Obtiene los datos para la vista centralizada de sanciones del lienzo (team/sanctions.php).
+     */
+    public function getCanvasSanctionsData(?string $canvasUuid, int $page = 1): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        if (empty($canvasUuid)) {
+            return ['unauthorized' => true, 'redirect' => (defined('APP_URL') ? APP_URL : '') . '/canvases/manage'];
+        }
+
+        $userId = $_SESSION['active_account'] ?? $_SESSION['user_id'] ?? null;
+        $db = new DatabaseManager();
+        $pdoCanvases = $db->getConnection(defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
+
+        $stmt = $pdoCanvases->prepare("SELECT id, uuid, owner_id as user_id FROM canvases WHERE uuid = :uuid OR id = :uuid_alt LIMIT 1");
+        $stmt->execute(['uuid' => $canvasUuid, 'uuid_alt' => $canvasUuid]);
+        $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$canvas || (int)$canvas['user_id'] !== (int)$userId) {
+            return ['unauthorized' => true, 'redirect' => (defined('APP_URL') ? APP_URL : '') . '/canvases/manage'];
+        }
+
+        $canvasId = (int)$canvas['id'];
+        $realCanvasUuid = $canvas['uuid'];
+        $appUrl = defined('APP_URL') ? APP_URL : '';
+
+        $limit = 15;
+        if ($page < 1) $page = 1;
+        $offset = ($page - 1) * $limit;
+
+        $userList = [];
+        $restrictionsMap = [];
+        $activeMemberUserIds = [];
+        $userDetails = [];
+        $totalItems = 0;
+
+        try {
+            $stmtM = $pdoCanvases->prepare("SELECT user_id FROM canvas_members WHERE canvas_id = ?");
+            $stmtM->execute([$canvasId]);
+            $memberUserIds = $stmtM->fetchAll(\PDO::FETCH_COLUMN);
+
+            $stmtR = $pdoCanvases->prepare("SELECT * FROM canvas_chat_restrictions WHERE canvas_id = ?");
+            $stmtR->execute([$canvasId]);
+            $allRestrictions = $stmtR->fetchAll(\PDO::FETCH_ASSOC);
+
+            foreach ($allRestrictions as $r) {
+                $restrictionsMap[$r['user_id']] = $r;
+            }
+
+            $restrictedUserIds = array_keys($restrictionsMap);
+            $allUserIds = array_values(array_unique(array_merge($memberUserIds, $restrictedUserIds)));
+            $activeMemberUserIds = $memberUserIds;
+            $totalItems = count($allUserIds);
+
+            $pageUserIds = array_slice($allUserIds, $offset, $limit);
+
+            if (!empty($pageUserIds)) {
+                $connNameIdentity = defined('\App\Core\System\DatabaseConstants::CONN_IDENTITY') ? \App\Core\System\DatabaseConstants::CONN_IDENTITY : 'identity';
+                $pdoIdentity = $db->getConnection($connNameIdentity);
+                $inQueryUsers = implode(',', array_fill(0, count($pageUserIds), '?'));
+                $stmtUsers = $pdoIdentity->prepare("
+                    SELECT u.id, u.uuid, u.username, u.email, u.profile_picture, st.color as subscription_color
+                    FROM users u
+                    LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
+                    WHERE u.id IN ({$inQueryUsers})
+                ");
+                $stmtUsers->execute($pageUserIds);
+                while ($row = $stmtUsers->fetch(\PDO::FETCH_ASSOC)) {
+                    $userDetails[$row['id']] = $row;
+                }
+            }
+
+            foreach ($pageUserIds as $uid) {
+                $userList[] = [
+                    'user_id' => $uid,
+                    'is_member' => in_array($uid, $activeMemberUserIds),
+                    'restriction' => $restrictionsMap[$uid] ?? null
+                ];
+            }
+        } catch (\Throwable $e) {
+            Logger::error("getCanvasSanctionsData error: " . $e->getMessage(), ['exception' => $e]);
+        }
+
+        $totalPages = ceil($totalItems / $limit);
+        if ($totalPages < 1) $totalPages = 1;
+
+        $prevPageUrl = $page > 1 ? $appUrl . '/canvases/manage/sanctions/' . $realCanvasUuid . '?page=' . ($page - 1) : '#';
+        $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage/sanctions/' . $realCanvasUuid . '?page=' . ($page + 1) : '#';
+
+        return [
+            'unauthorized' => false,
+            'canvas' => $canvas,
+            'canvasId' => $canvasId,
+            'canvasUuid' => $realCanvasUuid,
+            'userList' => $userList,
+            'restrictionsMap' => $restrictionsMap,
+            'userDetails' => $userDetails,
+            'activeMemberUserIds' => $activeMemberUserIds,
+            'totalItems' => $totalItems,
+            'totalPages' => $totalPages,
+            'page' => $page,
+            'prevPageUrl' => $prevPageUrl,
+            'nextPageUrl' => $nextPageUrl,
+            'appUrl' => $appUrl
+        ];
+    }
 }

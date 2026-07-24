@@ -57,6 +57,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                         <span class="material-symbols-rounded">group</span>
                     </button>
 
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-sanctions" data-nav="" data-tooltip="<?php echo __('tooltip_manage_sanctions'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">gavel</span>
+                    </button>
+
                     <?php if ($hasAdvancedRoles): ?>
                     <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-roles" data-nav="" data-tooltip="<?php echo __('tooltip_manage_roles'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">shield_person</span>

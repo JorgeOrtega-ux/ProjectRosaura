@@ -49,13 +49,26 @@ class CanvasChatRestrictionController {
             return ['status' => 'error', 'message' => __('err_invalid_password')];
         }
 
-        // Verify permissions (owner of canvas)
-        $stmt = $this->pdo->prepare("SELECT owner_id as user_id, allow_chat FROM canvases WHERE id = ?");
-        $stmt->execute([$canvasId]);
+        // Resolve canvas by ID or UUID
+        $stmt = $this->pdo->prepare("SELECT id, owner_id as user_id, allow_chat FROM canvases WHERE id = ? OR uuid = ? LIMIT 1");
+        $stmt->execute([$canvasId, $canvasId]);
         $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$canvas) {
             return ['status' => 'error', 'message' => __('err_canvas_not_found')];
+        }
+        $canvasId = (int)$canvas['id'];
+
+        // Resolve target user by ID or UUID
+        if (!is_numeric($targetUserId)) {
+            $uStmt = $identityDb->prepare("SELECT id FROM users WHERE uuid = ? LIMIT 1");
+            $uStmt->execute([$targetUserId]);
+            $realTargetId = $uStmt->fetchColumn();
+            if ($realTargetId) {
+                $targetUserId = (int)$realTargetId;
+            }
+        } else {
+            $targetUserId = (int)$targetUserId;
         }
 
         // Only owner can ban (or implement role logic later)

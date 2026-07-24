@@ -1124,5 +1124,87 @@ export const DialogTemplates = {
                 </div>
             `;
         }
+    },
+
+    manageSanctionModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const username = data.username || '';
+            const suspensionType = data.suspensionType || 'temporary';
+            const suspensionReason = data.suspensionReason || 'reason_terms';
+            const endDate = data.endDate ? data.endDate.replace(' ', 'T').substring(0, 16) : '';
+
+            const reasons = [
+                { key: 'reason_terms', label: __('reason_terms') || 'Términos de servicio' },
+                { key: 'reason_fake_info', label: __('reason_fake_info') || 'Información falsa' },
+                { key: 'reason_illegal', label: __('reason_illegal') || 'Contenido ilegal' },
+                { key: 'reason_fraud_use', label: __('reason_fraud_use') || 'Uso fraudulento' },
+                { key: 'reason_abuse', label: __('reason_abuse') || 'Abuso o acoso' },
+                { key: 'reason_prohibited_content', label: __('reason_prohibited_content') || 'Contenido prohibido' },
+                { key: 'reason_ip_violation', label: __('reason_ip_violation') || 'Violación de propiedad intelectual' },
+                { key: 'reason_spam_bot', label: __('reason_spam_bot') || 'Spam o Bot' },
+                { key: 'reason_security_breach', label: __('reason_security_breach') || 'Brecha de seguridad' },
+                { key: 'reason_unauthorized_commercial', label: __('reason_unauthorized_commercial') || 'Comercio no autorizado' },
+                { key: 'reason_other', label: __('reason_other') || 'Otro motivo' }
+            ];
+
+            const reasonOptionsHtml = reasons.map(r => 
+                `<option value="${r.key}" ${suspensionReason === r.key ? 'selected' : ''}>${r.label}</option>`
+            ).join('');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${__('lbl_restrict_chat') || 'Restringir Chat'}: ${username}</h2>
+                    <p class="component-modal-desc">${__('desc_chat_restriction') || 'Aplica o actualiza la restricción de chat para este usuario.'}</p>
+                </div>
+                <div class="component-modal-body">
+                    <div class="component-form-group" style="margin-bottom: 12px;">
+                        <label class="component-form-label">${__('lbl_sanction_scope') || 'Ámbito de Sanción'}</label>
+                        <select class="component-input" name="sanction_scope">
+                            <option value="chat" selected>${__('lbl_scope_chat') || 'Chat en Vivo'}</option>
+                            <option value="canvas" disabled>${__('lbl_scope_canvas') || 'Interacción en Lienzo (Próximamente)'}</option>
+                        </select>
+                    </div>
+
+                    <div class="component-form-group" style="margin-bottom: 12px;">
+                        <label class="component-form-label">${__('lbl_sanction_duration_mode') || 'Modalidad de Sanción'}</label>
+                        <select class="component-input" name="suspension_type" onchange="const d = this.closest('.component-modal-body').querySelector('.modal-end-date-group'); if(d) d.style.display = this.value==='temporary'?'block':'none';">
+                            <option value="temporary" ${suspensionType === 'temporary' ? 'selected' : ''}>${__('suspension_temp') || 'Temporal'}</option>
+                            <option value="permanent" ${suspensionType === 'permanent' ? 'selected' : ''}>${__('suspension_perm') || 'Permanente'}</option>
+                        </select>
+                    </div>
+
+                    <div class="component-form-group" style="margin-bottom: 12px;">
+                        <label class="component-form-label">${__('table_header_reason') || 'Motivo'}</label>
+                        <select class="component-input" name="suspension_reason">
+                            ${reasonOptionsHtml}
+                        </select>
+                    </div>
+
+                    <div class="component-form-group modal-end-date-group" style="margin-bottom: 12px; display: ${suspensionType === 'temporary' ? 'block' : 'none'};">
+                        <label class="component-form-label">${__('table_header_expiration') || 'Fecha de Expiración'}</label>
+                        <input type="datetime-local" class="component-input" name="end_date" value="${endDate}">
+                    </div>
+                </div>
+                <div class="component-modal-actions" style="margin-top: 16px;">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--primary" data-modal-action="confirm">${__('lbl_save_changes') || 'Guardar Sanción'}</button>
+                </div>
+            `;
+        },
+        getData: (container) => {
+            const scopeSelect = container.querySelector('[name="sanction_scope"]');
+            const typeSelect = container.querySelector('[name="suspension_type"]');
+            const reasonSelect = container.querySelector('[name="suspension_reason"]');
+            const endDateInput = container.querySelector('[name="end_date"]');
+
+            return {
+                sanction_scope: scopeSelect ? scopeSelect.value : 'chat',
+                suspension_type: typeSelect ? typeSelect.value : 'temporary',
+                suspension_reason: reasonSelect ? reasonSelect.value : 'reason_terms',
+                end_date: endDateInput ? endDateInput.value : null
+            };
+        }
     }
 };

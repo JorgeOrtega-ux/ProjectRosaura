@@ -153,9 +153,8 @@ export class DesignChat {
 
             const btnRestrict = e.target.closest('[data-action="chatRestrictUser"]');
             if (btnRestrict) {
-                const targetUuid = btnRestrict.dataset.userUuid || btnRestrict.dataset.userId;
                 const canvasUuid = this.canvasUuid || this.canvasId;
-                window.open((window.AppBasePath || '') + `/canvases/manage/chat-restriction/${canvasUuid}/${targetUuid}`, '_blank');
+                window.open((window.AppBasePath || '') + `/canvases/manage/sanctions/${canvasUuid}`, '_blank');
                 const dropdown = btnRestrict.closest('.chat-dropdown-module');
                 if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
             }

@@ -319,6 +319,7 @@ class CanvasesManageController {
 
         const btnEdit = document.querySelector('[data-ref="btn-nav-edit"]');
         const btnMembers = document.querySelector('[data-ref="btn-nav-members"]');
+        const btnSanctions = document.querySelector('[data-ref="btn-nav-sanctions"]');
         const btnRoles = document.querySelector('[data-ref="btn-nav-roles"]');
         const btnInvites = document.querySelector('[data-ref="btn-nav-invites"]');
         const btnResets = document.querySelector('[data-ref="btn-nav-resets"]');
@@ -327,7 +328,7 @@ class CanvasesManageController {
         
         const btnCreateSnapshot = document.querySelector('[data-ref="btn-action-create-snapshot"]');
 
-        const navButtons = [btnEdit, btnMembers, btnRoles, btnInvites, btnResets, btnSnapshots, btnResize];
+        const navButtons = [btnEdit, btnMembers, btnSanctions, btnRoles, btnInvites, btnResets, btnSnapshots, btnResize];
 
         if (this.selectedCanvasIds.size > 0) {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
@@ -362,6 +363,7 @@ class CanvasesManageController {
 
                 if (btnEdit) btnEdit.setAttribute('data-nav', `${this.basePath}/canvases/edit/${activeUuid}`);
                 if (btnMembers) btnMembers.setAttribute('data-nav', `${this.basePath}/canvases/members/${activeUuid}`);
+                if (btnSanctions) btnSanctions.setAttribute('data-nav', `${this.basePath}/canvases/manage/sanctions/${activeUuid}`);
                 if (btnRoles) btnRoles.setAttribute('data-nav', `${this.basePath}/canvases/manage/roles/${activeUuid}`);
                 if (btnInvites) btnInvites.setAttribute('data-nav', `${this.basePath}/canvases/manage/invites/${activeUuid}`);
                 

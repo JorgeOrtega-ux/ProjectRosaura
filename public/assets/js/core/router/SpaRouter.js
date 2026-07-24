@@ -25,6 +25,7 @@ export class SpaRouter {
         if (url.startsWith('/canvases/manage/role-builder/')) return '/canvases/manage/role-builder/:uuid';
         if (url.startsWith('/canvases/manage/role-permissions/')) return '/canvases/manage/role-permissions/:uuid';
         if (url.startsWith('/canvases/manage/chat-restriction/')) return '/canvases/manage/chat-restriction/:uuid/:user_uuid';
+        if (url.startsWith('/canvases/manage/sanctions/')) return '/canvases/manage/sanctions/:uuid';
         if (url.startsWith('/canvases/manage/resize/') || url.startsWith('/canvases/resize/')) return '/canvases/manage/resize/:uuid';
         if (url.startsWith('/canvases/edit/')) return '/canvases/edit/:uuid';
         if (url.startsWith('/canvases/members/') && url.includes('/role/')) return '/canvases/members/:uuid/role/:id';
