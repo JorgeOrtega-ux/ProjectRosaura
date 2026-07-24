@@ -29,10 +29,10 @@ class EnvLoader {
             }
         }
     }
-    public static function get(string $key) {
+    public static function get(string $key, $default = null) {
         $value = getenv($key);
         if ($value === false) {
-            return $_ENV[$key] ?? ($_SERVER[$key] ?? null);
+            return $_ENV[$key] ?? ($_SERVER[$key] ?? $default);
         }
         return $value;
     }

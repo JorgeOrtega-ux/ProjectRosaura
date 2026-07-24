@@ -221,13 +221,10 @@ export const DesignRender = {
         }
 
         const isDark = this.isDarkMode();
-        const bgColor = isDark ? '#0e0e11' : '#f5f5fa'; 
-        const gridColor = 'rgba(0, 0, 0, 0.15)';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
         const activeColor = this.currentColor; 
 
-        this.ctx.fillStyle = bgColor; 
-        
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.ctx.save();
         
@@ -269,7 +266,7 @@ export const DesignRender = {
             this.ctx.drawImage(this.offscreenCanvas, 0, 0);
         }
 
-        if (this.templates && this.templates.length > 0 && !this.isSpectator && !this.isResetLocked) {
+        if (this.templates && this.templates.length > 0 && !this.isResetLocked) {
             this.templates.forEach(tpl => {
                 if (!tpl || !tpl.img) return;
                 this.ctx.save();

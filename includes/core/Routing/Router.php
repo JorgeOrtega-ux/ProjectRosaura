@@ -265,11 +265,13 @@ class Router {
         }
 
         if (!array_key_exists($relativePath, $this->routes)) {
-            Logger::warning("Route not found (404)", [
-                'uri' => $requestUri, 
-                'ip' => Utils::getIpAddress(),
-                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
-            ]);
+            if ($relativePath !== '/favicon.ico') {
+                Logger::warning("Route not found (404)", [
+                    'uri' => $requestUri, 
+                    'ip' => Utils::getIpAddress(),
+                    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+                ]);
+            }
             return ['view' => 'system/404.php'];
         }
 

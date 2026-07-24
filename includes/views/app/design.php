@@ -86,7 +86,7 @@ if (!empty($canvasUuid)) {
                 }
             }
             $isBlockedInit = ($canvasPrivacy === 'private' && !$isMember);
-            $isSpectatorInit = ($userRole === 'spectator');
+            $isSpectatorInit = ($userRole === 'spectator' && !$isBlockedInit);
             $isPremiumBlockedInit = isset($canvas['is_locked']) ? (bool)$canvas['is_locked'] : false;
 
             $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();

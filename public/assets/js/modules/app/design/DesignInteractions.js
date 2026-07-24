@@ -246,8 +246,14 @@ export const DesignInteractions = {
     handleKeyDown(e) {
         if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
 
+        // Prevent spamming when holding down a key
+        if (e.repeat) return;
+
         // Skip shortcuts if user is typing in inputs or textareas
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable) return;
+        
+        // Skip shortcuts if a modifier key is pressed (e.g. Ctrl+C)
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
         
         if (e.key === 'Escape') {
             if (this.interactionMode !== 'normal') {
