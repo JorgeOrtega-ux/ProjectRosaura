@@ -536,9 +536,38 @@ async def handler(websocket):
                     
                     if code not in LIVE_ROOMS:
                         LIVE_ROOMS[code] = set()
+                    
+                    is_new = websocket not in LIVE_ROOMS[code]
                     LIVE_ROOMS[code].add(websocket)
                     
-                    print(f"[DEBUG LIVE] WS joined live session: {code}. Total: {len(LIVE_ROOMS[code])}")
+                    print(f"[DEBUG LIVE] WS joined live session: {code}. Total local: {len(LIVE_ROOMS[code])}")
+                    
+                    if is_new:
+                        try:
+                            redis_key = f"live_share:{code}:count"
+                            await r.incr(redis_key)
+                            await r.expire(redis_key, 14400)
+                            
+                            global_count_bytes = await r.get(redis_key)
+                            global_count = int(global_count_bytes) if global_count_bytes else len(LIVE_ROOMS[code])
+                        except Exception:
+                            global_count = len(LIVE_ROOMS[code])
+                            
+                        count_msg = json.dumps({
+                            "type": "live_share_count",
+                            "code": code,
+                            "count": global_count
+                        })
+                        websockets.broadcast(LIVE_ROOMS[code], count_msg)
+                        try:
+                            await r.publish("canvas:sync_events", json.dumps({
+                                "source_node": NODE_ID,
+                                "target_type": "live",
+                                "code": code,
+                                "payload": count_msg
+                            }))
+                        except Exception:
+                            pass
                     
                 elif data.get("type") == "update_live_share":
                     code = data.get("code")
@@ -557,6 +586,7 @@ async def handler(websocket):
                                     existing_data["empty"] = True
                                 else:
                                     existing_data["empty"] = False
+                                    if data.get("img_url") is not None: existing_data["img_url"] = data.get("img_url")
                                     if data.get("x") is not None: existing_data["x"] = data.get("x")
                                     if data.get("y") is not None: existing_data["y"] = data.get("y")
                                     if data.get("w") is not None: existing_data["w"] = data.get("w")
@@ -572,6 +602,7 @@ async def handler(websocket):
                             "type": "live_image_updated",
                             "code": code,
                             "empty": data.get("empty"),
+                            "img_url": data.get("img_url"),
                             "x": data.get("x"),
                             "y": data.get("y"),
                             "w": data.get("w"),
@@ -1192,7 +1223,34 @@ async def handler(websocket):
                     try:
                         redis_client = await get_redis_client()
                         await redis_client.delete(f"live_share:{code}")
+                        await redis_client.delete(f"live_share:{code}:count")
                     except Exception as e:
+                        pass
+                else:
+                    try:
+                        redis_client = await get_redis_client()
+                        redis_key = f"live_share:{code}:count"
+                        await redis_client.decr(redis_key)
+                        
+                        global_count_bytes = await redis_client.get(redis_key)
+                        global_count = int(global_count_bytes) if global_count_bytes else len(clients)
+                        if global_count < 1:
+                            global_count = 1
+                            
+                        count_msg = json.dumps({
+                            "type": "live_share_count",
+                            "code": code,
+                            "count": global_count
+                        })
+                        if clients:
+                            websockets.broadcast(clients, count_msg)
+                        await redis_client.publish("canvas:sync_events", json.dumps({
+                            "source_node": NODE_ID,
+                            "target_type": "live",
+                            "code": code,
+                            "payload": count_msg
+                        }))
+                    except Exception:
                         pass
                         
         if websocket in OWNER_CONNS:

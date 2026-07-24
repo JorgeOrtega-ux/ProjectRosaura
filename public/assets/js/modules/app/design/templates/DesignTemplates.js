@@ -428,6 +428,18 @@ export const DesignTemplates = {
     addTemplateFromLibrary(url) {
         const existing = this.templates.find(t => t.id === url);
         if (existing) {
+            if (this.activeTemplateId !== url) {
+                const targetW = this.boardWidth * 0.5;
+                const targetH = this.boardHeight * 0.5;
+                const scale = Math.min(targetW / (existing.img.width || 100), targetH / (existing.img.height || 100));
+                existing.w = Math.round((existing.img.width || 100) * scale);
+                existing.h = Math.round((existing.img.height || 100) * scale);
+                existing.x = Math.round((this.boardWidth - existing.w) / 2);
+                existing.y = Math.round((this.boardHeight - existing.h) / 2);
+                existing.angle = 0;
+                existing.opacity = 0.5;
+                existing.locked = false;
+            }
             this.toggleTemplate(url);
             return;
         }
@@ -670,6 +682,14 @@ export const DesignTemplates = {
         } else {
             this.activeTemplateId = id; 
         }
+        
+        if (this.liveShareStatus === 'owner') {
+            this.liveTemplateId = this.activeTemplateId;
+            if (typeof this.emitLiveImageUpdate === 'function') {
+                this.emitLiveImageUpdate();
+            }
+        }
+        
         this.updateTemplateUI();
         this.requestRender();
     },

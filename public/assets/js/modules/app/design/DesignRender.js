@@ -105,6 +105,7 @@ export const DesignRender = {
                         }
                         return {
                             id: tpl.id,
+                            url: tpl.url || tpl.src || (tpl.img ? tpl.img.src : ''),
                             x: tpl.x,
                             y: tpl.y,
                             w: tpl.w,
@@ -269,6 +270,7 @@ export const DesignRender = {
         if (this.templates && this.templates.length > 0 && !this.isResetLocked) {
             this.templates.forEach(tpl => {
                 if (!tpl || !tpl.img) return;
+                if (tpl.id !== this.activeTemplateId) return;
                 this.ctx.save();
                 this.ctx.globalAlpha = tpl.opacity !== undefined ? tpl.opacity : 0.5;
                 

@@ -238,10 +238,16 @@ export const DesignNetwork = {
                     document.dispatchEvent(new CustomEvent('canvas:chat_message_deleted', { detail: data.data }));
                 }
                 else if (data.type === 'live_image_updated') {
+                    console.log('[DesignNetwork] WebSocket event received: live_image_updated', data);
                     this.handleLiveImageUpdate(data);
                 }
                 else if (data.type === 'live_session_ended') {
+                    console.log('[DesignNetwork] WebSocket event received: live_session_ended', data);
                     this.handleLiveSessionEnded(data);
+                }
+                else if (data.type === 'live_share_count') {
+                    console.log('[DesignNetwork] WebSocket event received: live_share_count', data);
+                    this.handleLiveShareCount(data);
                 }
                 else if (data.type === 'canvas_locked_clear') {
                     this.handleCanvasLockedClear(data);
@@ -658,7 +664,7 @@ export const DesignNetwork = {
                 y: tpl.y,
                 w: tpl.w,
                 h: tpl.h,
-                opacity: tpl.opacity || 1,
+                opacity: tpl.opacity !== undefined && tpl.opacity !== null ? tpl.opacity : 0.5,
                 angle: tpl.angle || 0
             }, this.abortController.signal);
             
@@ -668,6 +674,7 @@ export const DesignNetwork = {
                 this.liveShareStatus = 'owner';
                 this.liveShareCode = response.data.code;
                 this.liveTemplateId = this.activeTemplateId;
+                this.liveShareCountVal = 1; // Owner starts at 1
                 
                 if (this.wsManager) {
                     this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
@@ -684,9 +691,11 @@ export const DesignNetwork = {
                     badge = document.createElement('div');
                     badge.className = 'component-badge';
                     badge.id = 'live-share-badge';
-                    badge.innerHTML = '<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso</span>';
+                    badge.innerHTML = '<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso (1 en línea)</span>';
                     const badgesContainer = document.querySelector('[data-ref="badges-left"]');
                     if (badgesContainer) badgesContainer.appendChild(badge);
+                } else {
+                    badge.innerHTML = '<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso (1 en línea)</span>';
                 }
 
                 showMessage(__('msg_broadcasting').replace(':code', this.liveShareCode), 'success');
@@ -713,6 +722,7 @@ export const DesignNetwork = {
         this.liveShareStatus = 'none';
         this.liveShareCode = null;
         this.liveTemplateId = null;
+        this.liveShareCountVal = null;
 
         const badge = document.getElementById('live-share-badge');
         if (badge) badge.remove();
@@ -744,8 +754,10 @@ export const DesignNetwork = {
             if (response.aborted) return false;
 
             if (response.success && response.data) {
+                console.log('[DesignNetwork] joinLiveImageSession HTTP success:', response.data);
                 this.liveShareStatus = 'spectator';
                 this.liveShareCode = code;
+                this.liveShareCountVal = null;
                 
                 const liveId = `live_tpl_${code}`;
                 this.liveTemplateId = liveId;
@@ -753,40 +765,49 @@ export const DesignNetwork = {
                 let tpl = this.templates.find(t => t.id === liveId);
                 if (!tpl) {
                     const img = new Image();
-                    img.src = response.data.img_url;
+                    img.crossOrigin = 'anonymous';
                     
                     await new Promise((resolve) => {
                         img.onload = () => {
                             this.templates.push({
                                 id: liveId,
                                 img: img,
-                                x: parseInt(response.data.x) || 0,
-                                y: parseInt(response.data.y) || 0,
-                                w: parseInt(response.data.w) || img.width,
-                                h: parseInt(response.data.h) || img.height,
-                                opacity: response.data.empty ? 0 : (parseFloat(response.data.opacity) || 1),
-                                angle: parseFloat(response.data.angle) || 0,
+                                x: response.data.x !== undefined && response.data.x !== null ? parseInt(response.data.x) : 0,
+                                y: response.data.y !== undefined && response.data.y !== null ? parseInt(response.data.y) : 0,
+                                w: response.data.w !== undefined && response.data.w !== null ? parseInt(response.data.w) : img.width,
+                                h: response.data.h !== undefined && response.data.h !== null ? parseInt(response.data.h) : img.height,
+                                opacity: response.data.empty ? 0 : (response.data.opacity !== undefined && response.data.opacity !== null ? parseFloat(response.data.opacity) : 0.5),
+                                angle: response.data.angle !== undefined && response.data.angle !== null ? parseFloat(response.data.angle) : 0,
                                 locked: true, 
                                 url: img.src
                             });
                             this.activeTemplateId = liveId;
                             
                             let badge = document.getElementById('live-share-badge');
+                            const countText = this.liveShareCountVal ? ` (${this.liveShareCountVal} en línea)` : '';
                             if (!badge) {
                                 badge = document.createElement('div');
                                 badge.className = 'component-badge';
                                 badge.id = 'live-share-badge';
-                                badge.innerHTML = '<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso</span>';
+                                badge.innerHTML = `<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso${countText}</span>`;
                                 const badgesContainer = document.querySelector('[data-ref="badges-left"]');
                                 if (badgesContainer) badgesContainer.appendChild(badge);
+                            } else {
+                                badge.innerHTML = `<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso${countText}</span>`;
                             }
                             
                             resolve();
                         };
                         img.onerror = () => {
-                            showMessage(__('err_load_live_img'), 'error');
-                            resolve();
+                            if (img.crossOrigin) {
+                                img.crossOrigin = null;
+                                img.src = response.data.img_url;
+                            } else {
+                                showMessage(__('err_load_live_img'), 'error');
+                                resolve();
+                            }
                         };
+                        img.src = response.data.img_url;
                     });
                 } else {
                     let badge = document.getElementById('live-share-badge');
@@ -825,6 +846,7 @@ export const DesignNetwork = {
         
         const tpl = this.templates.find(t => t.id === this.liveTemplateId);
         if (!tpl) {
+            console.log('[DesignNetwork] emitLiveImageUpdate: sending empty update');
             this.wsManager.send({
                 type: 'update_live_share',
                 code: this.liveShareCode,
@@ -833,34 +855,116 @@ export const DesignNetwork = {
             return;
         }
 
-        this.wsManager.send({
-            type: 'update_live_share',
-            code: this.liveShareCode,
+        console.log('[DesignNetwork] emitLiveImageUpdate: sending update with templates data', {
             x: tpl.x,
             y: tpl.y,
             w: tpl.w,
             h: tpl.h,
-            opacity: tpl.opacity || 1,
+            opacity: tpl.opacity,
+            angle: tpl.angle
+        });
+        this.wsManager.send({
+            type: 'update_live_share',
+            code: this.liveShareCode,
+            img_url: tpl.url || tpl.src || (tpl.img ? tpl.img.src : null),
+            x: tpl.x,
+            y: tpl.y,
+            w: tpl.w,
+            h: tpl.h,
+            opacity: tpl.opacity !== undefined && tpl.opacity !== null ? tpl.opacity : 0.5,
             angle: tpl.angle || 0
         });
     },
 
-    handleLiveImageUpdate(data) {
+    async handleLiveImageUpdate(data) {
         if (this.liveShareStatus === 'spectator' && this.liveShareCode === data.code) {
-            const tpl = this.templates.find(t => t.id === this.liveTemplateId);
-            if (tpl) {
-                if (data.empty) {
+            let tpl = this.templates.find(t => t.id === this.liveTemplateId);
+            if (data.empty) {
+                if (tpl) {
                     tpl.opacity = 0; // Hide the template if the owner deleted it but kept the session open
-                } else {
-                    tpl.x = data.x;
-                    tpl.y = data.y;
-                    tpl.w = data.w;
-                    tpl.h = data.h;
-                    tpl.opacity = data.opacity !== undefined ? data.opacity : 1;
-                    tpl.angle = data.angle || 0;
+                    this.requestRender();
                 }
-                this.requestRender();
+                return;
             }
+
+            if (!tpl) {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                
+                await new Promise((resolve) => {
+                    img.onload = () => {
+                        tpl = {
+                            id: this.liveTemplateId,
+                            img: img,
+                            x: data.x !== undefined && data.x !== null ? parseInt(data.x) : 0,
+                            y: data.y !== undefined && data.y !== null ? parseInt(data.y) : 0,
+                            w: data.w !== undefined && data.w !== null ? parseInt(data.w) : img.width,
+                            h: data.h !== undefined && data.h !== null ? parseInt(data.h) : img.height,
+                            opacity: data.opacity !== undefined && data.opacity !== null ? parseFloat(data.opacity) : 0.5,
+                            angle: data.angle !== undefined && data.angle !== null ? parseFloat(data.angle) : 0,
+                            locked: true,
+                            url: img.src
+                        };
+                        this.templates.push(tpl);
+                        this.activeTemplateId = this.liveTemplateId;
+                        resolve();
+                    };
+                    img.onerror = () => {
+                        if (img.crossOrigin) {
+                            img.crossOrigin = null;
+                            img.src = data.img_url;
+                        } else {
+                            resolve();
+                        }
+                    };
+                    img.src = data.img_url;
+                });
+                this.requestRender();
+                return;
+            }
+
+            if (data.img_url && tpl.url !== data.img_url) {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                await new Promise((resolve) => {
+                    img.onload = () => {
+                        tpl.img = img;
+                        tpl.url = img.src;
+                        tpl.x = data.x !== undefined && data.x !== null ? parseInt(data.x) : tpl.x;
+                        tpl.y = data.y !== undefined && data.y !== null ? parseInt(data.y) : tpl.y;
+                        tpl.w = data.w !== undefined && data.w !== null ? parseInt(data.w) : tpl.w;
+                        tpl.h = data.h !== undefined && data.h !== null ? parseInt(data.h) : tpl.h;
+                        tpl.opacity = data.opacity !== undefined && data.opacity !== null ? parseFloat(data.opacity) : 0.5;
+                        tpl.angle = data.angle !== undefined && data.angle !== null ? parseFloat(data.angle) : 0;
+                        
+                        if (tpl.imageBitmap) {
+                            tpl.imageBitmap.close();
+                        }
+                        tpl.imageBitmap = null;
+                        tpl._bitmapSentToWorker = false;
+                        resolve();
+                    };
+                    img.onerror = () => {
+                        if (img.crossOrigin) {
+                            img.crossOrigin = null;
+                            img.src = data.img_url;
+                        } else {
+                            resolve();
+                        }
+                    };
+                    img.src = data.img_url;
+                });
+                this.requestRender();
+                return;
+            }
+
+            tpl.x = data.x !== undefined && data.x !== null ? parseInt(data.x) : tpl.x;
+            tpl.y = data.y !== undefined && data.y !== null ? parseInt(data.y) : tpl.y;
+            tpl.w = data.w !== undefined && data.w !== null ? parseInt(data.w) : tpl.w;
+            tpl.h = data.h !== undefined && data.h !== null ? parseInt(data.h) : tpl.h;
+            tpl.opacity = data.opacity !== undefined && data.opacity !== null ? parseFloat(data.opacity) : 0.5;
+            tpl.angle = data.angle !== undefined && data.angle !== null ? parseFloat(data.angle) : 0;
+            this.requestRender();
         }
     },
 
@@ -869,6 +973,7 @@ export const DesignNetwork = {
             showMessage(__('info_live_ended'), 'info');
             this.liveShareStatus = 'none';
             this.liveShareCode = null;
+            this.liveShareCountVal = null;
             
             const badge = document.getElementById('live-share-badge');
             if (badge) badge.remove();
@@ -890,6 +995,16 @@ export const DesignNetwork = {
             }
 
             this.requestRender();
+        }
+    },
+
+    handleLiveShareCount(data) {
+        if (this.liveShareCode === data.code) {
+            this.liveShareCountVal = data.count;
+            const badge = document.getElementById('live-share-badge');
+            if (badge) {
+                badge.innerHTML = `<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso (${data.count} en línea)</span>`;
+            }
         }
     },
 

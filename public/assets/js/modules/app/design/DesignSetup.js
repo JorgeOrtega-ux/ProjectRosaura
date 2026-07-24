@@ -31,25 +31,37 @@ export const DesignSetup = {
 
     drawImageOnCanvas(url) {
         const img = new Image();
-        img.onload = async () => {
-            if (this.renderWorker) {
-                try {
-                    const imageBitmap = await createImageBitmap(img);
-                    this.renderWorker.postMessage({
-                        type: 'DRAW_IMAGE_BUFFER',
-                        payload: { imageBitmap }
-                    }, [imageBitmap]);
-                } catch (e) {
+        img.crossOrigin = 'anonymous';
+        
+        const loadPromise = new Promise((resolve) => {
+            img.onload = async () => {
+                if (this.renderWorker) {
+                    try {
+                        const imageBitmap = await createImageBitmap(img);
+                        this.renderWorker.postMessage({
+                            type: 'DRAW_IMAGE_BUFFER',
+                            payload: { imageBitmap }
+                        }, [imageBitmap]);
+                    } catch (e) {
+                        console.error('[DesignSetup] drawImageOnCanvas createImageBitmap error:', e);
+                    }
+                } else if (this.offscreenCtx) {
+                    this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+                    this.offscreenCtx.drawImage(img, 0, 0, this.boardWidth, this.boardHeight);
+                    this.requestRender();
                 }
-            } else if (this.offscreenCtx) {
-                this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
-                this.offscreenCtx.drawImage(img, 0, 0, this.boardWidth, this.boardHeight);
-                this.requestRender();
-            }
-        };
-        img.onerror = () => {
-            showMessage(__('err_history_image_missing'), 'error');
-        };
+                resolve(true);
+            };
+            img.onerror = () => {
+                if (img.crossOrigin) {
+                    img.crossOrigin = null;
+                    img.src = url;
+                } else {
+                    showMessage(__('err_history_image_missing'), 'error');
+                    resolve(false);
+                }
+            };
+        });
         img.src = url;
     },
 

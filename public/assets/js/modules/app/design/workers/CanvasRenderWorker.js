@@ -687,6 +687,7 @@ function render() {
     if (templatesList && templatesList.length > 0 && !isSpectator && !isResetLocked) {
         templatesList.forEach(tpl => {
             if (!tpl) return;
+            if (tpl.id !== activeTemplateId) return;
             ctx.save();
             ctx.globalAlpha = tpl.opacity !== undefined ? tpl.opacity : 0.5;
             const cx = Math.round(tpl.x + tpl.w / 2);
@@ -1130,20 +1131,21 @@ self.onmessage = function (e) {
             if (payload.templates) {
                 const prevMap = new Map();
                 if (templatesList) {
-                    templatesList.forEach(t => { if (t.imageBitmap) prevMap.set(t.id, t.imageBitmap); });
+                    templatesList.forEach(t => { if (t.imageBitmap) prevMap.set(t.id, t); });
                 }
                 activeTemplateId = payload.activeTemplateId || null;
                 templatesList = payload.templates.map(tpl => {
-                    if (!tpl.imageBitmap && prevMap.has(tpl.id)) {
-                        tpl.imageBitmap = prevMap.get(tpl.id);
+                    const prev = prevMap.get(tpl.id);
+                    if (!tpl.imageBitmap && prev && prev.url === tpl.url) {
+                        tpl.imageBitmap = prev.imageBitmap;
                     }
                     return tpl;
                 });
             } else if (payload.template) {
-                const prevBitmap = activeTemplate ? activeTemplate.imageBitmap : null;
+                const prevTpl = activeTemplate;
                 activeTemplate = payload.template;
-                if (!activeTemplate.imageBitmap && prevBitmap) {
-                    activeTemplate.imageBitmap = prevBitmap;
+                if (!activeTemplate.imageBitmap && prevTpl && prevTpl.url === activeTemplate.url) {
+                    activeTemplate.imageBitmap = prevTpl.imageBitmap;
                 }
                 activeTemplateId = activeTemplate.id || null;
                 templatesList = [activeTemplate];
