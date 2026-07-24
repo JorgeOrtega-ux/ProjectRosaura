@@ -151,6 +151,12 @@ export const DesignSetup = {
             this.removeCanvasBadge('lock-clear', 'left');
         }
 
+        if (this.isFrozen) {
+            this.setCanvasBadge('lock-freeze', 'ac_unit', 'Lienzo Congelado (Solo Lectura)', 'left');
+        } else {
+            this.removeCanvasBadge('lock-freeze', 'left');
+        }
+
         if (this.isPremiumBlocked) {
             this.setCanvasBadge('lock-premium', 'warning', __('badge_subscription_expired'), 'left');
             this.removeCanvasBadge('lock-private', 'left');

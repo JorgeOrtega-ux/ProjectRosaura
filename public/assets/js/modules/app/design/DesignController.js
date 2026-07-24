@@ -69,6 +69,7 @@ class DesignController {
         this.resetTimerInterval = null;
         
         this.isResetLocked = false; 
+        this.isFrozen = false;
         this.isResizeLocked = false;
         this.isInjectLocked = false;
         this.templatePopper = null;

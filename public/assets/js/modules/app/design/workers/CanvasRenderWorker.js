@@ -18,11 +18,49 @@ let currentColor = '#000000';
 
 let pixelQueue = [];
 let selectedPixelsArray = new Uint32Array(0); // TypedArray contiguo para píxeles seleccionados
+let protectedPixelsArray = new Uint32Array(0);
+let protectedBitmask = new Uint8Array(0);
+let protectedOffscreenCanvas = null;
+let protectedOffscreenCtx = null;
+let protectedPixelsDirty = true;
+let isOwnerProtecting = false;
 let hoveredPixelKey = -1;
 let ownerEraserBox = null;
 
+function updateProtectedOffscreen() {
+    if (typeof OffscreenCanvas === 'undefined') return;
+    if (!protectedOffscreenCanvas || protectedOffscreenCanvas.width !== boardWidth || protectedOffscreenCanvas.height !== boardHeight) {
+        protectedOffscreenCanvas = new OffscreenCanvas(boardWidth, boardHeight);
+        protectedOffscreenCtx = protectedOffscreenCanvas.getContext('2d', { alpha: true });
+    }
+    protectedOffscreenCtx.clearRect(0, 0, boardWidth, boardHeight);
+
+    const totalLen = boardWidth * boardHeight;
+    if (!protectedBitmask || protectedBitmask.length !== totalLen) {
+        protectedBitmask = new Uint8Array(totalLen);
+    } else {
+        protectedBitmask.fill(0);
+    }
+
+    if (protectedPixelsArray && protectedPixelsArray.length > 0) {
+        protectedOffscreenCtx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+        for (let i = 0; i < protectedPixelsArray.length; i++) {
+            const off = protectedPixelsArray[i];
+            if (off >= 0 && off < totalLen) {
+                protectedBitmask[off] = 1;
+                const px = off % boardWidth;
+                const py = (off / boardWidth) | 0;
+                protectedOffscreenCtx.fillRect(px, py, 1, 1);
+            }
+        }
+    }
+    protectedPixelsDirty = false;
+}
+
 let isSpectator = false;
 let isResetLocked = false;
+let isFrozen = false;
+let isOwner = false;
 let activeTemplate = null;
 let activeTemplateId = null;
 let templatesList = [];
@@ -267,7 +305,7 @@ function updateSelectionBitmask() {
         }
     }
 
-    if (hoveredPixelKey >= 0 && !isSpectator && !isResetLocked) {
+    if (hoveredPixelKey >= 0 && !isSpectator && !isResetLocked && !(isFrozen && !isOwner)) {
         const hx = hoveredPixelKey & 0xFFFF;
         const hy = hoveredPixelKey >> 16;
         if (hx >= 0 && hx < boardWidth && hy >= 0 && hy < boardHeight) {
@@ -684,7 +722,7 @@ function render() {
     ctx.restore();
 
     // Render all templates concurrently
-    if (templatesList && templatesList.length > 0 && !isSpectator && !isResetLocked) {
+    if (templatesList && templatesList.length > 0 && !isSpectator && !isResetLocked && !(isFrozen && !isOwner)) {
         templatesList.forEach(tpl => {
             if (!tpl) return;
             if (tpl.id !== activeTemplateId) return;
@@ -720,10 +758,42 @@ function render() {
         });
     }
 
-    // Dibujado de contornos de selección optimizado vía Bitmask O(1)
     const selLen = selectedPixelsArray.length;
-    const hasHover = hoveredPixelKey >= 0 && !isSpectator && !isResetLocked;
-    
+    const hasHover = hoveredPixelKey >= 0 && !isSpectator && !isResetLocked && !(isFrozen && !isOwner);
+
+    // Renderizado ultra-rápido O(1) de zonas protegidas resaltadas en modo Bloqueador
+    if (isOwnerProtecting) {
+        if (protectedPixelsDirty) {
+            updateProtectedOffscreen();
+        }
+        if (protectedOffscreenCanvas) {
+            ctx.drawImage(protectedOffscreenCanvas, 0, 0);
+        }
+        if (protectedPixelsArray && protectedPixelsArray.length > 0) {
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 1 / transform.scale;
+            ctx.beginPath();
+            for (let i = 0; i < protectedPixelsArray.length; i++) {
+                const off = protectedPixelsArray[i];
+                const x = off % boardWidth;
+                const y = (off / boardWidth) | 0;
+                if (x < 0 || x >= boardWidth || y < 0 || y >= boardHeight) continue;
+
+                const idx = y * boardWidth + x;
+                const hasTop = y > 0 && protectedBitmask[idx - boardWidth] === 1;
+                const hasBottom = y < boardHeight - 1 && protectedBitmask[idx + boardWidth] === 1;
+                const hasLeft = x > 0 && protectedBitmask[idx - 1] === 1;
+                const hasRight = x < boardWidth - 1 && protectedBitmask[idx + 1] === 1;
+
+                if (!hasTop) { ctx.moveTo(x, y); ctx.lineTo(x + 1, y); }
+                if (!hasBottom) { ctx.moveTo(x, y + 1); ctx.lineTo(x + 1, y + 1); }
+                if (!hasLeft) { ctx.moveTo(x, y); ctx.lineTo(x, y + 1); }
+                if (!hasRight) { ctx.moveTo(x + 1, y); ctx.lineTo(x + 1, y + 1); }
+            }
+            ctx.stroke();
+        }
+    }
+
     if (ownerEraserBox) {
         ctx.strokeStyle = '#ef4444';
         ctx.lineWidth = 1 / transform.scale;
@@ -734,7 +804,7 @@ function render() {
         
         ctx.fillRect(ownerEraserBox.x1, ownerEraserBox.y1, w, h);
         ctx.strokeRect(ownerEraserBox.x1, ownerEraserBox.y1, w, h);
-    } else if ((selLen > 0 || hasHover) && !isSpectator && !isResetLocked) {
+    } else if ((selLen > 0 || hasHover) && !isSpectator && !isResetLocked && !(isFrozen && !isOwner)) {
         ctx.strokeStyle = currentColor;
         ctx.lineWidth = 1 / transform.scale;
         ctx.beginPath();
@@ -925,12 +995,25 @@ self.onmessage = function (e) {
             requestRender();
             break;
 
+        case 'UPDATE_PROTECTED_PIXELS':
+            if (payload.protectedPixels) {
+                protectedPixelsArray = new Uint32Array(payload.protectedPixels);
+            } else {
+                protectedPixelsArray = new Uint32Array(0);
+            }
+            protectedPixelsDirty = true;
+            requestRender();
+            break;
+
         case 'UPDATE_RENDER_STATE':
             transform = payload.transform;
             isDarkMode = !!payload.isDarkMode;
             currentColor = payload.currentColor || '#000000';
             isSpectator = payload.isSpectator;
             isResetLocked = payload.isResetLocked;
+            isFrozen = !!payload.isFrozen;
+            isOwner = !!payload.isOwner;
+            isOwnerProtecting = !!payload.isOwnerProtecting;
             if (payload.selectedPixels) {
                 selectedPixelsArray = new Uint32Array(payload.selectedPixels);
             } else {

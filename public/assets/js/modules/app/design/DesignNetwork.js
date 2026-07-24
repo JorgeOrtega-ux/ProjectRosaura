@@ -171,14 +171,17 @@ export const DesignNetwork = {
                 }
                 else if (data.type === 'init_protected_pixels') {
                     this.protectedPixels = new Set(data.offsets);
+                    if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
                 }
                 else if (data.type === 'pixel_protected_broadcast') {
                     if (!this.protectedPixels) this.protectedPixels = new Set();
                     this.protectedPixels.add(data.offset);
+                    if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
                 }
                 else if (data.type === 'pixel_unprotected_broadcast') {
                     if (!this.protectedPixels) this.protectedPixels = new Set();
                     this.protectedPixels.delete(data.offset);
+                    if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
                 }
                 else if (data.type === 'pixel_protected_error') {
                     
@@ -203,6 +206,39 @@ export const DesignNetwork = {
                 }
                 else if (data.type === 'canvas_locked_error') {
                     showMessage(__('err_canvas_resetting'), 'warning');
+                }
+                else if (data.type === 'canvas_freeze_changed') {
+                    this.isFrozen = data.frozen;
+                    this.updateFreezeUI();
+                }
+                else if (data.type === 'area_protection_changed') {
+                    if (!this.protectedPixels) this.protectedPixels = new Set();
+                    const w = data.width || this.boardWidth || 64;
+                    const minX = data.x1;
+                    const maxX = data.x2;
+                    const minY = data.y1;
+                    const maxY = data.y2;
+                    const protect = data.protect;
+
+                    for (let y = minY; y <= maxY; y++) {
+                        for (let x = minX; x <= maxX; x++) {
+                            const offset = (y * w) + x;
+                            if (protect) {
+                                this.protectedPixels.add(offset);
+                            } else {
+                                this.protectedPixels.delete(offset);
+                            }
+                        }
+                    }
+                    if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
+                    if (typeof showMessage === 'function') {
+                        const actWord = protect ? 'protegida' : 'desprotegida';
+                        showMessage(`Zona administrativamente ${actWord} por el dueño.`, 'info');
+                    }
+                    this.requestRender();
+                }
+                else if (data.type === 'canvas_frozen_error') {
+                    showMessage(data.message || 'El lienzo está congelado por el administrador', 'warning');
                 }
                 else if (data.type === 'canvas_locked_resize') {
                     this.handleCanvasLockedResize(data);
@@ -1467,6 +1503,16 @@ export const DesignNetwork = {
             this.offscreenCtx.clearRect(x1, y1, w, h);
         }
 
+        this.requestRender();
+    },
+
+    updateFreezeUI() {
+        if (typeof this.updateLockBadges === 'function') {
+            this.updateLockBadges();
+        }
+        if (typeof this.updatePerkBadges === 'function') {
+            this.updatePerkBadges();
+        }
         this.requestRender();
     }
 };

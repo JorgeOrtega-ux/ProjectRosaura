@@ -356,7 +356,7 @@ export const DesignInteractions = {
         const exact = this.getExactBoardCoords(e.clientX, e.clientY);
         if (!exact) return;
 
-        const isOperationalLocked = !!(this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked);
+        const isOperationalLocked = !!(this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked || (this.isFrozen && !this.isOwner));
 
 
 
@@ -414,7 +414,38 @@ export const DesignInteractions = {
 
         const coords = this.getBoardCoords(e.clientX, e.clientY);
         if (coords) {
-            if (this.interactionMode === 'owner_erasing') {
+            if (this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') {
+                const bw = this.boardWidth || 64;
+                const offset = (coords.y * bw) + coords.x;
+                
+                if (this.interactionMode === 'owner_protecting' && (this.ownerEraserStep === 0 || this.ownerEraserStep === 2)) {
+                    if (this.protectedPixels && this.protectedPixels.has(offset)) {
+                        this.ownerEraserBox = { x1: coords.x, y1: coords.y, x2: coords.x, y2: coords.y };
+                        this.ownerEraserStep = 2;
+                        this.ownerEraserStart = null;
+                        this.updateSelectionUI();
+                        this.requestRender();
+
+                        if (window.dialogSystem) {
+                            window.dialogSystem.show('confirmProtectAreaModal', { count: 1 }).then(res => {
+                                const actStr = (typeof res === 'string') ? res : (res?.action || (res?.confirmed ? 'protect' : null));
+                                if (actStr === 'protect' || actStr === 'unprotect') {
+                                    this.executeOwnerProtectArea(actStr === 'protect');
+                                } else {
+                                    this.ownerEraserBox = null;
+                                    this.ownerEraserStep = 0;
+                                    this.updateSelectionUI();
+                                    this.requestRender();
+                                }
+                            });
+                        } else {
+                            const act = confirm("Esta zona está protegida. ¿Deseas desprotegerla? (Aceptar = Proteger, Cancelar = Desproteger)");
+                            this.executeOwnerProtectArea(act);
+                        }
+                        return;
+                    }
+                }
+
                 if (this.ownerEraserStep === 0 || this.ownerEraserStep === 2) {
                     this.ownerEraserStep = 1;
                     this.ownerEraserStart = { x: coords.x, y: coords.y };
@@ -430,7 +461,8 @@ export const DesignInteractions = {
                         if (this.ownerEraserBox) {
                             areaSize = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
                         }
-                        showMessage(`Zona fijada (${areaSize} px). Haz clic en 'Vaciar zona' abajo para confirmar.`, 'success');
+                        const actionWord = this.interactionMode === 'owner_erasing' ? 'Vaciar zona' : 'Bloquear zona';
+                        showMessage(`Zona fijada (${areaSize} px). Haz clic en '${actionWord}' abajo para confirmar.`, 'success');
                     }
                 }
                 return;
@@ -457,7 +489,7 @@ export const DesignInteractions = {
 
     handleMouseMove(e) {
 
-        if (this.interactionMode === 'owner_erasing' && this.ownerEraserStep === 1 && this.ownerEraserStart) {
+        if ((this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') && this.ownerEraserStep === 1 && this.ownerEraserStart) {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
             if (coords) {
                 this.selectOwnerArea(this.ownerEraserStart.x, this.ownerEraserStart.y, coords.x, coords.y, false);
@@ -800,7 +832,7 @@ export const DesignInteractions = {
             this.touchStartY = e.touches[0].clientY;
             this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
 
-            const isOperationalLocked = !!(this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked);
+            const isOperationalLocked = !!(this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked || (this.isFrozen && !this.isOwner));
 
             const exact = this.getExactBoardCoords(this.touchStartX, this.touchStartY);
             if (exact && !this.isSpectator && !isOperationalLocked) {
@@ -1079,9 +1111,12 @@ export const DesignInteractions = {
     updateSelectionUI() {
         if (!this.btnPlacePixels || !this.txtPlacePixels) return;
 
-        if (this.interactionMode === 'owner_erasing') {
+        if (this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') {
             this.btnPlacePixels.classList.replace('component-button--primary', 'component-button--danger');
             this.btnPlacePixels.classList.replace('component-button--success', 'component-button--danger');
+            if (this.interactionMode === 'owner_protecting') {
+                this.btnPlacePixels.classList.replace('component-button--danger', 'component-button--success');
+            }
             
             let areaSize = 0;
             if (this.ownerEraserBox) {
@@ -1090,7 +1125,7 @@ export const DesignInteractions = {
 
             if (this.ownerEraserBox && this.ownerEraserStep === 2) {
                 this.btnPlacePixels.classList.remove('disabled-interaction');
-                this.txtPlacePixels.textContent = `Vaciar zona (${areaSize} px)`;
+                this.txtPlacePixels.textContent = this.interactionMode === 'owner_erasing' ? `Vaciar zona (${areaSize} px)` : `Modificar protección (${areaSize} px)`;
             } else if (this.ownerEraserStep === 1) {
                 this.btnPlacePixels.classList.add('disabled-interaction');
                 this.txtPlacePixels.textContent = `Definiendo zona (${areaSize} px)...`;
@@ -1140,7 +1175,7 @@ export const DesignInteractions = {
     },
 
     placePixels() {
-        if ((this.selectedPixels.size === 0 && this.interactionMode !== 'owner_erasing') || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+        if ((this.selectedPixels.size === 0 && this.interactionMode !== 'owner_erasing' && this.interactionMode !== 'owner_protecting') || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
         
         if (this.interactionMode === 'owner_erasing') {
             if (!this.ownerEraserBox) return;
@@ -1153,6 +1188,23 @@ export const DesignInteractions = {
                 });
             } else if (confirm(`¿Estás seguro de vaciar esta zona de ${count} píxeles?`)) {
                 this.executeOwnerClearArea();
+            }
+            return;
+        }
+
+        if (this.interactionMode === 'owner_protecting') {
+            if (!this.ownerEraserBox) return;
+            const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
+            if (window.dialogSystem) {
+                window.dialogSystem.show('confirmProtectAreaModal', { count }).then(result => {
+                    const actStr = (typeof result === 'string') ? result : (result?.action || (result?.confirmed ? 'protect' : null));
+                    if (actStr === 'protect' || actStr === 'unprotect') {
+                        this.executeOwnerProtectArea(actStr === 'protect');
+                    }
+                });
+            } else {
+                const act = confirm(`Aceptar para Proteger la zona (${count} px). Cancelar para Desproteger la zona.`);
+                this.executeOwnerProtectArea(act);
             }
             return;
         }
@@ -1243,8 +1295,10 @@ export const DesignInteractions = {
 
             if (this.interactionMode === 'normal' || this.interactionMode === 'protecting') {
                 if (this.protectedPixels && this.protectedPixels.has(offset)) {
-                    hitProtected = true;
-                    return;
+                    if (!this.isOwner) {
+                        hitProtected = true;
+                        return;
+                    }
                 }
             } else if (this.interactionMode === 'erasing') {
                 if (this.protectedPixels && !this.protectedPixels.has(offset)) {
@@ -1585,22 +1639,60 @@ export const DesignInteractions = {
             badgesRight.appendChild(emptyBadge);
         }
 
-        if (this.isOwner && (this.showOwnerTools || this.interactionMode === 'owner_erasing')) {
-            const isToggledOn = (this.interactionMode === 'owner_erasing');
-            const colorClass = isToggledOn ? 'component-text-danger' : '';
-            const badgeEl = document.createElement('div');
-            badgeEl.className = 'component-badge component-badge--clickable owner-tool-badge';
-            badgeEl.style.cursor = 'pointer';
-            if (isToggledOn) {
-                badgeEl.style.border = '1px solid var(--color-error)';
-                badgeEl.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        if (this.isOwner) {
+            if (this.showOwnerTools || this.interactionMode === 'owner_erasing') {
+                const isToggledOn = (this.interactionMode === 'owner_erasing');
+                const colorClass = isToggledOn ? 'component-text-danger' : '';
+                const badgeEl = document.createElement('div');
+                badgeEl.className = 'component-badge component-badge--clickable owner-tool-badge';
+                badgeEl.style.cursor = 'pointer';
+                if (isToggledOn) {
+                    badgeEl.style.border = '1px solid var(--color-error)';
+                    badgeEl.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                }
+                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>Borrador</span>`;
+                badgeEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleOwnerEraser();
+                });
+                badgesRight.appendChild(badgeEl);
             }
-            badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>Borrador</span>`;
-            badgeEl.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.toggleOwnerEraser();
-            });
-            badgesRight.appendChild(badgeEl);
+
+            if (this.showOwnerTools || this.isFrozen) {
+                const isToggledOn = this.isFrozen;
+                const colorClass = isToggledOn ? 'component-text-warning' : '';
+                const badgeEl = document.createElement('div');
+                badgeEl.className = 'component-badge component-badge--clickable owner-tool-badge owner-freeze-badge';
+                badgeEl.style.cursor = 'pointer';
+                if (isToggledOn) {
+                    badgeEl.style.border = '1px solid var(--color-warning)';
+                    badgeEl.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+                }
+                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">ac_unit</span><span>${isToggledOn ? 'Descongelar' : 'Congelar'}</span>`;
+                badgeEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleOwnerFreeze();
+                });
+                badgesRight.appendChild(badgeEl);
+            }
+
+            if (this.showOwnerTools || this.interactionMode === 'owner_protecting') {
+                const isToggledOn = (this.interactionMode === 'owner_protecting');
+                const colorClass = isToggledOn ? 'component-text-success' : '';
+                const badgeEl = document.createElement('div');
+                badgeEl.className = 'component-badge component-badge--clickable owner-tool-badge owner-protect-badge';
+                badgeEl.style.cursor = 'pointer';
+                if (isToggledOn) {
+                    badgeEl.style.border = '1px solid var(--color-success)';
+                    badgeEl.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                }
+                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">admin_panel_settings</span><span>Bloqueador</span>`;
+                badgeEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleOwnerProtecting();
+                });
+                badgesRight.appendChild(badgeEl);
+            }
         }
     },
 
@@ -1685,5 +1777,69 @@ export const DesignInteractions = {
         this.updateSelectionUI();
         this.requestRender();
         if (typeof showMessage === 'function') showMessage('Zona vaciada con éxito', 'success');
+    },
+
+    toggleOwnerFreeze() {
+        if (!this.isOwner || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        const nextFrozen = !this.isFrozen;
+        if (this.wsManager) {
+            this.wsManager.send({
+                type: "toggle_freeze",
+                frozen: nextFrozen
+            });
+        }
+    },
+
+    toggleOwnerProtecting() {
+        if (!this.isOwner || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        if (this.interactionMode === 'owner_protecting') {
+            this.interactionMode = 'normal';
+            this.selectedPixels.clear();
+            this.ownerEraserBox = null;
+            this.ownerEraserStep = 0;
+            this.ownerEraserStart = null;
+            if (typeof showMessage === 'function') showMessage('Modo Bloqueador de Zonas desactivado', 'info');
+        } else {
+            this.interactionMode = 'owner_protecting';
+            this.activeBomb = null;
+            this.selectedPixels.clear();
+            this.ownerEraserBox = null;
+            this.ownerEraserStep = 0;
+            this.ownerEraserStart = null;
+            if (typeof showMessage === 'function') showMessage('Modo Bloqueador de Zonas activado. Haz clic en la primera esquina para definir la zona.', 'info');
+        }
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
+    },
+
+    executeOwnerProtectArea(protect = true) {
+        if (!this.ownerEraserBox) return;
+
+        const { x1: minX, y1: minY, x2: maxX, y2: maxY } = this.ownerEraserBox;
+
+        if (this.wsManager) {
+            this.wsManager.send({
+                type: "protect_area",
+                x1: minX,
+                y1: minY,
+                x2: maxX,
+                y2: maxY,
+                width: this.boardWidth || 64,
+                protect: protect
+            });
+        }
+
+        this.interactionMode = 'normal';
+        this.selectedPixels.clear();
+        this.ownerEraserBox = null;
+        this.ownerEraserStep = 0;
+        this.ownerEraserStart = null;
+
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
     }
 };

@@ -1062,6 +1062,32 @@ export const DialogTemplates = {
         }
     },
 
+    confirmProtectAreaModal: {
+        build: (data = {}) => {
+            const count = data.count || 0;
+            const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
+            const titleStr = __('title_confirm_protect_area', [], 'Modificar protección de zona');
+            const descRaw = __('desc_confirm_protect_area', [], 'Estás a punto de modificar la protección administrativa para :count píxeles en esta zona.');
+            const descStr = descRaw.replace(':count', `<strong>${count}</strong>`);
+            const btnCancel = __('btn_cancel', [], 'Cancelar');
+            const btnProtect = __('btn_protect_area', [], 'Proteger Zona');
+            const btnUnprotect = __('btn_unprotect_area', [], 'Desproteger Zona');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${titleStr}</h2>
+                    <p class="component-modal-desc">${descStr}</p>
+                </div>
+                <div class="component-modal-actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--warning" data-modal-action="unprotect">${btnUnprotect}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--success" data-modal-action="protect">${btnProtect}</button>
+                </div>
+            `;
+        }
+    },
+
     confirmBulkPerkPurchaseModal: {
         build: (data = {}) => {
             const items = data.items || [];

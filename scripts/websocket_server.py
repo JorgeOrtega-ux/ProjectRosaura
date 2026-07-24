@@ -233,6 +233,79 @@ def check_is_canvas_owner(user_id, canvas_id):
         print(f"[!] Error in check_is_canvas_owner: {e}")
         return False
 
+def get_canvas_frozen_db(canvas_id):
+    if not canvas_id: return False
+    try:
+        pool = get_db_pool()
+        if not pool: return False
+        db = pool.get_connection()
+        cursor = db.cursor()
+        tbl_canvases = os.getenv("DB_CANVASES_NAME", "db_canvases")
+        cursor.execute(f"SELECT is_frozen FROM `{tbl_canvases}`.`canvases` WHERE id = %s LIMIT 1", (canvas_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        db.close()
+        return bool(row[0]) if row and row[0] is not None else False
+    except Exception as e:
+        print(f"[!] Error in get_canvas_frozen_db: {e}")
+        return False
+
+def set_canvas_frozen_db(canvas_id, is_frozen):
+    if not canvas_id: return
+    try:
+        pool = get_db_pool()
+        if not pool: return
+        db = pool.get_connection()
+        cursor = db.cursor()
+        tbl_canvases = os.getenv("DB_CANVASES_NAME", "db_canvases")
+        cursor.execute(f"UPDATE `{tbl_canvases}`.`canvases` SET is_frozen = %s WHERE id = %s", (1 if is_frozen else 0, canvas_id))
+        db.commit()
+        cursor.close()
+        db.close()
+    except Exception as e:
+        print(f"[!] Error in set_canvas_frozen_db: {e}")
+
+def get_canvas_protections_db(canvas_id):
+    if not canvas_id: return []
+    try:
+        pool = get_db_pool()
+        if not pool: return []
+        db = pool.get_connection()
+        cursor = db.cursor()
+        tbl_canvases = os.getenv("DB_CANVASES_NAME", "db_canvases")
+        cursor.execute(f"SELECT offset FROM `{tbl_canvases}`.`canvas_protections` WHERE canvas_id = %s", (canvas_id,))
+        rows = cursor.fetchall()
+        cursor.close()
+        db.close()
+        return [row[0] for row in rows] if rows else []
+    except Exception as e:
+        print(f"[!] Error in get_canvas_protections_db: {e}")
+        return []
+
+def save_canvas_protections_db(canvas_id, offsets, protect, user_id=None):
+    if not canvas_id or not offsets: return
+    try:
+        pool = get_db_pool()
+        if not pool: return
+        db = pool.get_connection()
+        cursor = db.cursor()
+        tbl_canvases = os.getenv("DB_CANVASES_NAME", "db_canvases")
+        if protect:
+            data = [(canvas_id, int(off), user_id) for off in offsets]
+            query = f"INSERT IGNORE INTO `{tbl_canvases}`.`canvas_protections` (canvas_id, offset, protected_by) VALUES (%s, %s, %s)"
+            cursor.executemany(query, data)
+        else:
+            offsets_int = [int(off) for off in offsets]
+            format_strings = ','.join(['%s'] * len(offsets_int))
+            query = f"DELETE FROM `{tbl_canvases}`.`canvas_protections` WHERE canvas_id = %s AND offset IN ({format_strings})"
+            cursor.execute(query, [canvas_id] + offsets_int)
+        db.commit()
+        cursor.close()
+        db.close()
+    except Exception as e:
+        print(f"[!] Error in save_canvas_protections_db: {e}")
+
+
 NODE_ID = str(uuid.uuid4())
 ROOMS = {}
 LIVE_ROOMS = {} # Para las sesiones live share: { code: set(websockets) }
@@ -517,18 +590,51 @@ async def handler(websocket):
                     })
                     print(f"[DEBUG PY] Sending INIT response to front: {init_msg}")
                     await websocket.send(init_msg)
+                    
+                    freeze_key = f"canvas:{canvas_id}:freeze_lock"
+                    is_frozen_exists = await r.exists(freeze_key)
+                    if not is_frozen_exists:
+                        db_frozen = await asyncio.to_thread(get_canvas_frozen_db, canvas_id)
+                        if db_frozen:
+                            await r.set(freeze_key, "1")
+                            is_frozen = True
+                        else:
+                            is_frozen = False
+                    else:
+                        is_frozen = True
+
+                    await websocket.send(json.dumps({
+                        "type": "canvas_freeze_changed",
+                        "canvas_id": canvas_id,
+                        "frozen": bool(is_frozen)
+                    }))
 
                     current_time = int(time.time())
                     zset_key = f"canvas:{canvas_id}:protected_zset"
                     await r.zremrangebyscore(zset_key, 0, current_time)
                     protected_offsets = await r.zrange(zset_key, 0, -1)
-                    if protected_offsets:
+                    if not protected_offsets:
+                        db_offsets = await asyncio.to_thread(get_canvas_protections_db, canvas_id)
+                        if db_offsets:
+                            far_future_expiry = current_time + 3153600000
+                            async with r.pipeline(transaction=False) as pipe:
+                                for off in db_offsets:
+                                    pipe.set(f"canvas:{canvas_id}:protected_pixels:{off}", "admin")
+                                    pipe.zadd(zset_key, {str(off): far_future_expiry})
+                                await pipe.execute()
+                            protected_offsets_int = [int(o) for o in db_offsets]
+                        else:
+                            protected_offsets_int = []
+                    else:
                         protected_offsets_int = [int(o) for o in protected_offsets]
+
+                    if protected_offsets_int:
                         init_prot_msg = json.dumps({
                             "type": "init_protected_pixels",
                             "offsets": protected_offsets_int
                         })
                         await websocket.send(init_prot_msg)
+
 
                 elif data.get("type") == "join_live_share":
                     code = data.get("code")
@@ -633,6 +739,102 @@ async def handler(websocket):
                             del OWNER_CONNS[websocket]
                         print(f"[DEBUG LIVE] Room {code} intentionally destroyed by owner.")
 
+                elif data.get("type") == "toggle_freeze":
+                    user_id = WS_META[websocket].get('user_id')
+                    if not user_id:
+                        print(f"[DEBUG PY] toggle_freeze requested by unauthenticated user.")
+                        continue
+
+                    is_owner = await asyncio.to_thread(check_is_canvas_owner, user_id, canvas_id)
+                    if not is_owner:
+                        print(f"[DEBUG PY] User {user_id} is not owner of canvas {canvas_id}. toggle_freeze denied.")
+                        continue
+
+                    frozen = bool(data.get("frozen", False))
+                    freeze_lock_key = f"canvas:{canvas_id}:freeze_lock"
+                    if frozen:
+                        await r.set(freeze_lock_key, "1")
+                    else:
+                        await r.delete(freeze_lock_key)
+
+                    await asyncio.to_thread(set_canvas_frozen_db, canvas_id, frozen)
+
+                    freeze_msg = json.dumps({
+                        "type": "canvas_freeze_changed",
+                        "canvas_id": canvas_id,
+                        "frozen": frozen
+                    })
+                    clients_in_room = ROOMS.get(canvas_id, set())
+                    if clients_in_room:
+                        websockets.broadcast(clients_in_room, freeze_msg)
+                    await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": freeze_msg}))
+                    print(f"[DEBUG PY] Canvas {canvas_id} freeze toggled to {frozen} by owner {user_id}.")
+
+                elif data.get("type") == "protect_area":
+                    user_id = WS_META[websocket].get('user_id')
+                    if not user_id:
+                        print(f"[DEBUG PY] protect_area requested by unauthenticated user.")
+                        continue
+
+                    is_owner = await asyncio.to_thread(check_is_canvas_owner, user_id, canvas_id)
+                    if not is_owner:
+                        print(f"[DEBUG PY] User {user_id} is not owner of canvas {canvas_id}. protect_area denied.")
+                        continue
+
+                    x1 = int(data.get("x1", 0))
+                    y1 = int(data.get("y1", 0))
+                    x2 = int(data.get("x2", 0))
+                    y2 = int(data.get("y2", 0))
+                    width = int(data.get("width", 64))
+                    protect = bool(data.get("protect", True))
+
+                    min_x = max(0, min(x1, x2))
+                    max_x = min(width - 1, max(x1, x2)) if width > 0 else max(x1, x2)
+                    min_y = max(0, min(y1, y2))
+                    max_y = min(width - 1, max(y1, y2)) if width > 0 else max(y1, y2)
+
+                    zset_key = f"canvas:{canvas_id}:protected_zset"
+                    current_time = int(time.time())
+                    far_future_expiry = current_time + 3153600000
+
+                    affected_offsets = []
+                    async with r.pipeline(transaction=False) as pipe:
+                        for cy in range(min_y, max_y + 1):
+                            for cx in range(min_x, max_x + 1):
+                                if width == 0:
+                                    offset = f"{cx},{cy}"
+                                else:
+                                    offset = (cy * width) + cx
+                                
+                                affected_offsets.append(offset)
+                                protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
+                                if protect:
+                                    pipe.set(protected_key, "admin")
+                                    pipe.zadd(zset_key, {str(offset): far_future_expiry})
+                                else:
+                                    pipe.delete(protected_key)
+                                    pipe.zrem(zset_key, str(offset))
+                        
+                        await pipe.execute()
+
+                    await asyncio.to_thread(save_canvas_protections_db, canvas_id, affected_offsets, protect, user_id)
+
+                    broadcast_msg = json.dumps({
+                        "type": "area_protection_changed",
+                        "canvas_id": canvas_id,
+                        "x1": min_x,
+                        "y1": min_y,
+                        "x2": max_x,
+                        "y2": max_y,
+                        "protect": protect,
+                        "width": width
+                    })
+                    clients_in_room = ROOMS.get(canvas_id, set())
+                    if clients_in_room:
+                        websockets.broadcast(clients_in_room, broadcast_msg)
+                    await r.publish("canvas:sync_events", json.dumps({"source_node": NODE_ID, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg}))
+                    print(f"[DEBUG PY] Area protection toggled to {protect} for owner {user_id} on canvas {canvas_id}: ({min_x},{min_y}) to ({max_x},{max_y}).")
+
                 elif data.get("type") == "clear_area":
                     user_id = WS_META[websocket].get('user_id')
                     if not user_id:
@@ -692,6 +894,11 @@ async def handler(websocket):
                                 protected_key = f"canvas:{canvas_id}:protected_pixels:{offset_str}"
                                 protected_keys_to_del.append(protected_key)
                                 to_remove_protected.append(offset_bytes)
+
+                    if to_remove_protected:
+                        to_remove_offsets = [int(o) for o in to_remove_protected]
+                        await asyncio.to_thread(save_canvas_protections_db, canvas_id, to_remove_offsets, False, user_id)
+
 
                     async with r.pipeline(transaction=False) as pipe:
                         if to_remove_protected:
@@ -758,6 +965,18 @@ async def handler(websocket):
                     width = int(data.get("width", 64))
                     user_id = WS_META[websocket].get('user_id')
                     
+                    is_frozen = await r.exists(f"canvas:{canvas_id}:freeze_lock")
+                    if is_frozen:
+                        is_owner = await asyncio.to_thread(check_is_canvas_owner, user_id, canvas_id)
+                        if not is_owner:
+                            print(f"[DEBUG PY] Canvas {canvas_id} is frozen/read-only. Ignoring pixel from user {user_id}.")
+                            error_msg = json.dumps({
+                                "type": "canvas_frozen_error",
+                                "message": "El lienzo está congelado por el administrador"
+                            })
+                            await websocket.send(error_msg)
+                            continue
+
                     raw_color = data.get("color", "transparent")
                     color_bytes = b'\x00\x00\x00\x00'
                     color_hex = "transparent"
@@ -810,33 +1029,35 @@ async def handler(websocket):
                         protected_by = await r.get(protected_key)
                         
                         if protected_by:
-                            print(f"[DEBUG PY] Pixel {x},{y} protected by user {protected_by.decode('utf-8')}")
-                            
-                            redis_state_key = f"canvas:{canvas_id}:state"
-                            byte_offset = (y * width + x) * 4
+                            is_owner = await asyncio.to_thread(check_is_canvas_owner, user_id, canvas_id)
+                            if not is_owner:
+                                print(f"[DEBUG PY] Pixel {x},{y} protected by user {protected_by.decode('utf-8')}")
                                 
-                            orig_color = await r.getrange(redis_state_key, byte_offset, byte_offset + 3)
-                            
-                            orig_c_hex = "transparent"
-                            if orig_color and len(orig_color) == 4:
-                                if orig_color[3] != 0:
-                                    orig_c_hex = f"#{orig_color[0]:02x}{orig_color[1]:02x}{orig_color[2]:02x}"
-                            
-                            balance, last_t, user_key, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
-                            
-                            error_msg = json.dumps({
-                                "type": "pixel_protected_error",
-                                "message": "err_pixel_protected",
-                                "x": x,
-                                "y": y,
-                                "color": orig_c_hex,
-                                "balance": int(balance),
-                                "max_batch": config_batch,
-                                "cooldown_sec": config_sec,
-                                "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0
-                            })
-                            await websocket.send(error_msg)
-                            continue
+                                redis_state_key = f"canvas:{canvas_id}:state"
+                                byte_offset = (y * width + x) * 4
+                                    
+                                orig_color = await r.getrange(redis_state_key, byte_offset, byte_offset + 3)
+                                
+                                orig_c_hex = "transparent"
+                                if orig_color and len(orig_color) == 4:
+                                    if orig_color[3] != 0:
+                                        orig_c_hex = f"#{orig_color[0]:02x}{orig_color[1]:02x}{orig_color[2]:02x}"
+                                
+                                balance, last_t, user_key, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
+                                
+                                error_msg = json.dumps({
+                                    "type": "pixel_protected_error",
+                                    "message": "err_pixel_protected",
+                                    "x": x,
+                                    "y": y,
+                                    "color": orig_c_hex,
+                                    "balance": int(balance),
+                                    "max_batch": config_batch,
+                                    "cooldown_sec": config_sec,
+                                    "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0
+                                })
+                                await websocket.send(error_msg)
+                                continue
 
                         now = time.time()
                         byte_offset = (y * width + x) * 4
@@ -908,6 +1129,16 @@ async def handler(websocket):
                     pixels_list = data.get("pixels", [])
                     width = int(data.get("width", 64))
                     user_id = WS_META[websocket].get('user_id')
+                    is_frozen = await r.exists(f"canvas:{canvas_id}:freeze_lock")
+                    if is_frozen:
+                        is_owner = await asyncio.to_thread(check_is_canvas_owner, user_id, canvas_id)
+                        if not is_owner:
+                            await websocket.send(json.dumps({
+                                "type": "canvas_frozen_error",
+                                "message": "El lienzo está congelado por el administrador"
+                            }))
+                            continue
+
                     raw_color = data.get("color", "transparent")
                     color_bytes = b'\x00\x00\x00\x00'
                     color_hex = "transparent"
@@ -941,7 +1172,9 @@ async def handler(websocket):
                             protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
                             protected_by = await r.get(protected_key)
                             if protected_by:
-                                continue
+                                is_owner = await asyncio.to_thread(check_is_canvas_owner, user_id, canvas_id)
+                                if not is_owner:
+                                    continue
 
                             now_t = time.time()
                             byte_offset = (y * width + x) * 4

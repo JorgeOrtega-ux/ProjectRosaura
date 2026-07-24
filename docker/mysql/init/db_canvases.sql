@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `total_pixels` bigint(20) NOT NULL DEFAULT 0,
   `total_messages` bigint(20) NOT NULL DEFAULT 0,
   `is_official` tinyint(1) NOT NULL DEFAULT 0,
+  `is_frozen` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -33,6 +34,18 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   INDEX `idx_canvases_privacy_official` (`privacy`, `is_official`),
   INDEX `idx_canvases_official_owner` (`is_official`, `owner_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `canvas_protections` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `canvas_id` int(11) NOT NULL,
+  `offset` int(11) NOT NULL,
+  `protected_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_cp_canvas_offset` (`canvas_id`, `offset`),
+  CONSTRAINT `fk_cp_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
 
 CREATE TABLE IF NOT EXISTS `canvas_roles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
