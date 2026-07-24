@@ -411,24 +411,13 @@ class AuthServices {
         
         if ($this->userRepository->findByUsername($username)) return ['success' => false, 'message' => __('validation.username_in_use')];
 
-        $code = Utils::generateNumericCode(12);
-        $payload = json_encode(['email' => $regEmail, 'password' => $regPassword, 'username' => $username]);
-        
-        $codeMinutes = (int)($this->config['verification_code_minutes'] ?? 15);
-        $expiresAt = Utils::calculateExpirationDate($codeMinutes); 
-
-        if ($this->verificationCodeRepository->createCode($regEmail, DatabaseConstants::VERIFY_TYPE_ACTIVATION, $code, $payload, $expiresAt)) {
+        $sendResult = $this->sendRegistrationVerificationCode($regEmail, $username, $regPassword);
+        if ($sendResult['success']) {
             $regFlows[$regToken]['username'] = $username;
             $this->sessionManager->set(SessionConstants::KEY_REG_FLOWS, $regFlows);
-            
-            $mailer = new Mailer();
-            if ($mailer->sendVerificationCode($regEmail, $username, $code)) {
-                return ['success' => true, 'message' => __('auth.verification_code_sent')];
-            } else {
-                return ['success' => false, 'message' => __('error.email_delivery')];
-            }
+            return ['success' => true, 'message' => __('auth.verification_code_sent')];
         }
-        return ['success' => false, 'message' => __('error.database')];
+        return $sendResult;
     }
 
     public function registerResendCode($data) {
@@ -453,23 +442,34 @@ class AuthServices {
             return ['success' => false, 'message' => __('error.cooldown_active'), 'cooldown' => $timeLeft];
         }
 
-        $code = Utils::generateNumericCode(12);
+        $sendResult = $this->sendRegistrationVerificationCode($email, $username, $password, true);
+        if ($sendResult['success']) {
+            return ['success' => true, 'message' => __('auth.code_resent')];
+        }
+        return $sendResult;
+    }
+
+    private function sendRegistrationVerificationCode(string $email, string $username, string $password, bool $isResend = false): array {
+        $codeLength = (int)($this->config['verification_code_length'] ?? 12);
+        $code = Utils::generateNumericCode($codeLength);
         $payload = json_encode(['email' => $email, 'password' => $password, 'username' => $username]);
         
         $codeMinutes = (int)($this->config['verification_code_minutes'] ?? 15);
-        $expiresAt = Utils::calculateExpirationDate($codeMinutes); 
+        $expiresAt = Utils::calculateExpirationDate($codeMinutes);
 
-        $this->verificationCodeRepository->deleteByIdentifierAndType($email, DatabaseConstants::VERIFY_TYPE_ACTIVATION);
+        if ($isResend) {
+            $this->verificationCodeRepository->deleteByIdentifierAndType($email, DatabaseConstants::VERIFY_TYPE_ACTIVATION);
+        }
 
         if ($this->verificationCodeRepository->createCode($email, DatabaseConstants::VERIFY_TYPE_ACTIVATION, $code, $payload, $expiresAt)) {
             $mailer = new Mailer();
             if ($mailer->sendVerificationCode($email, $username, $code)) {
-                return ['success' => true, 'message' => __('auth.code_resent')];
+                return ['success' => true];
             } else {
                 return ['success' => false, 'message' => __('error.email_delivery')];
             }
         }
-        return ['success' => false, 'message' => __('error.update_failed')];
+        return ['success' => false, 'message' => __('error.database')];
     }
 
     public function registerVerify($data) {
@@ -647,26 +647,7 @@ class AuthServices {
         $credential = $data['credential'] ?? null;
         if (empty($credential)) return ['success' => false, 'message' => __('validation.missing_fields')];
 
-        $clientId = $_ENV['GOOGLE_CLIENT_ID'];
-        if (empty($clientId)) return ['success' => false, 'message' => __('error.internal_server_error')];
-
-        try {
-            $userInfoUrl = 'https://www.googleapis.com/oauth2/v3/userinfo';
-            $context = stream_context_create([
-                'http' => [
-                    'header' => "Authorization: Bearer {$credential}\r\n"
-                ]
-            ]);
-            $response = @file_get_contents($userInfoUrl, false, $context);
-            if ($response === false) {
-                return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
-            }
-            $payload = json_decode($response, true);
-        } catch (\Exception $e) {
-            Logger::error("Google token verification failed", ['exception' => $e]);
-            return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
-        }
-
+        $payload = \App\Core\Security\GoogleOAuthProvider::verifyToken($credential);
         if (!$payload || !isset($payload['sub'])) {
             return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
         }

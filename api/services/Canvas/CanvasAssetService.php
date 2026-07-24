@@ -97,6 +97,10 @@ class CanvasAssetService {
         }
     }
 
+    public function listTemplates(?int $userId = null): array {
+        return $this->getUserTemplates($userId ?? 0);
+    }
+
     public function getUserTemplates(int $userId): array {
         try {
             $templates = $this->canvasRepository->getUserTemplates($userId);

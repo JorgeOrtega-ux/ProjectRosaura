@@ -51,6 +51,31 @@ class StripeServices {
         return $prices;
     }
 
+    private function resolvePriceId(int $tier, string $billingPeriod): ?string {
+        // 1. Try environment variable mapping
+        $envKey = self::PRICE_MAP[$tier][$billingPeriod] ?? null;
+        if ($envKey && !empty($_ENV[$envKey])) {
+            return $_ENV[$envKey];
+        }
+
+        // 2. Fallback: check subscription_tiers database table
+        try {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $col = ($billingPeriod === 'yearly') ? 'stripe_price_id_yearly' : 'stripe_price_id_monthly';
+            $stmt = $pdo->prepare("SELECT {$col} FROM subscription_tiers WHERE tier_level = ? AND is_active = 1 LIMIT 1");
+            $stmt->execute([$tier]);
+            $priceId = $stmt->fetchColumn();
+            if (!empty($priceId)) {
+                return $priceId;
+            }
+        } catch (\Throwable $e) {
+            Logger::error("Error resolving Stripe price ID from DB", ['tier' => $tier, 'error' => $e->getMessage()]);
+        }
+
+        return null;
+    }
+
     private function getPriceToTierMap(): array {
         $map = [];
         foreach (self::PRICE_MAP as $tier => $periods) {
@@ -61,6 +86,24 @@ class StripeServices {
                 }
             }
         }
+
+        try {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmt = $pdo->query("SELECT tier_level, stripe_price_id_monthly, stripe_price_id_yearly FROM subscription_tiers WHERE is_active = 1");
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $tLevel = (int)$row['tier_level'];
+                if (!empty($row['stripe_price_id_monthly'])) {
+                    $map[$row['stripe_price_id_monthly']] = ['tier' => $tLevel, 'period' => 'monthly'];
+                }
+                if (!empty($row['stripe_price_id_yearly'])) {
+                    $map[$row['stripe_price_id_yearly']] = ['tier' => $tLevel, 'period' => 'yearly'];
+                }
+            }
+        } catch (\Throwable $e) {
+            // Silently continue if database is unreachable
+        }
+
         return $map;
     }
 
@@ -104,11 +147,10 @@ class StripeServices {
 
         \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
 
-        $envKey = self::PRICE_MAP[$tier][$billingPeriod] ?? null;
-        if (!$envKey || empty($_ENV[$envKey])) {
+        $newPriceId = $this->resolvePriceId($tier, $billingPeriod);
+        if (!$newPriceId) {
             return ['success' => false, 'message' => 'Price not configured.'];
         }
-        $newPriceId = $_ENV[$envKey];
 
         $stripeCustomerId = $this->subscriptionRepo->getStripeCustomerIdByUserId($userId);
         if (!$stripeCustomerId) {
@@ -194,12 +236,11 @@ class StripeServices {
             return ['success' => false, 'message_key' => 'stripe.already_on_plan'];
         }
 
-        $envKey = self::PRICE_MAP[$tier][$billingPeriod] ?? null;
-        if (!$envKey || empty($_ENV[$envKey])) {
-            Logger::error("Stripe Price ID not configured", ['env_key' => $envKey]);
+        $priceId = $this->resolvePriceId($tier, $billingPeriod);
+        if (!$priceId) {
+            Logger::error("Stripe Price ID not configured", ['tier' => $tier, 'billing_period' => $billingPeriod]);
             return ['success' => false, 'message_key' => 'stripe.price_not_configured'];
         }
-        $priceId = $_ENV[$envKey];
 
         \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
 
@@ -638,12 +679,11 @@ class StripeServices {
             }
         }
 
-        $envKey = self::PRICE_MAP[$tier][$billingPeriod] ?? null;
-        if (!$envKey || empty($_ENV[$envKey])) {
-            Logger::error("Stripe Price ID not configured", ['env_key' => $envKey]);
+        $newPriceId = $this->resolvePriceId($tier, $billingPeriod);
+        if (!$newPriceId) {
+            Logger::error("Stripe Price ID not configured", ['tier' => $tier, 'billing_period' => $billingPeriod]);
             return ['success' => false, 'message_key' => 'stripe.price_not_configured'];
         }
-        $newPriceId = $_ENV[$envKey];
 
         \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
 

@@ -2,7 +2,6 @@
 namespace App\Api\Controllers\Settings;
 
 use App\Api\Controllers\BaseController;
-
 use App\Api\Services\Settings\SettingsServices;
 
 class SettingsController extends BaseController {
@@ -16,7 +15,7 @@ class SettingsController extends BaseController {
     public function upgrade_tier($input) {
         try { 
             if (method_exists($this->settingsServices, 'upgradeTier')) {
-                return $this->settingsServices->upgradeTier($input); 
+                return $this->respond($this->settingsServices->upgradeTier($input)); 
             }
             return $this->respond(['success' => false, 'message' => __('err_billing_module_wip')]);
         }
@@ -24,108 +23,107 @@ class SettingsController extends BaseController {
     }
 
     public function update_avatar($input) {
-        try { return $this->settingsServices->updateAvatar($input); }
+        try { return $this->respond($this->settingsServices->updateAvatar($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function delete_avatar() {
-        try { return $this->settingsServices->deleteAvatar(); }
+        try { return $this->respond($this->settingsServices->deleteAvatar()); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function update_username($input) {
-        try { return $this->settingsServices->updateUsername($input); }
+        try { return $this->respond($this->settingsServices->updateUsername($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function request_email_code() {
-        try { return $this->settingsServices->requestEmailCode(); }
+        try { return $this->respond($this->settingsServices->requestEmailCode()); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function resend_email_code() {
-        try { return $this->settingsServices->resendEmailCode(); }
+        try { return $this->respond($this->settingsServices->resendEmailCode()); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function verify_email_code($input) {
-        try { return $this->settingsServices->verifyEmailCode($input); }
+        try { return $this->respond($this->settingsServices->verifyEmailCode($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function update_email($input) {
-        try { return $this->settingsServices->updateEmail($input); }
+        try { return $this->respond($this->settingsServices->updateEmail($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function update_preferences($input) {
-        try { return $this->settingsServices->updatePreferences($input); }
+        try { return $this->respond($this->settingsServices->updatePreferences($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function set_flag($input) {
-        try { return $this->settingsServices->setFlag($input); }
+        try { return $this->respond($this->settingsServices->setFlag($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function verify_current_password($input) {
-        try { return $this->settingsServices->verifyCurrentPassword($input); }
+        try { return $this->respond($this->settingsServices->verifyCurrentPassword($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function update_password($input) {
-        try { return $this->settingsServices->updatePassword($input); }
+        try { return $this->respond($this->settingsServices->updatePassword($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function delete_account($input) {
-        try { return $this->settingsServices->deleteAccount($input); }
+        try { return $this->respond($this->settingsServices->deleteAccount($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function generate_2fa() {
-        try { return $this->settingsServices->generate2faSetup(); }
+        try { return $this->respond($this->settingsServices->generate2faSetup()); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function enable_2fa($input) {
-        try { return $this->settingsServices->enable2fa($input); }
+        try { return $this->respond($this->settingsServices->enable2fa($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function disable_2fa($input) {
-        try { return $this->settingsServices->disable2fa($input); }
+        try { return $this->respond($this->settingsServices->disable2fa($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function regenerate_recovery_codes($input) {
-        try { return $this->settingsServices->regenerateRecoveryCodes($input); }
+        try { return $this->respond($this->settingsServices->regenerateRecoveryCodes($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
     
     public function get_devices() {
-        try { return $this->settingsServices->getDevices(); }
+        try { return $this->respond($this->settingsServices->getDevices()); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function revoke_device($input) {
-        try { return $this->settingsServices->revokeDevice($input); }
+        try { return $this->respond($this->settingsServices->revokeDevice($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function revoke_all_devices($input) {
-        try { return $this->settingsServices->revokeAllDevices($input); }
+        try { return $this->respond($this->settingsServices->revokeAllDevices($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function link_google($input) {
-        try { return $this->settingsServices->linkGoogle($input); }
+        try { return $this->respond($this->settingsServices->linkGoogle($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function unlink_google($input) {
-        try { return $this->settingsServices->unlinkGoogle($input); }
+        try { return $this->respond($this->settingsServices->unlinkGoogle($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 }
-?>

@@ -429,8 +429,8 @@ class ChatServices
             
             $publicEndpoint = rtrim(\App\Core\Helpers\EnvLoader::get('AWS_PUBLIC_URL', 'http://localhost:9000'), '/');
             $credentials = new \Aws\Credentials\Credentials(
-                \App\Core\Helpers\EnvLoader::get('AWS_ACCESS_KEY_ID', 'admin'),
-                \App\Core\Helpers\EnvLoader::get('AWS_SECRET_ACCESS_KEY', 'password')
+                \App\Core\Helpers\EnvLoader::get('AWS_ACCESS_KEY_ID', ''),
+                \App\Core\Helpers\EnvLoader::get('AWS_SECRET_ACCESS_KEY', '')
             );
             $s3PublicClient = new \Aws\S3\S3Client([
                 'version' => 'latest',

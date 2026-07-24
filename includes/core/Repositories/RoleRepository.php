@@ -8,6 +8,7 @@ use App\Config\Database\RedisCache;
 use App\Core\System\CacheConstants;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\SecurityConstants;
+use App\Core\System\Logger;
 use PDO;
 use Exception;
 
@@ -262,7 +263,7 @@ class RoleRepository implements RoleRepositoryInterface {
             return true;
         } catch (Exception $e) {
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            error_log("Error in RoleRepository::create: " . $e->getMessage());
+            Logger::error("Error in RoleRepository::create", ['exception' => $e]);
             return false;
         }
     }
@@ -298,7 +299,7 @@ class RoleRepository implements RoleRepositoryInterface {
             return true;
         } catch (Exception $e) {
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            error_log("Error in RoleRepository::update: " . $e->getMessage());
+            Logger::error("Error in RoleRepository::update", ['exception' => $e]);
             return false;
         }
     }
@@ -327,7 +328,7 @@ class RoleRepository implements RoleRepositoryInterface {
             return true;
         } catch (Exception $e) {
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            error_log("Error in RoleRepository::delete: " . $e->getMessage());
+            Logger::error("Error in RoleRepository::delete", ['exception' => $e]);
             return false;
         }
     }
@@ -375,7 +376,7 @@ class RoleRepository implements RoleRepositoryInterface {
             return true;
         } catch (Exception $e) {
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            error_log("Error in assignPermissionsToRole: " . $e->getMessage());
+            Logger::error("Error in assignPermissionsToRole", ['exception' => $e]);
             return false;
         }
     }
@@ -421,7 +422,7 @@ class RoleRepository implements RoleRepositoryInterface {
             return true;
         } catch (Exception $e) {
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            error_log("Error in syncUserRoles: " . $e->getMessage());
+            Logger::error("Error in syncUserRoles", ['exception' => $e]);
             return false;
         }
     }

@@ -821,26 +821,7 @@ class SettingsServices
         $credential = $data['credential'] ?? null;
         if (empty($credential)) return ['success' => false, 'message' => __('validation.missing_fields')];
 
-        $clientId = $_ENV['GOOGLE_CLIENT_ID'] ?? '';
-        if (empty($clientId)) return ['success' => false, 'message' => __('error.internal_server_error')];
-
-        try {
-            $userInfoUrl = 'https://www.googleapis.com/oauth2/v3/userinfo';
-            $context = stream_context_create([
-                'http' => [
-                    'header' => "Authorization: Bearer {$credential}\r\n"
-                ]
-            ]);
-            $response = @file_get_contents($userInfoUrl, false, $context);
-            if ($response === false) {
-                return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
-            }
-            $payload = json_decode($response, true);
-        } catch (\Exception $e) {
-            Logger::error("Google token verification failed in linkGoogle", ['exception' => $e]);
-            return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
-        }
-
+        $payload = \App\Core\Security\GoogleOAuthProvider::verifyToken($credential);
         if (!$payload || !isset($payload['sub'])) {
             return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
         }

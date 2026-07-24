@@ -13,6 +13,7 @@ class RateLimitConstants {
     public const KEY_AUTH_RESEND_CODE = 'resend_code_attempts';
     public const KEY_AUTH_LOGIN = 'login_attempts';
     public const KEY_AUTH_LOGIN_2FA = 'login_2fa_attempts';
+    public const KEY_AUTH_GOOGLE_LOGIN = 'auth_google_login';
     public const KEY_AUTH_CANCEL_DELETION = 'cancel_deletion_attempts';
     public const KEY_AUTH_SWITCH_ACCOUNT = 'switch_account_attempts';
     public const KEY_AUTH_LOGOUT = 'logout_attempts';

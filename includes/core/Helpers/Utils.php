@@ -87,8 +87,8 @@ class Utils {
                 $endpoint .= ':9000';
             }
             $credentials = new \Aws\Credentials\Credentials(
-                EnvLoader::get('AWS_ACCESS_KEY_ID', 'admin'),
-                EnvLoader::get('AWS_SECRET_ACCESS_KEY', 'password')
+                EnvLoader::get('AWS_ACCESS_KEY_ID', ''),
+                EnvLoader::get('AWS_SECRET_ACCESS_KEY', '')
             );
             self::$s3Client = new \Aws\S3\S3Client([
                 'version' => 'latest',

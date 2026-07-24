@@ -27,7 +27,7 @@ return [
     'auth.google' => [
         'controller' => 'App\Api\Controllers\Auth\AuthController',
         'action' => 'google_login',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'auth_google_login', 'max' => RL::MAX_5, 'time' => RL::TIME_15, 'identifier' => RL::ID_IP]]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_AUTH_GOOGLE_LOGIN, 'max' => RL::MAX_5, 'time' => RL::TIME_15, 'identifier' => RL::ID_IP]]
     ],
     'auth.login' => [
         'controller' => 'App\Api\Controllers\Auth\AuthController',

@@ -3,6 +3,7 @@
 namespace App\Core\Security;
 
 use App\Core\Helpers\EnvLoader;
+use App\Core\System\Logger;
 
 class TurnstileValidator {
     private string $secretKey;
@@ -11,8 +12,14 @@ class TurnstileValidator {
     public function __construct() {
         $this->secretKey = EnvLoader::get('TURNSTILE_SECRET_KEY', '');
     }
+
     public function isValid(?string $token, ?string $remoteIp = null): bool {
-        if (empty($token) || empty($this->secretKey)) {
+        if (empty($this->secretKey)) {
+            Logger::warning("Turnstile validation failed: TURNSTILE_SECRET_KEY is not configured in .env");
+            return false;
+        }
+
+        if (empty($token)) {
             return false;
         }
 
@@ -43,4 +50,3 @@ class TurnstileValidator {
         return isset($result['success']) && $result['success'] === true;
     }
 }
-?>

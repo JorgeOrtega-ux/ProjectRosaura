@@ -55,7 +55,8 @@ class CanvasCoreController extends BaseController {
             $canvasId = (int)($input['canvas_id'] ?? 0);
             $chunks = $input['chunks'] ?? [];
 
-            $goUrl = 'http://rosaura_go_service:8080/api/go/canvases/get_chunks';
+            $goBaseUrl = rtrim(\App\Core\Helpers\EnvLoader::get('GO_SERVICE_URL', 'http://rosaura_go_service:8080'), '/');
+            $goUrl = $goBaseUrl . '/api/go/canvases/get_chunks';
             
             $boardW = isset($input['board_w']) ? (int)$input['board_w'] : 0;
             $boardH = isset($input['board_h']) ? (int)$input['board_h'] : 0;

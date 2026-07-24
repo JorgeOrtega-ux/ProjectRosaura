@@ -202,26 +202,12 @@ export class ApiService {
         return null;
     }
 
-    async post(route, data = {}, signal = null) {
-        const payload = {
-            route: route,
-            ...data
-        };
-
+    _getCsrfToken() {
         const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+        return csrfMeta ? csrfMeta.getAttribute('content') : '';
+    }
 
-        const fetchOptions = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': csrfToken
-            },
-            body: JSON.stringify(payload)
-        };
-
-        if (signal) fetchOptions.signal = signal;
-
+    async _executeFetch(fetchOptions, route = '') {
         try {
             const response = await fetch(this.baseUrl, fetchOptions);
 
@@ -252,9 +238,7 @@ export class ApiService {
                 throw new Error(`Error HTTP: ${response.status}`);
             }
 
-            const result = await this._parseJsonResponse(response);
-            return this._processResponse(result);
-            
+            return response;
         } catch (error) {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
@@ -263,61 +247,50 @@ export class ApiService {
         }
     }
 
-    async postForm(route, formData, signal = null) {
-        formData.append('route', route);
-        
-        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+    async post(route, data = {}, signal = null) {
+        const payload = {
+            route: route,
+            ...data
+        };
 
         const fetchOptions = {
             method: 'POST',
             headers: {
-                'X-CSRF-Token': csrfToken
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': this._getCsrfToken()
+            },
+            body: JSON.stringify(payload)
+        };
+
+        if (signal) fetchOptions.signal = signal;
+
+        const res = await this._executeFetch(fetchOptions, route);
+        if (res && res.ok) {
+            const result = await this._parseJsonResponse(res);
+            return this._processResponse(result);
+        }
+        return res;
+    }
+
+    async postForm(route, formData, signal = null) {
+        formData.append('route', route);
+
+        const fetchOptions = {
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': this._getCsrfToken()
             },
             body: formData
         };
 
         if (signal) fetchOptions.signal = signal;
 
-        try {
-            const response = await fetch(this.baseUrl, fetchOptions);
-
-            if (!response.ok) {
-                const handledError = await this._handleHttpErrors(response);
-                if (handledError) return handledError;
-
-                if (response.status === 403 || response.status === 429) {
-                    const result = await this._parseJsonResponse(response); 
-
-                    if (response.status === 403 && result.message_key === 'error.invalid_csrf_token') {
-                        const retryResponse = await this._handleCsrfRetry(fetchOptions, result.csrf_token);
-                        if (retryResponse && retryResponse.ok) {
-                            const retryResult = await this._parseJsonResponse(retryResponse);
-                            return this._processResponse(retryResult);
-                        }
-                    }
-
-                    const processedResult = this._processResponse(result);
-                    
-                    if (response.status === 403) {
-                        window.dispatchEvent(new CustomEvent('securityViolationTriggered', { detail: processedResult }));
-                    }
-
-                    return processedResult; 
-                }
-                
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-
-            const result = await this._parseJsonResponse(response);
-            return this._processResponse(result); 
-
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                return { success: false, aborted: true }; 
-            }
-            return { success: false, message: window.__('api_connection_error') };
+        const res = await this._executeFetch(fetchOptions, route);
+        if (res && res.ok) {
+            const result = await this._parseJsonResponse(res);
+            return this._processResponse(result);
         }
+        return res;
     }
 
     async stream(route, data = {}, signal = null) {
@@ -480,7 +453,10 @@ export class ApiService {
         return await this.post(ApiRoutes.Canvases.RejectRequest, { request_id: requestId });
     }
 
-    async downloadFile(route, data = {}, defaultFilename = 'Recibo.pdf', signal = null) {
+    async downloadFile(route, data = {}, defaultFilename = null, signal = null) {
+        if (!defaultFilename) {
+            defaultFilename = (window.__ ? window.__('receipt_default_filename', 'Recibo.pdf') : 'Recibo.pdf');
+        }
         const payload = {
             route: route,
             ...data
