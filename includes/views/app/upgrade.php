@@ -1,74 +1,12 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\App\AppViewService;
 
-use App\Core\System\SubscriptionPlanConstants;
+$viewService = new AppViewService();
+$upgradeData = $viewService->getUpgradePageData();
 
-$activeAccountId = $_SESSION['active_account'] ?? null;
-$linkedAccounts  = $_SESSION['accounts'] ?? [];
-$currentUserTier = 0;
-if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
-    $currentUserTier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
-}
-
-// Fetch all active tiers (tier_level > 0 and is_active = 1)
-$allTiers = array_filter(SubscriptionPlanConstants::getAllTiers(), fn($t) => $t['tier_level'] > 0 && (isset($t['is_active']) ? (int)$t['is_active'] === 1 : true));
-
-function formatStoragePremium(int $mb): string {
-    if ($mb >= 1024) return number_format($mb / 1024, 0) . ' GB';
-    return $mb . ' MB';
-}
-
-// Define rows to compare
-$availableFeatures = \App\Core\System\SubscriptionFeatureConfig::getAvailableFeatures();
-$rowsToCompare = [
-    [
-        'label' => __('plan_limit_canvases', 'Lienzos'),
-        'desc' => __('plan_limit_canvases_desc', 'Proyectos simultáneos'),
-        'icon' => 'dashboard',
-        'values_fn' => function($t) {
-            return $t['max_canvases'] == -1 ? __('plan_limit_unlimited', 'Ilimitado') : $t['max_canvases'] . ' ' . __('plan_limit_canvases', 'Lienzos');
-        }
-    ],
-    [
-        'label' => __('plan_limit_snapshots', 'Snapshots'),
-        'desc' => __('plan_limit_snapshots_desc', 'Por lienzo'),
-        'icon' => 'history',
-        'values_fn' => function($t) {
-            return $t['max_snapshots_per_canvas'] == -1 ? __('plan_limit_unlimited', 'Ilimitado') : $t['max_snapshots_per_canvas'] . ' ' . __('plan_limit_snapshots', 'Snapshots');
-        }
-    ],
-    [
-        'label' => __('plan_limit_members', 'Miembros'),
-        'desc' => __('plan_limit_members_desc', 'Por lienzo'),
-        'icon' => 'group',
-        'values_fn' => function($t) {
-            return $t['max_members_per_canvas'] == -1 ? __('plan_limit_unlimited', 'Ilimitados') : number_format($t['max_members_per_canvas']) . ' ' . __('plan_limit_members', 'Miembros');
-        }
-    ],
-    [
-        'label' => __('lbl_storage', 'Almacenamiento'),
-        'desc' => __('plan_storage_desc', 'Capacidad de almacenamiento'),
-        'icon' => 'cloud',
-        'values_fn' => function($t) {
-            return formatStoragePremium((int)($t['max_storage_mb'] ?? 0));
-        }
-    ],
-];
-
-foreach ($availableFeatures as $fKey => $fData) {
-    $rowsToCompare[] = [
-        'label' => __($fData['title_key']),
-        'desc' => __($fData['desc_key']),
-        'icon' => $fData['icon'],
-        'values_fn' => function($t) use ($fKey, $fData) {
-            $hasFeat = !empty($t[$fKey]);
-            if ($fKey === 'feat_custom_palettes') {
-                return $hasFeat ? ($t['max_custom_palettes'] ?? 0) : false;
-            }
-            return $hasFeat;
-        }
-    ];
-}
+$currentUserTier = $upgradeData['currentUserTier'];
+$allTiers = $upgradeData['allTiers'];
+$rowsToCompare = $upgradeData['rowsToCompare'];
 ?>
 <div class="view-content" data-ref="subscription-wrapper">
     

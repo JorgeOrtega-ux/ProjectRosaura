@@ -1,15 +1,8 @@
 <?php
-use App\Core\System\StorePackagesConfig;
+use App\Api\Services\App\AppViewService;
 
-$contentPackages = [];
-if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfig::class, 'getContentPackages')) {
-    try {
-        $contentPackages = StorePackagesConfig::getContentPackages();
-        if (!is_array($contentPackages)) $contentPackages = [];
-    } catch (\Throwable $e) {
-        $contentPackages = [];
-    }
-}
+$viewService = new AppViewService();
+$contentPackages = $viewService->getStoreContentData();
 ?>
 <div class="view-content" data-ref="store-content-wrapper">
     <div class="component-wrapper component-wrapper--full no-padding">

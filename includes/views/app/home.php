@@ -1,6 +1,11 @@
 <?php
+use App\Api\Services\App\AppViewService;
+
 global $initialCanvasesJson;
 $initialCanvasesJson = $initialCanvasesJson ?? '[]';
+
+$viewService = new AppViewService();
+$tagsList = $viewService->getHomeTags();
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="purchase-history-wrapper">
@@ -17,25 +22,7 @@ $initialCanvasesJson = $initialCanvasesJson ?? '[]';
                             <span class="material-symbols-rounded">explore</span>
                             <?php echo __('filter_all_canvases'); ?>
                         </button>
-                        <?php 
-                        $tagsList = [
-                            'art' => 'palette', 
-                            'gaming' => 'sports_esports', 
-                            'anime' => 'animation', 
-                            'flags' => 'flag', 
-                            'memes' => 'mood', 
-                            'pixelart' => 'grid_on', 
-                            'community' => 'groups', 
-                            'nature' => 'nature', 
-                            'scifi' => 'rocket_launch', 
-                            'fantasy' => 'auto_fix_high',
-                            'music' => 'music_note',
-                            'sports' => 'sports_soccer',
-                            'popculture' => 'movie',
-                            'abstract' => 'blur_on',
-                            'experimental' => 'science'
-                        ];
-                        foreach($tagsList as $tag => $icon): ?>
+                        <?php foreach($tagsList as $tag => $icon): ?>
                             <button class="component-badge component-badge--interactive" data-action="filterHomeTag" data-tag="<?php echo $tag; ?>">
                                 <span class="material-symbols-rounded"><?php echo $icon; ?></span>
                                 <?php echo __('tag_' . $tag); ?>

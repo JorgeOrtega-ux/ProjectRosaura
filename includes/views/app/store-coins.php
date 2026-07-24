@@ -1,15 +1,8 @@
 <?php
-use App\Core\System\StorePackagesConfig;
+use App\Api\Services\App\AppViewService;
 
-$coinPackages = [];
-if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfig::class, 'getCoinPackages')) {
-    try {
-        $coinPackages = StorePackagesConfig::getCoinPackages();
-        if (!is_array($coinPackages)) $coinPackages = [];
-    } catch (\Throwable $e) {
-        $coinPackages = [];
-    }
-}
+$viewService = new AppViewService();
+$coinPackages = $viewService->getStoreCoinsData();
 ?>
 <div class="view-content" data-ref="store-coins-wrapper">
     <div class="component-wrapper component-wrapper--full no-padding">

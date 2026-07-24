@@ -42,7 +42,11 @@ class StripeServices {
 
         $prices = [];
         foreach ($packages as $amount => $pkg) {
-            $prices[$amount] = $_ENV[$pkg['stripe_env_key']];
+            $envKey = $pkg['stripe_env_key'] ?? '';
+            $priceId = (!empty($envKey) && !empty($_ENV[$envKey])) ? $_ENV[$envKey] : ($pkg['default_price_id'] ?? null);
+            if ($priceId) {
+                $prices[$amount] = $priceId;
+            }
         }
         return $prices;
     }
