@@ -207,6 +207,7 @@ class CanvasAssetController extends BaseController {
 
             // --- TOKEN LIMIT CHECK (5 Hours Window) ---
             $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($tier);
+            $maxTokens = (int)($planLimits['max_template_tokens'] ?? 0);
             if ($maxTokens <= 0) {
                 return $this->respond(['success' => false, 'message' => 'Tu plan actual no incluye cuota de tokens para inyección de plantillas.']);
             }

@@ -975,48 +975,31 @@ export const DialogTemplates = {
             const amount = data.amount || '0.00';
             const currency = (data.currency || 'USD').toUpperCase();
             const isUpgrade = data.isUpgrade || false;
+            const priceText = `${amount} ${currency}`;
+            const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
+            const titleStr = __('title_confirm_purchase', [], 'Confirmar Compra');
+            const totalStr = __('desc_confirm_purchase', [], 'Total a cobrar hoy:');
+            const prorationStr = isUpgrade ? ` (${__('desc_confirm_purchase_proration', [], 'incluye descuento por tu suscripción actual')})` : '';
+            const passwordLabel = __('lbl_account_password', [], 'Contraseña de tu cuenta');
+            const btnCancel = __('btn_cancel', [], 'Cancelar');
+            const btnConfirm = __('btn_confirm', [], 'Confirmar');
+
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
-                    <h2 class="component-modal-title">Confirmar Compra</h2>
-                    <p class="component-modal-desc">
-                        Estás a punto de confirmar la compra. Aquí tienes el desglose:
-                    </p>
+                    <h2 class="component-modal-title">${titleStr}</h2>
+                    <p class="component-modal-desc">${totalStr} <strong>${priceText}</strong>${prorationStr}.</p>
                 </div>
                 <div class="component-modal-body">
-                    <div class="component-card--grouped">
-                        <div class="component-group-item component-group-item--wrap">
-                            <div class="component-card__content">
-                                <div class="component-card__text">
-                                    <h2 class="component-card__title">Total a cobrar hoy</h2>
-                                    <p class="component-card__description">${amount} ${currency}</p>
-                                </div>
-                            </div>
-                        </div>
-                        ${isUpgrade ? `
-                        <div class="component-group-item component-group-item--wrap">
-                            <div class="component-card__content">
-                                <div class="component-card__icon-container">
-                                    <span class="material-symbols-rounded component-text-notice--info">info</span>
-                                </div>
-                                <div class="component-card__text">
-                                    <p class="component-card__description component-text-notice--info">El monto incluye el descuento por el tiempo no utilizado de tu suscripción actual.</p>
-                                </div>
-                            </div>
-                        </div>
-                        ` : ''}
-                        <div style="margin-top: 14px;">
-                            <div class="component-input-group">
-                                <input type="password" id="confirmPurchasePasswordInput" data-ref="confirmPurchasePasswordInput" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="current-password">
-                                <label class="component-input-label">Contraseña de tu cuenta</label>
-                                <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
-                            </div>
-                        </div>
+                    <div class="component-input-group">
+                        <input type="password" id="confirmPurchasePasswordInput" data-ref="confirmPurchasePasswordInput" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="current-password">
+                        <label class="component-input-label">${passwordLabel}</label>
+                        <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
                     </div>
                 </div>
                 <div class="component-modal-actions">
-                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">Cancelar</button>
-                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">Confirmar Pago</button>
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${btnConfirm}</button>
                 </div>
             `;
         }
@@ -1050,20 +1033,22 @@ export const DialogTemplates = {
     confirmClearAreaModal: {
         build: (data = {}) => {
             const count = data.count || 0;
+            const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
+            const titleStr = __('title_confirm_clear_area', [], '¿Vaciar zona seleccionada?');
+            const descRaw = __('desc_confirm_clear_area', [], 'Se borrarán :count píxeles de esta área para todos los usuarios. Esta acción no se puede deshacer.');
+            const descStr = descRaw.replace(':count', `<strong>${count}</strong>`);
+            const btnCancel = __('btn_cancel', [], 'Cancelar');
+            const btnConfirm = __('btn_clear_area', [], 'Vaciar Zona');
+
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-content--centered">
-                    <div class="component-card__icon-container component-text-danger">
-                        <span class="material-symbols-rounded component-icon--64">cleaning_services</span>
-                    </div>
-                    <h2 class="component-modal-title">¿Vaciar zona seleccionada?</h2>
-                    <p class="component-modal-desc">
-                        Se borrarán <strong>${count}</strong> píxeles de esta área para todos los usuarios. Esta acción no se puede deshacer.
-                    </p>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${titleStr}</h2>
+                    <p class="component-modal-desc">${descStr}</p>
                 </div>
                 <div class="component-modal-actions">
-                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="cancel">Cancelar</button>
-                    <button type="button" class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">Vaciar Zona</button>
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${btnConfirm}</button>
                 </div>
             `;
         }

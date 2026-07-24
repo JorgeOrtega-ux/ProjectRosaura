@@ -1782,5 +1782,14 @@
     "in_few_moments_items": "En unos momentos verás los siguientes ítems en tu cuenta:",
     "need_help_contact": "¿Necesitas ayuda? Contacta a nuestro equipo de soporte",
     "coins": "Monedas",
-    "subscription": "Suscripción"
+    "subscription": "Suscripción",
+    "title_confirm_fast_payment": "Autorizar Pago Rápido",
+    "desc_confirm_fast_payment": "Ingresa tu contraseña para activar el pago en 1 clic sin confirmación.",
+    "title_confirm_purchase": "Confirmar Compra",
+    "desc_confirm_purchase": "Total a cobrar hoy:",
+    "desc_confirm_purchase_proration": "incluye descuento por tu suscripción actual",
+    "lbl_account_password": "Contraseña de tu cuenta",
+    "title_confirm_clear_area": "¿Vaciar zona seleccionada?",
+    "desc_confirm_clear_area": "Se borrarán :count píxeles de esta área para todos los usuarios. Esta acción no se puede deshacer.",
+    "btn_clear_area": "Vaciar zona"
 }
