@@ -14,6 +14,7 @@ class CanvasesJoinController {
         if (this.isInitialized) return;
         this.isInitialized = true;
         
+        this.container = document.querySelector('[data-ref="canvas-join-wrapper"]');
         this.form = document.getElementById('form-join-canvas');
         this.input = document.getElementById('join-code-input');
         

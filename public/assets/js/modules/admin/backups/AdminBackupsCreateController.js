@@ -16,6 +16,7 @@ class AdminBackupsCreateController {
         this.handleChangeBound = this.handleChange.bind(this);
     }
     init() {
+        this.container = document.querySelector('[data-ref="custom-backup-wrapper"]');
         this.abortController = new AbortController();
         this.bindEvents();
         if (window.location.pathname.includes('/admin/backup-create')) {

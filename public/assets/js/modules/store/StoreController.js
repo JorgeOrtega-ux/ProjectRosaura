@@ -13,6 +13,7 @@ export class StoreController {
     }
 
     init() {
+        this.container = document.querySelector('[data-ref="store-coins-wrapper"], [data-ref="store-content-wrapper"]');
         document.addEventListener('click', this.handleDocumentClickBound);
         this.pendingPurchaseBtn = null;
         this.checkCheckoutSuccess();

@@ -11,6 +11,7 @@ export class UpgradeController {
     }
 
     init() {
+        this.wrapper = document.querySelector('[data-ref="subscription-wrapper"]');
         window.isYearlyPremium = false;
         document.body.addEventListener('click', this._boundHandleClick);
         this._handleUrlParams();

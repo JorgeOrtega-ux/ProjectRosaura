@@ -70,7 +70,7 @@ foreach ($availableFeatures as $fKey => $fData) {
     ];
 }
 ?>
-<div class="view-content" data-ref="premium-wrapper" id="upgradeViewWrapper">
+<div class="view-content" data-ref="subscription-wrapper">
     
     <?php if (empty($allTiers)): ?>
         <div class="component-viewport">
@@ -86,7 +86,7 @@ foreach ($availableFeatures as $fKey => $fData) {
     <?php else: ?>
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('upgrade_page_title'); ?>&nbsp;<span>ProjectRosaura</span></h1>
+                <h1 class="component-top-title"><?php echo __('upgrade_page_title'); ?></h1>
             </div>
             <div class="component-top-right">
                 <div class="component-dropdown-wrapper">
