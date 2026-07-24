@@ -256,9 +256,22 @@ export const DesignTemplates = {
         }
     },
 
+    async fetchTemplateTokensBalance() {
+        try {
+            const statusRes = await this.api.post(ApiRoutes.Canvases.GetTemplateTokens, {});
+            if (statusRes && statusRes.success && statusRes.tokens) {
+                this.cachedTemplateTokens = statusRes.tokens.remaining_tokens;
+            }
+        } catch (e) {
+            console.error("Error pre-fetching template tokens balance:", e);
+        }
+    },
+
     async loadUserLibrary() {
         if (this.isSpectator || this.isSnapshotMode) return;
         if (this.templatesLoaded || this.isLoadingTemplates) return;
+        
+        this.fetchTemplateTokensBalance();
         
         this.isLoadingTemplates = true;
         try {
@@ -789,8 +802,26 @@ export const DesignTemplates = {
         if (!this.canvasId) return;
         if (this.isInjectLocked || this.isResetLocked || this.isResizeLocked) return;
 
+        const w = tpl.w || 500;
+        const h = tpl.h || 500;
+        const cost = Math.max(500, Math.min(2500, Math.round((w * h) / 2000)));
+        let balance = this.cachedTemplateTokens;
+
+        if (balance === undefined) {
+            try {
+                const statusRes = await this.api.post(ApiRoutes.Canvases.GetTemplateTokens, {});
+                if (statusRes && statusRes.success && statusRes.tokens) {
+                    balance = statusRes.tokens.remaining_tokens;
+                    this.cachedTemplateTokens = balance;
+                }
+            } catch (e) {
+                console.error("Error fetching template tokens balance:", e);
+                balance = 0;
+            }
+        }
+
         if (window.dialogSystem) {
-            const res = await window.dialogSystem.show('confirmInjectTemplate');
+            const res = await window.dialogSystem.show('confirmInjectTemplate', { cost: cost, balance: balance });
             if (!res.confirmed) return;
         }
 
@@ -827,6 +858,10 @@ export const DesignTemplates = {
 
             if (res && res.success) {
                 // Success toast & canvas reload will come via WebSocket event
+                if (this.cachedTemplateTokens !== undefined) {
+                    this.cachedTemplateTokens = Math.max(0, this.cachedTemplateTokens - cost);
+                }
+                this.fetchTemplateTokensBalance();
             } else {
                 showMessage(res?.message || __('err_stamp_failed'), 'error');
             }

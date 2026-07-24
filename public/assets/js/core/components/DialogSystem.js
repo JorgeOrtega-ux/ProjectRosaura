@@ -15,6 +15,7 @@ export class DialogSystem {
         this.handlePointerDownBound = this.handlePointerDown.bind(this);
         this.handlePointerMoveBound = this.handlePointerMove.bind(this);
         this.handlePointerUpBound = this.handlePointerUp.bind(this);
+        this.handleKeyDownBound = this.handleKeyDown.bind(this);
         
         this.initialized = false;
 
@@ -30,6 +31,7 @@ export class DialogSystem {
         document.addEventListener('pointermove', this.handlePointerMoveBound);
         document.addEventListener('pointerup', this.handlePointerUpBound);
         document.addEventListener('pointercancel', this.handlePointerUpBound);
+        document.addEventListener('keydown', this.handleKeyDownBound);
     }
 
     destroy() {
@@ -39,6 +41,7 @@ export class DialogSystem {
         document.removeEventListener('pointermove', this.handlePointerMoveBound);
         document.removeEventListener('pointerup', this.handlePointerUpBound);
         document.removeEventListener('pointercancel', this.handlePointerUpBound);
+        document.removeEventListener('keydown', this.handleKeyDownBound);
         
         const container = document.querySelector('.modal-container[data-type="modal"]');
         if (container) container.remove();
@@ -111,6 +114,33 @@ export class DialogSystem {
 
             this.activeResolveFn = resolve;
         });
+    }
+
+    handleKeyDown(e) {
+        if (!this.activeResolveFn) return;
+
+        if (e.key === 'Enter') {
+            const activeEl = document.activeElement;
+            if (activeEl && activeEl.tagName === 'TEXTAREA') return;
+
+            if (this.activeBox) {
+                const confirmBtn = this.activeBox.querySelector(
+                    'button[data-modal-action="confirm"], ' +
+                    'button[data-modal-action="confirm_dynamic_form"], ' +
+                    'button[data-modal-action="finish"], ' +
+                    'button[data-action="confirm"], ' +
+                    '#btn_confirm_custom_backup'
+                );
+
+                if (confirmBtn && !confirmBtn.disabled && !confirmBtn.classList.contains('disabled')) {
+                    e.preventDefault();
+                    confirmBtn.click();
+                }
+            }
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            this.closeCurrent(false);
+        }
     }
 
     handleClick(e) {

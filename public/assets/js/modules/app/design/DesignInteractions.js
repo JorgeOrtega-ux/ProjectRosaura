@@ -286,19 +286,18 @@ export const DesignInteractions = {
             const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-templates"]');
             if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
         } else if (keyUpper === 'U') {
+            e.preventDefault();
+            if (this.activeTemplateId) {
+                const tpl = this.templates ? this.templates.find(t => t.id === this.activeTemplateId) : null;
+                if (tpl && !tpl.locked) {
+                    if (typeof this.toggleTemplateLock === 'function') {
+                        this.toggleTemplateLock();
+                        return;
+                    }
+                }
+            }
             const btn = document.querySelector('[data-action="unlockTemplateTop"]');
-            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
-        } else if (keyUpper === 'P') {
-            const btn = document.querySelector('[data-action="togglePerksInventory"]');
-            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
-        } else if (keyUpper === 'O') {
-            const btn = document.querySelector('[data-action="toggleOwnerTools"]');
-            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
-        } else if (keyUpper === 'H') {
-            const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-chat"]');
-            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
-        } else if (keyUpper === 'L') {
-            if (typeof this.toggleTemplateLock === 'function') { e.preventDefault(); this.toggleTemplateLock(); }
+            if (btn && !btn.classList.contains('disabled')) { btn.click(); }
         } else if (keyUpper === 'R') {
             if (typeof this.rotateTemplate === 'function') { e.preventDefault(); this.rotateTemplate(); }
         } else if (keyUpper === 'B') {
@@ -359,22 +358,7 @@ export const DesignInteractions = {
 
         const isOperationalLocked = !!(this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked);
 
-        // Check Shift + Click to unlock a locked template directly on the canvas
-        if (e.shiftKey && this.templates && this.templates.length > 0) {
-            const lockedHit = this.templates.find(t => t.locked && exact.x >= t.x && exact.x <= t.x + t.w && exact.y >= t.y && exact.y <= t.y + t.h);
-            if (lockedHit) {
-                e.preventDefault();
-                lockedHit.locked = false;
-                this.activeTemplateId = lockedHit.id;
-                this.updateTemplateUI();
-                this.requestRender();
-                if (typeof showMessage === 'function') {
-                    const msg = (typeof window.__ === 'function' ? window.__('msg_template_unlocked') : null) || 'Plantilla Desbloqueada';
-                    showMessage(msg, 'info');
-                }
-                return;
-            }
-        }
+
 
         if (this.activeTemplateId && !this.isSpectator && !isOperationalLocked) {
             const handleHit = typeof this.checkTemplateHandleHit === 'function' ? this.checkTemplateHandleHit(exact.x, exact.y) : null;

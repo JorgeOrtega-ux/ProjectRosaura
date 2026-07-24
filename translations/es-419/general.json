@@ -1137,7 +1137,7 @@
     "reason": "Motivo",
     "details": "Detalles",
     "msg_restore_warning_data_loss": "Atención: La restauración sobrescribirá los datos actuales.",
-    "tooltip_toggle_lock": "Bloquear \/ Desbloquear lienzo",
+    "tooltip_toggle_lock": "Fijar plantilla",
     "settings.2fa_enabled": "Autenticación de dos factores activada con éxito.",
     "msg_message_reported": "El mensaje ha sido reportado.",
     "tooltip_color_palette": "Paleta de colores del lienzo",

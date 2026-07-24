@@ -12,10 +12,12 @@ use App\Config\Database\RedisCache;
 class CanvasAssetController extends BaseController {
     private $canvasServices;
     private $session;
+    private $userRepo;
 
-    public function __construct(CanvasAssetService $canvasServices, SessionManagerInterface $session) {
+    public function __construct(CanvasAssetService $canvasServices, SessionManagerInterface $session, \App\Core\Interfaces\UserRepositoryInterface $userRepo) {
         $this->canvasServices = $canvasServices;
         $this->session = $session;
+        $this->userRepo = $userRepo;
     }
 
 
@@ -214,20 +216,12 @@ class CanvasAssetController extends BaseController {
 
             $w = (int)($input['w'] ?? 500);
             $h = (int)($input['h'] ?? 500);
-            // Dynamic token cost based on dimension or minimum base cost of 500 tokens
-            $tokensCost = max(500, min(2500, (int)round(($w * $h) / 2000)));
+            // Dynamic token cost based on dimension or minimum base cost of 25 tokens
+            $tokensCost = max(25, min(2500, (int)round(($w * $h) / 1000)));
 
-            $stmtUsage = $pdoIdentity->prepare("SELECT template_tokens_used, template_tokens_reset_at FROM users WHERE id = :id LIMIT 1");
-            $stmtUsage->execute([':id' => $userId]);
-            $userRow = $stmtUsage->fetch(\PDO::FETCH_ASSOC) ?: [];
-
-            $usedTokens = (int)($userRow['template_tokens_used'] ?? 0);
-            $resetAt = $userRow['template_tokens_reset_at'] ?? null;
-
-            if ($resetAt && strtotime($resetAt) <= time()) {
-                $usedTokens = 0;
-                $resetAt = null;
-            }
+            $usage = $this->userRepo->getTemplateTokenUsage($userId);
+            $usedTokens = (int)($usage['used'] ?? 0);
+            $resetAt = $usage['reset_at'] ?? null;
 
             if (($usedTokens + $tokensCost) > $maxTokens) {
                 $resetInSecs = $resetAt ? max(0, strtotime($resetAt) - time()) : 0;
@@ -238,14 +232,7 @@ class CanvasAssetController extends BaseController {
                 ]);
             }
 
-            // Initialize 5-hour window on first consumption
-            if (!$resetAt) {
-                $resetAt = date('Y-m-d H:i:s', strtotime('+5 hours'));
-            }
-
-            $newUsedTokens = $usedTokens + $tokensCost;
-            $stmtDeduct = $pdoIdentity->prepare("UPDATE users SET template_tokens_used = ?, template_tokens_reset_at = ? WHERE id = ?");
-            $stmtDeduct->execute([$newUsedTokens, $resetAt, $userId]);
+            $this->userRepo->consumeTemplateTokens($userId, $tokensCost);
             // --- END TOKEN LIMIT CHECK ---
 
             $canvasUuid = $input['canvas_id'] ?? null;
@@ -282,6 +269,42 @@ class CanvasAssetController extends BaseController {
             
             return $this->respond(['success' => true, 'message' => 'Imagen encolada correctamente. Por favor espera unos segundos.']);
             
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function get_template_tokens($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            
+            $dbManager = new \App\Config\Database\DatabaseManager();
+            $pdoIdentity = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmtUser = $pdoIdentity->prepare("SELECT subscription_tier FROM users WHERE id = :id LIMIT 1");
+            $stmtUser->execute([':id' => $userId]);
+            $tier = (int)($stmtUser->fetchColumn() ?: 0);
+
+            $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($tier);
+            $maxTokens = (int)($planLimits['max_template_tokens'] ?? 0);
+
+            $usage = $this->userRepo->getTemplateTokenUsage($userId);
+            $usedTokens = (int)($usage['used'] ?? 0);
+            $remainingTokens = max(0, $maxTokens - $usedTokens);
+
+            return $this->respond([
+                'success' => true,
+                'tokens' => [
+                    'used_tokens' => $usedTokens,
+                    'max_tokens' => $maxTokens,
+                    'remaining_tokens' => $remainingTokens,
+                    'reset_at' => $usage['reset_at'],
+                    'reset_in_seconds' => $usage['reset_in_seconds'],
+                    'has_feature' => ($maxTokens > 0)
+                ]
+            ]);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }

@@ -41,6 +41,7 @@ class CacheConstants {
     public const PREFIX_CANVAS_DETAIL = 'canvas:id:';
     public const PREFIX_USER_PROFILE = 'user:profile:';
     public const PREFIX_STORE_COINS = 'store:user:coins:';
+    public const PREFIX_USER_TEMPLATE_TOKENS = 'user:template_tokens:';
     public const PATTERN_CACHE = 'cache:*';
     public const PATTERN_PR_CACHE = 'PR_cache:*';
     public const TTL_ONE_MIN = 60;

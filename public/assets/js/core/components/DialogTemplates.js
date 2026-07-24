@@ -942,11 +942,19 @@ export const DialogTemplates = {
     },
 
     confirmInjectTemplate: {
-        build: () => DialogTemplates.confirmAction.build({
-            titleKey: 'title_confirm_action',
-            descHtml: __('confirm_inject_template'),
-            confirmClass: 'component-button--warning'
-        })
+        build: (data = {}) => {
+            const cost = data.cost || 0;
+            const balance = data.balance || 0;
+            const remaining = Math.max(0, balance - cost);
+            const msgConfirm = __('confirm_inject_template');
+            const desc = `${msgConfirm}<br><br><span style="display:block;margin-top:8px;font-size:13px;opacity:0.9;"><strong>Costo:</strong> ${cost.toLocaleString()} tokens<br><strong>Saldo actual:</strong> ${balance.toLocaleString()} tokens (te quedarán ${remaining.toLocaleString()})</span>`;
+            
+            return DialogTemplates.confirmAction.build({
+                titleKey: 'title_confirm_action',
+                descHtml: desc,
+                confirmClass: 'component-button--warning'
+            });
+        }
     },
 
     confirmUnlinkGoogleModal: {

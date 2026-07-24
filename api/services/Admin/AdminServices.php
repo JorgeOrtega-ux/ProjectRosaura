@@ -714,6 +714,7 @@ class AdminServices {
         $maxSnapshots = (int)($limits['max_snapshots_per_canvas'] ?? 10);
         $maxMembers = (int)($limits['max_members_per_canvas'] ?? 10);
         $maxCustomPalettes = (int)($limits['max_custom_palettes'] ?? 0);
+        $maxTemplateTokens = (int)($limits['max_template_tokens'] ?? 0);
         
         $featAdvancedRoles = empty($featuresData['feat_advanced_roles']) ? 0 : 1;
         $featChatRestriction = empty($featuresData['feat_chat_restriction']) ? 0 : 1;
@@ -729,8 +730,8 @@ class AdminServices {
             
             if (!empty($uuid)) {
                 // Update
-                $stmt = $pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, is_active = ?, color = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, price_monthly = ?, price_yearly = ?, max_canvases = ?, max_storage_mb = ?, max_snapshots_per_canvas = ?, max_members_per_canvas = ?, max_custom_palettes = ?, feat_advanced_roles = ?, feat_chat_restriction = ?, feat_custom_palettes = ?, feat_priority_rendering = ?, feat_unlimited_exports = ?, feat_beta_access = ?, feat_inject_templates = ? WHERE uuid = ?");
-                $stmt->execute([$name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featPriorityRendering, $featUnlimitedExports, $featBetaAccess, $featInjectTemplates, $uuid]);
+                $stmt = $pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, is_active = ?, color = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, price_monthly = ?, price_yearly = ?, max_canvases = ?, max_storage_mb = ?, max_snapshots_per_canvas = ?, max_members_per_canvas = ?, max_custom_palettes = ?, feat_advanced_roles = ?, feat_chat_restriction = ?, feat_custom_palettes = ?, feat_priority_rendering = ?, feat_unlimited_exports = ?, feat_beta_access = ?, feat_inject_templates = ?, max_template_tokens = ? WHERE uuid = ?");
+                $stmt->execute([$name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featPriorityRendering, $featUnlimitedExports, $featBetaAccess, $featInjectTemplates, $maxTemplateTokens, $uuid]);
 
                 try {
                     $redisCache = new \App\Config\Database\RedisCache();
@@ -747,8 +748,8 @@ class AdminServices {
             } else {
                 // Insert
                 $uuid = \App\Core\Helpers\Utils::generateUUID();
-                $stmt = $pdo->prepare("INSERT INTO subscription_tiers (uuid, name, tier_level, is_active, color, stripe_price_id_monthly, stripe_price_id_yearly, price_monthly, price_yearly, max_canvases, max_storage_mb, max_snapshots_per_canvas, max_members_per_canvas, max_custom_palettes, feat_advanced_roles, feat_chat_restriction, feat_custom_palettes, feat_priority_rendering, feat_unlimited_exports, feat_beta_access, feat_inject_templates) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$uuid, $name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featPriorityRendering, $featUnlimitedExports, $featBetaAccess, $featInjectTemplates]);
+                $stmt = $pdo->prepare("INSERT INTO subscription_tiers (uuid, name, tier_level, is_active, color, stripe_price_id_monthly, stripe_price_id_yearly, price_monthly, price_yearly, max_canvases, max_storage_mb, max_snapshots_per_canvas, max_members_per_canvas, max_custom_palettes, feat_advanced_roles, feat_chat_restriction, feat_custom_palettes, feat_priority_rendering, feat_unlimited_exports, feat_beta_access, feat_inject_templates, max_template_tokens) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$uuid, $name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featPriorityRendering, $featUnlimitedExports, $featBetaAccess, $featInjectTemplates, $maxTemplateTokens]);
                 
                 try {
                     $redisCache = new \App\Config\Database\RedisCache();

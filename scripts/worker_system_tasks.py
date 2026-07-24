@@ -981,13 +981,34 @@ def template_tokens_reset_thread():
             conn = get_db_connection()
             if conn:
                 with conn.cursor() as cursor:
+                    # Select IDs of users whose tokens are about to be reset
                     cursor.execute("""
-                        UPDATE users 
-                        SET template_tokens_used = 0, template_tokens_reset_at = NULL 
+                        SELECT id FROM users 
                         WHERE template_tokens_reset_at IS NOT NULL 
                           AND template_tokens_reset_at <= NOW()
                     """)
-                    conn.commit()
+                    users_to_reset = [row[0] for row in cursor.fetchall()]
+                    
+                    if users_to_reset:
+                        cursor.execute("""
+                            UPDATE users 
+                            SET template_tokens_used = 0, template_tokens_reset_at = NULL 
+                            WHERE template_tokens_reset_at IS NOT NULL 
+                              AND template_tokens_reset_at <= NOW()
+                        """)
+                        conn.commit()
+                        
+                        # Invalidate Redis cache for these users
+                        try:
+                            r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS, db=0)
+                            for user_id in users_to_reset:
+                                cache_key = f"user:template_tokens:{user_id}"
+                                r.delete(cache_key)
+                                profile_key = f"user:profile:{user_id}"
+                                r.delete(profile_key)
+                            Logger.info(f"Reset template tokens and invalidated Redis cache for user IDs: {users_to_reset}")
+                        except Exception as re:
+                            Logger.error(f"Error invalidating Redis cache in reset thread: {re}")
                 conn.close()
         except Exception as e:
             Logger.error(f"Error in template_tokens_reset_thread: {e}")

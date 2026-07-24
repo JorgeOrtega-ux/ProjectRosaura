@@ -252,18 +252,18 @@ if (!empty($canvasUuid)) {
             <canvas data-ref="design-canvas" class="component-canvas-surface <?php echo (isset($isBlockedInit) && $isBlockedInit) ? 'component-canvas-blocked disabled-interaction' : ''; ?>"></canvas>
 
             <div class="component-badge component-badge--dark component-badge--toolbar" data-ref="template-floating-toolbar" style="display: none;">
-                <button class="component-button component-button--icon component-button--h24" data-action="toggleTemplateLock" data-ref="btn-template-lock" data-tooltip="<?php echo __('tooltip_toggle_lock'); ?>" data-position="top">
+                <button class="component-button component-button--icon component-button--h24" data-action="toggleTemplateLock" data-ref="btn-template-lock" data-tooltip="<?php echo __('tooltip_toggle_lock'); ?> [U]" data-position="top">
                     <span class="material-symbols-rounded">lock_open</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h24" data-action="rotateTemplate" data-ref="btn-template-rotate" data-tooltip="<?php echo __('tooltip_rotate_template'); ?>" data-position="top">
+                <button class="component-button component-button--icon component-button--h24" data-action="rotateTemplate" data-ref="btn-template-rotate" data-tooltip="<?php echo __('tooltip_rotate_template'); ?> [R]" data-position="top">
                     <span class="material-symbols-rounded">rotate_right</span>
                 </button>
                 <?php if (isset($canInjectTemplate) && $canInjectTemplate): ?>
-                <button class="component-button component-button--icon component-button--h24" data-action="injectTemplate" data-ref="btn-template-inject" data-tooltip="<?php echo __('tooltip_inject_template'); ?>" data-position="top">
+                <button class="component-button component-button--icon component-button--h24" data-action="injectTemplate" data-ref="btn-template-inject" data-tooltip="<?php echo __('tooltip_inject_template'); ?> [B]" data-position="top">
                     <span class="material-symbols-rounded">brush</span>
                 </button>
                 <?php endif; ?>
-                <button class="component-button component-button--icon component-button--h24" data-action="deleteTemplate" data-ref="btn-template-delete" data-tooltip="<?php echo __('tooltip_remove_template'); ?>" data-position="top">
+                <button class="component-button component-button--icon component-button--h24" data-action="deleteTemplate" data-ref="btn-template-delete" data-tooltip="<?php echo __('tooltip_remove_template'); ?> [Supr]" data-position="top">
                     <span class="material-symbols-rounded">delete</span>
                 </button>
             </div>

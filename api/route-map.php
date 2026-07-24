@@ -667,6 +667,11 @@ return [
         'action' => 'inject_template',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_inject_template', 'max' => 5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
+    'canvases.template_tokens' => [
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
+        'action' => 'get_template_tokens',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_tpl_tokens', 'max' => 60, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
 
     'canvases.update_chat_restriction' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasChatRestrictionController',

@@ -73,7 +73,7 @@ class SubscriptionPlanConstants {
                     'feat_unlimited_exports' => (bool)$row['feat_unlimited_exports'],
                     'feat_beta_access' => (bool)$row['feat_beta_access'],
                     'feat_inject_templates' => (bool)($row['feat_inject_templates'] ?? false),
-                    'max_template_tokens' => ((bool)($row['feat_inject_templates'] ?? false)) ? 5000 : 0,
+                    'max_template_tokens' => (int)($row['max_template_tokens'] ?? 0),
                     'allow_live_chat' => (bool)$row['feat_chat_restriction'],
                     'custom_palettes' => (bool)$row['feat_custom_palettes']
                 ];

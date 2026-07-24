@@ -28,6 +28,7 @@ class UserRepository implements UserRepositoryInterface {
     public function invalidateProfileCache(int $userId, ?string $uuid = null): void {
         if ($this->redisClient) {
             $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+            $this->redisClient->del(CacheConstants::PREFIX_USER_TEMPLATE_TOKENS . $userId);
             if ($uuid) {
                 $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $uuid);
             } else {
@@ -546,6 +547,41 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     public function getTemplateTokenUsage(int $userId): array {
+        $cacheKey = CacheConstants::PREFIX_USER_TEMPLATE_TOKENS . $userId;
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== false && $cached !== null) {
+                    $data = json_decode($cached, true);
+                    if (is_array($data)) {
+                        $used = (int)($data['used'] ?? 0);
+                        $resetAtStr = $data['reset_at'] ?? null;
+                        $resetInSeconds = 0;
+                        if ($resetAtStr) {
+                            $resetTime = strtotime($resetAtStr);
+                            $now = time();
+                            if ($resetTime <= $now) {
+                                $tblUsers = DB::TBL_USERS;
+                                $stmtReset = $this->pdo->prepare("UPDATE {$tblUsers} SET template_tokens_used = 0, template_tokens_reset_at = NULL WHERE id = ?");
+                                $stmtReset->execute([$userId]);
+                                $this->invalidateProfileCache($userId);
+                                return ['used' => 0, 'reset_at' => null, 'reset_in_seconds' => 0];
+                            } else {
+                                $resetInSeconds = $resetTime - $now;
+                            }
+                        }
+                        return [
+                            'used' => $used,
+                            'reset_at' => $resetAtStr,
+                            'reset_in_seconds' => $resetInSeconds
+                        ];
+                    }
+                }
+            } catch (\Throwable $e) {
+                Logger::error("Redis error in " . __METHOD__, ['exception' => $e]);
+            }
+        }
+
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("SELECT template_tokens_used, template_tokens_reset_at FROM {$tblUsers} WHERE id = ?");
@@ -573,11 +609,22 @@ class UserRepository implements UserRepositoryInterface {
                 }
             }
 
-            return [
+            $result = [
                 'used' => $used,
                 'reset_at' => $resetAtStr,
                 'reset_in_seconds' => $resetInSeconds
             ];
+
+            if ($this->redisClient) {
+                try {
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode([
+                        'used' => $used,
+                        'reset_at' => $resetAtStr
+                    ]));
+                } catch (\Throwable $e) {}
+            }
+
+            return $result;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
             return ['used' => 0, 'reset_at' => null, 'reset_in_seconds' => 0];
@@ -600,11 +647,23 @@ class UserRepository implements UserRepositoryInterface {
                 $stmt->execute([$tokensToConsume, $userId]);
             }
 
+            $newUsed = $currentUsed + $tokensToConsume;
+            
+            // Invalidate/update cache
             $this->invalidateProfileCache($userId);
+            if ($this->redisClient) {
+                try {
+                    $cacheKey = CacheConstants::PREFIX_USER_TEMPLATE_TOKENS . $userId;
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode([
+                        'used' => $newUsed,
+                        'reset_at' => $resetAt
+                    ]));
+                } catch (\Throwable $e) {}
+            }
 
             return [
                 'success' => true,
-                'new_used' => $currentUsed + $tokensToConsume,
+                'new_used' => $newUsed,
                 'reset_at' => $resetAt
             ];
         } catch (PDOException $e) {

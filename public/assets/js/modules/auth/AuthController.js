@@ -14,6 +14,7 @@ class AuthController {
 
         this.handleClickBound = this.handleClick.bind(this);
         this.handleInputBound = this.handleInput.bind(this);
+        this.handleKeyDownBound = this.handleKeyDown.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
     }
 
@@ -45,6 +46,7 @@ class AuthController {
 
         document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('input', this.handleInputBound);
+        document.removeEventListener('keydown', this.handleKeyDownBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
 
         if (this.resendInterval) {
@@ -58,6 +60,7 @@ class AuthController {
     bindEvents() {
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('input', this.handleInputBound);
+        document.addEventListener('keydown', this.handleKeyDownBound);
         window.addEventListener('viewLoaded', this.handleViewLoadedBound);
     }
 
@@ -66,6 +69,30 @@ class AuthController {
             const resendBtn = document.querySelector('[data-ref="btn-resend-register-code"]');
             const defaultText = __('btn_resend_code');
             if (resendBtn) this.startResendTimer(resendBtn, defaultText, 60, true);
+        }
+    }
+
+    handleKeyDown(e) {
+        if (e.key === 'Enter') {
+            const activeEl = document.activeElement;
+            if (activeEl && activeEl.tagName === 'INPUT') {
+                const formBox = activeEl.closest('.component-form-box');
+                if (formBox) {
+                    const submitBtn = formBox.querySelector(
+                        'button[data-action="submitLogin"], ' +
+                        'button[data-action="submitLogin2FA"], ' +
+                        'button[data-action="submitRegisterStep1"], ' +
+                        'button[data-action="submitRegisterStep2"], ' +
+                        'button[data-action="submitRegisterVerify"], ' +
+                        'button[data-action="submitForgotPassword"], ' +
+                        'button[data-action="submitResetPassword"]'
+                    );
+                    if (submitBtn && !submitBtn.disabled && !submitBtn.classList.contains('disabled')) {
+                        e.preventDefault();
+                        submitBtn.click();
+                    }
+                }
+            }
         }
     }
 

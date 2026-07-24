@@ -645,7 +645,8 @@ class AdminSubscriptionBuilderController {
                 max_storage_mb: parseInt(document.querySelector('[data-ref="val_featMaxStorage"]')?.dataset.val || 0, 10),
                 max_snapshots_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxSnapshots"]')?.dataset.val || 0, 10),
                 max_members_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxMembers"]')?.dataset.val || 0, 10),
-                max_custom_palettes: parseInt(document.querySelector('[data-ref="val_featMaxCustomPalettes"]')?.dataset.val || 0, 10)
+                max_custom_palettes: parseInt(document.querySelector('[data-ref="val_featMaxCustomPalettes"]')?.dataset.val || 0, 10),
+                max_template_tokens: parseInt(document.querySelector('[data-ref="val_featMaxTemplateTokens"]')?.dataset.val || 0, 10)
             }
         };
         
