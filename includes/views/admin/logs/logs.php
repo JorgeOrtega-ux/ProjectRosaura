@@ -1,62 +1,12 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-
-$logFiles = [];
-$logBaseDir = ROOT_PATH . '/storage/private/logs/';
-
-if (is_dir($logBaseDir)) {
-    $categories = array_diff(scandir($logBaseDir), ['.', '..', '.htaccess', '.gitkeep']);
-    
-    foreach ($categories as $category) {
-        $catDir = $logBaseDir . $category;
-        if (is_dir($catDir)) {
-            $files = array_diff(scandir($catDir), ['.', '..', '.htaccess', '.gitkeep']);
-            foreach ($files as $file) {
-                if (pathinfo($file, PATHINFO_EXTENSION) === 'log') {
-                    $filepath = $catDir . '/' . $file;
-                    $sizeBytes = filesize($filepath);
-                    
-                    $sizeFormatted = $sizeBytes >= 1048576 
-                                    ? round($sizeBytes / 1048576, 2) . ' MB' 
-                                    : round($sizeBytes / 1024, 2) . ' KB';
-                                    
-                    $logFiles[] = [
-                        'id' => base64_encode($category . '/' . $file),
-                        'filename' => $file,
-                        'category' => $category,
-                        'size' => $sizeFormatted,
-                        'modified_at' => date('Y-m-d H:i:s', filemtime($filepath))
-                    ];
-                }
-            }
-        }
-    }
-    usort($logFiles, function($a, $b) {
-        return strtotime($b['modified_at']) - strtotime($a['modified_at']);
-    });
-}
-$searchQuery = isset($_GET['q']) ? strtolower(trim($_GET['q'])) : '';
-$categoryFilter = isset($_GET['category']) && $_GET['category'] !== '' ? explode(',', $_GET['category']) : [];
-
-$filteredLogs = array_filter($logFiles, function($log) use ($searchQuery, $categoryFilter) {
-    if ($searchQuery !== '' && strpos(strtolower($log['filename']), $searchQuery) === false) return false;
-    if (!empty($categoryFilter) && !in_array($log['category'], $categoryFilter)) return false;
-    return true;
-});
-
-$limit = 25; 
-$totalLogs = count($filteredLogs);
-$totalPages = ceil($totalLogs / $limit);
-if ($totalPages < 1) $totalPages = 1;
+use App\Api\Services\Admin\AdminViewService;
 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($page < 1) $page = 1;
-if ($page > $totalPages) $page = $totalPages;
+$adminService = new AdminViewService();
+$logsData = $adminService->getLogsData($_GET['category'] ?? 'all', $page);
 
-$offset = ($page - 1) * $limit;
-$pagedLogs = array_slice($filteredLogs, $offset, $limit);
-
-$appUrl = defined('APP_URL') ? APP_URL : '';
+extract($logsData);
+$pagedLogs = $logs;
 
 $queryParams = $_GET;
 unset($queryParams['url'], $queryParams['page']);

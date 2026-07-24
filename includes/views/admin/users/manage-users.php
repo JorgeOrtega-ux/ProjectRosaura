@@ -1,149 +1,19 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-
-use App\Config\Database\DatabaseManager;
+use App\Api\Services\Admin\AdminViewService;
 use App\Core\Helpers\Utils;
-use App\Core\System\DatabaseConstants as DB;
-use PDO;
-$userPerms = $_SESSION['user_permissions'] ?? [];
-$isSuperAdmin = isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4;
-$canEditUsers = in_array('edit_users', $userPerms);
-$canAssignRoles = in_array(\App\Core\System\PermissionsConstants::ASSIGN_ROLES, $userPerms);
-$canDeleteUsers = in_array('delete_users', $userPerms) || $isSuperAdmin;
-$canModerateUsers = count(array_intersect(['moderate_users', 'delete_users'], $userPerms)) > 0;
-$canViewKardex = in_array('view_kardex', $userPerms);
- 
-$limit = 25; 
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($page < 1) $page = 1;
-$offset = ($page - 1) * $limit;
-
-$db = new DatabaseManager(); 
-$pdo = $db->getConnection(DB::CONN_IDENTITY); 
-
-$tblUsers = DB::TBL_USERS;
-$tblRoles = DB::TBL_ROLES;
-$tblUserRoles = DB::TBL_USER_ROLES;
-$tblUserRestr = DB::TBL_USER_RESTRICTIONS;
-
-$stmtRoles = $pdo->query("SELECT id, name FROM {$tblRoles} ORDER BY id ASC");
-$allRoles = $stmtRoles->fetchAll(PDO::FETCH_ASSOC);
 
 $searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
 $rolesFilter = isset($_GET['roles']) && $_GET['roles'] !== '' ? array_filter(array_map('intval', explode(',', $_GET['roles']))) : [];
 $statusFilter = isset($_GET['status']) && $_GET['status'] !== '' ? array_filter(explode(',', $_GET['status'])) : [];
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 
-$whereConditions = ["1=1"];
-$params = [];
+$adminService = new AdminViewService();
+$usersData = $adminService->getManageUsersData($searchQuery, $rolesFilter, $statusFilter, $page);
 
-if ($searchQuery !== '') {
-    $whereConditions[] = "(u.email LIKE :q1 OR u.username LIKE :q2 OR u.uuid LIKE :q3)";
-    $qVal = '%' . $searchQuery . '%';
-    $params[':q1'] = $qVal;
-    $params[':q2'] = $qVal;
-    $params[':q3'] = $qVal;
-}
-
-if (!empty($statusFilter)) {
-    $statusConditions = [];
-    if (in_array('active', $statusFilter)) {
-        $statusConditions[] = "(ur.is_suspended = 0 OR ur.is_suspended IS NULL)";
-    }
-    if (in_array('suspended', $statusFilter)) {
-        $statusConditions[] = "(ur.is_suspended = 1)";
-    }
-    
-    if (!empty($statusConditions)) {
-        $whereConditions[] = "(" . implode(" OR ", $statusConditions) . ")";
-    } else {
-        $whereConditions[] = "1=0";
-    }
-}
-
-$whereClause = implode(" AND ", $whereConditions);
-
-$joinRole = "";
-if (!empty($rolesFilter)) {
-    $placeholders = [];
-    foreach ($rolesFilter as $i => $rId) {
-        $key = ":role_" . $i;
-        $placeholders[] = $key;
-        $params[$key] = $rId;
-    }
-    $placeholdersStr = implode(',', $placeholders);
-    $joinRole = "INNER JOIN {$tblUserRoles} ur2 ON u.id = ur2.user_id AND ur2.role_id IN ($placeholdersStr)";
-}
-
-$stmtCount = $pdo->prepare("SELECT COUNT(DISTINCT u.id) FROM {$tblUsers} u LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id $joinRole WHERE $whereClause");
-$stmtCount->execute($params);
-$totalUsers = (int)$stmtCount->fetchColumn();
-
-$totalPages = ceil($totalUsers / $limit);
-if ($totalPages < 1) $totalPages = 1;
-if ($page > $totalPages) {
-    $page = $totalPages;
-    $offset = ($page - 1) * $limit;
-}
-
-$stmt = $pdo->prepare("
-    SELECT u.id, u.uuid, u.username, u.email, u.subscription_tier, u.deletion_scheduled_at, 
-           ur.is_suspended, u.profile_picture, u.created_at,
-           st.color as subscription_color
-    FROM {$tblUsers} u
-    LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id
-    LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
-    $joinRole
-    WHERE $whereClause
-    GROUP BY u.id
-    ORDER BY u.id DESC 
-    LIMIT $limit OFFSET $offset
-");
-$stmt->execute($params);
-$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-if (!empty($users)) {
-    $userIds = array_column($users, 'id');
-    $placeholders = implode(',', array_fill(0, count($userIds), '?'));
-    
-    $stmtRoles = $pdo->prepare("
-        SELECT ur.user_id, r.id, r.name
-        FROM {$tblUserRoles} ur
-        INNER JOIN {$tblRoles} r ON ur.role_id = r.id
-        WHERE ur.user_id IN ($placeholders)
-        ORDER BY r.weight DESC
-    ");
-    $stmtRoles->execute($userIds);
-    $userRoles = $stmtRoles->fetchAll(PDO::FETCH_ASSOC);
-    
-    $rolesByUser = [];
-    foreach ($userRoles as $ur) {
-        $uid = $ur['user_id'];
-        if (!isset($rolesByUser[$uid])) {
-            $rolesByUser[$uid] = ['ids' => [], 'names' => [], 'color' => '#808080'];
-        }
-        $rolesByUser[$uid]['ids'][] = $ur['id'];
-        $rolesByUser[$uid]['names'][] = $ur['name'];
-    }
-    
-    foreach ($users as &$uRow) {
-        $uid = $uRow['id'];
-        if (isset($rolesByUser[$uid])) {
-            $uRow['role_ids'] = implode(',', $rolesByUser[$uid]['ids']);
-            $uRow['role_names'] = implode(',', $rolesByUser[$uid]['names']);
-            $uRow['role_color'] = $rolesByUser[$uid]['color'];
-        } else {
-            $uRow['role_ids'] = null;
-            $uRow['role_names'] = null;
-            $uRow['role_color'] = null;
-        }
-    }
-    unset($uRow);
-}
-
-$appUrl = defined('APP_URL') ? APP_URL : '';
+extract($usersData);
 
 $queryParams = $_GET;
-unset($queryParams['url'], $queryParams['page']); // Remove router params
+unset($queryParams['url'], $queryParams['page']);
 $queryString = !empty($queryParams) ? '&' . http_build_query($queryParams) : '';
 
 $prevPageUrl = $page > 1 ? $appUrl . '/admin/users?page=' . ($page - 1) . $queryString : '#';

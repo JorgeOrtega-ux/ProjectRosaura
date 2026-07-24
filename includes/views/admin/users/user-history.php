@@ -1,66 +1,19 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Admin\AdminViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Config\Database\RedisCache;
-use App\Core\Repositories\RoleRepository;
-use App\Core\Repositories\UserRepository;
-use App\Core\Repositories\ModerationRepository;
-
-$targetUserUuid = isset($_GET['uuid']) ? $_GET['uuid'] : '';
-if (empty($targetUserUuid)) {
-    $redirectUrl = APP_URL . "/admin/users";
-    if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
-        header("X-SPA-Update-URL: " . $redirectUrl);
-        require __DIR__ . '/manage-users.php';
-    } else {
-        header("Location: " . $redirectUrl);
-    }
-    exit;
-}
-
-$db = new DatabaseManager();
-$redis = new RedisCache();
-$roleRepo = new RoleRepository($db, $redis);
-$userRepo = new UserRepository($db, $roleRepo);
-$modRepo = new ModerationRepository($db);
-
-$user = $userRepo->findByUuid($targetUserUuid);
-if (!$user) {
-    $redirectUrl = APP_URL . "/admin/users";
-    if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
-        header("X-SPA-Update-URL: " . $redirectUrl);
-        require __DIR__ . '/manage-users.php';
-    } else {
-        header("Location: " . $redirectUrl);
-    }
-    exit;
-}
-
-$targetUserId = (int)$user['id'];
-
-$limit = 25; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($page < 1) $page = 1;
+$adminService = new AdminViewService();
+$userHistoryData = $adminService->getUserHistoryData($_GET['uuid'] ?? '', $page);
 
-$categoryFilter = isset($_GET['category']) && $_GET['category'] !== '' ? explode(',', $_GET['category']) : [];
-
-$totalItems = $modRepo->countUnifiedKardex($targetUserId, $categoryFilter);
-
-$totalPages = ceil($totalItems / $limit);
-if ($totalPages < 1) $totalPages = 1;
-if ($page > $totalPages) {
-    $page = $totalPages;
+if (!empty($userHistoryData['redirect'])) {
+    header("Location: " . $userHistoryData['redirect']);
+    exit;
 }
 
-$offset = ($page - 1) * $limit;
-$paginatedLogs = $modRepo->getUnifiedKardex($targetUserId, $limit, $offset, $categoryFilter);
-
-if (!is_array($paginatedLogs)) {
-    $paginatedLogs = [];
-}
-
-$appUrl = defined('APP_URL') ? APP_URL : '';
+extract($userHistoryData);
+$user = $targetUser;
+$paginatedLogs = $historyItems;
+$totalItems = $totalHistory;
 
 $queryParams = $_GET;
 unset($queryParams['url'], $queryParams['page']);

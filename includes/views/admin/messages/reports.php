@@ -1,72 +1,10 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Admin\AdminViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Core\System\DatabaseConstants as DB;
+$adminService = new AdminViewService();
+$reportsData = $adminService->getReportsData($_GET['q'] ?? null, (int)($_GET['page'] ?? 1));
 
-$userPerms = $_SESSION['user_permissions'] ?? [];
-$canManageMessages = in_array('view_logs', $userPerms) || true;
-
-$messageUuid = $_GET['uuid'] ?? null;
-$appUrl = defined('APP_URL') ? APP_URL : '';
-
-if (!$messageUuid) {
-    header("Location: " . $appUrl . "/admin/messages");
-    exit;
-}
-
-$db = new DatabaseManager();
-$pdoCanvases = $db->getConnection(DB::CONN_CANVASES);
-$pdoIdentity = $db->getConnection(DB::CONN_IDENTITY);
-
-// Fetch target message details
-$stmt = $pdoCanvases->prepare("
-    SELECT m.id, m.uuid, m.user_id, m.message, m.attachments, m.visibility, m.deleted_by, m.delete_reason, m.created_at, m.canvas_id, c.name as canvas_name, c.uuid as canvas_uuid
-    FROM canvas_chat_messages m
-    LEFT JOIN canvases c ON m.canvas_id = c.id
-    WHERE m.uuid = :uuid
-");
-$stmt->execute([':uuid' => $messageUuid]);
-$messageData = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-if (!$messageData) {
-    header("Location: " . $appUrl . "/admin/messages");
-    exit;
-}
-
-// Fetch sender username
-$senderStmt = $pdoIdentity->prepare("SELECT username FROM users WHERE id = ?");
-$senderStmt->execute([$messageData['user_id']]);
-$senderUsername = $senderStmt->fetchColumn() ?: __('user');
-
-// Fetch reports
-$repStmt = $pdoCanvases->prepare("
-    SELECT r.id, r.message_id, r.reporter_user_id, r.reason_key, r.details, r.status, r.created_at
-    FROM canvas_chat_reports r
-    WHERE r.message_id = :message_id
-    ORDER BY r.id DESC
-");
-$repStmt->execute([':message_id' => $messageData['id']]);
-$reports = $repStmt->fetchAll(\PDO::FETCH_ASSOC);
-
-if (!empty($reports)) {
-    $reporterIds = array_values(array_unique(array_column($reports, 'reporter_user_id')));
-    $placeholders = implode(',', array_fill(0, count($reporterIds), '?'));
-    $uStmt = $pdoIdentity->prepare("SELECT id, username FROM users WHERE id IN ($placeholders)");
-    $uStmt->execute($reporterIds);
-    $uMap = [];
-    while ($row = $uStmt->fetch(\PDO::FETCH_ASSOC)) {
-        $uMap[$row['id']] = $row['username'];
-    }
-    foreach ($reports as &$rep) {
-        $rep['reporter_username'] = $uMap[$rep['reporter_user_id']] ?? __('user');
-    }
-    unset($rep);
-}
-
-$visibility = $messageData['visibility'] ?? 'visible';
-$deletedBy = $messageData['deleted_by'] ?? '';
-$deleteReason = $messageData['delete_reason'] ?? '';
+extract($reportsData);
 
 $reasonLabels = [
     'spam' => __('report_reason_spam'),
@@ -91,8 +29,7 @@ $visibilityIcons = [
     'under_review' => 'pending',
     'deleted' => 'delete'
 ];
-$currentVisText = $visibilityLabels[$visibility] ?? $visibility;
-$currentVisIcon = $visibilityIcons[$visibility] ?? 'visibility';
+?>
 
 $backUrl = $appUrl . '/admin/messages';
 ?>

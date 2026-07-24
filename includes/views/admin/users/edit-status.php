@@ -1,57 +1,24 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-
-use App\Config\Database\DatabaseManager;
-use App\Config\Database\RedisCache;
-use App\Core\Repositories\UserRepository;
-use App\Core\Repositories\RoleRepository;
+use App\Api\Services\Admin\AdminViewService;
 use App\Core\System\DatabaseConstants as DB;
 
-$targetUserUuid = isset($_GET['uuid']) ? $_GET['uuid'] : '';
-if (empty($targetUserUuid)) {
-    $redirectUrl = APP_URL . "/admin/users";
-    if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
-        header("X-SPA-Update-URL: " . $redirectUrl);
-        require __DIR__ . '/manage-users.php';
-    } else {
-        header("Location: " . $redirectUrl);
-    }
+$adminService = new AdminViewService();
+$statusData = $adminService->getEditStatusData($_GET['uuid'] ?? '');
+
+if (!empty($statusData['redirect'])) {
+    header("Location: " . $statusData['redirect']);
     exit;
 }
 
-$db = new DatabaseManager();
-$redis = new RedisCache();
-$roleRepo = new RoleRepository($db, $redis);
-$userRepo = new UserRepository($db, $roleRepo);
-$user = $userRepo->findByUuid($targetUserUuid);
-
-if (!$user) {
-    $redirectUrl = APP_URL . "/admin/users";
-    if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
-        header("X-SPA-Update-URL: " . $redirectUrl);
-        require __DIR__ . '/manage-users.php';
-    } else {
-        header("Location: " . $redirectUrl);
-    }
-    exit;
-}
-
-$targetUserId = (int)$user['id'];
-$initialState = [
-    'isSuspended' => ($user['is_suspended'] == 1) ? '1' : '0',
-    'suspensionReason' => '',
-    'customSuspensionReason' => '',
-    'suspendedType' => $user['suspension_type'] ?: DB::SUSPENSION_TEMP,
-    'suspensionDuration' => '7',
-    'endDate' => '',
-    'notifyUserSuspension' => true
-];
+extract($statusData);
+$user = $targetUser;
 
 $predefinedSuspension = [
     'reason_terms', 'reason_fake_info', 'reason_illegal', 'reason_fraud_use',
     'reason_abuse', 'reason_prohibited_content', 'reason_ip_violation',
     'reason_spam_bot', 'reason_security_breach', 'reason_unauthorized_commercial', 'reason_other'
 ];
+
 
 if ($user['suspension_reason']) {
     if (in_array($user['suspension_reason'], $predefinedSuspension)) {

@@ -1,21 +1,10 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Admin\AdminViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Core\System\DatabaseConstants as DB;
-use PDO;
+$adminService = new AdminViewService();
+$serverConfigData = $adminService->getServerConfigData();
 
-$db = new DatabaseManager();
-$pdo = $db->getConnection(DB::CONN_IDENTITY);
-
-$tblServerConfig = DB::TBL_SERVER_CONFIG;
-
-$stmt = $pdo->query("SELECT * FROM {$tblServerConfig} LIMIT 1");
-$config = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$config) {
-    $config = [];
-}
+extract($serverConfigData);
 ?>
 <div class="view-content">
     

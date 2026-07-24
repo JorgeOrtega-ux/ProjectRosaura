@@ -1,57 +1,16 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-
-use App\Config\Database\DatabaseManager;
-use App\Core\Helpers\Utils;
-use App\Core\System\DatabaseConstants as DB;
-use PDO;
-$userPerms = $_SESSION['user_permissions'] ?? [];
-$canManageRoles = in_array(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE, $userPerms);
-$db = new DatabaseManager();
-$pdo = $db->getConnection(DB::CONN_IDENTITY);
-
-$tblRoles = DB::TBL_ROLES;
+use App\Api\Services\Admin\AdminViewService;
 
 $searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
-$limit = 25;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($page < 1) $page = 1;
 
-$searchCondition = "";
-$searchParams = [];
-if ($searchQuery !== '') {
-    $searchCondition = "WHERE name LIKE :search";
-    $searchParams[':search'] = '%' . $searchQuery . '%';
-}
+$adminService = new AdminViewService();
+$rolesData = $adminService->getManageRolesData($searchQuery, $page);
 
-$stmtCount = $pdo->prepare("SELECT COUNT(id) FROM {$tblRoles} {$searchCondition}");
-foreach ($searchParams as $key => $val) {
-    $stmtCount->bindValue($key, $val);
-}
-$stmtCount->execute();
-$totalRoles = (int)$stmtCount->fetchColumn();
+extract($rolesData);
 
-$totalPages = ceil($totalRoles / $limit);
-if ($totalPages < 1) $totalPages = 1;
-if ($page > $totalPages) {
-    $page = $totalPages;
-}
-$offset = ($page - 1) * $limit;
-
-$stmt = $pdo->prepare("SELECT id, name, weight, is_system, created_at FROM {$tblRoles} {$searchCondition} ORDER BY id ASC LIMIT :limit OFFSET :offset");
-foreach ($searchParams as $key => $val) {
-    $stmt->bindValue($key, $val);
-}
-$stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-$stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
-$stmt->execute();
-$roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-$currentUserWeight = isset($_SESSION['user_role_weight']) ? (int)$_SESSION['user_role_weight'] : 0;
 $userRolesArray = isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles']) ? $_SESSION['user_roles'] : [];
 $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
-
-$appUrl = defined('APP_URL') ? APP_URL : '';
 
 $queryParams = $_GET;
 unset($queryParams['url'], $queryParams['page']);

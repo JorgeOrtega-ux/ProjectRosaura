@@ -1,80 +1,18 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-global $serverConfig;
-
-use App\Config\Database\DatabaseManager;
-use App\Config\Database\RedisCache;
-use App\Core\Repositories\UserRepository;
-use App\Core\Repositories\RoleRepository;
-use App\Core\System\UserPrefsManager;
+use App\Api\Services\Admin\AdminViewService;
 use App\Core\System\Translator;
-use App\Core\System\DatabaseConstants as DB;
 
-$maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
+$adminService = new AdminViewService();
+$editUserData = $adminService->getEditUserData($_GET['uuid'] ?? '');
 
-$isSuperAdmin = isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4;
-
-$targetUserUuid = isset($_GET['uuid']) ? $_GET['uuid'] : '';
-if (empty($targetUserUuid)) {
-    $redirectUrl = APP_URL . "/admin/users";
-    if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
-        header("X-SPA-Update-URL: " . $redirectUrl);
-        require __DIR__ . '/manage-users.php';
-    } else {
-        header("Location: " . $redirectUrl);
-    }
+if (!empty($editUserData['redirect'])) {
+    header("Location: " . $editUserData['redirect']);
     exit;
 }
 
-$db = new DatabaseManager();
-$redis = new RedisCache();
-$roleRepo = new RoleRepository($db, $redis);
-$userRepo = new UserRepository($db, $roleRepo);
-$prefsManager = new UserPrefsManager($db);
+extract($editUserData);
 
-$user = $userRepo->findByUuid($targetUserUuid);
-if (!$user) {
-    $redirectUrl = APP_URL . "/admin/users";
-    if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
-        header("X-SPA-Update-URL: " . $redirectUrl);
-        require __DIR__ . '/manage-users.php';
-    } else {
-        header("Location: " . $redirectUrl);
-    }
-    exit;
-}
-
-$targetUserId = (int)$user['id'];
-$prefs = $prefsManager->ensureDefaultPreferences($targetUserId);
-
-$roleColorRaw = $user['subscription_color'] ?? ($user['role_color'] ?? '');
-$activeRoleBg = 'var(--text-muted)';
-
-if (!empty($roleColorRaw)) {
-    $colorData = json_decode($roleColorRaw, true);
-    if (json_last_error() === JSON_ERROR_NONE && isset($colorData['colors'])) {
-        $firstHex = is_string($colorData['colors'][0]) ? $colorData['colors'][0] : ($colorData['colors'][0]['hex'] ?? 'var(--text-muted)');
-        $activeRoleBg = $firstHex;
-
-        if (isset($colorData['type']) && $colorData['type'] === 'gradient' && count($colorData['colors']) > 1) {
-            $angle = (int)($colorData['angle'] ?? 0);
-            $stops = [];
-            $prevStop = 0;
-            $colorsCount = count($colorData['colors']);
-            foreach ($colorData['colors'] as $i => $c) {
-                $hex = is_string($c) ? $c : ($c['hex'] ?? '#000');
-                $percentage = isset($c['percentage']) ? (int)$c['percentage'] : floor(100 / $colorsCount);
-                $endStop = $prevStop + $percentage;
-                if ($i === $colorsCount - 1) $endStop = 100;
-                $stops[] = "{$hex} {$prevStop}% {$endStop}%";
-                $prevStop = $endStop;
-            }
-            $activeRoleBg = "conic-gradient(from {$angle}deg, " . implode(', ', $stops) . ")";
-        }
-    } else {
-        $activeRoleBg = htmlspecialchars($roleColorRaw);
-    }
-}
+$activeRoleBg = $roleBgCss ?? 'var(--text-muted)';
 
 $formattedAvatar = (!empty($user['profile_picture']) && strpos($user['profile_picture'], 'http') !== 0) 
     ? (defined('APP_URL') ? APP_URL : '') . '/' . ltrim($user['profile_picture'], '/') 
@@ -84,9 +22,9 @@ $isDefaultAvatar = strpos($formattedAvatar, '/default/') !== false;
 $langMap = Translator::getAvailableLanguages();
 
 $themeMap = [
-    DB::THEME_SYSTEM => __('theme_system'), 
-    DB::THEME_LIGHT => __('theme_light'), 
-    DB::THEME_DARK => __('theme_dark')
+    \App\Core\System\DatabaseConstants::THEME_SYSTEM => __('theme_system'), 
+    \App\Core\System\DatabaseConstants::THEME_LIGHT => __('theme_light'), 
+    \App\Core\System\DatabaseConstants::THEME_DARK => __('theme_dark')
 ];
 
 $rawRoleName = $user['role_name'] ?? '';
@@ -97,6 +35,8 @@ if (trim($rawRoleName) !== '') {
     if ($translatedRoleName === $roleKey) {
         $translatedRoleName = htmlspecialchars($rawRoleName);
     }
+} else {
+    $translatedRoleName = __('role_user', [], 'Usuario');
 }
 if ($translatedRoleName === '') {
     $translatedRoleName = __('admin_role_undefined');

@@ -1,49 +1,18 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Admin\AdminViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Config\Database\RedisCache;
-use App\Core\Repositories\UserRepository;
-use App\Core\Repositories\RoleRepository;
+$adminService = new AdminViewService();
+$roleData = $adminService->getEditUserRoleData($_GET['uuid'] ?? '');
 
-$targetUserUuid = isset($_GET['uuid']) ? $_GET['uuid'] : '';
-if (empty($targetUserUuid)) {
-    $redirectUrl = APP_URL . "/admin/users";
-    if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
-        header("X-SPA-Update-URL: " . $redirectUrl);
-        require __DIR__ . '/manage-users.php';
-    } else {
-        header("Location: " . $redirectUrl);
-    }
+if (!empty($roleData['redirect'])) {
+    header("Location: " . $roleData['redirect']);
     exit;
 }
 
-$db = new DatabaseManager();
-$redis = new RedisCache();
-$roleRepo = new RoleRepository($db, $redis);
-$userRepo = new UserRepository($db, $roleRepo);
-
-$user = $userRepo->findByUuid($targetUserUuid);
-if (!$user) {
-    $redirectUrl = APP_URL . "/admin/users";
-    if (!empty($_SERVER['HTTP_X_SPA_REQUEST'])) {
-        header("X-SPA-Update-URL: " . $redirectUrl);
-        require __DIR__ . '/manage-users.php';
-    } else {
-        header("Location: " . $redirectUrl);
-    }
-    exit;
-}
-
-$targetUserId = (int)$user['id'];
-
-$allRoles = $roleRepo->getAll();
-$assignedRoles = $roleRepo->getUserRoles($targetUserId);
-$assignedRoleIds = array_column($assignedRoles, 'id');
-
+extract($roleData);
+$user = $targetUser;
+$assignedRoleIds = $currentUserRoleId !== null ? [$currentUserRoleId] : [];
 $isSuperAdmin = isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4;
-$currentUserWeight = $_SESSION['user_role_weight'] ?? 0;
-
 $isTargetSuperAdmin = in_array(4, $assignedRoleIds);
 ?>
 <div class="view-content" data-user-id="<?php echo $targetUserId; ?>">

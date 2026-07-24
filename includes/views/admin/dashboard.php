@@ -1,14 +1,10 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Admin\AdminViewService;
 
-use App\Core\Helpers\Utils;
+$adminService = new AdminViewService();
+$dashboardData = $adminService->getDashboardData();
 
-$userPermissions = $_SESSION['user_permissions'] ?? [];
-
-$canManageRoles = in_array(\App\Core\System\PermissionsConstants::VIEW_ROLES, $userPermissions);
-$canViewLogs = in_array('view_logs', $userPermissions);
-$canManageMessages = true; // All admins currently
-
+extract($dashboardData);
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding">

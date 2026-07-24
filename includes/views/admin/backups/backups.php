@@ -1,63 +1,18 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Admin\AdminViewService;
+
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$adminService = new AdminViewService();
+$backupsData = $adminService->getBackupsData($_GET['q'] ?? null, $page);
+
+extract($backupsData);
 
 $userPerms = $_SESSION['user_permissions'] ?? [];
 $canCreate = in_array('create_backups', $userPerms);
 $canRestore = in_array('restore_backups', $userPerms);
-
-$backups = [];
-$backupDir = ROOT_PATH . '/storage/private/backups/';
-
-if (is_dir($backupDir)) {
-    $files = scandir($backupDir);
-    foreach ($files as $file) {
-        if (pathinfo($file, PATHINFO_EXTENSION) === 'enc') {
-            $filepath = $backupDir . $file;
-            $sizeBytes = filesize($filepath);
-            
-            $sizeFormatted = $sizeBytes >= 1048576 
-                            ? round($sizeBytes / 1048576, 2) . ' MB' 
-                            : round($sizeBytes / 1024, 2) . ' KB';
-                            
-            $backups[] = [
-                'id' => base64_encode($file),
-                'filename' => $file,
-                'type' => strpos($file, 'auto_backup_') !== false ? 'auto' : 'manual',
-                'status' => 'success',
-                'size' => $sizeFormatted,
-                'created_at' => date('Y-m-d H:i:s', filemtime($filepath))
-            ];
-        }
-    }
-    usort($backups, function($a, $b) {
-        return strtotime($b['created_at']) - strtotime($a['created_at']);
-    });
-}
-
-$searchQuery = isset($_GET['q']) ? strtolower(trim($_GET['q'])) : '';
-$typesFilter = isset($_GET['types']) && $_GET['types'] !== '' ? explode(',', $_GET['types']) : [];
-$statusFilter = isset($_GET['status']) && $_GET['status'] !== '' ? explode(',', $_GET['status']) : [];
-
-$filteredBackups = array_filter($backups, function($b) use ($searchQuery, $typesFilter, $statusFilter) {
-    if ($searchQuery !== '' && strpos(strtolower($b['filename']), $searchQuery) === false) return false;
-    if (!empty($typesFilter) && !in_array($b['type'], $typesFilter)) return false;
-    if (!empty($statusFilter) && !in_array($b['status'], $statusFilter)) return false;
-    return true;
-});
-
-$limit = 25; 
-$totalBackups = count($filteredBackups);
-$totalPages = ceil($totalBackups / $limit);
-if ($totalPages < 1) $totalPages = 1;
-
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($page < 1) $page = 1;
-if ($page > $totalPages) $page = $totalPages;
-
-$offset = ($page - 1) * $limit;
-$pagedBackups = array_slice($filteredBackups, $offset, $limit);
-
-$appUrl = defined('APP_URL') ? APP_URL : '';
+$pagedBackups = $backups;
+$totalBackups = count($pagedBackups);
+$totalPages = 1;
 
 $queryParams = $_GET;
 unset($queryParams['url'], $queryParams['page']);

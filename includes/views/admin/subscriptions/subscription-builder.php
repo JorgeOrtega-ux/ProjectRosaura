@@ -1,19 +1,16 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Admin\AdminViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Core\System\DatabaseConstants as DB;
-use App\Core\System\SubscriptionFeatureConfig;
-use PDO;
+$adminService = new AdminViewService();
+$builderData = $adminService->getSubscriptionBuilderData($_GET['uuid'] ?? null);
 
-$db = new DatabaseManager();
-$pdo = $db->getConnection(DB::CONN_IDENTITY);
+if (!empty($builderData['error'])) {
+    echo "<div class='view-content'><p>".htmlspecialchars($builderData['error'])."</p></div>";
+    return;
+}
 
-$tblTiers = 'subscription_tiers';
+extract($builderData);
 
-$userPermissions = $_SESSION['user_permissions'] ?? [];
-
-$isEdit = false;
 $tierData = [
     'uuid' => '',
     'id' => 0,
@@ -25,20 +22,13 @@ $tierData = [
     'stripe_price_id_yearly' => ''
 ];
 
-if (isset($_GET['uuid'])) {
-    $uuid = trim($_GET['uuid']);
-    
-    $stmt = $pdo->prepare("SELECT * FROM {$tblTiers} WHERE uuid = ?");
-    $stmt->execute([$uuid]);
-    $tier = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($tier) {
-        $isEdit = true;
-        $tierData = $tier;
-    }
+if ($isEdit && !empty($tier)) {
+    $tierData = array_merge($tierData, $tier);
 }
+
 $isSystemRole = ($isEdit && $tierData['id'] <= 1);
 $currentRoleId = isset($_SESSION['user_role_id']) ? (int)$_SESSION['user_role_id'] : 0;
+
 if (!function_exists('hexToHsv')) {
     function hexToHsv($hex) {
         $hex = ltrim($hex, '#');

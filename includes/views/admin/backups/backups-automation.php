@@ -1,18 +1,15 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Admin\AdminViewService;
 
-use App\Config\Database\DatabaseManager;
-use PDO;
-$dbManager = new DatabaseManager();
-$pdoIdentity = $dbManager->getConnection('identity');
+$adminService = new AdminViewService();
+$autoData = $adminService->getBackupsAutomationData();
 
-$stmtConfig = $pdoIdentity->query("SELECT * FROM server_config LIMIT 1");
-$config = $stmtConfig->fetch(PDO::FETCH_ASSOC) ?: [];
-$autoEnabled = (int)($config['auto_backup_enabled'] ?? 0);
-$autoFreq = (int)($config['auto_backup_frequency_hours'] ?? 24);
-$autoRetention = (int)($config['auto_backup_retention_count'] ?? 5);
-$schemaConfigJson = $config['backup_schema_config'] ?? '{}';
-$schemaConfig = json_decode($schemaConfigJson, true) ?: [];
+extract($autoData);
+
+$autoEnabled = 0;
+$autoFreq = 24;
+$autoRetention = 5;
+$schemaConfig = [];
 $freqTextMap = [
     1 => __('auto_freq_1h'),
     3 => __('auto_freq_3h'),
@@ -24,23 +21,7 @@ $freqTextMap = [
 ];
 $currentFreqText = $freqTextMap[$autoFreq] ?? str_replace(':hours', $autoFreq, __('freq_every_x_hours'));
 $availableSchema = [];
-try {
-    $pdoGlobal = $dbManager->getGlobalConnection();
-    $stmtDbs = $pdoGlobal->query("SHOW DATABASES WHERE `Database` NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys')");
-    $databases = $stmtDbs->fetchAll(PDO::FETCH_COLUMN);
-
-    foreach ($databases as $dbName) {
-        try {
-            $stmtTables = $pdoGlobal->query("SHOW TABLES FROM `$dbName`");
-            $availableSchema[$dbName] = $stmtTables->fetchAll(PDO::FETCH_COLUMN);
-        } catch (\Exception $e) {
-            $availableSchema[$dbName] = [];
-        }
-    }
-} catch (\Exception $e) {
-    $availableSchema['identity'] = [];
-}
-$selectedModules = $schemaConfig['_modules'] ?? [
+$selectedModules = [
     'db' => true,
     'avatars_uploaded' => false,
     'avatars_default' => false

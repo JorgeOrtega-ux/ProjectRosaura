@@ -1,35 +1,25 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Admin\AdminViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Config\Database\RedisCache;
-use App\Core\Repositories\RoleRepository;
+$adminService = new AdminViewService();
+$rolePermData = $adminService->getRolePermissionsData(isset($_GET['id']) ? (int)$_GET['id'] : null);
 
-$userPermissions = $_SESSION['user_permissions'] ?? [];
-
-if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    header("Location: " . APP_URL . "/admin/roles");
+if (!empty($rolePermData['redirect'])) {
+    header("Location: " . $rolePermData['redirect']);
     exit;
 }
 
-$roleId = (int)$_GET['id'];
-$dbManager = new DatabaseManager();
-$redis = new RedisCache();
-$roleRepo = new RoleRepository($dbManager, $redis);
-
-$role = $roleRepo->findById($roleId);
-if (!$role) {
-    header("Location: " . APP_URL . "/admin/roles");
-    exit;
+if (!empty($rolePermData['error'])) {
+    echo "<div class='view-content'><p>".htmlspecialchars($rolePermData['error'])."</p></div>";
+    return;
 }
+
+extract($rolePermData);
 $currentUserWeight = isset($_SESSION['user_role_weight']) ? (int)$_SESSION['user_role_weight'] : 0;
 $userRolesArray = isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles']) ? $_SESSION['user_roles'] : [];
 $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
-$targetRoleWeight = (int)$role['weight'];
-
-$allPermissions = $roleRepo->getAllPermissions();
-$rolePermissionsData = $roleRepo->getRolePermissions($roleId);
-$rolePermissionsIds = array_column($rolePermissionsData, 'id');
+$targetRoleWeight = isset($role['weight']) ? (int)$role['weight'] : 0;
+$rolePermissionsIds = $rolePermissions;
 ?>
 <div class="view-content" data-role-id="<?php echo $roleId; ?>" data-role-weight="<?php echo $targetRoleWeight; ?>" data-current-user-weight="<?php echo $currentUserWeight; ?>" data-is-superadmin="<?php echo $isSuperAdmin; ?>">
     

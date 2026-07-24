@@ -1,58 +1,16 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-
-use App\Config\Database\DatabaseManager;
-use App\Core\Helpers\Utils;
-use App\Core\System\DatabaseConstants as DB;
-use PDO;
-
-$userPerms = $_SESSION['user_permissions'] ?? [];
-// Currently allowing anyone who can manage roles to manage subscriptions, adjust as needed.
-$canManageTiers = in_array(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE, $userPerms) || in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPerms);
-$db = new DatabaseManager();
-$pdo = $db->getConnection(DB::CONN_IDENTITY);
-
-$tblTiers = 'subscription_tiers';
+use App\Api\Services\Admin\AdminViewService;
 
 $searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
-$limit = 25;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($page < 1) $page = 1;
 
-$searchCondition = "";
-$searchParams = [];
-if ($searchQuery !== '') {
-    $searchCondition = "WHERE name LIKE :search";
-    $searchParams[':search'] = '%' . $searchQuery . '%';
-}
+$adminService = new AdminViewService();
+$subData = $adminService->getManageSubscriptionsData($searchQuery, $page);
 
-$stmtCount = $pdo->prepare("SELECT COUNT(id) FROM {$tblTiers} {$searchCondition}");
-foreach ($searchParams as $key => $val) {
-    $stmtCount->bindValue($key, $val);
-}
-$stmtCount->execute();
-$totalTiers = (int)$stmtCount->fetchColumn();
-
-$totalPages = ceil($totalTiers / $limit);
-if ($totalPages < 1) $totalPages = 1;
-if ($page > $totalPages) {
-    $page = $totalPages;
-}
-$offset = ($page - 1) * $limit;
-
-$stmt = $pdo->prepare("SELECT id, uuid, is_active, is_popular, name, color, tier_level, created_at FROM {$tblTiers} {$searchCondition} ORDER BY tier_level ASC LIMIT :limit OFFSET :offset");
-foreach ($searchParams as $key => $val) {
-    $stmt->bindValue($key, $val);
-}
-$stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-$stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
-$stmt->execute();
-$tiers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+extract($subData);
 
 $userRolesArray = isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles']) ? $_SESSION['user_roles'] : [];
 $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
-
-$appUrl = defined('APP_URL') ? APP_URL : '';
 
 $queryParams = $_GET;
 unset($queryParams['url'], $queryParams['page']);
