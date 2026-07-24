@@ -761,7 +761,16 @@ class CanvasViewService {
             } catch (\Throwable $e) {}
         }
 
-        $ownerTier = 0;
+        $activeAccountId = $_SESSION['active_account'] ?? null;
+        $linkedAccounts = $_SESSION['accounts'] ?? [];
+        $currentSessionTier = 0;
+        if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
+            $currentSessionTier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
+        } else if (isset($_SESSION['subscription_tier'])) {
+            $currentSessionTier = (int)$_SESSION['subscription_tier'];
+        }
+
+        $ownerTier = ((int)$canvas['owner_id'] === (int)$userId) ? $currentSessionTier : 0;
         if ($canvas['owner_id'] !== null) {
             try {
                 $dbIdentityManager = new DatabaseManager();
@@ -769,7 +778,7 @@ class CanvasViewService {
                 $userRepo = new \App\Core\Repositories\UserRepository($dbIdentityManager, $roleRepo);
                 $uRow = $userRepo->findById($canvas['owner_id']);
                 if ($uRow) {
-                    $ownerTier = (int)$uRow['subscription_tier'];
+                    $ownerTier = (int)($uRow['subscription_tier'] ?? 0);
                 }
             } catch (\Throwable $e) {}
         }

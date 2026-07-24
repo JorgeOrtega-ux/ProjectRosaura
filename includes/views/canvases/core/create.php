@@ -1,5 +1,6 @@
 <?php 
 use App\Api\Services\Canvas\CanvasViewService;
+use App\Core\System\SubscriptionPlanConstants;
 
 $canvasService = new CanvasViewService();
 $createData = $canvasService->getCanvasCreateData();

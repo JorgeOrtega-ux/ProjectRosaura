@@ -39,11 +39,11 @@ class CanvasSettingsService {
 
             if ($canvas['owner_id'] !== null) {
                 $owner = $this->userRepository->findById($canvas['owner_id']);
-                $tier = $owner['subscription_tier'] ?? 0;
-                $requiredTier = $allSizes[$newSize]['tier'] ?? 0;
+                $tier = (int)($owner['subscription_tier'] ?? 0);
+                $requiredTier = (int)($allSizes[$newSize]['tier'] ?? 0);
                 
                 if ($tier < $requiredTier) {
-                    return ['success' => false, 'message' => __('err_plan_canvas_resize')];
+                    return ['success' => false, 'message' => __('err_plan_canvas_size')];
                 }
             }
 
@@ -125,11 +125,11 @@ class CanvasSettingsService {
             
             if ($canvas['owner_id'] !== null) {
                 $owner = $this->userRepository->findById($canvas['owner_id']);
-                $tier = $owner['subscription_tier'] ?? 0;
-                $requiredTier = $allSizes[$targetSize]['tier'] ?? 0;
+                $tier = (int)($owner['subscription_tier'] ?? 0);
+                $requiredTier = (int)($allSizes[$targetSize]['tier'] ?? 0);
                 
                 if ($tier < $requiredTier) {
-                    return ['success' => false, 'message' => __('err_plan_canvas_resize')];
+                    return ['success' => false, 'message' => __('err_plan_canvas_size')];
                 }
             }
             

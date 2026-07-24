@@ -148,12 +148,16 @@ class CanvasResizeController {
 
         if (sizeScheduledItem) {
             e.preventDefault();
-            this.handleSizeSelect(sizeScheduledItem, 'scheduled');
+            if (!sizeScheduledItem.classList.contains('disabled-interaction') && sizeScheduledItem.getAttribute('data-action') === 'selectValue') {
+                this.handleSizeSelect(sizeScheduledItem, 'scheduled');
+            }
         }
 
         if (sizeInstantItem) {
             e.preventDefault();
-            this.handleSizeSelect(sizeInstantItem, 'instant');
+            if (!sizeInstantItem.classList.contains('disabled-interaction') && sizeInstantItem.getAttribute('data-action') === 'selectValue') {
+                this.handleSizeSelect(sizeInstantItem, 'instant');
+            }
         }
 
 
@@ -177,6 +181,10 @@ class CanvasResizeController {
     }
 
     handleSizeSelect(btn, context) {
+        if (!btn || btn.classList.contains('disabled-interaction') || btn.getAttribute('data-action') !== 'selectValue') {
+            return;
+        }
+
         const moduleName = context === 'scheduled' ? 'dropdownSizeScheduled' : 'dropdownSizeInstant';
         const dropdown = this.wrapper.querySelector(`[data-module="${moduleName}"]`);
         if (dropdown) {

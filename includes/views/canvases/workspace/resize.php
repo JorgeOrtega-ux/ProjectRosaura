@@ -18,6 +18,7 @@ $showShrinkWarning = $instantWidth < $currWidth;
 
 $scheduledWidth = (int)explode('x', $scheduledSize)[0];
 $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
+$isOfficial = ($canvas['owner_id'] === null);
 ?>
 
 <div class="view-content" data-ref="canvas-resize-wrapper" data-canvas-id="<?php echo htmlspecialchars((string)$canvasId); ?>" data-current-size="<?php echo htmlspecialchars($currentSizeRaw); ?>">
@@ -84,7 +85,7 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                             <div class="component-menu-list component-menu-list--scrollable">
                                                 <?php foreach ($sizesList as $val => $data): 
                                                     $requiredTier = $data['tier'] ?? 0;
-                                                    $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
+                                                    $isAllowed = $isOfficial ? $canManageOfficial : ($ownerTier >= $requiredTier);
                                                     $disabledClass = $isAllowed ? '' : 'disabled-interaction';
                                                     $action = $isAllowed ? 'selectValue' : '';
                                                     $tierName = SubscriptionPlanConstants::getTierName($requiredTier);
@@ -101,8 +102,8 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($data['icon']); ?></span></div>
                                                     <div class="component-menu-link-text">
                                                         <span><?php echo htmlspecialchars($data['label']); ?></span>
-                                                        <?php echo $lockIcon; ?>
                                                     </div>
+                                                    <?php echo $lockIcon; ?>
                                                 </div>
                                                 <?php endforeach; ?>
                                             </div>
@@ -194,7 +195,7 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                                 <div class="component-menu-list component-menu-list--scrollable">
                                                     <?php foreach ($sizesList as $val => $data): 
                                                         $requiredTier = $data['tier'] ?? 0;
-                                                        $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
+                                                        $isAllowed = $isOfficial ? $canManageOfficial : ($ownerTier >= $requiredTier);
                                                         $disabledClass = $isAllowed ? '' : 'disabled-interaction';
                                                         $action = $isAllowed ? 'selectValue' : '';
                                                         $tierName = SubscriptionPlanConstants::getTierName($requiredTier);
@@ -211,8 +212,8 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($data['icon']); ?></span></div>
                                                         <div class="component-menu-link-text">
                                                             <span><?php echo htmlspecialchars($data['label']); ?></span>
-                                                            <?php echo $lockIcon; ?>
                                                         </div>
+                                                        <?php echo $lockIcon; ?>
                                                     </div>
                                                     <?php endforeach; ?>
                                                 </div>
