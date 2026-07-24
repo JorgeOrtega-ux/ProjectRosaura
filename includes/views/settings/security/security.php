@@ -95,7 +95,7 @@ if (isset($_SESSION['user_id'])) {
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--h36 component-button--danger" data-nav="<?php echo APP_URL; ?>/settings/delete-account"><?php echo __('btn_delete_account'); ?></button>
+                        <button type="button" class="component-button component-button--h36 component-button--danger" data-action="promptDeleteAccount"><?php echo __('btn_delete_account'); ?></button>
                     </div>
                 </div>
             </div>

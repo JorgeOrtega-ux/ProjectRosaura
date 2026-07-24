@@ -154,7 +154,7 @@ INSERT IGNORE INTO `user_roles` (`user_id`, `role_id`) VALUES (1, 4);
 
 CREATE TABLE IF NOT EXISTS `subscriptions` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `user_id` INT(11) NOT NULL,
+  `user_id` INT(11) DEFAULT NULL,
   `stripe_customer_id` VARCHAR(255) DEFAULT NULL,
   `stripe_subscription_id` VARCHAR(255) DEFAULT NULL,
   `stripe_checkout_session_id` VARCHAR(255) DEFAULT NULL,
@@ -171,12 +171,12 @@ CREATE TABLE IF NOT EXISTS `subscriptions` (
   INDEX idx_sub_stripe_customer (`stripe_customer_id`),
   INDEX idx_sub_stripe_subscription (`stripe_subscription_id`),
   INDEX idx_sub_checkout_session (`stripe_checkout_session_id`),
-  CONSTRAINT fk_sub_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+  CONSTRAINT fk_sub_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `payment_history` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `user_id` INT(11) NOT NULL,
+  `user_id` INT(11) DEFAULT NULL,
   `stripe_payment_intent_id` VARCHAR(255) DEFAULT NULL,
   `stripe_invoice_id` VARCHAR(255) DEFAULT NULL,
   `amount_cents` INT NOT NULL,
@@ -186,7 +186,7 @@ CREATE TABLE IF NOT EXISTS `payment_history` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_ph_user (`user_id`),
   INDEX idx_ph_user_created (`user_id`, `created_at` DESC),
-  CONSTRAINT fk_ph_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+  CONSTRAINT fk_ph_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `custom_palettes` (
@@ -363,7 +363,7 @@ INSERT INTO server_config (id) SELECT 1 WHERE NOT EXISTS (SELECT * FROM server_c
 
 CREATE TABLE IF NOT EXISTS `store_purchases` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `user_id` INT(11) NOT NULL,
+  `user_id` INT(11) DEFAULT NULL,
   `stripe_payment_intent_id` VARCHAR(255) DEFAULT NULL,
   `stripe_checkout_session_id` VARCHAR(255) DEFAULT NULL,
   `item_type` VARCHAR(50) NOT NULL, -- e.g., 'coins'
@@ -375,7 +375,7 @@ CREATE TABLE IF NOT EXISTS `store_purchases` (
   INDEX idx_store_purchases_user (`user_id`),
   INDEX idx_sp_user_created (`user_id`, `created_at` DESC),
   UNIQUE INDEX idx_store_purchases_session (`stripe_checkout_session_id`),
-  CONSTRAINT fk_store_purchases_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+  CONSTRAINT fk_store_purchases_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `user_perks` (

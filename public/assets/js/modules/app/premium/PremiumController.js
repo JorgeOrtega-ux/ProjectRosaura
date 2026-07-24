@@ -24,17 +24,10 @@ export class PremiumController {
     }
 
     _handleClick(e) {
-        const toggleSwitch = e.target.closest('#billingCheckboxToggle');
-        if (toggleSwitch) {
-            this._toggleBilling();
-            return;
-        }
-
-        const billingLabel = e.target.closest('#lblMonthly, #lblYearly');
-        if (billingLabel) {
-            const id = billingLabel.id;
-            if (id === 'lblMonthly') this._setBilling('monthly');
-            else if (id === 'lblYearly') this._setBilling('yearly');
+        const setBillingLink = e.target.closest('[data-action="setBillingCycle"]');
+        if (setBillingLink) {
+            const val = setBillingLink.getAttribute('data-value');
+            this._setBilling(val);
             return;
         }
 
@@ -45,43 +38,41 @@ export class PremiumController {
         }
     }
 
-    _toggleBilling() {
-        window.isYearlyPremium = !window.isYearlyPremium;
-        this._updateUIBilling();
-    }
-
     _setBilling(type) {
-        if (type === 'yearly' && !window.isYearlyPremium) {
+        if (type === 'yearly') {
             window.isYearlyPremium = true;
-            this._updateUIBilling();
-        } else if (type === 'monthly' && window.isYearlyPremium) {
+        } else {
             window.isYearlyPremium = false;
-            this._updateUIBilling();
+        }
+        this._updateUIBilling();
+
+        if (window.appInstance && typeof window.appInstance.closeAllModules === 'function') {
+            window.appInstance.closeAllModules();
         }
     }
 
     _updateUIBilling() {
-        const toggleContainer = document.getElementById('billingToggle');
-        const lblMonthly = document.getElementById('lblMonthly');
-        const lblYearly = document.getElementById('lblYearly');
-        const checkbox = document.getElementById('billingCheckboxToggle');
+        const triggerText = document.querySelector('[data-target="moduleBillingCycle"] [data-ref="billingCycleText"]');
+        const triggerIcon = document.querySelector('[data-target="moduleBillingCycle"] [data-ref="billingCycleIcon"]');
+        const links = document.querySelectorAll('[data-action="setBillingCycle"]');
         const cards = document.querySelectorAll('[data-ref="plan-card"]');
 
-        if (!toggleContainer) return;
-
-        if (checkbox) checkbox.checked = window.isYearlyPremium;
-
         if (window.isYearlyPremium) {
-            lblYearly.classList.remove('component-button--ghost', 'component-text-notice--muted');
-            lblYearly.classList.add('component-button--dark');
-            lblMonthly.classList.remove('component-button--dark');
-            lblMonthly.classList.add('component-button--ghost', 'component-text-notice--muted');
+            if (triggerText) triggerText.textContent = window.__('upgrade_billing_yearly') || 'Anual';
+            if (triggerIcon) triggerIcon.textContent = 'event_repeat';
         } else {
-            lblMonthly.classList.remove('component-button--ghost', 'component-text-notice--muted');
-            lblMonthly.classList.add('component-button--dark');
-            lblYearly.classList.remove('component-button--dark');
-            lblYearly.classList.add('component-button--ghost', 'component-text-notice--muted');
+            if (triggerText) triggerText.textContent = window.__('upgrade_billing_monthly') || 'Mensual';
+            if (triggerIcon) triggerIcon.textContent = 'calendar_month';
         }
+
+        links.forEach(link => {
+            const val = link.getAttribute('data-value');
+            if ((val === 'yearly' && window.isYearlyPremium) || (val === 'monthly' && !window.isYearlyPremium)) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
 
         cards.forEach(card => {
             const priceEl = card.querySelector('[data-ref="plan-price"]');

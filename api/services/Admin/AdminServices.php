@@ -192,7 +192,7 @@ class AdminServices {
         $userPrefs = $this->prefsManager->ensureDefaultPreferences($targetId);
         $assignedRoles = !empty($user['assigned_roles_ids']) ? array_map('intval', explode(',', $user['assigned_roles_ids'])) : [SecurityConstants::DEFAULT_USER_ROLE_ID];
 
-        $isDeleted = !empty($user['deletion_scheduled_at']) ? 'deleted' : 'active';
+        $isDeleted = 'active';
 
         return [
             'success' => true, 

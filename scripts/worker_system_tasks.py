@@ -109,6 +109,17 @@ def get_db_connection():
         database=DB_NAME
     )
 
+DB_CANVASES_NAME = os.getenv('DB_CANVASES_NAME', 'db_canvases')
+
+def get_canvases_db_connection():
+    return mysql.connector.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASS,
+        database=DB_CANVASES_NAME
+    )
+
 def get_telemetry_db_connection():
     return mysql.connector.connect(
         host=DB_TEL_HOST,
@@ -135,22 +146,27 @@ def get_redis_connection():
 
 def process_deletion(payload):
     user_id = payload.get('user_id')
+    if not user_id:
+        return
+
     conn_id = None
+    conn_can = None
     conn_tel = None
     try:
+        # 1. Fetch user data (UUID, profile picture) from db_identity
         conn_id = get_db_connection()
         cursor_id = conn_id.cursor(dictionary=True)
         cursor_id.execute("SELECT uuid, profile_picture FROM users WHERE id = %s", (user_id,))
         user_data = cursor_id.fetchone()
         
+        uuid_str = user_data.get('uuid') if user_data else None
+        
+        # 2. File Cleanup: Profile Picture
         if user_data:
             profile_pic = user_data.get('profile_picture')
-            uuid_str = user_data.get('uuid')
-            
             if profile_pic and 'fallbacks/avatar-default.png' not in profile_pic:
                 pic_relative = profile_pic.lstrip('/').replace('public/storage/', 'storage/public/')
                 pic_path = os.path.join(APP_ROOT_PATH, pic_relative)
-                
                 if os.path.exists(pic_path) and os.path.isfile(pic_path):
                     try:
                         os.remove(pic_path)
@@ -167,41 +183,104 @@ def process_deletion(payload):
                     except Exception:
                         pass
 
-            if uuid_str:
-                try:
-                    conn_tel = get_telemetry_db_connection()
-                    cursor_tel = conn_tel.cursor()
-                    telemetry_tables = ['api_latency', 'pageviews', 'auth_events']
-                    total_tel_deleted = 0
-                    
-                    for table in telemetry_tables:
+        # 3. Clean user_templates files on disk & purge db_canvases
+        try:
+            conn_can = get_canvases_db_connection()
+            cursor_can = conn_can.cursor(dictionary=True)
+            
+            # Remove template files on disk created by this user
+            cursor_can.execute("SELECT file_path FROM user_templates WHERE user_id = %s", (user_id,))
+            templates = cursor_can.fetchall()
+            for tmpl in templates:
+                t_path = tmpl.get('file_path')
+                if t_path:
+                    full_t_path = os.path.join(APP_ROOT_PATH, t_path.lstrip('/'))
+                    if os.path.exists(full_t_path) and os.path.isfile(full_t_path):
                         try:
-                            cursor_tel.execute(f"DELETE FROM {table} WHERE user_uuid = %s", (uuid_str,))
-                            total_tel_deleted += cursor_tel.rowcount
-                        except mysql.connector.Error as e:
-                            Logger.warning(f"Telemetry cleanup warning (Table {table}): {e}")
+                            os.remove(full_t_path)
+                            Logger.info(f"User template file purged from disk: {full_t_path}")
+                        except Exception as e:
+                            Logger.error(f"Failed to remove template file: {e}")
 
-                    conn_tel.commit()
-                    Logger.info(f"Telemetry logs successfully purged for UUID {uuid_str}. Total rows affected: {total_tel_deleted}")
-                except mysql.connector.Error as err:
-                    Logger.error(f"Telemetry database connection failed for UUID {uuid_str}: {err}")
-                finally:
-                    if conn_tel and conn_tel.is_connected():
-                        cursor_tel.close()
-                        conn_tel.close()
+            # Purge db_canvases tables
+            cursor_can.execute("DELETE FROM user_templates WHERE user_id = %s", (user_id,))
+            cursor_can.execute("DELETE FROM canvas_snapshots_likes WHERE user_id = %s", (user_id,))
+            cursor_can.execute("DELETE FROM canvas_chat_messages WHERE user_id = %s", (user_id,))
+            cursor_can.execute("DELETE FROM canvas_chat_reports WHERE reporter_user_id = %s", (user_id,))
+            if uuid_str:
+                cursor_can.execute("DELETE FROM canvas_chat_restrictions WHERE user_id = %s OR restricted_by = %s OR user_id = %s OR restricted_by = %s", (str(user_id), str(user_id), uuid_str, uuid_str))
+            else:
+                cursor_can.execute("DELETE FROM canvas_chat_restrictions WHERE user_id = %s OR restricted_by = %s", (str(user_id), str(user_id)))
+            cursor_can.execute("DELETE FROM canvas_favorites WHERE user_id = %s", (user_id,))
+            cursor_can.execute("DELETE FROM canvas_access_requests WHERE user_id = %s", (user_id,))
+            cursor_can.execute("DELETE FROM canvas_members WHERE user_id = %s", (user_id,))
+            cursor_can.execute("DELETE FROM canvas_user_roles WHERE user_id = %s", (user_id,))
+            cursor_can.execute("DELETE FROM canvas_invites WHERE created_by = %s", (user_id,))
+            cursor_can.execute("DELETE FROM canvases WHERE owner_id = %s", (user_id,))
+            
+            conn_can.commit()
+            Logger.info(f"db_canvases user data successfully purged for User ID: {user_id}")
+        except Exception as e:
+            Logger.error(f"Error purging db_canvases for User ID {user_id}: {e}")
+        finally:
+            if conn_can and conn_can.is_connected():
+                cursor_can.close()
+                conn_can.close()
 
-        Logger.info(f"Executing master record eradication for User ID: {user_id}")
-        tables_to_clean = ['sessions', 'user_roles', 'profile_logs', 'verification_codes', 'personal_access_tokens']
+        # 4. db_telemetry purge by UUID
+        if uuid_str:
+            try:
+                conn_tel = get_telemetry_db_connection()
+                cursor_tel = conn_tel.cursor()
+                telemetry_tables = ['api_latency', 'pageviews', 'auth_events']
+                total_tel_deleted = 0
+                for table in telemetry_tables:
+                    try:
+                        cursor_tel.execute(f"DELETE FROM {table} WHERE user_uuid = %s", (uuid_str,))
+                        total_tel_deleted += cursor_tel.rowcount
+                    except mysql.connector.Error as e:
+                        Logger.warning(f"Telemetry cleanup warning (Table {table}): {e}")
+                conn_tel.commit()
+                Logger.info(f"Telemetry logs successfully purged for UUID {uuid_str}. Total rows affected: {total_tel_deleted}")
+            except mysql.connector.Error as err:
+                Logger.error(f"Telemetry database connection failed for UUID {uuid_str}: {err}")
+            finally:
+                if conn_tel and conn_tel.is_connected():
+                    cursor_tel.close()
+                    conn_tel.close()
+
+        # 5. db_identity purge:
+        Logger.info(f"Executing master record eradication in db_identity for User ID: {user_id}")
         
-        for table in tables_to_clean:
+        # Disassociate financial purchase records to preserve accounting logs (user_id = NULL)
+        financial_tables = ['subscriptions', 'payment_history', 'store_purchases']
+        for ft in financial_tables:
+            try:
+                cursor_id.execute(f"UPDATE {ft} SET user_id = NULL WHERE user_id = %s", (user_id,))
+            except Exception as fe:
+                Logger.warning(f"Financial record anonymization notice ({ft}): {fe}")
+
+        # Delete non-financial user records
+        identity_tables = [
+            'user_perks', 'custom_palettes', 'user_flags', 'user_preferences',
+            'profile_changes_log', 'user_restrictions', 'auth_tokens', 'sessions',
+            'user_roles', 'verification_codes', 'personal_access_tokens'
+        ]
+        for table in identity_tables:
             try:
                 cursor_id.execute(f"DELETE FROM {table} WHERE user_id = %s", (user_id,))
             except mysql.connector.Error:
-                pass 
+                pass
+
+        try:
+            cursor_id.execute("UPDATE moderation_logs SET admin_id = NULL WHERE admin_id = %s", (user_id,))
+            cursor_id.execute("DELETE FROM moderation_logs WHERE user_id = %s", (user_id,))
+        except Exception:
+            pass
 
         cursor_id.execute("DELETE FROM users WHERE id = %s", (user_id,))
         conn_id.commit()
-        Logger.info(f"User ID {user_id} eradicated successfully from all logical systems and storage arrays.")
+        Logger.info(f"User ID {user_id} eradicated successfully from all 3 databases and storage arrays.")
         
     except mysql.connector.Error as err:
         Logger.error(f"Relational database error during user eradication sequence ({user_id}): {err}")
@@ -514,10 +593,8 @@ def worker_loop():
 def scheduler_loop():
     Logger.info("Cron scheduler daemon initialized.")
     r = get_redis_connection()
-    last_deletion_check = 0
     last_maintenance_check = 0
     last_renewal_check = 0
-    DELETION_INTERVAL = 3600
     MAINTENANCE_INTERVAL = 86400
     RENEWAL_CHECK_INTERVAL = 86400
     EXPIRATION_CHECK_INTERVAL = 3600
@@ -525,32 +602,6 @@ def scheduler_loop():
     
     while True:
         current_time = time.time()
-        
-        if current_time - last_deletion_check >= DELETION_INTERVAL:
-            Logger.info("Scheduler evaluating deletion grace period metrics.")
-            conn = None
-            try:
-                conn = get_db_connection()
-                cursor = conn.cursor(dictionary=True)
-                cursor.execute("SELECT id FROM users WHERE deletion_scheduled_at IS NOT NULL AND deletion_scheduled_at <= NOW()")
-                users_to_delete = cursor.fetchall()
-                
-                for user in users_to_delete:
-                    user_id = user['id']
-                    payload = json.dumps({"user_id": user_id})
-                    if not r:
-                        r = get_redis_connection()
-                    if r:
-                        r.rpush(QUEUE_ACCOUNT_DELETION, payload)
-                        Logger.info(f"Scheduler dispatched deletion mandate for User ID {user_id} to internal queue.")
-                    
-                last_deletion_check = time.time()
-            except Exception as e:
-                Logger.error(f"Scheduler fault during entity termination evaluation: {e}")
-            finally:
-                if conn and conn.is_connected():
-                    cursor.close()
-                    conn.close()
 
         if current_time - last_renewal_check >= RENEWAL_CHECK_INTERVAL:
             Logger.info("Scheduler evaluating upcoming subscription renewals.")

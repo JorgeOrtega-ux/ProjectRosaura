@@ -263,10 +263,9 @@ export const DialogTemplates = {
                 <h2 class="component-modal-title">${__('title_revoke_devices')}</h2>
                 <p class="component-modal-desc">${__('desc_revoke_devices')}</p>
             </div>
-            <div class="component-modal-body">
-                <button class="component-button component-button--h40 component-button--danger" data-modal-action="revoke_all">${__('btn_revoke_all')}</button>
-                <button class="component-button component-button--h40 component-button--dark" data-modal-action="revoke_other">${__('btn_revoke_other')}</button>
+            <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_revoke_all')}</button>
             </div>
         `
     },
@@ -367,8 +366,8 @@ export const DialogTemplates = {
                     <span class="material-symbols-rounded">warning</span>
                 </div>
                 <div class="component-modal-header-text">
-                    <h2 class="component-modal-title">${__('title_verify_identity')}</h2>
-                    <p class="component-modal-desc">${__('desc_verify_identity_delete')}</p>
+                    <h2 class="component-modal-title">${__('del_acc_modal_title') || 'Estás a punto de eliminar tu cuenta'}</h2>
+                    <p class="component-modal-desc">${__('del_acc_warning') || 'Al eliminar tu cuenta, perderás acceso a todos los servicios, tus lienzos, plantillas creadas e historial de actividad. Esta acción es permanente e irrecuperable.'}</p>
                 </div>
             </div>
             <div class="component-modal-body">

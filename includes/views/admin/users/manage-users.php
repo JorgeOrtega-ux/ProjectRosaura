@@ -47,13 +47,10 @@ if ($searchQuery !== '') {
 if (!empty($statusFilter)) {
     $statusConditions = [];
     if (in_array('active', $statusFilter)) {
-        $statusConditions[] = "(u.deletion_scheduled_at IS NULL AND (ur.is_suspended = 0 OR ur.is_suspended IS NULL))";
+        $statusConditions[] = "(ur.is_suspended = 0 OR ur.is_suspended IS NULL)";
     }
     if (in_array('suspended', $statusFilter)) {
-        $statusConditions[] = "(u.deletion_scheduled_at IS NULL AND ur.is_suspended = 1)";
-    }
-    if (in_array('deleted', $statusFilter)) {
-        $statusConditions[] = "(u.deletion_scheduled_at IS NOT NULL)";
+        $statusConditions[] = "(ur.is_suspended = 1)";
     }
     
     if (!empty($statusConditions)) {
@@ -332,11 +329,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                         <?php if ($users): ?>
                             <?php foreach ($users as $user): ?>
                                 <?php 
-                                    $isDeleted = !empty($user['deletion_scheduled_at']);
+                                    $isDeleted = false;
                                     
-                                    $dataStatus = $isDeleted ? 'deleted' : ($user['is_suspended'] ? 'suspended' : 'active');
-                                    $displayStatus = $isDeleted ? __('status_deleted') : ($user['is_suspended'] ? __('status_suspended') : __('status_active'));
-                                    $statusIcon = $isDeleted ? 'person_off' : ($user['is_suspended'] ? 'block' : 'check_circle');
+                                    $dataStatus = $user['is_suspended'] ? 'suspended' : 'active';
+                                    $displayStatus = $user['is_suspended'] ? __('status_suspended') : __('status_active');
+                                    $statusIcon = $user['is_suspended'] ? 'block' : 'check_circle';
                                     $validUserPic = Utils::getValidImage($user['profile_picture'], 'avatar');
                                     
                                     $roleIds = $user['role_ids'] ?? '1';

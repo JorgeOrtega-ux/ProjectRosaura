@@ -573,30 +573,7 @@ class AuthServices {
                 Logger::warning("security_alert", ['details' => $payload]);
             }
 
-            if (!empty($user['deletion_scheduled_at'])) {
-                if (strtotime($user['deletion_scheduled_at']) <= time()) {
-                    $this->telemetryServices->logAuthEvent([
-                        'event_type' => 'login_blocked_deleted',
-                        'user_uuid' => $user['uuid'],
-                        'ip_address' => $ipAddress
-                    ]);
-                    return ['success' => false, 'status' => 'deleted', 'message' => __('auth.account_deleted')];
-                }
 
-                $tempToken = bin2hex(random_bytes(16));
-                $pendingDeletion = $this->sessionManager->get(SessionConstants::KEY_PENDING_DELETION, []);
-                $pendingDeletion[$tempToken] = $user['id'];
-                $this->sessionManager->set(SessionConstants::KEY_PENDING_DELETION, $pendingDeletion);
-                
-                return [
-                    'success' => false, 
-                    'status' => 'pending_deletion', 
-                    'requires_action' => 'cancel_deletion',
-                    'temp_auth_token' => $tempToken, 
-                    'scheduled_at' => $user['deletion_scheduled_at'],
-                    'message' => __('auth.account_pending_deletion')
-                ];
-            }
             
             if (isset($user['is_suspended']) && $user['is_suspended'] == 1) {
                 if ($user['suspension_type'] === DatabaseConstants::SUSPENSION_TEMP && $user['suspension_end_date'] && strtotime($user['suspension_end_date']) <= time()) {
@@ -751,18 +728,7 @@ class AuthServices {
 
         $ipAddress = Utils::getIpAddress();
         
-        if (!empty($user['deletion_scheduled_at']) && strtotime($user['deletion_scheduled_at']) <= time()) {
-            return ['success' => false, 'status' => 'deleted', 'message' => __('auth.account_deleted')];
-        } else if (!empty($user['deletion_scheduled_at'])) {
-            $tempToken = bin2hex(random_bytes(16));
-            $pendingDeletion = $this->sessionManager->get(SessionConstants::KEY_PENDING_DELETION, []);
-            $pendingDeletion[$tempToken] = $user['id'];
-            $this->sessionManager->set(SessionConstants::KEY_PENDING_DELETION, $pendingDeletion);
-            return [
-                'success' => false, 'status' => 'pending_deletion', 'requires_action' => 'cancel_deletion',
-                'temp_auth_token' => $tempToken, 'scheduled_at' => $user['deletion_scheduled_at'], 'message' => __('auth.account_pending_deletion')
-            ];
-        }
+
 
         if (isset($user['is_suspended']) && $user['is_suspended'] == 1) {
             if ($user['suspension_type'] === DatabaseConstants::SUSPENSION_TEMP && $user['suspension_end_date'] && strtotime($user['suspension_end_date']) <= time()) {

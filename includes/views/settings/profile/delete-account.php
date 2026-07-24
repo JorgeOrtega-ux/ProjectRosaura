@@ -23,11 +23,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content component-card__content--full component-card__content--start">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">schedule</span>
+                                <span class="material-symbols-rounded">delete_forever</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('del_acc_grace_period_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('del_acc_grace_period_desc'); ?></p>
+                                <h2 class="component-card__title"><?php echo __('del_acc_instant_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('del_acc_instant_desc'); ?></p>
                             </div>
                         </div>
                     </div>

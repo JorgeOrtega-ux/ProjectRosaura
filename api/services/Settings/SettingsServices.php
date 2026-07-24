@@ -520,16 +520,27 @@ class SettingsServices
         if ($user && $passwordValid) {
             $this->rateLimiter->clear(RateLimitConstants::KEY_SET_DELETE_ACCOUNT . "_{$userId}");
 
-            $deletionDate = date('Y-m-d H:i:s', strtotime('+30 days'));
+            $this->tokenRepository->deleteAllByUserId($userId);
+            Utils::invalidateUserSessions($this->sessionManager, $userId, true);
+            $this->sessionManager->removeAccount($userId);
 
-            if ($this->userRepository->scheduleDeletion($userId, $deletionDate)) {
-                
-                $this->tokenRepository->deleteAllByUserId($userId);
-                Utils::invalidateUserSessions($this->sessionManager, $userId, true);
-                $this->sessionManager->removeAccount($userId);
-
-                return ['success' => true, 'message' => __('settings.account_deletion_scheduled'), 'scheduled_at' => $deletionDate];
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                $redisClient = $redisCache->getClient();
+                if ($redisClient) {
+                    $payload = json_encode([
+                        'user_id' => $userId,
+                        'email' => $user['email'] ?? '',
+                        'username' => $user['username'] ?? '',
+                        'reason' => 'user_requested_deletion'
+                    ]);
+                    $redisClient->rpush(\App\Core\System\CacheConstants::QUEUE_ACCOUNT_DELETION, [$payload]);
+                }
+            } catch (\Throwable $e) {
+                Logger::error("Failed pushing instant deletion to Redis queue", ['user_id' => $userId, 'error' => $e->getMessage()]);
             }
+
+            return ['success' => true, 'message' => __('settings.account_deleted_success')];
         }
         
         return ['success' => false, 'message' => __('auth.incorrect_password')];

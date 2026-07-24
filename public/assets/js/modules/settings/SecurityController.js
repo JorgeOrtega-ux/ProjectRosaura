@@ -128,18 +128,12 @@ class SecurityController {
     async promptDeleteAccount(btn) {
         if (btn.classList.contains('disabled-interaction')) return;
 
-        const chkConfirm = document.querySelector('[data-ref="chk_confirm_delete"]');
-        if (!chkConfirm || !chkConfirm.checked) {
-            showMessage(window.__('err_confirm_deletion'), "error");
-            return;
-        }
-
         const dialog = await window.dialogSystem.show('confirmDeleteAccountDialog');
 
         if (dialog.confirmed) {
             const passInput = dialog.data['modal_delete_password'];
             if (!passInput) {
-                showMessage(window.__('err_password_required'), "error");
+                showMessage(window.__('err_password_required') || 'Ingresa tu contraseña para confirmar', "error");
                 return;
             }
 
@@ -153,10 +147,10 @@ class SecurityController {
             restoreButton(btn);
 
             if (result.success) {
-                showMessage(result.message || window.__('msg_deletion_started'), "success");
+                showMessage(result.message || window.__('msg_deletion_started') || 'Cuenta eliminada con éxito', "success");
                 setTimeout(() => {
                     window.location.href = this.basePath + '/login';
-                }, 2000);
+                }, 1500);
             } else {
                 showMessage(result.message, "error");
             }
@@ -168,26 +162,19 @@ class SecurityController {
 
         const resultDialog = await window.dialogSystem.show('confirmRevokeAllDevices');
 
-        if (resultDialog && resultDialog.action && resultDialog.action !== 'cancel') {
+        if (resultDialog && resultDialog.confirmed) {
             setButtonLoading(btn);
 
             try {
-                const actionType = resultDialog.action;
-                const res = await this.api.post(ApiRoutes.Settings.RevokeAllDevices, { type: actionType }, this.abortController?.signal);
+                const res = await this.api.post(ApiRoutes.Settings.RevokeAllDevices, { type: 'revoke_all' }, this.abortController?.signal);
 
                 if (res.aborted) return;
 
                 if (res.success) {
-                    showMessage(res.message || 'Sesiones cerradas con éxito', 'success');
-                    if (actionType === 'revoke_all') {
-                        setTimeout(() => {
-                            window.location.href = this.basePath + '/login';
-                        }, 1000);
-                    } else {
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    }
+                    showMessage(res.message || window.__('msg_devices_revoked') || 'Sesiones cerradas con éxito', 'success');
+                    setTimeout(() => {
+                        window.location.href = this.basePath + '/login';
+                    }, 1000);
                 } else {
                     showMessage(res.message || 'Error al cerrar sesiones', 'error');
                 }

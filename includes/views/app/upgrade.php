@@ -89,13 +89,35 @@ foreach ($availableFeatures as $fKey => $fData) {
                 <h1 class="component-top-title"><?php echo __('upgrade_page_title'); ?>&nbsp;<span class="component-text-gradient-blue">ProjectRosaura</span></h1>
             </div>
             <div class="component-top-right">
-                <!-- Billing Switch (Monthly / Yearly) -->
-                <div class="component-toggle-group" id="billingToggle">
-                    <div class="component-toggle-group__wrapper">
-                        <button type="button" class="component-button component-button--dark component-button--rounded-pill component-button--h40 component-toggle-group__button component-toggle-group__button--w145" id="lblMonthly"><?php echo __('upgrade_billing_monthly'); ?></button>
-                        <button type="button" class="component-button component-button--ghost component-button--rounded-pill component-button--h40 component-toggle-group__button component-toggle-group__button--w145 component-text-notice--muted" id="lblYearly"><?php echo __('upgrade_billing_yearly'); ?></button>
+                <div class="component-dropdown-wrapper">
+                    <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleBillingCycle">
+                        <span class="material-symbols-rounded" data-ref="billingCycleIcon">calendar_month</span>
+                        <span class="component-dropdown-text" data-ref="billingCycleText"><?php echo __('upgrade_billing_monthly'); ?></span>
+                        <span class="material-symbols-rounded">expand_more</span>
                     </div>
-                    <input type="checkbox" id="billingCheckboxToggle" autocomplete="off" hidden>
+                    <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="moduleBillingCycle">
+                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                            <div class="pill-container"><div class="drag-handle"></div></div>
+                            <div class="component-menu-list component-menu-list--scrollable">
+                                <div class="component-menu-link active" data-action="setBillingCycle" data-value="monthly">
+                                    <div class="component-menu-link-icon">
+                                        <span class="material-symbols-rounded">calendar_month</span>
+                                    </div>
+                                    <div class="component-menu-link-text">
+                                        <span><?php echo __('upgrade_billing_monthly'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="component-menu-link" data-action="setBillingCycle" data-value="yearly">
+                                    <div class="component-menu-link-icon">
+                                        <span class="material-symbols-rounded">event_repeat</span>
+                                    </div>
+                                    <div class="component-menu-link-text">
+                                        <span><?php echo __('upgrade_billing_yearly'); ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
