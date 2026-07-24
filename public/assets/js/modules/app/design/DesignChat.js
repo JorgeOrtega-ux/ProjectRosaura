@@ -153,8 +153,9 @@ export class DesignChat {
 
             const btnRestrict = e.target.closest('[data-action="chatRestrictUser"]');
             if (btnRestrict) {
-                const userId = btnRestrict.dataset.userId;
-                window.open((window.AppBasePath || '') + `/canvases/manage/chat-restriction/${this.canvasId}/${userId}`, '_blank');
+                const targetUuid = btnRestrict.dataset.userUuid || btnRestrict.dataset.userId;
+                const canvasUuid = this.canvasUuid || this.canvasId;
+                window.open((window.AppBasePath || '') + `/canvases/manage/chat-restriction/${canvasUuid}/${targetUuid}`, '_blank');
                 const dropdown = btnRestrict.closest('.chat-dropdown-module');
                 if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
             }
@@ -830,7 +831,7 @@ export class DesignChat {
                             </div>
                         </div>
                         ${(!isMine && this.canModerateChat) ? `
-                        <div class="component-menu-link" data-action="chatRestrictUser" data-user-id="${msg.user_id}">
+                        <div class="component-menu-link" data-action="chatRestrictUser" data-user-id="${msg.user_id}" data-user-uuid="${msg.user_uuid || msg.user_id}">
                             <div class="component-menu-link-icon">
                                 <span class="material-symbols-rounded component-text-warning">block</span>
                             </div>

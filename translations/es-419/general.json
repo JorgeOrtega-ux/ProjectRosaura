@@ -1189,6 +1189,7 @@
     "msg_snapshot_deleted": "Captura eliminada correctamente.",
     "settings.identity_already_verified": "Tu identidad ya ha sido verificada.",
     "tooltip_remove_member": "Remover miembro",
+    "tooltip_chat_restriction": "Restricción de chat",
     "table_sender": "Remitente",
     "validation.invalid_color_type": "Tipo de color no válido.",
     "validation.invalid_data": "Los datos enviados no son válidos.",

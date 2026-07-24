@@ -16,7 +16,6 @@ $predefinedSuspension = [
     'reason_abuse', 'reason_prohibited_content', 'reason_ip_violation',
     'reason_spam_bot', 'reason_security_breach', 'reason_unauthorized_commercial', 'reason_other'
 ];
-?>
 
 if ($restriction && $restriction['suspension_reason']) {
     if (in_array($restriction['suspension_reason'], $predefinedSuspension)) {

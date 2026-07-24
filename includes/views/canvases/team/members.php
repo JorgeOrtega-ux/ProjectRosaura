@@ -26,6 +26,10 @@ extract($membersData);
                         <span class="material-symbols-rounded">manage_accounts</span>
                     </button>
 
+                    <button class="component-button component-button--icon component-button--h40" data-action="manageChatRestriction" data-tooltip="<?php echo __('tooltip_chat_restriction'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">block</span>
+                    </button>
+
                     <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="removeMember" data-tooltip="<?php echo __('tooltip_remove_member'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">person_remove</span>
                     </button>

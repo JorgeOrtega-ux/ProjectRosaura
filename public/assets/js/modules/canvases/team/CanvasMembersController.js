@@ -64,6 +64,7 @@ class CanvasMembersController {
         const deselectBtn = e.target.closest('[data-action="deselectMember"]');
         
         const changeRoleBtn = e.target.closest('[data-action="changeMemberRole"]');
+        const manageChatRestrictionBtn = e.target.closest('[data-action="manageChatRestriction"]');
         const removeMemberBtn = e.target.closest('[data-action="removeMember"]');
 
         if (searchBtn) this.toggleSearchToolbar();
@@ -75,6 +76,7 @@ class CanvasMembersController {
         if (deselectBtn) this.deselectMember();
         
         if (changeRoleBtn && !changeRoleBtn.classList.contains('disabled-interaction')) this.changeMemberRole();
+        if (manageChatRestrictionBtn && !manageChatRestrictionBtn.classList.contains('disabled-interaction')) this.manageChatRestriction();
         if (removeMemberBtn && !removeMemberBtn.classList.contains('disabled-interaction')) this.removeMember();
 
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
@@ -190,6 +192,38 @@ class CanvasMembersController {
         }
 
         const routeUrl = `${this.basePath}/canvases/members/${uuid}/role/${targetUserUuid}`;
+        if (window.spaRouter) {
+            window.spaRouter.navigate(routeUrl);
+        } else {
+            window.location.href = routeUrl;
+        }
+    }
+
+    manageChatRestriction() {
+        if (this.selectedMemberIds.size !== 1) return;
+        
+        const targetUserId = Array.from(this.selectedMemberIds)[0];
+        const selectedRow = document.querySelector(`[data-member-id="${targetUserId}"]`);
+
+        const targetUserUuid = selectedRow ? selectedRow.getAttribute('data-member-uuid') : null;
+
+        if (!targetUserUuid) {
+            showMessage(__('err_missing_user_id'), "error");
+            return;
+        }
+        
+        const pathParts = window.location.pathname.split('/');
+        let uuid = pathParts[pathParts.length - 1];
+        if (uuid.includes('?')) {
+            uuid = uuid.split('?')[0];
+        }
+
+        if (!uuid) {
+            showMessage(__('err_missing_canvas_id'), "error");
+            return;
+        }
+
+        const routeUrl = `${this.basePath}/canvases/manage/chat-restriction/${uuid}/${targetUserUuid}`;
         if (window.spaRouter) {
             window.spaRouter.navigate(routeUrl);
         } else {

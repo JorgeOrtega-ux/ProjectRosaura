@@ -67,7 +67,7 @@ class ChatServices
             $userIds = array_values(array_unique(array_column($messages, 'user_id')));
             $placeholders = implode(',', array_fill(0, count($userIds), '?'));
             $userStmt = $this->identityPdo->prepare("
-                SELECT u.id, u.username, u.profile_picture, st.color as subscription_color 
+                SELECT u.id, u.uuid, u.username, u.profile_picture, st.color as subscription_color 
                 FROM users u 
                 LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level 
                 WHERE u.id IN ($placeholders)
@@ -80,6 +80,7 @@ class ChatServices
             
             foreach ($messages as &$msg) {
                 $uid = $msg['user_id'];
+                $msg['user_uuid'] = $usersMap[$uid]['uuid'] ?? null;
                 $msg['username'] = $usersMap[$uid]['username'] ?? __('default_user');
                 $msg['avatar'] = isset($usersMap[$uid]['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($usersMap[$uid]['profile_picture']) : null;
                 $msg['subscription_color'] = $usersMap[$uid]['subscription_color'] ?? '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}';
@@ -254,7 +255,7 @@ class ChatServices
         $msgId = 'pending_' . uniqid();
 
         $uStmt = $this->identityPdo->prepare("
-            SELECT u.username, u.profile_picture, st.color as subscription_color 
+            SELECT u.username, u.uuid, u.profile_picture, st.color as subscription_color 
             FROM " . DB::TBL_USERS . " u 
             LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level 
             WHERE u.id = ?
@@ -270,6 +271,7 @@ class ChatServices
             'id' => $msgId,
             'client_id' => $clientId,
             'user_id' => $userId,
+            'user_uuid' => $userInfo['uuid'] ?? '',
             'username' => $userInfo['username'] ?? $defaultUsername,
             'avatar' => isset($userInfo['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($userInfo['profile_picture']) : null,
             'subscription_color' => $userInfo['subscription_color'] ?? '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}',

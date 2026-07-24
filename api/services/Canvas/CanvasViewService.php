@@ -1020,8 +1020,8 @@ class CanvasViewService {
         $db = new DatabaseManager();
         $pdo = $db->getConnection(defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
 
-        $stmt = $pdo->prepare("SELECT id, owner_id as user_id FROM canvases WHERE uuid = :uuid OR id = :uuid LIMIT 1");
-        $stmt->execute(['uuid' => $canvasUuid]);
+        $stmt = $pdo->prepare("SELECT id, uuid, owner_id as user_id FROM canvases WHERE uuid = :uuid OR id = :uuid_alt LIMIT 1");
+        $stmt->execute(['uuid' => $canvasUuid, 'uuid_alt' => $canvasUuid]);
         $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$canvas || (int)$canvas['user_id'] !== (int)$userId) {
@@ -1031,14 +1031,21 @@ class CanvasViewService {
         $redis = new \App\Config\Database\RedisCache();
         $roleRepo = new \App\Core\Repositories\RoleRepository($db, $redis);
         $userRepo = new \App\Core\Repositories\UserRepository($db, $roleRepo);
-        $targetUser = $userRepo->findById($targetUserUuid);
+        $targetUser = is_numeric($targetUserUuid) ? $userRepo->findById((int)$targetUserUuid) : $userRepo->findByUuid($targetUserUuid);
+
+        $realCanvasUuid = !empty($canvas['uuid']) ? $canvas['uuid'] : $canvasUuid;
 
         if (!$targetUser) {
-            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/canvases/manage/{$canvasUuid}"];
+            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/canvases/manage/{$realCanvasUuid}"];
         }
 
         $canvasId = (int)$canvas['id'];
         $targetUserId = (int)$targetUser['id'];
+        $realUserUuid = !empty($targetUser['uuid']) ? $targetUser['uuid'] : $targetUserUuid;
+
+        if ($canvasUuid !== $realCanvasUuid || $targetUserUuid !== $realUserUuid) {
+            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/canvases/manage/chat-restriction/{$realCanvasUuid}/{$realUserUuid}"];
+        }
 
         $stmt = $pdo->prepare("SELECT * FROM canvas_chat_restrictions WHERE canvas_id = ? AND user_id = ?");
         $stmt->execute([$canvasId, $targetUserId]);
@@ -1057,10 +1064,10 @@ class CanvasViewService {
             'redirect' => null,
             'canvas' => $canvas,
             'canvasId' => $canvasId,
-            'canvasUuid' => $canvasUuid,
+            'canvasUuid' => $realCanvasUuid,
             'targetUser' => $targetUser,
             'targetUserId' => $targetUserId,
-            'targetUserUuid' => $targetUserUuid,
+            'targetUserUuid' => $realUserUuid,
             'restriction' => $restriction,
             'initialState' => $initialState,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
