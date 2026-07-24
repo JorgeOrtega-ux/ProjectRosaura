@@ -168,21 +168,25 @@ foreach ($availableFeatures as $fKey => $fData) {
                                             </div>
                                         </div>
                                         <div class="component-card__actions component-card__actions--end">
-                                            <span class="component-badge component-badge--sm">
-                                                <span>USD</span>
-                                                <span data-ref="plan-price" data-monthly="<?php echo $monthly; ?>" data-yearly="<?php echo $yearly; ?>"><?php echo $monthly; ?></span>
-                                                <span data-ref="plan-period" data-period-monthly="<?php echo __('plan_period_month'); ?>" data-period-yearly="<?php echo __('plan_period_year'); ?>"><?php echo __('plan_period_month'); ?></span>
-                                            </span>
-
-                                            <div>
-                                                <?php if ($currentUserTier === $tierLevel): ?>
-                                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--h36 disabled-interaction component-cursor-pointer"><?php echo __('plan_btn_current'); ?></div>
-                                                <?php elseif ($currentUserTier > $tierLevel): ?>
-                                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--h36 component-cursor-pointer" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>"><?php echo __('plan_btn_downgrade'); ?></div>
-                                                <?php else: ?>
-                                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--h36 component-cursor-pointer" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>"><?php echo __('plan_btn_upgrade'); ?></div>
-                                                <?php endif; ?>
-                                            </div>
+                                            <?php if ($currentUserTier === $tierLevel): ?>
+                                                <button type="button" class="component-button component-button--dark component-button--rounded-pill component-button--h36 disabled-interaction component-cursor-pointer">
+                                                    <span class="material-symbols-rounded">check_circle</span>
+                                                    <span><?php echo __('plan_btn_current'); ?></span>
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button" class="component-button component-button--dark component-button--rounded-pill component-button--h36 component-button--hover-text component-cursor-pointer" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>">
+                                                    <span class="material-symbols-rounded">
+                                                        <?php echo ($currentUserTier > $tierLevel) ? 'arrow_downward' : 'rocket_launch'; ?>
+                                                    </span>
+                                                    <span class="btn-default-text">
+                                                        $<span data-ref="plan-price" data-monthly="<?php echo $monthly; ?>" data-yearly="<?php echo $yearly; ?>"><?php echo $monthly; ?></span>
+                                                        <span data-ref="plan-period" data-period-monthly="/ <?php echo __('plan_period_month'); ?>" data-period-yearly="/ <?php echo __('plan_period_year'); ?>">/ <?php echo __('plan_period_month'); ?></span>
+                                                    </span>
+                                                    <span class="btn-hover-text">
+                                                        <?php echo ($currentUserTier > $tierLevel) ? __('plan_btn_downgrade') : __('plan_btn_upgrade'); ?>
+                                                    </span>
+                                                </button>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
 
@@ -195,7 +199,7 @@ foreach ($availableFeatures as $fKey => $fData) {
                                                 <h2 class="component-card__title"><?php echo __('upgrade_features_title', [], 'Ventajas incluidas'); ?></h2>
                                                 <p class="component-card__description"><?php echo __('upgrade_features_desc', [], 'Límites y características del plan'); ?></p>
                                                 
-                                                <div class="upgrade-badges-wrapper">
+                                                <div class="component-badge-grid">
                                                     <?php foreach ($rowsToCompare as $row): 
                                                         $val = $row['values_fn']($tier);
                                                         if ($val === false) continue;

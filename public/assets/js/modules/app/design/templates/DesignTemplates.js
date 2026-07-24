@@ -258,24 +258,26 @@ export const DesignTemplates = {
 
     async loadUserLibrary() {
         if (this.isSpectator || this.isSnapshotMode) return;
-        if (this.templatesLoaded) return;
+        if (this.templatesLoaded || this.isLoadingTemplates) return;
         
+        this.isLoadingTemplates = true;
         try {
             this.renderSkeletonLibraryDOM();
             
             const response = await this.api.post(ApiRoutes.Canvases.GetTemplates, {}, this.abortController.signal);
             if (response.aborted) return;
 
+            this.templatesLoaded = true;
             if (response.success && response.data) {
-                this.templatesLoaded = true;
                 this.renderUserLibraryDOM(response.data);
             } else {
-                this.templatesLoaded = false;
                 this.renderUserLibraryDOM([]);
             }
         } catch (error) {
-            this.templatesLoaded = false;
+            this.templatesLoaded = true;
             this.renderUserLibraryDOM([]);
+        } finally {
+            this.isLoadingTemplates = false;
         }
     },
 

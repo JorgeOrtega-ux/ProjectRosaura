@@ -145,6 +145,11 @@ class DesignController {
         this.selectedPixels = new Set();
         this.isSelecting = false;
         this.interactionMode = 'normal';
+        this.showOwnerTools = false;
+        this.showInventoryPerks = false;
+        this.ownerEraserBox = null;
+        this.ownerEraserStep = 0;
+        this.ownerEraserStart = null;
         this.templates = [];
         this.activeTemplateId = null;
         this.templateInteraction = null;

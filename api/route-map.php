@@ -654,7 +654,7 @@ return [
     ],
     'canvases.get_templates' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
-        'action' => 'get_templates',
+        'action' => 'list_templates',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_tpl', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.delete_template' => [

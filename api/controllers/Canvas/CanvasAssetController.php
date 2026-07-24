@@ -74,6 +74,10 @@ class CanvasAssetController extends BaseController {
         }
     }
 
+    public function get_templates($input) {
+        return $this->list_templates($input);
+    }
+
     public function delete_template($input) {
         try {
             if (!$this->session->isLoggedIn()) {

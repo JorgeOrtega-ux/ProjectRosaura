@@ -2003,6 +2003,57 @@ html.dark-theme .component-menu-header.shadow {
     overflow: visible;
 }
 
+/* Reusable Component Badge Grid */
+.component-badge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.component-badge-grid .component-badge {
+    width: 100%;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    padding: 8px 12px;
+}
+
+/* Smooth Animated Hover Button */
+.component-button--hover-text {
+    position: relative;
+    overflow: hidden;
+    transition: background-color 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    min-width: 140px;
+    justify-content: center;
+}
+
+.component-button--hover-text .btn-default-text,
+.component-button--hover-text .btn-hover-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.component-button--hover-text .btn-hover-text {
+    position: absolute;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+}
+
+.component-button--hover-text:hover .btn-default-text {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.component-button--hover-text:hover .btn-hover-text {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
 .component-toggle-switch {
     position: relative;
     display: inline-block;

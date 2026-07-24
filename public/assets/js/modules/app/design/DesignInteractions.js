@@ -239,17 +239,15 @@ export const DesignInteractions = {
         if (e.key === 'Escape') {
             if (this.interactionMode !== 'normal') {
                 this.cancelInteractionMode();
-            }
-            if (this.isSelecting) {
+            } else {
                 this.isSelecting = false;
                 this.selectedPixels.clear();
+                this.ownerEraserBox = null;
+                this.ownerEraserStep = 0;
+                this.ownerEraserStart = null;
                 this.updateSelectionUI();
-                this.requestRender();
-            }
-            if (this.selectedPixels.size > 0) {
-                this.selectedPixels.clear();
-                this.updateSelectionUI();
-                this.requestRender();
+                if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                if (typeof this.requestRender === 'function') this.requestRender();
             }
         }
     },
@@ -1286,8 +1284,15 @@ export const DesignInteractions = {
 
     cancelInteractionMode() {
         this.interactionMode = 'normal';
+        this.selectedPixels.clear();
+        this.ownerEraserBox = null;
+        this.ownerEraserStep = 0;
+        this.ownerEraserStart = null;
+        this.activeBomb = null;
+        this.perkBombReady = null;
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.requestRender === 'function') this.requestRender();
         showMessage(window.__('special_mode_deactivated'), 'info');
     },
 
