@@ -3,6 +3,44 @@
 namespace App\Core\System;
 
 class SubscriptionPlanConstants {
+    public const ALL_FEATURES = [
+        'feat_advanced_roles' => [
+            'key' => 'feat_advanced_roles',
+            'name' => 'Roles Avanzados',
+            'desc' => 'Permite configurar roles personalizados en lienzos'
+        ],
+        'feat_chat_restriction' => [
+            'key' => 'feat_chat_restriction',
+            'name' => 'Acceso y Moderación de Chat',
+            'desc' => 'Permite uso de chat en vivo y herramientas de moderación'
+        ],
+        'feat_custom_palettes' => [
+            'key' => 'feat_custom_palettes',
+            'name' => 'Paletas Personalizadas',
+            'desc' => 'Permite crear y utilizar paletas de colores personalizadas'
+        ],
+        'feat_priority_rendering' => [
+            'key' => 'feat_priority_rendering',
+            'name' => 'Renderizado Prioritario',
+            'desc' => 'Prioridad de procesamiento y renderizado en lienzo'
+        ],
+        'feat_unlimited_exports' => [
+            'key' => 'feat_unlimited_exports',
+            'name' => 'Exportaciones Ilimitadas',
+            'desc' => 'Exportación ilimitada de instantáneas e imágenes'
+        ],
+        'feat_beta_access' => [
+            'key' => 'feat_beta_access',
+            'name' => 'Acceso a Funciones Beta',
+            'desc' => 'Acceso anticipado a nuevas herramientas y funciones beta'
+        ],
+        'feat_inject_templates' => [
+            'key' => 'feat_inject_templates',
+            'name' => 'Inyección de Plantillas',
+            'desc' => 'Inyección directa de plantillas avanzadas en lienzos'
+        ]
+    ];
+
     private static $tierLimitsCache = [];
 
     public static function getTierLimits(int $tier): array {

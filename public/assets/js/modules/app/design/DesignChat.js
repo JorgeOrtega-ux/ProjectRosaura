@@ -1,6 +1,6 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { showMessage } from '../../../core/utils/uiUtils.js';
+import { showMessage, renderSkeleton } from '../../../core/utils/uiUtils.js';
 
 export class DesignChat {
     constructor(controller) {
@@ -401,6 +401,7 @@ export class DesignChat {
 
         let loaderStartTime = 0;
         if (this.offset === 0 && this.loader) {
+            renderSkeleton(this.loader, 'chatSkeleton');
             this.loader.classList.remove('disabled'); this.loader.classList.add('active');
         } else if (this.offset > 0) {
             

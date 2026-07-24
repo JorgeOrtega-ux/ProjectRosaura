@@ -1,5 +1,7 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
+use App\Core\System\SubscriptionFeatureConfig;
+use App\Core\System\SubscriptionPlanConstants;
 
 $adminService = new AdminViewService();
 $builderData = $adminService->getSubscriptionBuilderData($_GET['uuid'] ?? null);
@@ -536,7 +538,7 @@ $featuresData = [
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
                             <?php 
-                            $availableFeatures = SubscriptionFeatureConfig::getAvailableFeatures();
+                            $availableFeatures = \App\Core\System\SubscriptionFeatureConfig::getAvailableFeatures();
                             $featCount = count($availableFeatures);
                             $fIndex = 0;
                             foreach ($availableFeatures as $fKey => $fData): 

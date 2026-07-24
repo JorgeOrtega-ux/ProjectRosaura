@@ -167,11 +167,8 @@ class HomeController {
             document.querySelectorAll('.component-tags-carousel .component-badge').forEach(btn => btn.classList.remove('active'));
             actionBtn.classList.add('active');
             
-            let skeletonCards = '';
-            for (let i = 0; i < 12; i++) {
-                skeletonCards += `<div class="component-skeleton component-skeleton--card"></div>`;
-            }
-            this.contentArea.innerHTML = `<div class="component-grid" data-ref="home-all-canvases">${skeletonCards}</div>`;
+            this.contentArea.innerHTML = '<div class="component-grid" data-ref="home-all-canvases"></div>';
+            renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
             
             this.loadCanvases();
             return;

@@ -15,20 +15,20 @@ export const RouteModulesMap = {
     '/store/coins': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-table' },
     '/store/content': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-table' },
 
-    '/login': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-basic' },
-    '/login/two-factor': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-basic' },
-    '/register': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-basic' },
-    '/register/aditional-data': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-basic' },
-    '/register/verification-account': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-basic' },
-    '/forgot-password': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-basic' },
-    '/reset-password': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-basic' },
+    '/login': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
+    '/login/two-factor': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
+    '/register': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
+    '/register/aditional-data': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
+    '/register/verification-account': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
+    '/forgot-password': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
+    '/reset-password': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
 
-    '/site-policy': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-basic' },
-    '/site-policy/terms-conditions': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-basic' },
-    '/site-policy/privacy-policy': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-basic' },
-    '/site-policy/cookies-policy': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-basic' },
-    '/site-policy/legal-notice': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-basic' },
-    '/site-policy/refund-policy': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-basic' },
+    '/site-policy': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-policy' },
+    '/site-policy/terms-conditions': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-policy' },
+    '/site-policy/privacy-policy': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-policy' },
+    '/site-policy/cookies-policy': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-policy' },
+    '/site-policy/legal-notice': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-policy' },
+    '/site-policy/refund-policy': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-policy' },
 
     '/settings': { path: './modules/settings/ProfileController.js', className: 'ProfileController', skeletonType: 'layout-basic' },
     '/settings/your-account': { path: './modules/settings/ProfileController.js', className: 'ProfileController', skeletonType: 'layout-basic' },
@@ -42,8 +42,8 @@ export const RouteModulesMap = {
     '/settings/2fa/deactivate': { path: './modules/settings/TwoFactorController.js', className: 'TwoFactorController', skeletonType: 'layout-basic' },
     '/settings/delete-account': { path: './modules/settings/SecurityController.js', className: 'SecurityController', skeletonType: 'layout-basic' },
 
-    '/admin': { path: './modules/admin/AdminDashboardController.js', className: 'AdminDashboardController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-    '/admin/dashboard': { path: './modules/admin/AdminDashboardController.js', className: 'AdminDashboardController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+    '/admin': { path: './modules/admin/AdminDashboardController.js', className: 'AdminDashboardController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
+    '/admin/dashboard': { path: './modules/admin/AdminDashboardController.js', className: 'AdminDashboardController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
     '/admin/messages': { path: './modules/admin/messages/AdminMessagesController.js', className: 'AdminMessagesController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/messages/visibility/:uuid': { path: './modules/admin/messages/AdminMessagesVisibilityController.js', className: 'AdminMessagesVisibilityController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/messages/reports/:uuid': { path: './modules/admin/messages/AdminMessagesReportsController.js', className: 'AdminMessagesReportsController', requiresAdminLang: true, skeletonType: 'layout-basic' },
@@ -103,4 +103,3 @@ export const RouteModulesMap = {
 
     '/snapshot/view/:id': { path: './modules/canvases/history/SnapshotViewerController.js', className: 'SnapshotViewerController', skeletonType: 'layout-grid' }
 };
-
