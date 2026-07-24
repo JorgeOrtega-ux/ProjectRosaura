@@ -1,33 +1,12 @@
 <?php
+use App\Api\Services\Auth\AuthViewService;
 
-use App\Core\Container;
-use App\Core\Interfaces\VerificationCodeRepositoryInterface;
-use App\Core\System\DatabaseConstants;
+$authService = new AuthViewService();
+$resetData = $authService->getResetPasswordViewData($_GET['token'] ?? null);
 
-$token = $_GET['token'] ?? '';
-$isValid = false;
-$userEmail = '';
-if (!empty($token)) {
-    try {
-        global $container;
-        if (!isset($container)) {
-            $container = new Container();
-        }
-        
-        $verificationRepo = $container->get(VerificationCodeRepositoryInterface::class);
-        $verification = $verificationRepo->findValidByCodeAndType($token, DatabaseConstants::VERIFY_TYPE_PASSWORD);
-        
-        if ($verification) {
-            $isValid = true;
-            $payload = json_decode($verification['payload'], true);
-            if (isset($payload['email'])) {
-                $userEmail = $payload['email'];
-            }
-        }
-    } catch (\Exception $e) {
-        $isValid = false;
-    }
-}
+$token = $resetData['token'];
+$isValid = $resetData['isValid'];
+$userEmail = $resetData['userEmail'];
 ?>
 <div class="component-layout-centered">
     <?php include __DIR__ . '/auth-logo.php'; ?>

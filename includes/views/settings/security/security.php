@@ -1,29 +1,12 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Api\Services\Settings\SettingsViewService;
 
-use App\Config\Database\DatabaseManager;
-use App\Core\System\Logger;
+$settingsService = new SettingsViewService();
+$securityData = $settingsService->getSecurityOverviewData();
 
-$lastUpdateText = __('sec_never_updated');
-$is2FAActive = !empty($_SESSION['user_2fa']);
-$text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
-
-if (isset($_SESSION['user_id'])) {
-    try {
-        $db = new DatabaseManager();
-        $pdo = $db->getConnection('identity');
-        $stmt = $pdo->prepare("SELECT created_at FROM profile_changes_log WHERE user_id = ? AND change_type = 'password' ORDER BY created_at DESC LIMIT 1");
-        $stmt->execute([$_SESSION['user_id']]);
-        $log = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($log && !empty($log['created_at'])) {
-            $date = new DateTime($log['created_at']);
-            $lastUpdateText = $date->format('d/m/Y H:i');
-        }
-    } catch (\Throwable $e) {
-        Logger::error("Failed to fetch security info in security.php", ['user_id' => $_SESSION['user_id'], 'exception' => $e]);
-    }
-}
+$lastUpdateText = $securityData['lastUpdateText'];
+$is2FAActive = $securityData['is2FAActive'];
+$text2FA = $securityData['text2FA'];
 ?>
 <div class="view-content">
     <div class="component-wrapper">

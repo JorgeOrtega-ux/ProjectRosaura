@@ -1,7 +1,12 @@
 <?php
-$prefLang = $_COOKIE['pr_language'] ?? 'es-419';
-$languages = \App\Core\System\Translator::getAvailableLanguages();
-$currentLangText = $languages[$prefLang] ?? __('default_language_text');
+use App\Api\Services\Settings\SettingsViewService;
+
+$settingsService = new SettingsViewService();
+$guestData = $settingsService->getGuestPreferencesData();
+
+$prefLang = $guestData['prefLang'];
+$languages = $guestData['languages'];
+$currentLangText = $guestData['currentLangText'];
 ?>
 <div class="view-content">
     <div class="component-wrapper">

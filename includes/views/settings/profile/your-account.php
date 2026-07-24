@@ -1,90 +1,10 @@
 <?php
-use App\Core\System\SubscriptionPlanConstants;
+use App\Api\Services\Settings\SettingsViewService;
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+$settingsService = new SettingsViewService();
+$accountData = $settingsService->getYourAccountData();
 
-global $serverConfig;
-$maxAvatarSize = 2;
-
-if (!empty($serverConfig['max_avatar_size_mb']) && is_numeric($serverConfig['max_avatar_size_mb'])) {
-    $maxAvatarSize = $serverConfig['max_avatar_size_mb'];
-}
-
-$isLoggedIn = isset($_SESSION['user_id']);
-$userId = $_SESSION['user_id'] ?? 0;
-$userName = $_SESSION['user_name'] ?? __('user');
-$userEmail = $_SESSION['user_email'] ?? '';
-$userRoleName = $_SESSION['user_role_name'] ?? __('user');
-$subscriptionColorRaw = $_SESSION['subscription_color'] ?? '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
-$activeRoleBg = 'var(--text-muted)';
-
-if ($isLoggedIn) {
-    $colorData = json_decode($subscriptionColorRaw, true);
-
-    if (json_last_error() !== JSON_ERROR_NONE || !is_array($colorData)) {
-        $colorData = ['type' => 'solid', 'colors' => [['hex' => $subscriptionColorRaw, 'percentage' => 100]]];
-    }
-
-    $firstColorObj = $colorData['colors'][0] ?? null;
-    $activeRoleBg = is_string($firstColorObj) ? htmlspecialchars($firstColorObj) : htmlspecialchars($firstColorObj['hex'] ?? 'var(--text-muted)');
-
-    if (($colorData['type'] ?? 'solid') === 'gradient' && count($colorData['colors']) > 1) {
-        $angle = (int)($colorData['angle'] ?? 0);
-        $stopsArray = [];
-        $prevStop = 0;
-        $colorsCount = count($colorData['colors']);
-        
-        foreach ($colorData['colors'] as $i => $colorObj) {
-            $hex = is_string($colorObj) ? $colorObj : ($colorObj['hex'] ?? '#000000');
-            $hex = htmlspecialchars($hex);
-            $percentage = is_array($colorObj) && isset($colorObj['percentage']) ? (int)$colorObj['percentage'] : floor(100 / $colorsCount);
-
-            $endStop = $prevStop + $percentage;
-            if ($i === $colorsCount - 1) $endStop = 100;
-            $stopsArray[] = "{$hex} {$prevStop}% {$endStop}%";
-            $prevStop = $endStop;
-        }
-        $activeRoleBg = "conic-gradient(from {$angle}deg, " . implode(', ', $stopsArray) . ")";
-    }
-}
-
-$rawUserPic = $_SESSION['user_pic'] ?? '';
-$userPic = \App\Core\Helpers\Utils::getValidImage($rawUserPic, 'avatar');
-$formattedAvatar = htmlspecialchars($userPic);
-$isDefaultAvatar = strpos($userPic, 'profilePictures/default/') !== false || strpos($userPic, 'fallbacks/avatar-default.png') !== false;
-$userPrefs = $_SESSION['user_prefs'] ?? [];
-$prefLang = $userPrefs['language'] ?? ($_COOKIE['pr_language'] ?? 'es-419');
-$prefOpenLinks = isset($userPrefs['open_links_new_tab']) ? (int)$userPrefs['open_links_new_tab'] : 1;
-$prefTelemetry = isset($userPrefs['allow_telemetry']) ? (int)$userPrefs['allow_telemetry'] : 1;
-
-$languages = \App\Core\System\Translator::getAvailableLanguages();
-$currentLangText = $languages[$prefLang] ?? __('default_language_text');
-
-$activeAccountId = $_SESSION['active_account'] ?? null;
-$linkedAccounts = $_SESSION['accounts'] ?? [];
-$subscriptionTier = 0;
-if ($activeAccountId !== null && isset($linkedAccounts[$activeAccountId])) {
-    $subscriptionTier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
-} else {
-    $subscriptionTier = (int)($_SESSION['subscription_tier'] ?? 0);
-}
-$subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimits($subscriptionTier)['name'] ?? __('tier_free');
-
-$googleId = null;
-if ($isLoggedIn) {
-    try {
-        global $container;
-        if ($container) {
-            $userRepo = $container->get(\App\Core\Interfaces\UserRepositoryInterface::class);
-            $currentUserDb = $userRepo->findById($userId);
-            if ($currentUserDb) {
-                $googleId = $currentUserDb['google_id'] ?? null;
-            }
-        }
-    } catch (\Throwable $e) {}
-}
-$isGoogleConnected = !empty($googleId);
-$googleClientId = $_ENV['GOOGLE_CLIENT_ID'] ?? '';
+extract($accountData);
 ?>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>

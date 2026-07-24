@@ -1,7 +1,11 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-$is2FAActive = !empty($_SESSION['user_2fa']);
-$text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
+use App\Api\Services\Settings\SettingsViewService;
+
+$settingsService = new SettingsViewService();
+$faData = $settingsService->get2FAStatusData();
+
+$is2FAActive = $faData['is2FAActive'];
+$text2FA = $faData['text2FA'];
 ?>
 <div class="view-content">
     <div class="component-wrapper">

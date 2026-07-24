@@ -1,22 +1,13 @@
 <?php
-$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$appUrlPath = parse_url(defined('APP_URL') ? APP_URL : '', PHP_URL_PATH) ?: '';
-$relativePath = $requestUri;
-if ($appUrlPath !== '' && $appUrlPath !== '/' && strpos($requestUri, $appUrlPath) === 0) {
-    $relativePath = substr($requestUri, strlen($appUrlPath));
-}
+use App\Api\Services\Auth\AuthViewService;
 
-if ($relativePath === '' || $relativePath === false) {
-    $relativePath = '/';
-}
-if (strlen($relativePath) > 1 && substr($relativePath, -1) === '/') {
-    $relativePath = rtrim($relativePath, '/');
-}
+$authService = new AuthViewService();
+$registerData = $authService->getRegisterViewData();
 
-$errorMsg = null;
-global $serverConfig;
-$maxUsernameLen = $serverConfig['max_username_length'] ?? 32;
-$maxPasswordLen = $serverConfig['max_password_length'] ?? 64;
+$relativePath = $registerData['relativePath'];
+$errorMsg = $registerData['errorMsg'];
+$maxUsernameLen = $registerData['maxUsernameLen'];
+$maxPasswordLen = $registerData['maxPasswordLen'];
 ?>
 
 <div class="component-layout-centered">

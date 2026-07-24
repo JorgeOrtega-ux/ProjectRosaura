@@ -1,32 +1,13 @@
 <?php
-$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$appUrlPath = parse_url(defined('APP_URL') ? APP_URL : '', PHP_URL_PATH) ?: '';
-$relativePath = $requestUri;
-if ($appUrlPath !== '' && $appUrlPath !== '/' && strpos($requestUri, $appUrlPath) === 0) {
-    $relativePath = substr($requestUri, strlen($appUrlPath));
-}
+use App\Api\Services\Auth\AuthViewService;
 
-if ($relativePath === '' || $relativePath === false) {
-    $relativePath = '/';
-}
-if (strlen($relativePath) > 1 && substr($relativePath, -1) === '/') {
-    $relativePath = rtrim($relativePath, '/');
-}
+$authService = new AuthViewService();
+$loginData = $authService->getLoginViewData();
 
-$errorMsg = null;
-if ($relativePath === '/login/two-factor') {
-    $sessionKey = defined('\App\Core\System\SessionConstants::KEY_PENDING_2FA') 
-                  ? \App\Core\System\SessionConstants::KEY_PENDING_2FA 
-                  : 'pending_2fa';
-                  
-    $pending2FA = $_SESSION[$sessionKey] ?? [];
-    
-    if (empty($pending2FA)) {
-        $errorMsg = __('reg_no_data');
-    }
-}
-$linkedAccounts = $_SESSION['accounts'] ?? [];
-$isMultiSessionAdd = count($linkedAccounts) > 0;
+$relativePath = $loginData['relativePath'];
+$errorMsg = $loginData['errorMsg'];
+$linkedAccounts = $loginData['linkedAccounts'];
+$isMultiSessionAdd = $loginData['isMultiSessionAdd'];
 ?>
 
 <div class="component-layout-centered">

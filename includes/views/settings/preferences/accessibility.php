@@ -1,14 +1,12 @@
 <?php
-$userPrefs = $_SESSION['user_prefs'] ?? [];
-$prefTheme = $userPrefs['theme'] ?? 'system';
-$prefExtendedAlerts = isset($userPrefs['extended_alerts']) ? (int)$userPrefs['extended_alerts'] : 0;
+use App\Api\Services\Settings\SettingsViewService;
 
-$themeTexts = [
-    'system' => __('theme_system'),
-    'light'  => __('theme_light'),
-    'dark'   => __('theme_dark')
-];
-$currentThemeText = $themeTexts[$prefTheme] ?? __('theme_system');
+$settingsService = new SettingsViewService();
+$accData = $settingsService->getAccessibilityData();
+
+$prefTheme = $accData['prefTheme'];
+$prefExtendedAlerts = $accData['prefExtendedAlerts'];
+$currentThemeText = $accData['currentThemeText'];
 ?>
 <div class="view-content">
     <div class="component-wrapper">
