@@ -61,7 +61,22 @@ extract($accountData);
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('lbl_username'); ?></h2>
-                                <span class="component-display-value" data-ref="display-username"><?php echo htmlspecialchars($userName); ?></span>
+                                <?php 
+                                $showRole = false;
+                                $translatedRole = '';
+                                if (!empty($userRoleName)) {
+                                    $roleLower = strtolower(trim($userRoleName));
+                                    if ($roleLower !== 'user' && $roleLower !== 'usuario') {
+                                        $showRole = true;
+                                        $roleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', $roleLower);
+                                        $translatedRole = __($roleKey, [], $userRoleName);
+                                    }
+                                }
+                                ?>
+                                <span class="component-display-value" data-ref="display-username">
+                                    <?php echo htmlspecialchars($userName); ?>
+                                    <?php if ($showRole): ?> (<?php echo htmlspecialchars($translatedRole); ?>)<?php endif; ?>
+                                </span>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--stretch">
@@ -121,19 +136,6 @@ extract($accountData);
                         </div>
                     </div>
 
-                </div>
-
-                <hr class="component-divider">
-
-                <div class="component-group-item component-group-item--stateful">
-                    <div class="active component-state-box" data-state="role-view">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('lbl_system_role'); ?></h2>
-                                <span class="component-display-value" data-ref="display-role"><?php echo htmlspecialchars($userRoleName); ?></span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <hr class="component-divider">

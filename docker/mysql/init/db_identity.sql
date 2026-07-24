@@ -296,7 +296,7 @@ CREATE TABLE IF NOT EXISTS server_config (
   session_lifetime_minutes INT NOT NULL DEFAULT 120,
   max_active_sessions_per_user INT NOT NULL DEFAULT 3,
   allow_registrations TINYINT(1) NOT NULL DEFAULT 1,
-  allowed_email_domains LONGTEXT DEFAULT 'gmail.com,outlook.com,hotmail.com',
+  allowed_email_domains VARCHAR(2048) NOT NULL DEFAULT 'gmail.com,outlook.com,hotmail.com',
   registration_rate_limit_attempts INT NOT NULL DEFAULT 5,
   registration_rate_limit_minutes INT NOT NULL DEFAULT 15,
   verification_code_minutes INT NOT NULL DEFAULT 15,

@@ -59,7 +59,23 @@ $parseRoleColor = function($roleColorRaw) {
                              onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
                     </div>
                     <div class="component-account-info">
-                        <span class="component-account-name"><?php echo htmlspecialchars($activeAcc['user_name'] ?? __('user')); ?></span>
+                        <?php 
+                        $roleName = $activeAcc['user_role_name'] ?? '';
+                        $showRole = false;
+                        $translatedRole = '';
+                        if (!empty($roleName)) {
+                            $roleLower = strtolower(trim($roleName));
+                            if ($roleLower !== 'user' && $roleLower !== 'usuario') {
+                                $showRole = true;
+                                $roleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', $roleLower);
+                                $translatedRole = __($roleKey, [], $roleName);
+                            }
+                        }
+                        ?>
+                        <span class="component-account-name">
+                            <?php echo htmlspecialchars($activeAcc['user_name'] ?? __('user')); ?>
+                            <?php if ($showRole): ?> (<?php echo htmlspecialchars($translatedRole); ?>)<?php endif; ?>
+                        </span>
                         <span class="component-account-email"><?php echo htmlspecialchars($activeAcc['user_email'] ?? ''); ?></span>
                     </div>
                     <span class="material-symbols-rounded">navigate_next</span>
@@ -138,7 +154,23 @@ $parseRoleColor = function($roleColorRaw) {
                              onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
                     </div>
                     <div class="component-account-info">
-                        <span class="component-account-name"><?php echo htmlspecialchars($acc['user_name'] ?? __('user')); ?></span>
+                        <?php 
+                        $accRoleName = $acc['user_role_name'] ?? '';
+                        $accShowRole = false;
+                        $accTranslatedRole = '';
+                        if (!empty($accRoleName)) {
+                            $accRoleLower = strtolower(trim($accRoleName));
+                            if ($accRoleLower !== 'user' && $accRoleLower !== 'usuario') {
+                                $accShowRole = true;
+                                $accRoleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', $accRoleLower);
+                                $accTranslatedRole = __($accRoleKey, [], $accRoleName);
+                            }
+                        }
+                        ?>
+                        <span class="component-account-name">
+                            <?php echo htmlspecialchars($acc['user_name'] ?? __('user')); ?>
+                            <?php if ($accShowRole): ?> (<?php echo htmlspecialchars($accTranslatedRole); ?>)<?php endif; ?>
+                        </span>
                         <span class="component-account-email"><?php echo htmlspecialchars($acc['user_email'] ?? ''); ?></span>
                     </div>
                     <?php if($isActive): ?>

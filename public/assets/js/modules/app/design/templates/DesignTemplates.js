@@ -804,7 +804,7 @@ export const DesignTemplates = {
 
         const w = tpl.w || 500;
         const h = tpl.h || 500;
-        const cost = Math.max(500, Math.min(2500, Math.round((w * h) / 2000)));
+        const cost = Math.max(25, Math.min(2500, Math.round((w * h) / 1000)));
         let balance = this.cachedTemplateTokens;
 
         if (balance === undefined) {
