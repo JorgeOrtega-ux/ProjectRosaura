@@ -29,7 +29,7 @@ $predefinedSuspension = [
             <div class="component-top-right">
                 
                 <div class="component-actions disabled" data-ref="header-selection-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="editSanction" data-tooltip="<?php echo htmlspecialchars(__('tooltip_restrict_chat')); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="editSanction" data-tooltip="<?php echo htmlspecialchars(__('lbl_edit_sanction')); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">block</span>
                     </button>
 
@@ -78,7 +78,7 @@ $predefinedSuspension = [
                         <tr>
                             <th><?php echo __('table_header_member'); ?></th>
                             <th><?php echo __('table_header_status'); ?></th>
-                            <th><?php echo __('table_header_sanction'); ?></th>
+                            <th><?php echo __('table_header_sanction_type'); ?></th>
                             <th><?php echo __('table_header_reason'); ?></th>
                             <th><?php echo __('table_header_expiration'); ?></th>
                         </tr>
