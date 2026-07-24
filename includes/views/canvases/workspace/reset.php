@@ -151,7 +151,7 @@ $isResetActive = $resetSettings['is_active'];
                                     <h2 class="component-card__title"><?php echo __('canvas_reset_snapshot_title'); ?></h2>
                                     <p class="component-card__description"><?= __('take_photo_before_reset') ?></p>
                                     <?php if (!$canTakeSnapshot): ?>
-                                        <p class="component-card__description text-danger"><b><?php echo __('snapshot_limit_reached', ['current' => $currentSnapshots, 'max' => $maxSnapshots]); ?></b> <?php echo __('snapshot_upgrade_plan'); ?></p>
+                                        <p class="component-card__description"><b><?php echo __('snapshot_limit_reached', ['current' => $currentSnapshots, 'max' => $maxSnapshots]); ?></b> <?php echo __('snapshot_upgrade_plan'); ?></p>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -168,7 +168,7 @@ $isResetActive = $resetSettings['is_active'];
                         <div class="component-group-item component-group-item--wrap">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title text-danger"><?php echo __('canvas_reset_now_title'); ?></h2>
+                                    <h2 class="component-card__title"><?php echo __('canvas_reset_now_title'); ?></h2>
                                     <p class="component-card__description"><?php echo __('canvas_reset_now_desc'); ?></p>
                                 </div>
                             </div>
@@ -297,7 +297,7 @@ $isResetActive = $resetSettings['is_active'];
                                         <h2 class="component-card__title"><?php echo __('canvas_reset_snapshot_title'); ?></h2>
                                         <p class="component-card__description"><?php echo __('canvas_reset_snapshot_desc'); ?></p>
                                         <?php if (!$canTakeSnapshot): ?>
-                                            <p class="component-card__description text-danger"><b><?php echo __('snapshot_limit_reached', ['current' => $currentSnapshots, 'max' => $maxSnapshots]); ?></b> <?php echo __('snapshot_upgrade_plan'); ?></p>
+                                            <p class="component-card__description"><b><?php echo __('snapshot_limit_reached', ['current' => $currentSnapshots, 'max' => $maxSnapshots]); ?></b> <?php echo __('snapshot_upgrade_plan'); ?></p>
                                         <?php endif; ?>
                                     </div>
                                 </div>

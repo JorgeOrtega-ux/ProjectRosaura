@@ -131,7 +131,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity?id=' . $tar
     </div>
 
     <div class="component-viewport">
-        <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="user-history-wrapper">
+        <div class="component-wrapper component-wrapper--full no-padding" data-ref="user-history-wrapper">
             <div class="component-bottom">
                 <div class="component-table-wrapper" data-ref="view-table">
                     <table class="component-table">
@@ -225,7 +225,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity?id=' . $tar
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="td-details-content text-sm">
+                                        <div class="td-details-content">
                                             <?php if (!empty($log['reason'])): ?>
                                                 <?php 
                                                 $reasonObj = json_decode($log['reason'], true);
@@ -273,7 +273,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity?id=' . $tar
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded"><?php echo $adminBadgeIcon; ?></span>
-                                                <span class="font-medium"><?php echo htmlspecialchars($adminName); ?></span>
+                                                <span ><?php echo htmlspecialchars($adminName); ?></span>
                                             </div>
                                         </div>
                                     </td>

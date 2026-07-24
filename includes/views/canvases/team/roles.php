@@ -90,7 +90,7 @@ if (!$canManageRoles) {
 $appUrl = defined('APP_URL') ? APP_URL : '';
 ?>
 <div class="view-content" data-ref="canvasRolesView" data-canvas-id="<?php echo $canvasId; ?>" data-canvas-uuid="<?php echo $canvasUuid; ?>" data-user-weight="<?php echo $userRolesWeight; ?>" data-is-owner="<?php echo $canvasOwnerId === $userId ? '1' : '0'; ?>">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex">
+    <div class="component-wrapper component-wrapper--full no-padding">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -151,14 +151,14 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                 <div class="td-user-info">
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded"><?php echo $isSystemFlag ? 'shield' : 'person'; ?></span>
-                                        <span class="search-target font-medium"><?php echo $translatedName; ?></span>
+                                        <span class="search-target"><?php echo $translatedName; ?></span>
                                     </div>
                                 </div>
                             </td>
                             <td>
                                 <div class="component-badge component-badge--sm">
                                     <span class="material-symbols-rounded">layers</span>
-                                    <span class="font-mono font-medium">
+                                    <span >
                                         <?php echo (int)$role['weight']; ?>
                                     </span>
                                 </div>

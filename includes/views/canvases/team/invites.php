@@ -60,7 +60,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
 ?>
 
 <div class="view-content">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="manage-invites-wrapper" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>" data-canvas-uuid="<?php echo htmlspecialchars($canvasUuid); ?>">
+    <div class="component-wrapper component-wrapper--full no-padding" data-ref="manage-invites-wrapper" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>" data-canvas-uuid="<?php echo htmlspecialchars($canvasUuid); ?>">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -108,7 +108,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                     <td>
                                         <div class="component-badge component-badge--sm">
                                             <span class="material-symbols-rounded">key</span>
-                                            <span class="font-medium"><?php echo htmlspecialchars($invite['code']); ?></span>
+                                            <span ><?php echo htmlspecialchars($invite['code']); ?></span>
                                         </div>
                                     </td>
                                     <td>

@@ -35,7 +35,7 @@ $isMultiSessionAdd = count($linkedAccounts) > 0;
         
         <?php if ($errorMsg): ?>
             <div class="component-form-header">
-                <h1 class="component-form-title component-text-notice--error"><?php echo __('reg_access_denied'); ?></h1>
+                <h1 class="component-form-title"><?php echo __('reg_access_denied'); ?></h1>
                 <p class="component-form-desc"><?php echo htmlspecialchars($errorMsg); ?></p>
             </div>
             <div class="component-form-body">

@@ -2,7 +2,7 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 <div class="view-content view-fade-in">
-    <div class="component-wrapper component-wrapper--full no-padding h-full">
+    <div class="component-wrapper component-wrapper--full no-padding">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -15,7 +15,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             </div>
         </div>
 
-        <div class="component-bottom h-full-flex">
+        <div class="component-bottom component-bottom--full">
             <div data-ref="logs-viewer-loader" class="component-loader-center active">
                 <div class="component-spinner"></div>
             </div>

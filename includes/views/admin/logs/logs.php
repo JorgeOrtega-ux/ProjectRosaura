@@ -67,7 +67,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/logs?page=' . ($page + 1)
 ?>
 
 <div class="view-content">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="manage-logs-wrapper">
+    <div class="component-wrapper component-wrapper--full no-padding" data-ref="manage-logs-wrapper">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -200,7 +200,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/logs?page=' . ($page + 1)
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">draft</span>
-                                                <span class="search-target font-medium"><?php echo htmlspecialchars($log['filename']); ?></span>
+                                                <span class="search-target"><?php echo htmlspecialchars($log['filename']); ?></span>
                                             </div>
                                         </div>
                                     </td>

@@ -12,7 +12,7 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
 }
 ?>
 <div class="view-content" data-ref="store-content-wrapper">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex">
+    <div class="component-wrapper component-wrapper--full no-padding">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -58,7 +58,7 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
                                         <span class="material-symbols-rounded"><?= $pkg['icon'] ?></span>
                                     </div>
                                     <div class="component-badge component-badge--sm">
-                                        <span class="component-text-bold"><?= $pkg['name'] ?></span>
+                                        <span ><?= $pkg['name'] ?></span>
                                     </div>
                                 </div>
                             </td>

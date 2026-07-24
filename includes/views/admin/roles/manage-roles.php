@@ -38,7 +38,7 @@ if ($page > $totalPages) {
 }
 $offset = ($page - 1) * $limit;
 
-$stmt = $pdo->prepare("SELECT id, name, color, weight, is_system, created_at FROM {$tblRoles} {$searchCondition} ORDER BY id ASC LIMIT :limit OFFSET :offset");
+$stmt = $pdo->prepare("SELECT id, name, weight, is_system, created_at FROM {$tblRoles} {$searchCondition} ORDER BY id ASC LIMIT :limit OFFSET :offset");
 foreach ($searchParams as $key => $val) {
     $stmt->bindValue($key, $val);
 }
@@ -61,7 +61,7 @@ $prevPageUrl = $page > 1 ? $appUrl . '/admin/roles?page=' . ($page - 1) . $query
 $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1) . $queryString : '#';
 ?>
 <div class="view-content" data-ref="manageRolesView" data-current-user-weight="<?php echo $currentUserWeight; ?>" data-is-superadmin="<?php echo $isSuperAdmin; ?>">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex">
+    <div class="component-wrapper component-wrapper--full no-padding">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -120,9 +120,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
                     <div class="component-search-icon">
                         <span class="material-symbols-rounded">search</span>
                     </div>
-                    <div class="component-search-input">
-                        <input type="text" data-ref="role-search-input" placeholder="<?php echo __('search_role_placeholder'); ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
-                    </div>
+                    <input type="text" class="component-search-input" placeholder="<?php echo __('placeholder_search_roles'); ?>" data-ref="role-search-input" value="<?php echo htmlspecialchars($searchQuery); ?>" autocomplete="off">
                 </div>
             </div>
 
@@ -141,29 +139,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
                     </thead>
                     <tbody data-ref="roles-table-body">
                         <?php foreach ($roles as $role): 
-                            $colorData = json_decode($role['color'], true);
-                            if (!$colorData || !isset($colorData['colors'])) {
-                                $colorData = ['type' => 'solid', 'colors' => [['hex' => '#808080', 'stop' => 0]]];
-                            }
-
-                            $cssColorValue = '';
-
-                            if ($colorData['type'] === 'gradient' && count($colorData['colors']) > 1) {
-                                $angle = $colorData['angle'] ?? 0;
-                                $prevStop = 0;
-                                $stops = [];
-                                foreach ($colorData['colors'] as $c) {
-                                    $hex = htmlspecialchars(is_string($c) ? $c : $c['hex']);
-                                    $percentage = isset($c['percentage']) ? (int)$c['percentage'] : (isset($c['stop']) ? (int)$c['stop'] : 100);
-                                    $endStop = $prevStop + $percentage;
-                                    $stops[] = "{$hex} {$prevStop}% {$endStop}%";
-                                    $prevStop = $endStop;
-                                }
-                                $cssColorValue = "conic-gradient(from {$angle}deg, " . implode(', ', $stops) . ")";
-                            } else {
-                                $cssColorValue = htmlspecialchars(is_string($colorData['colors'][0]) ? $colorData['colors'][0] : $colorData['colors'][0]['hex']);
-                            }
-
                             $rawName = $role['name'] ?? '';
                             $roleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower(trim($rawName)));
                             $translatedName = __($roleKey);
@@ -179,21 +154,21 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
                             data-role-weight="<?php echo (int)$role['weight']; ?>">
                             <td>
                                 <div class="td-user-info">
-                                    <div class="component-button--profile role-dynamic component-avatar--static-sm" data-role-bg="<?php echo htmlspecialchars($cssColorValue); ?>">
+                                    <div class="component-button--profile component-avatar--static-sm">
                                         <img src="/public/assets/img/fallbacks/avatar-default.png" alt="<?php echo __('alt_role_avatar'); ?>"
                                              class="image-lazy-fade"
                                              onload="this.classList.add('image-loaded')">
                                     </div>
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded">admin_panel_settings</span>
-                                        <span class="search-target font-medium"><?php echo htmlspecialchars($translatedName); ?></span>
+                                        <span class="search-target"><?php echo htmlspecialchars($translatedName); ?></span>
                                     </div>
                                 </div>
                             </td>
                             <td>
                                 <div class="component-badge component-badge--sm">
                                     <span class="material-symbols-rounded">layers</span>
-                                    <span class="font-mono font-medium">
+                                    <span >
                                         <?php echo (int)$role['weight']; ?>
                                     </span>
                                 </div>

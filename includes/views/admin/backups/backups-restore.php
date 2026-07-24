@@ -75,7 +75,7 @@ if (empty($filename)) {
                                     </div>
                                     <div class="component-card__text">
                                         <h2 class="component-card__title">Paquete de Respaldo Seleccionado</h2>
-                                        <p class="component-card__description font-medium" data-ref="restore-target-filename" data-backup-id="<?php echo htmlspecialchars($backupId); ?>">
+                                        <p class="component-card__description" data-ref="restore-target-filename" data-backup-id="<?php echo htmlspecialchars($backupId); ?>">
                                             <?php echo htmlspecialchars($filename); ?>
                                         </p>
                                     </div>

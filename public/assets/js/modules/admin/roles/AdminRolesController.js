@@ -263,25 +263,25 @@ class AdminRolesController {
         if (currentUserWeight < 100 && roleWeight >= currentUserWeight) {
             if (deleteBtn) {
                 deleteBtn.classList.add('disabled-interaction'); 
-                deleteBtn.setAttribute('title', _t());
+                deleteBtn.setAttribute('title', _t('cannot_delete_higher_role', 'No puedes eliminar un rol de igual o mayor peso'));
             }
             if (editBtn) {
                 editBtn.classList.add('disabled-interaction'); 
-                editBtn.setAttribute('title', _t());
+                editBtn.setAttribute('title', _t('cannot_edit_higher_role', 'No puedes editar un rol de igual o mayor peso'));
             }
             if (permsBtn) {
                 permsBtn.classList.add('disabled-interaction'); 
-                permsBtn.setAttribute('title', _t());
+                permsBtn.setAttribute('title', _t('cannot_edit_higher_role_perms', 'No puedes editar permisos de un rol de igual o mayor peso'));
             }
             return; 
         }
         if (isSystem) {
             if (deleteBtn) {
                 deleteBtn.classList.add('disabled-interaction');
-                deleteBtn.setAttribute('title', _t());
+                deleteBtn.setAttribute('title', _t('system_role_cannot_delete', 'Los roles del sistema no pueden eliminarse'));
             }
             if (editBtn) {
-                editBtn.setAttribute('title', _t());
+                editBtn.setAttribute('title', _t('system_role_edit_notice', 'Rol del sistema'));
             }
         }
     }
@@ -300,10 +300,10 @@ class AdminRolesController {
         const roleId = parseInt(this.selectedRoleId, 10);
         const selectedRow = document.querySelector(`[data-action="selectRoleRow"][data-role-id="${roleId}"]`);
         if (selectedRow && parseInt(selectedRow.getAttribute('data-is-system'), 10) === 1) {
-            showMessage(_t(), 'error');
+            showMessage(_t('system_role_cannot_delete', 'Los roles del sistema no pueden eliminarse'), 'error');
             return; 
         }
-        const roleName = selectedRow ? selectedRow.getAttribute('data-role-name') : _t();
+        const roleName = selectedRow ? selectedRow.getAttribute('data-role-name') : '';
         const response = await window.dialogSystem.show('confirmDeleteRole', { roleName: roleName });
         if (response.confirmed) {
             await this.executeApiAction(ApiRoutes.Admin.DeleteRole, { id: roleId });
@@ -313,14 +313,14 @@ class AdminRolesController {
         const res = await this.api.post(apiRoute, payload, this.abortController.signal);
         if (res.aborted) return;
         if (res.success) {
-            showMessage(_t(), 'success');
+            showMessage(_t('msg_action_success', 'Acción realizada con éxito'), 'success');
             if (window.spaRouter) {
                 window.spaRouter.navigate(window.location.pathname + window.location.search);
             } else {
                 window.location.reload();
             }
         } else {
-            showMessage(_t() + res.message_key, 'error');
+            showMessage(res.message || _t('err_action_failed', 'Ocurrió un error al procesar la solicitud'), 'error');
         }
     }
 }

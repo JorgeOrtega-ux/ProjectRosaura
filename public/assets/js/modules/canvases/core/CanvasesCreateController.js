@@ -177,7 +177,7 @@ class CanvasesCreateController {
                 if (!emptyEl) {
                     emptyEl = document.createElement('div');
                     emptyEl.className = 'component-menu-empty';
-                    emptyEl.innerHTML = `<div class="component-menu-link disabled-interaction"><div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div><div class="component-menu-link-text"><span class="component-text-notice--muted">${window.__ ? window.__('no_results_found') : 'No results found'}</span></div></div>`;
+                    emptyEl.innerHTML = `<div class="component-menu-link disabled-interaction"><div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div><div class="component-menu-link-text"><span >${window.__ ? window.__('no_results_found') : 'No results found'}</span></div></div>`;
                     menuList.appendChild(emptyEl);
                 }
                 emptyEl.hidden = hasVisible;

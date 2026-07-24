@@ -197,19 +197,19 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const cardId = escapeHTML(card.id || '');
 
         return `
-            <div class="component-pm-row" data-pm-id="${cardId}" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                <div class="component-pm-row__left" style="display: flex; align-items: center; gap: 12px;">
-                    <div class="component-pm-row__logo-box">
+            <div class="component-group-item component-group-item--wrap" data-pm-id="${cardId}">
+                <div class="component-card__content">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
                         ${logoSvg}
                     </div>
-                    <div class="component-pm-row__info">
-                        <div class="component-pm-row__title">${brandFormatted} •••• ${last4}</div>
-                        <div class="component-pm-row__subtitle">${expText}</div>
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">${brandFormatted} •••• ${last4}</h2>
+                        <p class="component-card__description">${expText}</p>
                     </div>
                 </div>
-                <div class="component-pm-row__right">
+                <div class="component-card__actions component-card__actions--end">
                     <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="deletePaymentMethod" data-pm-id="${cardId}" data-tooltip="${window.__('delete_card') || 'Eliminar tarjeta'}" data-position="left">
-                        <span class="material-symbols-rounded" style="font-size: 18px;">delete</span>
+                        <span class="material-symbols-rounded">delete</span>
                     </button>
                 </div>
             </div>

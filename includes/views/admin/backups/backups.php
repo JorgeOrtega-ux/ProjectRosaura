@@ -68,7 +68,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
 ?>
 
 <div class="view-content">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="manage-backups-wrapper">
+    <div class="component-wrapper component-wrapper--full no-padding" data-ref="manage-backups-wrapper">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -240,7 +240,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">lock</span>
-                                                <span class="search-target font-medium"><?php echo htmlspecialchars($backup['filename']); ?></span>
+                                                <span class="search-target"><?php echo htmlspecialchars($backup['filename']); ?></span>
                                             </div>
                                         </div>
                                     </td>

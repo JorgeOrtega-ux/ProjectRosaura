@@ -37,7 +37,7 @@ export class BillingController {
             this.paymentMethodsArea.innerHTML = `
                 <div class="component-group-item" style="padding: 20px; justify-content: center; align-items: center; gap: 10px;">
                     <div class="component-spinner"></div>
-                    <span class="component-text-secondary" style="font-size: 0.85rem;">${window.__('loading_payment_methods') || 'Cargando métodos de pago...'}</span>
+                    <span  style="font-size: 0.85rem;">${window.__('loading_payment_methods') || 'Cargando métodos de pago...'}</span>
                 </div>
             `;
         }
@@ -228,7 +228,7 @@ export class BillingController {
             const response = await this.api.post(ApiRoutes.Stripe.GetPaymentMethods, {}, this.abortController.signal);
             
             if (response.success && response.data && response.data.length > 0) {
-                let html = '<div class="component-pm-list">';
+                let html = '<div class="component-list component-list--flush">';
                 response.data.forEach(card => {
                     html += CardTemplates.paymentMethodCard(card);
                 });

@@ -246,7 +246,7 @@ export const DialogTemplates = {
                 
                 <div class="component-link-container component-link-container--start">
                     <span class="component-link-text">${__('txt_not_received_code')}</span>
-                    <span class="component-link disabled-interaction component-text-notice--muted" data-action="dialogResendCode">${__('btn_resend_code')} (60)</span>
+                    <span class="component-link disabled-interaction" data-action="dialogResendCode">${__('btn_resend_code')} (60)</span>
                 </div>
             </div>
             <div class="component-modal-actions">
@@ -1057,7 +1057,7 @@ export const DialogTemplates = {
                         <span class="material-symbols-rounded component-icon--64">cleaning_services</span>
                     </div>
                     <h2 class="component-modal-title">¿Vaciar zona seleccionada?</h2>
-                    <p class="component-modal-desc component-text-secondary">
+                    <p class="component-modal-desc">
                         Se borrarán <strong>${count}</strong> píxeles de esta área para todos los usuarios. Esta acción no se puede deshacer.
                     </p>
                 </div>

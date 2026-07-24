@@ -98,7 +98,7 @@ $backUrl = $appUrl . '/admin/messages';
 ?>
 
 <div class="view-content" data-ref="admin-message-reports-view" data-message-uuid="<?php echo htmlspecialchars($messageUuid); ?>" data-visibility="<?php echo htmlspecialchars($visibility); ?>" data-deleted-by="<?php echo htmlspecialchars($deletedBy); ?>" data-delete-reason="<?php echo htmlspecialchars($deleteReason); ?>">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="reports-wrapper">
+    <div class="component-wrapper component-wrapper--full no-padding" data-ref="reports-wrapper">
         
         <div class="component-top">
             <div class="component-top-left">

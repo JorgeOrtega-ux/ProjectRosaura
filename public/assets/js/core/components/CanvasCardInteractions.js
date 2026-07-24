@@ -279,12 +279,12 @@ export class CanvasCardInteractions {
         let actionButtonHtml = '';
         if (window.activeUserId) {
             if (isOwner) {
-                actionButtonHtml = `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="deleteCanvas" data-id="${id}" data-uuid="${uuid}">
+                actionButtonHtml = `<button type="button" class="component-menu-link component-menu-link--bordered" data-action="deleteCanvas" data-id="${id}" data-uuid="${uuid}">
                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
                         <div class="component-menu-link-text"><span>${window.__('delete_canvas')}</span></div>
                    </button>`;
             } else if (isMember) {
-                actionButtonHtml = `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="leaveCanvas" data-id="${id}" data-uuid="${uuid}">
+                actionButtonHtml = `<button type="button" class="component-menu-link component-menu-link--bordered" data-action="leaveCanvas" data-id="${id}" data-uuid="${uuid}">
                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
                         <div class="component-menu-link-text"><span>${window.__('leave_canvas')}</span></div>
                    </button>`;

@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 
 <div class="view-content">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="purchase-history-wrapper">
+    <div class="component-wrapper component-wrapper--full no-padding" data-ref="purchase-history-wrapper">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -159,7 +159,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 $statusText = __('paid');
                                 
                                 if ($item['status'] !== 'succeeded' && $item['status'] !== 'paid') {
-                                    $statusClass = 'component-text-notice--error';
+                                    $statusClass = 'component-badge--danger';
                                     $statusText = __('failed');
                                 }
                                 

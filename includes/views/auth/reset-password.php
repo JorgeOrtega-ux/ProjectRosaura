@@ -53,9 +53,9 @@ if (!empty($token)) {
                 <p class="component-form-desc"><?php echo __('reset_desc'); ?></p>
                 
                 <?php if (!empty($userEmail)): ?>
-                <div class="component-badge component-mt-4">
+                <div class="component-badge">
                     <span class="material-symbols-rounded">mail</span>
-                    <span class="font-medium"><?php echo htmlspecialchars($userEmail); ?></span>
+                    <span ><?php echo htmlspecialchars($userEmail); ?></span>
                 </div>
                 <?php endif; ?>
             </div>

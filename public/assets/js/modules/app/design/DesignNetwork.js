@@ -1267,13 +1267,13 @@ export const DesignNetwork = {
 
             let remaining = durationSecs;
             badge.style.display = 'flex';
-            badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
+            badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span >${details.text} (${remaining}s)</span>`;
             container.appendChild(badge);
 
             const timerId = setInterval(() => {
                 remaining--;
                 if (remaining > 0) {
-                    badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span class="component-text-bold">${details.text} (${remaining}s)</span>`;
+                    badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span >${details.text} (${remaining}s)</span>`;
                 } else {
                     clearInterval(timerId);
                     badge.remove();
@@ -1304,7 +1304,7 @@ export const DesignNetwork = {
         badge.style.backgroundColor = 'rgba(99, 102, 241, 0.9)';
         badge.style.color = '#ffffff';
         badge.style.border = '1px solid var(--color-primary, #6366f1)';
-        badge.innerHTML = `<span class="material-symbols-rounded">aspect_ratio</span><span class="component-text-bold">${labelText}: ${oldSizeStr} ➔ ${newSizeStr}</span>`;
+        badge.innerHTML = `<span class="material-symbols-rounded">aspect_ratio</span><span >${labelText}: ${oldSizeStr} ➔ ${newSizeStr}</span>`;
 
         container.appendChild(badge);
         setTimeout(() => {
@@ -1325,7 +1325,7 @@ export const DesignNetwork = {
 
         const badge = document.createElement('div');
         badge.className = 'component-badge component-badge--warning';
-        badge.innerHTML = `<span class="material-symbols-rounded">restart_alt</span><span class="component-text-bold">Lienzo vaciado</span>`;
+        badge.innerHTML = `<span class="material-symbols-rounded">restart_alt</span><span >Lienzo vaciado</span>`;
 
         container.appendChild(badge);
         setTimeout(() => {

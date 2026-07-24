@@ -224,7 +224,7 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                         <div class="component-group-item component-group-item--wrap">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title text-danger"><?php echo __('canvas_resize_now_title'); ?></h2>
+                                    <h2 class="component-card__title"><?php echo __('canvas_resize_now_title'); ?></h2>
                                     <p class="component-card__description"><?php echo __('canvas_resize_now_desc'); ?></p>
                                 </div>
                             </div>

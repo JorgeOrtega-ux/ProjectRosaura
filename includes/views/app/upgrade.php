@@ -86,7 +86,7 @@ foreach ($availableFeatures as $fKey => $fData) {
     <?php else: ?>
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('upgrade_page_title'); ?>&nbsp;<span class="component-text-gradient-blue">ProjectRosaura</span></h1>
+                <h1 class="component-top-title"><?php echo __('upgrade_page_title'); ?>&nbsp;<span>ProjectRosaura</span></h1>
             </div>
             <div class="component-top-right">
                 <div class="component-dropdown-wrapper">
@@ -127,103 +127,101 @@ foreach ($availableFeatures as $fKey => $fData) {
                 <div class="component-bottom">
 
                     <!-- Accordion List for Plans -->
-                    <div class="component-list component-list--flush">
-                        <?php foreach ($allTiers as $tier):
-                            $isPopular = !empty($tier['is_popular']);
-                            $tierLevel = (int)$tier['tier_level'];
-                            $monthly = number_format((float)($tier['price_monthly'] ?? 0), 2);
-                            $yearly = number_format((float)($tier['price_yearly'] ?? 0) / 12, 2);
-                            
-                            $cardClass = 'component-card--grouped component-accordion upgrade-accordion-card';
-                        ?>
-                            <div class="<?php echo $cardClass; ?>" data-tier="<?php echo $tierLevel; ?>" data-ref="plan-card">
-                                <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
-                                    <div class="component-card__content">
-                                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                                            <span class="material-symbols-rounded">stars</span>
-                                        </div>
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title">
-                                                <?php echo htmlspecialchars($tier['name']); ?>
-                                                <?php if ($isPopular): ?>
-                                                    <span class="component-badge component-badge--sm"><span class="component-text-gradient-blue"><?php echo __('plan_badge_popular'); ?></span></span>
-                                                <?php endif; ?>
-                                            </h2>
-                                            <p class="component-card__description"><?php echo __('plan_desc_' . strtolower(str_replace(' ', '_', $tier['name'])), __('upgrade_page_desc')); ?></p>
-                                        </div>
+                    <?php foreach ($allTiers as $tier):
+                        $isPopular = !empty($tier['is_popular']);
+                        $tierLevel = (int)$tier['tier_level'];
+                        $monthly = number_format((float)($tier['price_monthly'] ?? 0), 2);
+                        $yearly = number_format((float)($tier['price_yearly'] ?? 0) / 12, 2);
+                        
+                        $cardClass = 'component-card--grouped component-accordion';
+                    ?>
+                        <div class="<?php echo $cardClass; ?>" data-tier="<?php echo $tierLevel; ?>" data-ref="plan-card">
+                            <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                                <div class="component-card__content">
+                                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                                        <span class="material-symbols-rounded">stars</span>
                                     </div>
-                                    <div class="component-card__actions component-card__actions--end">
-                                        <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">
+                                            <?php echo htmlspecialchars($tier['name']); ?>
+                                            <?php if ($isPopular): ?>
+                                                <span class="component-badge component-badge--sm"><span><?php echo __('plan_badge_popular'); ?></span></span>
+                                            <?php endif; ?>
+                                        </h2>
+                                        <p class="component-card__description"><?php echo __('plan_desc_' . strtolower(str_replace(' ', '_', $tier['name'])), __('upgrade_page_desc')); ?></p>
                                     </div>
                                 </div>
-
-                                <div class="component-accordion-body">
-                                    <div class="component-accordion-content">
-                                        
-                                        <!-- Row 1: Suscribirse / Precio -->
-                                        <div class="component-group-item component-group-item--wrap">
-                                            <div class="component-card__content">
-                                                <div class="component-card__text">
-                                                    <h2 class="component-card__title"><?php echo __('upgrade_price_title', [], 'Precio y suscripción'); ?></h2>
-                                                    <p class="component-card__description"><?php echo __('upgrade_price_desc', [], 'Elige este plan y gestiona tu ciclo de facturación'); ?></p>
-                                                </div>
-                                            </div>
-                                            <div class="component-card__actions component-card__actions--end">
-                                                <span class="component-badge component-badge--sm">
-                                                    <span>USD</span>
-                                                    <span data-ref="plan-price" data-monthly="<?php echo $monthly; ?>" data-yearly="<?php echo $yearly; ?>"><?php echo $monthly; ?></span>
-                                                    <span data-ref="plan-period" data-period-monthly="<?php echo __('plan_period_month'); ?>" data-period-yearly="<?php echo __('plan_period_year'); ?>"><?php echo __('plan_period_month'); ?></span>
-                                                </span>
-
-                                                <div>
-                                                    <?php if ($currentUserTier === $tierLevel): ?>
-                                                        <div class="component-button component-button--dark component-button--rounded-pill component-button--h36 disabled-interaction component-cursor-pointer component-text-center"><?php echo __('plan_btn_current'); ?></div>
-                                                    <?php elseif ($currentUserTier > $tierLevel): ?>
-                                                        <div class="component-button component-button--dark component-button--rounded-pill component-button--h36 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>"><?php echo __('plan_btn_downgrade'); ?></div>
-                                                    <?php else: ?>
-                                                        <div class="component-button component-button--dark component-button--rounded-pill component-button--h36 component-cursor-pointer component-text-center" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>"><?php echo __('plan_btn_upgrade'); ?></div>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <hr class="component-divider">
-
-                                        <!-- Row 2: Ventajas / Límites -->
-                                        <div class="component-group-item component-group-item--stacked">
-                                            <div class="component-card__content component-card__content--full">
-                                                <div class="component-card__text">
-                                                    <h2 class="component-card__title"><?php echo __('upgrade_features_title', [], 'Ventajas incluidas'); ?></h2>
-                                                    <p class="component-card__description"><?php echo __('upgrade_features_desc', [], 'Límites y características del plan'); ?></p>
-                                                    
-                                                    <div class="upgrade-badges-wrapper">
-                                                        <?php foreach ($rowsToCompare as $row): 
-                                                            $val = $row['values_fn']($tier);
-                                                            if ($val === false) continue;
-                                                        ?>
-                                                            <span class="component-badge component-badge--sm">
-                                                                <span class="material-symbols-rounded component-icon-sm"><?php echo $row['icon']; ?></span>
-                                                                <span>
-                                                                    <?php 
-                                                                    if ($val === true) {
-                                                                        echo htmlspecialchars($row['label']);
-                                                                    } else {
-                                                                        echo htmlspecialchars($row['label']) . ': ' . htmlspecialchars($val);
-                                                                    }
-                                                                    ?>
-                                                                </span>
-                                                            </span>
-                                                        <?php endforeach; ?>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                    </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
                                 </div>
                             </div>
-                        <?php endforeach; ?>
-                    </div>
+
+                            <div class="component-accordion-body">
+                                <div class="component-accordion-content">
+                                    
+                                    <!-- Row 1: Suscribirse / Precio -->
+                                    <div class="component-group-item component-group-item--wrap">
+                                        <div class="component-card__content">
+                                            <div class="component-card__text">
+                                                <h2 class="component-card__title"><?php echo __('upgrade_price_title', [], 'Precio y suscripción'); ?></h2>
+                                                <p class="component-card__description"><?php echo __('upgrade_price_desc', [], 'Elige este plan y gestiona tu ciclo de facturación'); ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="component-card__actions component-card__actions--end">
+                                            <span class="component-badge component-badge--sm">
+                                                <span>USD</span>
+                                                <span data-ref="plan-price" data-monthly="<?php echo $monthly; ?>" data-yearly="<?php echo $yearly; ?>"><?php echo $monthly; ?></span>
+                                                <span data-ref="plan-period" data-period-monthly="<?php echo __('plan_period_month'); ?>" data-period-yearly="<?php echo __('plan_period_year'); ?>"><?php echo __('plan_period_month'); ?></span>
+                                            </span>
+
+                                            <div>
+                                                <?php if ($currentUserTier === $tierLevel): ?>
+                                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--h36 disabled-interaction component-cursor-pointer"><?php echo __('plan_btn_current'); ?></div>
+                                                <?php elseif ($currentUserTier > $tierLevel): ?>
+                                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--h36 component-cursor-pointer" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>"><?php echo __('plan_btn_downgrade'); ?></div>
+                                                <?php else: ?>
+                                                    <div class="component-button component-button--dark component-button--rounded-pill component-button--h36 component-cursor-pointer" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>"><?php echo __('plan_btn_upgrade'); ?></div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr class="component-divider">
+
+                                    <!-- Row 2: Ventajas / Límites -->
+                                    <div class="component-group-item component-group-item--stacked">
+                                        <div class="component-card__content component-card__content--full">
+                                            <div class="component-card__text">
+                                                <h2 class="component-card__title"><?php echo __('upgrade_features_title', [], 'Ventajas incluidas'); ?></h2>
+                                                <p class="component-card__description"><?php echo __('upgrade_features_desc', [], 'Límites y características del plan'); ?></p>
+                                                
+                                                <div class="upgrade-badges-wrapper">
+                                                    <?php foreach ($rowsToCompare as $row): 
+                                                        $val = $row['values_fn']($tier);
+                                                        if ($val === false) continue;
+                                                    ?>
+                                                        <span class="component-badge component-badge--sm">
+                                                            <span class="material-symbols-rounded component-icon-sm"><?php echo $row['icon']; ?></span>
+                                                            <span>
+                                                                <?php 
+                                                                if ($val === true) {
+                                                                    echo htmlspecialchars($row['label']);
+                                                                } else {
+                                                                    echo htmlspecialchars($row['label']) . ': ' . htmlspecialchars($val);
+                                                                }
+                                                                ?>
+                                                            </span>
+                                                        </span>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                     
                 </div>
 

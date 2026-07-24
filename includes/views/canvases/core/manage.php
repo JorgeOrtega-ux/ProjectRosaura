@@ -61,7 +61,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
 ?>
 
 <div class="view-content">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="manage-canvases-wrapper">
+    <div class="component-wrapper component-wrapper--full no-padding" data-ref="manage-canvases-wrapper">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -169,7 +169,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                         <div class="td-user-info">
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">palette</span>
-                                                <span class="search-target font-medium"><?php echo htmlspecialchars($canvas['name']); ?></span>
+                                                <span class="search-target"><?php echo htmlspecialchars($canvas['name']); ?></span>
                                             </div>
                                         </div>
                                     </td>

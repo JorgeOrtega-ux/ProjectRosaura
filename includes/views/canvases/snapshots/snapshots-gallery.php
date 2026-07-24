@@ -201,7 +201,7 @@ if ($error) {
                                                 <div class="component-menu-link-text"><span class="privacy-text"><?php echo $snapshot['privacy'] === 'public' ? __('make_private') : __('make_public'); ?></span></div>
                                             </button>
                                             
-                                            <button type="button" class="component-menu-link component-text-notice--danger" data-action="deleteSnapshot" data-id="<?php echo $snapshot['snapshot_uuid']; ?>" data-card-id="<?php echo $snapshot['id']; ?>">
+                                            <button type="button" class="component-menu-link" data-action="deleteSnapshot" data-id="<?php echo $snapshot['snapshot_uuid']; ?>" data-card-id="<?php echo $snapshot['id']; ?>">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
                                                 <div class="component-menu-link-text"><span><?php echo __('delete_snapshot'); ?></span></div>
                                             </button>

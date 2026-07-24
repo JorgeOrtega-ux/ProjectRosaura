@@ -170,7 +170,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
 ?>
 
 <div class="view-content">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="manage-messages-wrapper">
+    <div class="component-wrapper component-wrapper--full no-padding" data-ref="manage-messages-wrapper">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -345,7 +345,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                             $badgeContent .= '<a class="component-table-inline-icon" data-nav="' . htmlspecialchars($viewerUrl) . '"><span class="material-symbols-rounded">image</span> ' . $attachCount . '</a>';
                                         }
                                         if (empty($snippet) && $attachCount === 0) {
-                                            $badgeContent .= '<span class="component-text-notice--muted">' . __('admin_msg_empty') . '</span>';
+                                            $badgeContent .= '<span >' . __('admin_msg_empty') . '</span>';
                                         }
                                         
                                         echo '<span class="component-badge component-badge--sm search-target">' . $badgeContent . '</span>';

@@ -104,7 +104,7 @@ class CanvasRequestsController {
                         <div class="td-user-info">
                             <div class="component-badge component-badge--sm">
                                 <span class="material-symbols-rounded">person</span>
-                                <span class="font-medium">${req.username || `${__('lbl_user_id')}: ${req.user_id}`}</span>
+                                <span >${req.username || `${__('lbl_user_id')}: ${req.user_id}`}</span>
                             </div>
                         </div>
                     </td>

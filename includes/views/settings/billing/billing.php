@@ -147,7 +147,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             <div class="component-group-item component-group-item--stacked" data-ref="payment-methods-area">
                                 <div class="component-group-item" style="padding: 20px; justify-content: center; align-items: center; gap: 10px;">
                                     <div class="component-spinner"></div>
-                                    <span class="component-text-secondary" style="font-size: 0.85rem;"><?php echo __('loading_payment_methods') ?: 'Cargando métodos de pago...'; ?></span>
+                                    <span  style="font-size: 0.85rem;"><?php echo __('loading_payment_methods') ?: 'Cargando métodos de pago...'; ?></span>
                                 </div>
                             </div>
                         </div>

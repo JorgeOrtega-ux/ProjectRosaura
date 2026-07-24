@@ -12,7 +12,7 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
 }
 ?>
 <div class="view-content" data-ref="store-coins-wrapper">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex">
+    <div class="component-wrapper component-wrapper--full no-padding">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -58,7 +58,7 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
                                         <span class="material-symbols-rounded"><?= $pkg['icon'] ?></span>
                                     </div>
                                     <div class="component-badge component-badge--sm">
-                                        <span class="component-text-bold"><?= $pkg['name'] ?></span>
+                                        <span ><?= $pkg['name'] ?></span>
                                     </div>
                                 </div>
                             </td>
@@ -83,7 +83,7 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
                             <td>
                                 <div class="component-badge component-badge--sm">
                                     <span class="material-symbols-rounded">payments</span>
-                                    <span class="component-text-bold">$<?= \App\Core\Helpers\Utils::formatNumber($pkg['price_usd'], 2) ?> USD</span>
+                                    <span >$<?= \App\Core\Helpers\Utils::formatNumber($pkg['price_usd'], 2) ?> USD</span>
                                 </div>
                             </td>
                         </tr>

@@ -814,7 +814,7 @@ export class DesignChat {
 
         const menuBtn = `<div class="component-dropdown-wrapper component-dropdown-wrapper--fit chat-msg-actions chat-msg-actions--ml-auto">
             <button class="component-button component-button--icon component-button--icon-sm-ghost" data-action="toggleChatDropdown" data-target="${uniqueId}">
-                <span class="material-symbols-rounded component-icon--18 component-text-secondary">more_vert</span>
+                <span class="material-symbols-rounded component-icon--18">more_vert</span>
             </button>
             <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed chat-dropdown-module disabled" data-module="${uniqueId}">
                 <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="${uniqueId}-options">
@@ -910,7 +910,7 @@ export class DesignChat {
                 <div class="chat-message-header">
                     <div class="chat-header-title-box">
                         <strong class="chat-message-username">${msg.username}</strong>
-                        <span class="component-text-secondary">•</span>
+                        <span >•</span>
                         <span class="chat-message-time">${time}</span>
                     </div>
                     ${menuBtn}

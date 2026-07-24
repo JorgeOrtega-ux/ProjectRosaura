@@ -11,7 +11,7 @@ $canManageMessages = true; // All admins currently
 
 ?>
 <div class="view-content">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex">
+    <div class="component-wrapper component-wrapper--full no-padding">
         
         <div class="component-top">
             <div class="component-top-left">

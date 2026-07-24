@@ -1463,7 +1463,7 @@ export const DesignInteractions = {
                     isActive = true; 
                     isToggledOn = false;
                     const titleText = PerksRegistry.getLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded component-text-secondary">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})</span>`;
                     clickHandler = () => {
                         this.activatePerk(perkId);
                     };

@@ -151,7 +151,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
 ?>
 
 <div class="view-content">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="manage-users-wrapper">
+    <div class="component-wrapper component-wrapper--full no-padding" data-ref="manage-users-wrapper">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -375,7 +375,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">person</span>
-                                                <span class="search-target font-medium"><?php echo htmlspecialchars($user['username']); ?></span>
+                                                <span class="search-target"><?php echo htmlspecialchars($user['username']); ?></span>
                                             </div>
                                         </div>
                                     </td>
@@ -394,7 +394,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                             ?>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">shield_person</span>
-                                                <span class="search-target font-bold" data-role-original-name="<?php echo htmlspecialchars($primaryRoleName); ?>">
+                                                <span class="search-target" data-role-original-name="<?php echo htmlspecialchars($primaryRoleName); ?>">
                                                     <?php echo htmlspecialchars($pTrans); ?>
                                                 </span>
                                             </div>
@@ -410,7 +410,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                             ?>
                                             
                                             <div class="component-badge component-badge--sm" data-tooltip="<?php echo htmlspecialchars($tooltipText); ?>" data-position="bottom">
-                                                <span class="font-bold">+<?php echo $extraCount; ?></span>
+                                                <span >+<?php echo $extraCount; ?></span>
                                             </div>
 
                                             <?php foreach ($extraRoles as $extraRoleName): 

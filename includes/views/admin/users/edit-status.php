@@ -143,7 +143,7 @@ if ($initialState['isSuspended'] === '1') {
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('admin_access_restriction_title'); ?></h2>
                                         <p class="component-card__description">
-                                            <?php echo ($user['role_name'] === 'founder') ? '<span class="component-text-notice--error">'.__('err_founder_suspend_immutable').'</span>' : __('desc_account_suspension'); ?>
+                                            <?php echo ($user['role_name'] === 'founder') ? '<span >'.__('err_founder_suspend_immutable').'</span>' : __('desc_account_suspension'); ?>
                                         </p>
                                     </div>
                                 </div>
@@ -160,7 +160,7 @@ if ($initialState['isSuspended'] === '1') {
                                             <div class="component-card__text">
                                                 <h2 class="component-card__title"><?php echo __('admin_access_restriction_title'); ?></h2>
                                                 <p class="component-card__description">
-                                                    <?php echo ($user['role_name'] === 'founder') ? '<span class="component-text-notice--error">'.__('err_founder_suspend_immutable').'</span>' : __('desc_account_suspension'); ?>
+                                                    <?php echo ($user['role_name'] === 'founder') ? '<span >'.__('err_founder_suspend_immutable').'</span>' : __('desc_account_suspension'); ?>
                                                 </p>
                                             </div>
                                         </div>
@@ -270,7 +270,7 @@ if ($initialState['isSuspended'] === '1') {
                                                                  <div class="component-menu-empty" data-ref="suspension-reason-empty" hidden>
                                                                       <div class="component-menu-link disabled-interaction">
                                                                           <div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div>
-                                                                          <div class="component-menu-link-text"><span class="component-text-notice--muted"><?php echo __('no_results_found'); ?></span></div>
+                                                                          <div class="component-menu-link-text"><span ><?php echo __('no_results_found'); ?></span></div>
                                                                       </div>
                                                                  </div>
                                                              </div>

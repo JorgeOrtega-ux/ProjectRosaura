@@ -83,7 +83,7 @@ class AdminSubscriptionBuilderController {
                             <div class="component-dropdown-trigger component-dropdown-trigger--color" data-action="toggleModule" data-target="${uniqueId}">
                                 <div class="component-dropdown-trigger__left">
                                     <div class="component-color-swatch" data-ref="triggerPreview"></div>
-                                    <span class="component-dropdown-text component-text--mono" data-ref="triggerHex">#808080</span>
+                                    <span class="component-dropdown-text" data-ref="triggerHex">#808080</span>
                                 </div>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>

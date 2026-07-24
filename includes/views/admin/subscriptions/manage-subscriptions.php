@@ -62,7 +62,7 @@ $prevPageUrl = $page > 1 ? $appUrl . '/admin/subscriptions?page=' . ($page - 1) 
 $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($page + 1) . $queryString : '#';
 ?>
 <div class="view-content" data-ref="manageSubscriptionsView" data-is-superadmin="<?php echo $isSuperAdmin; ?>">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex">
+    <div class="component-wrapper component-wrapper--full no-padding">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -184,14 +184,14 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                                     </div>
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded">workspace_premium</span>
-                                        <span class="search-target font-medium"><?php echo htmlspecialchars($rawName); ?></span>
+                                        <span class="search-target"><?php echo htmlspecialchars($rawName); ?></span>
                                     </div>
                                 </div>
                             </td>
                             <td>
                                 <div class="component-badge component-badge--sm">
                                     <span class="material-symbols-rounded">layers</span>
-                                    <span class="font-mono font-medium">
+                                    <span >
                                         <?php echo (int)$tier['tier_level']; ?>
                                     </span>
                                 </div>

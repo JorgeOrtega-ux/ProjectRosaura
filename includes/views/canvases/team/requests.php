@@ -40,7 +40,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
 ?>
 
 <div class="view-content" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>" data-ref="canvas-requests-container">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex">
+    <div class="component-wrapper component-wrapper--full no-padding">
         
         <div class="component-top">
             <div class="component-top-left">

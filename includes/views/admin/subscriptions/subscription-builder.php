@@ -105,7 +105,7 @@ function renderColorBlock($hex, $percentage, $isSolid = false) {
     $html .= '              <div class="component-dropdown-trigger component-dropdown-trigger--color" data-action="toggleModule" data-target="' . $id . '">';
     $html .= '                  <div class="component-dropdown-trigger__left">';
     $html .= '                      <div class="component-color-swatch" data-ref="triggerPreview" style="background-color: ' . htmlspecialchars($hex) . ';"></div>';
-    $html .= '                      <span class="component-dropdown-text component-text--mono" data-ref="triggerHex">' . htmlspecialchars(strtoupper($hex)) . '</span>';
+    $html .= '                      <span class="component-dropdown-text" data-ref="triggerHex">' . htmlspecialchars(strtoupper($hex)) . '</span>';
     $html .= '                  </div>';
     $html .= '                  <span class="material-symbols-rounded">expand_more</span>';
     $html .= '              </div>';

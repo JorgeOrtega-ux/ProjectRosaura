@@ -30,7 +30,7 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
             'session_lifetime_minutes' => 120,
             'max_active_sessions_per_user' => 3,
             'allow_registrations' => 1,
-            'allowed_email_domains' => '', 
+            'allowed_email_domains' => 'gmail.com,outlook.com,hotmail.com', 
             'registration_rate_limit_attempts' => 5,
             'registration_rate_limit_minutes' => 15,
             'verification_code_minutes' => 15,

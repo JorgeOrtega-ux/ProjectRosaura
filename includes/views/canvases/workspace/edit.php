@@ -197,7 +197,7 @@ if (!$canvasId) {
                 </div>
 
 
-                <div class="component-card--grouped component-accordion ">
+                <div class="component-card--grouped component-accordion">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
@@ -395,7 +395,7 @@ if (!$canvasId) {
                 </div>
 
 
-                <div class="component-card--grouped component-accordion ">
+                <div class="component-card--grouped component-accordion">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
