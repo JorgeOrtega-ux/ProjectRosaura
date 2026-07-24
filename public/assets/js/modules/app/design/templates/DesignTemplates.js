@@ -531,22 +531,23 @@ export const DesignTemplates = {
             }
         });
 
+        console.log('[DEBUG TEMPLATE TOOLBAR] updateTemplateActionButtons called. activeTemplateId:', this.activeTemplateId, 'templates:', this.templates);
+
+        const toolbarEl = document.querySelector('[data-ref="template-floating-toolbar"]');
         const btnLock = document.querySelector('[data-ref="btn-template-lock"]');
         const btnRotate = document.querySelector('[data-ref="btn-template-rotate"]');
         const btnInject = document.querySelector('[data-ref="btn-template-inject"]');
         const btnDel = document.querySelector('[data-ref="btn-template-delete"]');
         const btnLive = document.querySelector('[data-ref="btn-start-live"]');
-        const divider = document.querySelector('[data-ref="template-actions-divider"]');
 
         if (this.activeTemplateId) {
-            const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+            const tpl = this.templates ? this.templates.find(t => t.id === this.activeTemplateId) : null;
             if (tpl) {
                 if (btnLock) btnLock.classList.remove('disabled');
                 if (btnRotate) btnRotate.classList.remove('disabled');
                 if (btnInject) btnInject.classList.remove('disabled');
                 if (btnDel) btnDel.classList.remove('disabled');
                 if (btnLive) btnLive.classList.remove('disabled');
-                if (divider) divider.classList.remove('disabled');
                 
                 if (btnLock) {
                     const iconLock = btnLock.querySelector('.material-symbols-rounded');
@@ -554,6 +555,10 @@ export const DesignTemplates = {
                         iconLock.textContent = tpl.locked ? 'lock' : 'lock_open';
                     }
                 }
+                if (toolbarEl) toolbarEl.classList.add('active');
+                this.positionTemplateToolbar();
+            } else {
+                if (toolbarEl) toolbarEl.classList.remove('active');
             }
         } else {
             if (btnLock) btnLock.classList.add('disabled');
@@ -561,8 +566,60 @@ export const DesignTemplates = {
             if (btnInject) btnInject.classList.add('disabled');
             if (btnDel) btnDel.classList.add('disabled');
             if (btnLive) btnLive.classList.add('disabled');
-            if (divider) divider.classList.add('disabled');
+            if (toolbarEl) toolbarEl.classList.remove('active');
         }
+    },
+
+    positionTemplateToolbar() {
+        const toolbarEl = document.querySelector('[data-ref="template-floating-toolbar"]');
+        if (!toolbarEl) return;
+
+        const isLockedState = !!(this.isSpectator || this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked);
+
+        // Hide floating toolbar while user is actively moving, resizing, panning, or zooming
+        if (!this.activeTemplateId || !this.templates || isLockedState || this.templateInteraction || this.isDragging || this.isZooming) {
+            if (toolbarEl.style.display !== 'none') {
+                toolbarEl.style.display = 'none';
+                toolbarEl.classList.remove('active');
+            }
+            return;
+        }
+
+        const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+        if (!tpl || !this.canvas || !this.transform) {
+            toolbarEl.style.display = 'none';
+            toolbarEl.classList.remove('active');
+            return;
+        }
+
+        const canvasRect = this.canvas.getBoundingClientRect();
+        const containerRect = this.canvas.parentNode ? this.canvas.parentNode.getBoundingClientRect() : canvasRect;
+
+        // Board coordinates of top-center of template image
+        const tplCenterX = tpl.x + (tpl.w / 2);
+        const tplTopY = tpl.y;
+
+        // Viewport screen coordinates (matching getExactBoardCoords inverse math)
+        const screenX = canvasRect.left + (tplCenterX * this.transform.scale) + this.transform.x;
+        const screenY = canvasRect.top + (tplTopY * this.transform.scale) + this.transform.y;
+
+        // DOM pixel offset relative to container (.component-bottom)
+        const leftPx = screenX - containerRect.left;
+        const topPx = screenY - containerRect.top - 8;
+
+        console.log('[DEBUG TEMPLATE TOOLBAR] Centering Pill Badge:', {
+            templateBoardCenter: { x: tplCenterX, y: tplTopY },
+            templateDimensions: { w: tpl.w, h: tpl.h },
+            calculatedToolbarCenter: { leftPx: Math.round(leftPx), topPx: Math.round(topPx) },
+            zoomScale: this.transform.scale.toFixed(2)
+        });
+
+        toolbarEl.style.position = 'absolute';
+        toolbarEl.style.left = `${Math.round(leftPx)}px`;
+        toolbarEl.style.top = `${Math.round(topPx)}px`;
+        toolbarEl.style.transform = 'translate(-50%, -100%)';
+        toolbarEl.style.display = 'inline-flex';
+        toolbarEl.classList.add('active');
     },
 
     updateTemplateCount(count) {

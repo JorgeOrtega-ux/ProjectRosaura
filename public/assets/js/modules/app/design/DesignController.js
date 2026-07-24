@@ -71,6 +71,7 @@ class DesignController {
         this.isResetLocked = false; 
         this.isResizeLocked = false;
         this.isInjectLocked = false;
+        this.templatePopper = null;
 
         this.cooldownBalance = 5;
         this.cooldownMax = 5;

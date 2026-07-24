@@ -138,9 +138,9 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded&display=swap" />
     
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/styles.css">
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/components/components.css">
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/root.css">
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/styles.css?v=<?php echo file_exists(dirname(__DIR__, 2) . '/public/assets/css/styles.css') ? filemtime(dirname(__DIR__, 2) . '/public/assets/css/styles.css') : time(); ?>">
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/components/components.css?v=<?php echo file_exists(dirname(__DIR__, 2) . '/public/assets/css/components/components.css') ? filemtime(dirname(__DIR__, 2) . '/public/assets/css/components/components.css') : time(); ?>">
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/root.css?v=<?php echo file_exists(dirname(__DIR__, 2) . '/public/assets/css/root.css') ? filemtime(dirname(__DIR__, 2) . '/public/assets/css/root.css') : time(); ?>">
     <title><?php echo htmlspecialchars($initialTitle); ?></title>
     
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

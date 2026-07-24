@@ -274,6 +274,13 @@ export const DesignInteractions = {
         this.transform.y = mouseY - (mouseY - this.transform.y) * (newScale / this.transform.scale);
         this.transform.scale = newScale;
 
+        this.isZooming = true;
+        if (this.zoomTimeout) clearTimeout(this.zoomTimeout);
+        this.zoomTimeout = setTimeout(() => {
+            this.isZooming = false;
+            this.requestRender();
+        }, 150);
+
         if (typeof this.limitBounds === 'function') this.limitBounds();
         this.calculateHoverPixel(e.clientX, e.clientY);
         this.requestRender();

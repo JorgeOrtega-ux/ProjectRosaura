@@ -66,6 +66,9 @@ export const DesignRender = {
 
             requestAnimationFrame(() => {
                 this._workerRenderPending = false;
+                if (typeof this.positionTemplateToolbar === 'function') {
+                    this.positionTemplateToolbar();
+                }
                 if (!this.renderWorker) return;
 
                 const selArray = this.selectedPixels ? Array.from(this.selectedPixels) : [];
@@ -312,6 +315,13 @@ export const DesignRender = {
                 }
                 
                 this.ctx.restore();
+                if (typeof this.positionTemplateToolbar === 'function') {
+                    this.positionTemplateToolbar();
+                }
+            }
+        } else {
+            if (typeof this.positionTemplateToolbar === 'function') {
+                this.positionTemplateToolbar();
             }
         }
 
