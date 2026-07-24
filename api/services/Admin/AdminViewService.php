@@ -833,12 +833,64 @@ class AdminViewService {
     /**
      * Datos para el módulo de copias de seguridad (backups/backups.php).
      */
-    public function getBackupsData(?string $searchQuery, int $page = 1): array {
+    public function getBackupsData(?string $searchQuery, int $page = 1, array $typesFilter = [], array $statusFilter = []): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
         $backups = [];
+        $baseDir = defined('ROOT_PATH') ? ROOT_PATH : (defined('APP_ROOT') ? APP_ROOT : dirname(__DIR__, 3));
+        $backupDir = rtrim($baseDir, '/\\') . '/storage/private/backups/';
+
+        if (is_dir($backupDir)) {
+            $files = array_diff(scandir($backupDir), ['.', '..', '.htaccess', '.gitkeep']);
+            foreach ($files as $file) {
+                if (pathinfo($file, PATHINFO_EXTENSION) === 'enc' || pathinfo($file, PATHINFO_EXTENSION) === 'sql' || pathinfo($file, PATHINFO_EXTENSION) === 'zip') {
+                    $filepath = $backupDir . $file;
+                    if (!file_exists($filepath)) continue;
+
+                    $sizeBytes = filesize($filepath);
+                    $sizeFormatted = $sizeBytes >= 1048576 
+                                    ? round($sizeBytes / 1048576, 2) . ' MB' 
+                                    : round($sizeBytes / 1024, 2) . ' KB';
+                                    
+                    $backups[] = [
+                        'id' => base64_encode($file),
+                        'filename' => $file,
+                        'type' => strpos($file, 'auto_backup_') !== false ? 'auto' : 'manual',
+                        'status' => 'success',
+                        'size' => $sizeFormatted,
+                        'created_at' => date('Y-m-d H:i:s', filemtime($filepath))
+                    ];
+                }
+            }
+            usort($backups, function($a, $b) {
+                return strtotime($b['created_at']) - strtotime($a['created_at']);
+            });
+        }
+
+        $searchQuery = isset($searchQuery) ? strtolower(trim($searchQuery)) : '';
+
+        $filteredBackups = array_filter($backups, function($b) use ($searchQuery, $typesFilter, $statusFilter) {
+            if ($searchQuery !== '' && strpos(strtolower($b['filename']), $searchQuery) === false) return false;
+            if (!empty($typesFilter) && !in_array($b['type'], $typesFilter)) return false;
+            if (!empty($statusFilter) && !in_array($b['status'], $statusFilter)) return false;
+            return true;
+        });
+
+        $limit = 25; 
+        $totalBackups = count($filteredBackups);
+        $totalPages = ceil($totalBackups / $limit);
+        if ($totalPages < 1) $totalPages = 1;
+
+        if ($page < 1) $page = 1;
+        if ($page > $totalPages) $page = $totalPages;
+
+        $offset = ($page - 1) * $limit;
+        $pagedBackups = array_slice(array_values($filteredBackups), $offset, $limit);
+
         return [
-            'backups' => $backups,
+            'backups' => $pagedBackups,
+            'totalBackups' => $totalBackups,
+            'totalPages' => $totalPages,
             'searchQuery' => $searchQuery,
             'page' => $page,
             'appUrl' => defined('APP_URL') ? APP_URL : ''

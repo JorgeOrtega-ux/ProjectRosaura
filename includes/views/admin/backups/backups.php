@@ -2,8 +2,11 @@
 use App\Api\Services\Admin\AdminViewService;
 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$typesFilter = isset($_GET['types']) && $_GET['types'] !== '' ? explode(',', $_GET['types']) : [];
+$statusFilter = isset($_GET['status']) && $_GET['status'] !== '' ? explode(',', $_GET['status']) : [];
+
 $adminService = new AdminViewService();
-$backupsData = $adminService->getBackupsData($_GET['q'] ?? null, $page);
+$backupsData = $adminService->getBackupsData($_GET['q'] ?? null, $page, $typesFilter, $statusFilter);
 
 extract($backupsData);
 
@@ -11,8 +14,6 @@ $userPerms = $_SESSION['user_permissions'] ?? [];
 $canCreate = in_array('create_backups', $userPerms);
 $canRestore = in_array('restore_backups', $userPerms);
 $pagedBackups = $backups;
-$totalBackups = count($pagedBackups);
-$totalPages = 1;
 
 $queryParams = $_GET;
 unset($queryParams['url'], $queryParams['page']);
