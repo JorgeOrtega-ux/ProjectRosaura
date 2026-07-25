@@ -95,8 +95,8 @@ class CanvasCoreService {
             $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts, $canManageOfficial) {
                 $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
                 $canvas['is_member'] = !empty($canvas['is_member']);
-                $canvas['is_locked'] = !empty($canvas['is_locked']);
-                $canvas['locked_requires_downgrade'] = !empty($canvas['is_locked']);
+                $canvas['is_subscription_locked'] = !empty($canvas['is_subscription_locked']);
+                $canvas['locked_requires_downgrade'] = !empty($canvas['is_subscription_locked']);
                 
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
                 
@@ -223,7 +223,7 @@ class CanvasCoreService {
                     'members_count' => $canvas['members_count'],
                     'favorites_count' => $canvas['favorites_count'] ?? 0,
                     'thumbnail_url' => $thumbnailUrl,
-                    'locked_requires_downgrade' => (bool)$canvas['is_locked'],
+                    'locked_requires_downgrade' => (bool)$canvas['is_subscription_locked'],
                     'locked_reasons' => $lockedReasons ?: []
                 ];
             }
@@ -297,7 +297,7 @@ class CanvasCoreService {
             $canvas['locked_requires_downgrade'] = false;
             $canvas['locked_reasons'] = [];
 
-            if ($canvas['is_locked']) {
+            if ($canvas['is_subscription_locked']) {
                 $lockedReasons = [];
                 if (!empty($canvas['locked_reasons'])) {
                     $lockedReasons = is_array($canvas['locked_reasons']) ? $canvas['locked_reasons'] : json_decode($canvas['locked_reasons'], true);
@@ -359,7 +359,7 @@ class CanvasCoreService {
                         $redis->hMSet("canvas:{$canvasId}:config", [
                             'cooldown_batch' => $canvas['cooldown_pixels_batch'] ?? 5,
                             'cooldown_seconds' => $canvas['cooldown_seconds'] ?? 10,
-                            'is_locked' => $canvas['is_locked'] ? 1 : 0
+                            'is_subscription_locked' => $canvas['is_subscription_locked'] ? 1 : 0
                         ]);
                     }
                 }

@@ -28,7 +28,7 @@ extract($designData);
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
          data-is-owner="<?php echo (isset($isOwner) && $isOwner) ? '1' : '0'; ?>"
          data-is-blocked="<?php echo isset($isBlockedInit) && $isBlockedInit ? '1' : '0'; ?>"
-         data-premium-blocked="<?php echo isset($isPremiumBlockedInit) && $isPremiumBlockedInit ? '1' : '0'; ?>"
+         data-subscription-locked="<?php echo isset($isSubscriptionLockedInit) && $isSubscriptionLockedInit ? '1' : '0'; ?>"
          data-is-spectator="<?php echo isset($isSpectatorInit) && $isSpectatorInit ? '1' : '0'; ?>"
          data-approval="<?php echo htmlspecialchars($canvasApproval); ?>"
          data-allow-chat="<?php echo htmlspecialchars($canvasAllowChat); ?>"
@@ -67,27 +67,27 @@ extract($designData);
                     $isBlockedInit = ($canvasPrivacy === 'private');
                     $isSpectatorInit = true;
                 }
-                $showSpectatorControls = ($isBlockedInit || $isSpectatorInit || $isPremiumBlockedInit);
+                $showSpectatorControls = ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit);
                 $showDesignTools = !$showSpectatorControls;
                 ?>
                 <div class="component-actions <?php echo $showSpectatorControls ? 'active' : 'disabled'; ?>" data-ref="spectator-controls">
                     
-                    <div class="component-badge component-badge--danger <?php echo (isset($isPremiumBlockedInit) && $isPremiumBlockedInit) ? '' : 'disabled'; ?>" data-ref="premium-status-badge" data-position="bottom">
+                    <div class="component-badge component-badge--danger <?php echo (isset($isSubscriptionLockedInit) && $isSubscriptionLockedInit) ? '' : 'disabled'; ?>" data-ref="premium-status-badge" data-position="bottom">
                         <span class="material-symbols-rounded">warning</span>
                         <span><?php echo __('lbl_requires_subscription'); ?></span>
                     </div>
                     
-                    <div class="component-badge component-badge--danger <?php echo (!$isBlockedInit || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit)) ? 'disabled' : ''; ?>" data-ref="private-status-badge" data-tooltip="<?php echo __('tooltip_not_member'); ?>" data-position="bottom">
+                    <div class="component-badge component-badge--danger <?php echo (!$isBlockedInit || (isset($isSubscriptionLockedInit) && $isSubscriptionLockedInit)) ? 'disabled' : ''; ?>" data-ref="private-status-badge" data-tooltip="<?php echo __('tooltip_not_member'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">lock</span>
                         <span><?php echo __('lbl_private_canvas'); ?></span>
                     </div>
                     
-                    <button class="component-button component-button--h34 <?php echo ($canvasApproval || $isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
+                    <button class="component-button component-button--h34 <?php echo ($canvasApproval || $isSubscriptionLockedInit) ? 'disabled' : ''; ?>" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
                         <span class="material-symbols-rounded">group_add</span>
                         <?php echo __('btn_join'); ?>
                     </button>
                     
-                    <button class="component-button component-button--h34 component-button--dark <?php echo (!$canvasApproval || $isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-action="requestCanvasAccess" data-ref="btn-request-access">
+                    <button class="component-button component-button--h34 component-button--dark <?php echo (!$canvasApproval || $isSubscriptionLockedInit) ? 'disabled' : ''; ?>" data-action="requestCanvasAccess" data-ref="btn-request-access">
                         <span class="material-symbols-rounded">front_hand</span>
                         <?php echo __('btn_request_access'); ?>
                     </button>
@@ -171,7 +171,7 @@ extract($designData);
                     <span><?php echo __('lbl_spectator'); ?></span>
                 </div>
 
-                <?php if (isset($isPremiumBlockedInit) && $isPremiumBlockedInit): ?>
+                <?php if (isset($isSubscriptionLockedInit) && $isSubscriptionLockedInit): ?>
                 <div class="component-badge" data-badge-id="lock-premium">
                     <span class="material-symbols-rounded">warning</span>
                     <span><?php echo __('badge_subscription_expired'); ?></span>
@@ -184,7 +184,7 @@ extract($designData);
                 <?php endif; ?>
 
                 <?php if (!$isSnapshot): ?>
-                <div class="component-badge <?php echo ($isBlockedInit || $isSpectatorInit || $isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-ref="cooldown-badge">
+                <div class="component-badge <?php echo ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit) ? 'disabled' : ''; ?>" data-ref="cooldown-badge">
                     <span class="material-symbols-rounded">bolt</span>
                     <span data-ref="cooldown-counter">--/--</span>
                     
@@ -199,7 +199,7 @@ extract($designData);
             <div class="canvas-badges-right" data-ref="badges-right"></div>
             
             <?php if (!$isSnapshot): ?>
-            <div class="component-action-pill <?php echo ($isBlockedInit || $isSpectatorInit || $isPremiumBlockedInit) ? 'disabled' : ''; ?>">
+            <div class="component-action-pill <?php echo ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit) ? 'disabled' : ''; ?>">
                 <button class="component-button component-button--dark component-button--h45 disabled-interaction" data-action="placePixels" data-ref="pixel-action-btn">
                     <span class="material-symbols-rounded">touch_app</span>
                     <span data-ref="pixel-action-text"><?php echo __('btn_select_pixels'); ?></span>

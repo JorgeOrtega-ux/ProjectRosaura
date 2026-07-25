@@ -151,7 +151,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     FROM " . DB::TBL_CANVASES . " c
                     LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                     $joinMemberSql
-                    WHERE c.privacy = 'public' AND c.is_official = 0 AND c.is_locked = 0
+                    WHERE c.privacy = 'public' AND c.is_official = 0 AND c.is_subscription_locked = 0
                     $orderClause 
                     LIMIT :limit OFFSET :offset";
             
@@ -201,12 +201,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         $joinMemberSql = "";
         if ($userId) {
-            $whereConditions[] = "((c.is_locked = 0 AND (c.privacy = 'public' OR cm_feed.canvas_id IS NOT NULL)) OR c.owner_id = :current_user_id_w1)";
+            $whereConditions[] = "((c.is_subscription_locked = 0 AND (c.privacy = 'public' OR cm_feed.canvas_id IS NOT NULL)) OR c.owner_id = :current_user_id_w1)";
             $params[':current_user_id_w1'] = $userIdParam;
             $joinMemberSql = "LEFT JOIN " . DB::TBL_CANVAS_MEMBERS . " cm_feed ON c.id = cm_feed.canvas_id AND cm_feed.user_id = :current_user_id_member";
             $params[':current_user_id_member'] = $userIdParam;
         } else {
-            $whereConditions[] = "c.is_locked = 0 AND (c.privacy = 'public' OR c.is_official = 1)";
+            $whereConditions[] = "c.is_subscription_locked = 0 AND (c.privacy = 'public' OR c.is_official = 1)";
         }
         
         $whereSql = implode(' AND ', $whereConditions);
@@ -215,7 +215,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         $orderSql = "ORDER BY c.is_official DESC, c.created_at DESC, c.id DESC";
         
-        $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.is_official, c.favorites_count, c.tags, c.is_locked, c.locked_reasons,
+        $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.is_official, c.favorites_count, c.tags, c.is_subscription_locked, c.locked_reasons,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count,
                        $isMemberSelect
@@ -285,7 +285,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     FROM " . DB::TBL_CANVASES . " c
                     LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                     $joinMemberSql
-                    WHERE c.is_official = 1 AND c.is_locked = 0
+                    WHERE c.is_official = 1 AND c.is_subscription_locked = 0
                     $orderClause
                     LIMIT :limit OFFSET :offset";
                     
@@ -334,7 +334,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $whereClause = "WHERE (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL) AND f.canvas_id IS NOT NULL";
         }
 
-        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.owner_id, c.is_locked, c.locked_reasons, c.favorites_count,
+        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.owner_id, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count,
                        CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner,
@@ -367,7 +367,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
-        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.is_locked, c.locked_reasons, c.favorites_count,
+        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c

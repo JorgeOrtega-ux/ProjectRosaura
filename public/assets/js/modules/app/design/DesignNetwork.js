@@ -1130,7 +1130,7 @@ export const DesignNetwork = {
             
             const isPremiumLocked = response.locked_requires_downgrade || (response.data && response.data.locked_requires_downgrade);
             if (isPremiumLocked && response.data) {
-                this.isPremiumBlocked = true;
+                this.isSubscriptionLocked = true;
                 this.isPrivateBlocked = false;
                 this.isSpectator = true;
                 this.setRoleUI('premium_locked', response.data);
@@ -1142,14 +1142,14 @@ export const DesignNetwork = {
                 }
                 return;
             } else if (isPremiumLocked) {
-                this.isPremiumBlocked = true;
+                this.isSubscriptionLocked = true;
                 this.isPrivateBlocked = true;
                 this.setRoleUI('blocked');
                 return;
             }
 
             if (response.success && response.data) {
-                this.isPremiumBlocked = false;
+                this.isSubscriptionLocked = false;
                 this.isPrivateBlocked = false;
                 const role = response.data.role || 'spectator';
                 
@@ -1215,7 +1215,7 @@ export const DesignNetwork = {
 
             if (specBadge) specBadge.classList.add('disabled');
             if (cooldownBadge) cooldownBadge.classList.add('disabled');
-            if (this.isPremiumBlocked) {
+            if (this.isSubscriptionLocked) {
                 if (privBadge) privBadge.classList.add('disabled');
                 if (premBadge) premBadge.classList.remove('disabled');
                 if (btnJoin) btnJoin.classList.add('disabled');

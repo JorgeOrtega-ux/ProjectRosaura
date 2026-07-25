@@ -20,7 +20,7 @@ class CanvasLockManager {
     }
 
     /**
-     * Evaluates all canvases for a given user and updates their is_locked status
+     * Evaluates all canvases for a given user and updates their is_subscription_locked status
      * based on the user's current subscription tier limits.
      * 
      * @param int $userId The ID of the canvas owner
@@ -56,7 +56,7 @@ class CanvasLockManager {
             
             $toLockCount = ($maxCanvases !== -1) ? max(0, $totalOwned - $maxCanvases) : 0;
             
-            $updateStmt = $canvasesDb->prepare("UPDATE canvases SET is_locked = :is_locked, locked_reasons = :locked_reasons WHERE id = :id");
+            $updateStmt = $canvasesDb->prepare("UPDATE canvases SET is_subscription_locked = :is_subscription_locked, locked_reasons = :locked_reasons WHERE id = :id");
             $canvasesDb->beginTransaction();
             
             $redisClient = null;
@@ -65,11 +65,11 @@ class CanvasLockManager {
             }
 
             foreach ($canvases as $canvas) {
-                $isLocked = false;
+                $isSubscriptionLocked = false;
                 $lockedReasons = [];
 
                 if ($toLockCount > 0) {
-                    $isLocked = true;
+                    $isSubscriptionLocked = true;
                     $lockedReasons[] = 'max_canvases';
                     $toLockCount--;
                 }
@@ -77,23 +77,23 @@ class CanvasLockManager {
                 $sizeStr = $canvas['size'];
                 $requiredTier = $allSizes[$sizeStr]['tier'] ?? 0;
                 if ($tier < $requiredTier) {
-                    $isLocked = true;
+                    $isSubscriptionLocked = true;
                     if (!in_array(\App\Core\System\CanvasConstants::LOCK_REASON_SIZE, $lockedReasons)) $lockedReasons[] = \App\Core\System\CanvasConstants::LOCK_REASON_SIZE;
                 }
 
                 if (isset($canvas['palette_id']) && $canvas['palette_id'] !== 'default' && !SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')) {
-                    $isLocked = true;
+                    $isSubscriptionLocked = true;
                     if (!in_array(\App\Core\System\CanvasConstants::LOCK_REASON_PALETTE, $lockedReasons)) $lockedReasons[] = \App\Core\System\CanvasConstants::LOCK_REASON_PALETTE;
                 }
 
                 if ($planLimits['max_members_per_canvas'] !== -1 && $canvas['max_participants'] > $planLimits['max_members_per_canvas']) {
-                    $isLocked = true;
+                    $isSubscriptionLocked = true;
                     if (!in_array(\App\Core\System\CanvasConstants::LOCK_REASON_MEMBERS, $lockedReasons)) $lockedReasons[] = \App\Core\System\CanvasConstants::LOCK_REASON_MEMBERS;
                 }
 
                 $updateStmt->execute([
-                    'is_locked' => $isLocked ? 1 : 0,
-                    'locked_reasons' => $isLocked ? json_encode($lockedReasons) : null,
+                    'is_subscription_locked' => $isSubscriptionLocked ? 1 : 0,
+                    'locked_reasons' => $isSubscriptionLocked ? json_encode($lockedReasons) : null,
                     'id' => $canvas['id']
                 ]);
                 

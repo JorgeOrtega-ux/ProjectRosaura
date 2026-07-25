@@ -173,14 +173,14 @@ def fetch_canvas_config_from_db(canvas_id):
         db = pool.get_connection()
         cursor = db.cursor(dictionary=True)
         tbl_canvases = os.getenv("DB_CANVASES_NAME", "db_canvases")
-        cursor.execute(f"SELECT cooldown_pixels_batch, cooldown_seconds, is_locked, size FROM `{tbl_canvases}`.`canvases` WHERE id = %s LIMIT 1", (canvas_id,))
+        cursor.execute(f"SELECT cooldown_pixels_batch, cooldown_seconds, is_subscription_locked, size FROM `{tbl_canvases}`.`canvases` WHERE id = %s LIMIT 1", (canvas_id,))
         row = cursor.fetchone()
         cursor.close()
         db.close()
         if row:
             batch = int(row.get('cooldown_pixels_batch') or 5)
             sec = int(row.get('cooldown_seconds') or 10)
-            is_locked = int(row.get('is_locked') or 0)
+            is_locked = int(row.get('is_subscription_locked') or 0)
             width = 64
             if row.get('size'):
                 try:
@@ -199,7 +199,7 @@ async def get_canvas_config(r, canvas_id):
     if raw_config and b'cooldown_batch' in raw_config and b'width' in raw_config:
         batch = int(raw_config[b'cooldown_batch'])
         sec = int(raw_config.get(b'cooldown_seconds', b'10'))
-        is_locked = int(raw_config.get(b'is_locked', b'0'))
+        is_locked = int(raw_config.get(b'is_subscription_locked', b'0'))
         width = int(raw_config.get(b'width', b'64'))
         return batch, sec, is_locked, width
     
@@ -207,7 +207,7 @@ async def get_canvas_config(r, canvas_id):
     await r.hset(config_key, mapping={
         'cooldown_batch': str(batch),
         'cooldown_seconds': str(sec),
-        'is_locked': str(is_locked),
+        'is_subscription_locked': str(is_locked),
         'width': str(width)
     })
     return batch, sec, is_locked, width

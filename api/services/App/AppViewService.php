@@ -182,7 +182,7 @@ class AppViewService {
         $isOwner = false;
         $isBlockedInit = true;
         $isSpectatorInit = true;
-        $isPremiumBlockedInit = false;
+        $isSubscriptionLockedInit = false;
         $canvasInitialZoom = 0.5;
         $isChatRestricted = false;
         $chatRestrictionType = null;
@@ -194,7 +194,7 @@ class AppViewService {
             try {
                 $dbManager = new DatabaseManager();
                 $db = $dbManager->getConnection(DB::CONN_CANVASES);
-                $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, c.is_locked, 
+                $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, c.is_subscription_locked, 
                                c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat, c.allow_purchases,
                                r.is_active as reset_active, r.next_reset_at,
                                rs.is_active as resize_active, rs.next_resize_at, rs.target_size
@@ -248,7 +248,7 @@ class AppViewService {
                     }
                     $isBlockedInit = ($canvasPrivacy === 'private' && !$isMember);
                     $isSpectatorInit = ($userRole === 'spectator' && !$isBlockedInit);
-                    $isPremiumBlockedInit = isset($canvas['is_locked']) ? (bool)$canvas['is_locked'] : false;
+                    $isSubscriptionLockedInit = isset($canvas['is_subscription_locked']) ? (bool)$canvas['is_subscription_locked'] : false;
 
                     $allSizes = Utils::getCanvasSizes();
                     $canvasInitialZoom = $allSizes[$canvasSize]['initial_zoom'] ?? 0.5;
@@ -315,7 +315,7 @@ class AppViewService {
             'isOwner' => $isOwner,
             'isBlockedInit' => $isBlockedInit,
             'isSpectatorInit' => $isSpectatorInit,
-            'isPremiumBlockedInit' => $isPremiumBlockedInit,
+            'isSubscriptionLockedInit' => $isSubscriptionLockedInit,
             'canvasInitialZoom' => $canvasInitialZoom,
             'isChatRestricted' => $isChatRestricted,
             'chatRestrictionType' => $chatRestrictionType,

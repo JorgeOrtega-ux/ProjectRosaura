@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `requires_approval` tinyint(1) NOT NULL DEFAULT 0,
   `allow_purchases` tinyint(1) NOT NULL DEFAULT 1,
   `allow_chat` tinyint(1) NOT NULL DEFAULT 0,
-  `is_locked` tinyint(1) NOT NULL DEFAULT 0,
+  `is_subscription_locked` tinyint(1) NOT NULL DEFAULT 0,
   `locked_reasons` json DEFAULT NULL,
   `size` varchar(20) NOT NULL DEFAULT '64',
   `palette_id` varchar(50) NOT NULL DEFAULT 'default',

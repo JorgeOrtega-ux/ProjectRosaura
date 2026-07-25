@@ -73,7 +73,7 @@ export const DesignSetup = {
             this.canvasId = wrapper.getAttribute('data-canvas-uuid'); 
             this.canvasPrivacy = wrapper.getAttribute('data-privacy') || 'private';
             this.isPrivateBlocked = wrapper.getAttribute('data-is-blocked') === '1';
-            this.isPremiumBlocked = wrapper.getAttribute('data-premium-blocked') === '1';
+            this.isSubscriptionLocked = wrapper.getAttribute('data-subscription-locked') === '1';
             this.isSpectator = wrapper.getAttribute('data-is-spectator') === '1';
             this.isOwner = wrapper.getAttribute('data-is-owner') === '1';
             this.canvasApproval = wrapper.getAttribute('data-approval') === '1';
@@ -157,7 +157,7 @@ export const DesignSetup = {
             this.removeCanvasBadge('lock-freeze', 'left');
         }
 
-        if (this.isPremiumBlocked) {
+        if (this.isSubscriptionLocked) {
             this.setCanvasBadge('lock-premium', 'warning', __('badge_subscription_expired'), 'left');
             this.removeCanvasBadge('lock-private', 'left');
         } else if (this.isPrivateBlocked) {
