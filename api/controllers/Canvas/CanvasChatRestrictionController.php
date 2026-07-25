@@ -26,6 +26,7 @@ class CanvasChatRestrictionController {
         $canvasId = $data['canvas_id'] ?? null;
         $targetUserId = $data['target_user_id'] ?? null;
         $isSuspended = $data['is_suspended'] ?? '0';
+        $sanctionScope = $data['sanction_scope'] ?? 'chat_mute';
         $suspensionType = $data['suspension_type'] ?? null;
         $suspensionReason = $data['suspension_reason'] ?? null;
         $endDate = $data['end_date'] ?? null;
@@ -96,13 +97,20 @@ class CanvasChatRestrictionController {
 
         try {
             if ($isSuspended === '1') {
+                // If it is a canvas ban, kick the member
+                if ($sanctionScope === 'canvas_ban') {
+                    $canvasRepo = new \App\Core\Repositories\CanvasRepository(new DatabaseManager(), new \App\Config\Search\TypesenseManager(), new \App\Config\Database\RedisCache());
+                    $canvasRepo->removeMember($canvasId, $targetUserId);
+                }
+
                 // Insert or update restriction
                 $stmt = $this->pdo->prepare("
-                    INSERT INTO canvas_chat_restrictions 
-                    (canvas_id, user_id, restricted_by, suspension_type, suspension_reason, end_date) 
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO canvas_sanctions 
+                    (canvas_id, user_id, restricted_by, sanction_scope, suspension_type, suspension_reason, end_date) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                     ON DUPLICATE KEY UPDATE 
                     restricted_by = VALUES(restricted_by),
+                    sanction_scope = VALUES(sanction_scope),
                     suspension_type = VALUES(suspension_type),
                     suspension_reason = VALUES(suspension_reason),
                     end_date = VALUES(end_date)
@@ -111,32 +119,47 @@ class CanvasChatRestrictionController {
                     $canvasId,
                     $targetUserId,
                     $userId,
+                    $sanctionScope,
                     $suspensionType,
                     $suspensionReason,
                     $endDate
                 ]);
                 
-                // Add to Redis for websocket server to block typing events
+                // Add to Redis for websocket server
                 $redis = (new \App\Config\Database\RedisCache())->getClient();
+                $ttl = 0;
                 if ($suspensionType === 'temporary' && $endDate) {
                     $ttl = strtotime($endDate) - time();
-                    if ($ttl > 0) {
-                        $redis->setex("canvas:{$canvasId}:chat_restricted:{$targetUserId}", $ttl, '1');
-                    }
-                } else {
-                    $redis->set("canvas:{$canvasId}:chat_restricted:{$targetUserId}", '1');
                 }
 
-                return ['status' => 'success', 'message' => __('msg_chat_restriction_applied')];
+                if ($sanctionScope === 'canvas_ban') {
+                    if ($ttl > 0) {
+                        $redis->setex("canvas:{$canvasId}:canvas_banned:{$targetUserId}", $ttl, '1');
+                        $redis->setex("canvas:{$canvasId}:chat_restricted:{$targetUserId}", $ttl, '1');
+                    } else {
+                        $redis->set("canvas:{$canvasId}:canvas_banned:{$targetUserId}", '1');
+                        $redis->set("canvas:{$canvasId}:chat_restricted:{$targetUserId}", '1');
+                    }
+                } else {
+                    if ($ttl > 0) {
+                        $redis->setex("canvas:{$canvasId}:chat_restricted:{$targetUserId}", $ttl, '1');
+                    } else {
+                        $redis->set("canvas:{$canvasId}:chat_restricted:{$targetUserId}", '1');
+                    }
+                    $redis->del("canvas:{$canvasId}:canvas_banned:{$targetUserId}");
+                }
+
+                return ['status' => 'success', 'message' => __('msg_sanction_applied')];
             } else {
                 // Remove restriction
-                $stmt = $this->pdo->prepare("DELETE FROM canvas_chat_restrictions WHERE canvas_id = ? AND user_id = ?");
+                $stmt = $this->pdo->prepare("DELETE FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ?");
                 $stmt->execute([$canvasId, $targetUserId]);
                 
                 $redis = (new \App\Config\Database\RedisCache())->getClient();
                 $redis->del("canvas:{$canvasId}:chat_restricted:{$targetUserId}");
+                $redis->del("canvas:{$canvasId}:canvas_banned:{$targetUserId}");
                 
-                return ['status' => 'success', 'message' => __('msg_chat_restriction_removed')];
+                return ['status' => 'success', 'message' => __('msg_sanction_removed')];
             }
         } catch (\Exception $e) {
             Logger::error("Error de base de datos en updateRestriction: " . $e->getMessage());

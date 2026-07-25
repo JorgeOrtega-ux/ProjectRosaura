@@ -39,16 +39,17 @@ $predefinedSuspension = [
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="searchSanctionUser" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_member_placeholder'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 <?php echo !empty($_GET['q']) ? 'has-active-filter' : ''; ?>" data-action="searchSanctionUser" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_member_placeholder'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">search</span>
                     </button>
-
+                    
                     <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]); ?>" data-position="bottom">
                         <div class="component-inline-control__group">
                             <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interaction' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
                                 <span class="material-symbols-rounded">chevron_left</span>
                             </button>
                         </div>
+                        <div class="component-inline-control__center"><?php echo $page; ?></div>
                         <div class="component-inline-control__group">
                             <button class="component-inline-control__btn <?php echo $page >= $totalPages ? 'disabled-interaction' : ''; ?>" <?php echo $page < $totalPages ? 'data-nav="'.$nextPageUrl.'"' : ''; ?>>
                                 <span class="material-symbols-rounded">chevron_right</span>
@@ -90,15 +91,19 @@ $predefinedSuspension = [
                                     $uid = $item['user_id'];
                                     $uInfo = $userDetails[$uid] ?? [];
                                     $username = !empty($uInfo['username']) ? $uInfo['username'] : __('lbl_user') . ' #' . $uid;
-                                    $avatar = !empty($uInfo['profile_picture']) ? $uInfo['profile_picture'] : $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
+                                    $rawAvatar = !empty($uInfo['profile_picture']) ? $uInfo['profile_picture'] : null;
+                                    $validAvatarPath = \App\Core\Helpers\Utils::getValidImage($rawAvatar, 'avatar');
+                                    $avatarUrl = $appUrl . '/' . ltrim($validAvatarPath, '/');
+
                                     $userUuidStr = !empty($uInfo['uuid']) ? $uInfo['uuid'] : '';
-                                    $roleColor = !empty($uInfo['subscription_color']) ? $uInfo['subscription_color'] : 'var(--text-muted)';
+                                    $roleColor = !empty($uInfo['role_bg']) ? $uInfo['role_bg'] : 'var(--text-muted)';
                                     $isMember = $item['is_member'];
                                     $restr = $item['restriction'];
 
                                     $hasRestriction = !empty($restr);
                                     $isExpired = $hasRestriction && $restr['suspension_type'] === 'temporary' && $restr['end_date'] && strtotime($restr['end_date']) <= time();
                                     $isActiveSanction = $hasRestriction && !$isExpired;
+                                    $scope = $restr['sanction_scope'] ?? 'chat_mute';
 
                                     $reasonDisplay = '-';
                                     if ($hasRestriction) {
@@ -113,13 +118,17 @@ $predefinedSuspension = [
                                     data-user-uuid="<?php echo htmlspecialchars($userUuidStr); ?>"
                                     data-username="<?php echo htmlspecialchars($username); ?>"
                                     data-has-sanction="<?php echo $isActiveSanction ? '1' : '0'; ?>"
+                                    data-sanction-scope="<?php echo htmlspecialchars($scope); ?>"
                                     data-suspension-type="<?php echo htmlspecialchars($restr['suspension_type'] ?? 'temporary'); ?>"
                                     data-suspension-reason="<?php echo htmlspecialchars($restr['suspension_reason'] ?? 'reason_terms'); ?>"
                                     data-end-date="<?php echo htmlspecialchars($restr['end_date'] ?? ''); ?>">
                                     <td>
                                         <div class="td-user-info">
                                             <div class="component-button--profile role-dynamic component-avatar--static-sm" data-role-bg="<?php echo htmlspecialchars($roleColor); ?>">
-                                                <img src="<?php echo htmlspecialchars($avatar); ?>" alt="alt_avatar" class="image-lazy-fade onload-loaded">
+                                                <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="<?php echo __('alt_avatar'); ?>"
+                                                     class="image-lazy-fade"
+                                                     onload="this.classList.add('image-loaded')"
+                                                     onerror="this.onerror=null; this.src='<?php echo $appUrl; ?>/public/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">person</span>
@@ -128,16 +137,28 @@ $predefinedSuspension = [
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="component-badge component-badge--sm <?php echo $isMember ? '' : 'component-badge--warning'; ?>">
-                                            <span class="material-symbols-rounded"><?php echo $isMember ? 'check_circle' : 'person_off'; ?></span>
-                                            <span><?php echo $isMember ? __('lbl_active_member') : __('lbl_former_member'); ?></span>
-                                        </div>
+                                        <?php if ($isActiveSanction && $scope === 'canvas_ban'): ?>
+                                            <div class="component-badge component-badge--sm component-badge--danger">
+                                                <span class="material-symbols-rounded">block</span>
+                                                <span><?php echo __('lbl_banned_member'); ?></span>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="component-badge component-badge--sm <?php echo $isMember ? '' : 'component-badge--warning'; ?>">
+                                                <span class="material-symbols-rounded"><?php echo $isMember ? 'check_circle' : 'person_off'; ?></span>
+                                                <span><?php echo $isMember ? __('lbl_active_member') : __('lbl_former_member'); ?></span>
+                                            </div>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <?php if ($isActiveSanction): ?>
+                                            <?php 
+                                                $scopeLabel = ($scope === 'canvas_ban') ? __('sanction_scope_canvas_ban') : __('sanction_scope_chat_mute');
+                                                $durationLabel = ($restr['suspension_type'] === 'permanent') ? __('suspension_perm') : __('suspension_temp');
+                                                $icon = ($scope === 'canvas_ban') ? 'block' : 'speaker_notes_off';
+                                            ?>
                                             <div class="component-badge component-badge--sm component-badge--danger">
-                                                <span class="material-symbols-rounded"><?php echo $restr['suspension_type'] === 'permanent' ? 'block' : 'timer'; ?></span>
-                                                <span><?php echo __('lbl_restricted') . ' (' . ($restr['suspension_type'] === 'permanent' ? __('suspension_perm') : __('suspension_temp')) . ')'; ?></span>
+                                                <span class="material-symbols-rounded"><?php echo $icon; ?></span>
+                                                <span><?php echo htmlspecialchars($scopeLabel) . ' (' . htmlspecialchars($durationLabel) . ')'; ?></span>
                                             </div>
                                         <?php elseif ($hasRestriction && $isExpired): ?>
                                             <div class="component-badge component-badge--sm component-badge--muted">
@@ -159,10 +180,22 @@ $predefinedSuspension = [
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
+
+                            <tr class="disabled" data-ref="empty-search-table">
+                                <td colspan="5" class="component-empty-table-cell">
+                                    <div class="component-empty-state component-empty-state--table">
+                                        <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
+                                        <p class="component-empty-state-text"><?php echo __('lbl_no_users_found'); ?></p>
+                                    </div>
+                                </td>
+                            </tr>
                         <?php else: ?>
-                            <tr>
-                                <td colspan="5" class="text-center py-6">
-                                    <p class="component-text-muted"><?php echo __('lbl_no_users_found'); ?></p>
+                            <tr data-ref="empty-table">
+                                <td colspan="5" class="component-empty-table-cell">
+                                    <div class="component-empty-state component-empty-state--table">
+                                        <span class="material-symbols-rounded component-empty-state-icon">shield_person</span>
+                                        <p class="component-empty-state-text"><?php echo __('lbl_no_sanctions_found'); ?></p>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endif; ?>

@@ -549,6 +549,14 @@ async def handler(websocket):
         message_count = 0
 
         async for message in websocket:
+            user_id = WS_META[websocket].get('user_id')
+            if user_id:
+                is_banned = await r.exists(f"canvas:{canvas_id}:canvas_banned:{user_id}")
+                if is_banned:
+                    print(f"[!] Banned user {user_id} tried to send message. Disconnecting.")
+                    await websocket.close(code=4003, reason="Banned from canvas")
+                    return
+
             now = time.time()
             if now - last_message_time > 1.0:
                 last_message_time = now

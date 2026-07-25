@@ -199,37 +199,7 @@ class CanvasMembersController {
         }
     }
 
-    manageChatRestriction() {
-        if (this.selectedMemberIds.size !== 1) return;
-        
-        const targetUserId = Array.from(this.selectedMemberIds)[0];
-        const selectedRow = document.querySelector(`[data-member-id="${targetUserId}"]`);
 
-        const targetUserUuid = selectedRow ? selectedRow.getAttribute('data-member-uuid') : null;
-
-        if (!targetUserUuid) {
-            showMessage(__('err_missing_user_id'), "error");
-            return;
-        }
-        
-        const pathParts = window.location.pathname.split('/');
-        let uuid = pathParts[pathParts.length - 1];
-        if (uuid.includes('?')) {
-            uuid = uuid.split('?')[0];
-        }
-
-        if (!uuid) {
-            showMessage(__('err_missing_canvas_id'), "error");
-            return;
-        }
-
-        const routeUrl = `${this.basePath}/canvases/manage/chat-restriction/${uuid}/${targetUserUuid}`;
-        if (window.spaRouter) {
-            window.spaRouter.navigate(routeUrl);
-        } else {
-            window.location.href = routeUrl;
-        }
-    }
 
     async removeMember() {
         if (this.selectedMemberIds.size === 0) return;

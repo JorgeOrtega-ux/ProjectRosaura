@@ -1491,7 +1491,7 @@ class CanvasViewService {
             $stmtM->execute([$canvasId]);
             $memberUserIds = $stmtM->fetchAll(\PDO::FETCH_COLUMN);
 
-            $stmtR = $pdoCanvases->prepare("SELECT * FROM canvas_chat_restrictions WHERE canvas_id = ?");
+            $stmtR = $pdoCanvases->prepare("SELECT * FROM canvas_sanctions WHERE canvas_id = ?");
             $stmtR->execute([$canvasId]);
             $allRestrictions = $stmtR->fetchAll(\PDO::FETCH_ASSOC);
 
@@ -1518,6 +1518,7 @@ class CanvasViewService {
                 ");
                 $stmtUsers->execute($pageUserIds);
                 while ($row = $stmtUsers->fetch(\PDO::FETCH_ASSOC)) {
+                    $row['role_bg'] = self::parseSubscriptionColor($row['subscription_color'] ?? null);
                     $userDetails[$row['id']] = $row;
                 }
             }

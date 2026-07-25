@@ -96,7 +96,19 @@ if (!empty($canvasUuid)) {
             $chatRestrictionType = null;
             $chatRestrictionEnd = null;
             if ($userId) {
-                $restSql = "SELECT suspension_type, end_date FROM canvas_chat_restrictions WHERE canvas_id = :cid AND user_id = :uid LIMIT 1";
+                // Check if user is banned from the canvas (excluding the owner)
+                if (!$isOwner) {
+                    $banSql = "SELECT id FROM canvas_sanctions WHERE canvas_id = :cid AND user_id = :uid AND sanction_scope = 'canvas_ban' AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW())) LIMIT 1";
+                    $banStmt = $db->prepare($banSql);
+                    $banStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
+                    if ($banStmt->fetch()) {
+                        echo "<div class='view-content'><p style='padding: 40px; text-align: center; color: var(--text-danger); font-weight: 500;'>".__('err_user_banned_from_canvas')."</p></div>";
+                        return;
+                    }
+                }
+
+                // Check if user is restricted from chat
+                $restSql = "SELECT suspension_type, end_date FROM canvas_sanctions WHERE canvas_id = :cid AND user_id = :uid AND sanction_scope = 'chat_mute' AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW())) LIMIT 1";
                 $restStmt = $db->prepare($restSql);
                 $restStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
                 if ($restRow = $restStmt->fetch(PDO::FETCH_ASSOC)) {

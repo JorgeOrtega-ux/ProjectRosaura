@@ -1130,27 +1130,61 @@ export const DialogTemplates = {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
             const username = data.username || '';
+            const sanctionScope = data.sanctionScope || 'chat_mute';
             const suspensionType = data.suspensionType || 'temporary';
             const suspensionReason = data.suspensionReason || 'reason_terms';
             const endDate = data.endDate ? data.endDate.replace(' ', 'T').substring(0, 16) : '';
 
-            const reasons = [
-                { key: 'reason_terms', label: __('reason_terms') || 'Términos de servicio' },
-                { key: 'reason_fake_info', label: __('reason_fake_info') || 'Información falsa' },
-                { key: 'reason_illegal', label: __('reason_illegal') || 'Contenido ilegal' },
-                { key: 'reason_fraud_use', label: __('reason_fraud_use') || 'Uso fraudulento' },
-                { key: 'reason_abuse', label: __('reason_abuse') || 'Abuso o acoso' },
-                { key: 'reason_prohibited_content', label: __('reason_prohibited_content') || 'Contenido prohibido' },
-                { key: 'reason_ip_violation', label: __('reason_ip_violation') || 'Violación de propiedad intelectual' },
-                { key: 'reason_spam_bot', label: __('reason_spam_bot') || 'Spam o Bot' },
-                { key: 'reason_security_breach', label: __('reason_security_breach') || 'Brecha de seguridad' },
-                { key: 'reason_unauthorized_commercial', label: __('reason_unauthorized_commercial') || 'Comercio no autorizado' },
-                { key: 'reason_other', label: __('reason_other') || 'Otro motivo' }
+            const scopes = [
+                { key: 'chat_mute', label: __('sanction_scope_chat_mute') || 'Silenciar Chat', icon: 'speaker_notes_off' },
+                { key: 'canvas_ban', label: __('sanction_scope_canvas_ban') || 'Expulsar del Lienzo (Baneo)', icon: 'block' }
             ];
 
-            const reasonOptionsHtml = reasons.map(r => 
-                `<option value="${r.key}" ${suspensionReason === r.key ? 'selected' : ''}>${r.label}</option>`
-            ).join('');
+            const types = [
+                { key: 'temporary', label: __('suspension_temp') || 'Temporal', icon: 'timer' },
+                { key: 'permanent', label: __('suspension_perm') || 'Permanente', icon: 'all_inclusive' }
+            ];
+
+            const reasons = [
+                { key: 'reason_terms', label: __('reason_terms') || 'Términos de servicio', icon: 'gavel' },
+                { key: 'reason_fake_info', label: __('reason_fake_info') || 'Información falsa', icon: 'info' },
+                { key: 'reason_illegal', label: __('reason_illegal') || 'Contenido ilegal', icon: 'gavel' },
+                { key: 'reason_fraud_use', label: __('reason_fraud_use') || 'Uso fraudulento', icon: 'credit_card' },
+                { key: 'reason_abuse', label: __('reason_abuse') || 'Abuso o acoso', icon: 'front_hand' },
+                { key: 'reason_prohibited_content', label: __('reason_prohibited_content') || 'Contenido prohibido', icon: 'report' },
+                { key: 'reason_ip_violation', label: __('reason_ip_violation') || 'Violación de propiedad intelectual', icon: 'copyright' },
+                { key: 'reason_spam_bot', label: __('reason_spam_bot') || 'Spam o Bot', icon: 'smart_toy' },
+                { key: 'reason_security_breach', label: __('reason_security_breach') || 'Brecha de seguridad', icon: 'security' },
+                { key: 'reason_unauthorized_commercial', label: __('reason_unauthorized_commercial') || 'Comercio no autorizado', icon: 'storefront' },
+                { key: 'reason_other', label: __('reason_other') || 'Otro motivo', icon: 'more_horiz' }
+            ];
+
+            const activeScope = scopes.find(s => s.key === sanctionScope) || scopes[0];
+            const activeType = types.find(t => t.key === suspensionType) || types[0];
+            const activeReason = reasons.find(r => r.key === suspensionReason) || reasons[0];
+
+            const scopeOptionsHtml = scopes.map(s => `
+                <div class="component-menu-link ${s.key === activeScope.key ? 'active' : ''}" data-action="selectSanctionDropdownOption" data-target-input="sanction_scope" data-value="${s.key}" data-icon="${s.icon}" data-text="${s.label}">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">${s.icon}</span></div>
+                    <div class="component-menu-link-text"><span>${s.label}</span></div>
+                </div>
+            `).join('');
+
+            const typeOptionsHtml = types.map(t => `
+                <div class="component-menu-link ${t.key === activeType.key ? 'active' : ''}" data-action="selectSanctionDropdownOption" data-target-input="suspension_type" data-value="${t.key}" data-icon="${t.icon}" data-text="${t.label}">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">${t.icon}</span></div>
+                    <div class="component-menu-link-text"><span>${t.label}</span></div>
+                </div>
+            `).join('');
+
+            const reasonOptionsHtml = reasons.map(r => `
+                <div class="component-menu-link ${r.key === activeReason.key ? 'active' : ''}" data-action="selectSanctionDropdownOption" data-target-input="suspension_reason" data-value="${r.key}" data-icon="${r.icon}" data-text="${r.label}">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">${r.icon}</span></div>
+                    <div class="component-menu-link-text"><span>${r.label}</span></div>
+                </div>
+            `).join('');
+
+            const endDateDisplay = endDate ? endDate.replace('T', ' ') : (__('lbl_select_expiration_date') || 'Seleccionar fecha de expiración');
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -1159,40 +1193,122 @@ export const DialogTemplates = {
                     <p class="component-modal-desc">${__('desc_chat_restriction') || 'Aplica o actualiza la sanción para este usuario.'}</p>
                 </div>
                 <div class="component-modal-body">
-                    <div class="component-form-group" style="margin-bottom: 12px;">
-                        <label class="component-form-label">${__('lbl_sanction_type') || 'Tipo de Sanción'}</label>
-                        <select class="component-input" name="suspension_type" onchange="const d = this.closest('.component-modal-body').querySelector('.modal-end-date-group'); if(d) d.style.display = this.value==='temporary'?'block':'none';">
-                            <option value="temporary" ${suspensionType === 'temporary' ? 'selected' : ''}>${__('suspension_temp') || 'Temporal'}</option>
-                            <option value="permanent" ${suspensionType === 'permanent' ? 'selected' : ''}>${__('suspension_perm') || 'Permanente'}</option>
-                        </select>
+                    <!-- Alcance de la Sanción -->
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full" style="margin-bottom: 12px;">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSanctionScope">
+                            <span class="material-symbols-rounded" data-ref="sanction_scope_trigger_icon">${activeScope.icon}</span>
+                            <span class="component-dropdown-text" data-ref="sanction_scope_trigger_text">${activeScope.label}</span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleSanctionScope">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    ${scopeOptionsHtml}
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                    <input type="hidden" name="sanction_scope" value="${activeScope.key}">
 
-                    <div class="component-form-group" style="margin-bottom: 12px;">
-                        <label class="component-form-label">${__('table_header_reason') || 'Motivo'}</label>
-                        <select class="component-input" name="suspension_reason">
-                            ${reasonOptionsHtml}
-                        </select>
+                    <!-- Duración -->
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full" style="margin-bottom: 12px;">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionType">
+                            <span class="material-symbols-rounded" data-ref="suspension_type_trigger_icon">${activeType.icon}</span>
+                            <span class="component-dropdown-text" data-ref="suspension_type_trigger_text">${activeType.label}</span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleSuspensionType">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    ${typeOptionsHtml}
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                    <input type="hidden" name="suspension_type" value="${activeType.key}">
 
-                    <div class="component-form-group modal-end-date-group" style="margin-bottom: 12px; display: ${suspensionType === 'temporary' ? 'block' : 'none'};">
-                        <label class="component-form-label">${__('table_header_expiration') || 'Fecha de Expiración'}</label>
-                        <input type="datetime-local" class="component-input" name="end_date" value="${endDate}">
+                    <!-- Motivo -->
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full" style="margin-bottom: 12px;">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionReason">
+                            <span class="material-symbols-rounded" data-ref="suspension_reason_trigger_icon">${activeReason.icon}</span>
+                            <span class="component-dropdown-text" data-ref="suspension_reason_trigger_text">${activeReason.label}</span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleSuspensionReason">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    ${reasonOptionsHtml}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="suspension_reason" value="${activeReason.key}">
+
+                    <!-- Fecha de Expiración (moduleCalendar) -->
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full modal-end-date-group" style="margin-bottom: 12px; display: ${activeType.key === 'temporary' ? 'block' : 'none'};">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="sanctionModuleCalendar">
+                            <span class="material-symbols-rounded">calendar_month</span>
+                            <span class="component-dropdown-text" data-ref="sanction-endDate-text">${endDateDisplay}</span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sanctionModuleCalendar">
+                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-calendar">
+                                    <div class="component-calendar-header">
+                                        <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                            <span class="material-symbols-rounded">chevron_left</span>
+                                        </button>
+                                        <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year') || 'Mes Año'}</div>
+                                        <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </button>
+                                    </div>
+                                    <div class="component-calendar-weekdays">
+                                        <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sa'}</span>
+                                    </div>
+                                    <div class="component-calendar-days" data-ref="calendar-days"></div>
+                                    <div class="component-calendar-time">
+                                        <div class="component-input-group component-input-group--h34">
+                                            <input type="number" data-ref="calendar-hours" class="component-input-field component-input-field--simple" placeholder="HH" min="0" max="23" value="00">
+                                        </div>
+                                        <span>:</span>
+                                        <div class="component-input-group component-input-group--h34">
+                                            <input type="number" data-ref="calendar-minutes" class="component-input-field component-input-field--simple" placeholder="MM" min="0" max="59" value="00">
+                                        </div>
+                                    </div>
+                                    <div class="component-calendar-actions">
+                                        <button type="button" class="component-button component-button--h30" data-action="calendarClear">${__('btn_clear') || 'Limpiar'}</button>
+                                        <div>
+                                            <button type="button" class="component-button component-button--h30" data-action="calendarCancel">${__('btn_cancel') || 'Cancelar'}</button>
+                                            <button type="button" class="component-button component-button--h30 component-button--dark" data-action="calendarConfirm">${__('btn_accept') || 'Aceptar'}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="end_date" value="${endDate}">
                     </div>
                 </div>
-                <div class="component-modal-actions" style="margin-top: 16px;">
+                <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--primary" data-modal-action="confirm">${__('lbl_save_changes') || 'Guardar Sanción'}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('lbl_save_changes') || 'Guardar Sanción'}</button>
                 </div>
             `;
         },
         getData: (container) => {
-            const typeSelect = container.querySelector('[name="suspension_type"]');
-            const reasonSelect = container.querySelector('[name="suspension_reason"]');
+            const scopeInput = container.querySelector('[name="sanction_scope"]');
+            const typeInput = container.querySelector('[name="suspension_type"]');
+            const reasonInput = container.querySelector('[name="suspension_reason"]');
             const endDateInput = container.querySelector('[name="end_date"]');
 
             return {
-                suspension_type: typeSelect ? typeSelect.value : 'temporary',
-                suspension_reason: reasonSelect ? reasonSelect.value : 'reason_terms',
+                sanction_scope: scopeInput ? scopeInput.value : 'chat_mute',
+                suspension_type: typeInput ? typeInput.value : 'temporary',
+                suspension_reason: reasonInput ? reasonInput.value : 'reason_terms',
                 end_date: endDateInput ? endDateInput.value : null
             };
         }

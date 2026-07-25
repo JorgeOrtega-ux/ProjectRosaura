@@ -330,14 +330,14 @@ if (array_key_exists($route, $routes)) {
             'message_key' => 'error.internal_server_error'
         ]);
     } catch (\Exception $e) {
-        Logger::error("General Exception in route {$route}: " . $e->getMessage(), 'error', ['exception' => $e]);
+        Logger::error("General Exception in route {$route}: " . $e->getMessage(), ['exception' => $e]);
         http_response_code(500);
         echo json_encode([
             'success' => false, 
             'message_key' => 'error.internal_server_error'
         ]);
     } catch (\Error $e) {
-        Logger::error("Fatal Error in route {$route}: " . $e->getMessage(), 'error', ['exception' => $e]);
+        Logger::error("Fatal Error in route {$route}: " . $e->getMessage(), ['exception' => $e]);
         http_response_code(500);
         echo json_encode([
             'success' => false, 

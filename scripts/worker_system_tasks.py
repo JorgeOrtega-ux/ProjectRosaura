@@ -208,9 +208,9 @@ def process_deletion(payload):
             cursor_can.execute("DELETE FROM canvas_chat_messages WHERE user_id = %s", (user_id,))
             cursor_can.execute("DELETE FROM canvas_chat_reports WHERE reporter_user_id = %s", (user_id,))
             if uuid_str:
-                cursor_can.execute("DELETE FROM canvas_chat_restrictions WHERE user_id = %s OR restricted_by = %s OR user_id = %s OR restricted_by = %s", (str(user_id), str(user_id), uuid_str, uuid_str))
+                cursor_can.execute("DELETE FROM canvas_sanctions WHERE user_id = %s OR restricted_by = %s OR user_id = %s OR restricted_by = %s", (str(user_id), str(user_id), uuid_str, uuid_str))
             else:
-                cursor_can.execute("DELETE FROM canvas_chat_restrictions WHERE user_id = %s OR restricted_by = %s", (str(user_id), str(user_id)))
+                cursor_can.execute("DELETE FROM canvas_sanctions WHERE user_id = %s OR restricted_by = %s", (str(user_id), str(user_id)))
             cursor_can.execute("DELETE FROM canvas_favorites WHERE user_id = %s", (user_id,))
             cursor_can.execute("DELETE FROM canvas_access_requests WHERE user_id = %s", (user_id,))
             cursor_can.execute("DELETE FROM canvas_members WHERE user_id = %s", (user_id,))

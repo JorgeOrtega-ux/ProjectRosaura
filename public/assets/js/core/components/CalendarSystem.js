@@ -26,7 +26,12 @@ export class CalendarSystem {
 
     getContainer() {
         if (this.containerSelector) {
-            return document.querySelector(this.containerSelector) || document;
+            if (typeof this.containerSelector === 'string') {
+                return document.querySelector(this.containerSelector) || document;
+            }
+            if (this.containerSelector instanceof HTMLElement || (typeof this.containerSelector === 'object' && this.containerSelector.querySelector)) {
+                return this.containerSelector;
+            }
         }
         return document;
     }

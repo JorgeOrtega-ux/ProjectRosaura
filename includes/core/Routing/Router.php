@@ -68,15 +68,6 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-        if (preg_match('#^/canvases/manage/chat-restriction/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            $_GET['user_uuid'] = $matches[2];
-            return $this->routes['/canvases/manage/chat-restriction/:uuid/:user_uuid'] ?? [
-                'view' => 'canvases/team/sanctions.php',
-                'auth' => true,
-                'requires_2fa' => false
-            ];
-        }
         if (preg_match('#^/canvases/manage/sanctions/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/sanctions/:uuid'] ?? [

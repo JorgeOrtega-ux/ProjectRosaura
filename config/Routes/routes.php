@@ -51,7 +51,6 @@ return [
     '/canvases/manage/role-builder/:uuid' => ['view' => 'canvases/team/role-builder.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/manage/role-permissions/:uuid' => ['view' => 'canvases/team/role-permissions.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/manage/sanctions/:uuid' => ['view' => 'canvases/team/sanctions.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
-    '/canvases/manage/chat-restriction/:uuid/:user_uuid' => ['view' => 'canvases/team/sanctions.php', 'auth' => true, 'requires_2fa' => false],
     '/canvases/chat-viewer' => ['view' => 'canvases/chat/chat-viewer.php', 'auth' => true, 'requires_2fa' => false],
     '/canvases/join' => ['view' => 'canvases/core/join.php', 'auth' => true, 'permissions' => ['join_canvas'], 'requires_2fa' => false],
     '/canvases/palettes/create' => ['view' => 'canvases/palettes/custom-palette-create.php', 'auth' => true, 'requires_2fa' => false],

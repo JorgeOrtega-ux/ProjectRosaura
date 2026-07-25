@@ -114,6 +114,15 @@ class CanvasAccessService {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
+            // Check if user is banned from the canvas
+            $db = new DatabaseManager();
+            $pdo = $db->getConnection(DB::CONN_CANVASES);
+            $stmtBan = $pdo->prepare("SELECT id FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ? AND sanction_scope = 'canvas_ban' AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW())) LIMIT 1");
+            $stmtBan->execute([$canvasId, $userId]);
+            if ($stmtBan->fetch()) {
+                return ['success' => false, 'message' => __('err_user_banned_from_canvas')];
+            }
+
             $memberRoles = $this->canvasRepository->getMemberRoles($canvasId, $userId);
             if (!empty($memberRoles) || $canvas['owner_id'] === $userId) {
                 return ['success' => true, 'joined' => true, 'message' => __('msg_already_member')];
@@ -421,6 +430,15 @@ class CanvasAccessService {
             $canvasId = $invite['canvas_id'];
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_deleted')];
+
+            // Check if user is banned from the canvas
+            $db = new DatabaseManager();
+            $pdo = $db->getConnection(DB::CONN_CANVASES);
+            $stmtBan = $pdo->prepare("SELECT id FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ? AND sanction_scope = 'canvas_ban' AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW())) LIMIT 1");
+            $stmtBan->execute([$canvasId, $userId]);
+            if ($stmtBan->fetch()) {
+                return ['success' => false, 'message' => __('err_user_banned_from_canvas')];
+            }
 
             $memberRoles = $this->canvasRepository->getMemberRoles($canvasId, $userId);
             if (!empty($memberRoles) || $canvas['owner_id'] === $userId) {

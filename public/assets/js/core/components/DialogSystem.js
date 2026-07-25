@@ -1,4 +1,5 @@
 import { DialogTemplates } from './DialogTemplates.js';
+import { CalendarSystem } from './CalendarSystem.js';
 
 export class DialogSystem {
     constructor() {
@@ -8,6 +9,7 @@ export class DialogSystem {
         this.activeWrapper = null;
         this.activeOverlay = null;
         this.activeBox = null;
+        this.calendarSystem = null;
 
         this.dragState = { startY: 0, currentDiff: 0, isDragging: false };
 
@@ -147,9 +149,30 @@ export class DialogSystem {
         if (!this.activeResolveFn) return; 
 
         const closeBtn = e.target.closest('.component-modal-close-btn');
-        if (closeBtn) {
-            this.closeCurrent(false);
-            return;
+        const toggleModuleBtn = e.target.closest('[data-action="toggleModule"]');
+        if (toggleModuleBtn) {
+            const target = toggleModuleBtn.getAttribute('data-target');
+            if (target === 'sanctionModuleCalendar' && this.activeBox) {
+                if (!this.calendarSystem) {
+                    this.calendarSystem = new CalendarSystem(this.activeBox);
+                    this.calendarSystem.init();
+                }
+                const hiddenInput = this.activeBox.querySelector('[name="end_date"]');
+                const initialVal = hiddenInput ? hiddenInput.value : '';
+                this.calendarSystem.setup(
+                    initialVal,
+                    (isoString, displayString) => {
+                        if (hiddenInput) hiddenInput.value = isoString;
+                        const textEl = this.activeBox.querySelector('[data-ref="sanction-endDate-text"]');
+                        if (textEl) textEl.textContent = displayString;
+                    },
+                    () => {
+                        if (hiddenInput) hiddenInput.value = '';
+                        const textEl = this.activeBox.querySelector('[data-ref="sanction-endDate-text"]');
+                        if (textEl) textEl.textContent = typeof window.__ === 'function' ? window.__('lbl_select_expiration_date') : 'Seleccionar fecha de expiración';
+                    }
+                );
+            }
         }
 
         const selectReasonBtn = e.target.closest('[data-action="selectReportReason"]');
@@ -181,6 +204,49 @@ export class DialogSystem {
                 selectReasonBtn.classList.add('active');
                 
                 const module = selectReasonBtn.closest('.component-module');
+                if (module && window.appInstance && typeof window.appInstance.closeModule === 'function') {
+                    window.appInstance.closeModule(module);
+                } else if (module) {
+                    module.classList.replace('active', 'disabled');
+                }
+            }
+            return;
+        }
+
+        const selectSanctionOptionBtn = e.target.closest('[data-action="selectSanctionDropdownOption"]');
+        if (selectSanctionOptionBtn) {
+            const inputName = selectSanctionOptionBtn.getAttribute('data-target-input');
+            const val = selectSanctionOptionBtn.getAttribute('data-value');
+            const icon = selectSanctionOptionBtn.getAttribute('data-icon');
+            const text = selectSanctionOptionBtn.getAttribute('data-text');
+            const modal = this.activeBox;
+            if (modal) {
+                const hiddenInput = modal.querySelector(`[name="${inputName}"]`);
+                if (hiddenInput) hiddenInput.value = val;
+
+                const wrapper = selectSanctionOptionBtn.closest('.component-dropdown-wrapper');
+                if (wrapper) {
+                    const triggerText = wrapper.querySelector('.component-dropdown-text');
+                    if (triggerText) triggerText.textContent = text;
+
+                    const triggerIcon = wrapper.querySelector('.component-dropdown-trigger .material-symbols-rounded:first-child');
+                    if (triggerIcon && icon) triggerIcon.textContent = icon;
+                }
+
+                if (inputName === 'suspension_type') {
+                    const endDateGroup = modal.querySelector('.modal-end-date-group');
+                    if (endDateGroup) {
+                        endDateGroup.style.display = (val === 'temporary') ? 'block' : 'none';
+                    }
+                }
+
+                const menuList = selectSanctionOptionBtn.closest('.component-menu-list');
+                if (menuList) {
+                    menuList.querySelectorAll('[data-action="selectSanctionDropdownOption"]').forEach(el => el.classList.remove('active'));
+                    selectSanctionOptionBtn.classList.add('active');
+                }
+
+                const module = selectSanctionOptionBtn.closest('.component-module');
                 if (module && window.appInstance && typeof window.appInstance.closeModule === 'function') {
                     window.appInstance.closeModule(module);
                 } else if (module) {

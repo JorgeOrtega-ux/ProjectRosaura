@@ -179,12 +179,11 @@ class ChatServices
             return ['success' => false, 'message' => __('err_chat_disabled'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
 }
 
-        $stmt = $this->pdo->prepare("SELECT id FROM canvas_chat_restrictions WHERE canvas_id = ? AND user_id = ? AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW()))");
+        $stmt = $this->pdo->prepare("SELECT id FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ? AND sanction_scope IN ('chat_mute', 'canvas_ban') AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW()))");
         $stmt->execute([$canvasId, $userId]);
         if ($stmt->fetch()) {
             return ['success' => false, 'message' => __('err_chat_restricted'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
-}
-
+        }
         if ($this->redis) {
             $redisKeyBurst = "canvas_chat_burst:{$canvasId}:{$userId}";
             $redisKeyLastMsg = "canvas_chat_last:{$canvasId}:{$userId}";

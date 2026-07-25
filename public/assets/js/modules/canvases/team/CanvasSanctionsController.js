@@ -140,7 +140,15 @@ export class CanvasSanctionsController {
     applyLocalSearch() {
         const searchInput = document.querySelector('[data-ref="sanction-search-input"]');
         const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
+
+        if (searchBtn) {
+            if (query.length > 0) searchBtn.classList.add('has-active-filter');
+            else searchBtn.classList.remove('has-active-filter');
+        }
+
         const rows = document.querySelectorAll('.component-table-row');
+        let visibleCount = 0;
 
         rows.forEach(row => {
             const targets = row.querySelectorAll('.search-target');
@@ -149,11 +157,18 @@ export class CanvasSanctionsController {
             text = text.toLowerCase();
 
             if (!query || text.includes(query)) {
-                row.style.display = '';
+                row.classList.remove('disabled');
+                visibleCount++;
             } else {
-                row.style.display = 'none';
+                row.classList.add('disabled');
             }
         });
+
+        const emptySearchRow = document.querySelector('[data-ref="empty-search-table"]');
+        if (emptySearchRow) {
+            if (visibleCount === 0 && rows.length > 0) emptySearchRow.classList.remove('disabled');
+            else emptySearchRow.classList.add('disabled');
+        }
     }
 
     handleRowSelection(row) {
@@ -210,12 +225,14 @@ export class CanvasSanctionsController {
         if (!this.selectedUserId) return;
 
         const selectedRow = document.querySelector(`[data-user-id="${this.selectedUserId}"]`);
+        const currentScope = selectedRow ? (selectedRow.getAttribute('data-sanction-scope') || 'chat_mute') : 'chat_mute';
         const currentType = selectedRow ? (selectedRow.getAttribute('data-suspension-type') || 'temporary') : 'temporary';
         const currentReason = selectedRow ? (selectedRow.getAttribute('data-suspension-reason') || 'reason_terms') : 'reason_terms';
         const currentEndDate = selectedRow ? (selectedRow.getAttribute('data-end-date') || '') : '';
 
         const resultDialog = await window.dialogSystem.show('manageSanctionModal', {
             username: this.selectedUsername,
+            sanctionScope: currentScope,
             suspensionType: currentType,
             suspensionReason: currentReason,
             endDate: currentEndDate
@@ -237,6 +254,7 @@ export class CanvasSanctionsController {
             canvas_id: this.canvasUuid || this.canvasId,
             target_user_id: this.selectedUserUuid || this.selectedUserId,
             is_suspended: '1',
+            sanction_scope: formData.sanction_scope || 'chat_mute',
             suspension_type: formData.suspension_type || 'temporary',
             suspension_reason: formData.suspension_reason || 'reason_terms',
             end_date: formData.suspension_type === 'temporary' ? (formData.end_date ? formData.end_date.replace('T', ' ') + ':00' : null) : null,
