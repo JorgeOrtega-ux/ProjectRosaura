@@ -864,6 +864,25 @@ class CanvasViewService {
             Logger::error("getCanvasRolesData roles query error: " . $e->getMessage(), ['exception' => $e]);
         }
 
+        $canManageRoles = ($canvasOwnerId === $userId);
+        $userRolesWeight = 0;
+        if (!$canManageRoles) {
+            try {
+                $stmtRole = $pdoCanvases->prepare("SELECT r.weight FROM canvas_roles r JOIN canvas_user_roles ur ON r.id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid ORDER BY r.weight DESC LIMIT 1");
+                $stmtRole->execute(['cid' => $canvasId, 'uid' => $userId]);
+                $w = $stmtRole->fetchColumn();
+                if ($w !== false) $userRolesWeight = (int)$w;
+                
+                $stmtPerm = $pdoCanvases->prepare("SELECT 1 FROM canvas_role_permissions rp JOIN canvas_permissions p ON rp.permission_id = p.id JOIN canvas_user_roles ur ON rp.role_id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid AND p.name = 'manage_roles' LIMIT 1");
+                $stmtPerm->execute(['cid' => $canvasId, 'uid' => $userId]);
+                if ($stmtPerm->fetchColumn()) {
+                    $canManageRoles = true;
+                }
+            } catch (\Exception $e) {}
+        } else {
+            $userRolesWeight = 100;
+        }
+
         return [
             'error' => null,
             'userId' => $userId,
@@ -872,7 +891,9 @@ class CanvasViewService {
             'canvasOwnerId' => $canvasOwnerId,
             'ownerTier' => $ownerTier,
             'isAdmin' => $isAdmin,
-            'roles' => $roles
+            'roles' => $roles,
+            'canManageRoles' => $canManageRoles,
+            'userRolesWeight' => $userRolesWeight
         ];
     }
 
@@ -1259,8 +1280,28 @@ class CanvasViewService {
             } catch (\Throwable $e) {}
         }
 
+        $canManageRoles = ($canvasOwnerId === $userId);
+        $userRolesWeight = 0;
+        if (!$canManageRoles) {
+            try {
+                $stmtRole = $pdoCanvases->prepare("SELECT r.weight FROM canvas_roles r JOIN canvas_user_roles ur ON r.id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid ORDER BY r.weight DESC LIMIT 1");
+                $stmtRole->execute(['cid' => $canvasId, 'uid' => $userId]);
+                $w = $stmtRole->fetchColumn();
+                if ($w !== false) $userRolesWeight = (int)$w;
+                
+                $stmtPerm = $pdoCanvases->prepare("SELECT 1 FROM canvas_role_permissions rp JOIN canvas_permissions p ON rp.permission_id = p.id JOIN canvas_user_roles ur ON rp.role_id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid AND p.name = 'manage_roles' LIMIT 1");
+                $stmtPerm->execute(['cid' => $canvasId, 'uid' => $userId]);
+                if ($stmtPerm->fetchColumn()) {
+                    $canManageRoles = true;
+                }
+            } catch (\Exception $e) {}
+        } else {
+            $userRolesWeight = 100;
+        }
+
         return [
             'error' => null,
+            'userId' => $userId,
             'canvasId' => $canvasId,
             'canvasUuid' => $canvasUuid,
             'canvasOwnerId' => $canvasOwnerId,
@@ -1268,7 +1309,9 @@ class CanvasViewService {
             'isAdmin' => $isAdmin,
             'isEdit' => $isEdit,
             'roleId' => $roleId,
-            'roleData' => $roleData
+            'roleData' => $roleData,
+            'canManageRoles' => $canManageRoles,
+            'userRolesWeight' => $userRolesWeight
         ];
     }
 
@@ -1348,9 +1391,29 @@ class CanvasViewService {
             $allPermissions = $stmtAll->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\Throwable $e) {}
 
+        $canManageRoles = ($canvasOwnerId === $userId);
+        $userRolesWeight = 0;
+        if (!$canManageRoles) {
+            try {
+                $stmtRole = $pdoCanvases->prepare("SELECT r.weight FROM canvas_roles r JOIN canvas_user_roles ur ON r.id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid ORDER BY r.weight DESC LIMIT 1");
+                $stmtRole->execute(['cid' => $canvasId, 'uid' => $userId]);
+                $w = $stmtRole->fetchColumn();
+                if ($w !== false) $userRolesWeight = (int)$w;
+                
+                $stmtPerm = $pdoCanvases->prepare("SELECT 1 FROM canvas_role_permissions rp JOIN canvas_permissions p ON rp.permission_id = p.id JOIN canvas_user_roles ur ON rp.role_id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid AND p.name = 'manage_roles' LIMIT 1");
+                $stmtPerm->execute(['cid' => $canvasId, 'uid' => $userId]);
+                if ($stmtPerm->fetchColumn()) {
+                    $canManageRoles = true;
+                }
+            } catch (\Exception $e) {}
+        } else {
+            $userRolesWeight = 100;
+        }
+
         return [
             'redirect' => null,
             'error' => null,
+            'userId' => $userId,
             'canvasId' => $canvasId,
             'canvasUuid' => $canvasUuid,
             'canvasOwnerId' => $canvasOwnerId,
@@ -1360,7 +1423,9 @@ class CanvasViewService {
             'roleData' => $roleData,
             'rolePermissions' => $rolePermissions,
             'allPermissions' => $allPermissions,
-            'appUrl' => defined('APP_URL') ? APP_URL : ''
+            'appUrl' => defined('APP_URL') ? APP_URL : '',
+            'canManageRoles' => $canManageRoles,
+            'userRolesWeight' => $userRolesWeight
         ];
     }
 

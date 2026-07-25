@@ -1,137 +1,16 @@
 <?php
-
-use App\Config\Database\DatabaseManager;
-use App\Core\System\DatabaseConstants as DB;
+use App\Api\Services\App\AppViewService;
 use App\Core\Helpers\Utils;
-use PDO;
 
-$canvasIntId = 0; 
-$canvasName = '';
-$canvasSize = '64'; 
-$canvasPalette = 'default'; 
-$canvasPrivacy = 'private'; 
-$canvasApproval = '0'; 
-$canvasAllowChat = '0';
-$canvasAllowPurchases = '1';
-$canvasCooldownBatch = '5';
-$canvasCooldownSeconds = '10';
-$resetActive = '0';
-$nextResetAt = '';
-$timerAction = 'restart';
-$resizeActive = '0';
-$nextResizeAt = '';
-$resizeTargetSize = '64';
-$resizeTimerAction = 'restart';
+$viewService = new AppViewService();
+$designData = $viewService->getCanvasDesignData($_GET['id'] ?? '', isset($_GET['snapshot']));
 
-$canvasUuid = $_GET['id'] ?? '';
-$isSnapshot = isset($_GET['snapshot']);
-
-if (!empty($canvasUuid)) {
-    try {
-        $dbManager = new DatabaseManager();
-        $db = $dbManager->getConnection(DB::CONN_CANVASES);
-        $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, c.is_locked, 
-                       c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat, c.allow_purchases,
-                       r.is_active as reset_active, r.next_reset_at,
-                       rs.is_active as resize_active, rs.next_resize_at, rs.target_size
-                FROM " . DB::TBL_CANVASES . " c
-                LEFT JOIN canvas_reset_settings r ON c.id = r.canvas_id
-                LEFT JOIN canvas_resize_settings rs ON c.id = rs.canvas_id
-                WHERE c.uuid = :uuid LIMIT 1";
-        
-        $stmt = $db->prepare($sql);
-        $stmt->execute([':uuid' => $canvasUuid]);
-        $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($canvas) {
-            $canvasIntId = (int)$canvas['id'];
-            $canvasName = $canvas['name'];
-            $canvasSize = strtolower($canvas['size'] ?? '64');
-            $canvasPalette = $canvas['palette_id'] ?? 'default';
-            $canvasPrivacy = $canvas['privacy'] ?? 'private';
-            $canvasApproval = $canvas['requires_approval'] ?? '0';
-            $canvasAllowChat = $canvas['allow_chat'] ?? '0';
-            $canvasAllowPurchases = $canvas['allow_purchases'] ?? '1';
-            
-            $canvasCooldownBatch = $canvas['cooldown_pixels_batch'] ?? '5';
-            $canvasCooldownSeconds = $canvas['cooldown_seconds'] ?? '10';
-
-            $resetActive = $canvas['reset_active'] ?? '0';
-            $nextResetAt = $canvas['next_reset_at'] ?? '';
-
-            $resizeActive = $canvas['resize_active'] ?? '0';
-            $nextResizeAt = $canvas['next_resize_at'] ?? '';
-            $resizeTargetSize = $canvas['target_size'] ?? '64';
-            $isMember = false;
-            $userRole = 'spectator';
-            $userId = null;
-            $isOwner = false;
-            global $sessionManager;
-            $session = $sessionManager ?? null;
-            if ($session && method_exists($session, 'isLoggedIn') && $session->isLoggedIn()) {
-                $userId = $session->getActiveAccountId();
-                if (isset($canvas['owner_id']) && (int)$canvas['owner_id'] === (int)$userId) {
-                    $isOwner = true;
-                    $isMember = true;
-                    $userRole = 'admin';
-                }
-                $memberSql = "SELECT r.name as role FROM canvas_user_roles cur JOIN canvas_roles r ON cur.role_id = r.id WHERE cur.canvas_id = :cid AND cur.user_id = :uid LIMIT 1";
-                $mStmt = $db->prepare($memberSql);
-                $mStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
-                if ($mRow = $mStmt->fetch(PDO::FETCH_ASSOC)) {
-                    $isMember = true;
-                    if (!$isOwner) {
-                        $userRole = 'editor';
-                    }
-                }
-            }
-            $isBlockedInit = ($canvasPrivacy === 'private' && !$isMember);
-            $isSpectatorInit = ($userRole === 'spectator' && !$isBlockedInit);
-            $isPremiumBlockedInit = isset($canvas['is_locked']) ? (bool)$canvas['is_locked'] : false;
-
-            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
-            $canvasInitialZoom = $allSizes[$canvasSize]['initial_zoom'] ?? 0.5;
-            
-            $isChatRestricted = false;
-            $chatRestrictionType = null;
-            $chatRestrictionEnd = null;
-            if ($userId) {
-                // Check if user is banned from the canvas (excluding the owner)
-                if (!$isOwner) {
-                    $banSql = "SELECT id FROM canvas_sanctions WHERE canvas_id = :cid AND user_id = :uid AND sanction_scope = 'canvas_ban' AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW())) LIMIT 1";
-                    $banStmt = $db->prepare($banSql);
-                    $banStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
-                    if ($banStmt->fetch()) {
-                        echo "<div class='view-content'><p style='padding: 40px; text-align: center; color: var(--text-danger); font-weight: 500;'>".__('err_user_banned_from_canvas')."</p></div>";
-                        return;
-                    }
-                }
-
-                // Check if user is restricted from chat
-                $restSql = "SELECT suspension_type, end_date FROM canvas_sanctions WHERE canvas_id = :cid AND user_id = :uid AND sanction_scope = 'chat_mute' AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW())) LIMIT 1";
-                $restStmt = $db->prepare($restSql);
-                $restStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
-                if ($restRow = $restStmt->fetch(PDO::FETCH_ASSOC)) {
-                    $isChatRestricted = true;
-                    $chatRestrictionType = $restRow['suspension_type'];
-                    $chatRestrictionEnd = $restRow['end_date'];
-                }
-            }
-        }
-
-        $canInjectTemplate = false;
-        if ($userId) {
-            $uStmt = $dbManager->getConnection(DB::CONN_IDENTITY)->prepare("SELECT subscription_tier FROM users WHERE id = :uid LIMIT 1");
-            $uStmt->execute([':uid' => $userId]);
-            $userTier = (int)($uStmt->fetchColumn() ?: 0);
-            $canInjectTemplate = \App\Core\System\SubscriptionPlanConstants::hasFeature($userTier, 'inject_templates');
-        }
-
-
-    } catch (Exception $e) {
-        \App\Core\System\Logger::error('err_design_view_load', ['exception' => $e->getMessage()]);
-    }
+if ($designData['isBanned']) {
+    echo "<div class='view-content'><p style='padding: 40px; text-align: center; color: var(--text-danger); font-weight: 500;'>".__('err_user_banned_from_canvas')."</p></div>";
+    return;
 }
+
+extract($designData);
 ?>
 <div class="view-content">
     

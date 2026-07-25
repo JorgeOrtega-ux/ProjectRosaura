@@ -11,26 +11,6 @@ if (!empty($roleBuilderData['error'])) {
 
 extract($roleBuilderData);
 $isSystemRole = (isset($roleData['is_system']) && (int)$roleData['is_system'] === 1);
-$userRolesWeight = 0;
-$canManageRoles = ($canvasOwnerId === $userId);
-?>
-
-if (!$canManageRoles) {
-    try {
-        $stmtRole = $pdoCanvases->prepare("SELECT r.weight FROM canvas_roles r JOIN canvas_user_roles ur ON r.id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid ORDER BY r.weight DESC LIMIT 1");
-        $stmtRole->execute(['cid' => $canvasId, 'uid' => $userId]);
-        $w = $stmtRole->fetchColumn();
-        if ($w !== false) $userRolesWeight = (int)$w;
-        
-        $stmtPerm = $pdoCanvases->prepare("SELECT 1 FROM canvas_role_permissions rp JOIN canvas_permissions p ON rp.permission_id = p.id JOIN canvas_user_roles ur ON rp.role_id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid AND p.name = 'manage_roles' LIMIT 1");
-        $stmtPerm->execute(['cid' => $canvasId, 'uid' => $userId]);
-        if ($stmtPerm->fetchColumn()) {
-            $canManageRoles = true;
-        }
-    } catch (\Exception $e) {}
-} else {
-    $userRolesWeight = 100;
-}
 
 if (!$canManageRoles || ($isEdit && $roleData['weight'] >= $userRolesWeight && $canvasOwnerId !== $userId)) {
 }
