@@ -74,7 +74,15 @@ export class DialogSystem {
                 return;
             }
 
+            if (this.activeTemplateName === templateName) {
+                this.closeCurrent(false);
+                resolve({ confirmed: false, data: {} });
+                return;
+            }
+
             if (this.activeResolveFn) this.closeCurrent(false);
+
+            this.activeTemplateName = templateName;
 
             const container = this._getContainer();
 
@@ -131,10 +139,11 @@ export class DialogSystem {
                     'button[data-modal-action="confirm_dynamic_form"], ' +
                     'button[data-modal-action="finish"], ' +
                     'button[data-action="confirm"], ' +
+                    'button[data-action="submitJoinLive"], ' +
                     '#btn_confirm_custom_backup'
                 );
 
-                if (confirmBtn && !confirmBtn.disabled && !confirmBtn.classList.contains('disabled')) {
+                if (confirmBtn && !confirmBtn.disabled && !confirmBtn.classList.contains('disabled') && !confirmBtn.classList.contains('disabled-interaction')) {
                     e.preventDefault();
                     confirmBtn.click();
                 }
@@ -341,6 +350,7 @@ export class DialogSystem {
         this.activeOverlay = null;
         this.activeWrapper = null;
         this.activeBox = null;
+        this.activeTemplateName = null;
 
         resolveToCall({ confirmed: result !== false, action: result, data: formData });
 

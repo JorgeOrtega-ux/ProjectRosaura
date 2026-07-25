@@ -87,7 +87,7 @@ class AuthController {
                         'button[data-action="submitForgotPassword"], ' +
                         'button[data-action="submitResetPassword"]'
                     );
-                    if (submitBtn && !submitBtn.disabled && !submitBtn.classList.contains('disabled')) {
+                    if (submitBtn && !submitBtn.disabled && !submitBtn.classList.contains('disabled') && !submitBtn.classList.contains('disabled-interaction')) {
                         e.preventDefault();
                         submitBtn.click();
                     }
@@ -344,6 +344,7 @@ class AuthController {
     }
 
     async handleLogin(btn) {
+        if (btn.disabled || btn.classList.contains('disabled-interaction')) return;
         this.clearMessages();
         const emailInput = document.querySelector('[data-ref="email"]');
         const passwordInput = document.querySelector('[data-ref="password"]');
@@ -446,6 +447,7 @@ class AuthController {
     }
 
     async handleCancelAccountDeletion(btn) {
+        if (btn.disabled || btn.classList.contains('disabled-interaction')) return;
         const token = btn.getAttribute('data-token');
         if (!token) return;
 
@@ -472,6 +474,7 @@ class AuthController {
     }
 
     async handleLogin2FA(btn) {
+        if (btn.disabled || btn.classList.contains('disabled-interaction')) return;
         this.clearMessages();
         const codeInput = document.querySelector('[data-ref="2fa_code"]');
         if (!codeInput) return;
@@ -511,6 +514,7 @@ class AuthController {
     }
 
     async handleRegisterStep1(btn) {
+        if (btn.disabled || btn.classList.contains('disabled-interaction')) return;
         this.clearMessages();
         const emailInput = document.querySelector('[data-ref="email"]');
         const passwordInput = document.querySelector('[data-ref="password"]');
@@ -563,6 +567,7 @@ class AuthController {
     }
 
     async handleRegisterStep2(btn) {
+        if (btn.disabled || btn.classList.contains('disabled-interaction')) return;
         this.clearMessages();
         const usernameInput = document.querySelector('[data-ref="username"]');
         if (!usernameInput) return;
@@ -596,6 +601,7 @@ class AuthController {
     }
 
     async handleRegisterVerify(btn) {
+        if (btn.disabled || btn.classList.contains('disabled-interaction')) return;
         this.clearMessages();
         const codeInput = document.querySelector('[data-ref="verification_code"]');
         if (!codeInput) return;
@@ -627,8 +633,8 @@ class AuthController {
     }
 
     async handleResendRegisterCode(btn) {
+        if (btn.disabled || btn.classList.contains('disabled-interaction')) return;
         this.clearMessages();
-        if (btn.classList.contains('disabled-interaction')) return;
 
         const regToken = sessionStorage.getItem('reg_token');
         if (!regToken) {
@@ -661,6 +667,7 @@ class AuthController {
     }
 
     async handleForgotPassword(btn) {
+        if (btn.disabled || btn.classList.contains('disabled-interaction')) return;
         this.clearMessages();
         const emailInput = document.querySelector('[data-ref="forgot_email"]');
         if (!emailInput) return;
@@ -701,6 +708,7 @@ class AuthController {
     }
 
     async handleResetPassword(btn) {
+        if (btn.disabled || btn.classList.contains('disabled-interaction')) return;
         this.clearMessages();
         const tokenInput = document.querySelector('[data-ref="reset_token"]');
         const passInput = document.querySelector('[data-ref="new_password"]');

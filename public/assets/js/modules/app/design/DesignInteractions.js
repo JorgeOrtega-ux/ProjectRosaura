@@ -285,6 +285,24 @@ export const DesignInteractions = {
         } else if (keyUpper === 'T') {
             const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-templates"]');
             if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'P') {
+            const btn = document.querySelector('[data-action="togglePerksInventory"]');
+            if (btn && !btn.classList.contains('disabled') && !btn.classList.contains('disabled-interaction')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'O') {
+            const btn = document.querySelector('[data-action="toggleOwnerTools"]');
+            if (btn && !btn.classList.contains('disabled') && !btn.classList.contains('disabled-interaction')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'H') {
+            const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-chat"]');
+            if (btn && !btn.classList.contains('disabled') && !btn.classList.contains('disabled-interaction')) { 
+                e.preventDefault(); 
+                btn.click(); 
+                setTimeout(() => {
+                    const chatInput = document.querySelector('[data-ref="chat-input-message"]');
+                    if (chatInput && chatInput.offsetParent !== null) {
+                        chatInput.focus();
+                    }
+                }, 100);
+            }
         } else if (keyUpper === 'U') {
             e.preventDefault();
             if (this.activeTemplateId) {
@@ -1650,7 +1668,7 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-error)';
                     badgeEl.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
                 }
-                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>Borrador</span>`;
+                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>Borrador de Lienzo</span>`;
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.toggleOwnerEraser();
@@ -1668,7 +1686,7 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-warning)';
                     badgeEl.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
                 }
-                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">ac_unit</span><span>${isToggledOn ? 'Descongelar' : 'Congelar'}</span>`;
+                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">ac_unit</span><span>${isToggledOn ? 'Descongelar Interactividad' : 'Congelar Interactividad'}</span>`;
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.toggleOwnerFreeze();
@@ -1686,7 +1704,7 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-success)';
                     badgeEl.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
                 }
-                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">admin_panel_settings</span><span>Bloqueador</span>`;
+                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">admin_panel_settings</span><span>Protector de Zona</span>`;
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.toggleOwnerProtecting();
@@ -1705,7 +1723,7 @@ export const DesignInteractions = {
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
-            if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_off') || 'Modo Borrador desactivado', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_off') || 'Modo Borrador de Lienzo desactivado', 'info');
         } else {
             this.interactionMode = 'owner_erasing';
             this.activeBomb = null;
@@ -1713,7 +1731,7 @@ export const DesignInteractions = {
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
-            if (typeof showMessage === 'function') showMessage('Modo Borrador activado. Haz clic en la primera esquina para definir la zona.', 'info');
+            if (typeof showMessage === 'function') showMessage('Modo Borrador de Lienzo activado. Haz clic en la primera esquina para definir la zona.', 'info');
         }
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
@@ -1800,7 +1818,7 @@ export const DesignInteractions = {
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
-            if (typeof showMessage === 'function') showMessage('Modo Bloqueador de Zonas desactivado', 'info');
+            if (typeof showMessage === 'function') showMessage('Modo Protector de Zonas desactivado', 'info');
         } else {
             this.interactionMode = 'owner_protecting';
             this.activeBomb = null;
@@ -1808,7 +1826,7 @@ export const DesignInteractions = {
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
-            if (typeof showMessage === 'function') showMessage('Modo Bloqueador de Zonas activado. Haz clic en la primera esquina para definir la zona.', 'info');
+            if (typeof showMessage === 'function') showMessage('Modo Protector de Zonas activado. Haz clic en la primera esquina para definir la zona.', 'info');
         }
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
