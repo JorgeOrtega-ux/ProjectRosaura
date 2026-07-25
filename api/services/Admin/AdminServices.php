@@ -585,11 +585,6 @@ class AdminServices {
                 $this->tokenRepository->deleteAllByUserId($targetId);
                 
                 Utils::invalidateUserSessions($this->sessionManager, $targetId, true);
-                
-                if ($notifyUser) {
-                    $mailer = new Mailer();
-                    $mailer->sendAccountStatusNotification($user['email'], $user['username'], 'suspended', $dbSuspensionReason, $dbEndDate);
-                }
             }
             return ['success' => true, 'message' => __('admin.status_updated')];
         }

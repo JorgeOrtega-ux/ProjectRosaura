@@ -15,8 +15,7 @@ class AdminStatusEditController {
             suspensionReason: '', 
             suspendedType: 'temporary',
             suspensionDuration: '7',
-            endDate: '',
-            notifyUserSuspension: true
+            endDate: ''
         };
         this.reasonDurations = {};
         if (window.APP_SANCTION_REASONS && window.APP_SANCTION_REASONS.suspensions) {
@@ -73,12 +72,9 @@ class AdminStatusEditController {
             suspensionReason: viewContent.getAttribute('data-suspension-reason') || '',
             suspendedType: viewContent.getAttribute('data-suspended-type') || 'temporary',
             suspensionDuration: viewContent.getAttribute('data-suspension-duration') || '7',
-            endDate: viewContent.getAttribute('data-end-date') || '',
-            notifyUserSuspension: viewContent.getAttribute('data-notify-user-suspension') !== '0'
+            endDate: viewContent.getAttribute('data-end-date') || ''
         };
         this.initialState = Object.assign({}, this.state);
-        const chkNotifySuspension = document.querySelector('[data-ref="chk_notify_user_suspension"]');
-        if (chkNotifySuspension) chkNotifySuspension.checked = this.state.notifyUserSuspension;
         const reasonEl = document.querySelector('[data-ref="admin-suspensionReason-text"]');
         if (reasonEl) this.defaultTexts.suspensionReason = reasonEl.textContent.trim();
         const dateEl = document.querySelector('[data-ref="admin-endDate-text"]');
@@ -163,12 +159,6 @@ class AdminStatusEditController {
         }
     }
     handleChange(e) {
-        if (!window.location.pathname.includes('/admin/user-moderation')) return;
-        const ref = e.target.getAttribute('data-ref');
-        if (ref === 'chk_notify_user_suspension') {
-            this.state.notifyUserSuspension = e.target.checked;
-            this.checkForChanges(); 
-        }
     }
     calculateEndDateFromDuration(days) {
         const d = new Date();
@@ -228,8 +218,7 @@ class AdminStatusEditController {
         const secSuspType = document.querySelector('[data-ref="section-suspended-type"]');
         const secSuspDuration = document.querySelector('[data-ref="section-suspended-duration"]');
         const secSuspDate = document.querySelector('[data-ref="section-suspended-date"]');
-        const secNotifyUserSuspension = document.querySelector('[data-ref="section-notify-user-suspension"]');
-        [secSuspReason, secSuspType, secSuspDuration, secSuspDate, secNotifyUserSuspension].forEach(el => {
+        [secSuspReason, secSuspType, secSuspDuration, secSuspDate].forEach(el => {
             if (el) el.classList.add('disabled');
         });
         if (s.isSuspended === '1') {
@@ -241,7 +230,6 @@ class AdminStatusEditController {
                     if (s.suspensionDuration === 'custom' && secSuspDate) secSuspDate.classList.remove('disabled');
                 }
             }
-            if (secNotifyUserSuspension) secNotifyUserSuspension.classList.remove('disabled');
         }
     }
     checkForChanges() {
@@ -284,7 +272,7 @@ class AdminStatusEditController {
             suspension_type: this.state.isSuspended === '1' ? this.state.suspendedType : null,
             suspension_reason: this.state.isSuspended === '1' ? this.state.suspensionReason : null,
             end_date: (this.state.isSuspended === '1' && this.state.suspendedType === 'temporary') ? this.formatDateForDB(this.state.endDate) : null,
-            notify_user: this.state.notifyUserSuspension,
+            notify_user: false,
             password: password
         };
         const result = await this.api.post(ApiRoutes.Admin.UpdateSuspension, payload, this.abortController.signal);
