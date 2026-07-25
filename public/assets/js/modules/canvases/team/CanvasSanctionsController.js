@@ -225,10 +225,11 @@ export class CanvasSanctionsController {
         if (!this.selectedUserId) return;
 
         const selectedRow = document.querySelector(`[data-user-id="${this.selectedUserId}"]`);
+        const hasSanction = selectedRow ? (selectedRow.getAttribute('data-has-sanction') === '1') : false;
         const currentScope = selectedRow ? (selectedRow.getAttribute('data-sanction-scope') || 'chat_mute') : 'chat_mute';
         const currentType = selectedRow ? (selectedRow.getAttribute('data-suspension-type') || 'temporary') : 'temporary';
-        const currentReason = selectedRow ? (selectedRow.getAttribute('data-suspension-reason') || 'reason_terms') : 'reason_terms';
-        const currentEndDate = selectedRow ? (selectedRow.getAttribute('data-end-date') || '') : '';
+        const currentReason = selectedRow && hasSanction ? (selectedRow.getAttribute('data-suspension-reason') || '') : '';
+        const currentEndDate = selectedRow && hasSanction ? (selectedRow.getAttribute('data-end-date') || '') : '';
 
         const resultDialog = await window.dialogSystem.show('manageSanctionModal', {
             username: this.selectedUsername,
@@ -250,13 +251,18 @@ export class CanvasSanctionsController {
             return;
         }
 
+        if (!formData.suspension_reason) {
+            showMessage(typeof window.__ === 'function' ? window.__('err_select_suspension_reason') : 'Debes seleccionar una razón', 'error');
+            return;
+        }
+
         const payload = {
             canvas_id: this.canvasUuid || this.canvasId,
             target_user_id: this.selectedUserUuid || this.selectedUserId,
             is_suspended: '1',
             sanction_scope: formData.sanction_scope || 'chat_mute',
             suspension_type: formData.suspension_type || 'temporary',
-            suspension_reason: formData.suspension_reason || 'reason_terms',
+            suspension_reason: formData.suspension_reason,
             end_date: formData.suspension_type === 'temporary' ? (formData.end_date ? formData.end_date.replace('T', ' ') + ':00' : null) : null,
             password: password
         };

@@ -6,12 +6,11 @@ $reportsData = $adminService->getReportsData($_GET['q'] ?? null, (int)($_GET['pa
 
 extract($reportsData);
 
-$reasonLabels = [
-    'spam' => __('report_reason_spam'),
-    'offensive' => __('report_reason_offensive'),
-    'harassment' => __('report_reason_harassment'),
-    'other' => __('report_reason_other')
-];
+$sanctionReasons = \App\Core\Helpers\Utils::getSanctionReasons();
+$reasonLabels = [];
+foreach ($sanctionReasons['report_messages'] as $r) {
+    $reasonLabels[$r['key']] = __('report_reason_' . $r['key']);
+}
 
 $statusLabels = [
     'pending' => __('report_status_pending'),

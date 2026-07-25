@@ -13,19 +13,16 @@ if (!empty($statusData['redirect'])) {
 extract($statusData);
 $user = $targetUser;
 
-$predefinedSuspension = [
-    'reason_terms', 'reason_fake_info', 'reason_illegal', 'reason_fraud_use',
-    'reason_abuse', 'reason_prohibited_content', 'reason_ip_violation',
-    'reason_spam_bot', 'reason_security_breach', 'reason_unauthorized_commercial', 'reason_other'
-];
+$sanctionReasons = \App\Core\Helpers\Utils::getSanctionReasons();
+$predefinedSuspension = array_column($sanctionReasons['suspensions'], 'key');
 
 
 if ($user['suspension_reason']) {
     if (in_array($user['suspension_reason'], $predefinedSuspension)) {
         $initialState['suspensionReason'] = $user['suspension_reason'];
     } else {
-        $initialState['suspensionReason'] = 'reason_other';
-        $initialState['customSuspensionReason'] = $user['suspension_reason'];
+        $initialState['suspensionReason'] = '';
+        $initialState['customSuspensionReason'] = '';
     }
 }
 
@@ -62,24 +59,22 @@ if (!empty($initialState['endDate'])) {
 }
 
 $vis = [
-    'suspension_reason' => 'disabled', 'suspension_custom' => 'disabled', 'suspension_type' => 'disabled',
-    'suspension_duration' => 'disabled', 'suspension_date' => 'disabled', 'notify_user_suspension' => 'disabled'
+    'suspension_reason' => 'disabled', 'suspension_type' => 'disabled',
+    'suspension_duration' => 'disabled', 'suspension_date' => 'disabled'
 ];
 
 if ($initialState['isSuspended'] === '1') {
     $vis['suspension_reason'] = '';
     if ($initialState['suspensionReason'] !== '') {
-        if ($initialState['suspensionReason'] === 'reason_other') $vis['suspension_custom'] = '';
         $vis['suspension_type'] = '';
         if ($initialState['suspendedType'] === DB::SUSPENSION_TEMP) {
             $vis['suspension_duration'] = '';
             if ($initialState['suspensionDuration'] === 'custom') $vis['suspension_date'] = '';
         }
     }
-    $vis['notify_user_suspension'] = '';
 }
 ?>
-<div class="view-content" data-user-id="<?php echo $targetUserId; ?>" data-is-suspended="<?php echo htmlspecialchars($initialState['isSuspended']); ?>" data-suspension-reason="<?php echo htmlspecialchars($initialState['suspensionReason']); ?>" data-custom-suspension-reason="<?php echo htmlspecialchars($initialState['customSuspensionReason']); ?>" data-suspended-type="<?php echo htmlspecialchars($initialState['suspendedType']); ?>" data-suspension-duration="<?php echo htmlspecialchars($initialState['suspensionDuration']); ?>" data-end-date="<?php echo htmlspecialchars($initialState['endDate']); ?>" data-notify-user-suspension="<?php echo $initialState['notifyUserSuspension'] ? '1' : '0'; ?>">
+<div class="view-content" data-user-id="<?php echo $targetUserId; ?>" data-is-suspended="<?php echo htmlspecialchars($initialState['isSuspended']); ?>" data-suspension-reason="<?php echo htmlspecialchars($initialState['suspensionReason']); ?>" data-custom-suspension-reason="<?php echo htmlspecialchars($initialState['customSuspensionReason']); ?>" data-suspended-type="<?php echo htmlspecialchars($initialState['suspendedType']); ?>" data-suspension-duration="<?php echo htmlspecialchars($initialState['suspensionDuration']); ?>" data-end-date="<?php echo htmlspecialchars($initialState['endDate']); ?>">
     
     <div class="component-top">
         <div class="component-top-left">
@@ -189,50 +184,12 @@ if ($initialState['isSuspended'] === '1') {
                                                              </div>
 
                                                              <div class="component-menu-list component-menu-list--scrollable" data-ref="suspension-reason-list">
-                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_terms') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_terms">
-                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
-                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_terms'); ?></span></div>
-                                                                 </div>
-                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_fake_info') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_fake_info">
-                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">person_off</span></div>
-                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_fake_info'); ?></span></div>
-                                                                 </div>
-                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_illegal') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_illegal">
-                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">local_police</span></div>
-                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_illegal'); ?></span></div>
-                                                                 </div>
-                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_fraud_use') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_fraud_use">
-                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">warning</span></div>
-                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_fraud_use'); ?></span></div>
-                                                                 </div>
-                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_abuse') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_abuse">
-                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
-                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_abuse'); ?></span></div>
-                                                                 </div>
-                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_prohibited_content') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_prohibited_content">
-                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">report</span></div>
-                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_prohibited_content'); ?></span></div>
-                                                                 </div>
-                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_ip_violation') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_ip_violation">
-                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">copyright</span></div>
-                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_ip_violation'); ?></span></div>
-                                                                 </div>
-                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_spam_bot') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_spam_bot">
-                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">smart_toy</span></div>
-                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_spam_bot'); ?></span></div>
-                                                                 </div>
-                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_security_breach') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_security_breach">
-                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">security</span></div>
-                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_security_breach'); ?></span></div>
-                                                                 </div>
-                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_unauthorized_commercial') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_unauthorized_commercial">
-                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">storefront</span></div>
-                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_unauthorized_commercial'); ?></span></div>
-                                                                 </div>
-                                                                 <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === 'reason_other') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_other">
-                                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
-                                                                     <div class="component-menu-link-text"><span><?php echo __('reason_other'); ?></span></div>
-                                                                 </div>
+                                                                 <?php foreach ($sanctionReasons['suspensions'] as $r): ?>
+                                                                     <div class="component-menu-link <?php echo ($initialState['suspensionReason'] === $r['key']) ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionReason" data-value="<?php echo htmlspecialchars($r['key']); ?>">
+                                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($r['icon']); ?></span></div>
+                                                                         <div class="component-menu-link-text"><span><?php echo __($r['key']); ?></span></div>
+                                                                     </div>
+                                                                 <?php endforeach; ?>
                                                                  
                                                                  <div class="component-menu-empty" data-ref="suspension-reason-empty" hidden>
                                                                       <div class="component-menu-link disabled-interaction">
@@ -248,19 +205,7 @@ if ($initialState['isSuspended'] === '1') {
                                          </div>
                                      </div>
 
-                                     <div class="<?php echo $vis['suspension_custom']; ?>" data-ref="section-suspended-custom-reason">
-                                         <hr class="component-divider">
-                                         <div class="component-group-item component-group-item--stacked">
-                                             <div class="component-card__content component-card__content--full">
-                                                 <div class="component-card__text">
-                                                     <h2 class="component-card__title"><?php echo __('admin_custom_reason_suspension_title'); ?></h2>
-                                                     <div class="component-card__form-area">
-                                                         <textarea class="component-input-field" data-ref="inp_custom_suspension_reason" placeholder="<?php echo __('placeholder_suspension_reason'); ?>"><?php echo htmlspecialchars($initialState['customSuspensionReason'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
-                                                     </div>
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     </div>
+
 
                                      <div class="<?php echo $vis['suspension_type']; ?>" data-ref="section-suspended-type">
                                          <hr class="component-divider">
@@ -368,25 +313,7 @@ if ($initialState['isSuspended'] === '1') {
 
                         </div>
                         
-                        <div class="component-card--grouped <?php echo $vis['notify_user_suspension']; ?>" data-ref="section-notify-user-suspension">
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                                        <span class="material-symbols-rounded">forward_to_inbox</span>
-                                    </div>
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_notify_suspension_title'); ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_notify_suspension_desc'); ?></p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" data-ref="chk_notify_user_suspension" <?php echo ($initialState['notifyUserSuspension']) ? 'checked' : ''; ?>>
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
+
 
                     </div>
 

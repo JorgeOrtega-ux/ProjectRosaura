@@ -228,15 +228,8 @@ class AdminMessagesReportsController {
                     return; // Admin se arrepintió o cerró el modal
                 }
 
-                if (dialogRes.report_reason === 'other') {
-                    deleteReason = dialogRes.report_other_text || 'Otro motivo';
-                } else if (dialogRes.report_reason) {
-                    const reasonLabels = {
-                        spam: 'Spam / Publicidad no deseada',
-                        offensive: 'Contenido ofensivo o inapropiado',
-                        harassment: 'Acoso o discriminación'
-                    };
-                    deleteReason = reasonLabels[dialogRes.report_reason] || dialogRes.report_reason;
+                if (dialogRes.report_reason) {
+                    deleteReason = window.__('report_reason_' + dialogRes.report_reason);
                 } else {
                     deleteReason = 'Moderación administrativa';
                 }

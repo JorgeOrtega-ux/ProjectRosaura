@@ -370,6 +370,11 @@ class ChatServices
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 
+        $validReasons = array_column(\App\Core\Helpers\Utils::getSanctionReasons()['report_messages'], 'key');
+        if (!in_array($reason, $validReasons)) {
+            return ['success' => false, 'message' => __('validation.invalid_reason'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
+        }
+
         $stmt = $this->pdo->prepare("SELECT id FROM " . DB::TBL_CANVAS_CHAT_MESSAGES . " WHERE id = ?");
         $stmt->execute([$messageId]);
         if (!$stmt->fetch()) {

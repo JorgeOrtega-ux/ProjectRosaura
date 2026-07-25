@@ -818,119 +818,87 @@ export const DialogTemplates = {
     },
 
     deleteMessageDialog: {
-        build: () => `
-            <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header">
-                <h2 class="component-modal-title">${__('admin_msg_delete_title') || 'Eliminar Mensaje'}</h2>
-                <p class="component-modal-desc">${__('admin_msg_delete_desc') || 'Selecciona el motivo de moderación para eliminar este mensaje.'}</p>
-            </div>
-            <div class="component-modal-body">
-                <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                    <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason">
-                        <span class="material-symbols-rounded" data-ref="report_trigger_icon">delete</span>
-                        <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder') || 'Selecciona un motivo...'}</span>
-                        <span class="material-symbols-rounded">expand_more</span>
-                    </div>
-                    <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleReportReason">
-                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                            <div class="pill-container"><div class="drag-handle"></div></div>
-                            <div class="component-menu-list component-menu-list--scrollable">
-                                <div class="component-menu-link" data-action="selectReportReason" data-value="spam" data-icon="campaign" data-text="${__('report_reason_spam') || 'Spam / Publicidad no deseada'}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">campaign</span></div>
-                                    <div class="component-menu-link-text"><span>${__('report_reason_spam') || 'Spam / Publicidad no deseada'}</span></div>
-                                </div>
-                                <div class="component-menu-link" data-action="selectReportReason" data-value="offensive" data-icon="warning" data-text="${__('report_reason_offensive') || 'Contenido ofensivo o inapropiado'}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">warning</span></div>
-                                    <div class="component-menu-link-text"><span>${__('report_reason_offensive') || 'Contenido ofensivo o inapropiado'}</span></div>
-                                </div>
-                                <div class="component-menu-link" data-action="selectReportReason" data-value="harassment" data-icon="front_hand" data-text="${__('report_reason_harassment') || 'Acoso o discriminación'}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">front_hand</span></div>
-                                    <div class="component-menu-link-text"><span>${__('report_reason_harassment') || 'Acoso o discriminación'}</span></div>
-                                </div>
-                                <div class="component-menu-link" data-action="selectReportReason" data-value="other" data-icon="more_horiz" data-text="${__('report_reason_other') || 'Otro motivo'}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
-                                    <div class="component-menu-link-text"><span>${__('report_reason_other') || 'Otro motivo'}</span></div>
+        build: () => {
+            const reasons = window.APP_SANCTION_REASONS ? window.APP_SANCTION_REASONS.delete_messages : [];
+            const reasonsHtml = reasons.map(r => `
+                <div class="component-menu-link" data-action="selectReportReason" data-value="${r.key}" data-icon="${r.icon}" data-text="${__('report_reason_' + r.key) || r.key}">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">${r.icon}</span></div>
+                    <div class="component-menu-link-text"><span>${__('report_reason_' + r.key) || r.key}</span></div>
+                </div>
+            `).join('');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${__('admin_msg_delete_title') || 'Eliminar Mensaje'}</h2>
+                    <p class="component-modal-desc">${__('admin_msg_delete_desc') || 'Selecciona el motivo de moderación para eliminar este mensaje.'}</p>
+                </div>
+                <div class="component-modal-body">
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason">
+                            <span class="material-symbols-rounded" data-ref="report_trigger_icon">delete</span>
+                            <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder') || 'Selecciona un motivo...'}</span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleReportReason">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    ${reasonsHtml}
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <input type="hidden" name="report_reason" id="report_reason" data-ref="report_reason" value="">
                 </div>
-                <input type="hidden" name="report_reason" id="report_reason" data-ref="report_reason" value="">
-                <div class="component-input-group disabled" id="report_other_group">
-                    <textarea id="report_other_textarea" data-ref="report_other_text" class="component-input-field" placeholder="${__('report_other_placeholder') || 'Escribe el motivo detallado...'}" rows="3"></textarea>
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel') || 'Cancelar'}</button>
+                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_delete') || 'Eliminar'}</button>
                 </div>
-            </div>
-            <div class="component-modal-actions">
-                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel') || 'Cancelar'}</button>
-                <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_delete') || 'Eliminar'}</button>
-            </div>
-        `
+            `;
+        }
     },
 
     reportMessageDialog: {
-        build: () => `
-            <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header">
-                <h2 class="component-modal-title">${__('report_title')}</h2>
-                <p class="component-modal-desc">${__('report_desc')}</p>
-            </div>
-            <div class="component-modal-body">
-                <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                    <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason">
-                        <span class="material-symbols-rounded" data-ref="report_trigger_icon">report</span>
-                        <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder')}</span>
-                        <span class="material-symbols-rounded">expand_more</span>
-                    </div>
-                    <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleReportReason">
-                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                            <div class="pill-container"><div class="drag-handle"></div></div>
-                            <div class="component-menu-list component-menu-list--scrollable">
-                                <div class="component-menu-link" data-action="selectReportReason" data-value="spam" data-icon="campaign" data-text="${__('report_reason_spam')}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">campaign</span></div>
-                                    <div class="component-menu-link-text"><span>${__('report_reason_spam')}</span></div>
-                                </div>
-                                <div class="component-menu-link" data-action="selectReportReason" data-value="offensive" data-icon="warning" data-text="${__('report_reason_offensive')}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">warning</span></div>
-                                    <div class="component-menu-link-text"><span>${__('report_reason_offensive')}</span></div>
-                                </div>
-                                <div class="component-menu-link" data-action="selectReportReason" data-value="harassment" data-icon="front_hand" data-text="${__('report_reason_harassment')}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">front_hand</span></div>
-                                    <div class="component-menu-link-text"><span>${__('report_reason_harassment')}</span></div>
-                                </div>
-                                <div class="component-menu-link" data-action="selectReportReason" data-value="hate_speech" data-icon="gavel" data-text="${__('report_reason_hate_speech')}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
-                                    <div class="component-menu-link-text"><span>${__('report_reason_hate_speech')}</span></div>
-                                </div>
-                                <div class="component-menu-link" data-action="selectReportReason" data-value="violence" data-icon="dangerous" data-text="${__('report_reason_violence')}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">dangerous</span></div>
-                                    <div class="component-menu-link-text"><span>${__('report_reason_violence')}</span></div>
-                                </div>
-                                <div class="component-menu-link" data-action="selectReportReason" data-value="misinformation" data-icon="info" data-text="${__('report_reason_misinformation')}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">info</span></div>
-                                    <div class="component-menu-link-text"><span>${__('report_reason_misinformation')}</span></div>
-                                </div>
-                                <div class="component-menu-link" data-action="selectReportReason" data-value="privacy" data-icon="privacy_tip" data-text="${__('report_reason_privacy')}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">privacy_tip</span></div>
-                                    <div class="component-menu-link-text"><span>${__('report_reason_privacy')}</span></div>
-                                </div>
-                                <div class="component-menu-link" data-action="selectReportReason" data-value="other" data-icon="more_horiz" data-text="${__('report_reason_other')}">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
-                                    <div class="component-menu-link-text"><span>${__('report_reason_other')}</span></div>
+        build: () => {
+            const reasons = window.APP_SANCTION_REASONS ? window.APP_SANCTION_REASONS.report_messages : [];
+            const reasonsHtml = reasons.map(r => `
+                <div class="component-menu-link" data-action="selectReportReason" data-value="${r.key}" data-icon="${r.icon}" data-text="${__('report_reason_' + r.key)}">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">${r.icon}</span></div>
+                    <div class="component-menu-link-text"><span>${__('report_reason_' + r.key)}</span></div>
+                </div>
+            `).join('');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${__('report_title')}</h2>
+                    <p class="component-modal-desc">${__('report_desc')}</p>
+                </div>
+                <div class="component-modal-body">
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason">
+                            <span class="material-symbols-rounded" data-ref="report_trigger_icon">report</span>
+                            <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder')}</span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleReportReason">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    ${reasonsHtml}
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <input type="hidden" name="report_reason" id="report_reason" data-ref="report_reason" value="">
                 </div>
-                <input type="hidden" name="report_reason" id="report_reason" data-ref="report_reason" value="">
-                <div class="component-input-group disabled" id="report_other_group">
-                    <textarea id="report_other_textarea" data-ref="report_other_text" class="component-input-field" placeholder="${__('report_other_placeholder')}" rows="3"></textarea>
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_report')}</button>
                 </div>
-            </div>
-            <div class="component-modal-actions">
-                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_report')}</button>
-            </div>
-        `
+            `;
+        }
     },
 
     downgradeCanvasModal: {
@@ -1132,7 +1100,7 @@ export const DialogTemplates = {
             const username = data.username || '';
             const sanctionScope = data.sanctionScope || 'chat_mute';
             const suspensionType = data.suspensionType || 'temporary';
-            const suspensionReason = data.suspensionReason || 'reason_terms';
+            const suspensionReason = data.suspensionReason || '';
             const endDate = data.endDate ? data.endDate.replace(' ', 'T').substring(0, 16) : '';
 
             const scopes = [
@@ -1145,23 +1113,15 @@ export const DialogTemplates = {
                 { key: 'permanent', label: __('suspension_perm') || 'Permanente', icon: 'all_inclusive' }
             ];
 
-            const reasons = [
-                { key: 'reason_terms', label: __('reason_terms') || 'Términos de servicio', icon: 'gavel' },
-                { key: 'reason_fake_info', label: __('reason_fake_info') || 'Información falsa', icon: 'info' },
-                { key: 'reason_illegal', label: __('reason_illegal') || 'Contenido ilegal', icon: 'gavel' },
-                { key: 'reason_fraud_use', label: __('reason_fraud_use') || 'Uso fraudulento', icon: 'credit_card' },
-                { key: 'reason_abuse', label: __('reason_abuse') || 'Abuso o acoso', icon: 'front_hand' },
-                { key: 'reason_prohibited_content', label: __('reason_prohibited_content') || 'Contenido prohibido', icon: 'report' },
-                { key: 'reason_ip_violation', label: __('reason_ip_violation') || 'Violación de propiedad intelectual', icon: 'copyright' },
-                { key: 'reason_spam_bot', label: __('reason_spam_bot') || 'Spam o Bot', icon: 'smart_toy' },
-                { key: 'reason_security_breach', label: __('reason_security_breach') || 'Brecha de seguridad', icon: 'security' },
-                { key: 'reason_unauthorized_commercial', label: __('reason_unauthorized_commercial') || 'Comercio no autorizado', icon: 'storefront' },
-                { key: 'reason_other', label: __('reason_other') || 'Otro motivo', icon: 'more_horiz' }
-            ];
+            const reasons = window.APP_SANCTION_REASONS ? window.APP_SANCTION_REASONS.suspensions : [];
 
             const activeScope = scopes.find(s => s.key === sanctionScope) || scopes[0];
             const activeType = types.find(t => t.key === suspensionType) || types[0];
-            const activeReason = reasons.find(r => r.key === suspensionReason) || reasons[0];
+            
+            const activeReason = reasons.find(r => r.key === suspensionReason);
+            const activeReasonKey = activeReason ? activeReason.key : '';
+            const activeReasonLabel = activeReason ? (__(activeReason.key) || activeReason.key) : (__('lbl_select_suspension_reason') || 'Seleccionar motivo...');
+            const activeReasonIcon = activeReason ? activeReason.icon : 'gavel';
 
             const scopeOptionsHtml = scopes.map(s => `
                 <div class="component-menu-link ${s.key === activeScope.key ? 'active' : ''}" data-action="selectSanctionDropdownOption" data-target-input="sanction_scope" data-value="${s.key}" data-icon="${s.icon}" data-text="${s.label}">
@@ -1177,12 +1137,15 @@ export const DialogTemplates = {
                 </div>
             `).join('');
 
-            const reasonOptionsHtml = reasons.map(r => `
-                <div class="component-menu-link ${r.key === activeReason.key ? 'active' : ''}" data-action="selectSanctionDropdownOption" data-target-input="suspension_reason" data-value="${r.key}" data-icon="${r.icon}" data-text="${r.label}">
-                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">${r.icon}</span></div>
-                    <div class="component-menu-link-text"><span>${r.label}</span></div>
-                </div>
-            `).join('');
+            const reasonOptionsHtml = reasons.map(r => {
+                const label = __(r.key) || r.key;
+                return `
+                    <div class="component-menu-link ${r.key === activeReasonKey ? 'active' : ''}" data-action="selectSanctionDropdownOption" data-target-input="suspension_reason" data-value="${r.key}" data-icon="${r.icon}" data-text="${label}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${r.icon}</span></div>
+                        <div class="component-menu-link-text"><span>${label}</span></div>
+                    </div>
+                `;
+            }).join('');
 
             const endDateDisplay = endDate ? endDate.replace('T', ' ') : (__('lbl_select_expiration_date') || 'Seleccionar fecha de expiración');
 
@@ -1232,8 +1195,8 @@ export const DialogTemplates = {
                     <!-- Motivo -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full" style="margin-bottom: 12px;">
                         <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionReason">
-                            <span class="material-symbols-rounded" data-ref="suspension_reason_trigger_icon">${activeReason.icon}</span>
-                            <span class="component-dropdown-text" data-ref="suspension_reason_trigger_text">${activeReason.label}</span>
+                            <span class="material-symbols-rounded" data-ref="suspension_reason_trigger_icon">${activeReasonIcon}</span>
+                            <span class="component-dropdown-text" data-ref="suspension_reason_trigger_text">${activeReasonLabel}</span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleSuspensionReason">
@@ -1245,7 +1208,7 @@ export const DialogTemplates = {
                             </div>
                         </div>
                     </div>
-                    <input type="hidden" name="suspension_reason" value="${activeReason.key}">
+                    <input type="hidden" name="suspension_reason" value="${activeReasonKey}">
 
                     <!-- Fecha de Expiración (moduleCalendar) -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full modal-end-date-group" style="margin-bottom: 12px; display: ${activeType.key === 'temporary' ? 'block' : 'none'};">

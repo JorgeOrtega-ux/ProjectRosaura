@@ -155,6 +155,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         window.AppServerConfig = <?php echo isset($serverConfig) && !empty($serverConfig) ? json_encode($serverConfig) : '{}'; ?>;
         window.AppTurnstileSiteKey = "<?php echo \App\Core\Helpers\EnvLoader::get('TURNSTILE_SITE_KEY', ''); ?>";
         window.AppTranslations = <?php echo json_encode(\App\Core\System\Translator::getAll()); ?>;
+        window.APP_SANCTION_REASONS = <?php echo json_encode(\App\Core\Helpers\Utils::getSanctionReasons()); ?>;
         window.APP_PALETTES = <?php echo $palettesJson; ?>;
         window.APP_CUSTOM_PALETTES = <?php echo $customPalettesJson; ?>;
         window.activeUserId = <?php echo isset($_SESSION['active_account']) ? json_encode((string)$_SESSION['active_account']) : 'null'; ?>;

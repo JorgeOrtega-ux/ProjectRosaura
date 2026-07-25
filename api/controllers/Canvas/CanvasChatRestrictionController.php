@@ -97,6 +97,11 @@ class CanvasChatRestrictionController {
 
         try {
             if ($isSuspended === '1') {
+                $validReasons = array_column(\App\Core\Helpers\Utils::getSanctionReasons()['suspensions'], 'key');
+                if (!in_array($suspensionReason, $validReasons)) {
+                    return ['status' => 'error', 'message' => __('validation.invalid_reason')];
+                }
+
                 // If it is a canvas ban, kick the member
                 if ($sanctionScope === 'canvas_ban') {
                     $canvasRepo = new \App\Core\Repositories\CanvasRepository(new DatabaseManager(), new \App\Config\Search\TypesenseManager(), new \App\Config\Database\RedisCache());

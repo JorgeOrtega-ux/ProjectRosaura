@@ -5,6 +5,7 @@ use App\Core\Interfaces\SessionManagerInterface;
 class Utils {
     private static $s3Client = null;
     private static $canvasSizes = null;
+    private static $sanctionReasons = null;
 
     public static function enforceIpRateLimit(string $actionKey, int $maxRequests = 60, int $windowSeconds = 60, bool $isJsonError = false): void {
         try {
@@ -56,6 +57,53 @@ class Utils {
             '64x64' => ['label' => '64x64', 'icon' => 'crop_square']
         ];
         return self::$canvasSizes;
+    }
+
+    public static function getSanctionReasons(): array {
+        if (self::$sanctionReasons !== null) {
+            return self::$sanctionReasons;
+        }
+
+        $path = defined('ROOT_PATH') ? ROOT_PATH . '/config/reasons.json' : dirname(__DIR__, 3) . '/config/reasons.json';
+        if (file_exists($path)) {
+            $json = file_get_contents($path);
+            $data = json_decode($json, true);
+            if (is_array($data)) {
+                self::$sanctionReasons = $data;
+                return self::$sanctionReasons;
+            }
+        }
+
+        // Fallback robust reasons in case JSON file is missing or corrupted
+        self::$sanctionReasons = [
+            'suspensions' => [
+                ['key' => 'reason_terms', 'icon' => 'gavel', 'default_duration' => 7],
+                ['key' => 'reason_fake_info', 'icon' => 'info', 'default_duration' => 30],
+                ['key' => 'reason_illegal', 'icon' => 'gavel', 'default_duration' => 30],
+                ['key' => 'reason_fraud_use', 'icon' => 'credit_card', 'default_duration' => 14],
+                ['key' => 'reason_abuse', 'icon' => 'front_hand', 'default_duration' => 3],
+                ['key' => 'reason_prohibited_content', 'icon' => 'report', 'default_duration' => 7],
+                ['key' => 'reason_ip_violation', 'icon' => 'copyright', 'default_duration' => 14],
+                ['key' => 'reason_spam_bot', 'icon' => 'smart_toy', 'default_duration' => 7],
+                ['key' => 'reason_security_breach', 'icon' => 'security', 'default_duration' => 30],
+                ['key' => 'reason_unauthorized_commercial', 'icon' => 'storefront', 'default_duration' => 14]
+            ],
+            'report_messages' => [
+                ['key' => 'spam', 'icon' => 'campaign'],
+                ['key' => 'offensive', 'icon' => 'warning'],
+                ['key' => 'harassment', 'icon' => 'front_hand'],
+                ['key' => 'hate_speech', 'icon' => 'gavel'],
+                ['key' => 'violence', 'icon' => 'dangerous'],
+                ['key' => 'misinformation', 'icon' => 'info'],
+                ['key' => 'privacy', 'icon' => 'privacy_tip']
+            ],
+            'delete_messages' => [
+                ['key' => 'spam', 'icon' => 'campaign'],
+                ['key' => 'offensive', 'icon' => 'warning'],
+                ['key' => 'harassment', 'icon' => 'front_hand']
+            ]
+        ];
+        return self::$sanctionReasons;
     }
 
     public static function isProgressiveLoadRequired(string $size): bool {

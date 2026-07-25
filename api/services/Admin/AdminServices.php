@@ -546,7 +546,10 @@ class AdminServices {
             $rawSuspensionReason = $data['suspension_reason'] ?? null;
             $dbSuspensionReason = Utils::sanitizeText($rawSuspensionReason);
 
-            if ($dbSuspensionReason && mb_strlen($dbSuspensionReason) > 500) return ['success' => false, 'message' => __('validation.reason_too_long')];
+            $validReasons = array_column(Utils::getSanctionReasons()['suspensions'], 'key');
+            if (!in_array($dbSuspensionReason, $validReasons)) {
+                return ['success' => false, 'message' => __('validation.invalid_reason')];
+            }
             
             if ($dbSuspensionType === DB::SUSPENSION_TEMP && !empty($data['end_date'])) {
                 $format = 'Y-m-d H:i:s';

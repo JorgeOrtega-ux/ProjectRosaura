@@ -1210,6 +1210,7 @@
     "table_sender": "Remitente",
     "validation.invalid_color_type": "Tipo de color no válido.",
     "validation.invalid_data": "Los datos enviados no son válidos.",
+    "validation.invalid_reason": "El motivo seleccionado no es válido.",
     "premium": "Plan Superior",
     "msg_role_updated": "Rol actualizado correctamente.",
     "validation.missing_fields": "Por favor completa todos los campos requeridos.",

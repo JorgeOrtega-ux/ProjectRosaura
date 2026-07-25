@@ -13,18 +13,17 @@ class AdminStatusEditController {
         this.state = {
             isSuspended: '0', 
             suspensionReason: '', 
-            customSuspensionReason: '',
             suspendedType: 'temporary',
             suspensionDuration: '7',
             endDate: '',
             notifyUserSuspension: true
         };
-        this.reasonDurations = {
-            'reason_terms': 7, 'reason_fake_info': 30, 'reason_illegal': 30,
-            'reason_fraud_use': 14, 'reason_abuse': 3, 'reason_prohibited_content': 7,
-            'reason_ip_violation': 14, 'reason_spam_bot': 7, 'reason_security_breach': 30,
-            'reason_unauthorized_commercial': 14, 'reason_other': 1 
-        };
+        this.reasonDurations = {};
+        if (window.APP_SANCTION_REASONS && window.APP_SANCTION_REASONS.suspensions) {
+            window.APP_SANCTION_REASONS.suspensions.forEach(r => {
+                this.reasonDurations[r.key] = r.default_duration;
+            });
+        }
         this.defaultTexts = {
             suspensionReason: '',
             endDate: ''
@@ -72,16 +71,13 @@ class AdminStatusEditController {
         this.state = {
             isSuspended: viewContent.getAttribute('data-is-suspended') || '0',
             suspensionReason: viewContent.getAttribute('data-suspension-reason') || '',
-            customSuspensionReason: viewContent.getAttribute('data-custom-suspension-reason') || '',
             suspendedType: viewContent.getAttribute('data-suspended-type') || 'temporary',
             suspensionDuration: viewContent.getAttribute('data-suspension-duration') || '7',
             endDate: viewContent.getAttribute('data-end-date') || '',
             notifyUserSuspension: viewContent.getAttribute('data-notify-user-suspension') !== '0'
         };
         this.initialState = Object.assign({}, this.state);
-        const inpSuspCustom = document.querySelector('[data-ref="inp_custom_suspension_reason"]');
         const chkNotifySuspension = document.querySelector('[data-ref="chk_notify_user_suspension"]');
-        if (inpSuspCustom) inpSuspCustom.value = this.state.customSuspensionReason || '';
         if (chkNotifySuspension) chkNotifySuspension.checked = this.state.notifyUserSuspension;
         const reasonEl = document.querySelector('[data-ref="admin-suspensionReason-text"]');
         if (reasonEl) this.defaultTexts.suspensionReason = reasonEl.textContent.trim();
@@ -143,11 +139,7 @@ class AdminStatusEditController {
         if (!window.location.pathname.includes('/admin/user-moderation')) return;
         const ref = e.target.getAttribute('data-ref');
         if (!ref) return;
-        if (ref === 'inp_custom_suspension_reason') {
-            this.state.customSuspensionReason = e.target.value;
-            this.checkForChanges(); 
-            this.renderUI();
-        } else if (ref === 'suspension-reason-search') {
+        if (ref === 'suspension-reason-search') {
             const query = e.target.value.toLowerCase().trim();
             const list = document.querySelector('[data-ref="suspension-reason-list"]');
             const emptyState = document.querySelector('[data-ref="suspension-reason-empty"]');
@@ -233,18 +225,16 @@ class AdminStatusEditController {
     renderUI() {
         const s = this.state;
         const secSuspReason = document.querySelector('[data-ref="section-suspended-reason"]');
-        const secSuspCustom = document.querySelector('[data-ref="section-suspended-custom-reason"]');
         const secSuspType = document.querySelector('[data-ref="section-suspended-type"]');
         const secSuspDuration = document.querySelector('[data-ref="section-suspended-duration"]');
         const secSuspDate = document.querySelector('[data-ref="section-suspended-date"]');
         const secNotifyUserSuspension = document.querySelector('[data-ref="section-notify-user-suspension"]');
-        [secSuspReason, secSuspCustom, secSuspType, secSuspDuration, secSuspDate, secNotifyUserSuspension].forEach(el => {
+        [secSuspReason, secSuspType, secSuspDuration, secSuspDate, secNotifyUserSuspension].forEach(el => {
             if (el) el.classList.add('disabled');
         });
         if (s.isSuspended === '1') {
             if (secSuspReason) secSuspReason.classList.remove('disabled');
             if (s.suspensionReason !== '') {
-                if (s.suspensionReason === 'reason_other' && secSuspCustom) secSuspCustom.classList.remove('disabled');
                 if (secSuspType) secSuspType.classList.remove('disabled');
                 if (s.suspendedType === 'temporary') {
                     if (secSuspDuration) secSuspDuration.classList.remove('disabled');
@@ -279,9 +269,6 @@ class AdminStatusEditController {
             if (!this.state.suspensionReason) {
                 showMessage(typeof window.__ === 'function' ? window.__('err_select_suspension_reason') : 'Debes seleccionar una razón', 'error'); return;
             }
-            if (this.state.suspensionReason === 'reason_other' && !this.state.customSuspensionReason.trim()) {
-                showMessage(typeof window.__ === 'function' ? window.__('err_specify_suspension_reason') : 'Debes especificar el motivo', 'error'); return;
-            }
             if (this.state.suspendedType === 'temporary' && !this.state.endDate) {
                 showMessage(typeof window.__ === 'function' ? window.__('err_select_end_date') : 'Debes seleccionar una fecha', 'error'); return;
             }
@@ -295,7 +282,7 @@ class AdminStatusEditController {
             target_user_id: this.targetUserId,
             is_suspended: this.state.isSuspended,
             suspension_type: this.state.isSuspended === '1' ? this.state.suspendedType : null,
-            suspension_reason: this.state.isSuspended === '1' ? (this.state.suspensionReason === 'reason_other' ? this.state.customSuspensionReason : this.state.suspensionReason) : null,
+            suspension_reason: this.state.isSuspended === '1' ? this.state.suspensionReason : null,
             end_date: (this.state.isSuspended === '1' && this.state.suspendedType === 'temporary') ? this.formatDateForDB(this.state.endDate) : null,
             notify_user: this.state.notifyUserSuspension,
             password: password
