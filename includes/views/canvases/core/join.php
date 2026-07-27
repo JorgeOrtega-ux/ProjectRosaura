@@ -6,7 +6,7 @@
         <div class="component-top-right">
             <button type="submit" form="form-join-canvas" id="btn-join-canvas" class="component-button component-button--h40" data-action="joinCanvas">
                 <span class="material-symbols-rounded">login</span>
-                <span><?php echo __('btn_join'); ?></span>
+                <span><?php echo __('btn_accept'); ?></span>
             </button>
         </div>
     </div>
@@ -32,18 +32,12 @@
                     </form>
                 </div>
                 <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--wrap">
+                    <div class="component-group-item">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('lbl_terms_conditions'); ?></h2>
-                                <p class="component-card__description"><?php echo __('desc_join_terms'); ?></p>
+                                <p class="component-card__description"><?php echo __('join_accept_rules_desc'); ?></p>
                             </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <label class="component-toggle-switch">
-                                <input type="checkbox" id="join-terms-checkbox" name="terms_accepted" required form="form-join-canvas">
-                                <span class="component-toggle-slider"></span>
-                            </label>
                         </div>
                     </div>
                 </div>

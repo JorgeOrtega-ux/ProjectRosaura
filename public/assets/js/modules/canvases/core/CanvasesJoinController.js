@@ -61,12 +61,6 @@ class CanvasesJoinController {
             return;
         }
 
-        const termsCheckbox = document.getElementById('join-terms-checkbox');
-        if (termsCheckbox && !termsCheckbox.checked) {
-            showMessage(__('err_accept_terms'), 'warning');
-            return;
-        }
-
         const code = this.input.value.trim();
         if (code.length < 5) {
             showMessage(__('err_invalid_code'), 'error');
@@ -80,10 +74,8 @@ class CanvasesJoinController {
         btn.innerHTML = `<span class="material-symbols-rounded spin-icon">autorenew</span> ${__('lbl_validating')}`;
         btn.disabled = true;
 
-        const termsAccepted = termsCheckbox ? termsCheckbox.checked : false;
-
         try {
-            const response = await this.api.post('canvases.join_via_invite', { code: code, terms_accepted: termsAccepted });
+            const response = await this.api.post('canvases.join_via_invite', { code: code, terms_accepted: true });
             
             if (response && response.success) {
                 showMessage(response.message || __('msg_joined_successfully'), 'success');
