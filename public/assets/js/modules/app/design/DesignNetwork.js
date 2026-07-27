@@ -1304,8 +1304,7 @@ export const DesignNetwork = {
 
         if (window.dialogSystem) {
             const res = await window.dialogSystem.show('joinCanvasTerms');
-            if (!res.confirmed || !res.data.modal_join_terms) {
-                if (res.confirmed) showMessage(window.__('err_accept_terms'), 'warning');
+            if (!res.confirmed) {
                 return;
             }
         }

@@ -1,0 +1,90 @@
+Otra cosa no me gustan mucho los nombres de las owner tools como borrador, congelar, bloqueador ya que son muy simples, deben tener 2 o 3 palabras, tambien en lascards de home.php al clickar morevert de una card hay un link que se llama, view restart gallery, renombralo ya que los snapshots no son vinculados solo a reinicios,, luego si entras a un lienzo pero no tienes sesion y clickas en unirte te activara el modal de aceptar terminos, no tiene sentido, mejor elimina el boton y agrega otro badget abajo del de espectador que diga, Iniciar sesion para unirte o algo asi, ademasen el modal de aceptar terminos al tratar de unirte no me gusta que haya esto <div class="component-group-item component-group-item--wrap">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Aceptar reglas de la comunidad</h2>
+                                <p class="component-card__description">Reconozco las reglas de uso de lienzos privados</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" data-ref="modal_join_terms">
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>, no se si lo podamos eliminar y solo dejar el titulo y descrpipcion que ya tenemos y que al acepat pues te una y asi, , al igual en la seccion /join eliminariamos y remplazariamos por el mismo texto, osea en la descripcion pondras de que al unirte aceptas las reglas de la comunidad y asi, y que el btn diga de que, Aceptar
+
+
+
+falta una animacion skeleton especial para la seccion de /design ya que actualmente esta usando la basica
+
+
+
+
+
+
+
+
+
+
+proteccion contra uso abusivo de herramientas de deueños de lienzos (ya que cualquiera que tenga un lienzo puede usarlas y abusar saturando el servidor)
+
+al seleccionar el herramienta de proteger y seleccionar area y clcikar el btn de proteger saldra un modal que dice cancelar, desproteger y proteger, solo debe decir el de cancelar y el de proteger, no el de desproteger ya que para eso tenemos que al activar el tool proteccion se resalten todas las zonas protegidas y clickando sobre una de ellas se activa el modal, el cual debe ser otro modal pero que solo tenga el de cancelar y elmimiar poteccion, ademas resuelve ya que si clickamos dentro de una zona protegida si se activa el modal pero tambien como que se intenta activar el modoseleccion para proteger
+
+resuelve por que los btns de <button class="component-modal-close-btn"><span class="material-symbols-rounded">close</span></button>, dejaron de funcionar al clickarlos
+
+arregla que en el modal de join a trasmision en el item de <div class="component-form-box component-form-box--full">
+                    <div class="component-input-group">
+                        <input type="text" data-ref="live-join-code-modal" class="component-input-field" placeholder="ph_live_share_code" maxlength="9" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/(.{4})(.+)/, '$1-$2').slice(0, 9);">
+                        <label class="component-input-label">lbl_live_share_code</label>
+                    </div>
+                </div> se esta restringiendo el ancho ya que la clase padre si bien tiene width 100%, tiene un max width, que impide que cresca, antes de corregir eso corre un script para buscar que otros lugares usan esa clase para no romper nada
+
+                a bueno y en relacion al de desproteger zonas, el problema que hay es que al clickar sobre una zona protegida si se selecciona y activa el modal, pero solo se selecciona un pixel entonces quisiera que al clickar en lugar de activarse el modal se active el modo seleccion y podamos arrastrar y asi,como si estuvieramos protegiendo, y ya al volver a clickar en otra esquina se seleccione y en el btn de abajo diga eliminar proteccion y se active el modal, o bueno ya no se ya que tal que solo se selecciona un pixel protegido y todos los demas no lo estan, que tal que queria proteger y no desproteeger, no lose tu analiza
+
+
+
+
+
+
+                hay un bug donde al subir plantillas si se suben a la bd y asi, pero no se actualiza ahi en el ui, tengo que recargar para que me salga
+
+
+
+
+
+
+
+
+
+                en el modal que sale al inyectar o tratar de inyectar una plantilla sale de que asi title_confirm_action
+confirm_inject_template
+
+Costo: 25 tokens
+Saldo actual: 250 tokens (te quedarán 225), pero se me ase muy abrumador, quisiera que eso de tokes a gastar y cuantos te quedan vayan en la descricion de confirm_inject_template
+ como complemento aparte de la descripcion que ya iba ahi claro
+
+
+
+
+
+
+ en la seccion de admin dashboard tengo demasiadas cards de estadisticas, si bien son interereates, debemos buscar otra forma de mostrarlas o de ir cambiando o asi, ya que en el futuro seran mas tambien hay un problema y es que si en esa seccion la pantalla es pequeña por alguna razon la grafica no se vera completa o se mochara o asi,
+
+
+ aviso de cookies
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ al buscar algoen search hace como doble carga o nose

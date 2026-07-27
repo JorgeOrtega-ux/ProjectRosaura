@@ -733,6 +733,10 @@ html.dark-theme .component-top.shadow {
     gap: 12px;
 }
 
+.component-form-box.component-form-box--full {
+    max-width: 100%;
+}
+
 .component-form-header {
     display: flex;
     flex-direction: column;

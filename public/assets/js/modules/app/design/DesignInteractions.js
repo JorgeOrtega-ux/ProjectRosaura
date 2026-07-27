@@ -438,27 +438,23 @@ export const DesignInteractions = {
                 
                 if (this.interactionMode === 'owner_protecting' && (this.ownerEraserStep === 0 || this.ownerEraserStep === 2)) {
                     if (this.protectedPixels && this.protectedPixels.has(offset)) {
-                        this.ownerEraserBox = { x1: coords.x, y1: coords.y, x2: coords.x, y2: coords.y };
-                        this.ownerEraserStep = 2;
-                        this.ownerEraserStart = null;
-                        this.updateSelectionUI();
-                        this.requestRender();
 
                         if (window.dialogSystem) {
-                            window.dialogSystem.show('confirmProtectAreaModal', { count: 1 }).then(res => {
-                                const actStr = (typeof res === 'string') ? res : (res?.action || (res?.confirmed ? 'protect' : null));
-                                if (actStr === 'protect' || actStr === 'unprotect') {
-                                    this.executeOwnerProtectArea(actStr === 'protect');
-                                } else {
-                                    this.ownerEraserBox = null;
-                                    this.ownerEraserStep = 0;
-                                    this.updateSelectionUI();
-                                    this.requestRender();
+                            window.dialogSystem.show('confirmUnprotectAreaModal', { count: 1 }).then(res => {
+                                const actStr = (typeof res === 'string') ? res : (res?.action || null);
+                                if (actStr === 'unprotect') {
+                                    this.ownerEraserBox = { x1: coords.x, y1: coords.y, x2: coords.x, y2: coords.y };
+                                    this.ownerEraserStep = 2;
+                                    this.executeOwnerProtectArea(false);
                                 }
                             });
                         } else {
-                            const act = confirm("Esta zona está protegida. ¿Deseas desprotegerla? (Aceptar = Proteger, Cancelar = Desproteger)");
-                            this.executeOwnerProtectArea(act);
+                            const act = confirm(window.__('confirm_unprotect_pixel') || '¿Deseas eliminar la protección de este píxel?');
+                            if (act) {
+                                this.ownerEraserBox = { x1: coords.x, y1: coords.y, x2: coords.x, y2: coords.y };
+                                this.ownerEraserStep = 2;
+                                this.executeOwnerProtectArea(false);
+                            }
                         }
                         return;
                     }
@@ -1668,7 +1664,7 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-error)';
                     badgeEl.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
                 }
-                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>Borrador de Lienzo</span>`;
+                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>${window.__('badge_owner_eraser') || 'Borrador Administrativo'}</span>`;
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.toggleOwnerEraser();
@@ -1686,7 +1682,7 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-warning)';
                     badgeEl.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
                 }
-                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">ac_unit</span><span>${isToggledOn ? 'Descongelar Interactividad' : 'Congelar Interactividad'}</span>`;
+                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">ac_unit</span><span>${isToggledOn ? (window.__('badge_owner_unfreeze') || 'Descongelar Actividad') : (window.__('badge_owner_freeze') || 'Congelar Actividad')}</span>`;
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.toggleOwnerFreeze();
@@ -1704,7 +1700,7 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-success)';
                     badgeEl.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
                 }
-                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">admin_panel_settings</span><span>Protector de Zona</span>`;
+                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">admin_panel_settings</span><span>${window.__('badge_owner_protect') || 'Protección Administrativa'}</span>`;
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.toggleOwnerProtecting();

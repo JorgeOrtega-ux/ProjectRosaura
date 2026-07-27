@@ -781,30 +781,12 @@ export const DialogTemplates = {
                 <span class="material-symbols-rounded">gavel</span>
                 <div class="component-modal-header-text">
                     <h3 class="component-modal-title">${window.__('terms_and_conditions')}</h3>
-                    <p class="component-modal-desc">${window.__('please_accept_rules')}</p>
-                </div>
-            </div>
-            <div class="component-modal-body">
-                <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">${window.__('accept_community_rules')}</h2>
-                                <p class="component-card__description">${window.__('acknowledge_private_canvas_rules')}</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <label class="component-toggle-switch">
-                                <input type="checkbox" data-ref="modal_join_terms">
-                                <span class="component-toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
+                    <p class="component-modal-desc">${window.__('join_accept_rules_desc')}</p>
                 </div>
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--dark component-button--h40" data-modal-action="confirm">${window.__('join_canvas')}</button>
+                <button class="component-button component-button--dark component-button--h40" data-modal-action="confirm">${window.__('btn_accept')}</button>
             </div>
         `
     },
@@ -915,7 +897,8 @@ export const DialogTemplates = {
             const balance = data.balance || 0;
             const remaining = Math.max(0, balance - cost);
             const msgConfirm = __('confirm_inject_template');
-            const desc = `${msgConfirm}<br><br><span style="display:block;margin-top:8px;font-size:13px;opacity:0.9;"><strong>Costo:</strong> ${cost.toLocaleString()} tokens<br><strong>Saldo actual:</strong> ${balance.toLocaleString()} tokens (te quedarán ${remaining.toLocaleString()})</span>`;
+            const tokenInfo = `(${__('lbl_cost')}: ${cost.toLocaleString()} tokens · ${__('lbl_remaining_balance')}: ${remaining.toLocaleString()} tokens)`;
+            const desc = `${msgConfirm} ${tokenInfo}`;
             
             return DialogTemplates.confirmAction.build({
                 titleKey: 'title_confirm_action',
@@ -1034,12 +1017,11 @@ export const DialogTemplates = {
         build: (data = {}) => {
             const count = data.count || 0;
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
-            const titleStr = __('title_confirm_protect_area', [], 'Modificar protección de zona');
-            const descRaw = __('desc_confirm_protect_area', [], 'Estás a punto de modificar la protección administrativa para :count píxeles en esta zona.');
+            const titleStr = __('title_confirm_protect_area', [], 'Proteger zona');
+            const descRaw = __('desc_confirm_protect_area', [], 'Estás a punto de aplicar protección administrativa para :count píxeles en esta zona.');
             const descStr = descRaw.replace(':count', `<strong>${count}</strong>`);
             const btnCancel = __('btn_cancel', [], 'Cancelar');
             const btnProtect = __('btn_protect_area', [], 'Proteger Zona');
-            const btnUnprotect = __('btn_unprotect_area', [], 'Desproteger Zona');
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -1049,8 +1031,31 @@ export const DialogTemplates = {
                 </div>
                 <div class="component-modal-actions" style="display: flex; gap: 8px; justify-content: flex-end;">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--warning" data-modal-action="unprotect">${btnUnprotect}</button>
                     <button type="button" class="component-button component-button--h40 component-button--success" data-modal-action="protect">${btnProtect}</button>
+                </div>
+            `;
+        }
+    },
+
+    confirmUnprotectAreaModal: {
+        build: (data = {}) => {
+            const count = data.count || 0;
+            const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
+            const titleStr = __('title_confirm_unprotect_area', [], 'Eliminar protección de zona');
+            const descRaw = __('desc_confirm_unprotect_area', [], 'Estás a punto de eliminar la protección administrativa de :count píxeles en esta zona.');
+            const descStr = descRaw.replace(':count', `<strong>${count}</strong>`);
+            const btnCancel = __('btn_cancel', [], 'Cancelar');
+            const btnRemove = __('btn_remove_protection', [], 'Eliminar Protección');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${titleStr}</h2>
+                    <p class="component-modal-desc">${descStr}</p>
+                </div>
+                <div class="component-modal-actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--danger" data-modal-action="unprotect">${btnRemove}</button>
                 </div>
             `;
         }

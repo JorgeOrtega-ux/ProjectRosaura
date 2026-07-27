@@ -82,6 +82,7 @@ extract($designData);
                         <span><?php echo __('lbl_private_canvas'); ?></span>
                     </div>
                     
+                    <?php if (isset($_SESSION['active_account']) && $_SESSION['active_account']): ?>
                     <button class="component-button component-button--h34 <?php echo ($canvasApproval || $isSubscriptionLockedInit) ? 'disabled' : ''; ?>" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
                         <span class="material-symbols-rounded">group_add</span>
                         <?php echo __('btn_join'); ?>
@@ -91,6 +92,12 @@ extract($designData);
                         <span class="material-symbols-rounded">front_hand</span>
                         <?php echo __('btn_request_access'); ?>
                     </button>
+                    <?php else: ?>
+                    <div class="component-badge component-badge--warning" style="cursor: pointer;" data-nav="<?php echo APP_URL; ?>/login">
+                        <span class="material-symbols-rounded">login</span>
+                        <span><?php echo __('lbl_login_to_join'); ?></span>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="component-actions <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="design-tools-actions">

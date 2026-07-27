@@ -158,6 +158,11 @@ export class DialogSystem {
         if (!this.activeResolveFn) return; 
 
         const closeBtn = e.target.closest('.component-modal-close-btn');
+        if (closeBtn) {
+            this.closeCurrent(false);
+            return;
+        }
+
         const toggleModuleBtn = e.target.closest('[data-action="toggleModule"]');
         if (toggleModuleBtn) {
             const target = toggleModuleBtn.getAttribute('data-target');

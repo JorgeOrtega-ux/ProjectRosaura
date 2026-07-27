@@ -423,6 +423,7 @@ export const DesignTemplates = {
 
             if (response.success) {
                 showMessage(__('msg_template_uploaded'), 'success');
+                this.templatesLoaded = false;
                 await this.loadUserLibrary();
             } else {
                 showMessage(response.message, 'error');
@@ -539,6 +540,7 @@ export const DesignTemplates = {
                     }
                 }
 
+                this.templatesLoaded = false;
                 await this.loadUserLibrary();
             } else {
                 showMessage(response.message, 'error');

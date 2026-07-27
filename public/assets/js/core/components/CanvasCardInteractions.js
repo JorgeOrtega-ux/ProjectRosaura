@@ -181,11 +181,6 @@ export class CanvasCardInteractions {
         if (window.dialogSystem) {
             const res = await window.dialogSystem.show('joinCanvasTerms');
             if (!res || !res.confirmed) return;
-            
-            if (!res.data || !res.data.modal_join_terms) {
-                if (typeof showMessage === 'function') showMessage(window.__('err_accept_terms') || 'Debes aceptar los términos para unirte.', 'warning');
-                return;
-            }
         }
 
         if (typeof setButtonLoading === 'function') setButtonLoading(btn);
@@ -324,7 +319,7 @@ export class CanvasCardInteractions {
                         
                         <button type="button" class="component-menu-link" data-nav="${this.basePath}/design/s/${uuid}">
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('view_restart_gallery')}</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('view_snapshots_gallery')}</span></div>
                         </button>
                         
                         ${warningMenuOption}
