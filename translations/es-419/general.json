@@ -1825,5 +1825,18 @@
     "btn_remove_protection": "Eliminar Protección",
     "confirm_unprotect_pixel": "¿Deseas eliminar la protección de este píxel?",
     "lbl_cost": "Costo",
-    "lbl_remaining_balance": "Saldo restante"
+    "lbl_remaining_balance": "Saldo restante",
+    "canvas_palette_color_title": "Color",
+    "canvas_palette_color_desc": "Selecciona un color para este bloque.",
+    "canvas_palette_name_accordion_desc": "Define el nombre de tu paleta personalizada.",
+    "title_start_broadcast": "¿Iniciar transmisión?",
+    "desc_start_broadcast": "Se generará un código de acceso. Cualquier persona con el código podrá unirse a tu transmisión.",
+    "btn_start_broadcast": "Iniciar",
+    "title_stop_broadcast": "¿Finalizar transmisión?",
+    "desc_stop_broadcast": "Todos los espectadores serán desconectados de tu transmisión.",
+    "btn_stop_broadcast": "Finalizar",
+    "lbl_broadcast_code": "Código de transmisión",
+    "tooltip_click_toggle_code": "Clic para ocultar/mostrar el código",
+    "err_no_template_selected": "Selecciona una plantilla primero.",
+    "err_already_broadcasting": "Ya tienes una transmisión activa. Finalízala antes de iniciar otra."
 }

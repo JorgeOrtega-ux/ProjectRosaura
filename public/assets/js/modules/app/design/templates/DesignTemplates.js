@@ -25,73 +25,74 @@ export const DesignTemplates = {
             }
         }
 
-        const btnToggleLiveMenu = e.target.closest('[data-menu-target="menu-live"]');
-        if (btnToggleLiveMenu) {
-            if (btnToggleLiveMenu.getAttribute('data-requires-premium') === 'true') {
-                e.preventDefault();
-                e.stopPropagation();
+        const btnToggleLiveBroadcast = e.target.closest('[data-action="toggleLiveBroadcast"]');
+        if (btnToggleLiveBroadcast) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (btnToggleLiveBroadcast.getAttribute('data-requires-premium') === 'true') {
                 window.location.href = (window.AppBasePath || '') + '/upgrade';
                 return true;
             }
 
-            if (this.activeTemplateId) {
-                const tpl = this.templates.find(t => t.id === this.activeTemplateId);
-                if (!this.uiLiveInputX) {
-                    this.uiLiveInputX = document.querySelector('[data-ref="val_live_x"]');
-                    this.uiLiveInputY = document.querySelector('[data-ref="val_live_y"]');
-                    this.uiLiveInputOpacity = document.querySelector('[data-ref="val_live_opacity"]');
+            if (this.liveShareStatus === 'owner') {
+                // Already broadcasting → confirm stop
+                if (window.dialogSystem) {
+                    window.dialogSystem.show('confirmStopBroadcast').then(res => {
+                        if (res && res.confirmed) {
+                            if (typeof this.stopLiveShare === 'function') {
+                                this.stopLiveShare();
+                            }
+
+                            // Remove badges
+                            const badge = document.getElementById('live-share-badge');
+                            if (badge) badge.remove();
+                            const codeBadge = document.getElementById('live-share-code-badge');
+                            if (codeBadge) codeBadge.remove();
+
+                            // Reset button styling
+                            const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
+                            if (btnOpenJoinLive) {
+                                btnOpenJoinLive.classList.remove('disabled-interaction', 'disabled');
+                                btnOpenJoinLive.removeAttribute('title');
+                            }
+
+                            btnToggleLiveBroadcast.classList.remove('component-color-indicator');
+                            btnToggleLiveBroadcast.style.removeProperty('--active-color');
+                        }
+                    });
+                }
+            } else {
+                // Not broadcasting → confirm start
+                if (!this.activeTemplateId) {
+                    showMessage(__('err_no_template_selected', [], 'Selecciona una plantilla primero.'), 'warning');
+                    return true;
                 }
 
-                if (this.uiLiveInputX && tpl) {
-                    this.uiLiveInputX.setAttribute('data-val', tpl.x);
-                    this.uiLiveInputX.textContent = tpl.x;
-                    
-                    this.uiLiveInputY.setAttribute('data-val', tpl.y);
-                    this.uiLiveInputY.textContent = tpl.y;
-                    
-                    this.uiLiveInputOpacity.setAttribute('data-val', tpl.opacity);
-                    this.uiLiveInputOpacity.textContent = `${Math.round(tpl.opacity * 100)}%`;
-                }
-            }
-            
-        }
+                if (window.dialogSystem) {
+                    window.dialogSystem.show('confirmStartBroadcast').then(async (res) => {
+                        if (res && res.confirmed) {
+                            if (typeof this.startLiveShare === 'function') {
+                                const success = await this.startLiveShare();
 
-        const btnAdjustLive = e.target.closest('[data-action="adjustLiveTemplate"]');
-        if (btnAdjustLive && this.activeTemplateId) {
-            e.preventDefault();
-            const field = btnAdjustLive.getAttribute('data-field');
-            let step = parseFloat(btnAdjustLive.getAttribute('data-step'));
-            const min = btnAdjustLive.hasAttribute('data-min') ? parseFloat(btnAdjustLive.getAttribute('data-min')) : -Infinity;
-            const max = btnAdjustLive.hasAttribute('data-max') ? parseFloat(btnAdjustLive.getAttribute('data-max')) : Infinity;
-            
-            const valRef = document.querySelector(`[data-ref="val_${field}"]`);
-            const tpl = this.templates.find(t => t.id === this.activeTemplateId);
-            
-            if (valRef && tpl) {
-                let currentVal = parseFloat(valRef.getAttribute('data-val'));
-                let newVal = currentVal + step;
-                
-                if (field === 'live_x') {
-                    newVal = Math.round(newVal);
-                    newVal = Math.max(0, Math.min(newVal, this.boardWidth - tpl.w));
-                    tpl.x = newVal;
-                } else if (field === 'live_y') {
-                    newVal = Math.round(newVal);
-                    newVal = Math.max(0, Math.min(newVal, this.boardHeight - tpl.h));
-                    tpl.y = newVal;
-                } else if (field === 'live_opacity') {
-                    newVal = Math.round(newVal * 10) / 10;
-                    if (newVal < 0.1) newVal = 0.1;
-                    if (newVal > 1) newVal = 1;
-                    tpl.opacity = newVal;
-                }
-                
-                valRef.setAttribute('data-val', newVal);
-                valRef.textContent = field === 'live_opacity' ? `${Math.round(newVal * 100)}%` : newVal;
-                
-                this.requestRender();
-                if (this.liveShareStatus === 'owner' && typeof this.emitLiveImageUpdate === 'function') {
-                    this.emitLiveImageUpdate();
+                                if (success) {
+                                    // Disable join button
+                                    const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
+                                    if (btnOpenJoinLive) {
+                                        btnOpenJoinLive.classList.add('disabled-interaction');
+                                        btnOpenJoinLive.setAttribute('title', window.__('err_cannot_join_while_streaming'));
+                                    }
+
+                                    // Style the broadcast button as active
+                                    btnToggleLiveBroadcast.classList.add('component-color-indicator');
+                                    btnToggleLiveBroadcast.style.setProperty('--active-color', 'var(--color-danger, #ef4444)');
+
+                                    // Create code badge below the main badge
+                                    this._createCodeBadge(this.liveShareCode);
+                                }
+                            }
+                        }
+                    });
                 }
             }
             return true;
@@ -152,82 +153,47 @@ export const DesignTemplates = {
             return true;
         }
 
-        const btnStartLive = e.target.closest('[data-action="startLive"]');
-        if (btnStartLive) {
-            e.preventDefault();
-            if (typeof this.startLiveShare === 'function') {
-                const originalText = btnStartLive.innerHTML;
-                btnStartLive.innerHTML = '<span class="component-spinner component-spinner--small"></span> Iniciando...';
-                btnStartLive.classList.add('disabled-interaction');
-
-                const attemptStart = async () => {
-                    const success = await this.startLiveShare();
-                    
-                    if (success) {
-                        const alert = document.querySelector('[data-ref="live-share-active-alert"]');
-                        const codeDisplay = document.querySelector('[data-ref="live-share-code"]');
-                        const btnStop = document.querySelector('[data-action="stopLive"]');
-                        
-                        if (alert) { alert.classList.remove('disabled'); alert.classList.add('active'); }
-                        if (codeDisplay) codeDisplay.textContent = this.liveShareCode;
-                        
-                        btnStartLive.classList.add('disabled');
-                        if (btnStop) btnStop.classList.remove('disabled');
-                        
-                        const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
-                        if (btnOpenJoinLive) {
-                            btnOpenJoinLive.classList.add('disabled-interaction');
-                            btnOpenJoinLive.setAttribute('title', window.__('err_cannot_join_while_streaming'));
-                        }
-                        
-                        const btnToggleLiveMenu = document.querySelector('[data-menu-target="menu-live"]');
-                        if (btnToggleLiveMenu) {
-                            btnToggleLiveMenu.classList.add('component-color-indicator');
-                            btnToggleLiveMenu.style.setProperty('--active-color', 'var(--color-danger, #ef4444)');
-                        }
-                    }
-                    
-                    btnStartLive.innerHTML = originalText;
-                    btnStartLive.classList.remove('disabled-interaction');
-                };
-                
-                attemptStart();
-            }
-            return true;
-        }
-
-        const btnStopLive = e.target.closest('[data-action="stopLive"]');
-        if (btnStopLive) {
-            e.preventDefault();
-            if (typeof this.stopLiveShare === 'function') {
-                this.stopLiveShare();
-                
-                const alert = document.querySelector('[data-ref="live-share-active-alert"]');
-                const codeDisplay = document.querySelector('[data-ref="live-share-code"]');
-                const btnStart = document.querySelector('[data-action="startLive"]');
-                
-                if (alert) { alert.classList.add('disabled'); alert.classList.remove('active'); }
-                if (codeDisplay) codeDisplay.textContent = '...';
-                
-                btnStopLive.classList.add('disabled');
-                if (btnStart) btnStart.classList.remove('disabled');
-
-                const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
-                if (btnOpenJoinLive) {
-                    btnOpenJoinLive.classList.remove('disabled-interaction', 'disabled');
-                    btnOpenJoinLive.removeAttribute('title');
-                }
-
-                const btnToggleLiveMenu = document.querySelector('[data-menu-target="menu-live"]');
-                if (btnToggleLiveMenu) {
-                    btnToggleLiveMenu.classList.remove('component-color-indicator');
-                    btnToggleLiveMenu.style.removeProperty('--active-color');
-                }
-            }
-            return true;
-        }
-
         return false;
+    },
+
+    _createCodeBadge(code) {
+        let codeBadge = document.getElementById('live-share-code-badge');
+        if (codeBadge) codeBadge.remove();
+
+        codeBadge = document.createElement('div');
+        codeBadge.className = 'component-badge component-badge--info';
+        codeBadge.id = 'live-share-code-badge';
+        codeBadge.style.cursor = 'pointer';
+        codeBadge.setAttribute('title', window.__('tooltip_click_toggle_code', [], 'Clic para ocultar/mostrar el código'));
+
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'material-symbols-rounded';
+        iconSpan.textContent = 'key';
+        
+        const textSpan = document.createElement('span');
+        textSpan.setAttribute('data-ref', 'live-code-text');
+        textSpan.textContent = `${window.__('lbl_broadcast_code', [], 'Código de transmisión')}: ${code}`;
+
+        codeBadge.appendChild(iconSpan);
+        codeBadge.appendChild(textSpan);
+
+        codeBadge._codeVisible = true;
+        codeBadge._code = code;
+
+        codeBadge.addEventListener('click', () => {
+            codeBadge._codeVisible = !codeBadge._codeVisible;
+            const txt = codeBadge.querySelector('[data-ref="live-code-text"]');
+            if (codeBadge._codeVisible) {
+                txt.textContent = `${window.__('lbl_broadcast_code', [], 'Código de transmisión')}: ${codeBadge._code}`;
+                iconSpan.textContent = 'key';
+            } else {
+                txt.textContent = `${window.__('lbl_broadcast_code', [], 'Código de transmisión')}: ••••-••••`;
+                iconSpan.textContent = 'key_off';
+            }
+        });
+
+        const badgesContainer = document.querySelector('[data-ref="badges-left"]');
+        if (badgesContainer) badgesContainer.appendChild(codeBadge);
     },
 
     renderSkeletonLibraryDOM() {

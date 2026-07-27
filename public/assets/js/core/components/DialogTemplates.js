@@ -1280,5 +1280,39 @@ export const DialogTemplates = {
                 end_date: endDateInput ? endDateInput.value : null
             };
         }
+    },
+
+    confirmStartBroadcast: {
+        build: () => {
+            const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${__('title_start_broadcast', [], '¿Iniciar transmisión?')}</h2>
+                    <p class="component-modal-desc">${__('desc_start_broadcast', [], 'Se generará un código de acceso. Cualquier persona con el código podrá unirse a tu transmisión.')}</p>
+                </div>
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [], 'Cancelar')}</button>
+                    <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_start_broadcast', [], 'Iniciar')}</button>
+                </div>
+            `;
+        }
+    },
+
+    confirmStopBroadcast: {
+        build: () => {
+            const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${__('title_stop_broadcast', [], '¿Finalizar transmisión?')}</h2>
+                    <p class="component-modal-desc">${__('desc_stop_broadcast', [], 'Todos los espectadores serán desconectados de tu transmisión.')}</p>
+                </div>
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [], 'Cancelar')}</button>
+                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_stop_broadcast', [], 'Finalizar')}</button>
+                </div>
+            `;
+        }
     }
 };

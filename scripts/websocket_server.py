@@ -309,7 +309,8 @@ def save_canvas_protections_db(canvas_id, offsets, protect, user_id=None):
 NODE_ID = str(uuid.uuid4())
 ROOMS = {}
 LIVE_ROOMS = {} # Para las sesiones live share: { code: set(websockets) }
-OWNER_CONNS = {} # Mapeo { websocket: code } para limpiar si el dueÃ±o se desconecta de golpe
+OWNER_CONNS = {} # Mapeo { websocket: code } para limpiar si el dueño se desconecta de golpe
+GRACE_SESSIONS = {} # { code: asyncio.Task } — grace period timers for owner disconnections
 REDIS_CLIENT = None
 USER_LOCKS = {}
 
@@ -686,6 +687,12 @@ async def handler(websocket):
                 elif data.get("type") == "update_live_share":
                     code = data.get("code")
                     if code and code in LIVE_ROOMS:
+                        # If this owner was in grace period, cancel it (reconnection)
+                        if code in GRACE_SESSIONS:
+                            GRACE_SESSIONS[code].cancel()
+                            del GRACE_SESSIONS[code]
+                            print(f"[DEBUG LIVE] Owner reconnected for session {code}, grace period cancelled.")
+
                         if websocket not in OWNER_CONNS:
                             OWNER_CONNS[websocket] = code
                             print(f"[DEBUG LIVE] WS registered as owner of session {code}")
@@ -732,6 +739,11 @@ async def handler(websocket):
                 elif data.get("type") == "end_live_share":
                     code = data.get("code")
                     if code and code in LIVE_ROOMS:
+                        # Cancel any grace period for this code
+                        if code in GRACE_SESSIONS:
+                            GRACE_SESSIONS[code].cancel()
+                            del GRACE_SESSIONS[code]
+
                         end_msg = json.dumps({
                             "type": "live_session_ended",
                             "code": code
@@ -743,6 +755,13 @@ async def handler(websocket):
                             
                         del LIVE_ROOMS[code]
                         await r.delete(f"live_share:{code}")
+                        await r.delete(f"live_share:{code}:count")
+
+                        # Clean up user broadcast key so they can start a new one
+                        user_id = WS_META.get(websocket, {}).get('user_id')
+                        if user_id:
+                            await r.delete(f"live_share:user_{user_id}")
+
                         if websocket in OWNER_CONNS:
                             del OWNER_CONNS[websocket]
                         print(f"[DEBUG LIVE] Room {code} intentionally destroyed by owner.")
@@ -1456,17 +1475,42 @@ async def handler(websocket):
                 clients.remove(websocket)
                 
                 if websocket in OWNER_CONNS and OWNER_CONNS[websocket] == code:
-                    end_msg = json.dumps({"type": "live_session_ended", "code": code})
-                    if clients:
-                        websockets.broadcast(clients, end_msg)
-                        
-                    del LIVE_ROOMS[code]
-                    try:
-                        redis_client = await get_redis_client()
-                        await redis_client.delete(f"live_share:{code}")
-                        await redis_client.delete(f"live_share:{code}:count")
-                    except Exception as e:
-                        pass
+                    # Owner disconnected — start grace period instead of immediate cleanup
+                    print(f"[DEBUG LIVE] Owner disconnected from session {code}. Starting 5-minute grace period.")
+                    
+                    async def grace_cleanup(grace_code, grace_clients):
+                        try:
+                            await asyncio.sleep(300)  # 5 minutes
+                            print(f"[DEBUG LIVE] Grace period expired for session {grace_code}. Cleaning up.")
+                            
+                            end_msg = json.dumps({"type": "live_session_ended", "code": grace_code})
+                            remaining = LIVE_ROOMS.get(grace_code, set())
+                            if remaining:
+                                websockets.broadcast(remaining, end_msg)
+                            
+                            if grace_code in LIVE_ROOMS:
+                                del LIVE_ROOMS[grace_code]
+                            
+                            try:
+                                redis_client = await get_redis_client()
+                                await redis_client.delete(f"live_share:{grace_code}")
+                                await redis_client.delete(f"live_share:{grace_code}:count")
+                            except Exception:
+                                pass
+                            
+                            if grace_code in GRACE_SESSIONS:
+                                del GRACE_SESSIONS[grace_code]
+                                
+                        except asyncio.CancelledError:
+                            print(f"[DEBUG LIVE] Grace period cancelled for session {grace_code} (owner reconnected).")
+                            if grace_code in GRACE_SESSIONS:
+                                del GRACE_SESSIONS[grace_code]
+                    
+                    # Cancel any existing grace timer for this code
+                    if code in GRACE_SESSIONS:
+                        GRACE_SESSIONS[code].cancel()
+                    
+                    GRACE_SESSIONS[code] = asyncio.create_task(grace_cleanup(code, clients))
                 else:
                     try:
                         redis_client = await get_redis_client()

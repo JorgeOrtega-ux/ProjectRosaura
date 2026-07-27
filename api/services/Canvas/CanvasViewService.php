@@ -238,7 +238,9 @@ class CanvasViewService {
             'error' => $error,
             'errorMessage' => $errorMessage,
             'errorIcon' => $errorIcon,
-            'fallbackImg' => $fallbackImg
+            'fallbackImg' => $fallbackImg,
+            'isAuthorized' => $isAuthorized ?? false,
+            'isOwner' => $isOwner ?? false
         ];
     }
 

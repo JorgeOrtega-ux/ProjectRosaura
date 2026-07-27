@@ -82,8 +82,8 @@ class CustomPaletteCreateController {
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title" data-ref="blockTitle">${_t('admin_role_hue_adjust')}</h2>
-                            <p class="component-card__description" data-ref="blockDesc">${_t('admin_role_hue_adjust_desc')}</p>
+                            <h2 class="component-card__title" data-ref="blockTitle">${_t('canvas_palette_color_title', 'Color')}</h2>
+                            <p class="component-card__description" data-ref="blockDesc">${_t('canvas_palette_color_desc', 'Selecciona un color para este bloque.')}</p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--start">
@@ -280,7 +280,6 @@ class CustomPaletteCreateController {
             if(hexText) hexText.textContent = hex;
         }
 
-        this.updateLivePreview();
     }
 
     handleGlobalClick(e) {
@@ -305,8 +304,7 @@ class CustomPaletteCreateController {
         
         if (removeColorBtn) {
             removeColorBtn.closest('[data-component="color-block"]').remove();
-            this.updateLivePreview();
-            this.checkMaxColorsLimit();
+                this.checkMaxColorsLimit();
         }
     }
 
@@ -332,7 +330,6 @@ class CustomPaletteCreateController {
             this.addColorBlock('paletteColorsContainer', '#ff8c00');
         }
 
-        this.updateLivePreview();
         this.checkMaxColorsLimit();
     }
 
@@ -366,40 +363,6 @@ class CustomPaletteCreateController {
         this.updatePickerUI(container.lastElementChild.querySelector('[data-ref="customColorPicker"]'));
 
         this.checkMaxColorsLimit();
-        this.updateLivePreview();
-    }
-
-    updateLivePreview() {
-        const ring = document.querySelector('[data-ref="paletteLivePreviewRing"]');
-        if (!ring) return;
-
-        const rows = Array.from(document.querySelectorAll('[data-ref="paletteColorsContainer"] [data-component="color-block"]'));
-        if (rows.length === 0) {
-            ring.style.background = '#808080';
-            return;
-        }
-
-        if (rows.length === 1) {
-            let hexText = rows[0].querySelector('[data-ref="triggerHex"]')?.textContent || '#808080';
-            ring.style.background = hexText;
-            return;
-        }
-
-        let base = Math.floor(100 / rows.length);
-        let remainder = 100 % rows.length;
-        
-        let prevStop = 0;
-        let segments = rows.map((row, index) => {
-            let hexText = row.querySelector('[data-ref="triggerHex"]')?.textContent || '#808080';
-            let percentage = base + (index < remainder ? 1 : 0);
-            
-            let endStop = prevStop + percentage;
-            let segment = `${hexText} ${prevStop}% ${endStop}%`;
-            prevStop = endStop;
-            return segment;
-        });
-        
-        ring.style.background = `conic-gradient(from 0deg, ${segments.join(', ')})`;
     }
 
     extractColors() {

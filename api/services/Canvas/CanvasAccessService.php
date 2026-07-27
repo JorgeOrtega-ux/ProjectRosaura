@@ -265,11 +265,23 @@ class CanvasAccessService {
                 $redisInstance = new RedisCache();
                 $redis = $redisInstance->getClient();
                 if ($redis) {
+                    // Check if the user already has an active broadcast
+                    $userBroadcastKey = CacheConstants::PREFIX_LIVE_SHARE . 'user_' . $userId;
+                    $existingCode = $redis->get($userBroadcastKey);
+                    if ($existingCode) {
+                        $existingData = $redis->get(CacheConstants::PREFIX_LIVE_SHARE . $existingCode);
+                        if ($existingData) {
+                            return ['success' => false, 'message' => __('err_already_broadcasting')];
+                        } else {
+                            // Stale key — old session expired, clean up
+                            $redis->del($userBroadcastKey);
+                        }
+                    }
+
                     $key = CacheConstants::PREFIX_LIVE_SHARE . $code;
                     $redis->set($key, json_encode($data));
                     $redis->expire($key, 14400); 
 
-                    $userBroadcastKey = CacheConstants::PREFIX_LIVE_SHARE . 'user_' . $userId;
                     $redis->set($userBroadcastKey, $code);
                     $redis->expire($userBroadcastKey, 14400);
 

@@ -277,7 +277,7 @@ export const DesignInteractions = {
             const btn = document.querySelector('[data-action="openJoinLiveModal"]');
             if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
         } else if (keyUpper === 'S') {
-            const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-live"]');
+            const btn = document.querySelector('[data-action="toggleLiveBroadcast"]');
             if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
         } else if (keyUpper === 'C') {
             const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-colors"]');

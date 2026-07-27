@@ -686,9 +686,6 @@ export const DesignNetwork = {
             return false;
         }
 
-        const btn = document.querySelector('[data-action="startLive"]');
-        if (btn) setButtonLoading(btn);
-
         try {
             const route = ApiRoutes.Canvases?.CreateLiveShare || 'canvas/live-share/create';
             const tpl = this.templates.find(t => t.id === this.activeTemplateId);
@@ -700,7 +697,7 @@ export const DesignNetwork = {
                 y: tpl.y,
                 w: tpl.w,
                 h: tpl.h,
-                opacity: tpl.opacity !== undefined && tpl.opacity !== null ? tpl.opacity : 0.5,
+                opacity: 0.5,
                 angle: tpl.angle || 0
             }, this.abortController.signal);
             
@@ -710,17 +707,14 @@ export const DesignNetwork = {
                 this.liveShareStatus = 'owner';
                 this.liveShareCode = response.data.code;
                 this.liveTemplateId = this.activeTemplateId;
-                this.liveShareCountVal = 1; // Owner starts at 1
+                this.liveShareCountVal = 1;
+                
+                // Force standard opacity
+                tpl.opacity = 0.5;
                 
                 if (this.wsManager) {
                     this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
                 }
-
-                if (this.uiLiveCode) this.uiLiveCode.textContent = this.liveShareCode;
-                
-                if (this.uiLiveInputX) this.uiLiveInputX.value = tpl.x;
-                if (this.uiLiveInputY) this.uiLiveInputY.value = tpl.y;
-                if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.value = tpl.opacity || 1;
 
                 let badge = document.getElementById('live-share-badge');
                 if (!badge) {
@@ -737,14 +731,12 @@ export const DesignNetwork = {
                 showMessage(__('msg_broadcasting').replace(':code', this.liveShareCode), 'success');
                 return true;
             } else {
-                showMessage(__('err_live_code_gen'), 'error');
+                showMessage(response.message || __('err_live_code_gen'), 'error');
                 return false;
             }
         } catch (error) {
             showMessage(__('err_server_live_start'), 'error');
             return false;
-        } finally {
-            if (btn) restoreButton(btn);
         }
     },
 
@@ -763,10 +755,19 @@ export const DesignNetwork = {
         const badge = document.getElementById('live-share-badge');
         if (badge) badge.remove();
 
+        const codeBadge = document.getElementById('live-share-code-badge');
+        if (codeBadge) codeBadge.remove();
+
         const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
         if (btnOpenJoinLive) {
             btnOpenJoinLive.classList.remove('disabled-interaction', 'disabled');
             btnOpenJoinLive.removeAttribute('title');
+        }
+
+        const btnToggleLive = document.querySelector('[data-action="toggleLiveBroadcast"]');
+        if (btnToggleLive) {
+            btnToggleLive.classList.remove('component-color-indicator');
+            btnToggleLive.style.removeProperty('--active-color');
         }
 
         showMessage(__('msg_broadcast_stopped'), 'info');
@@ -907,7 +908,7 @@ export const DesignNetwork = {
             y: tpl.y,
             w: tpl.w,
             h: tpl.h,
-            opacity: tpl.opacity !== undefined && tpl.opacity !== null ? tpl.opacity : 0.5,
+            opacity: 0.5,
             angle: tpl.angle || 0
         });
     },
@@ -1013,6 +1014,9 @@ export const DesignNetwork = {
             
             const badge = document.getElementById('live-share-badge');
             if (badge) badge.remove();
+
+            const codeBadge = document.getElementById('live-share-code-badge');
+            if (codeBadge) codeBadge.remove();
 
             if (this.liveTemplateId) {
                 this.templates = this.templates.filter(t => t.id !== this.liveTemplateId);

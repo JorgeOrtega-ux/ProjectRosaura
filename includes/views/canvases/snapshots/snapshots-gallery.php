@@ -12,6 +12,11 @@ $error = $galleryData['error'];
 $errorMessage = $galleryData['errorMessage'];
 $errorIcon = $galleryData['errorIcon'];
 $fallbackImg = $galleryData['fallbackImg'];
+$isAuthorized = $galleryData['isAuthorized'] ?? false;
+$isOwner = $galleryData['isOwner'] ?? false;
+
+$userPermissions = $_SESSION['user_permissions'] ?? [];
+$isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions);
 ?>
 
 <div class="view-content">

@@ -25,6 +25,7 @@ class CanvasEditController {
         this.abortController = null;
         this.container = null;
         this.canvasId = null;
+        this.basePath = window.AppBasePath || '';
 
         this.state = {
             name: '',

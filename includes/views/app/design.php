@@ -107,7 +107,7 @@ extract($designData);
                     
                     <div class="component-divider-vertical" data-ref="main-actions-divider"></div>
 
-                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-live" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom">
                         <span class="material-symbols-rounded">stream</span>
                     </button>
                     
