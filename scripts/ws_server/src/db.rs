@@ -114,8 +114,9 @@ pub async fn save_canvas_protections_db(db: &MySqlPool, canvas_id: &str, offsets
         query.push_str(&placeholders.join(", "));
         
         let mut q = sqlx::query(&query);
+        let uid = user_id.and_then(|u| u.parse::<i32>().ok());
         for &offset in offsets {
-            q = q.bind(canvas_id).bind(offset).bind(user_id);
+            q = q.bind(canvas_id).bind(offset).bind(uid);
         }
         let _ = q.execute(db).await;
     } else {
@@ -138,7 +139,8 @@ pub async fn consume_user_perk(db: &MySqlPool, user_id: &str, perk_id: &str) -> 
         db_identity
     );
     
-    match sqlx::query(&query_sel).bind(user_id).bind(perk_id).fetch_optional(db).await {
+    let uid = user_id.parse::<i32>().unwrap_or(0);
+    match sqlx::query(&query_sel).bind(uid).bind(perk_id).fetch_optional(db).await {
         Ok(Some(row)) => {
             if let Ok(perk_row_id) = row.try_get::<i32, _>("id") {
                 let query_upd = format!("UPDATE `{}`.`user_perks` SET is_used = 1, used_at = NOW() WHERE id = ? AND is_used = 0", db_identity);
@@ -146,6 +148,9 @@ pub async fn consume_user_perk(db: &MySqlPool, user_id: &str, perk_id: &str) -> 
                     return res.rows_affected() > 0;
                 }
             }
+        }
+        Err(e) => {
+            tracing::error!("consume_user_perk error: {:?}", e);
         }
         _ => {}
     }

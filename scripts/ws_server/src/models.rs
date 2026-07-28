@@ -50,6 +50,7 @@ pub struct WsMessage {
     pub message: Option<String>,
     
     // Bombs
+    #[serde(alias = "perk", rename = "perk")]
     pub perk_id: Option<String>,
     pub r: Option<i32>,
     pub radius: Option<i32>,
