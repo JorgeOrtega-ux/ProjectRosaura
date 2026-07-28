@@ -3,16 +3,18 @@ use axum::{
     response::Response,
 };
 use std::collections::HashMap;
-use tracing::{info, warn, error};
+use tracing::{info, warn};
 use serde_json::Value;
 use deadpool_redis::redis::AsyncCommands;
 use uuid::Uuid;
 use futures::{sink::SinkExt, stream::StreamExt};
 use tokio::sync::mpsc;
+use std::time::{SystemTime, UNIX_EPOCH, Duration};
 
 use crate::state::{AppState, ClientMeta};
 use crate::models::WsMessage;
 use crate::actions;
+use crate::helpers;
 
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
@@ -73,6 +75,41 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
         }
     });
 
+    let max_connections = std::env::var("WS_MAX_CONNECTIONS").unwrap_or_else(|_| "1000".to_string()).parse::<usize>().unwrap_or(1000);
+    let qos_threshold = std::env::var("WS_QOS_THRESHOLD").unwrap_or_else(|_| "900".to_string()).parse::<usize>().unwrap_or(900);
+
+    let current_connections = state.ws_meta.len();
+
+    if current_connections >= qos_threshold {
+        if user_type == "guest" {
+            if current_connections >= max_connections {
+                warn!("[QoS] Server full. Blocking Guest connection.");
+                let _ = socket.send(Message::Close(Some(axum::extract::ws::CloseFrame {
+                    code: 4001,
+                    reason: std::borrow::Cow::Borrowed("Server full. Registered users prioritized.")
+                }))).await;
+                return;
+            }
+        } else {
+            if current_connections >= max_connections {
+                let guest_to_evict = state.ws_meta.iter().find(|m| m.value().user_type == "guest").map(|m| m.key().clone());
+                if let Some(evict_id) = guest_to_evict {
+                    warn!("[QoS] Evicting guest connection to prioritize registered user.");
+                    if let Some(tx) = state.tx_channels.get(&evict_id) {
+                        let _ = tx.send("###CLOSE###".to_string()).await;
+                    }
+                } else {
+                    warn!("[QoS] Server full with only registered users. Connection blocked.");
+                    let _ = socket.send(Message::Close(Some(axum::extract::ws::CloseFrame {
+                        code: 1013,
+                        reason: std::borrow::Cow::Borrowed("Server at maximum capacity.")
+                    }))).await;
+                    return;
+                }
+            }
+        }
+    }
+
     let connection_id = Uuid::new_v4().to_string();
 
     let meta = ClientMeta {
@@ -88,23 +125,58 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
     let (tx, mut rx) = mpsc::channel::<String>(100);
     state.tx_channels.insert(connection_id.clone(), tx);
 
-    info!("Client ({}) connected to room '{}'.", user_type, canvas_id);
+    info!("Client ({}) connected to room '{}'. Global total: {}", user_type, canvas_id, state.ws_meta.len());
 
-    // Tarea para enviar mensajes salientes al WebSocket
     let mut send_task = tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
+            if msg == "###CLOSE###" {
+                let _ = sender.send(Message::Close(Some(axum::extract::ws::CloseFrame {
+                    code: 4001,
+                    reason: std::borrow::Cow::Borrowed("Evicted for QoS")
+                }))).await;
+                break;
+            }
             if sender.send(Message::Text(msg)).await.is_err() {
                 break;
             }
         }
     });
 
-    // Tarea para procesar mensajes entrantes
     let state_clone = state.clone();
     let canvas_id_clone = canvas_id.clone();
     let connection_id_clone = connection_id.clone();
+    
     let mut recv_task = tokio::spawn(async move {
+        let mut last_message_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f64();
+        let mut message_count = 0;
+
         while let Some(Ok(Message::Text(text))) = receiver.next().await {
+            // Anti-Spam check
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f64();
+            if now - last_message_time > 1.0 {
+                last_message_time = now;
+                message_count = 0;
+            }
+            message_count += 1;
+            
+            if message_count > 200 {
+                warn!("Spam detected (Connection: {}). Disconnecting WS.", connection_id_clone);
+                break; // Break will end recv_task, triggering cleanup
+            }
+
+            // Ban check
+            let mut is_banned = false;
+            if let Some(uid) = state_clone.ws_meta.get(&connection_id_clone).and_then(|m| m.user_id.clone()) {
+                if let Ok(mut c) = state_clone.redis_pool.get().await {
+                    let ban_key = format!("canvas:{}:canvas_banned:{}", canvas_id_clone, uid);
+                    is_banned = c.exists(&ban_key).await.unwrap_or(false);
+                }
+            }
+            if is_banned {
+                warn!("Banned user tried to send message. Disconnecting.");
+                break;
+            }
+
             if let Ok(ws_msg) = serde_json::from_str::<WsMessage>(&text) {
                 actions::handle_action(ws_msg, &canvas_id_clone, &connection_id_clone, &state_clone).await;
             } else {
@@ -113,17 +185,96 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
         }
     });
 
-    // Si una de las dos tareas termina, abortamos la otra
     tokio::select! {
         _ = (&mut send_task) => recv_task.abort(),
         _ = (&mut recv_task) => send_task.abort(),
     }
 
-    // Cleanup
-    if let Some(mut room) = state.rooms.get_mut(&canvas_id) {
+    // --- CLEANUP LOGIC ---
+    if let Some(room) = state.rooms.get_mut(&canvas_id) {
         room.remove(&connection_id);
     }
     state.ws_meta.remove(&connection_id);
     state.tx_channels.remove(&connection_id);
-    info!("Client {} disconnected from {}", connection_id, canvas_id);
+    info!("Client {} disconnected. Remaining global total: {}", connection_id, state.ws_meta.len());
+
+    // Live share disconnect cleanup
+    let codes: Vec<String> = state.live_rooms.iter().map(|kv| kv.key().clone()).collect();
+    for code in codes {
+        let is_in_room = {
+            if let Some(clients) = state.live_rooms.get_mut(&code) {
+                clients.remove(&connection_id).is_some()
+            } else {
+                false
+            }
+        };
+
+        if is_in_room {
+            let is_owner = {
+                if let Some(owner) = state.owner_conns.get(&connection_id) {
+                    *owner.value() == code
+                } else {
+                    false
+                }
+            };
+
+            if is_owner {
+                info!("Owner disconnected from session {}. Starting 5-minute grace period.", code);
+                let state_for_grace = state.clone();
+                let grace_code = code.clone();
+                
+                if let Some(existing) = state.grace_sessions.get(&code) {
+                    existing.abort();
+                }
+                
+                let grace_handle = tokio::spawn(async move {
+                    tokio::time::sleep(Duration::from_secs(300)).await;
+                    info!("Grace period expired for session {}. Cleaning up.", grace_code);
+                    
+                    let end_msg = serde_json::json!({
+                        "type": "live_session_ended",
+                        "code": grace_code
+                    }).to_string();
+                    
+                    helpers::broadcast_to_live_room(&state_for_grace, &grace_code, &end_msg, None).await;
+                    state_for_grace.live_rooms.remove(&grace_code);
+                    
+                    if let Ok(mut c) = state_for_grace.redis_pool.get().await {
+                        let _: () = c.del(format!("live_share:{}", grace_code)).await.unwrap_or(());
+                        let _: () = c.del(format!("live_share:{}:count", grace_code)).await.unwrap_or(());
+                    }
+                    
+                    state_for_grace.grace_sessions.remove(&grace_code);
+                });
+                
+                state.grace_sessions.insert(code.clone(), grace_handle);
+            } else {
+                // Not owner, decrement count
+                if let Ok(mut c) = state.redis_pool.get().await {
+                    let redis_key = format!("live_share:{}:count", code);
+                    let _: () = c.decr(&redis_key, 1).await.unwrap_or(());
+                    
+                    let global_count: i64 = c.get(&redis_key).await.unwrap_or(1);
+                    let global_count = global_count.max(1);
+                    
+                    let count_msg = serde_json::json!({
+                        "type": "live_share_count",
+                        "code": code,
+                        "count": global_count
+                    }).to_string();
+                    
+                    helpers::broadcast_to_live_room(&state, &code, &count_msg, None).await;
+                    let sync_payload = serde_json::json!({
+                        "source_node": "rust_node",
+                        "target_type": "live",
+                        "code": code,
+                        "payload": count_msg
+                    });
+                    let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
+                }
+            }
+        }
+    }
+    
+    state.owner_conns.remove(&connection_id);
 }

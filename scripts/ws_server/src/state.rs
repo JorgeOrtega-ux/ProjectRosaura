@@ -3,6 +3,8 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc};
 use deadpool_redis::Pool as RedisPool;
 use sqlx::MySqlPool;
+use tokio::task::JoinHandle;
+use crate::models::PerksConfig;
 
 #[derive(Clone, Debug)]
 pub struct ClientMeta {
@@ -18,8 +20,11 @@ pub struct AppState {
     pub ws_meta: Arc<DashMap<String, ClientMeta>>, // connection_id -> ClientMeta
     pub tx_channels: Arc<DashMap<String, mpsc::Sender<String>>>, // connection_id -> Sender
     pub user_locks: Arc<DashMap<String, Arc<Mutex<()>>>>, // user_id -> Mutex lock
+    pub owner_conns: Arc<DashMap<String, String>>, // connection_id -> code
+    pub grace_sessions: Arc<DashMap<String, JoinHandle<()>>>, // code -> JoinHandle
     pub redis_pool: RedisPool,
     pub db_pool: MySqlPool,
+    pub perks_config: Arc<Mutex<Option<PerksConfig>>>,
 }
 
 impl AppState {
@@ -30,8 +35,11 @@ impl AppState {
             ws_meta: Arc::new(DashMap::new()),
             tx_channels: Arc::new(DashMap::new()),
             user_locks: Arc::new(DashMap::new()),
+            owner_conns: Arc::new(DashMap::new()),
+            grace_sessions: Arc::new(DashMap::new()),
             redis_pool,
             db_pool,
+            perks_config: Arc::new(Mutex::new(None)),
         }
     }
 }

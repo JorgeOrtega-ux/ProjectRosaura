@@ -13,8 +13,9 @@ COPY scripts/ws_server/Cargo.toml scripts/ws_server/
 WORKDIR /usr/src/app/scripts/ws_server
 RUN cargo build --release
 
-# Copiar el código real
+# Copiar el código real y el archivo perks.json necesario para include_str!
 COPY scripts/ws_server/src src/
+COPY public/assets/data/perks.json /usr/src/app/public/assets/data/perks.json
 
 # Forzar la recompilación del binario real
 RUN touch src/main.rs && cargo build --release

@@ -1479,6 +1479,12 @@ export const DesignInteractions = {
                     if (this.flashOverlay) {
                         this.flashOverlay.style.transition = `opacity ${flashMs / 1000}s ease-out`;
                         this.flashOverlay.classList.remove('active');
+                        
+                        // Safety timeout to ensure it gets removed
+                        if (this.flashOverlayTimeout) clearTimeout(this.flashOverlayTimeout);
+                        this.flashOverlayTimeout = setTimeout(() => {
+                            if (this.flashOverlay) this.flashOverlay.classList.remove('active');
+                        }, flashMs + 100);
                     }
                 });
             });
