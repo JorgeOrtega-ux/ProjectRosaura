@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let importPath = moduleConfig.path;
                 if (importPath.startsWith('./')) {
                     let basePath = window.AppBasePath || '';
-                    importPath = `${basePath}/public/assets/js/${importPath.slice(2)}`;
+                    importPath = `${basePath}/assets/js/${importPath.slice(2)}`;
                 }
 
                 if (!window.loadedControllers[className]) {

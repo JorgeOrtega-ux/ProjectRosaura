@@ -392,3 +392,12 @@ CREATE TABLE IF NOT EXISTS `user_perks` (
   INDEX idx_user_perk_active (`user_id`, `perk_id`, `is_used`),
   CONSTRAINT fk_user_perks_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `user_perk_balances` (
+  `user_id` INT(11) NOT NULL,
+  `perk_id` VARCHAR(100) NOT NULL,
+  `quantity_available` INT NOT NULL DEFAULT 0,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`, `perk_id`),
+  CONSTRAINT fk_user_perk_balances_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

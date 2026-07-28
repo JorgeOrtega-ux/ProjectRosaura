@@ -143,6 +143,13 @@ class StoreRepository implements StoreRepositoryInterface {
             $perkStmt = $this->db->prepare("INSERT INTO user_perks (user_id, perk_id, coins_spent) VALUES (?, ?, ?)");
             $perkStmt->execute([$userId, $perkId, $price]);
 
+            $balanceStmt = $this->db->prepare("
+                INSERT INTO user_perk_balances (user_id, perk_id, quantity_available) 
+                VALUES (?, ?, 1) 
+                ON DUPLICATE KEY UPDATE quantity_available = quantity_available + 1
+            ");
+            $balanceStmt->execute([$userId, $perkId]);
+
             $this->db->commit();
 
             if ($this->redisClient) {
@@ -190,10 +197,16 @@ class StoreRepository implements StoreRepositoryInterface {
             }
 
             $perkStmt = $this->db->prepare("INSERT INTO user_perks (user_id, perk_id, coins_spent) VALUES (?, ?, ?)");
+            $balanceStmt = $this->db->prepare("
+                INSERT INTO user_perk_balances (user_id, perk_id, quantity_available) 
+                VALUES (?, ?, 1) 
+                ON DUPLICATE KEY UPDATE quantity_available = quantity_available + 1
+            ");
             foreach ($perkItems as $item) {
                 $perkId = $item['id'];
                 $price = (int)($item['price'] ?? 0);
                 $perkStmt->execute([$userId, $perkId, $price]);
+                $balanceStmt->execute([$userId, $perkId]);
             }
 
             $this->db->commit();
@@ -222,11 +235,29 @@ class StoreRepository implements StoreRepositoryInterface {
     }
 
     public function addPerkToUser(int $userId, string $perkId, int $coinsSpent = 0): bool {
-        $stmt = $this->db->prepare("
-            INSERT INTO user_perks (user_id, perk_id, coins_spent) 
-            VALUES (?, ?, ?)
-        ");
-        return $stmt->execute([$userId, $perkId, $coinsSpent]);
+        try {
+            $this->db->beginTransaction();
+            $stmt = $this->db->prepare("
+                INSERT INTO user_perks (user_id, perk_id, coins_spent) 
+                VALUES (?, ?, ?)
+            ");
+            $res = $stmt->execute([$userId, $perkId, $coinsSpent]);
+            if ($res) {
+                $balanceStmt = $this->db->prepare("
+                    INSERT INTO user_perk_balances (user_id, perk_id, quantity_available) 
+                    VALUES (?, ?, 1) 
+                    ON DUPLICATE KEY UPDATE quantity_available = quantity_available + 1
+                ");
+                $balanceStmt->execute([$userId, $perkId]);
+            }
+            $this->db->commit();
+            return $res;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return false;
+        }
     }
 
     public function getUserPerks(int $userId): array {
@@ -237,34 +268,71 @@ class StoreRepository implements StoreRepositoryInterface {
 
     public function getUnusedPerks(int $userId): array {
         $stmt = $this->db->prepare("
-            SELECT perk_id, COUNT(*) as count 
-            FROM user_perks 
-            WHERE user_id = ? AND is_used = 0 
-            GROUP BY perk_id
+            SELECT perk_id, quantity_available as count 
+            FROM user_perk_balances 
+            WHERE user_id = ? AND quantity_available > 0
         ");
         $stmt->execute([$userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function markPerkAsUsed(int $userId, string $perkId): bool {
-        $stmt = $this->db->prepare("
-            UPDATE user_perks 
-            SET is_used = 1, used_at = NOW() 
-            WHERE user_id = ? AND perk_id = ? AND is_used = 0 
-            ORDER BY created_at ASC LIMIT 1
-        ");
-        $stmt->execute([$userId, $perkId]);
-        return $stmt->rowCount() > 0;
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare("
+                UPDATE user_perks 
+                SET is_used = 1, used_at = NOW() 
+                WHERE user_id = ? AND perk_id = ? AND is_used = 0 
+                ORDER BY created_at ASC LIMIT 1
+            ");
+            $stmt->execute([$userId, $perkId]);
+            if ($stmt->rowCount() > 0) {
+                $balanceStmt = $this->db->prepare("
+                    UPDATE user_perk_balances 
+                    SET quantity_available = GREATEST(0, quantity_available - 1) 
+                    WHERE user_id = ? AND perk_id = ?
+                ");
+                $balanceStmt->execute([$userId, $perkId]);
+                $this->db->commit();
+                return true;
+            }
+            $this->db->rollBack();
+            return false;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return false;
+        }
     }
 
     public function refundPerk(int $userId, string $perkId): bool {
-        $stmt = $this->db->prepare("
-            UPDATE user_perks 
-            SET is_used = 0, used_at = NULL 
-            WHERE user_id = ? AND perk_id = ? AND is_used = 1 
-            ORDER BY used_at DESC LIMIT 1
-        ");
-        $stmt->execute([$userId, $perkId]);
-        return $stmt->rowCount() > 0;
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare("
+                UPDATE user_perks 
+                SET is_used = 0, used_at = NULL 
+                WHERE user_id = ? AND perk_id = ? AND is_used = 1 
+                ORDER BY used_at DESC LIMIT 1
+            ");
+            $stmt->execute([$userId, $perkId]);
+            if ($stmt->rowCount() > 0) {
+                $balanceStmt = $this->db->prepare("
+                    INSERT INTO user_perk_balances (user_id, perk_id, quantity_available) 
+                    VALUES (?, ?, 1) 
+                    ON DUPLICATE KEY UPDATE quantity_available = quantity_available + 1
+                ");
+                $balanceStmt->execute([$userId, $perkId]);
+                $this->db->commit();
+                return true;
+            }
+            $this->db->rollBack();
+            return false;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return false;
+        }
     }
 }

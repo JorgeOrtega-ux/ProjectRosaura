@@ -138,9 +138,9 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
     
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/styles.css?v=<?php echo file_exists(dirname(__DIR__, 2) . '/public/assets/css/styles.css') ? filemtime(dirname(__DIR__, 2) . '/public/assets/css/styles.css') : time(); ?>">
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/components/components.css?v=<?php echo file_exists(dirname(__DIR__, 2) . '/public/assets/css/components/components.css') ? filemtime(dirname(__DIR__, 2) . '/public/assets/css/components/components.css') : time(); ?>">
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/root.css?v=<?php echo file_exists(dirname(__DIR__, 2) . '/public/assets/css/root.css') ? filemtime(dirname(__DIR__, 2) . '/public/assets/css/root.css') : time(); ?>">
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/styles.css">
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/components/components.css">
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/root.css">
     <title><?php echo htmlspecialchars($initialTitle); ?></title>
     
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -216,6 +216,6 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     </div>
     
     <script src="https://unpkg.com/@popperjs/core@2"></script>
-    <script type="module" src="<?php echo $appPath; ?>/assets/js/AppInit.js?v=<?php echo filemtime(ROOT_PATH . '/public/assets/js/AppInit.js'); ?>"></script>
+    <script type="module" src="<?php echo $appPath; ?>/assets/js/AppInit.js"></script>
 </body>
 </html>
