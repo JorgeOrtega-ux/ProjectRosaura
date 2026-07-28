@@ -4,10 +4,15 @@ services:
   websocket_node:
     build:
       context: .
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_websocket_node
+      dockerfile: docker/rust/Dockerfile.worker
+    container_name: rosaura_websocket_node_rust
     restart: always
-    network_mode: "host" # Maximiza el rendimiento de red (recomendado para alta carga de WS en VPS dedicados)
-    command: python -u scripts/websocket_server.py
+    networks:
+      - rosaura_network
     env_file:
       - .env.ws
+
+networks:
+  rosaura_network:
+    external: true
+    name: projectrosaura_rosaura_network

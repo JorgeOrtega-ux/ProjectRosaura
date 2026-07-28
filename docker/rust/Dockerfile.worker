@@ -1,0 +1,32 @@
+FROM rust:alpine AS builder
+
+WORKDIR /usr/src/app
+
+# Instalar dependencias necesarias para compilar con musl
+RUN apk add --no-cache musl-dev gcc make openssl-dev
+
+# Crear una estructura dummy para cachear dependencias
+RUN mkdir -p scripts/ws_server/src && \
+    echo "fn main() {}" > scripts/ws_server/src/main.rs
+
+COPY scripts/ws_server/Cargo.toml scripts/ws_server/
+WORKDIR /usr/src/app/scripts/ws_server
+RUN cargo build --release
+
+# Copiar el código real
+COPY scripts/ws_server/src src/
+
+# Forzar la recompilación del binario real
+RUN touch src/main.rs && cargo build --release
+
+# Imagen final ultra ligera
+FROM alpine:3.19
+WORKDIR /app
+
+# Dependencias en runtime si es necesario
+RUN apk add --no-cache ca-certificates tzdata
+
+COPY --from=builder /usr/src/app/scripts/ws_server/target/release/ws_server /usr/local/bin/
+
+# El .env se montará como volumen o se inyectará
+CMD ["ws_server"]

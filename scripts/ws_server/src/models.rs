@@ -1,0 +1,78 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WsMessage {
+    #[serde(rename = "type")]
+    pub msg_type: String,
+    
+    // Generics used by multiple types
+    pub canvas_id: Option<String>,
+    pub user_id: Option<String>,
+    pub username: Option<String>,
+    pub is_typing: Option<bool>,
+    
+    // Pixel / Area
+    pub x: Option<i32>,
+    pub y: Option<i32>,
+    pub x1: Option<i32>,
+    pub y1: Option<i32>,
+    pub x2: Option<i32>,
+    pub y2: Option<i32>,
+    pub width: Option<i32>,
+    pub height: Option<i32>,
+    pub color: Option<String>,
+    pub pixels: Option<Vec<PixelData>>,
+    
+    // Protections
+    pub protect: Option<bool>,
+    pub offsets: Option<Vec<i32>>,
+    
+    // Cooldown
+    pub balance: Option<i32>,
+    pub max_batch: Option<i32>,
+    pub cooldown_sec: Option<i32>,
+    pub next_replenish_in: Option<f32>,
+    
+    // Live Share
+    pub code: Option<String>,
+    pub count: Option<usize>,
+    pub empty: Option<bool>,
+    pub img_url: Option<String>,
+    pub w: Option<f32>,
+    pub h: Option<f32>,
+    pub opacity: Option<f32>,
+    pub angle: Option<f32>,
+    
+    // Freeze
+    pub frozen: Option<bool>,
+    
+    // Errors
+    pub message: Option<String>,
+    
+    // Bombs
+    pub perk_id: Option<String>,
+    pub r: Option<i32>,
+    pub radius: Option<i32>,
+    pub duration: Option<i32>,
+    pub targets: Option<Vec<BombTarget>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PixelData {
+    pub x: i32,
+    pub y: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BombTarget {
+    pub x: i32,
+    pub y: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CanvasConfig {
+    pub batch: i32,
+    pub sec: i32,
+    pub is_locked: bool,
+    pub width: i32,
+}
