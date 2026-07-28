@@ -3956,6 +3956,7 @@ input:checked+.component-toggle-slider:before {
     background-color: var(--bg-surface-alt, #1c1c20);
     border-radius: 12px;
     position: relative;
+    border: 1px solid #00000020;
     outline: 2px solid transparent;
     outline-offset: 0px;
     transition: outline 0.2s ease, outline-offset 0.2s ease, transform 0.2s ease;
@@ -5694,6 +5695,47 @@ html.dark-theme .component-skeleton-chart-body {
     flex-direction: column;
     gap: 10px;
     padding: 16px 0;
+}
+
+/* Design Canvas Skeleton */
+.component-skeleton-design-bottom {
+    position: relative;
+    flex: 1;
+    min-height: 70vh;
+    display: flex;
+    overflow: hidden;
+    background-color: var(--bg-app, #f5f5f5);
+}
+
+html[data-theme="dark"] .component-skeleton-design-bottom,
+html.dark-theme .component-skeleton-design-bottom {
+    background-color: var(--bg-app, #1a1a1a);
+}
+
+.component-skeleton-design-bottom canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+}
+
+.component-skeleton-design-badges {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    z-index: 1;
+}
+
+.component-skeleton-design-pill {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
 }
 
 .ui-skeleton-loader {

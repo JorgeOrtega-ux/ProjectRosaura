@@ -25,6 +25,8 @@ export const SkeletonTemplates = {
                 return this.policySkeleton();
             case 'chatSkeleton':
                 return this.chatSkeleton();
+            case 'layout-design':
+                return this.designSkeleton();
             default:
                 return this.basicSkeleton();
         }
@@ -411,5 +413,118 @@ export const SkeletonTemplates = {
                 </div>
             </div>
         </div>`;
+    },
+
+    designSkeleton() {
+        return `
+        <div class="view-content">
+            <div class="component-wrapper component-wrapper--full no-padding">
+                <div class="component-top">
+                    <div class="component-top-left">
+                        <div class="component-skeleton component-skeleton--control"></div>
+                    </div>
+                    <div class="component-top-right">
+                        <div class="component-actions active">
+                            <div class="component-skeleton component-skeleton--btn-icon"></div>
+                            <div class="component-divider-vertical"></div>
+                            <div class="component-skeleton component-skeleton--btn-icon"></div>
+                            <div class="component-skeleton component-skeleton--btn-icon"></div>
+                            <div class="component-skeleton component-skeleton--btn-icon"></div>
+                            <div class="component-divider-vertical"></div>
+                            <div class="component-skeleton component-skeleton--btn-icon"></div>
+                            <div class="component-divider-vertical"></div>
+                            <div class="component-skeleton component-skeleton--btn-icon"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-bottom"></div>
+            </div>
+        </div>`;
+    },
+
+    _drawDesignSkeleton(canvasId) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+
+        const parent = canvas.closest('.component-skeleton-design-bottom');
+        if (!parent) return;
+
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const rect = parent.getBoundingClientRect();
+        
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+
+        const w = rect.width;
+        const h = rect.height;
+        const cellSize = 12;
+        const cols = Math.ceil(w / cellSize);
+        const rows = Math.ceil(h / cellSize);
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || document.documentElement.classList.contains('dark-theme');
+
+        const bgColor = isDark ? '#1e1e1e' : '#ffffff';
+        const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+
+        const skColors = isDark
+            ? ['#3a3a3a','#333','#2f2f2f','#383838','#353535','#404040','#3d3d3d']
+            : ['#e0e0e0','#d5d5d5','#e8e8e8','#ddd','#d0d0d0','#e3e3e3','#d8d8d8'];
+
+        const pixels = [];
+        const density = 0.07;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (Math.random() < density) {
+                    pixels.push({ x: c, y: r, color: skColors[Math.floor(Math.random() * skColors.length)] });
+                }
+            }
+        }
+
+        let shimmerX = -0.3;
+        let frameId = null;
+
+        const draw = () => {
+            if (!document.getElementById(canvasId)) { cancelAnimationFrame(frameId); return; }
+
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, w, h);
+
+            for (const p of pixels) {
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x * cellSize, p.y * cellSize, cellSize - 1, cellSize - 1);
+            }
+
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            for (let x = 0; x <= w; x += cellSize) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+            }
+            for (let y = 0; y <= h; y += cellSize) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+            }
+            ctx.stroke();
+
+            const shimmerW = w * 0.35;
+            const sx = shimmerX * w;
+            const grad = ctx.createLinearGradient(sx, 0, sx + shimmerW, 0);
+            const shimmerAlpha = isDark ? 0.06 : 0.12;
+            grad.addColorStop(0, 'rgba(255,255,255,0)');
+            grad.addColorStop(0.5, `rgba(255,255,255,${shimmerAlpha})`);
+            grad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(sx, 0, shimmerW, h);
+
+            shimmerX += 0.004;
+            if (shimmerX > 1.3) shimmerX = -0.35;
+
+            frameId = requestAnimationFrame(draw);
+        };
+
+        draw();
     }
 };

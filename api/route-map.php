@@ -493,7 +493,7 @@ return [
     'canvases.resize' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'resize',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_resize', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_resize', 'max' => RL::MAX_3, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
     'canvases.get_resize_settings' => [
@@ -516,7 +516,7 @@ return [
     'search.query' => [
         'controller' => 'App\Api\Controllers\Search\SearchController',
         'action' => 'search',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'search_query', 'max' => 60, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'search_query', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
     'canvases.assign_member_role' => [
@@ -590,12 +590,12 @@ return [
     'canvases.reset_now' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'reset_now',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_reset_now', 'max' => RL::MAX_5, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_reset_now', 'max' => 2, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.create_snapshot' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'create_snapshot',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create_snap', 'max' => RL::MAX_5, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create_snap', 'max' => RL::MAX_3, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
     'canvases.request_access' => [
@@ -650,7 +650,7 @@ return [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'upload_template',
         
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_upload_tpl', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_upload_tpl', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.get_templates' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
@@ -665,7 +665,7 @@ return [
     'canvases.inject_template' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'inject_template',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_inject_template', 'max' => 5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_inject_template', 'max' => RL::MAX_3, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.template_tokens' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
@@ -682,7 +682,7 @@ return [
     'canvases.create_live_share' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'create_live_share',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create_live', 'max' => 10, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create_live', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.join_live_share' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',

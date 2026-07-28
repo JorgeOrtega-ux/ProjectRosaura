@@ -43,14 +43,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.applyRoleDynamicColors = applyRoleDynamicColors;
 
+    let _searchCooldown = false;
     document.body.addEventListener('keydown', (e) => {
         if (e.target.matches('#globalSearchInput')) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const query = e.target.value.trim();
-                if (query) {
-                    window.spaRouter.navigate('/search?q=' + encodeURIComponent(query));
-                }
+                if (query.length < 2 || _searchCooldown) return;
+                _searchCooldown = true;
+                setTimeout(() => { _searchCooldown = false; }, 1000);
+                window.spaRouter.navigate('/search?q=' + encodeURIComponent(query));
             }
         }
     });
