@@ -487,11 +487,11 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             bg_thumb.paste(img_thumb)
         
         thumb_io = io.BytesIO()
-        bg_thumb.save(thumb_io, "PNG", optimize=True)
+        bg_thumb.save(thumb_io, "WEBP", quality=80)
         thumb_io.seek(0)
         s3 = get_s3_client()
         try:
-            s3.put_object(Bucket=S3_BUCKET, Key=f"thumbnails/canvas_{canvas_uuid}.png", Body=thumb_io, ContentType='image/png')
+            s3.put_object(Bucket=S3_BUCKET, Key=f"thumbnails/canvas_{canvas_uuid}.webp", Body=thumb_io, ContentType='image/webp')
         except Exception as e:
             print(f"[!] Error uploading thumbnail to S3: {e}")
             return False

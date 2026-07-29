@@ -133,10 +133,9 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     <base href="<?php echo $appPath; ?>/">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken ?? '', ENT_QUOTES, 'UTF-8'); ?>">
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/icons.css">
+    <script src="<?php echo $appPath; ?>/assets/js/icons-init.js"></script>
     
     <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/styles.css">
     <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/components/components.css">

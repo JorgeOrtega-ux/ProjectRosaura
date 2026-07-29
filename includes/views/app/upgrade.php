@@ -148,7 +148,7 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
                                                 </div>
                                             <?php endif; ?>
 
-                                            <div class="upgrade-card-feature-item">
+                                            <div class="upgrade-card-feature-item <?php echo $featureIndex > 4 ? 'upgrade-card-feature-item--hidden' : ''; ?>" data-hidden="<?php echo $featureIndex > 4 ? 'true' : 'false'; ?>">
                                                 <span class="material-symbols-rounded upgrade-card-feature-icon"><?php echo $row['icon']; ?></span>
                                                 <div class="upgrade-card-feature-text-container">
                                                     <span class="upgrade-card-feature-title"><?php echo $featureTitle; ?></span>
@@ -158,6 +158,12 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
                                         <?php 
                                         $featureIndex++;
                                         endforeach; ?>
+                                        
+                                        <?php if ($featureIndex > 5): ?>
+                                            <div style="text-align: center; margin-top: 12px;">
+                                                <span class="component-badge component-cursor-pointer" data-action="toggle-plan-features">Mostrar todos los beneficios</span>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>

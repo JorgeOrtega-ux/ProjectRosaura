@@ -3968,7 +3968,7 @@ input:checked+.component-toggle-slider:before {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 30%, rgba(0, 0, 0, 0) 60%);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.3) 15%, rgba(0, 0, 0, 0) 40%);
     pointer-events: none;
     z-index: 2;
     border-radius: inherit;
@@ -7114,13 +7114,13 @@ html.dark-theme .component-skeleton-design-bottom {
 .upgrade-card--popular {
     padding: 24px;
     border: 3px solid transparent;
-    background-image: linear-gradient(var(--bg-surface, #fff), var(--bg-surface, #fff)), linear-gradient(77.04deg, #3186ff 6.99%, #346bf1 45.46%, #4fa0ff 88.2%);
+    background-image: linear-gradient(var(--bg-surface, #fff), var(--bg-surface, #fff)), linear-gradient(135deg, #333333 0%, #000000 100%);
     background-origin: border-box;
     background-clip: padding-box, border-box;
 }
 
 .upgrade-card-popular-badge {
-    color: #3186ff;
+    color: var(--text-primary);
     font-size: 14px;
     font-weight: 500;
     margin-bottom: 4px;
@@ -7177,9 +7177,26 @@ html.dark-theme .component-skeleton-design-bottom {
 }
 
 .upgrade-card-button--popular {
-    background: #3186ff;
+    background: #000000;
     color: #fff;
     border: none;
+}
+
+.upgrade-card-feature-item--hidden {
+    display: none !important;
+}
+
+.upgrade-card-features-toggle {
+    text-align: center;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: 12px;
+}
+.upgrade-card-features-toggle:hover {
+    color: var(--text-secondary);
 }
 
 .upgrade-card-features {

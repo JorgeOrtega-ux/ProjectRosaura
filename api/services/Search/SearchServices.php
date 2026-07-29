@@ -137,7 +137,7 @@ class SearchServices {
     }
     
     private function getThumbnailUrl(string $uuid): ?string {
-        return \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $uuid . ".png");
+        return \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $uuid . ".webp");
     }
 }
 ?>

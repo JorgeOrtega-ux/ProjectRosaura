@@ -35,7 +35,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             return $canvas;
         }
         
-        $thumbnailPath = "/storage/public/thumbnails/canvas_" . $canvas['id'] . ".png";
+        $thumbnailPath = "/storage/public/thumbnails/canvas_" . $canvas['id'] . ".webp";
         $physicalPath = dirname(__DIR__, 3) . $thumbnailPath;
         
         if (file_exists($physicalPath)) {

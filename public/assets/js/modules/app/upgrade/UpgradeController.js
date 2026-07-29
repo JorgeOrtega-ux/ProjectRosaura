@@ -41,6 +41,13 @@ export class UpgradeController {
             if (modal) modal.style.display = 'none';
             return;
         }
+        
+        const toggleFeaturesBtn = e.target.closest('[data-action="toggle-plan-features"]');
+        if (toggleFeaturesBtn) {
+            e.preventDefault();
+            this._toggleFeatures(toggleFeaturesBtn);
+            return;
+        }
     }
 
     _setBilling(type) {
@@ -53,6 +60,24 @@ export class UpgradeController {
 
         if (window.appInstance && typeof window.appInstance.closeAllModules === 'function') {
             window.appInstance.closeAllModules();
+        }
+    }
+
+    _toggleFeatures(btn) {
+        const container = btn.closest('.upgrade-card-features');
+        if (!container) return;
+        
+        const hiddenItems = container.querySelectorAll('.upgrade-card-feature-item[data-hidden="true"]');
+        if (!hiddenItems.length) return;
+        
+        const isCurrentlyHidden = hiddenItems[0].classList.contains('upgrade-card-feature-item--hidden');
+        
+        if (isCurrentlyHidden) {
+            hiddenItems.forEach(item => item.classList.remove('upgrade-card-feature-item--hidden'));
+            btn.textContent = window.__('upgrade_hide_features') || "Ocultar beneficios";
+        } else {
+            hiddenItems.forEach(item => item.classList.add('upgrade-card-feature-item--hidden'));
+            btn.textContent = window.__('upgrade_show_features') || "Mostrar todos los beneficios";
         }
     }
 

@@ -98,7 +98,7 @@ class CanvasCoreService {
                 $canvas['is_subscription_locked'] = !empty($canvas['is_subscription_locked']);
                 $canvas['locked_requires_downgrade'] = !empty($canvas['is_subscription_locked']);
                 
-                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
+                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
                 
                 $canvas['thumbnail_url'] = $thumbnailUrl;
                 $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
@@ -136,7 +136,7 @@ class CanvasCoreService {
                 $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
                 $canvas['is_member'] = !empty($canvas['is_member']);
                 
-                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
+                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
                 
                 $canvas['thumbnail_url'] = $thumbnailUrl;
                 $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
@@ -177,7 +177,7 @@ class CanvasCoreService {
                 $canvas['is_member'] = !empty($canvas['is_member']);
                 $canvas['privacy'] = 'public'; 
                 
-                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
+                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
                 
                 $canvas['thumbnail_url'] = $thumbnailUrl;
                 $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
@@ -200,7 +200,7 @@ class CanvasCoreService {
             
             $formattedCanvases = [];
             foreach ($canvases as $canvas) {
-                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
+                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
                 
                 $lockedReasons = [];
                 if (!empty($canvas['locked_reasons'])) {
