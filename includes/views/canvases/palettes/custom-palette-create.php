@@ -34,7 +34,7 @@ $translatedName = __('canvas_palette_new');
                             </div>
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_palette_name'); ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_palette_name_accordion_desc') ?: 'Define el nombre de tu paleta personalizada.'; ?></p>
+                                <p class="component-card__description"><?php echo __('canvas_palette_name_accordion_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">

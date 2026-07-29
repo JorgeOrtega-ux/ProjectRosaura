@@ -14,7 +14,8 @@ export class PurchaseHistoryController {
         this.selectedReceiptUrl = null;
         this.selectedPdfUrl = null;
 
-        // Paginación y Filtros
+        
+
         this.currentPage = 1;
         this.limit = 10;
         this.totalItems = 0;
@@ -201,7 +202,8 @@ export class PurchaseHistoryController {
                 }
             }
 
-            // Actualizar activeFilters
+            
+
             const checkedVals = Array.from(groupCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
             if (filterCategory === 'type') {
                 this.activeFilters.types = checkedVals;
@@ -265,7 +267,7 @@ export class PurchaseHistoryController {
                     <td colspan="4" class="component-empty-table-cell">
                         <div class="component-empty-state component-empty-state--table">
                             <span class="material-symbols-rounded component-empty-state-icon">receipt_long</span>
-                            <p class="component-empty-state-text">${window.__('no_purchases') || 'No hay compras registradas.'}</p>
+                            <p class="component-empty-state-text">${window.__('no_purchases')}</p>
                         </div>
                     </td>
                 </tr>
@@ -329,7 +331,7 @@ export class PurchaseHistoryController {
 
     async downloadSelectedDocument(btn = null) {
         if (!this.selectedRow || !this.selectedPurchaseId) {
-            showMessage(window.__('no_receipt_available') || 'No hay comprobante disponible para esta compra.', 'warning');
+            showMessage(window.__('no_receipt_available'), 'warning');
             return;
         }
 
@@ -364,7 +366,7 @@ export class PurchaseHistoryController {
 
         } catch (error) {
             if (error.name !== 'AbortError') {
-                showMessage(window.__('err_download_receipt') || 'Error al descargar el comprobante.', 'error');
+                showMessage(window.__('err_download_receipt'), 'error');
             }
         } finally {
             if (btn) restoreButton(btn);

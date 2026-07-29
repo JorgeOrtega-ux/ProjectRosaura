@@ -144,7 +144,8 @@ function flushDirtyRect() {
     const dh = Math.min(boardHeight - 1, dirtyRect.maxY) - dy + 1;
     
     if (dw > 0 && dh > 0) {
-        // Enviar solo la parte sucia a la GPU en 1 llamada ultra-rápida
+        
+
         offscreenCtx.putImageData(mainImageData, 0, 0, dx, dy, dw, dh);
     }
     
@@ -353,7 +354,8 @@ function clearBombPixels(cX, cY, r) {
 }
 
 // ---------------------------------------------------------
-// RENDER LOOP PRINCIPAL
+
+
 // ---------------------------------------------------------
 
 function render() {
@@ -362,7 +364,8 @@ function render() {
 
     processPixelQueue();
 
-    // Actualizar animación de reinicio de lienzo en memoria (Espiral)
+    
+
     if (resetAnimation) {
         const now = Date.now();
         const elapsed = now - resetAnimation.startTime;
@@ -422,7 +425,8 @@ function render() {
         }
     }
 
-    // Actualizar animación de inyección de template en memoria (Z)
+    
+
     if (injectAnimation) {
         const now = Date.now();
         const elapsed = now - injectAnimation.startTime;
@@ -499,7 +503,8 @@ function render() {
         }
     }
 
-    // Actualizar animaciones de borrador en memoria (Espiral)
+    
+
     if (eraserAnimations.length > 0) {
         const now = Date.now();
         let needsFlush = false;
@@ -694,7 +699,8 @@ function render() {
         const startX = Math.max(0, Math.floor(-transform.x / transform.scale));
         const startY = Math.max(0, Math.floor(-transform.y / transform.scale));
         
-        // BUG FIX: Limitar grid al tamaño en animación (drawW / drawH), no al total instantáneo
+        
+
         const endX = Math.min(drawW, Math.ceil((canvasWidthCss - transform.x) / transform.scale));
         const endY = Math.min(drawH, Math.ceil((canvasHeightCss - transform.y) / transform.scale));
 
@@ -714,7 +720,8 @@ function render() {
     ctx.rect(0, 0, drawW, drawH);
     ctx.clip();
 
-    // Copiar buffer offscreen (siempre y cuando sea válido)
+    
+
     if (offscreenCanvas && offscreenCanvas.width > 0 && offscreenCanvas.height > 0) {
         ctx.drawImage(offscreenCanvas, 0, 0);
     }
@@ -761,7 +768,8 @@ function render() {
     const selLen = selectedPixelsArray.length;
     const hasHover = hoveredPixelKey >= 0 && !isSpectator && !isResetLocked && !(isFrozen && !isOwner);
 
-    // Renderizado ultra-rápido O(1) de zonas protegidas resaltadas en modo Bloqueador
+    
+
     if (isOwnerProtecting) {
         if (protectedPixelsDirty) {
             updateProtectedOffscreen();

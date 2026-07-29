@@ -74,10 +74,10 @@ export class UpgradeController {
         
         if (isCurrentlyHidden) {
             hiddenItems.forEach(item => item.classList.remove('upgrade-card-feature-item--hidden'));
-            btn.textContent = window.__('upgrade_hide_features') || "Ocultar beneficios";
+            btn.textContent = window.__('upgrade_hide_features');
         } else {
             hiddenItems.forEach(item => item.classList.add('upgrade-card-feature-item--hidden'));
-            btn.textContent = window.__('upgrade_show_features') || "Mostrar todos los beneficios";
+            btn.textContent = window.__('upgrade_show_features');
         }
     }
 
@@ -136,12 +136,12 @@ export class UpgradeController {
         const sessionId = urlParams.get('session_id');
 
         if ((status === 'success' || urlParams.get('checkout') === 'success') && sessionId) {
-            showMessage(window.__('msg_payment_success') || '¡Pago completado con éxito!', 'success');
+            showMessage(window.__('msg_payment_success'), 'success');
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
             this._pollSubscriptionStatus(3, sessionId);
         } else if (status === 'cancel') {
-            showMessage(window.__('payment_cancelled') || 'Pago cancelado', 'warning');
+            showMessage(window.__('payment_cancelled'), 'warning');
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
         }
@@ -158,7 +158,7 @@ export class UpgradeController {
                     if (window.dialogSystem) {
                         window.dialogSystem.show('welcomePremiumModal', result.data);
                     } else {
-                        showMessage(window.__('msg_plan_updated') || '¡Suscripción actualizada!', 'success');
+                        showMessage(window.__('msg_plan_updated'), 'success');
                     }
                     return;
                 }
@@ -260,7 +260,7 @@ export class UpgradeController {
                             window.location.reload();
                         });
                     } else {
-                        showMessage(window.__('msg_sub_updated') || '¡Suscripción actualizada!', 'success');
+                        showMessage(window.__('msg_sub_updated'), 'success');
                         setTimeout(() => { window.location.reload(); }, 1500);
                     }
                 } else {
@@ -285,7 +285,7 @@ export class UpgradeController {
                             window.location.reload();
                         });
                     } else {
-                        showMessage(window.__('msg_sub_updated') || '¡Suscripción actualizada!', 'success');
+                        showMessage(window.__('msg_sub_updated'), 'success');
                         setTimeout(() => { window.location.reload(); }, 1500);
                     }
                 } else {

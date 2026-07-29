@@ -814,7 +814,7 @@ export class DesignChat {
         }
 
         const avatarStr = `
-            <div class="component-button--profile role-dynamic component-avatar--static-sm" style="--active-role-bg: ${subColorCSS}">
+            <div class="component-button--profile role-dynamic component-avatar--static-sm">
                 <img src="${avatarUrl}" class="chat-message-avatar-img image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('image-loaded');">
             </div>
         `;

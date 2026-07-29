@@ -14,7 +14,7 @@ use App\Core\System\Logger;
 class AppViewService {
 
     /**
-     * Obtiene los paquetes de monedas para la vista store-coins.
+
      */
     public function getStoreCoinsData(): array {
         if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfig::class, 'getCoinPackages')) {
@@ -54,7 +54,7 @@ class AppViewService {
     }
 
     /**
-     * Obtiene todos los datos requeridos para la vista de upgrade/suscripciones.
+
      */
     public function getUpgradePageData(): array {
         if (session_status() === PHP_SESSION_NONE) {
@@ -68,7 +68,8 @@ class AppViewService {
             $currentUserTier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
         }
 
-        // Obtener todos los tiers activos (tier_level > 0 y is_active = 1)
+        
+
         $allTiers = array_filter(
             SubscriptionPlanConstants::getAllTiers(),
             fn($t) => $t['tier_level'] > 0 && (isset($t['is_active']) ? (int)$t['is_active'] === 1 : true)
@@ -77,16 +78,16 @@ class AppViewService {
         $availableFeatures = SubscriptionFeatureConfig::getAvailableFeatures();
         $rowsToCompare = [
             [
-                'label' => __('plan_limit_canvases', 'Lienzos'),
+                'label' => __('plan_limit_canvases'),
                 'desc' => __('plan_limit_canvases_desc', 'Proyectos simultáneos'),
                 'icon' => 'dashboard',
                 'values_fn' => function($t) {
-                    return $t['max_canvases'] == -1 ? __('plan_limit_unlimited', 'Ilimitado') : $t['max_canvases'] . ' ' . __('plan_limit_canvases', 'Lienzos');
+                    return $t['max_canvases'] == -1 ? __('plan_limit_unlimited') : $t['max_canvases'] . ' ' . __('plan_limit_canvases');
                 }
             ],
             [
                 'label' => __('plan_limit_snapshots', 'Snapshots'),
-                'desc' => __('plan_limit_snapshots_desc', 'Por lienzo'),
+                'desc' => __('plan_limit_snapshots_desc'),
                 'icon' => 'history',
                 'values_fn' => function($t) {
                     return $t['max_snapshots_per_canvas'] == -1 ? __('plan_limit_unlimited', 'Ilimitado') : $t['max_snapshots_per_canvas'] . ' ' . __('plan_limit_snapshots', 'Snapshots');
@@ -94,7 +95,7 @@ class AppViewService {
             ],
             [
                 'label' => __('plan_limit_members', 'Miembros'),
-                'desc' => __('plan_limit_members_desc', 'Por lienzo'),
+                'desc' => __('plan_limit_members_desc'),
                 'icon' => 'group',
                 'values_fn' => function($t) {
                     return $t['max_members_per_canvas'] == -1 ? __('plan_limit_unlimited', 'Ilimitados') : number_format($t['max_members_per_canvas']) . ' ' . __('plan_limit_members', 'Miembros');
@@ -133,7 +134,7 @@ class AppViewService {
     }
 
     /**
-     * Obtiene la lista de etiquetas con sus íconos para la vista principal.
+
      */
     public function getHomeTags(): array {
         return [
@@ -156,7 +157,7 @@ class AppViewService {
     }
 
     /**
-     * Obtiene todos los datos requeridos para la vista de diseño de lienzo (design.php).
+
      */
     public function getCanvasDesignData(?string $canvasUuid, bool $isSnapshot = false): array {
         $canvasIntId = 0; 

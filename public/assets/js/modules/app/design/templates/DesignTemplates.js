@@ -77,7 +77,7 @@ export const DesignTemplates = {
             } else {
                 // Not broadcasting → confirm start
                 if (!this.activeTemplateId) {
-                    showMessage(__('err_no_template_selected', [], 'Selecciona una plantilla primero.'), 'warning');
+                    showMessage(__('err_no_template_selected', []), 'warning');
                     return true;
                 }
 
@@ -179,7 +179,7 @@ export const DesignTemplates = {
         codeBadge.className = 'component-badge component-badge--info';
         codeBadge.id = 'live-share-code-badge';
         codeBadge.style.cursor = 'pointer';
-        codeBadge.setAttribute('title', window.__('tooltip_click_toggle_code', [], 'Clic para ocultar/mostrar el código'));
+        codeBadge.setAttribute('title', window.__('tooltip_click_toggle_code', []));
 
         const iconSpan = document.createElement('span');
         iconSpan.className = 'material-symbols-rounded';
@@ -187,7 +187,7 @@ export const DesignTemplates = {
         
         const textSpan = document.createElement('span');
         textSpan.setAttribute('data-ref', 'live-code-text');
-        textSpan.textContent = `${window.__('lbl_broadcast_code', [], 'Código de transmisión')}: ${code}`;
+        textSpan.textContent = `${window.__('lbl_broadcast_code', [])}: ${code}`;
 
         codeBadge.appendChild(iconSpan);
         codeBadge.appendChild(textSpan);
@@ -199,10 +199,10 @@ export const DesignTemplates = {
             codeBadge._codeVisible = !codeBadge._codeVisible;
             const txt = codeBadge.querySelector('[data-ref="live-code-text"]');
             if (codeBadge._codeVisible) {
-                txt.textContent = `${window.__('lbl_broadcast_code', [], 'Código de transmisión')}: ${codeBadge._code}`;
+                txt.textContent = `${window.__('lbl_broadcast_code', [])}: ${codeBadge._code}`;
                 iconSpan.textContent = 'key';
             } else {
-                txt.textContent = `${window.__('lbl_broadcast_code', [], 'Código de transmisión')}: ••••-••••`;
+                txt.textContent = `${window.__('lbl_broadcast_code', [])}: ••••-••••`;
                 iconSpan.textContent = 'key_off';
             }
         });

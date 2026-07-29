@@ -351,7 +351,7 @@ class SettingsServices
                 $user = $this->userRepository->findById($userId);
                 $password = trim($data['password'] ?? '');
                 if (!$user || empty($password) || !password_verify($password, $user['password'] ?? '')) {
-                    return ['success' => false, 'message' => __('auth.incorrect_password') ?: 'Contraseña incorrecta.'];
+                    return ['success' => false, 'message' => __('auth.incorrect_password')];
                 }
             }
 
@@ -831,9 +831,9 @@ class SettingsServices
 
         if ($existingUser) {
             if ((int)$existingUser['id'] === (int)$userId) {
-                return ['success' => true, 'message' => __('google_already_linked', [], 'Esta cuenta de Google ya está vinculada a tu perfil.')];
+                return ['success' => true, 'message' => __('google_already_linked', [])];
             }
-            return ['success' => false, 'message' => __('google_linked_other_user', [], 'Esta cuenta de Google ya está vinculada a otro usuario.')];
+            return ['success' => false, 'message' => __('google_linked_other_user', [])];
         }
 
         if ($this->userRepository->updateGoogleId($userId, $googleId)) {
@@ -843,7 +843,7 @@ class SettingsServices
                 $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
             }
             $this->logProfileChange($userId, 'link_google', null, json_encode(['google_id' => $googleId]));
-            return ['success' => true, 'message' => __('google_linked_success', [], 'Cuenta de Google vinculada con éxito.')];
+            return ['success' => true, 'message' => __('google_linked_success', [])];
         }
 
         return ['success' => false, 'message' => __('error.database')];
@@ -858,7 +858,7 @@ class SettingsServices
         if (!$user) return ['success' => false, 'message' => __('error.user_not_found')];
 
         if (empty($user['google_id'])) {
-            return ['success' => false, 'message' => __('google_not_linked', [], 'No tienes una cuenta de Google vinculada.')];
+            return ['success' => false, 'message' => __('google_not_linked', [])];
         }
 
         $newPassword = trim($data['new_password'] ?? '');
@@ -884,7 +884,7 @@ class SettingsServices
                 $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
             }
             $this->logProfileChange($userId, 'unlink_google', json_encode(['google_id' => $user['google_id']]), null);
-            return ['success' => true, 'message' => __('google_unlinked_success', [], 'Cuenta de Google desvinculada con éxito.')];
+            return ['success' => true, 'message' => __('google_unlinked_success', [])];
         }
 
         return ['success' => false, 'message' => __('error.database')];

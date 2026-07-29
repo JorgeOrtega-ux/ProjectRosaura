@@ -38,8 +38,8 @@ $contentPackages = $viewService->getStoreContentData();
                         <tr>
                             <th><?php echo __('th_item') ?: 'Ítem / Ventaja'; ?></th>
                             <th><?php echo __('th_description') ?: 'Descripción'; ?></th>
-                            <th><?php echo __('th_usage') ?: 'Tipo / Uso'; ?></th>
-                            <th><?php echo __('th_price') ?: 'Precio (Monedas)'; ?></th>
+                            <th><?php echo __('th_usage'); ?></th>
+                            <th><?php echo __('th_price'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -64,7 +64,7 @@ $contentPackages = $viewService->getStoreContentData();
                                 <?php if (!empty($pkg['is_single_use'])): ?>
                                 <div class="component-badge component-badge--sm">
                                     <span class="material-symbols-rounded">info</span>
-                                    <span><?= __('single_use') ?: 'Un solo uso'; ?></span>
+                                    <span><?= __('single_use'); ?></span>
                                 </div>
                                 <?php else: ?>
                                 <div class="component-badge component-badge--sm component-badge--muted">

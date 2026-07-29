@@ -184,7 +184,7 @@ class CanvasSnapshotsGalleryController {
                         bottomArea.innerHTML = `
                             <div class="component-empty-state" data-ref="empty-state-rendered">
                                 <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                <p class="component-empty-state-text">${window.__('empty_snapshots_gallery') || 'No snapshots found.'}</p>
+                                <p class="component-empty-state-text">${window.__('empty_snapshots_gallery')}</p>
                             </div>
                         `;
                     }

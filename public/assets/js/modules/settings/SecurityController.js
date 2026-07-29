@@ -133,7 +133,7 @@ class SecurityController {
         if (dialog.confirmed) {
             const passInput = dialog.data['modal_delete_password'];
             if (!passInput) {
-                showMessage(window.__('err_password_required') || 'Ingresa tu contraseña para confirmar', "error");
+                showMessage(window.__('err_password_required'), "error");
                 return;
             }
 
@@ -147,7 +147,7 @@ class SecurityController {
             restoreButton(btn);
 
             if (result.success) {
-                showMessage(result.message || window.__('msg_deletion_started') || 'Cuenta eliminada con éxito', "success");
+                showMessage(result.message || window.__('msg_deletion_started'), "success");
                 setTimeout(() => {
                     window.location.href = this.basePath + '/login';
                 }, 1500);
@@ -171,7 +171,7 @@ class SecurityController {
                 if (res.aborted) return;
 
                 if (res.success) {
-                    showMessage(res.message || window.__('msg_devices_revoked') || 'Sesiones cerradas con éxito', 'success');
+                    showMessage(res.message || window.__('msg_devices_revoked'), 'success');
                     setTimeout(() => {
                         window.location.href = this.basePath + '/login';
                     }, 1000);

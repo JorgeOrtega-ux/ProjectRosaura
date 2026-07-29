@@ -449,7 +449,7 @@ export const DesignInteractions = {
                                 }
                             });
                         } else {
-                            const act = confirm(window.__('confirm_unprotect_pixel') || '¿Deseas eliminar la protección de este píxel?');
+                            const act = confirm(window.__('confirm_unprotect_pixel'));
                             if (act) {
                                 this.ownerEraserBox = { x1: coords.x, y1: coords.y, x2: coords.x, y2: coords.y };
                                 this.ownerEraserStep = 2;
@@ -1526,7 +1526,7 @@ export const DesignInteractions = {
             const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
             const count = owned ? parseInt(owned.count, 10) : 0;
             if (count <= 0) {
-                if (typeof showMessage === 'function') showMessage(window.__('err_perk_not_owned') || 'No tienes usos disponibles de esta bomba', 'warning');
+                if (typeof showMessage === 'function') showMessage(window.__('err_perk_not_owned'), 'warning');
                 return;
             }
 
@@ -1664,7 +1664,7 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-error)';
                     badgeEl.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
                 }
-                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>${window.__('badge_owner_eraser') || 'Borrador Administrativo'}</span>`;
+                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>${window.__('badge_owner_eraser')}</span>`;
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.toggleOwnerEraser();
@@ -1719,7 +1719,7 @@ export const DesignInteractions = {
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
-            if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_off') || 'Modo Borrador de Lienzo desactivado', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_off'), 'info');
         } else {
             this.interactionMode = 'owner_erasing';
             this.activeBomb = null;

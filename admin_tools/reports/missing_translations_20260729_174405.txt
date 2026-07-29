@@ -1,0 +1,65 @@
+=== REPORTE DE TRADUCCIONES FALTANTES ===
+Fecha: 2026-07-29 17:44:05
+Archivos escaneados: 271
+Claves en código: 1928
+Claves en JSON: 2602
+Claves faltantes: 57
+
+=== LISTA DE CLAVES FALTANTES ===
+admin_tier_limit_template_tokens
+admin_tier_limit_template_tokens_desc
+admin_tier_price_monthly
+admin_tier_price_monthly_desc
+admin_tier_price_yearly
+admin_tier_price_yearly_desc
+auth_incorrect_password
+btn_leave_broadcast
+btn_more_info
+btn_protect_area
+cannot_delete_higher_role
+cannot_edit_higher_role
+cannot_edit_higher_role_perms
+desc_leave_broadcast
+err_action_failed
+err_invalid_id
+err_invalid_template_id
+err_requires_inject_templates_plan
+err_select_item
+err_select_package
+lbl_no_users_found
+lbl_requires_pro
+lbl_sanction_expired
+lbl_select_expiration_date
+lbl_system_role
+menu_policy_cookies_prefs
+msg_action_success
+msg_bulk_purchase_success
+msg_devices_revoked
+msg_left_live_share
+msg_purchase_success
+msg_template_unlocked
+no_permission_desc
+no_permission_title
+placeholder_search_roles
+receipt_default_filename
+report_reason_
+settings.identity_already_verified
+system_role_cannot_delete
+system_role_edit_notice
+table_header_expiration
+table_header_reason
+th_bonus
+th_item
+th_package
+th_price
+th_usage
+title_leave_broadcast
+tooltip_owner_tools
+upgrade_hide_features
+upgrade_show_features
+welcome_adv_speed_desc
+welcome_adv_speed_title
+welcome_adv_storage_desc
+welcome_adv_storage_title
+welcome_adv_tools_desc
+welcome_adv_tools_title

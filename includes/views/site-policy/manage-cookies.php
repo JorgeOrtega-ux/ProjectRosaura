@@ -4,7 +4,7 @@
             <h1 class="component-top-title">Administrar cookies</h1>
         </div>
         <div class="component-top-right">
-            <div style="display: flex; gap: 8px;">
+            <div>
                 <button class="component-button component-button--h40 component-button--outline" data-action="reject_all">Rechazar todo</button>
                 <button class="component-button component-button--h40 component-button--dark" data-action="accept_all">Aceptar todo</button>
                 <button class="component-button component-button--h40" data-action="save_prefs">Guardar preferencias</button>
@@ -33,7 +33,7 @@
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <span style="font-size: 12px; color: var(--text-muted); font-weight: 500; margin-right: 8px;">Siempre activas</span>
+                            <span>Siempre activas</span>
                             <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
                         </div>
                     </div>

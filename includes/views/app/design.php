@@ -6,7 +6,7 @@ $viewService = new AppViewService();
 $designData = $viewService->getCanvasDesignData($_GET['id'] ?? '', isset($_GET['snapshot']));
 
 if ($designData['isBanned']) {
-    echo "<div class='view-content'><p style='padding: 40px; text-align: center; color: var(--text-danger); font-weight: 500;'>".__('err_user_banned_from_canvas')."</p></div>";
+    echo "<div class='view-content'><p>".__('err_user_banned_from_canvas')."</p></div>";
     return;
 }
 
@@ -118,7 +118,7 @@ extract($designData);
                         <span class="material-symbols-rounded">photo_library</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40 component-button--warning disabled" data-action="unlockTemplateTop" data-ref="btn-top-unlock-template" data-tooltip="Desfijar Plantilla [U]" data-position="bottom" style="display: none;">
+                    <button class="component-button component-button--icon component-button--h40 component-button--warning disabled" data-action="unlockTemplateTop" data-ref="btn-top-unlock-template" data-tooltip="Desfijar Plantilla [U]" data-position="bottom">
                         <span class="material-symbols-rounded">lock_open</span>
                     </button>
                     
@@ -131,7 +131,7 @@ extract($designData);
 
                     <?php if (isset($isOwner) && $isOwner): ?>
                     <div class="component-divider-vertical" data-ref="owner-tools-actions-divider"></div>
-                    <button class="component-button component-button--icon component-button--h40" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools', 'Herramientas de Dueño'); ?> [O]" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
                         <span class="material-symbols-rounded">construction</span>
                     </button>
                     <?php endif; ?>
@@ -149,7 +149,7 @@ extract($designData);
         <div class="component-bottom">
             <canvas data-ref="design-canvas" class="component-canvas-surface <?php echo (isset($isBlockedInit) && $isBlockedInit) ? 'component-canvas-blocked disabled-interaction' : ''; ?>"></canvas>
 
-            <div class="component-badge component-badge--dark component-badge--toolbar" data-ref="template-floating-toolbar" style="display: none;">
+            <div class="component-badge component-badge--dark component-badge--toolbar" data-ref="template-floating-toolbar">
                 <button class="component-button component-button--icon component-button--h24" data-action="toggleTemplateLock" data-ref="btn-template-lock" data-tooltip="<?php echo __('tooltip_toggle_lock'); ?> [U]" data-position="top">
                     <span class="material-symbols-rounded">lock_open</span>
                 </button>

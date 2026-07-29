@@ -25,7 +25,8 @@ try {
     }
 }
 
-// 3. Renderizar el Layout HTML Principal
+
+
 try {
     require_once __DIR__ . '/../includes/layouts/app.php';
 } catch (\Throwable $e) {

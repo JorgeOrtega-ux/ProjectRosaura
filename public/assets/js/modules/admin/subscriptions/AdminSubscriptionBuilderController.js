@@ -502,12 +502,12 @@ class AdminSubscriptionBuilderController {
         if (!container) return;
         
         const html = `
-            <div class="component-group-item component-group-item--stacked benefit-row" style="background: rgba(0,0,0,0.02); margin-bottom: 8px; border-radius: 8px; padding: 12px; border: 1px solid var(--border-color, #e0e0e0);">
-                <div style="display:flex; gap: 12px; width: 100%; align-items: flex-start;">
-                    <div class="component-input-group component-input-group--h34" style="flex: 0 0 60px;">
+            <div class="component-group-item component-group-item--stacked benefit-row">
+                <div>
+                    <div class="component-input-group component-input-group--h34">
                         <input type="text" class="component-input-field component-input-field--simple b-icon" placeholder="Icon" value="${data.icon || 'check'}" title="Material Symbol (ej. check, palette, stars)">
                     </div>
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                    <div>
                         <div class="component-input-group component-input-group--h34">
                             <input type="text" class="component-input-field component-input-field--simple b-title" placeholder="Clave de Título (ej. plan_card_canvases)" value="${data.title_key || ''}">
                         </div>
@@ -515,7 +515,7 @@ class AdminSubscriptionBuilderController {
                             <input type="text" class="component-input-field component-input-field--simple b-desc" placeholder="Clave de Descripción (ej. plan_desc_canvases)" value="${data.desc_key || ''}">
                         </div>
                     </div>
-                    <button type="button" class="component-button component-button--icon component-button--h34" data-action="removeBenefit" style="flex: 0 0 34px;">
+                    <button type="button" class="component-button component-button--icon component-button--h34" data-action="removeBenefit">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
                 </div>

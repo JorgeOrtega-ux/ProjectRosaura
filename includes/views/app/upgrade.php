@@ -127,9 +127,9 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
                                     <?php endif; ?>
                                 </div>
 
-                                <hr class="component-divider" style="margin: 0;">
+                                <hr class="component-divider">
 
-                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div>
                                     <div class="upgrade-card-features">
                                         <?php 
                                         $featureIndex = 0;
@@ -160,7 +160,7 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
                                         endforeach; ?>
                                         
                                         <?php if ($featureIndex > 5): ?>
-                                            <div style="text-align: center; margin-top: 12px;">
+                                            <div>
                                                 <span class="component-badge component-cursor-pointer" data-action="toggle-plan-features">Mostrar todos los beneficios</span>
                                             </div>
                                         <?php endif; ?>

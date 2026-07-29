@@ -29,7 +29,7 @@ class AuthViewService {
     }
 
     /**
-     * Obtiene y prepara los datos para la vista de inicio de sesión (login.php).
+
      */
     public function getLoginViewData(): array {
         if (session_status() === PHP_SESSION_NONE) {
@@ -79,7 +79,7 @@ class AuthViewService {
     }
 
     /**
-     * Valida el token de recuperación de contraseña y prepara los datos para reset-password.php.
+
      */
     public function getResetPasswordViewData(?string $token): array {
         $isValid = false;

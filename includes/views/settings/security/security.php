@@ -59,12 +59,12 @@ $text2FA = $securityData['text2FA'];
                             <span class="material-symbols-rounded">devices</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title"><?php echo __('sec_logout_all_devices_title', [], 'Cerrar sesión en todos los dispositivos'); ?></h2>
-                            <p class="component-card__description"><?php echo __('sec_logout_all_devices_desc', [], '¿Iniciaste sesión en Rosaura desde un dispositivo de uso compartido y se te olvidó cerrar sesión? ¡No hay problema! Puedes cerrar sesión en todos tus dispositivos.'); ?></p>
+                            <h2 class="component-card__title"><?php echo __('sec_logout_all_devices_title', []); ?></h2>
+                            <p class="component-card__description"><?php echo __('sec_logout_all_devices_desc', []); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--h36 component-button--danger" data-action="logoutAllDevices"><?php echo __('btn_logout_all_devices', [], 'Cerrar sesión en todos los dispositivos'); ?></button>
+                        <button type="button" class="component-button component-button--h36 component-button--danger" data-action="logoutAllDevices"><?php echo __('btn_logout_all_devices', []); ?></button>
                     </div>
                 </div>
             </div>

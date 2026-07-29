@@ -4,7 +4,7 @@ namespace App\Core\System;
 
 /**
  * Configurador Central de Ventajas (Features) de Suscripciones.
- * Aquí se definen todos los booleanos (switches) posibles para un plan,
+
  * y se mapea su representación visual (icono, traducciones).
  */
 class SubscriptionFeatureConfig {

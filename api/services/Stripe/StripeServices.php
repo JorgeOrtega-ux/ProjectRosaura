@@ -328,7 +328,8 @@ class StripeServices {
                             ]);
                             $this->subscriptionRepo->updateUserTier($userId, $tier);
 
-                            // Actualizar sesión y caché
+                            
+
                             $accounts = $this->sessionManager->getLinkedAccounts();
                             if (isset($accounts[$userId])) {
                                 $accounts[$userId]['subscription_tier'] = $tier;
@@ -655,7 +656,7 @@ class StripeServices {
         if ($purchasePreference === 'verify') {
             $submittedPassword = trim($input['password'] ?? '');
             if (empty($submittedPassword) || !password_verify($submittedPassword, $user['password'] ?? '')) {
-                return ['success' => false, 'message' => __('auth.incorrect_password') ?: 'Contraseña incorrecta. Por favor inténtalo de nuevo.'];
+                return ['success' => false, 'message' => __('auth.incorrect_password')];
             }
         }
 
@@ -711,7 +712,8 @@ class StripeServices {
                 'billing_period' => $billingPeriod
             ]);
             
-            // Actualizar la sesión para que se refleje inmediatamente sin tener que cerrar sesión
+            
+
             $accounts = $this->sessionManager->getLinkedAccounts();
             if (isset($accounts[$userId])) {
                 $accounts[$userId]['subscription_tier'] = $tier;
@@ -719,7 +721,8 @@ class StripeServices {
                 $this->sessionManager->syncRootState();
             }
 
-            // Limpiar la caché de Redis del usuario para evitar datos obsoletos en consultas futuras
+            
+
             try {
                 $redisCache = new \App\Config\Database\RedisCache();
                 $redisClient = $redisCache->getClient();

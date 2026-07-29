@@ -204,7 +204,7 @@ class CanvasAssetController extends BaseController {
             $canInject = \App\Core\System\SubscriptionPlanConstants::hasFeature($tier, 'inject_templates');
             
             if (!$canInject) {
-                return $this->respond(['success' => false, 'message' => __('err_requires_inject_templates_plan') ?: 'Esta función requiere un plan de suscripción que incluya inyección de plantillas.']);
+                return $this->respond(['success' => false, 'message' => __('err_requires_inject_templates_plan')]);
             }
 
             // --- TOKEN LIMIT CHECK (5 Hours Window) ---

@@ -36,7 +36,7 @@ if (trim($rawRoleName) !== '') {
         $translatedRoleName = htmlspecialchars($rawRoleName);
     }
 } else {
-    $translatedRoleName = __('role_user', [], 'Usuario');
+    $translatedRoleName = __('role_user', []);
 }
 if ($translatedRoleName === '') {
     $translatedRoleName = __('admin_role_undefined');

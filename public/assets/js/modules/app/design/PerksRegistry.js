@@ -7,7 +7,7 @@
  *   // or attach to controller: this.perksRegistry = PerksRegistry;
  * 
  * All perk data is loaded from /assets/data/perks.json.
- * To add a new perk, simply add its entry to perks.json - no other JS files need editing.
+
  */
 
 let _perksConfig = null;

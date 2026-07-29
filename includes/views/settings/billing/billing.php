@@ -11,7 +11,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
         <div class="component-top-right">
             <button type="button" class="component-button component-button--h40 disabled-interaction" data-action="addNewCard" data-tooltip="<?php echo __('tooltip_add_card'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">add</span>
-                <span><?php echo __('btn_add_card') ?: 'Agregar tarjeta'; ?></span>
+                <span><?php echo __('btn_add_card'); ?></span>
             </button>
         </div>
     </div>
@@ -29,7 +29,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('subscription_details_title') ?: 'Plan y Almacenamiento'; ?></h2>
-                                <p class="component-card__description"><?php echo __('subscription_details_desc') ?: 'Información de tu plan actual, ciclo de facturación y capacidad disponible.'; ?></p>
+                                <p class="component-card__description"><?php echo __('subscription_details_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -48,7 +48,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                     </div>
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('current_plan'); ?></h2>
-                                        <p class="component-card__description" data-ref="sub-plan-desc"><?php echo __('lbl_loading') ?: 'Cargando...'; ?></p>
+                                        <p class="component-card__description" data-ref="sub-plan-desc"><?php echo __('lbl_loading'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--end">
@@ -59,7 +59,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
 
                             <!-- Renovación Automática -->
-                            <div data-ref="sub-renewal-container" style="display: none;">
+                            <div data-ref="sub-renewal-container">
                                 <hr class="component-divider">
                                 <div class="component-group-item component-group-item--wrap">
                                     <div class="component-card__content">
@@ -68,7 +68,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         </div>
                                         <div class="component-card__text">
                                             <h2 class="component-card__title"><?php echo __('auto_renewal'); ?></h2>
-                                            <p class="component-card__description" data-ref="sub-renewal-desc"><?php echo __('lbl_loading') ?: 'Cargando...'; ?></p>
+                                            <p class="component-card__description" data-ref="sub-renewal-desc"><?php echo __('lbl_loading'); ?></p>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--end">
@@ -82,42 +82,42 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             <hr class="component-divider">
 
                             <!-- Almacenamiento del Plan -->
-                            <div class="component-group-item component-group-item--stacked" style="padding: 24px; gap: 14px;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 16px;">
+                            <div class="component-group-item component-group-item--stacked">
+                                <div>
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title">Almacenamiento del Plan</h2>
                                             <p class="component-card__description" data-ref="sub-storage-subtitle">Tu capacidad de almacenamiento · -- MB de -- MB utilizados (Quedan -- MB)</p>
                                         </div>
                                     </div>
-                                    <div class="component-storage-usage__percentage" style="align-self: flex-start; padding-top: 2px;">
+                                    <div class="component-storage-usage__percentage">
                                         <span data-ref="sub-storage-percentage">0%</span>
                                     </div>
                                 </div>
 
                                 <div class="component-progress-track">
-                                    <div class="component-progress-fill" data-ref="sub-storage-progress-fill" style="width: 0%;"></div>
+                                    <div class="component-progress-fill" data-ref="sub-storage-progress-fill"></div>
                                 </div>
                             </div>
 
-                            <hr class="component-divider" data-ref="sub-tokens-divider" style="display: none;">
+                            <hr class="component-divider" data-ref="sub-tokens-divider">
 
                             <!-- Uso de Tokens de Inyección de Plantillas -->
-                            <div class="component-group-item component-group-item--stacked" data-ref="sub-tokens-container" style="padding: 24px; gap: 14px; display: none;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 16px;">
+                            <div class="component-group-item component-group-item--stacked" data-ref="sub-tokens-container">
+                                <div>
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title">Inyección de Plantillas (Tokens de 5 horas)</h2>
                                             <p class="component-card__description" data-ref="sub-tokens-subtitle">Uso de tokens · -- / -- Tokens consumidos</p>
                                         </div>
                                     </div>
-                                    <div class="component-storage-usage__percentage" style="align-self: flex-start; padding-top: 2px;">
+                                    <div class="component-storage-usage__percentage">
                                         <span data-ref="sub-tokens-percentage">0%</span>
                                     </div>
                                 </div>
 
                                 <div class="component-progress-track">
-                                    <div class="component-progress-fill" data-ref="sub-tokens-progress-fill" style="width: 0%;"></div>
+                                    <div class="component-progress-fill" data-ref="sub-tokens-progress-fill"></div>
                                 </div>
                             </div>
 
@@ -145,9 +145,9 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
                             <div class="component-group-item component-group-item--stacked" data-ref="payment-methods-area">
-                                <div class="component-group-item" style="padding: 20px; justify-content: center; align-items: center; gap: 10px;">
+                                <div class="component-group-item">
                                     <div class="component-spinner"></div>
-                                    <span  style="font-size: 0.85rem;"><?php echo __('loading_payment_methods') ?: 'Cargando métodos de pago...'; ?></span>
+                                    <span ><?php echo __('loading_payment_methods'); ?></span>
                                 </div>
                             </div>
                         </div>

@@ -110,7 +110,7 @@ export class PremiumController {
             window.history.replaceState({}, document.title, cleanUrl);
             this._pollSubscriptionStatus(3, sessionId);
         } else if (status === 'cancel') {
-            showMessage(window.__('payment_cancelled') || 'Pago cancelado', 'warning');
+            showMessage(window.__('payment_cancelled'), 'warning');
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
         }
@@ -127,7 +127,7 @@ export class PremiumController {
                     if (window.dialogSystem) {
                         window.dialogSystem.show('purchaseSuccessModal', { ...result.data, item_type: 'subscription' });
                     } else {
-                        showMessage(window.__('msg_plan_updated') || '¡Suscripción actualizada!', 'success');
+                        showMessage(window.__('msg_plan_updated'), 'success');
                     }
                     return;
                 }

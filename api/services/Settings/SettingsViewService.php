@@ -9,7 +9,7 @@ use App\Core\Helpers\Utils;
 class SettingsViewService {
 
     /**
-     * Obtiene y procesa los datos necesarios para la vista del perfil (your-account.php).
+
      */
     public function getYourAccountData(): array {
         if (session_status() === PHP_SESSION_NONE) {
@@ -126,7 +126,7 @@ class SettingsViewService {
     }
 
     /**
-     * Obtiene los datos generales de la vista de seguridad (security.php).
+
      */
     public function getSecurityOverviewData(): array {
         if (session_status() === PHP_SESSION_NONE) {
@@ -191,7 +191,7 @@ class SettingsViewService {
     }
 
     /**
-     * Obtiene las preferencias de idioma para usuarios invitados (guest.php).
+
      */
     public function getGuestPreferencesData(): array {
         $prefLang = $_COOKIE['pr_language'] ?? 'es-419';
@@ -206,7 +206,7 @@ class SettingsViewService {
     }
 
     /**
-     * Obtiene el estado de autenticación en dos pasos (2fa.php).
+
      */
     public function get2FAStatusData(): array {
         if (session_status() === PHP_SESSION_NONE) {

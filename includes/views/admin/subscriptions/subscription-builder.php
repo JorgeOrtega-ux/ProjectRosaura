@@ -96,7 +96,7 @@ function renderColorBlock($hex, $percentage, $isSolid = false) {
     $html .= '          <div class="component-dropdown-wrapper component-dropdown-wrapper--color" data-ref="dropdownWrapper">';
     $html .= '              <div class="component-dropdown-trigger component-dropdown-trigger--color" data-action="toggleModule" data-target="' . $id . '">';
     $html .= '                  <div class="component-dropdown-trigger__left">';
-    $html .= '                      <div class="component-color-swatch" data-ref="triggerPreview" style="background-color: ' . htmlspecialchars($hex) . ';"></div>';
+    $html .= '                      <div class="component-color-swatch" data-ref="triggerPreview"></div>';
     $html .= '                      <span class="component-dropdown-text" data-ref="triggerHex">' . htmlspecialchars(strtoupper($hex)) . '</span>';
     $html .= '                  </div>';
     $html .= '                  <span class="material-symbols-rounded">expand_more</span>';
@@ -105,15 +105,15 @@ function renderColorBlock($hex, $percentage, $isSolid = false) {
     $html .= '                  <div class="component-menu component-menu--w-full component-menu--h-auto">';
     $html .= '                      <div class="pill-container"><div class="drag-handle"></div></div>';
     $html .= '                      <div class="component-color-picker" data-ref="customColorPicker" data-h="' . $hue . '" data-s="' . $sat . '" data-v="' . $val . '">';
-    $html .= '                          <div class="component-color-picker__sv-area" data-action="dragSV" style="background-color: hsl(' . $hue . ', 100%, 50%);">';
+    $html .= '                          <div class="component-color-picker__sv-area" data-action="dragSV">';
     $html .= '                              <div class="component-color-picker__sv-bg"></div>';
-    $html .= '                              <div class="component-color-picker__sv-thumb" data-ref="svThumb" style="left: ' . $sat . '%; top: ' . (100 - $val) . '%;"></div>';
+    $html .= '                              <div class="component-color-picker__sv-thumb" data-ref="svThumb"></div>';
     $html .= '                          </div>';
     $html .= '                          <div class="component-color-picker__hue-area" data-action="dragHue">';
-    $html .= '                              <div class="component-color-picker__hue-thumb" data-ref="hueThumb" style="left: ' . ($hue / 360 * 100) . '%;"></div>';
+    $html .= '                              <div class="component-color-picker__hue-thumb" data-ref="hueThumb"></div>';
     $html .= '                          </div>';
     $html .= '                          <div class="component-input-group component-input-group--h34 component-input-group--color">';
-    $html .= '                              <div class="component-color-swatch component-color-swatch--sm" data-ref="hexInputPreview" style="background-color: ' . htmlspecialchars($hex) . ';"></div>';
+    $html .= '                              <div class="component-color-swatch component-color-swatch--sm" data-ref="hexInputPreview"></div>';
     $html .= '                              <input type="text" class="component-input-field component-input-field--mono" data-ref="hexInput" value="' . htmlspecialchars(strtoupper($hex)) . '" readonly>';
     $html .= '                          </div>';
     $html .= '                          <div class="' . $controlsClass . '" data-ref="controlsContainer">';
@@ -177,7 +177,7 @@ $featuresData = [
     
     <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title"><?php echo $isEdit ? (__('admin_tier_edit_title') ?: 'Editar Suscripción') : (__('admin_tier_new_title') ?: 'Nueva Suscripción'); ?></h1>
+            <h1 class="component-top-title"><?php echo $isEdit ? (__('admin_tier_edit_title')) : (__('admin_tier_new_title')); ?></h1>
         </div>
         <div class="component-top-right">
             <button type="button" class="component-button component-button--dark component-button--h40" data-action="saveSubscription">
@@ -200,7 +200,7 @@ $featuresData = [
                                 <span class="material-symbols-rounded">diamond</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('admin_tier_details_title') ?: 'Detalles de Suscripción'; ?></h2>
+                                <h2 class="component-card__title"><?php echo __('admin_tier_details_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('admin_tier_details_desc') ?: 'Configura los datos básicos e identificadores.'; ?></p>
                             </div>
                         </div>
@@ -214,25 +214,25 @@ $featuresData = [
                                 <div class="active component-state-box" data-state="tier-name-view">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_tier_name') ?: 'Nombre de Suscripción'; ?></h2>
-                                            <span class="component-display-value" data-ref="display-tier-name"><?php echo htmlspecialchars($tierData['name']) ?: (__('admin_not_configured') ?: 'No configurado'); ?></span>
+                                            <h2 class="component-card__title"><?php echo __('admin_tier_name'); ?></h2>
+                                            <span class="component-display-value" data-ref="display-tier-name"><?php echo htmlspecialchars($tierData['name']) ?: (__('admin_not_configured')); ?></span>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="tier-name"><?php echo __('btn_edit') ?: 'Editar'; ?></button>
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="tier-name"><?php echo __('btn_edit'); ?></button>
                                     </div>
                                 </div>
                                 <div class="disabled component-state-box" data-state="tier-name-edit">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_tier_name') ?: 'Nombre de Suscripción'; ?></h2>
+                                            <h2 class="component-card__title"><?php echo __('admin_tier_name'); ?></h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
                                                     <input type="text" id="tierName" data-ref="input-tier-name" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['name']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['name']); ?>" placeholder="Ej. Pro, Ultra">
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
-                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="tier-name"><?php echo __('btn_cancel') ?: 'Cancelar'; ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="tier-name"><?php echo __('btn_save') ?: 'Aplicar'; ?></button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="tier-name"><?php echo __('btn_cancel'); ?></button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="tier-name"><?php echo __('btn_save'); ?></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -271,8 +271,8 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_price_monthly') ?: 'Precio Mensual (USD)'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_price_monthly_desc') ?: 'Precio de suscripción mensual en dólares.'; ?></p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_price_monthly'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_price_monthly_desc'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -295,8 +295,8 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_price_yearly') ?: 'Precio Anual (USD)'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_price_yearly_desc') ?: 'Precio de suscripción anual en dólares.'; ?></p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_price_yearly'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_price_yearly_desc'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -321,11 +321,11 @@ $featuresData = [
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title"><?php echo __('admin_tier_stripe_monthly') ?: 'Stripe Price ID (Mensual)'; ?></h2>
-                                            <span class="component-display-value" data-ref="display-stripe-monthly"><?php echo htmlspecialchars($tierData['stripe_price_id_monthly']) ?: (__('admin_not_configured') ?: 'No configurado'); ?></span>
+                                            <span class="component-display-value" data-ref="display-stripe-monthly"><?php echo htmlspecialchars($tierData['stripe_price_id_monthly']) ?: (__('admin_not_configured')); ?></span>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-monthly"><?php echo __('btn_edit') ?: 'Editar'; ?></button>
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-monthly"><?php echo __('btn_edit'); ?></button>
                                     </div>
                                 </div>
                                 <div class="disabled component-state-box" data-state="stripe-monthly-edit">
@@ -337,8 +337,8 @@ $featuresData = [
                                                     <input type="text" data-ref="input-stripe-monthly" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['stripe_price_id_monthly']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['stripe_price_id_monthly']); ?>" placeholder="ID Mensual">
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
-                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-monthly"><?php echo __('btn_cancel') ?: 'Cancelar'; ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="stripe-monthly"><?php echo __('btn_save') ?: 'Aplicar'; ?></button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-monthly"><?php echo __('btn_cancel'); ?></button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="stripe-monthly"><?php echo __('btn_save'); ?></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -353,11 +353,11 @@ $featuresData = [
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title"><?php echo __('admin_tier_stripe_yearly') ?: 'Stripe Price ID (Anual)'; ?></h2>
-                                            <span class="component-display-value" data-ref="display-stripe-yearly"><?php echo htmlspecialchars($tierData['stripe_price_id_yearly']) ?: (__('admin_not_configured') ?: 'No configurado'); ?></span>
+                                            <span class="component-display-value" data-ref="display-stripe-yearly"><?php echo htmlspecialchars($tierData['stripe_price_id_yearly']) ?: (__('admin_not_configured')); ?></span>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-yearly"><?php echo __('btn_edit') ?: 'Editar'; ?></button>
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-yearly"><?php echo __('btn_edit'); ?></button>
                                     </div>
                                 </div>
                                 <div class="disabled component-state-box" data-state="stripe-yearly-edit">
@@ -369,8 +369,8 @@ $featuresData = [
                                                     <input type="text" data-ref="input-stripe-yearly" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['stripe_price_id_yearly']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['stripe_price_id_yearly']); ?>" placeholder="ID Anual">
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
-                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-yearly"><?php echo __('btn_cancel') ?: 'Cancelar'; ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="stripe-yearly"><?php echo __('btn_save') ?: 'Aplicar'; ?></button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-yearly"><?php echo __('btn_cancel'); ?></button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="stripe-yearly"><?php echo __('btn_save'); ?></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -390,7 +390,7 @@ $featuresData = [
                             </div>
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('admin_tier_limits_title') ?: 'Límites y Beneficios'; ?></h2>
-                                <p class="component-card__description"><?php echo __('admin_tier_limits_desc') ?: 'Configura los beneficios que obtienen los usuarios con esta suscripción.'; ?></p>
+                                <p class="component-card__description"><?php echo __('admin_tier_limits_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -402,8 +402,8 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_canvases') ?: 'Lienzos Máximos'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_limit_canvases_desc') ?: 'Cantidad de lienzos permitidos (-1 para ilimitado).'; ?></p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_canvases'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_canvases_desc'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -427,7 +427,7 @@ $featuresData = [
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('admin_tier_limit_storage') ?: 'Almacenamiento Máximo (MB)'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_limit_storage_desc') ?: 'Límite de espacio para assets del usuario.'; ?></p>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_storage_desc'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -450,7 +450,7 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_snapshots') ?: 'Snapshots por Lienzo'; ?></h2>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_snapshots'); ?></h2>
                                         <p class="component-card__description"><?php echo __('admin_tier_limit_snapshots_desc') ?: 'Historial máximo permitido (-1 = Ilimitado).'; ?></p>
                                     </div>
                                 </div>
@@ -474,8 +474,8 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_members') ?: 'Miembros por Lienzo'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_limit_members_desc') ?: 'Límite de usuarios invitados por lienzo.'; ?></p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_members'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_members_desc'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -553,7 +553,7 @@ $featuresData = [
                             </div>
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('admin_tier_features_title') ?: 'Características'; ?></h2>
-                                <p class="component-card__description"><?php echo __('admin_tier_features_desc') ?: 'Activa o desactiva módulos especiales del sistema.'; ?></p>
+                                <p class="component-card__description"><?php echo __('admin_tier_features_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -573,7 +573,7 @@ $featuresData = [
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title"><?php echo __($fData['title_key']) ?: $fKey; ?></h2>
-                                            <p class="component-card__description"><?php echo __($fData['desc_key']) ?: 'Activar/Desactivar'; ?></p>
+                                            <p class="component-card__description"><?php echo __($fData['desc_key']); ?></p>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--end">

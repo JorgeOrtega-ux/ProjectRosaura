@@ -216,7 +216,7 @@ export class CanvasCardInteractions {
 
             const password = confirmRes.data && confirmRes.data.modal_verify_password ? confirmRes.data.modal_verify_password.trim() : '';
             if (!password) {
-                if (typeof showMessage === 'function') showMessage(window.__('err_password_required') || 'La contraseña es requerida', 'error');
+                if (typeof showMessage === 'function') showMessage(window.__('err_password_required'), 'error');
                 return;
             }
 
@@ -286,7 +286,7 @@ export class CanvasCardInteractions {
             } else {
                 actionButtonHtml = `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--info" data-action="joinCanvas" data-id="${id}" data-uuid="${uuid}">
                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">login</span></div>
-                        <div class="component-menu-link-text"><span>${window.__('join_canvas') || 'Unirse al lienzo'}</span></div>
+                        <div class="component-menu-link-text"><span>${window.__('join_canvas')}</span></div>
                    </button>`;
             }
         }

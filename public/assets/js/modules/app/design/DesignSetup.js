@@ -554,7 +554,8 @@ export const DesignSetup = {
         const scaleX = rect.width / this.boardWidth;
         const scaleY = rect.height / this.boardHeight;
         
-        // El 90% para que el lienzo quepa en la pantalla
+        
+
         this.transform.scale = Math.min(scaleX, scaleY) * 0.9;
         
         this.transform.x = (rect.width - (this.boardWidth * this.transform.scale)) / 2;

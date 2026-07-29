@@ -904,7 +904,7 @@ export const DesignNetwork = {
         if (btnOpenJoinLive) {
             btnOpenJoinLive.classList.remove('component-color-indicator');
             btnOpenJoinLive.style.removeProperty('--active-color');
-            btnOpenJoinLive.setAttribute('data-tooltip', (typeof window.__ === 'function' ? window.__('tooltip_join_live', [], 'Unirse a transmisión') : 'Unirse a transmisión') + ' [J]');
+            btnOpenJoinLive.setAttribute('data-tooltip', (typeof window.__ === 'function' ? window.__('tooltip_join_live', []) : 'Unirse a transmisión') + ' [J]');
             const icon = btnOpenJoinLive.querySelector('.material-symbols-rounded');
             if (icon) icon.textContent = 'sensors';
         }
@@ -1072,7 +1072,7 @@ export const DesignNetwork = {
                 btnOpenJoinLive.classList.remove('disabled-interaction', 'disabled', 'component-color-indicator');
                 btnOpenJoinLive.style.removeProperty('--active-color');
                 btnOpenJoinLive.removeAttribute('title');
-                btnOpenJoinLive.setAttribute('data-tooltip', (typeof window.__ === 'function' ? window.__('tooltip_join_live', [], 'Unirse a transmisión') : 'Unirse a transmisión') + ' [J]');
+                btnOpenJoinLive.setAttribute('data-tooltip', (typeof window.__ === 'function' ? window.__('tooltip_join_live', []) : 'Unirse a transmisión') + ' [J]');
                 const icon = btnOpenJoinLive.querySelector('.material-symbols-rounded');
                 if (icon) icon.textContent = 'sensors';
             }

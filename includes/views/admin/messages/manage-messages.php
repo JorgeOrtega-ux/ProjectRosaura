@@ -209,8 +209,8 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                     <?php if ($repCount > 0): 
                                         $reportsUrl = $appUrl . '/admin/messages/reports/' . urlencode($msg['uuid']);
                                     ?>
-                                        <a class="component-badge component-badge--sm component-badge--warning" data-nav="<?php echo htmlspecialchars($reportsUrl); ?>" style="cursor: pointer; text-decoration: none;">
-                                            <span class="material-symbols-rounded" style="font-size: 14px; margin-right: 2px; vertical-align: middle;">flag</span>
+                                        <a class="component-badge component-badge--sm component-badge--warning" data-nav="<?php echo htmlspecialchars($reportsUrl); ?>">
+                                            <span class="material-symbols-rounded">flag</span>
                                             <?php echo $repCount; ?>
                                         </a>
                                     <?php else: ?>

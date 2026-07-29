@@ -35,9 +35,9 @@ export class BillingController {
     renderSkeletons() {
         if (this.paymentMethodsArea) {
             this.paymentMethodsArea.innerHTML = `
-                <div class="component-group-item" style="padding: 20px; justify-content: center; align-items: center; gap: 10px;">
+                <div class="component-group-item">
                     <div class="component-spinner"></div>
-                    <span  style="font-size: 0.85rem;">${window.__('loading_payment_methods') || 'Cargando métodos de pago...'}</span>
+                    <span >${window.__('loading_payment_methods')}</span>
                 </div>
             `;
         }
@@ -71,12 +71,12 @@ export class BillingController {
                 this.updateSubscriptionData(response.data);
             } else {
                 const planDescEl = this.subscriptionArea.querySelector('[data-ref="sub-plan-desc"]');
-                if (planDescEl) planDescEl.textContent = window.__('empty_subscription') || 'No tienes una suscripción activa.';
+                if (planDescEl) planDescEl.textContent = window.__('empty_subscription');
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
                 const planDescEl = this.subscriptionArea.querySelector('[data-ref="sub-plan-desc"]');
-                if (planDescEl) planDescEl.textContent = window.__('error_fetching_subscription') || 'Error al obtener estado de suscripción.';
+                if (planDescEl) planDescEl.textContent = window.__('error_fetching_subscription');
             }
         } finally {
             if (this.subscriptionArea) {
@@ -95,7 +95,7 @@ export class BillingController {
         }
         const status = data.status || 'active';
         const cancelAtEnd = data.cancel_at_period_end;
-        let dateLabel = cancelAtEnd ? (window.__('ends_on') || 'Finaliza el') : (window.__('next_billing') || 'Próxima facturación');
+        let dateLabel = cancelAtEnd ? (window.__('ends_on')) : (window.__('next_billing'));
 
         let dateVal = '-';
         if (data.current_period_end) {
@@ -110,11 +110,11 @@ export class BillingController {
             }
         }
 
-        let statusText = window.__('status_active') || 'Activo';
+        let statusText = window.__('status_active');
         if (status !== 'active') {
-            statusText = status === 'incomplete' ? (window.__('status_incomplete') || 'Incompleto') : (window.__('status_inactive') || 'Inactivo');
+            statusText = status === 'incomplete' ? (window.__('status_incomplete')) : (window.__('status_inactive'));
         } else if (cancelAtEnd) {
-            statusText = window.__('will_cancel_soon') || 'Cancelación pendiente';
+            statusText = window.__('will_cancel_soon');
         }
 
         // 1. Plan description
@@ -128,7 +128,7 @@ export class BillingController {
         if (renewalContainer) {
             if (data.tier > 0) {
                 renewalContainer.style.display = 'block';
-                let renewText = cancelAtEnd ? (window.__('status_canceled') || 'Cancelado') : (window.__('status_active') || 'Activo');
+                let renewText = cancelAtEnd ? (window.__('status_canceled')) : (window.__('status_active'));
                 const renewalDescEl = renewalContainer.querySelector('[data-ref="sub-renewal-desc"]');
                 if (renewalDescEl) {
                     renewalDescEl.textContent = `${renewText} (${dateLabel} ${dateVal})`;
@@ -136,7 +136,7 @@ export class BillingController {
 
                 const renewalBtn = renewalContainer.querySelector('[data-ref="sub-renewal-btn"]');
                 if (renewalBtn) {
-                    const actionText = cancelAtEnd ? (window.__('btn_reactivate_sub') || 'Reactivar suscripción') : (window.__('btn_cancel_renew') || 'Cancelar renovación');
+                    const actionText = cancelAtEnd ? (window.__('btn_reactivate_sub')) : (window.__('btn_cancel_renew'));
                     renewalBtn.textContent = actionText;
                     renewalBtn.dataset.cancelState = !cancelAtEnd;
                     if (cancelAtEnd) {
@@ -258,8 +258,8 @@ export class BillingController {
         if (!window.dialogSystem) return;
 
         const confirm = await window.dialogSystem.show('confirmAction', {
-            title: window.__('title_delete_payment_method') || 'Eliminar Tarjeta',
-            message: window.__('desc_delete_payment_method') || '¿Estás seguro de que deseas eliminar esta tarjeta de pago?',
+            title: window.__('title_delete_payment_method'),
+            message: window.__('desc_delete_payment_method'),
             confirmClass: 'component-button--danger',
             confirmKey: 'btn_delete'
         });

@@ -10,7 +10,7 @@ use App\Core\System\Logger;
 class CanvasViewService {
 
     /**
-     * Obtiene y procesa los datos necesarios para la vista de creación de lienzo (create.php).
+
      */
     public function getCanvasCreateData(): array {
         if (session_status() === PHP_SESSION_NONE) {
@@ -56,7 +56,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene los lienzos administrables y la paginación para (manage.php).
+
      */
     public function getCanvasManageData(?int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) {
@@ -183,7 +183,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene la galería de snapshots de un lienzo (snapshots-gallery.php).
+
      */
     public function getSnapshotsGalleryData(?string $paramUuid): array {
         if (session_status() === PHP_SESSION_NONE) {
@@ -342,7 +342,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene la información del lienzo y sus miembros (members.php).
+
      */
     public function getCanvasMembersData(?string $paramUuid, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) {
@@ -517,7 +517,7 @@ class CanvasViewService {
     }
 
     /**
-     * Verifica si el usuario tiene un permiso específico en el lienzo.
+
      */
     private function hasCanvasPermission(\PDO $pdo, int $canvasId, int $userId, int $permissionId): bool {
         $stmt = $pdo->prepare("SELECT 1 FROM canvas_role_permissions crp
@@ -528,7 +528,7 @@ class CanvasViewService {
     }
 
     /**
-     * Auxiliar para parsear colores/gradientes de suscripción.
+
      */
     public static function parseSubscriptionColor(?string $subscriptionColorRaw): string {
         if (empty($subscriptionColorRaw)) {
@@ -564,7 +564,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene y procesa los datos para la vista de edición de lienzo (workspace/edit.php).
+
      */
     public function getWorkspaceEditData(?string $canvasUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -665,7 +665,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene los datos de la vista de reinicio de lienzo (workspace/reset.php).
+
      */
     public function getWorkspaceResetData(?string $canvasUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -774,7 +774,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene los datos de la vista de redimensionado de lienzo (workspace/resize.php).
+
      */
     public function getWorkspaceResizeData(?string $canvasUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -917,7 +917,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene los roles de un lienzo (team/roles.php).
+
      */
     public function getCanvasRolesData(?string $canvasUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -1008,7 +1008,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene los datos para cambiar el rol de un miembro (team/change-role.php).
+
      */
     public function getCanvasChangeRoleData(?string $canvasUuid, ?string $targetUserUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -1206,7 +1206,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene las invitaciones de un lienzo (team/invites.php & team/invites-generate.php).
+
      */
     public function getCanvasInvitesData(?string $canvasUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -1273,7 +1273,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene las solicitudes de acceso pendientes a un lienzo (team/requests.php).
+
      */
     public function getCanvasRequestsData(?string $canvasUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -1319,7 +1319,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene los datos del creador/editor de roles de lienzo (team/role-builder.php).
+
      */
     public function getCanvasRoleBuilderData(?string $canvasUuid, ?string $roleUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -1427,7 +1427,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene los permisos de un rol de lienzo (team/role-permissions.php).
+
      */
     public function getCanvasRolePermissionsData(?string $canvasUuid, ?string $roleUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -1627,7 +1627,7 @@ class CanvasViewService {
     }
 
     /**
-     * Obtiene los datos para la vista centralizada de sanciones del lienzo (team/sanctions.php).
+
      */
     public function getCanvasSanctionsData(?string $canvasUuid, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();

@@ -170,14 +170,14 @@ extract($accountData);
                         <div class="component-card__text">
                             <h2 class="component-card__title">Google</h2>
                             <p class="component-card__description" data-ref="google-account-status">
-                                <?php echo $isGoogleConnected ? htmlspecialchars($userName) : __('google_not_connected', [], 'No vinculada'); ?>
+                                <?php echo $isGoogleConnected ? htmlspecialchars($userName) : __('google_not_connected', []); ?>
                             </p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end" data-ref="google-account-actions">
                         <?php if ($isGoogleConnected): ?>
                             <button type="button" class="component-button component-button--h34" data-action="unlinkGoogle" data-google-name="<?php echo htmlspecialchars($userName); ?>" data-user-email="<?php echo htmlspecialchars($userEmail); ?>">
-                                <?php echo __('btn_disconnect', [], 'Desconectar'); ?>
+                                <?php echo __('btn_disconnect', []); ?>
                             </button>
                         <?php else: ?>
                             <button type="button" class="component-button component-button--h34 component-button--dark" data-action="linkGoogle">

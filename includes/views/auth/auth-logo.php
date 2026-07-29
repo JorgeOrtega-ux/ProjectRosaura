@@ -5,7 +5,7 @@
 ?>
 <div class="auth-header-logo" data-nav="<?php echo APP_URL; ?>/" title="<?php echo htmlspecialchars(APP_NAME); ?>">
     <svg width="208" height="80" viewBox="0 0 208 80" fill="none" xmlns="http://www.w3.org/2000/svg" title="ChatGPT">
-        <mask id="mask0_1333_3895" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="208" height="80">
+        <mask id="mask0_1333_3895" maskUnits="userSpaceOnUse" x="0" y="0" width="208" height="80">
             <path d="M207.68 0H0V80H207.68V0Z" fill="white"></path>
         </mask>
         <g mask="url(#mask0_1333_3895)">

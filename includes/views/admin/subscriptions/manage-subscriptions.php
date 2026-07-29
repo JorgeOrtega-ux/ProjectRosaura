@@ -32,10 +32,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                     <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="editTier" data-tooltip="<?php echo __('btn_edit'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">edit</span>
                     </button>
-                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="toggleVisibilityTier" data-tooltip="<?php echo __('btn_toggle_visibility') ?: 'Activar/Desactivar'; ?>" data-position="bottom">
+                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="toggleVisibilityTier" data-tooltip="<?php echo __('btn_toggle_visibility'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
                     </button>
-                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="setPopularTier" data-tooltip="<?php echo __('btn_set_popular') ?: 'Marcar como Popular'; ?>" data-position="bottom">
+                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="setPopularTier" data-tooltip="<?php echo __('btn_set_popular'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">star</span>
                     </button>
                     <button class="component-button component-button--danger component-button--icon component-button--h40" data-action="deleteTier" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
@@ -50,7 +50,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                     </button>
                     
                     <?php if ($canManageTiers): ?>
-                    <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="addTier" data-tooltip="<?php echo __('btn_add_tier') ?: 'Añadir Suscripción'; ?>" data-position="bottom">
+                    <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="addTier" data-tooltip="<?php echo __('btn_add_tier'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">add</span>
                     </button>
                     <?php endif; ?>
@@ -77,7 +77,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="tier-search-input" placeholder="<?php echo __('admin_tier_search_placeholder') ?: 'Buscar suscripción...'; ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
+                        <input type="text" data-ref="tier-search-input" placeholder="<?php echo __('admin_tier_search_placeholder'); ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
                     </div>
                 </div>
             </div>
@@ -90,7 +90,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                 <table class="component-table">
                     <thead>
                         <tr>
-                            <th><?php echo __('admin_tier_col_name') ?: 'Nombre de Suscripción'; ?></th>
+                            <th><?php echo __('admin_tier_col_name'); ?></th>
                             <th data-width="120"><?php echo __('admin_tier_col_level') ?: 'Nivel (Tier)'; ?></th>
                             <th data-width="140"><?php echo __('admin_tier_col_visibility') ?: 'Visibilidad'; ?></th>
                             <th data-width="140"><?php echo __('admin_tier_col_popularity') ?: 'Popularidad'; ?></th>
@@ -190,7 +190,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                             <td colspan="3" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                    <p class="component-empty-state-text"><?php echo __('admin_tier_search_empty') ?: 'No se encontraron suscripciones.'; ?></p>
+                                    <p class="component-empty-state-text"><?php echo __('admin_tier_search_empty'); ?></p>
                                 </div>
                             </td>
                         </tr>
@@ -200,8 +200,8 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
             <?php else: ?>
             <div class="component-empty-state" data-ref="tiers-empty-state">
                 <span class="material-symbols-rounded empty-icon">workspace_premium</span>
-                <h3><?php echo __('admin_tier_empty_title') ?: 'No hay suscripciones'; ?></h3>
-                <p><?php echo __('admin_tier_empty_desc') ?: 'No se encontró ninguna suscripción configurada.'; ?></p>
+                <h3><?php echo __('admin_tier_empty_title'); ?></h3>
+                <p><?php echo __('admin_tier_empty_desc'); ?></p>
             </div>
             <?php endif; ?>
         </div>

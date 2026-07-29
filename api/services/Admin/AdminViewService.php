@@ -16,7 +16,7 @@ use App\Core\System\Logger;
 class AdminViewService {
 
     /**
-     * Parsea un string o JSON de color/gradiente de suscripción a un CSS válido.
+
      */
     public static function parseSubscriptionColor(?string $raw): ?string {
         if (empty($raw)) return null;
@@ -44,7 +44,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos para el Dashboard Principal de Administración (dashboard.php).
+
      */
     public function getDashboardData(): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -65,7 +65,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos para la vista de Configuración del Servidor (system/server-config.php).
+
      */
     public function getServerConfigData(): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -261,7 +261,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos para la edición de usuario (users/edit-user.php).
+
      */
     public function getEditUserData(?string $targetUserUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -305,7 +305,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos para editar el estado/restricciones de un usuario (users/edit-status.php).
+
      */
     public function getEditStatusData(?string $targetUserUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -352,7 +352,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos para editar el rol del sistema de un usuario (users/edit-user-role.php).
+
      */
     public function getEditUserRoleData(?string $targetUserUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -410,7 +410,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos del historial de seguridad y auditoría de un usuario (users/user-history.php).
+
      */
     public function getUserHistoryData(?string $targetUserUuid, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -475,7 +475,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos para la gestión de suscripciones del sistema (subscriptions/manage-subscriptions.php).
+
      */
     public function getManageSubscriptionsData(?string $searchQuery, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -541,7 +541,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos para el creador/editor de planes de suscripción (subscriptions/subscription-builder.php).
+
      */
     public function getSubscriptionBuilderData(?string $targetUuid = null): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -585,7 +585,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos para la gestión de roles de usuario del sistema (roles/manage-roles.php).
+
      */
     public function getManageRolesData(?string $searchQuery, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -654,7 +654,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos para los permisos de roles del sistema (roles/role-permissions.php).
+
      */
     public function getRolePermissionsData(?string $roleUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -708,7 +708,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos para la administración de mensajes del sistema (messages/manage-messages.php).
+
      */
     public function getManageMessagesData(?string $searchQuery, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -802,7 +802,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos para el registro de auditoría y logs del sistema (logs/logs.php).
+
      */
     public function getLogsData(?string $category = 'all', int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -849,7 +849,7 @@ class AdminViewService {
     }
 
     /**
-     * Visor de archivo de log individual (logs/logs-viewer.php).
+
      */
     public function getLogsViewerData(?string $fileName): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -871,7 +871,7 @@ class AdminViewService {
     }
 
     /**
-     * Datos para el módulo de copias de seguridad (backups/backups.php).
+
      */
     public function getBackupsData(?string $searchQuery, int $page = 1, array $typesFilter = [], array $statusFilter = []): array {
         if (session_status() === PHP_SESSION_NONE) session_start();

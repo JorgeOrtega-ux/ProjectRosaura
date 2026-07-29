@@ -98,7 +98,7 @@ export class StoreController {
 
     async handleBuySelectedCoins(btn) {
         if (!this.selectedCoinAmount) {
-            showMessage(window.__('err_select_package') || 'Por favor, selecciona un paquete de monedas.', 'warning');
+            showMessage(window.__('err_select_package'), 'warning');
             return;
         }
         await this.handleBuyCoins(this.selectedCoinAmount, btn);
@@ -107,7 +107,7 @@ export class StoreController {
     async handleBuySelectedPerk(btn) {
         const selectedRows = Array.from(document.querySelectorAll('tr.component-table-row.selected[data-perkid]'));
         if (selectedRows.length === 0) {
-            showMessage(window.__('err_select_item') || 'Por favor, selecciona al menos un ítem o ventaja.', 'warning');
+            showMessage(window.__('err_select_item'), 'warning');
             return;
         }
 
@@ -140,7 +140,7 @@ export class StoreController {
     async processBulkPerkPurchase(items, btn, selectedRows) {
         if (!items.length || btn.dataset.loading === 'true') return;
 
-        setButtonLoading(btn, (window.__('loading') || 'Cargando') + '...');
+        setButtonLoading(btn, (window.__('loading')) + '...');
 
         try {
             const perkIds = items.map(item => item.perkId);
@@ -167,7 +167,7 @@ export class StoreController {
                 showMessage(window.__('msg_bulk_purchase_success') || `¡Se han adquirido ${items.length} elementos con éxito!`, 'success');
             } else {
                 if (result && result.message_key === 'store.insufficient_coins') {
-                    showMessage(window.__('err_insufficient_coins') || 'Monedas insuficientes', 'error');
+                    showMessage(window.__('err_insufficient_coins'), 'error');
                 } else {
                     const msg = (result && result.message_key) ? window.__(result.message_key) : 'No se pudo procesar la compra en lote.';
                     showMessage(msg, 'error');
@@ -182,7 +182,7 @@ export class StoreController {
     async handleBuyPerk(perkId, btn) {
         if (!perkId || btn.dataset.loading === 'true') return;
 
-        setButtonLoading(btn, (window.__('loading') || 'Cargando') + '...');
+        setButtonLoading(btn, (window.__('loading')) + '...');
         
         try {
             const idempotencyKey = crypto.randomUUID();
@@ -199,7 +199,7 @@ export class StoreController {
                 }
             } else if (result) {
                 if (result.message_key === 'store.insufficient_coins') {
-                    showMessage(window.__('err_insufficient_coins') || 'Monedas insuficientes', 'error');
+                    showMessage(window.__('err_insufficient_coins'), 'error');
                 } else {
                     showMessage(result.message_key || window.__('err_process_purchase'), 'error');
                 }
@@ -214,7 +214,7 @@ export class StoreController {
     async handleBuyCoins(amount, btn) {
         if (!amount || btn.dataset.loading === 'true') return;
 
-        setButtonLoading(btn, (window.__('loading') || 'Cargando') + '...');
+        setButtonLoading(btn, (window.__('loading')) + '...');
         
         try {
             const result = await this.api.post(ApiRoutes.Stripe.CreateCoinCheckout, { 

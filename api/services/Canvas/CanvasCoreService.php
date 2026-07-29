@@ -999,7 +999,8 @@ LUA;
             }
 
             if (!$extractedViaRedis) {
-                // Fallback: cargar el buffer completo si Redis no respondió
+                
+
                 $stateRaw = null;
                 if (class_exists(RedisCache::class)) {
                     try {

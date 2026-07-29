@@ -71,7 +71,8 @@ export class MainController {
         window.addEventListener('resize', this.handleResizeBound);
         document.addEventListener('scroll', this.handleScrollBound, true);
 
-        // Capture phase listener para botones bloqueados por suscripción
+        
+
         document.addEventListener('click', (e) => {
             const premiumLockedBtn = e.target.closest('.premium-locked');
             if (premiumLockedBtn) {
@@ -136,11 +137,13 @@ export class MainController {
             this.lastVisibleTime = Date.now();
         } else if (document.visibilityState === 'visible') {
             const timeHidden = Date.now() - (this.lastVisibleTime || Date.now());
-            // Recargar si la pestaña estuvo inactiva por más de 2 horas (caducidad típica de sesión/CSRF)
+            
+
             if (timeHidden > 7200000) {
                 window.location.reload();
             } else if (timeHidden > 5000) {
-                // Refrescar el token CSRF de forma proactiva al volver a la pestaña antes de cualquier llamada POST
+                
+
                 ApiService.refreshCsrfTokenProactively();
             }
         }
@@ -213,14 +216,14 @@ export class MainController {
         if (key === 'purchase_preference' && value === 'fast' && !password) {
             if (window.dialogSystem) {
                 const res = await window.dialogSystem.show('confirmPasswordModal', {
-                    title: window.__('title_confirm_fast_payment') || 'Autorizar Pago Rápido',
-                    desc: window.__('desc_confirm_fast_payment') || 'Ingresa tu contraseña para activar el pago en 1 clic sin confirmación.'
+                    title: window.__('title_confirm_fast_payment'),
+                    desc: window.__('desc_confirm_fast_payment')
                 });
 
                 if (res && (res.confirmed || res.action === 'confirm' || res.action === true)) {
                     password = (res.data && res.data.confirmSecPasswordInput) || res.confirmSecPasswordInput || '';
                     if (!password) {
-                        this.showToast(window.__('auth_incorrect_password') || 'Contraseña requerida.', 'error');
+                        this.showToast(window.__('auth_incorrect_password'), 'error');
                         return;
                     }
                 } else {

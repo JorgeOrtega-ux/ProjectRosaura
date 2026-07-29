@@ -56,8 +56,8 @@ $canvasSize = $viewerData['canvasSize'];
             </div>
         </div>
 
-        <div class="component-bottom" style="position: relative; width: 100%; height: calc(100vh - 120px); min-height: 500px; overflow: hidden;">
-            <canvas data-ref="snapshot-canvas" class="component-canvas-surface" style="width: 100%; height: 100%; min-height: 400px; display: block;"></canvas>
+        <div class="component-bottom">
+            <canvas data-ref="snapshot-canvas" class="component-canvas-surface"></canvas>
             
             <div class="canvas-badges-left" data-ref="badges-left">
                 <div class="component-badge" data-badge-id="coords">

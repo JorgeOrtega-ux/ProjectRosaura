@@ -127,7 +127,7 @@ export const DialogTemplates = {
                         <!-- Step 3 -->
                         <div class="step-modal-step" id="welcome-step-3">
                             <h2 class="component-modal-title">${window.__('welcome_modal_step3_title')}</h2>
-                            <p class="component-modal-desc step-modal-desc" style="margin-bottom: 12px;">
+                            <p class="component-modal-desc step-modal-desc">
                                 ${window.__('welcome_modal_step3_desc')}
                             </p>
                             
@@ -137,7 +137,7 @@ export const DialogTemplates = {
                                         <span class="material-symbols-rounded component-icon-sm">cloud</span>
                                     </div>
                                     <div class="welcome-feature-text">
-                                        <span class="welcome-feature-title">${window.__('welcome_adv_storage_title') || 'Almacenamiento y Lienzos Ilimitados'}</span>
+                                        <span class="welcome-feature-title">${window.__('welcome_adv_storage_title')}</span>
                                         <span class="welcome-feature-desc">${window.__('welcome_adv_storage_desc') || 'Aumenta tu capacidad de almacenamiento en la nube y crea múltiples proyectos sin restricciones.'}</span>
                                     </div>
                                 </div>
@@ -147,8 +147,8 @@ export const DialogTemplates = {
                                         <span class="material-symbols-rounded component-icon-sm">palette</span>
                                     </div>
                                     <div class="welcome-feature-text">
-                                        <span class="welcome-feature-title">${window.__('welcome_adv_tools_title') || 'Herramientas y Paletas Exclusivas'}</span>
-                                        <span class="welcome-feature-desc">${window.__('welcome_adv_tools_desc') || 'Diseña con paletas de colores personalizadas y accede a herramientas avanzadas para tus diseños.'}</span>
+                                        <span class="welcome-feature-title">${window.__('welcome_adv_tools_title')}</span>
+                                        <span class="welcome-feature-desc">${window.__('welcome_adv_tools_desc')}</span>
                                     </div>
                                 </div>
 
@@ -158,7 +158,7 @@ export const DialogTemplates = {
                                     </div>
                                     <div class="welcome-feature-text">
                                         <span class="welcome-feature-title">${window.__('welcome_adv_speed_title') || 'Renderizado Prioritario y Funciones Beta'}</span>
-                                        <span class="welcome-feature-desc">${window.__('welcome_adv_speed_desc') || 'Exporta tus lienzos a máxima velocidad y prueba las nuevas características antes que los demás.'}</span>
+                                        <span class="welcome-feature-desc">${window.__('welcome_adv_speed_desc')}</span>
                                     </div>
                                 </div>
                             </div>
@@ -169,9 +169,9 @@ export const DialogTemplates = {
                                 <div class="step-modal-dot active"></div>
                             </div>
 
-                            <div class="step-modal-actions" style="gap: 8px;">
+                            <div class="step-modal-actions">
                                 <button class="component-button component-button--h40 component-button--ghost" onclick="if(window.spaRouter){window.spaRouter.navigate('/upgrade');}else{window.location.href='/upgrade';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
-                                    ${window.__('btn_more_info') || 'Más información'}
+                                    ${window.__('btn_more_info')}
                                 </button>
                                 <button class="component-button component-button--h40 component-button--dark" data-modal-action="finish">
                                     ${window.__('welcome_modal_btn_finish')}
@@ -366,8 +366,8 @@ export const DialogTemplates = {
                     <span class="material-symbols-rounded">warning</span>
                 </div>
                 <div class="component-modal-header-text">
-                    <h2 class="component-modal-title">${__('del_acc_modal_title') || 'Estás a punto de eliminar tu cuenta'}</h2>
-                    <p class="component-modal-desc">${__('del_acc_warning') || 'Al eliminar tu cuenta, perderás acceso a todos los servicios, tus lienzos, plantillas creadas e historial de actividad. Esta acción es permanente e irrecuperable.'}</p>
+                    <h2 class="component-modal-title">${__('del_acc_modal_title')}</h2>
+                    <p class="component-modal-desc">${__('del_acc_warning')}</p>
                 </div>
             </div>
             <div class="component-modal-body">
@@ -610,8 +610,8 @@ export const DialogTemplates = {
         build: (data) => `
             <div class="pill-container"><div class="drag-handle"></div></div>
             <div class="component-modal-header">
-                <h2 class="component-modal-title">${__('admin_tier_delete_title') || 'Eliminar Suscripción'}</h2>
-                <p class="component-modal-desc">${__('admin_tier_delete_desc') || '¿Estás seguro de que deseas eliminar la suscripción'} ${data.tierName || ''}?</p>
+                <h2 class="component-modal-title">${__('admin_tier_delete_title')}</h2>
+                <p class="component-modal-desc">${__('admin_tier_delete_desc')} ${data.tierName || ''}?</p>
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
@@ -812,8 +812,8 @@ export const DialogTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
-                    <h2 class="component-modal-title">${__('admin_msg_delete_title') || 'Eliminar Mensaje'}</h2>
-                    <p class="component-modal-desc">${__('admin_msg_delete_desc') || 'Selecciona el motivo de moderación para eliminar este mensaje.'}</p>
+                    <h2 class="component-modal-title">${__('admin_msg_delete_title')}</h2>
+                    <p class="component-modal-desc">${__('admin_msg_delete_desc')}</p>
                 </div>
                 <div class="component-modal-body">
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
@@ -834,8 +834,8 @@ export const DialogTemplates = {
                     <input type="hidden" name="report_reason" id="report_reason" data-ref="report_reason" value="">
                 </div>
                 <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel') || 'Cancelar'}</button>
-                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_delete') || 'Eliminar'}</button>
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_delete')}</button>
                 </div>
             `;
         }
@@ -922,8 +922,8 @@ export const DialogTemplates = {
                     </p>
                 </div>
                 <div class="component-modal-actions">
-                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${window.__('btn_cancel', [], 'Cancelar')}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${window.__('btn_disconnect', [], 'Desconectar')}</button>
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${window.__('btn_cancel', [])}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${window.__('btn_disconnect', [])}</button>
                 </div>
             `;
         }
@@ -936,12 +936,12 @@ export const DialogTemplates = {
             const isUpgrade = data.isUpgrade || false;
             const priceText = `${amount} ${currency}`;
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
-            const titleStr = __('title_confirm_purchase', [], 'Confirmar Compra');
+            const titleStr = __('title_confirm_purchase', []);
             const totalStr = __('desc_confirm_purchase', [], 'Total a cobrar hoy:');
-            const prorationStr = isUpgrade ? ` (${__('desc_confirm_purchase_proration', [], 'incluye descuento por tu suscripción actual')})` : '';
-            const passwordLabel = __('lbl_account_password', [], 'Contraseña de tu cuenta');
-            const btnCancel = __('btn_cancel', [], 'Cancelar');
-            const btnConfirm = __('btn_confirm', [], 'Confirmar');
+            const prorationStr = isUpgrade ? ` (${__('desc_confirm_purchase_proration', [])})` : '';
+            const passwordLabel = __('lbl_account_password', []);
+            const btnCancel = __('btn_cancel', []);
+            const btnConfirm = __('btn_confirm', []);
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -994,9 +994,9 @@ export const DialogTemplates = {
             const count = data.count || 0;
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
             const titleStr = __('title_confirm_clear_area', [], '¿Vaciar zona seleccionada?');
-            const descRaw = __('desc_confirm_clear_area', [], 'Se borrarán :count píxeles de esta área para todos los usuarios. Esta acción no se puede deshacer.');
+            const descRaw = __('desc_confirm_clear_area', []);
             const descStr = descRaw.replace(':count', `<strong>${count}</strong>`);
-            const btnCancel = __('btn_cancel', [], 'Cancelar');
+            const btnCancel = __('btn_cancel', []);
             const btnConfirm = __('btn_clear_area', [], 'Vaciar Zona');
 
             return `
@@ -1018,9 +1018,9 @@ export const DialogTemplates = {
             const count = data.count || 0;
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
             const titleStr = __('title_confirm_protect_area', [], 'Proteger zona');
-            const descRaw = __('desc_confirm_protect_area', [], 'Estás a punto de aplicar protección administrativa para :count píxeles en esta zona.');
+            const descRaw = __('desc_confirm_protect_area', []);
             const descStr = descRaw.replace(':count', `<strong>${count}</strong>`);
-            const btnCancel = __('btn_cancel', [], 'Cancelar');
+            const btnCancel = __('btn_cancel', []);
             const btnProtect = __('btn_protect_area', [], 'Proteger Zona');
 
             return `
@@ -1029,7 +1029,7 @@ export const DialogTemplates = {
                     <h2 class="component-modal-title">${titleStr}</h2>
                     <p class="component-modal-desc">${descStr}</p>
                 </div>
-                <div class="component-modal-actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+                <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
                     <button type="button" class="component-button component-button--h40 component-button--success" data-modal-action="protect">${btnProtect}</button>
                 </div>
@@ -1041,11 +1041,11 @@ export const DialogTemplates = {
         build: (data = {}) => {
             const count = data.count || 0;
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
-            const titleStr = __('title_confirm_unprotect_area', [], 'Eliminar protección de zona');
-            const descRaw = __('desc_confirm_unprotect_area', [], 'Estás a punto de eliminar la protección administrativa de :count píxeles en esta zona.');
+            const titleStr = __('title_confirm_unprotect_area', []);
+            const descRaw = __('desc_confirm_unprotect_area', []);
             const descStr = descRaw.replace(':count', `<strong>${count}</strong>`);
-            const btnCancel = __('btn_cancel', [], 'Cancelar');
-            const btnRemove = __('btn_remove_protection', [], 'Eliminar Protección');
+            const btnCancel = __('btn_cancel', []);
+            const btnRemove = __('btn_remove_protection', []);
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -1053,7 +1053,7 @@ export const DialogTemplates = {
                     <h2 class="component-modal-title">${titleStr}</h2>
                     <p class="component-modal-desc">${descStr}</p>
                 </div>
-                <div class="component-modal-actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+                <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
                     <button type="button" class="component-button component-button--h40 component-button--danger" data-modal-action="unprotect">${btnRemove}</button>
                 </div>
@@ -1071,7 +1071,7 @@ export const DialogTemplates = {
             const badgesHtml = items.map(item => {
                 const formattedPrice = (typeof window.formatNumber === 'function') ? window.formatNumber(item.price) : item.price;
                 return `
-                    <div class="component-badge component-badge--warning" style="margin-bottom: 4px;">
+                    <div class="component-badge component-badge--warning">
                         <span class="material-symbols-rounded">${item.icon || 'star'}</span>
                         <span>${item.name} (${formattedPrice} ${__('coins')})</span>
                     </div>
@@ -1087,11 +1087,11 @@ export const DialogTemplates = {
                     </p>
                 </div>
                 <div class="component-modal-body">
-                    <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start; margin-top: 8px;">
+                    <div>
                         ${badgesHtml}
                     </div>
                 </div>
-                <div class="component-modal-actions" style="margin-top: 16px;">
+                <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
                     <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_confirm')}</button>
                 </div>
@@ -1110,12 +1110,12 @@ export const DialogTemplates = {
 
             const scopes = [
                 { key: 'chat_mute', label: __('sanction_scope_chat_mute') || 'Silenciar Chat', icon: 'speaker_notes_off' },
-                { key: 'canvas_ban', label: __('sanction_scope_canvas_ban') || 'Expulsar del Lienzo (Baneo)', icon: 'block' }
+                { key: 'canvas_ban', label: __('sanction_scope_canvas_ban'), icon: 'block' }
             ];
 
             const types = [
-                { key: 'temporary', label: __('suspension_temp') || 'Temporal', icon: 'timer' },
-                { key: 'permanent', label: __('suspension_perm') || 'Permanente', icon: 'all_inclusive' }
+                { key: 'temporary', label: __('suspension_temp'), icon: 'timer' },
+                { key: 'permanent', label: __('suspension_perm'), icon: 'all_inclusive' }
             ];
 
             const reasons = window.APP_SANCTION_REASONS ? window.APP_SANCTION_REASONS.suspensions : [];
@@ -1125,7 +1125,7 @@ export const DialogTemplates = {
             
             const activeReason = reasons.find(r => r.key === suspensionReason);
             const activeReasonKey = activeReason ? activeReason.key : '';
-            const activeReasonLabel = activeReason ? (__(activeReason.key) || activeReason.key) : (__('lbl_select_suspension_reason') || 'Seleccionar motivo...');
+            const activeReasonLabel = activeReason ? (__(activeReason.key) || activeReason.key) : (__('lbl_select_suspension_reason'));
             const activeReasonIcon = activeReason ? activeReason.icon : 'gavel';
 
             const scopeOptionsHtml = scopes.map(s => `
@@ -1152,17 +1152,17 @@ export const DialogTemplates = {
                 `;
             }).join('');
 
-            const endDateDisplay = endDate ? endDate.replace('T', ' ') : (__('lbl_select_expiration_date') || 'Seleccionar fecha de expiración');
+            const endDateDisplay = endDate ? endDate.replace('T', ' ') : (__('lbl_select_expiration_date'));
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
                     <h2 class="component-modal-title">${__('canvases_sanctions_title') || 'Gestionar Sanción'}: ${username}</h2>
-                    <p class="component-modal-desc">${__('desc_chat_restriction') || 'Aplica o actualiza la sanción para este usuario.'}</p>
+                    <p class="component-modal-desc">${__('desc_chat_restriction')}</p>
                 </div>
                 <div class="component-modal-body">
                     <!-- Alcance de la Sanción -->
-                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full" style="margin-bottom: 12px;">
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
                         <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSanctionScope">
                             <span class="material-symbols-rounded" data-ref="sanction_scope_trigger_icon">${activeScope.icon}</span>
                             <span class="component-dropdown-text" data-ref="sanction_scope_trigger_text">${activeScope.label}</span>
@@ -1180,7 +1180,7 @@ export const DialogTemplates = {
                     <input type="hidden" name="sanction_scope" value="${activeScope.key}">
 
                     <!-- Duración -->
-                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full" style="margin-bottom: 12px;">
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
                         <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionType">
                             <span class="material-symbols-rounded" data-ref="suspension_type_trigger_icon">${activeType.icon}</span>
                             <span class="component-dropdown-text" data-ref="suspension_type_trigger_text">${activeType.label}</span>
@@ -1198,7 +1198,7 @@ export const DialogTemplates = {
                     <input type="hidden" name="suspension_type" value="${activeType.key}">
 
                     <!-- Motivo -->
-                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full" style="margin-bottom: 12px;">
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
                         <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionReason">
                             <span class="material-symbols-rounded" data-ref="suspension_reason_trigger_icon">${activeReasonIcon}</span>
                             <span class="component-dropdown-text" data-ref="suspension_reason_trigger_text">${activeReasonLabel}</span>
@@ -1216,7 +1216,7 @@ export const DialogTemplates = {
                     <input type="hidden" name="suspension_reason" value="${activeReasonKey}">
 
                     <!-- Fecha de Expiración (moduleCalendar) -->
-                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full modal-end-date-group" style="margin-bottom: 12px; display: ${activeType.key === 'temporary' ? 'block' : 'none'};">
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full modal-end-date-group">
                         <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="sanctionModuleCalendar">
                             <span class="material-symbols-rounded">calendar_month</span>
                             <span class="component-dropdown-text" data-ref="sanction-endDate-text">${endDateDisplay}</span>
@@ -1251,8 +1251,8 @@ export const DialogTemplates = {
                                     <div class="component-calendar-actions">
                                         <button type="button" class="component-button component-button--h30" data-action="calendarClear">${__('btn_clear') || 'Limpiar'}</button>
                                         <div>
-                                            <button type="button" class="component-button component-button--h30" data-action="calendarCancel">${__('btn_cancel') || 'Cancelar'}</button>
-                                            <button type="button" class="component-button component-button--h30 component-button--dark" data-action="calendarConfirm">${__('btn_accept') || 'Aceptar'}</button>
+                                            <button type="button" class="component-button component-button--h30" data-action="calendarCancel">${__('btn_cancel')}</button>
+                                            <button type="button" class="component-button component-button--h30 component-button--dark" data-action="calendarConfirm">${__('btn_accept')}</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1263,7 +1263,7 @@ export const DialogTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('lbl_save_changes') || 'Guardar Sanción'}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('lbl_save_changes')}</button>
                 </div>
             `;
         },
@@ -1288,12 +1288,12 @@ export const DialogTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
-                    <h2 class="component-modal-title">${__('title_start_broadcast', [], '¿Iniciar transmisión?')}</h2>
-                    <p class="component-modal-desc">${__('desc_start_broadcast', [], 'Se generará un código de acceso. Cualquier persona con el código podrá unirse a tu transmisión.')}</p>
+                    <h2 class="component-modal-title">${__('title_start_broadcast', [])}</h2>
+                    <p class="component-modal-desc">${__('desc_start_broadcast', [])}</p>
                 </div>
                 <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [], 'Cancelar')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_start_broadcast', [], 'Iniciar')}</button>
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [])}</button>
+                    <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_start_broadcast', [])}</button>
                 </div>
             `;
         }
@@ -1306,10 +1306,10 @@ export const DialogTemplates = {
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
                     <h2 class="component-modal-title">${__('title_stop_broadcast', [], '¿Finalizar transmisión?')}</h2>
-                    <p class="component-modal-desc">${__('desc_stop_broadcast', [], 'Todos los espectadores serán desconectados de tu transmisión.')}</p>
+                    <p class="component-modal-desc">${__('desc_stop_broadcast', [])}</p>
                 </div>
                 <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [], 'Cancelar')}</button>
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [])}</button>
                     <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_stop_broadcast', [], 'Finalizar')}</button>
                 </div>
             `;
@@ -1323,10 +1323,10 @@ export const DialogTemplates = {
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
                     <h2 class="component-modal-title">${__('title_leave_broadcast', [], '¿Abandonar transmisión?')}</h2>
-                    <p class="component-modal-desc">${__('desc_leave_broadcast', [], 'Saldrás de la transmisión y dejarás de recibir actualizaciones.')}</p>
+                    <p class="component-modal-desc">${__('desc_leave_broadcast', [])}</p>
                 </div>
                 <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [], 'Cancelar')}</button>
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [])}</button>
                     <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_leave_broadcast', [], 'Abandonar')}</button>
                 </div>
             `;

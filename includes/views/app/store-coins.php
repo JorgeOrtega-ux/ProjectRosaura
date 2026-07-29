@@ -39,7 +39,7 @@ $coinPackages = $viewService->getStoreCoinsData();
                             <th><?php echo __('th_package') ?: 'Paquete'; ?></th>
                             <th><?php echo __('th_amount') ?: 'Cantidad'; ?></th>
                             <th><?php echo __('th_bonus') ?: 'Bonificación'; ?></th>
-                            <th><?php echo __('th_price') ?: 'Precio'; ?></th>
+                            <th><?php echo __('th_price'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -58,7 +58,7 @@ $coinPackages = $viewService->getStoreCoinsData();
                             <td>
                                 <div class="component-badge component-badge--sm">
                                     <span class="material-symbols-rounded">toll</span>
-                                    <span><?= \App\Core\Helpers\Utils::formatNumber($pkg['amount']) ?> <?= __('coins') ?: 'Monedas'; ?></span>
+                                    <span><?= \App\Core\Helpers\Utils::formatNumber($pkg['amount']) ?> <?= __('coins'); ?></span>
                                 </div>
                             </td>
                             <td>

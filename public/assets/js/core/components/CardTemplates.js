@@ -168,7 +168,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const expText = monthName ? `Vence en ${monthName} de ${yearStr}` : `Vence en ${card.exp_month}/${yearStr}`;
 
         let logoSvg = `
-            <span class="material-symbols-rounded" style="color: #666666; font-size: 24px;">credit_card</span>
+            <span class="material-symbols-rounded">credit_card</span>
         `;
 
         if (brandRaw === 'mastercard') {
@@ -208,7 +208,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="deletePaymentMethod" data-pm-id="${cardId}" data-tooltip="${window.__('delete_card') || 'Eliminar tarjeta'}" data-position="left">
+                    <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="deletePaymentMethod" data-pm-id="${cardId}" data-tooltip="${window.__('delete_card')}" data-position="left">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
                 </div>
@@ -262,7 +262,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
 
         const subtitleStorage = `Tu capacidad de almacenamiento · ${usedMB} MB de ${maxMB} MB utilizados (Quedan ${remainingMB} MB)`;
         const percentageText = `${percentage}% ${window.__('used') || 'usado'}`;
-        const questionText = window.__('storage_question_upgrade') || '¿Cómo obtener más almacenamiento?';
+        const questionText = window.__('storage_question_upgrade');
 
         let autoRenewHtml = '';
         if (data.tier > 0) {
@@ -321,7 +321,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 </div>
 
                 <div class="component-progress-track">
-                    <div class="component-progress-fill" style="width: ${percentage}%;"></div>
+                    <div class="component-progress-fill"></div>
                 </div>
             </div>
         `;

@@ -413,7 +413,8 @@ export const DesignRender = {
                 this.ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
                 this.ctx.stroke();
 
-                // 2. Anillo fijo exterior translúcido
+                
+
                 this.ctx.beginPath();
                 this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
                 this.ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';

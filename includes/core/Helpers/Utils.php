@@ -156,6 +156,10 @@ class Utils {
         if (empty($path)) return '';
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, 'data:')) return $path;
         
+        if (str_starts_with($path, 'profilePictures/default/')) {
+            return '/storage/' . $path;
+        }
+        
         $path = preg_replace('#^/?public/storage/#', '', ltrim($path, '/'));
         
         $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
@@ -243,17 +247,13 @@ class Utils {
             return 'public/assets/img/fallbacks/avatar-default.png';
         }
         $fileName = $uuid . '.png';
-        $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
-        $s3Client = self::getS3Client();
-        try {
-            $s3Client->putObject([
-                'Bucket' => $bucket,
-                'Key'    => 'profilePictures/default/' . $fileName,
-                'Body'   => $imageContent,
-                'ContentType' => 'image/png'
-            ]);
-        } catch (\Throwable $e) {
-            \App\Core\System\Logger::error('Failed to upload avatar to S3', ['exception' => $e->getMessage()]);
+        $savePath = defined('ROOT_PATH') ? ROOT_PATH . "/storage/public/profilePictures/default/" . $fileName : '';
+        if (!empty($savePath)) {
+            $dir = dirname($savePath);
+            if (!is_dir($dir)) {
+                mkdir($dir, 0777, true);
+            }
+            file_put_contents($savePath, $imageContent);
         }
         return 'profilePictures/default/' . $fileName;
     }

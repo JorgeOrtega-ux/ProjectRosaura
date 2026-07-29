@@ -137,7 +137,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                 ?>
                                 <tr class="component-table-row" data-action="selectCanvas" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>" data-size="<?php echo htmlspecialchars($canvas['size']); ?>" data-is-owner="<?php echo $isOwner; ?>" data-user-permissions="<?php echo htmlspecialchars($userPerms); ?>">
                                     <td>
-                                        <div class="td-user-info" style="gap: 8px;">
+                                        <div class="td-user-info">
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">palette</span>
                                                 <span class="search-target"><?php echo htmlspecialchars($canvas['name']); ?></span>
@@ -146,11 +146,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                     </td>
                                     <td>
                                         <?php if ($isOwner): ?>
-                                            <div class="component-badge component-badge--sm component-badge--primary" style="font-size: 0.75em;">
+                                            <div class="component-badge component-badge--sm component-badge--primary">
                                                 <span>Propietario</span>
                                             </div>
                                         <?php else: ?>
-                                            <div class="component-badge component-badge--sm component-badge--secondary" style="font-size: 0.75em;">
+                                            <div class="component-badge component-badge--sm component-badge--secondary">
                                                 <span><?php echo htmlspecialchars($canvas['user_role_name'] ?? 'Colaborador'); ?></span>
                                             </div>
                                         <?php endif; ?>
