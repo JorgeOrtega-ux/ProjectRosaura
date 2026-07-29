@@ -21,12 +21,11 @@ error_log
 /storage/private/canvases/
 !/storage/private/canvases/.gitkeep
 
-/storage/canvases/
 
 storage/private/backups/*.sql
 storage/private/backups/*.enc
 storage/private/backups/*.gz
-!storage/private/backups/.htaccess
+!/storage/private/.htaccess
 
 # === BLOQUEO ESTRICTO: DATOS SENSIBLES Y ARCHIVOS BINARIOS ===
 

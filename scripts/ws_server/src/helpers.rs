@@ -185,7 +185,7 @@ pub async fn sync_events_listener(state: AppState) {
     while let Some(msg) = stream.next().await {
         if let Ok(payload) = msg.get_payload::<String>() {
             if let Ok(event) = serde_json::from_str::<serde_json::Value>(&payload) {
-                if event.get("source_node").and_then(|v| v.as_str()) == Some("rust_node") {
+                if event.get("source_node").and_then(|v| v.as_str()) == Some(state.node_id.as_str()) {
                     continue;
                 }
                 

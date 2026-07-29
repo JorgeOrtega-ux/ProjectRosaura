@@ -25,6 +25,7 @@ pub struct AppState {
     pub redis_pool: RedisPool,
     pub db_pool: MySqlPool,
     pub perks_config: Arc<Mutex<Option<PerksConfig>>>,
+    pub node_id: String,
 }
 
 impl AppState {
@@ -40,6 +41,7 @@ impl AppState {
             redis_pool,
             db_pool,
             perks_config: Arc::new(Mutex::new(None)),
+            node_id: uuid::Uuid::new_v4().to_string(),
         }
     }
 }
