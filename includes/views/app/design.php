@@ -93,7 +93,7 @@ extract($designData);
                         <?php echo __('btn_request_access'); ?>
                     </button>
                     <?php else: ?>
-                    <div class="component-badge component-badge--warning" style="cursor: pointer;" data-nav="<?php echo APP_URL; ?>/login">
+                    <div class="component-badge component-badge--warning" data-nav="<?php echo APP_URL; ?>/login">
                         <span class="material-symbols-rounded">login</span>
                         <span><?php echo __('lbl_login_to_join'); ?></span>
                     </div>
