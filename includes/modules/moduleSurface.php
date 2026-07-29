@@ -96,6 +96,14 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                         <span><?php echo __('menu_policy_cookies'); ?></span>
                     </div>
                 </div>
+                                <div class="component-menu-link nav-item" data-nav="/site-policy/manage-cookies">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">tune</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('menu_policy_cookies_prefs'); ?></span>
+                    </div>
+                </div>
                 <div class="component-menu-link nav-item" data-nav="/site-policy/legal-notice">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">gavel</span>

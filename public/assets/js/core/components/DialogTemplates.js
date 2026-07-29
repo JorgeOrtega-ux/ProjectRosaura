@@ -1332,4 +1332,5 @@ export const DialogTemplates = {
             `;
         }
     }
+
 };

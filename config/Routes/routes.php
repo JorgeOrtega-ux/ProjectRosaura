@@ -17,6 +17,7 @@ return [
     '/reset-password' => ['view' => 'auth/reset-password.php', 'guest_only' => true],
     '/account-suspended' => ['view' => 'system/message.php'],
     '/account-deleted' => ['view' => 'system/message.php'],
+    '/site-policy/manage-cookies' => ['view' => 'site-policy/manage-cookies.php'],
     '/site-policy' => ['view' => 'site-policy/site-policy.php'],
     '/site-policy/terms-conditions' => ['view' => 'site-policy/terms-conditions.php'],
     '/site-policy/privacy-policy' => ['view' => 'site-policy/privacy-policy.php'],
@@ -82,3 +83,4 @@ return [
     '/admin/logs/viewer' => ['view' => 'admin/logs/logs-viewer.php', 'auth' => true, 'permissions' => ['view_logs'], 'requires_2fa' => false]
 ];
 ?>
+

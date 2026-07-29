@@ -1,6 +1,7 @@
 import { MainController } from './MainController.js';
 import { SpaRouter } from './core/router/SpaRouter.js';
 import { DialogSystem } from './core/components/DialogSystem.js';
+import { NoticeSystem } from './core/components/NoticeSystem.js';
 import { TooltipSystem } from './core/components/TooltipSystem.js';
 import { TelemetryTracker } from './core/telemetry/TelemetryTracker.js';
 import { RouteModulesMap } from './core/router/RouteModulesMap.js';
@@ -18,6 +19,51 @@ document.addEventListener('DOMContentLoaded', () => {
     window.appInstance = app; 
 
     window.dialogSystem = new DialogSystem();
+    window.noticeSystem = new NoticeSystem();
+
+    // Cookie Banner Logic
+    const cookieConsent = localStorage.getItem('pr_cookie_consent');
+    const isManageCookiesPage = window.location.pathname === '/site-policy/manage-cookies';
+    if (!cookieConsent && !isManageCookiesPage) {
+        window.noticeSystem.show('cookieBanner', {
+            title: 'Aviso de Privacidad',
+            message: 'Utilizamos cookies propias y de terceros para analizar nuestros servicios y mostrarte publicidad relacionada con tus preferencias en base a un perfil elaborado a partir de tus hábitos de navegación.',
+            confirmText: 'Aceptar todas las cookies',
+            cancelText: 'Administrar cookies'
+        }).then(res => {
+            if (res.confirmed === 'manage_cookies' || res.action === 'manage_cookies') {
+                if (window.spaRouter) {
+                    window.spaRouter.navigate('/site-policy/manage-cookies');
+                } else {
+                    window.location.href = '/site-policy/manage-cookies';
+                }
+            } else if (res.confirmed === true) {
+                localStorage.setItem('pr_cookie_consent', JSON.stringify({ essential: true, func: true, perf: true, target: true }));
+            }
+        });
+    } else {
+        // Promo Card Logic
+        if (window.appUserTier === 0) {
+            const lastPromoTime = localStorage.getItem('pr_promo_last_seen');
+            const now = Date.now();
+            if (!lastPromoTime || now - parseInt(lastPromoTime) > 24 * 60 * 60 * 1000) {
+                setTimeout(() => {
+                    window.noticeSystem.show('promoCard', {
+                        title: '¡Mejora tu plan!',
+                        message: 'Obtén acceso a todas las funcionalidades exclusivas con nuestra suscripción premium. Cancela cuando quieras.',
+                        confirmText: 'Ver planes',
+                        cancelText: 'Quizás luego'
+                    }).then(res => {
+                        localStorage.setItem('pr_promo_last_seen', Date.now().toString());
+                        if (res.confirmed === true) {
+                            if (window.spaRouter) window.spaRouter.navigate('/premium');
+                            else window.location.href = '/premium';
+                        }
+                    });
+                }, 3000); 
+            }
+        }
+    }
 
     window.tooltipSystem = new TooltipSystem();
     window.tooltipSystem.init();

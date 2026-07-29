@@ -6878,4 +6878,186 @@ html.dark-theme .component-skeleton-design-bottom {
     .canvas-flash-overlay.active {
         opacity: 1;
     }
+}/* ==========================================================================
+   Notice System (Promotional / Consent Alerts)
+   ========================================================================== */
+
+.notice-container-root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
 }
+
+.notice-container {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+}
+
+.notice-container--bottom-left {
+    bottom: 0;
+    left: 0;
+    align-items: flex-start;
+}
+
+.notice-container--bottom-right {
+    bottom: 0;
+    right: 0;
+    align-items: flex-end;
+}
+
+.notice-container--top-left {
+    top: 0;
+    left: 0;
+    align-items: flex-start;
+}
+
+.notice-container--top-right {
+    top: 0;
+    right: 0;
+    align-items: flex-end;
+}
+
+.notice-container--bottom-center {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    align-items: center;
+    width: 100%;
+}
+
+.component-notice-box {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    position: relative;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+}
+
+.component-notice-box.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.component-notice-box--promo {
+    width: 425px;
+    padding: 24px;
+}
+
+.component-notice-box--banner {
+    width: 100%;
+    max-width: 800px;
+    padding: 24px;
+}
+
+.component-notice-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.component-notice-close-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-main);
+}
+
+.component-notice-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.component-notice-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+}
+
+.component-notice-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.component-notice-actions--left {
+    justify-content: flex-start;
+}
+
+.component-notice-actions--right {
+    justify-content: flex-end;
+}
+
+.component-notice-banner-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.component-notice-banner-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .notice-container {
+        padding: 0; /* No padding on mobile container */
+    }
+    
+    .notice-container--bottom-left,
+    .notice-container--bottom-right,
+    .notice-container--bottom-center {
+        left: 0;
+        right: 0;
+        transform: none;
+        width: 100%;
+        align-items: stretch;
+    }
+    
+    .component-notice-box {
+        width: 100% !important;
+        max-width: none !important;
+        border-radius: 0; /* Remove radius on mobile */
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+    }
+    
+    .component-notice-actions,
+    .component-notice-banner-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .component-notice-actions .component-button,
+    .component-notice-banner-actions .component-button {
+        width: 100%;
+    }
+}
+
