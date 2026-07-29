@@ -1,7 +1,14 @@
 pub const PAINT_PIXEL_LUA: &str = r#"
-local protected_by = redis.call('GET', KEYS[2])
-if protected_by then
-    return {'PROTECTED_ERROR', protected_by}
+local protected_areas_json = redis.call('GET', KEYS[2])
+if protected_areas_json then
+    local areas = cjson.decode(protected_areas_json)
+    local px = tonumber(ARGV[7])
+    local py = tonumber(ARGV[8])
+    for _, area in ipairs(areas) do
+        if px >= area.x1 and px <= area.x2 and py >= area.y1 and py <= area.y2 then
+            return {'PROTECTED_ERROR', 'admin'}
+        end
+    end
 end
 
 local config_batch = tonumber(ARGV[3])

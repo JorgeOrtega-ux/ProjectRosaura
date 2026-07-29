@@ -70,24 +70,23 @@ pub async fn send_to_client(state: &AppState, connection_id: &str, msg: &str) {
 }
 
 pub async fn broadcast_to_room(state: &AppState, canvas_id: &str, msg: &str) {
-    if let Some(room) = state.rooms.get(canvas_id) {
-        for conn_id in room.iter() {
-            if let Some(tx) = state.tx_channels.get(conn_id.key()) {
-                let _ = tx.send(msg.to_string()).await;
-            }
-        }
+    if let Some(tx) = state.room_broadcasts.get(canvas_id) {
+        let _ = tx.send(msg.to_string());
     }
 }
 
 pub async fn broadcast_to_room_excluding(state: &AppState, canvas_id: &str, msg: &str, exclude_conn: &str) {
-    if let Some(room) = state.rooms.get(canvas_id) {
-        for conn_id in room.iter() {
-            if conn_id.key() != exclude_conn {
-                if let Some(tx) = state.tx_channels.get(conn_id.key()) {
-                    let _ = tx.send(msg.to_string()).await;
-                }
-            }
-        }
+    // With tokio broadcast we can't easily exclude a specific connection at the sender level.
+    // However, the standard behavior for most canvas actions is to broadcast to everyone, 
+    // and the client ignores its own updates or processes them.
+    // But since the frontend might expect not to receive its own pixel (to avoid double drawing or rollback),
+    // we should include the exclude_conn in the broadcast message (as a meta field) 
+    // or we can wrap the message so the receiver task knows whether to drop it.
+    // For now, we'll prepend the exclude_conn to the message to let the receiver filter it.
+    // We prefix it with `!EXC:conn_id|` to be caught by the receiver task.
+    if let Some(tx) = state.room_broadcasts.get(canvas_id) {
+        let wrapped_msg = format!("!EXC:{}|{}", exclude_conn, msg);
+        let _ = tx.send(wrapped_msg);
     }
 }
 

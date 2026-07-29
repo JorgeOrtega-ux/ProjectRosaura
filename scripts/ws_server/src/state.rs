@@ -1,6 +1,6 @@
 use dashmap::{DashMap, DashSet};
 use std::sync::Arc;
-use tokio::sync::{Mutex, mpsc};
+use tokio::sync::{Mutex, mpsc, broadcast};
 use deadpool_redis::Pool as RedisPool;
 use sqlx::MySqlPool;
 use tokio::task::JoinHandle;
@@ -16,9 +16,10 @@ pub struct ClientMeta {
 #[derive(Clone)]
 pub struct AppState {
     pub rooms: Arc<DashMap<String, DashSet<String>>>, // canvas_id -> set of connection_ids
+    pub room_broadcasts: Arc<DashMap<String, broadcast::Sender<String>>>, // canvas_id -> broadcast sender
     pub live_rooms: Arc<DashMap<String, DashSet<String>>>, // code -> set of connection_ids
     pub ws_meta: Arc<DashMap<String, ClientMeta>>, // connection_id -> ClientMeta
-    pub tx_channels: Arc<DashMap<String, mpsc::Sender<String>>>, // connection_id -> Sender
+    pub tx_channels: Arc<DashMap<String, mpsc::Sender<String>>>, // connection_id -> Sender (direct msgs)
     pub user_locks: Arc<DashMap<String, Arc<Mutex<()>>>>, // user_id -> Mutex lock
     pub owner_conns: Arc<DashMap<String, String>>, // connection_id -> code
     pub grace_sessions: Arc<DashMap<String, JoinHandle<()>>>, // code -> JoinHandle
@@ -32,6 +33,7 @@ impl AppState {
     pub fn new(redis_pool: RedisPool, db_pool: MySqlPool) -> Self {
         Self {
             rooms: Arc::new(DashMap::new()),
+            room_broadcasts: Arc::new(DashMap::new()),
             live_rooms: Arc::new(DashMap::new()),
             ws_meta: Arc::new(DashMap::new()),
             tx_channels: Arc::new(DashMap::new()),
