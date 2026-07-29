@@ -5,7 +5,9 @@ $canvasService = new CanvasViewService();
 $reqData = $canvasService->getCanvasRequestsData($_GET['uuid'] ?? null);
 
 if (!empty($reqData['error'])) {
-    echo "<div class='view-content'><p>".htmlspecialchars($reqData['error'])."</p></div>";
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 

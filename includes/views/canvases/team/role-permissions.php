@@ -2,7 +2,7 @@
 use App\Api\Services\Canvas\CanvasViewService;
 
 $canvasService = new CanvasViewService();
-$rolePermData = $canvasService->getCanvasRolePermissionsData($_GET['uuid'] ?? null, isset($_GET['role_id']) ? (int)$_GET['role_id'] : null);
+$rolePermData = $canvasService->getCanvasRolePermissionsData($_GET['uuid'] ?? null, $_GET['role_uuid'] ?? null);
 
 if (!empty($rolePermData['redirect'])) {
     header("Location: " . $rolePermData['redirect']);
@@ -20,7 +20,9 @@ if (!empty($rolePermData['error'])) {
         require ROOT_PATH . '/includes/views/system/message.php';
         return;
     }
-    echo "<div class='view-content'><p>".htmlspecialchars($rolePermData['error'])."</p></div>";
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 
@@ -28,7 +30,9 @@ extract($rolePermData);
 $isSystemRole = (isset($roleData['is_system']) && (int)$roleData['is_system'] === 1);
 
 if (!$canManageRoles) {
-    echo "<div class='view-content'><p>".__('err_no_permission')."</p></div>";
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 
@@ -51,9 +55,7 @@ if (trim($rawName) !== '') {
     
     <div class="component-top">
         <div class="component-top-left">
-            <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo $backUrl; ?>" data-tooltip="<?php echo __('btn_back'); ?>" data-position="bottom">
-                <span class="material-symbols-rounded">arrow_back</span>
-            </button>
+
             <h1 class="component-top-title" data-ref="role-name-display">
                 <?php echo __('admin_edit_role_permissions_title'); ?>: <?php echo htmlspecialchars($translatedName !== '' ? $translatedName : __('admin_role_undefined')); ?>
             </h1>

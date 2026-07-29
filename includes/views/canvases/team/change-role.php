@@ -15,7 +15,9 @@ if (!empty($changeRoleData['error'])) {
         require ROOT_PATH . '/includes/views/system/message.php';
         return;
     }
-    echo "<div class='view-content'><p>".htmlspecialchars($changeRoleData['error'])."</p></div>";
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 

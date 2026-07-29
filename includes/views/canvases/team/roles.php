@@ -17,14 +17,18 @@ if (!empty($rolesData['error'])) {
         require ROOT_PATH . '/includes/views/system/message.php';
         return;
     }
-    echo "<div class='view-content'><p>" . htmlspecialchars($rolesData['error']) . "</p></div>";
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 
 extract($rolesData);
 
 if (!$canManageRoles) {
-    echo "<div class='view-content'><p>".__('err_no_permission')."</p></div>";
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 
@@ -85,6 +89,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                         <tr class="component-table-row clickable" 
                             data-action="selectRoleRow" 
                             data-role-id="<?php echo $role['id']; ?>" 
+                            data-role-uuid="<?php echo htmlspecialchars($role['uuid'] ?? ''); ?>"
                             data-role-name="<?php echo htmlspecialchars($translatedName); ?>" 
                             data-is-system="<?php echo $isSystemFlag; ?>" 
                             data-role-weight="<?php echo (int)$role['weight']; ?>">

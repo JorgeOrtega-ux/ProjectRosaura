@@ -5,7 +5,9 @@ $canvasService = new CanvasViewService();
 $invitesData = $canvasService->getCanvasInvitesData($_GET['uuid'] ?? null);
 
 if (!empty($invitesData['error'])) {
-    echo "<div class='view-content'><p>".htmlspecialchars($invitesData['error'])."</p></div>";
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 

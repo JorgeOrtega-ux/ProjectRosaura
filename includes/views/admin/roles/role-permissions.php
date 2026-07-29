@@ -2,7 +2,7 @@
 use App\Api\Services\Admin\AdminViewService;
 
 $adminService = new AdminViewService();
-$rolePermData = $adminService->getRolePermissionsData(isset($_GET['id']) ? (int)$_GET['id'] : null);
+$rolePermData = $adminService->getRolePermissionsData($_GET['uuid'] ?? null);
 
 if (!empty($rolePermData['redirect'])) {
     header("Location: " . $rolePermData['redirect']);

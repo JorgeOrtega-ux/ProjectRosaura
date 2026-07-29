@@ -140,6 +140,16 @@ class Router {
                 'requires_2fa' => false
             ];
         }
+        if (preg_match('#^/canvases/manage/role-builder/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            $_GET['role_uuid'] = $matches[2];
+            return $this->routes['/canvases/manage/role-builder/:uuid/:role_uuid'] ?? [
+                'view' => 'canvases/team/role-builder.php',
+                'auth' => true,
+                'permissions' => ['manage_canvases'],
+                'requires_2fa' => false
+            ];
+        }
         if (preg_match('#^/canvases/manage/role-builder/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/role-builder/:uuid'] ?? [
@@ -150,6 +160,16 @@ class Router {
             ];
         }
 
+        if (preg_match('#^/canvases/manage/role-permissions/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            $_GET['role_uuid'] = $matches[2];
+            return $this->routes['/canvases/manage/role-permissions/:uuid/:role_uuid'] ?? [
+                'view' => 'canvases/team/role-permissions.php',
+                'auth' => true,
+                'permissions' => ['manage_canvases'],
+                'requires_2fa' => false
+            ];
+        }
         if (preg_match('#^/canvases/manage/role-permissions/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/role-permissions/:uuid'] ?? [

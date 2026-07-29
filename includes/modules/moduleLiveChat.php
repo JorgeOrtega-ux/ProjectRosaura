@@ -57,14 +57,7 @@ $maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
                                                 <span><?php echo __('chat_attach_photos'); ?></span>
                                             </div>
                                         </div>
-                                        <div class="component-menu-link">
-                                            <div class="component-menu-link-icon">
-                                                <span class="material-symbols-rounded">share</span>
-                                            </div>
-                                            <div class="component-menu-link-text">
-                                                <span><?php echo __('chat_share_template'); ?></span>
-                                            </div>
-                                        </div>
+
                                     </div>
                                 </div>
                             </div>

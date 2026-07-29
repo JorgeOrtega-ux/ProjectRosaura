@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `canvas_protections` (
 
 CREATE TABLE IF NOT EXISTS `canvas_roles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `uuid` CHAR(36) UNIQUE DEFAULT NULL,
   `canvas_id` int(11) DEFAULT NULL,
   `name` varchar(50) NOT NULL,
   `weight` int(11) NOT NULL DEFAULT 1,
@@ -96,11 +97,11 @@ CREATE TABLE IF NOT EXISTS `canvas_members` (
   CONSTRAINT `fk_cm_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
-INSERT IGNORE INTO canvas_roles (id, canvas_id, name, weight, is_system) VALUES
-  (1, NULL, 'Usuario', 1, 1),
-  (2, NULL, 'Moderator', 50, 1),
-  (3, NULL, 'Administrator', 80, 1),
-  (4, NULL, 'SuperAdministrator', 100, 1);
+INSERT IGNORE INTO canvas_roles (id, uuid, canvas_id, name, weight, is_system) VALUES
+  (1, UUID(), NULL, 'Usuario', 1, 1),
+  (2, UUID(), NULL, 'Moderator', 50, 1),
+  (3, UUID(), NULL, 'Administrator', 80, 1),
+  (4, UUID(), NULL, 'SuperAdministrator', 100, 1);
 
 INSERT IGNORE INTO canvas_permissions (id, name, description) VALUES
   (1, 'place_pixels', 'desc_place_pixels'),
@@ -109,13 +110,16 @@ INSERT IGNORE INTO canvas_permissions (id, name, description) VALUES
   (4, 'manage_roles', 'desc_manage_roles'),
   (5, 'assign_roles', 'desc_assign_roles'),
   (6, 'view_history', 'desc_view_history'),
-  (7, 'manage_resets', 'desc_manage_resets');
+  (7, 'manage_resets', 'desc_manage_resets'),
+  (8, 'manage_sanctions', 'desc_manage_sanctions'),
+  (9, 'manage_invites', 'desc_manage_invites'),
+  (10, 'create_snapshots', 'desc_create_snapshots');
 
 INSERT IGNORE INTO canvas_role_permissions (role_id, permission_id) VALUES
-  (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7);
+  (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9), (4, 10);
 
 INSERT IGNORE INTO canvas_role_permissions (role_id, permission_id) VALUES
-  (3, 1), (3, 2), (3, 3), (3, 5), (3, 6), (3, 7);
+  (3, 1), (3, 2), (3, 3), (3, 5), (3, 6), (3, 7), (3, 8), (3, 9);
 
 INSERT IGNORE INTO canvas_role_permissions (role_id, permission_id) VALUES
   (2, 1), (2, 3), (2, 6);

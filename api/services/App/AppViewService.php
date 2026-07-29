@@ -284,7 +284,7 @@ class AppViewService {
                     $uStmt->execute([':uid' => $userId]);
                     $userTier = (int)($uStmt->fetchColumn() ?: 0);
                     $canInjectTemplate = SubscriptionPlanConstants::hasFeature($userTier, 'inject_templates');
-                    $canLiveShare = SubscriptionPlanConstants::hasFeature($userTier, 'live_sync');
+                    $canLiveShare = SubscriptionPlanConstants::hasFeature($userTier, 'live_share');
                 }
 
             } catch (Exception $e) {

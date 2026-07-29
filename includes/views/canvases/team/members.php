@@ -5,7 +5,9 @@ $canvasService = new CanvasViewService();
 $membersData = $canvasService->getCanvasMembersData($_GET['uuid'] ?? null, (int)($_GET['page'] ?? 1));
 
 if (!empty($membersData['unauthorized'])) {
-    echo "<div class='view-content'><p>".__('err_unauthorized_or_missing_id')."</p></div>";
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 

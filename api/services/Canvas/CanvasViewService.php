@@ -92,29 +92,84 @@ class CanvasViewService {
 
         $tblCanvases = defined('\App\Core\System\DatabaseConstants::TBL_CANVASES') ? \App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
         if ($isAdmin) {
-            $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid OR is_official = 1";
-            $sqlSelect = "SELECT id, uuid, name, privacy, size, max_participants, created_at, is_official, favorites_count 
-                          FROM {$tblCanvases} 
-                          WHERE owner_id = :uid OR is_official = 1
-                          ORDER BY id DESC 
+            $sqlCount = "SELECT COUNT(DISTINCT c.id) FROM {$tblCanvases} c 
+                         LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
+                         LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
+                         WHERE c.owner_id = :uid2 OR c.is_official = 1 OR crp.permission_id IS NOT NULL";
+            $sqlSelect = "SELECT DISTINCT c.id, c.uuid, c.name, c.privacy, c.size, c.max_participants, c.created_at, c.is_official, c.favorites_count, c.owner_id 
+                          FROM {$tblCanvases} c 
+                          LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
+                          LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
+                          WHERE c.owner_id = :uid2 OR c.is_official = 1 OR crp.permission_id IS NOT NULL
+                          ORDER BY c.id DESC 
                           LIMIT $limit OFFSET $offset";
         } else {
-            $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid";
-            $sqlSelect = "SELECT id, uuid, name, privacy, size, max_participants, created_at, is_official, favorites_count 
-                          FROM {$tblCanvases} 
-                          WHERE owner_id = :uid 
-                          ORDER BY id DESC 
+            $sqlCount = "SELECT COUNT(DISTINCT c.id) FROM {$tblCanvases} c 
+                         LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
+                         LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
+                         WHERE c.owner_id = :uid2 OR crp.permission_id IS NOT NULL";
+            $sqlSelect = "SELECT DISTINCT c.id, c.uuid, c.name, c.privacy, c.size, c.max_participants, c.created_at, c.is_official, c.favorites_count, c.owner_id 
+                          FROM {$tblCanvases} c 
+                          LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
+                          LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
+                          WHERE c.owner_id = :uid2 OR crp.permission_id IS NOT NULL
+                          ORDER BY c.id DESC 
                           LIMIT $limit OFFSET $offset";
         }
 
         $stmtCount = $pdo->prepare($sqlCount);
-        $stmtCount->execute([':uid' => $userId]);
+        $stmtCount->execute([':uid1' => $userId, ':uid2' => $userId]);
         $totalItems = (int)$stmtCount->fetchColumn();
         $totalPages = ceil($totalItems / $limit);
 
         $stmtSelect = $pdo->prepare($sqlSelect);
-        $stmtSelect->execute([':uid' => $userId]);
+        $stmtSelect->execute([':uid1' => $userId, ':uid2' => $userId]);
         $canvases = $stmtSelect->fetchAll(\PDO::FETCH_ASSOC);
+
+        $permissionsByCanvas = [];
+        $rolesByCanvas = [];
+        if (!empty($canvases)) {
+            $canvasIds = array_column($canvases, 'id');
+            $in = str_repeat('?,', count($canvasIds) - 1) . '?';
+            $sqlPerms = "SELECT cur.canvas_id, crp.permission_id 
+                         FROM canvas_user_roles cur 
+                         JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id 
+                         WHERE cur.user_id = ? AND cur.canvas_id IN ($in)";
+            $params = array_merge([$userId], $canvasIds);
+            
+            try {
+                $stmtPerms = $pdo->prepare($sqlPerms);
+                $stmtPerms->execute($params);
+                while ($row = $stmtPerms->fetch(\PDO::FETCH_ASSOC)) {
+                    $cid = $row['canvas_id'];
+                    $pid = $row['permission_id'];
+                    if (!isset($permissionsByCanvas[$cid])) {
+                        $permissionsByCanvas[$cid] = [];
+                    }
+                    if (!in_array($pid, $permissionsByCanvas[$cid])) {
+                        $permissionsByCanvas[$cid][] = $pid;
+                    }
+                }
+                
+                $sqlRoles = "SELECT cur.canvas_id, cr.name as role_name
+                             FROM canvas_user_roles cur
+                             JOIN canvas_roles cr ON cur.role_id = cr.id
+                             WHERE cur.user_id = ? AND cur.canvas_id IN ($in)";
+                $stmtRoles = $pdo->prepare($sqlRoles);
+                $stmtRoles->execute($params);
+                while ($row = $stmtRoles->fetch(\PDO::FETCH_ASSOC)) {
+                    $rolesByCanvas[$row['canvas_id']] = $row['role_name'];
+                }
+            } catch (\Throwable $e) {
+                // Silencioso
+            }
+        }
+
+        foreach ($canvases as &$c) {
+            $c['user_permissions'] = $permissionsByCanvas[$c['id']] ?? [];
+            $c['user_role_name'] = $rolesByCanvas[$c['id']] ?? null;
+        }
+        unset($c);
 
         return [
             'unauthorized' => false,
@@ -338,6 +393,30 @@ class CanvasViewService {
             ];
         }
 
+        $isOwner = ((int)$canvasOwnerId === (int)$userId);
+        if (!$isOwner) {
+            $isOwner = $this->hasCanvasPermission($pdoCanvases, $canvasId, (int)$userId, 3);
+        }
+
+        if (!$isOwner) {
+            return [
+                'error' => __('err_unauthorized'),
+                'unauthorized' => true,
+                'userId' => $userId,
+                'canvasUuid' => $canvasUuid,
+                'canvasId' => $canvasId,
+                'canvasOwnerId' => $canvasOwnerId,
+                'members' => [],
+                'memberRoles' => [],
+                'userDetails' => [],
+                'totalMembers' => 0,
+                'page' => 1,
+                'totalPages' => 1,
+                'prevPageUrl' => '#',
+                'nextPageUrl' => '#'
+            ];
+        }
+
         $limit = 25;
         if ($page < 1) $page = 1;
         $offset = ($page - 1) * $limit;
@@ -438,6 +517,17 @@ class CanvasViewService {
     }
 
     /**
+     * Verifica si el usuario tiene un permiso específico en el lienzo.
+     */
+    private function hasCanvasPermission(\PDO $pdo, int $canvasId, int $userId, int $permissionId): bool {
+        $stmt = $pdo->prepare("SELECT 1 FROM canvas_role_permissions crp
+                               JOIN canvas_user_roles cur ON crp.role_id = cur.role_id
+                               WHERE cur.canvas_id = :cid AND cur.user_id = :uid AND crp.permission_id = :pid LIMIT 1");
+        $stmt->execute(['cid' => $canvasId, 'uid' => $userId, 'pid' => $permissionId]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    /**
      * Auxiliar para parsear colores/gradientes de suscripción.
      */
     public static function parseSubscriptionColor(?string $subscriptionColorRaw): string {
@@ -478,8 +568,8 @@ class CanvasViewService {
      */
     public function getWorkspaceEditData(?string $canvasUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
-
-        $activeAccountId = $_SESSION['active_account'] ?? null;
+        $userId = $_SESSION['active_account'] ?? $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
+        $activeAccountId = $_SESSION['active_account'] ?? $userId;
         $linkedAccounts = $_SESSION['accounts'] ?? [];
         $tier = 0;
         if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
@@ -515,7 +605,19 @@ class CanvasViewService {
                 $canvasData = $stmt->fetch(\PDO::FETCH_ASSOC);
 
                 if ($canvasData) {
-                    $canvasId = (int)$canvasData['id'];
+                    $userPerms = $_SESSION['user_permissions'] ?? [];
+                    $canManageOfficial = in_array(PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPerms);
+                    $canCreateOfficial = in_array(PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
+
+                    $isOwner = ((int)$canvasData['owner_id'] === (int)$userId)
+                               || ($canvasData['owner_id'] === null && $canManageOfficial);
+                    
+                    $hasPerm = false;
+                    if (!$isOwner) {
+                        $hasPerm = $this->hasCanvasPermission($pdo, (int)$canvasData['id'], (int)$userId, 2);
+                    }
+                    if ($isOwner || $hasPerm) {
+                        $canvasId = (int)$canvasData['id'];
                     $cName = htmlspecialchars($canvasData['name'] ?? '');
                     $cSize = htmlspecialchars($canvasData['size'] ?? '64');
                     $cPrivacy = $canvasData['privacy'] ?? 'private';
@@ -527,13 +629,12 @@ class CanvasViewService {
                     $cAllowPurchases = (int)($canvasData['allow_purchases'] ?? 1);
                     $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
                     
-                    $userPerms = $_SESSION['user_permissions'] ?? [];
-                    $canCreateOfficial = in_array(PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
                     $cOfficial = (bool)($canvasData['is_official'] ?? 0);
 
                     if (!empty($canvasData['tags'])) {
                         $cTags = json_decode($canvasData['tags'], true) ?? [];
                     }
+                }
                 }
             } catch (\Throwable $e) {
                 Logger::error("getWorkspaceEditData canvas query error: " . $e->getMessage(), ['exception' => $e]);
@@ -596,6 +697,10 @@ class CanvasViewService {
                 if ($canvas) {
                     $isOwner = ((int)$canvas['owner_id'] === (int)$userId)
                         || ($canvas['owner_id'] === null && $canManageOfficial);
+                    
+                    if (!$isOwner) {
+                        $isOwner = $this->hasCanvasPermission($pdo, (int)$canvas['id'], (int)$userId, 7);
+                    }
 
                     if ($isOwner) {
                         $canvasId = (int)$canvas['id'];
@@ -699,6 +804,11 @@ class CanvasViewService {
         }
 
         $isOwner = ((int)$canvas['owner_id'] === (int)$userId) || ($canvas['owner_id'] === null && $canManageOfficial) || $canManageOfficial;
+        
+        if (!$isOwner) {
+            $isOwner = $this->hasCanvasPermission($pdo, (int)$canvas['id'], (int)$userId, 2);
+        }
+
         if (!$isOwner) {
             return ['error' => __('err_unauthorized')];
         }
@@ -875,9 +985,7 @@ class CanvasViewService {
                 $w = $stmtRole->fetchColumn();
                 if ($w !== false) $userRolesWeight = (int)$w;
                 
-                $stmtPerm = $pdoCanvases->prepare("SELECT 1 FROM canvas_role_permissions rp JOIN canvas_permissions p ON rp.permission_id = p.id JOIN canvas_user_roles ur ON rp.role_id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid AND p.name = 'manage_roles' LIMIT 1");
-                $stmtPerm->execute(['cid' => $canvasId, 'uid' => $userId]);
-                if ($stmtPerm->fetchColumn()) {
+                if ($this->hasCanvasPermission($pdoCanvases, $canvasId, $userId, 4)) {
                     $canManageRoles = true;
                 }
             } catch (\Exception $e) {}
@@ -1133,7 +1241,8 @@ class CanvasViewService {
         if ((int)$userId !== $canvasOwnerId) {
             $userPerms = $_SESSION['user_permissions'] ?? $_SESSION['permissions'] ?? [];
             $isAdmin = is_array($userPerms) && in_array(PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPerms);
-            if (!$isAdmin || $canvasOwnerId !== null) {
+            $hasPerm = $this->hasCanvasPermission($pdoCanvases, $canvasId, (int)$userId, 9);
+            if ((!$isAdmin || $canvasOwnerId !== null) && !$hasPerm) {
                 return ['error' => __('err_unauthorized')];
             }
         }
@@ -1212,7 +1321,7 @@ class CanvasViewService {
     /**
      * Obtiene los datos del creador/editor de roles de lienzo (team/role-builder.php).
      */
-    public function getCanvasRoleBuilderData(?string $canvasUuid, ?int $roleId): array {
+    public function getCanvasRoleBuilderData(?string $canvasUuid, ?string $roleUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
         $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
@@ -1270,14 +1379,16 @@ class CanvasViewService {
             'is_system' => 0
         ];
 
-        if ($roleId) {
+        $roleId = 0;
+        if ($roleUuid) {
             try {
-                $stmt = $pdoCanvases->prepare("SELECT * FROM canvas_roles WHERE id = :id AND (canvas_id = :cid OR canvas_id IS NULL)");
-                $stmt->execute(['id' => $roleId, 'cid' => $canvasId]);
+                $stmt = $pdoCanvases->prepare("SELECT * FROM canvas_roles WHERE uuid = :uuid AND (canvas_id = :cid OR canvas_id IS NULL)");
+                $stmt->execute(['uuid' => $roleUuid, 'cid' => $canvasId]);
                 $row = $stmt->fetch(\PDO::FETCH_ASSOC);
                 if ($row) {
                     $isEdit = true;
                     $roleData = $row;
+                    $roleId = $row['id'];
                 }
             } catch (\Throwable $e) {}
         }
@@ -1291,9 +1402,7 @@ class CanvasViewService {
                 $w = $stmtRole->fetchColumn();
                 if ($w !== false) $userRolesWeight = (int)$w;
                 
-                $stmtPerm = $pdoCanvases->prepare("SELECT 1 FROM canvas_role_permissions rp JOIN canvas_permissions p ON rp.permission_id = p.id JOIN canvas_user_roles ur ON rp.role_id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid AND p.name = 'manage_roles' LIMIT 1");
-                $stmtPerm->execute(['cid' => $canvasId, 'uid' => $userId]);
-                if ($stmtPerm->fetchColumn()) {
+                if ($this->hasCanvasPermission($pdoCanvases, $canvasId, $userId, 4)) {
                     $canManageRoles = true;
                 }
             } catch (\Exception $e) {}
@@ -1320,11 +1429,11 @@ class CanvasViewService {
     /**
      * Obtiene los permisos de un rol de lienzo (team/role-permissions.php).
      */
-    public function getCanvasRolePermissionsData(?string $canvasUuid, ?int $roleId): array {
+    public function getCanvasRolePermissionsData(?string $canvasUuid, ?string $roleUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
         $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
-        if (!$userId || !$canvasUuid || !$roleId) {
+        if (!$userId || !$canvasUuid || !$roleUuid) {
             return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/canvases/manage/roles/" . ($canvasUuid ?? '')];
         }
 
@@ -1370,12 +1479,14 @@ class CanvasViewService {
 
         $roleData = null;
         $rolePermissions = [];
+        $roleId = null;
         try {
-            $stmt = $pdoCanvases->prepare("SELECT * FROM canvas_roles WHERE id = :id AND (canvas_id = :cid OR canvas_id IS NULL)");
-            $stmt->execute(['id' => $roleId, 'cid' => $canvasId]);
+            $stmt = $pdoCanvases->prepare("SELECT * FROM canvas_roles WHERE uuid = :uuid AND (canvas_id = :cid OR canvas_id IS NULL)");
+            $stmt->execute(['uuid' => $roleUuid, 'cid' => $canvasId]);
             $roleData = $stmt->fetch(\PDO::FETCH_ASSOC);
 
             if ($roleData) {
+                $roleId = $roleData['id'];
                 $stmtPerms = $pdoCanvases->prepare("SELECT permission_id FROM canvas_role_permissions WHERE role_id = :rid");
                 $stmtPerms->execute(['rid' => $roleId]);
                 $rolePermissions = $stmtPerms->fetchAll(\PDO::FETCH_COLUMN);
@@ -1402,9 +1513,7 @@ class CanvasViewService {
                 $w = $stmtRole->fetchColumn();
                 if ($w !== false) $userRolesWeight = (int)$w;
                 
-                $stmtPerm = $pdoCanvases->prepare("SELECT 1 FROM canvas_role_permissions rp JOIN canvas_permissions p ON rp.permission_id = p.id JOIN canvas_user_roles ur ON rp.role_id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid AND p.name = 'manage_roles' LIMIT 1");
-                $stmtPerm->execute(['cid' => $canvasId, 'uid' => $userId]);
-                if ($stmtPerm->fetchColumn()) {
+                if ($this->hasCanvasPermission($pdoCanvases, $canvasId, $userId, 4)) {
                     $canManageRoles = true;
                 }
             } catch (\Exception $e) {}
@@ -1535,11 +1644,16 @@ class CanvasViewService {
         $stmt->execute(['uuid' => $canvasUuid, 'uuid_alt' => $canvasUuid]);
         $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$canvas || (int)$canvas['user_id'] !== (int)$userId) {
+        if (!$canvas) {
             return ['unauthorized' => true, 'redirect' => (defined('APP_URL') ? APP_URL : '') . '/canvases/manage'];
         }
 
         $canvasId = (int)$canvas['id'];
+        $isOwner = ((int)$canvas['user_id'] === (int)$userId);
+        
+        if (!$isOwner && !$this->hasCanvasPermission($pdoCanvases, $canvasId, (int)$userId, 8)) {
+            return ['unauthorized' => true, 'redirect' => (defined('APP_URL') ? APP_URL : '') . '/canvases/manage'];
+        }
         $realCanvasUuid = $canvas['uuid'];
         $appUrl = defined('APP_URL') ? APP_URL : '';
 

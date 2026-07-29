@@ -8,6 +8,7 @@ class CanvasRolesController {
         this.isInitialized = false;
         
         this.selectedRoleId = null;
+        this.selectedRoleUuid = null;
         this.selectedRoleWeight = null;
         this.selectedIsSystem = 0;
         
@@ -57,26 +58,30 @@ class CanvasRolesController {
         if (deleteBtn && !deleteBtn.classList.contains('disabled-interaction')) this.deleteRole(deleteBtn);
     }
 
-    handleRoleSelection(rowElement) {
-        const roleId = rowElement.getAttribute('data-role-id');
-        const weight = parseInt(rowElement.getAttribute('data-role-weight'));
-        const isSystem = parseInt(rowElement.getAttribute('data-is-system'));
+    handleRoleSelection(target) {
+        const roleId = target.getAttribute('data-role-id');
+        const roleUuid = target.getAttribute('data-role-uuid');
+        const weight = parseInt(target.getAttribute('data-role-weight'));
+        const isSystem = parseInt(target.getAttribute('data-is-system'));
         
         if (this.selectedRoleId === roleId) {
-            this.deselectRole();
-        } else {
-            document.querySelectorAll('[data-action="selectRoleRow"]').forEach(el => el.classList.remove('selected'));
-            this.selectedRoleId = roleId;
-            this.selectedRoleWeight = weight;
-            this.selectedIsSystem = isSystem;
-            rowElement.classList.add('selected');
+            this.deselectAll();
+            return;
         }
+
+        document.querySelectorAll('[data-action="selectRoleRow"]').forEach(el => el.classList.remove('selected'));
+        this.selectedRoleId = roleId;
+        this.selectedRoleUuid = roleUuid;
+        this.selectedRoleWeight = weight;
+        this.selectedIsSystem = isSystem;
+        target.classList.add('selected');
 
         this.updateSelectionUI();
     }
 
-    deselectRole() {
+    deselectAll() {
         this.selectedRoleId = null;
+        this.selectedRoleUuid = null;
         this.selectedRoleWeight = null;
         this.selectedIsSystem = 0;
         document.querySelectorAll('[data-action="selectRoleRow"]').forEach(el => el.classList.remove('selected'));
@@ -127,17 +132,23 @@ class CanvasRolesController {
     }
 
     navigateToEditRole() {
-        if (!this.selectedRoleId) return;
-        const url = `${this.basePath}/canvases/manage/role-builder/${this.canvasUuid}?role_id=${this.selectedRoleId}`;
-        if (window.spaRouter) window.spaRouter.navigate(url);
-        else window.location.href = url;
+        if (!this.selectedRoleUuid) return;
+        const url = `${this.basePath}/canvases/manage/role-builder/${this.canvasUuid}/${this.selectedRoleUuid}`;
+        if (window.spaRouter) {
+            window.spaRouter.navigate(url);
+        } else {
+            window.location.href = url;
+        }
     }
 
     navigateToEditPermissions() {
-        if (!this.selectedRoleId) return;
-        const url = `${this.basePath}/canvases/manage/role-permissions/${this.canvasUuid}?role_id=${this.selectedRoleId}`;
-        if (window.spaRouter) window.spaRouter.navigate(url);
-        else window.location.href = url;
+        if (!this.selectedRoleUuid) return;
+        const url = `${this.basePath}/canvases/manage/role-permissions/${this.canvasUuid}/${this.selectedRoleUuid}`;
+        if (window.spaRouter) {
+            window.spaRouter.navigate(url);
+        } else {
+            window.location.href = url;
+        }
     }
 
     async deleteRole(btn) {

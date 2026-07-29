@@ -28,6 +28,11 @@ class SubscriptionPlanConstants {
             'key' => 'feat_inject_templates',
             'name' => 'Inyección de Plantillas',
             'desc' => 'Inyección directa de plantillas avanzadas en lienzos'
+        ],
+        'feat_live_share' => [
+            'key' => 'feat_live_share',
+            'name' => 'Transmisión de Plantillas',
+            'desc' => 'Permite transmitir y sincronizar lienzos en vivo'
         ]
     ];
 
@@ -61,6 +66,7 @@ class SubscriptionPlanConstants {
                     'feat_custom_palettes' => (bool)$row['feat_custom_palettes'],
                     'feat_unlimited_exports' => (bool)$row['feat_unlimited_exports'],
                     'feat_inject_templates' => (bool)($row['feat_inject_templates'] ?? false),
+                    'feat_live_share' => (bool)($row['feat_live_share'] ?? false),
                     'max_template_tokens' => (int)($row['max_template_tokens'] ?? 0),
                     'allow_live_chat' => (bool)$row['feat_chat_restriction'],
                     'custom_palettes' => (bool)$row['feat_custom_palettes']
@@ -85,6 +91,7 @@ class SubscriptionPlanConstants {
             'feat_custom_palettes' => false,
             'feat_unlimited_exports' => false,
             'feat_inject_templates' => false,
+            'feat_live_share' => false,
             'max_template_tokens' => 0,
             'allow_live_chat' => false,
             'custom_palettes' => false

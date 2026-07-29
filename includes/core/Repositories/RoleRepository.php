@@ -72,7 +72,7 @@ class RoleRepository implements RoleRepositoryInterface {
             if ($cached) return json_decode($cached, true);
 
             $tblRoles = DB::TBL_ROLES;
-            $stmt = $this->pdo->query("SELECT id, name, weight, is_system, created_at, updated_at FROM {$tblRoles} ORDER BY weight DESC, id ASC");
+            $stmt = $this->pdo->query("SELECT id, uuid, name, weight, is_system, created_at, updated_at FROM {$tblRoles} ORDER BY weight DESC, id ASC");
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
@@ -90,8 +90,27 @@ class RoleRepository implements RoleRepositoryInterface {
             if ($cached) return json_decode($cached, true);
 
             $tblRoles = DB::TBL_ROLES;
-            $stmt = $this->pdo->prepare("SELECT id, name, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE id = ? LIMIT 1");
+            $stmt = $this->pdo->prepare("SELECT id, uuid, name, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE id = ? LIMIT 1");
             $stmt->execute([$id]);
+            $role = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($role && $this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
+            return $role ?: null;
+        });
+    }
+
+    public function findByUuid(string $uuid): ?array {
+        $cacheKey = CacheConstants::PREFIX_ROLE_BY_ID . 'uuid_' . md5($uuid);
+        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+        if ($cached) return json_decode($cached, true);
+
+        return $this->redisCache->executeWithLock('lock_rbac_role_uuid_' . md5($uuid), 5, function() use ($uuid, $cacheKey) {
+            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+            if ($cached) return json_decode($cached, true);
+
+            $tblRoles = DB::TBL_ROLES;
+            $stmt = $this->pdo->prepare("SELECT id, uuid, name, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE uuid = ? LIMIT 1");
+            $stmt->execute([$uuid]);
             $role = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($role && $this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
@@ -109,7 +128,7 @@ class RoleRepository implements RoleRepositoryInterface {
             if ($cached) return json_decode($cached, true);
 
             $tblRoles = DB::TBL_ROLES;
-            $stmt = $this->pdo->prepare("SELECT id, name, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE name = ? LIMIT 1");
+            $stmt = $this->pdo->prepare("SELECT id, uuid, name, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE name = ? LIMIT 1");
             $stmt->execute([$name]);
             $role = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -182,7 +201,7 @@ class RoleRepository implements RoleRepositoryInterface {
             $tblUserRoles = DB::TBL_USER_ROLES;
 
             $stmt = $this->pdo->prepare("
-                SELECT r.id, r.name, r.weight 
+                SELECT r.id, r.uuid, r.name, r.weight 
                 FROM {$tblRoles} r 
                 INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id 
                 WHERE ur.user_id = ? 
@@ -237,7 +256,7 @@ class RoleRepository implements RoleRepositoryInterface {
             $tblUserRoles = DB::TBL_USER_ROLES;
 
             $stmt = $this->pdo->prepare("
-                SELECT r.id, r.name, r.weight 
+                SELECT r.id, r.uuid, r.name, r.weight 
                 FROM {$tblRoles} r 
                 INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id 
                 WHERE ur.user_id = ? 

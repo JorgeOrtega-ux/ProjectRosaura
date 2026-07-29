@@ -5,7 +5,9 @@ $canvasService = new CanvasViewService();
 $manageData = $canvasService->getCanvasManageData(isset($_GET['page']) ? (int)$_GET['page'] : 1);
 
 if (!empty($manageData['unauthorized'])) {
-    echo "<div class='view-content'><p>".__('err_unauthorized')."</p></div>";
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 
@@ -15,6 +17,7 @@ $totalPages = $manageData['totalPages'];
 $page = $manageData['page'];
 $isAdmin = $manageData['isAdmin'];
 $hasAdvancedRoles = $manageData['hasAdvancedRoles'];
+$userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
 $prevPageUrl = $page > 1 ? $appUrl . '/canvases/manage?page=' . ($page - 1) : '#';
@@ -69,7 +72,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                         <span class="material-symbols-rounded">link</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedCanvases" data-tooltip="<?php echo __('tooltip_delete_canvas'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedCanvases" data-ref="btn-action-delete" data-tooltip="<?php echo __('tooltip_delete_canvas'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
                 </div>
@@ -116,6 +119,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                     <thead>
                         <tr>
                             <th><?php echo __('table_header_canvas_name'); ?></th>
+                            <th>Rol</th>
                             <th><?php echo __('table_header_type'); ?></th>
                             <th><?php echo __('table_header_privacy'); ?></th>
                             <th><?php echo __('table_header_size'); ?></th>
@@ -127,14 +131,29 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                     <tbody>
                         <?php if ($canvases): ?>
                             <?php foreach ($canvases as $canvas): ?>
-                                <tr class="component-table-row" data-action="selectCanvas" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>" data-size="<?php echo htmlspecialchars($canvas['size']); ?>">
+                                <?php
+                                $isOwner = isset($canvas['owner_id']) && $canvas['owner_id'] == $userId ? 1 : 0;
+                                $userPerms = json_encode($canvas['user_permissions'] ?? []);
+                                ?>
+                                <tr class="component-table-row" data-action="selectCanvas" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>" data-size="<?php echo htmlspecialchars($canvas['size']); ?>" data-is-owner="<?php echo $isOwner; ?>" data-user-permissions="<?php echo htmlspecialchars($userPerms); ?>">
                                     <td>
-                                        <div class="td-user-info">
+                                        <div class="td-user-info" style="gap: 8px;">
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">palette</span>
                                                 <span class="search-target"><?php echo htmlspecialchars($canvas['name']); ?></span>
                                             </div>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <?php if ($isOwner): ?>
+                                            <div class="component-badge component-badge--sm component-badge--primary" style="font-size: 0.75em;">
+                                                <span>Propietario</span>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="component-badge component-badge--sm component-badge--secondary" style="font-size: 0.75em;">
+                                                <span><?php echo htmlspecialchars($canvas['user_role_name'] ?? 'Colaborador'); ?></span>
+                                            </div>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <div class="component-badge component-badge--sm">

@@ -50,6 +50,15 @@ switch ($type) {
         ];
         break;
 
+    case 'no_permission':
+        http_response_code(403);
+        $config = [
+            'icon' => 'lock',
+            'title' => __('no_permission_title') ?? 'Acceso Denegado',
+            'desc' => __('no_permission_desc') ?? 'No estás autorizado para realizar esta acción.'
+        ];
+        break;
+
     case '404':
     default:
         http_response_code(404);

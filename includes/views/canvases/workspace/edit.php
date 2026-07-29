@@ -5,8 +5,10 @@ use App\Core\System\SubscriptionPlanConstants;
 $canvasService = new CanvasViewService();
 $editData = $canvasService->getWorkspaceEditData($_GET['uuid'] ?? null);
 
-if (!$editData['canvasId']) {
-    echo "<div class='view-content'><p>".__('err_invalid_canvas_id')."</p></div>";
+if (empty($editData['canvasId'])) {
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 

@@ -656,10 +656,10 @@ class AdminViewService {
     /**
      * Datos para los permisos de roles del sistema (roles/role-permissions.php).
      */
-    public function getRolePermissionsData(?int $roleId): array {
+    public function getRolePermissionsData(?string $roleUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
-        if (!$roleId) {
+        if (empty($roleUuid)) {
             return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/roles"];
         }
 
@@ -670,11 +670,12 @@ class AdminViewService {
         $rolePermissions = [];
 
         try {
-            $stmt = $pdo->prepare("SELECT * FROM roles WHERE id = :id LIMIT 1");
-            $stmt->execute(['id' => $roleId]);
+            $stmt = $pdo->prepare("SELECT * FROM roles WHERE uuid = :uuid LIMIT 1");
+            $stmt->execute(['uuid' => $roleUuid]);
             $role = $stmt->fetch(\PDO::FETCH_ASSOC);
 
             if ($role) {
+                $roleId = $role['id'];
                 $stmtPerms = $pdo->prepare("SELECT permission_id FROM role_permissions WHERE role_id = :rid");
                 $stmtPerms->execute(['rid' => $roleId]);
                 $rolePermissions = $stmtPerms->fetchAll(\PDO::FETCH_COLUMN);

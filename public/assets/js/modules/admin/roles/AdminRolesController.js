@@ -15,6 +15,7 @@ class AdminRolesController {
         this.basePath = window.AppBasePath || '';
         this.isInitialized = false; 
         this.selectedRoleId = null;
+        this.selectedRoleUuid = null;
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
         this.handlePaginationClickBound = this.handlePaginationClick.bind(this);
         this.handleGlobalInputBound = this.handleGlobalInput.bind(this);
@@ -34,6 +35,7 @@ class AdminRolesController {
         document.removeEventListener('input', this.handleGlobalInputBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
         this.selectedRoleId = null;
+        this.selectedRoleUuid = null;
         this.isInitialized = false;
     }
     bindEvents() {
@@ -215,28 +217,30 @@ class AdminRolesController {
         }
     }
     navigateToEditRole() {
-        if (!this.selectedRoleId) return;
+        if (!this.selectedRoleUuid) return;
         if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/admin/role-edit/${this.selectedRoleId}`);
+            window.spaRouter.navigate(`${this.basePath}/admin/role-edit/${this.selectedRoleUuid}`);
         } else {
-            window.location.href = `${this.basePath}/admin/role-edit/${this.selectedRoleId}`;
+            window.location.href = `${this.basePath}/admin/role-edit/${this.selectedRoleUuid}`;
         }
     }
     navigateToEditPermissions() {
-        if (!this.selectedRoleId) return;
+        if (!this.selectedRoleUuid) return;
         if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/admin/role-permissions/${this.selectedRoleId}`);
+            window.spaRouter.navigate(`${this.basePath}/admin/role-permissions/${this.selectedRoleUuid}`);
         } else {
-            window.location.href = `${this.basePath}/admin/role-permissions/${this.selectedRoleId}`;
+            window.location.href = `${this.basePath}/admin/role-permissions/${this.selectedRoleUuid}`;
         }
     }
     handleRowSelection(target) {
         const roleId = parseInt(target.getAttribute('data-role-id'), 10);
+        const roleUuid = target.getAttribute('data-role-uuid');
         if (this.selectedRoleId === roleId) {
             this.deselectAll();
             return;
         }
         this.selectedRoleId = roleId;
+        this.selectedRoleUuid = roleUuid;
         document.querySelectorAll('[data-action="selectRoleRow"]').forEach(row => {
             if(row.getAttribute('data-role-id') == roleId) {
                 row.classList.add('selected');
@@ -287,6 +291,7 @@ class AdminRolesController {
     }
     deselectAll() {
         this.selectedRoleId = null;
+        this.selectedRoleUuid = null;
         document.querySelectorAll('[data-action="selectRoleRow"]').forEach(row => row.classList.remove('selected'));
         const defaultMode = document.querySelector('[data-ref="header-default-actions"]');
         const selectionMode = document.querySelector('[data-ref="role-selection-actions"]');

@@ -2,7 +2,7 @@
 use App\Api\Services\Canvas\CanvasViewService;
 
 $canvasService = new CanvasViewService();
-$roleBuilderData = $canvasService->getCanvasRoleBuilderData($_GET['uuid'] ?? null, isset($_GET['role_id']) ? (int)$_GET['role_id'] : null);
+$roleBuilderData = $canvasService->getCanvasRoleBuilderData($_GET['uuid'] ?? null, $_GET['role_uuid'] ?? null);
 
 if (!empty($roleBuilderData['error'])) {
     if ($roleBuilderData['error'] === __('err_plan_custom_roles')) {
@@ -15,7 +15,9 @@ if (!empty($roleBuilderData['error'])) {
         require ROOT_PATH . '/includes/views/system/message.php';
         return;
     }
-    echo "<div class='view-content'><p>".htmlspecialchars($roleBuilderData['error'])."</p></div>";
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 
@@ -23,6 +25,10 @@ extract($roleBuilderData);
 $isSystemRole = (isset($roleData['is_system']) && (int)$roleData['is_system'] === 1);
 
 if (!$canManageRoles || ($isEdit && $roleData['weight'] >= $userRolesWeight && $canvasOwnerId !== $userId)) {
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
+    return;
 }
 
 $appUrl = defined('APP_URL') ? APP_URL : '';

@@ -108,6 +108,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
                         <tr class="component-table-row clickable" 
                             data-action="selectRoleRow" 
                             data-role-id="<?php echo $role['id']; ?>" 
+                            data-role-uuid="<?php echo htmlspecialchars($role['uuid'] ?? ''); ?>"
                             data-role-name="<?php echo htmlspecialchars($translatedName); ?>" 
                             data-is-system="<?php echo $isSystemFlag; ?>" 
                             data-role-weight="<?php echo (int)$role['weight']; ?>">

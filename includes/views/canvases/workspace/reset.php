@@ -4,8 +4,10 @@ use App\Api\Services\Canvas\CanvasViewService;
 $canvasService = new CanvasViewService();
 $resetData = $canvasService->getWorkspaceResetData($_GET['uuid'] ?? null);
 
-if (!$resetData['canvasId']) {
-    echo "<div class='view-content'><p>" . __('err_invalid_canvas_id') . "</p></div>";
+if (empty($resetData['canvasId'])) {
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 

@@ -6,7 +6,9 @@ $canvasService = new CanvasViewService();
 $resizeData = $canvasService->getWorkspaceResizeData($_GET['uuid'] ?? null);
 
 if (!empty($resizeData['error'])) {
-    echo "<div class='view-content'><p>" . htmlspecialchars($resizeData['error']) . "</p></div>";
+    global $systemMessageType;
+    $systemMessageType = 'no_permission';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 

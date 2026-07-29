@@ -581,22 +581,24 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function syncUserRoles(int $canvasId, int $userId, array $roleIds): bool {
         try {
-            $this->pdo->beginTransaction();
+            $this->db->beginTransaction();
 
-            $stmtDelete = $this->pdo->prepare("DELETE FROM " . DB::TBL_CANVAS_USER_ROLES . " WHERE canvas_id = :cid AND user_id = :uid");
+            $stmtDelete = $this->db->prepare("DELETE FROM " . DB::TBL_CANVAS_USER_ROLES . " WHERE canvas_id = :cid AND user_id = :uid");
             $stmtDelete->execute(['cid' => $canvasId, 'uid' => $userId]);
 
             if (!empty($roleIds)) {
-                $stmtInsert = $this->pdo->prepare("INSERT IGNORE INTO " . DB::TBL_CANVAS_USER_ROLES . " (canvas_id, user_id, role_id) VALUES (:cid, :uid, :rid)");
+                $stmtInsert = $this->db->prepare("INSERT IGNORE INTO " . DB::TBL_CANVAS_USER_ROLES . " (canvas_id, user_id, role_id) VALUES (:cid, :uid, :rid)");
                 foreach ($roleIds as $roleId) {
                     $stmtInsert->execute(['cid' => $canvasId, 'uid' => $userId, 'rid' => $roleId]);
                 }
             }
 
-            $this->pdo->commit();
+            $this->db->commit();
             return true;
         } catch (\Exception $e) {
-            $this->pdo->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             Logger::error('Error in syncUserRoles.', ['error' => $e->getMessage()]);
             return false;
         }
