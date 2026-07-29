@@ -819,15 +819,41 @@ class AdminServices {
             $db = new \App\Config\Database\DatabaseManager();
             $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
             
-            // Protect system tiers from deletion
-            $stmtCheck = $pdo->prepare("SELECT id FROM subscription_tiers WHERE uuid = ?");
+            // Protect system tiers from deletion and get tier info
+            $stmtCheck = $pdo->prepare("SELECT id, tier_level, is_active FROM subscription_tiers WHERE uuid = ?");
             $stmtCheck->execute([$uuid]);
-            $tierId = (int)$stmtCheck->fetchColumn();
-            if ($tierId > 0 && $tierId <= 1) return ['success' => false, 'message' => 'No se puede eliminar esta suscripción'];
+            $tierInfo = $stmtCheck->fetch(\PDO::FETCH_ASSOC);
+            
+            if (!$tierInfo) return ['success' => false, 'message' => 'Suscripción no encontrada'];
+            
+            $tierId = (int)$tierInfo['id'];
+            $tierLevel = (int)$tierInfo['tier_level'];
+            
+            if ($tierId > 0 && $tierId <= 1) return ['success' => false, 'message' => __('admin.cannot_delete_base_role')];
 
-            $stmt = $pdo->prepare("DELETE FROM subscription_tiers WHERE uuid = ?");
-            $stmt->execute([$uuid]);
-            return ['success' => true, 'message' => 'Suscripción eliminada'];
+            // Check if there are users with this tier
+            $stmtUsers = $pdo->prepare("SELECT COUNT(id) FROM users WHERE subscription_tier = ?");
+            $stmtUsers->execute([$tierLevel]);
+            $usersCount = (int)$stmtUsers->fetchColumn();
+
+            if ($usersCount > 0) {
+                // Soft Delete (Archive)
+                if ((int)$tierInfo['is_active'] === 0) {
+                    return ['success' => false, 'message' => 'La suscripción ya está archivada y tiene usuarios activos. No se puede eliminar.'];
+                }
+                
+                $stmt = $pdo->prepare("UPDATE subscription_tiers SET is_active = 0 WHERE uuid = ?");
+                $stmt->execute([$uuid]);
+                return [
+                    'success' => true, 
+                    'message' => 'Suscripción archivada. Tiene ' . $usersCount . ' usuario(s) asignados y no puede ser eliminada permanentemente.'
+                ];
+            } else {
+                // Hard Delete
+                $stmt = $pdo->prepare("DELETE FROM subscription_tiers WHERE uuid = ?");
+                $stmt->execute([$uuid]);
+                return ['success' => true, 'message' => 'Suscripción eliminada permanentemente'];
+            }
         } catch (\PDOException $e) {
             Logger::error("deleteSubscription Error", ['exception' => $e]);
             return ['success' => false, 'message' => 'Error al eliminar'];

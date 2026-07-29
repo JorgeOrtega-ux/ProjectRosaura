@@ -183,7 +183,8 @@ class AdminUsersController {
             window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
             this.resetViewState();
             this.updateFilterButtonsState();
-            this.translateRolesInTable(); 
+            this.translateRolesInTable();
+            if (typeof window.applyRoleDynamicColors === 'function') window.applyRoleDynamicColors();
         } catch (error) {
             if (error.name === 'AbortError') return;
             if (window.spaRouter) window.spaRouter.navigate(url);
