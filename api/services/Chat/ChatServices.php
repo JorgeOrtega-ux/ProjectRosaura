@@ -25,6 +25,13 @@ class ChatServices
         $this->redis = $redisCache->getClient();
 }
 
+    public function resolveCanvasIntId($uuid)
+    {
+        $stmt = $this->pdo->prepare("SELECT id FROM " . DB::TBL_CANVASES . " WHERE uuid = ? LIMIT 1");
+        $stmt->execute([$uuid]);
+        return (int)($stmt->fetchColumn() ?: 0);
+    }
+
     public function history($userId, $canvasId, $offset)
     {
         $limit = 50;
@@ -251,7 +258,8 @@ class ChatServices
             }
 }
 
-        $msgId = 'pending_' . uniqid();
+        $msgUuid = \App\Core\Helpers\Utils::generateUUID();
+        $msgId = 'pending_' . $msgUuid;
 
         $uStmt = $this->identityPdo->prepare("
             SELECT u.username, u.uuid, u.profile_picture, st.color as subscription_color 
@@ -288,6 +296,7 @@ class ChatServices
                 'file_size' => $totalSize,
                 'created_at' => $messageData['created_at'],
                 'temp_id' => $msgId,
+                'uuid' => $msgUuid,
                 'username' => $messageData['username'],
                 'avatar' => $messageData['avatar']
             ];
@@ -305,8 +314,8 @@ class ChatServices
             
             $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
         } else {
-            $stmtInsert = $this->pdo->prepare("INSERT INTO canvas_chat_messages (canvas_id, user_id, message, attachments, file_size, created_at) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmtInsert->execute([$canvasId, $userId, $censoredMessageText, $attachmentsJson, $totalSize, $messageData['created_at']]);
+            $stmtInsert = $this->pdo->prepare("INSERT INTO canvas_chat_messages (uuid, canvas_id, user_id, message, attachments, file_size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmtInsert->execute([$msgUuid, $canvasId, $userId, $censoredMessageText, $attachmentsJson, $totalSize, $messageData['created_at']]);
             $messageData['id'] = $this->pdo->lastInsertId();
         }
 
@@ -324,12 +333,20 @@ class ChatServices
 
     public function delete($userId, $canvasId, $messageId)
     {
-        if ($messageId <= 0 || $canvasId <= 0) {
+        $msgUuid = '';
+        $msgIntId = 0;
+        if (is_numeric($messageId)) {
+            $msgIntId = (int)$messageId;
+        } else if (!empty($messageId)) {
+            $msgUuid = str_replace('pending_', '', $messageId);
+        }
+
+        if (($msgIntId <= 0 && empty($msgUuid)) || $canvasId <= 0) {
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 
-        $stmt = $this->pdo->prepare("SELECT user_id, file_size, visibility FROM canvas_chat_messages WHERE id = ? AND canvas_id = ?");
-        $stmt->execute([$messageId, $canvasId]);
+        $stmt = $this->pdo->prepare("SELECT id, user_id, file_size, visibility FROM canvas_chat_messages WHERE (id = ? OR uuid = ?) AND canvas_id = ?");
+        $stmt->execute([$msgIntId, $msgUuid, $canvasId]);
         $msg = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$msg) {
@@ -340,14 +357,16 @@ class ChatServices
             return ['success' => false, 'message' => __('err_cannot_delete_others_message'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
         }
 
-        // Already deleted Ã¢â‚¬â€ no-op
+        // Already deleted — no-op
         if (($msg['visibility'] ?? 'visible') === 'deleted') {
             return ['success' => true, 'message' => __('msg_message_deleted')];
         }
 
+        $resolvedId = (int)$msg['id'];
+
         // Soft-delete: mark as 'deleted' instead of removing from DB
         $stmt = $this->pdo->prepare("UPDATE canvas_chat_messages SET visibility = 'deleted' WHERE id = ?");
-        $stmt->execute([$messageId]);
+        $stmt->execute([$resolvedId]);
 
         if ($this->redis) {
             $eventPayload = [
@@ -366,7 +385,15 @@ class ChatServices
 
     public function report($userId, $messageId, $reason, $details = '')
     {
-        if ($messageId <= 0 || empty($reason)) {
+        $msgUuid = '';
+        $msgIntId = 0;
+        if (is_numeric($messageId)) {
+            $msgIntId = (int)$messageId;
+        } else if (!empty($messageId)) {
+            $msgUuid = str_replace('pending_', '', $messageId);
+        }
+
+        if (($msgIntId <= 0 && empty($msgUuid)) || empty($reason)) {
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 
@@ -375,14 +402,17 @@ class ChatServices
             return ['success' => false, 'message' => __('validation.invalid_reason'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 
-        $stmt = $this->pdo->prepare("SELECT id FROM " . DB::TBL_CANVAS_CHAT_MESSAGES . " WHERE id = ?");
-        $stmt->execute([$messageId]);
-        if (!$stmt->fetch()) {
+        $stmt = $this->pdo->prepare("SELECT id FROM canvas_chat_messages WHERE id = ? OR uuid = ?");
+        $stmt->execute([$msgIntId, $msgUuid]);
+        $msg = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$msg) {
             return ['success' => false, 'message' => __('err_message_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
         }
 
+        $resolvedId = (int)$msg['id'];
+
         $stmtInsert = $this->pdo->prepare("INSERT INTO " . DB::TBL_CANVAS_CHAT_REPORTS . " (message_id, reporter_user_id, reason_key, details) VALUES (?, ?, ?, ?)");
-        $stmtInsert->execute([$messageId, $userId, $reason, $details]);
+        $stmtInsert->execute([$resolvedId, $userId, $reason, $details]);
 
         return ['success' => true, 'message' => __('msg_message_reported')];
     }

@@ -5063,6 +5063,7 @@ input:checked+.component-toggle-slider:before {
     gap: 4px;
     border-radius: 8px;
     overflow: hidden;
+    width: 100%;
     max-width: 280px;
 }
 
@@ -5295,6 +5296,17 @@ html.dark-theme .component-skeleton::after {
     width: 64px;
     height: 64px;
     flex-shrink: 0;
+}
+
+.component-skeleton--avatar-chat {
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+}
+
+.chat-attachment-preview-card.component-skeleton {
+    width: 48px !important;
 }
 
 .component-skeleton--avatar-sm {

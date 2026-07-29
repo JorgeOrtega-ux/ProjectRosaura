@@ -10,7 +10,7 @@ require_once ROOT_PATH . '/vendor/autoload.php';
 \App\Core\Helpers\EnvLoader::load(ROOT_PATH . '/.env');
 
 $s3Host = $_ENV['AWS_PUBLIC_URL'];
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://challenges.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com {$s3Host}; connect-src 'self' {$s3Host} https://unpkg.com https://cdn.jsdelivr.net https://accounts.google.com ws: wss:; frame-src 'self' https://challenges.cloudflare.com https://accounts.google.com; frame-ancestors 'none';");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://challenges.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://api.qrserver.com {$s3Host}; connect-src 'self' {$s3Host} https://unpkg.com https://cdn.jsdelivr.net https://accounts.google.com ws: wss:; frame-src 'self' https://challenges.cloudflare.com https://accounts.google.com; frame-ancestors 'none';");
 
 
 if (!isset($_ENV['APP_URL'])) {

@@ -202,7 +202,7 @@ def chat_persistence_thread():
                                 try:
                                     msg_data = json.loads(raw_msg.decode('utf-8'))
                                     insert_data.append((
-                                        str(uuid.uuid4()),
+                                        msg_data.get('uuid') or str(uuid.uuid4()),
                                         msg_data['canvas_id'],
                                         msg_data['user_id'],
                                         msg_data['message'],

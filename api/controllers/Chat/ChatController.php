@@ -19,7 +19,12 @@ class ChatController extends BaseController
     public function history($request)
     {
         try {
-            $canvasId = (int)($request['canvas_id'] ?? 0);
+            $canvasId = $request['canvas_id'] ?? 0;
+            if (!is_numeric($canvasId) && !empty($canvasId)) {
+                $canvasId = $this->chatServices->resolveCanvasIntId($canvasId);
+            } else {
+                $canvasId = (int)$canvasId;
+            }
             $offset = (int)($request['offset'] ?? 0);
             
             $userId = $this->sessionManager->getActiveAccountId();
@@ -39,7 +44,12 @@ class ChatController extends BaseController
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
-            $canvasId = (int)($request['canvas_id'] ?? 0);
+            $canvasId = $request['canvas_id'] ?? 0;
+            if (!is_numeric($canvasId) && !empty($canvasId)) {
+                $canvasId = $this->chatServices->resolveCanvasIntId($canvasId);
+            } else {
+                $canvasId = (int)$canvasId;
+            }
             $messageText = trim((string)($request['message'] ?? ''));
             $clientId = trim((string)($request['client_id'] ?? ''));
             $files = $request['_files']['images'] ?? null;
@@ -59,8 +69,13 @@ class ChatController extends BaseController
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
-            $messageId = (int)($request['message_id'] ?? 0);
-            $canvasId = (int)($request['canvas_id'] ?? 0);
+            $messageId = $request['message_id'] ?? 0;
+            $canvasId = $request['canvas_id'] ?? 0;
+            if (!is_numeric($canvasId) && !empty($canvasId)) {
+                $canvasId = $this->chatServices->resolveCanvasIntId($canvasId);
+            } else {
+                $canvasId = (int)$canvasId;
+            }
 
             $result = $this->chatServices->delete($userId, $canvasId, $messageId);
             return $this->respond($result);
@@ -77,7 +92,7 @@ class ChatController extends BaseController
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
 
-            $messageId = (int)($request['message_id'] ?? 0);
+            $messageId = $request['message_id'] ?? 0;
             $reason = trim((string)($request['reason'] ?? ''));
             $details = trim((string)($request['details'] ?? ''));
 

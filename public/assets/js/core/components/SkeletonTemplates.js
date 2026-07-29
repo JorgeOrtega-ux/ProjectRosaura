@@ -374,23 +374,55 @@ export const SkeletonTemplates = {
         return `
         <div class="chat-skeleton-container">
             <div class="chat-skeleton-group">
-                <div class="component-skeleton component-skeleton--avatar"></div>
+                <div class="component-skeleton component-skeleton--avatar-chat"></div>
                 <div class="chat-skeleton-content">
                     <div class="component-skeleton component-skeleton--text-short"></div>
-                    <div class="component-skeleton component-skeleton--h45"></div>
+                    <div class="component-skeleton component-skeleton--h34"></div>
                 </div>
             </div>
             
             <div class="chat-skeleton-group chat-skeleton-group--reverse">
-                <div class="component-skeleton component-skeleton--avatar"></div>
+                <div class="component-skeleton component-skeleton--avatar-chat"></div>
                 <div class="chat-skeleton-content chat-skeleton-content--end">
                     <div class="component-skeleton component-skeleton--text-short"></div>
-                    <div class="component-skeleton component-skeleton--h100"></div>
+                    <div class="component-skeleton component-skeleton--h40"></div>
                 </div>
             </div>
 
             <div class="chat-skeleton-group">
-                <div class="component-skeleton component-skeleton--avatar"></div>
+                <div class="component-skeleton component-skeleton--avatar-chat"></div>
+                <div class="chat-skeleton-content">
+                    <div class="component-skeleton component-skeleton--text-short"></div>
+                    <div class="component-skeleton component-skeleton--h24"></div>
+                </div>
+            </div>
+
+            <div class="chat-skeleton-group chat-skeleton-group--reverse">
+                <div class="component-skeleton component-skeleton--avatar-chat"></div>
+                <div class="chat-skeleton-content chat-skeleton-content--end">
+                    <div class="component-skeleton component-skeleton--text-short"></div>
+                    <div class="component-skeleton component-skeleton--h34"></div>
+                </div>
+            </div>
+
+            <div class="chat-skeleton-group">
+                <div class="component-skeleton component-skeleton--avatar-chat"></div>
+                <div class="chat-skeleton-content">
+                    <div class="component-skeleton component-skeleton--text-short"></div>
+                    <div class="component-skeleton component-skeleton--h34"></div>
+                </div>
+            </div>
+
+            <div class="chat-skeleton-group chat-skeleton-group--reverse">
+                <div class="component-skeleton component-skeleton--avatar-chat"></div>
+                <div class="chat-skeleton-content chat-skeleton-content--end">
+                    <div class="component-skeleton component-skeleton--text-short"></div>
+                    <div class="component-skeleton component-skeleton--h24"></div>
+                </div>
+            </div>
+
+            <div class="chat-skeleton-group">
+                <div class="component-skeleton component-skeleton--avatar-chat"></div>
                 <div class="chat-skeleton-content">
                     <div class="component-skeleton component-skeleton--text-short"></div>
                     <div class="component-skeleton component-skeleton--h40"></div>
@@ -398,18 +430,26 @@ export const SkeletonTemplates = {
             </div>
 
             <div class="chat-skeleton-group chat-skeleton-group--reverse">
-                <div class="component-skeleton component-skeleton--avatar"></div>
+                <div class="component-skeleton component-skeleton--avatar-chat"></div>
                 <div class="chat-skeleton-content chat-skeleton-content--end">
                     <div class="component-skeleton component-skeleton--text-short"></div>
-                    <div class="component-skeleton component-skeleton--h45"></div>
+                    <div class="component-skeleton component-skeleton--h34"></div>
                 </div>
             </div>
 
             <div class="chat-skeleton-group">
-                <div class="component-skeleton component-skeleton--avatar"></div>
+                <div class="component-skeleton component-skeleton--avatar-chat"></div>
                 <div class="chat-skeleton-content">
                     <div class="component-skeleton component-skeleton--text-short"></div>
-                    <div class="component-skeleton component-skeleton--h60"></div>
+                    <div class="component-skeleton component-skeleton--h24"></div>
+                </div>
+            </div>
+
+            <div class="chat-skeleton-group chat-skeleton-group--reverse">
+                <div class="component-skeleton component-skeleton--avatar-chat"></div>
+                <div class="chat-skeleton-content chat-skeleton-content--end">
+                    <div class="component-skeleton component-skeleton--text-short"></div>
+                    <div class="component-skeleton component-skeleton--h34"></div>
                 </div>
             </div>
         </div>`;
