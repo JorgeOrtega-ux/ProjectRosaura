@@ -70,6 +70,23 @@ export class MainController {
     bindEvents() {
         window.addEventListener('resize', this.handleResizeBound);
         document.addEventListener('scroll', this.handleScrollBound, true);
+
+        // Capture phase listener para botones bloqueados por suscripción
+        document.addEventListener('click', (e) => {
+            const premiumLockedBtn = e.target.closest('.premium-locked');
+            if (premiumLockedBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const basePath = window.AppBasePath || '';
+                
+                if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                    window.spaRouter.navigate(basePath + '/upgrade');
+                } else {
+                    window.location.href = basePath + '/upgrade';
+                }
+            }
+        }, true);
+
         document.addEventListener('click', this.handleDocumentClickBound);
         document.addEventListener('change', this.handleDocumentChangeBound);
         document.addEventListener('keydown', this.handleDocumentKeydownBound);

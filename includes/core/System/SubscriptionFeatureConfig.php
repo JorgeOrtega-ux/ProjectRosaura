@@ -30,20 +30,10 @@ class SubscriptionFeatureConfig {
                 'title_key' => 'plan_feat_custom_palettes_title',
                 'desc_key'  => 'plan_feat_custom_palettes_desc'
             ],
-            'feat_priority_rendering' => [
-                'icon'      => 'speed',
-                'title_key' => 'plan_feat_priority_rendering_title',
-                'desc_key'  => 'plan_feat_priority_rendering_desc'
-            ],
             'feat_unlimited_exports' => [
                 'icon'      => 'download',
                 'title_key' => 'plan_feat_unlimited_exports_title',
                 'desc_key'  => 'plan_feat_unlimited_exports_desc'
-            ],
-            'feat_beta_access' => [
-                'icon'      => 'science',
-                'title_key' => 'plan_feat_beta_access_title',
-                'desc_key'  => 'plan_feat_beta_access_desc'
             ],
             'feat_inject_templates' => [
                 'icon'      => 'brush',

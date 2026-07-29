@@ -19,20 +19,10 @@ class SubscriptionPlanConstants {
             'name' => 'Paletas Personalizadas',
             'desc' => 'Permite crear y utilizar paletas de colores personalizadas'
         ],
-        'feat_priority_rendering' => [
-            'key' => 'feat_priority_rendering',
-            'name' => 'Renderizado Prioritario',
-            'desc' => 'Prioridad de procesamiento y renderizado en lienzo'
-        ],
         'feat_unlimited_exports' => [
             'key' => 'feat_unlimited_exports',
             'name' => 'Exportaciones Ilimitadas',
             'desc' => 'Exportación ilimitada de instantáneas e imágenes'
-        ],
-        'feat_beta_access' => [
-            'key' => 'feat_beta_access',
-            'name' => 'Acceso a Funciones Beta',
-            'desc' => 'Acceso anticipado a nuevas herramientas y funciones beta'
         ],
         'feat_inject_templates' => [
             'key' => 'feat_inject_templates',
@@ -69,9 +59,7 @@ class SubscriptionPlanConstants {
                     'feat_advanced_roles' => (bool)$row['feat_advanced_roles'],
                     'feat_chat_restriction' => (bool)$row['feat_chat_restriction'],
                     'feat_custom_palettes' => (bool)$row['feat_custom_palettes'],
-                    'feat_priority_rendering' => (bool)$row['feat_priority_rendering'],
                     'feat_unlimited_exports' => (bool)$row['feat_unlimited_exports'],
-                    'feat_beta_access' => (bool)$row['feat_beta_access'],
                     'feat_inject_templates' => (bool)($row['feat_inject_templates'] ?? false),
                     'max_template_tokens' => (int)($row['max_template_tokens'] ?? 0),
                     'allow_live_chat' => (bool)$row['feat_chat_restriction'],
@@ -95,9 +83,7 @@ class SubscriptionPlanConstants {
             'feat_advanced_roles' => false,
             'feat_chat_restriction' => false,
             'feat_custom_palettes' => false,
-            'feat_priority_rendering' => false,
             'feat_unlimited_exports' => false,
-            'feat_beta_access' => false,
             'feat_inject_templates' => false,
             'max_template_tokens' => 0,
             'allow_live_chat' => false,
@@ -110,8 +96,6 @@ class SubscriptionPlanConstants {
     public static function hasFeature(int $tier, string $featureKey): bool {
         if ($featureKey === 'allow_live_chat') {
             $featureKey = 'chat_restriction';
-        } elseif ($featureKey === 'live_templates' || $featureKey === 'live_sync') {
-            $featureKey = 'beta_access';
         }
         $limits = self::getTierLimits($tier);
         if (isset($limits[$featureKey])) {
@@ -190,8 +174,6 @@ class SubscriptionPlanConstants {
     public static function getLowestTierForFeature(string $featureKey): ?array {
         if ($featureKey === 'allow_live_chat') {
             $featureKey = 'feat_chat_restriction';
-        } elseif ($featureKey === 'live_templates' || $featureKey === 'live_sync') {
-            $featureKey = 'feat_beta_access';
         }
         if (strpos($featureKey, 'feat_') !== 0 && !in_array($featureKey, ['custom_palettes', 'allow_live_chat'])) {
             $featureKey = 'feat_' . $featureKey;

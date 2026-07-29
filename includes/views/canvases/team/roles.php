@@ -6,11 +6,13 @@ $rolesData = $canvasService->getCanvasRolesData($_GET['uuid'] ?? null);
 
 if (!empty($rolesData['error'])) {
     if ($rolesData['error'] === __('err_plan_custom_roles')) {
+        global $systemMessageType;
         $systemMessageType = 'subscription_required';
         require ROOT_PATH . '/includes/views/system/message.php';
         return;
     }
     if ($rolesData['error'] === __('err_canvas_not_found') || $rolesData['error'] === __('err_user_not_member')) {
+        global $systemMessageType;
         $systemMessageType = '404';
         require ROOT_PATH . '/includes/views/system/message.php';
         return;

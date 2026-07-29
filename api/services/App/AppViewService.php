@@ -188,6 +188,7 @@ class AppViewService {
         $chatRestrictionType = null;
         $chatRestrictionEnd = null;
         $canInjectTemplate = false;
+        $canLiveShare = false;
         $isBanned = false;
 
         if (!empty($canvasUuid)) {
@@ -283,6 +284,7 @@ class AppViewService {
                     $uStmt->execute([':uid' => $userId]);
                     $userTier = (int)($uStmt->fetchColumn() ?: 0);
                     $canInjectTemplate = SubscriptionPlanConstants::hasFeature($userTier, 'inject_templates');
+                    $canLiveShare = SubscriptionPlanConstants::hasFeature($userTier, 'live_sync');
                 }
 
             } catch (Exception $e) {
@@ -321,6 +323,7 @@ class AppViewService {
             'chatRestrictionType' => $chatRestrictionType,
             'chatRestrictionEnd' => $chatRestrictionEnd,
             'canInjectTemplate' => $canInjectTemplate,
+            'canLiveShare' => $canLiveShare,
             'isBanned' => $isBanned,
             'isSnapshot' => $isSnapshot
         ];

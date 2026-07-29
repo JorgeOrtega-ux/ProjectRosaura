@@ -190,7 +190,15 @@ export class DesignChat {
                     const msg = e.detail;
                     if (msg.client_id) {
                         const optEl = window.currentDesignChatInstance.chatContainer.querySelector(`[data-client-id="${msg.client_id}"]`);
-                        if (optEl) optEl.remove();
+                        if (optEl) {
+                            const blobImgs = Array.from(optEl.querySelectorAll('.chat-attachment-item img'))
+                                .map(img => img.src)
+                                .filter(src => src.startsWith('blob:'));
+                            if (blobImgs.length > 0 && msg.attachments && blobImgs.length === msg.attachments.length) {
+                                msg.optimisticBlobs = blobImgs;
+                            }
+                            optEl.remove();
+                        }
                     }
                     window.currentDesignChatInstance.appendMessage(msg, true);
                 }
@@ -875,7 +883,7 @@ export class DesignChat {
             });
             
             for (let i = 0; i < displayCount; i++) {
-                const url = fullUrls[i];
+                const url = msg.optimisticBlobs && msg.optimisticBlobs[i] ? msg.optimisticBlobs[i] : fullUrls[i];
                 
                 let extractedUuid = this.canvasUuid;
                 if (!extractedUuid || extractedUuid === 'null') {
