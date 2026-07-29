@@ -900,27 +900,70 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getSnapshot(int $canvasId): ?string {
-        $sql = "SELECT snapshot_data FROM " . DB::TBL_CANVAS_SNAPSHOTS . " WHERE canvas_id = :canvas_id LIMIT 1";
+        $sql = "SELECT s3_key, snapshot_data FROM " . DB::TBL_CANVAS_SNAPSHOTS . " WHERE canvas_id = :canvas_id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
         
-        $result = $stmt->fetchColumn();
-        return $result ? @gzuncompress($result) : null;
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+
+        if (!empty($row['s3_key'])) {
+            try {
+                $s3 = \App\Core\Helpers\Utils::getS3Client();
+                $bucket = $_ENV['AWS_BUCKET'] ?? 'rosaura-storage';
+                $result = $s3->getObject([
+                    'Bucket' => $bucket,
+                    'Key'    => $row['s3_key']
+                ]);
+                $body = (string)$result['Body'];
+                return $body ? @gzuncompress($body) : null;
+            } catch (\Throwable $e) {
+                Logger::error("Failed to fetch active snapshot from S3 for canvas {$canvasId}: " . $e->getMessage());
+            }
+        }
+
+        return !empty($row['snapshot_data']) ? @gzuncompress($row['snapshot_data']) : null;
     }
 
     public function saveSnapshot(int $canvasId, string $snapshotData): bool {
         $compressed = gzcompress($snapshotData);
+        $s3_key = "active_snapshots/canvas_{$canvasId}.bin";
         
-        $sql = "INSERT INTO " . DB::TBL_CANVAS_SNAPSHOTS . " (canvas_id, snapshot_data) 
-                VALUES (:canvas_id, :data)
-                ON DUPLICATE KEY UPDATE snapshot_data = :update_data, last_updated = CURRENT_TIMESTAMP";
-        
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
-            ':canvas_id'   => $canvasId,
-            ':data'        => $compressed,
-            ':update_data' => $compressed
-        ]);
+        try {
+            $s3 = \App\Core\Helpers\Utils::getS3Client();
+            $bucket = $_ENV['AWS_BUCKET'] ?? 'rosaura-storage';
+            $s3->putObject([
+                'Bucket' => $bucket,
+                'Key'    => $s3_key,
+                'Body'   => $compressed
+            ]);
+            
+            $sql = "INSERT INTO " . DB::TBL_CANVAS_SNAPSHOTS . " (canvas_id, s3_key, snapshot_data) 
+                    VALUES (:canvas_id, :s3_key, NULL)
+                    ON DUPLICATE KEY UPDATE s3_key = :update_s3_key, snapshot_data = NULL, last_updated = CURRENT_TIMESTAMP";
+            
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':canvas_id'     => $canvasId,
+                ':s3_key'        => $s3_key,
+                ':update_s3_key' => $s3_key
+            ]);
+        } catch (\Throwable $e) {
+            Logger::error("Failed to save active snapshot to S3 for canvas {$canvasId}: " . $e->getMessage());
+            
+            $sql = "INSERT INTO " . DB::TBL_CANVAS_SNAPSHOTS . " (canvas_id, s3_key, snapshot_data) 
+                    VALUES (:canvas_id, NULL, :data)
+                    ON DUPLICATE KEY UPDATE snapshot_data = :update_data, last_updated = CURRENT_TIMESTAMP";
+            
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':canvas_id'   => $canvasId,
+                ':data'        => $compressed,
+                ':update_data' => $compressed
+            ]);
+        }
     }
 
     public function clearCanvasData(int $canvasId): bool {
@@ -1151,14 +1194,37 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getInvites(int $canvasId): array {
-        $sql = "SELECT i.*, u.username as creator_name 
-                FROM " . DB::TBL_CANVAS_INVITES . " i
-                LEFT JOIN users u ON i.created_by = u.id
+        $sql = "SELECT i.* FROM " . DB::TBL_CANVAS_INVITES . " i
                 WHERE i.canvas_id = :canvas_id
                 ORDER BY i.created_at DESC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $invites = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (empty($invites)) {
+            return [];
+        }
+
+        $creatorIds = array_unique(array_filter(array_column($invites, 'created_by')));
+        
+        if (!empty($creatorIds)) {
+            $dbManager = new DatabaseManager();
+            $userRepo = new \App\Core\Repositories\UserRepository(
+                $dbManager, 
+                new \App\Core\Repositories\RoleRepository($dbManager, new \App\Config\Database\RedisCache())
+            );
+            $usernames = $userRepo->getUsernamesByIds($creatorIds);
+            
+            foreach ($invites as &$invite) {
+                $invite['creator_name'] = $usernames[$invite['created_by']] ?? 'Unknown';
+            }
+        } else {
+            foreach ($invites as &$invite) {
+                $invite['creator_name'] = 'Unknown';
+            }
+        }
+
+        return $invites;
     }
 
     public function getInviteByCode(string $code): ?array {

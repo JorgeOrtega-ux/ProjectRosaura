@@ -132,10 +132,16 @@ def process_resize_task(r, db, task_data):
         with db.cursor() as cursor:
             cursor.execute("UPDATE canvases SET size = %s WHERE id = %s", (new_size_db_str, canvas_id))
             compressed_state = zlib.compress(new_state_bytes)
+            s3_key = f"active_snapshots/canvas_{canvas_id}.bin"
+            try:
+                s3 = get_s3_client()
+                s3.put_object(Bucket=S3_BUCKET, Key=s3_key, Body=compressed_state)
+            except Exception as s3_err:
+                print(f"[!] Error uploading resized snapshot to S3: {s3_err}")
             cursor.execute("""
-                INSERT INTO canvas_snapshots (canvas_id, snapshot_data) 
-                VALUES (%s, %s) ON DUPLICATE KEY UPDATE snapshot_data = %s, last_updated = CURRENT_TIMESTAMP
-            """, (canvas_id, compressed_state, compressed_state))
+                INSERT INTO canvas_snapshots (canvas_id, s3_key, snapshot_data) 
+                VALUES (%s, %s, NULL) ON DUPLICATE KEY UPDATE s3_key = %s, snapshot_data = NULL, last_updated = CURRENT_TIMESTAMP
+            """, (canvas_id, s3_key, s3_key))
             db.commit()
 
         stream_key = f"canvas:{canvas_id}:stream"
@@ -212,12 +218,18 @@ def process_reset_task(r, db, task_data):
         size_w, size_h = parse_size(canvas_size)
         empty_state = b'\x00\x00\x00\x00' * (size_w * size_h)
         compressed_empty = zlib.compress(empty_state)
+        s3_key = f"active_snapshots/canvas_{canvas_id}.bin"
+        try:
+            s3 = get_s3_client()
+            s3.put_object(Bucket=S3_BUCKET, Key=s3_key, Body=compressed_empty)
+        except Exception as s3_err:
+            print(f"[!] Error uploading empty snapshot to S3: {s3_err}")
         
         with db.cursor() as cursor:
             cursor.execute("""
-                INSERT INTO canvas_snapshots (canvas_id, snapshot_data, last_updated)
-                VALUES (%s, %s, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE snapshot_data = %s, last_updated = CURRENT_TIMESTAMP
-            """, (canvas_id, compressed_empty, compressed_empty))
+                INSERT INTO canvas_snapshots (canvas_id, s3_key, snapshot_data, last_updated)
+                VALUES (%s, %s, NULL, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE s3_key = %s, snapshot_data = NULL, last_updated = CURRENT_TIMESTAMP
+            """, (canvas_id, s3_key, s3_key))
             db.commit()
             
         r.set(state_key, empty_state) 
@@ -354,10 +366,13 @@ def scheduler_thread():
                     if current_state:
                         try:
                             compressed_state = zlib.compress(current_state if isinstance(current_state, bytes) else current_state.encode('latin1'))
+                            s3_key = f"active_snapshots/canvas_{canvas_id}.bin"
+                            s3 = get_s3_client()
+                            s3.put_object(Bucket=S3_BUCKET, Key=s3_key, Body=compressed_state)
                             cursor.execute("""
-                                INSERT INTO canvas_snapshots (canvas_id, snapshot_data, last_updated)
-                                VALUES (%s, %s, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE snapshot_data = %s, last_updated = CURRENT_TIMESTAMP
-                            """, (canvas_id, compressed_state, compressed_state))
+                                INSERT INTO canvas_snapshots (canvas_id, s3_key, snapshot_data, last_updated)
+                                VALUES (%s, %s, NULL, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE s3_key = %s, snapshot_data = NULL, last_updated = CURRENT_TIMESTAMP
+                            """, (canvas_id, s3_key, s3_key))
                         except Exception as ex_snap:
                             logging.error(f"Error persisting current state for manual snapshot canvas {canvas_id}: {ex_snap}")
 
@@ -626,7 +641,7 @@ def thumbnails_thread():
                     
                     for canvas_id in pending_canvases:
                         query = f"""
-                            SELECT s.snapshot_data, c.size, c.palette_id, IFNULL(u.subscription_tier, 2) as tier, c.uuid
+                            SELECT s.snapshot_data, c.size, c.palette_id, IFNULL(u.subscription_tier, 2) as tier, c.uuid, s.s3_key
                             FROM canvases c
                             LEFT JOIN canvas_snapshots s ON s.canvas_id = c.id
                             LEFT JOIN {DB_IDENTITY_NAME}.users u ON c.owner_id = u.id
@@ -643,6 +658,14 @@ def thumbnails_thread():
                                 r_bin.delete(f"canvas:{canvas_id}:temp_snapshot")
                             else:
                                 snapshot_data = result[0]
+                                if not snapshot_data and result[5]:
+                                    try:
+                                        s3 = get_s3_client()
+                                        s3_obj = s3.get_object(Bucket=S3_BUCKET, Key=result[5])
+                                        snapshot_data = s3_obj['Body'].read()
+                                    except Exception as s3_err:
+                                        print(f"[!] Error fetching active snapshot from S3 for canvas {canvas_id}: {s3_err}")
+                                        snapshot_data = None
                                 
                             size_str = result[1] if result[1] else '64'
                             palette_id = result[2] if result[2] else 'default'

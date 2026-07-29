@@ -44,16 +44,48 @@ pub async fn ensure_canvas_state_loaded(state: &AppState, canvas_id: &str) {
 
     let expected_size = (width * height * 4) as usize;
 
-    let query_snap = "SELECT snapshot_data FROM canvas_snapshots WHERE canvas_id = ? LIMIT 1";
+    let query_snap = "SELECT s3_key, snapshot_data FROM canvas_snapshots WHERE canvas_id = ? LIMIT 1";
     let mut raw_state = vec![0u8; expected_size];
 
     if let Ok(Some(row)) = sqlx::query(query_snap).bind(canvas_id).fetch_optional(&state.db_pool).await {
-        if let Ok(compressed) = row.try_get::<Vec<u8>, _>("snapshot_data") {
-            let mut decoder = ZlibDecoder::new(&compressed[..]);
-            let mut decompressed = Vec::new();
-            if decoder.read_to_end(&mut decompressed).is_ok() {
-                if decompressed.len() == expected_size {
-                    raw_state = decompressed;
+        let mut loaded_from_s3 = false;
+        
+        if let Ok(Some(s3_key)) = row.try_get::<Option<String>, _>("s3_key") {
+            if !s3_key.is_empty() {
+                let mut s3_endpoint = std::env::var("AWS_ENDPOINT").unwrap_or_else(|_| "http://minio:9000".to_string());
+                if !s3_endpoint.starts_with("http://") && !s3_endpoint.starts_with("https://") {
+                    s3_endpoint = format!("http://{}", s3_endpoint);
+                }
+                let s3_bucket = std::env::var("AWS_BUCKET").unwrap_or_else(|_| "rosaura-storage".to_string());
+                let url = format!("{}/{}/{}", s3_endpoint.trim_end_matches('/'), s3_bucket, s3_key.trim_start_matches('/'));
+                
+                if let Ok(resp) = reqwest::get(&url).await {
+                    if resp.status().is_success() {
+                        if let Ok(compressed) = resp.bytes().await {
+                            let mut decoder = ZlibDecoder::new(&compressed[..]);
+                            let mut decompressed = Vec::new();
+                            if decoder.read_to_end(&mut decompressed).is_ok() {
+                                if decompressed.len() == expected_size {
+                                    raw_state = decompressed;
+                                    loaded_from_s3 = true;
+                                    info!("Loaded active snapshot from S3 successfully for canvas {} using key {}", canvas_id, s3_key);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if !loaded_from_s3 {
+            if let Ok(Some(compressed)) = row.try_get::<Option<Vec<u8>>, _>("snapshot_data") {
+                let mut decoder = ZlibDecoder::new(&compressed[..]);
+                let mut decompressed = Vec::new();
+                if decoder.read_to_end(&mut decompressed).is_ok() {
+                    if decompressed.len() == expected_size {
+                        raw_state = decompressed;
+                        info!("Loaded active snapshot from MySQL blob fallback for canvas {}", canvas_id);
+                    }
                 }
             }
         }

@@ -153,7 +153,8 @@ CREATE TABLE IF NOT EXISTS `canvas_favorites` (
 
 CREATE TABLE IF NOT EXISTS `canvas_snapshots` (
   `canvas_id` int(11) NOT NULL,
-  `snapshot_data` LONGBLOB NOT NULL,
+  `s3_key` varchar(255) DEFAULT NULL,
+  `snapshot_data` LONGBLOB DEFAULT NULL,
   `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`canvas_id`),
   CONSTRAINT `fk_snapshot_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE

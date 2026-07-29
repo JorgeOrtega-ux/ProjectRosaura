@@ -32,5 +32,6 @@ interface UserRepositoryInterface {
     public function getTemplateTokenUsage(int $userId): array;
     public function consumeTemplateTokens(int $userId, int $tokensToConsume, int $windowHours = 5): array;
     public function invalidateProfileCache(int $userId, ?string $uuid = null): void;
+    public function getUsernamesByIds(array $ids): array;
 }
 ?>

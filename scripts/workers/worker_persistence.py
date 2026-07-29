@@ -153,22 +153,29 @@ def canvas_persistence_thread():
                 dirty_canvases_bytes = r.smembers("canvases:dirty_states")
                 if dirty_canvases_bytes:
                     r.delete("canvases:dirty_states")
+                    s3 = get_s3_client()
                     for canvas_id_bytes in dirty_canvases_bytes:
                         canvas_id_str = canvas_id_bytes.decode('utf-8')
                         state_key = f"canvas:{canvas_id_str}:state"
                         canvas_bytes = r.get(state_key)
                         if canvas_bytes:
                             compressed_data = compress(canvas_bytes)
-                            query = """
-                                INSERT INTO canvas_snapshots (canvas_id, snapshot_data) 
-                                VALUES (%s, %s)
-                                ON DUPLICATE KEY UPDATE snapshot_data = VALUES(snapshot_data), last_updated = CURRENT_TIMESTAMP
-                            """
-                            cursor.execute(query, (canvas_id_str, compressed_data))
-                            r.sadd("canvases:pending_snapshots", canvas_id_str)
+                            s3_key = f"active_snapshots/canvas_{canvas_id_str}.bin"
+                            try:
+                                s3.put_object(Bucket=S3_BUCKET, Key=s3_key, Body=compressed_data)
+                                query = """
+                                    INSERT INTO canvas_snapshots (canvas_id, s3_key, snapshot_data) 
+                                    VALUES (%s, %s, NULL)
+                                    ON DUPLICATE KEY UPDATE s3_key = VALUES(s3_key), snapshot_data = NULL, last_updated = CURRENT_TIMESTAMP
+                                """
+                                cursor.execute(query, (canvas_id_str, s3_key))
+                                r.sadd("canvases:pending_snapshots", canvas_id_str)
+                                print(f"[+] Active snapshot uploaded to S3 and DB updated for canvas {canvas_id_str}")
+                            except Exception as s3_err:
+                                print(f"[!] Error uploading snapshot to S3 for canvas {canvas_id_str}: {s3_err}")
                 db_conn.commit()
             except Exception as e:
-                print(f"[!] Error saving Snapshots to DB: {e}")
+                print(f"[!] Error saving Snapshots to DB/S3: {e}")
                 db_conn.rollback()
             finally:
                 cursor.close()

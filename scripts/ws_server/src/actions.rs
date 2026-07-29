@@ -376,7 +376,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             let areas_key = format!("canvas:{}:protected_areas", canvas_id);
             
             if let Ok(mut c) = state.redis_pool.get().await {
-                let areas_json: String = deadpool_redis::redis::AsyncCommands::get(&mut c, &areas_key).await.unwrap_or_else(|_| "[]".to_string());
+                let areas_json: String = c.get(&areas_key).await.unwrap_or_else(|_| "[]".to_string());
                 let mut areas: Vec<serde_json::Value> = serde_json::from_str(&areas_json).unwrap_or_default();
                 
                 if protect {
@@ -394,7 +394,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 }
                 
                 let new_json = serde_json::to_string(&areas).unwrap_or_else(|_| "[]".to_string());
-                let _: () = deadpool_redis::redis::AsyncCommands::set(&mut c, &areas_key, new_json).await.unwrap_or(());
+                let _: () = c.set(&areas_key, new_json).await.unwrap_or(());
                 
                 // Keep Redis protected_zset and protected_pixels:{offset} in sync!
                 let current_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
@@ -464,7 +464,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             };
 
             let areas_key = format!("canvas:{}:protected_areas", canvas_id);
-            let areas_json: String = deadpool_redis::redis::AsyncCommands::get(&mut redis_conn, &areas_key).await.unwrap_or_else(|_| "[]".to_string());
+            let areas_json: String = redis_conn.get(&areas_key).await.unwrap_or_else(|_| "[]".to_string());
             let mut areas: Vec<serde_json::Value> = serde_json::from_str(&areas_json).unwrap_or_default();
             
             let original_len = areas.len();
@@ -479,7 +479,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             
             if areas.len() != original_len {
                 let new_json = serde_json::to_string(&areas).unwrap_or_else(|_| "[]".to_string());
-                let _: () = deadpool_redis::redis::AsyncCommands::set(&mut redis_conn, &areas_key, new_json).await.unwrap_or(());
+                let _: () = redis_conn.set(&areas_key, new_json).await.unwrap_or(());
             }
 
             let redis_state_key = format!("canvas:{}:state", canvas_id);
@@ -593,7 +593,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             
             let now_t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f64();
             let script = deadpool_redis::redis::Script::new(crate::lua_scripts::PAINT_PIXEL_LUA);
-            let _ = deadpool_redis::redis::AsyncCommands::script_load(&mut redis_conn, crate::lua_scripts::PAINT_PIXEL_LUA).await.unwrap_or_default();
+            let _ : String = deadpool_redis::redis::cmd("SCRIPT").arg("LOAD").arg(crate::lua_scripts::PAINT_PIXEL_LUA).query_async(&mut *redis_conn).await.unwrap_or_default();
             let hash = script.get_hash();
 
             let mut pipe = deadpool_redis::redis::pipe();
@@ -812,7 +812,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                     
                     if let Ok(mut c) = s_clone2.redis_pool.get().await {
                         let areas_key = format!("canvas:{}:protected_areas", c_id_clone2);
-                        let areas_json: String = deadpool_redis::redis::AsyncCommands::get(&mut c, &areas_key).await.unwrap_or_else(|_| "[]".to_string());
+                        let areas_json: String = c.get(&areas_key).await.unwrap_or_else(|_| "[]".to_string());
                         let mut areas: Vec<serde_json::Value> = serde_json::from_str(&areas_json).unwrap_or_default();
                         
                         let original_len = areas.len();
@@ -827,7 +827,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                         
                         if areas.len() != original_len {
                             let new_json = serde_json::to_string(&areas).unwrap_or_else(|_| "[]".to_string());
-                            let _: () = deadpool_redis::redis::AsyncCommands::set(&mut c, &areas_key, new_json).await.unwrap_or(());
+                            let _: () = c.set(&areas_key, new_json).await.unwrap_or(());
                         }
                         
                         let mut pipe = deadpool_redis::redis::pipe();

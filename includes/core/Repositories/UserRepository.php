@@ -671,5 +671,25 @@ class UserRepository implements UserRepositoryInterface {
             return ['success' => false, 'message' => 'Error al actualizar tokens'];
         }
     }
+
+    public function getUsernamesByIds(array $ids): array {
+        if (empty($ids)) {
+            return [];
+        }
+
+        $tblUsers = DB::TBL_USERS;
+        try {
+            $ids = array_map('intval', $ids);
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            
+            $stmt = $this->pdo->prepare("SELECT id, username FROM {$tblUsers} WHERE id IN ({$placeholders})");
+            $stmt->execute($ids);
+            
+            return $stmt->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['ids' => $ids, 'exception' => $e]);
+            return [];
+        }
+    }
 }
 ?>
