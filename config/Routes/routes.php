@@ -53,7 +53,7 @@ return [
     '/canvases/manage/sanctions/:uuid' => ['view' => 'canvases/team/sanctions.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/chat-viewer' => ['view' => 'canvases/chat/chat-viewer.php', 'auth' => true, 'requires_2fa' => false],
     '/canvases/join' => ['view' => 'canvases/core/join.php', 'auth' => true, 'permissions' => ['join_canvas'], 'requires_2fa' => false],
-    '/canvases/palettes/create' => ['view' => 'canvases/palettes/custom-palette-create.php', 'auth' => true, 'requires_2fa' => false],
+    '/canvases/palettes/create' => ['view' => 'canvases/palettes/custom-palette-create.php', 'auth' => true, 'requires_2fa' => false, 'subscription_feature' => 'custom_palettes'],
     '/design/s/:uuid' => ['view' => 'canvases/snapshots/snapshots-gallery.php'],
     '/snapshot/view/:id' => ['view' => 'canvases/snapshots/snapshot-viewer.php'],
     '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => [\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL], 'requires_2fa' => false],

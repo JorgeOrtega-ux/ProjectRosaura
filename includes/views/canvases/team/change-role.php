@@ -5,6 +5,16 @@ $canvasService = new CanvasViewService();
 $changeRoleData = $canvasService->getCanvasChangeRoleData($_GET['uuid'] ?? null, $_GET['user_uuid'] ?? null);
 
 if (!empty($changeRoleData['error'])) {
+    if ($changeRoleData['error'] === __('err_plan_custom_roles')) {
+        $systemMessageType = 'subscription_required';
+        require ROOT_PATH . '/includes/views/system/message.php';
+        return;
+    }
+    if ($changeRoleData['error'] === __('err_canvas_not_found') || $changeRoleData['error'] === __('err_user_not_member')) {
+        $systemMessageType = '404';
+        require ROOT_PATH . '/includes/views/system/message.php';
+        return;
+    }
     echo "<div class='view-content'><p>".htmlspecialchars($changeRoleData['error'])."</p></div>";
     return;
 }

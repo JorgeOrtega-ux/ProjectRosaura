@@ -41,6 +41,15 @@ switch ($type) {
         ];
         break;
 
+    case 'subscription_required':
+        http_response_code(403);
+        $config = [
+            'icon' => 'workspace_premium',
+            'title' => __('subscription_required_title'),
+            'desc' => __('subscription_required_desc')
+        ];
+        break;
+
     case '404':
     default:
         http_response_code(404);

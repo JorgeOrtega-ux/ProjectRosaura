@@ -5,6 +5,16 @@ $canvasService = new CanvasViewService();
 $roleBuilderData = $canvasService->getCanvasRoleBuilderData($_GET['uuid'] ?? null, isset($_GET['role_id']) ? (int)$_GET['role_id'] : null);
 
 if (!empty($roleBuilderData['error'])) {
+    if ($roleBuilderData['error'] === __('err_plan_custom_roles')) {
+        $systemMessageType = 'subscription_required';
+        require ROOT_PATH . '/includes/views/system/message.php';
+        return;
+    }
+    if ($roleBuilderData['error'] === __('err_canvas_not_found') || $roleBuilderData['error'] === __('err_user_not_member')) {
+        $systemMessageType = '404';
+        require ROOT_PATH . '/includes/views/system/message.php';
+        return;
+    }
     echo "<div class='view-content'><p>".htmlspecialchars($roleBuilderData['error'])."</p></div>";
     return;
 }

@@ -10,6 +10,16 @@ if (!empty($rolePermData['redirect'])) {
 }
 
 if (!empty($rolePermData['error'])) {
+    if ($rolePermData['error'] === __('err_plan_custom_roles')) {
+        $systemMessageType = 'subscription_required';
+        require ROOT_PATH . '/includes/views/system/message.php';
+        return;
+    }
+    if ($rolePermData['error'] === __('err_canvas_not_found') || $rolePermData['error'] === __('err_user_not_member')) {
+        $systemMessageType = '404';
+        require ROOT_PATH . '/includes/views/system/message.php';
+        return;
+    }
     echo "<div class='view-content'><p>".htmlspecialchars($rolePermData['error'])."</p></div>";
     return;
 }

@@ -75,6 +75,18 @@ if ($isMaintenanceActive && !$isPrivileged) {
         }
     }
 
+    if (!empty($routeData['subscription_feature']) && $isLoggedIn && $currentView !== 'system/message.php') {
+        $feature = $routeData['subscription_feature'];
+        $tier = $_SESSION['subscription_tier'] ?? 0;
+        
+        if (class_exists('\App\Core\System\SubscriptionPlanConstants')) {
+            if (!\App\Core\System\SubscriptionPlanConstants::hasFeature($tier, $feature)) {
+                $currentView = 'system/message.php';
+                $systemMessageType = 'subscription_required';
+            }
+        }
+    }
+
     if (!empty($routeData['requires_2fa']) && $isLoggedIn && $currentView !== 'system/message.php') {
         if (empty($_SESSION['user_2fa'])) {
             $currentView = 'system/message.php';

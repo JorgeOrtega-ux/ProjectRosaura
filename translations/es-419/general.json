@@ -185,6 +185,8 @@
     "ph_email": "Ingresa tu correo",
     "404_title": "Oops! 404",
     "404_desc": "La página que estás intentando buscar no existe en este proyecto.",
+    "subscription_required_title": "Funcionalidad Premium",
+    "subscription_required_desc": "Esta funcionalidad requiere un nivel de suscripción más alto. Por favor, actualiza tu plan para acceder a ella.",
     "btn_back_home": "Volver al inicio",
     "2fa_title": "Autenticación de dos factores",
     "2fa_desc": "Agrega una capa adicional de seguridad utilizando una aplicación de autenticación móvil.",
