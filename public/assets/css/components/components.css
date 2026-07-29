@@ -7095,8 +7095,8 @@ html.dark-theme .component-skeleton-design-bottom {
 }
 
 .upgrade-card {
-    flex: 1;
-    min-width: 320px;
+    flex: 1 1 560px;
+    min-width: min(100%, 560px);
     max-width: 560px;
     display: flex;
     flex-direction: column;
