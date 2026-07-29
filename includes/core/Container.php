@@ -37,6 +37,8 @@ use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use App\Core\Repositories\SubscriptionRepository;
 use App\Core\Interfaces\StoreRepositoryInterface;
 use App\Core\Repositories\StoreRepository;
+use App\Core\Interfaces\PaletteRepositoryInterface;
+use App\Core\Repositories\PaletteRepository;
 
 class Container implements ContainerInterface {
     private $instances = [];
@@ -68,6 +70,7 @@ class Container implements ContainerInterface {
         $this->bindings[CanvasRepositoryInterface::class] = CanvasRepository::class;
         $this->bindings[SubscriptionRepositoryInterface::class] = SubscriptionRepository::class;
         $this->bindings[StoreRepositoryInterface::class] = StoreRepository::class;
+        $this->bindings[PaletteRepositoryInterface::class] = PaletteRepository::class;
     }
 
     public function get(string $id) {

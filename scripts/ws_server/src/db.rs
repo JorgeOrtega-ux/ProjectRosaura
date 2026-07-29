@@ -4,7 +4,7 @@ use std::env;
 pub async fn get_canvas_config_from_db(
     db: &MySqlPool,
     canvas_id: &str,
-) -> Result<(i32, i32, bool, i32), Box<dyn std::error::Error>> {
+) -> Result<(i32, i32, bool, i32, i32), Box<dyn std::error::Error>> {
     let db_name = env::var("DB_CANVASES_NAME").unwrap_or_else(|_| "db_canvases".to_string());
     let query = format!(
         "SELECT cooldown_pixels_batch, cooldown_seconds, is_subscription_locked, size FROM `{}`.`canvases` WHERE id = ? LIMIT 1",
@@ -19,18 +19,25 @@ pub async fn get_canvas_config_from_db(
         let is_locked: i32 = row.try_get("is_subscription_locked").unwrap_or(0);
         
         let mut width = 64;
+        let mut height = 64;
         if let Ok(size_str) = row.try_get::<String, _>("size") {
             let parts: Vec<&str> = size_str.split('x').collect();
             if let Some(w) = parts.first() {
                 if let Ok(w_int) = w.parse::<i32>() {
                     width = w_int;
+                    height = w_int;
+                }
+            }
+            if let Some(h) = parts.get(1) {
+                if let Ok(h_int) = h.parse::<i32>() {
+                    height = h_int;
                 }
             }
         }
         
-        Ok((batch, sec, is_locked == 1, width))
+        Ok((batch, sec, is_locked == 1, width, height))
     } else {
-        Ok((5, 10, false, 64))
+        Ok((5, 10, false, 64, 64))
     }
 }
 

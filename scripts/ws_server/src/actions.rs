@@ -76,7 +76,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         "init" => {
             helpers::ensure_canvas_state_loaded(state, canvas_id).await;
             
-            let (config_batch, config_sec, _, _) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64));
+            let (config_batch, config_sec, _, _, _) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
             
             let mut balance = config_batch as f64;
             let mut next_in = 0.0;
@@ -356,15 +356,23 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             let y1 = msg.y1.unwrap_or(0);
             let x2 = msg.x2.unwrap_or(0);
             let y2 = msg.y2.unwrap_or(0);
-            let width = msg.width.unwrap_or(64);
             let protect = msg.protect.unwrap_or(true);
             
+            // Securely load canvas dimensions from DB instead of trusting client input
+            let (_, _, _, db_width, db_height) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
+            
             let min_x = std::cmp::min(x1, x2).max(0);
-            let max_x = std::cmp::max(x1, x2).min(if width > 0 { width - 1 } else { std::i32::MAX });
+            let max_x = std::cmp::max(x1, x2).min(db_width - 1);
             let min_y = std::cmp::min(y1, y2).max(0);
-            let max_y = std::cmp::max(y1, y2).min(if width > 0 { width - 1 } else { std::i32::MAX });
+            let max_y = std::cmp::max(y1, y2).min(db_height - 1);
             
             let mut affected_offsets = Vec::new();
+            for iy in min_y..=max_y {
+                for ix in min_x..=max_x {
+                    affected_offsets.push(iy * db_width + ix);
+                }
+            }
+            
             let areas_key = format!("canvas:{}:protected_areas", canvas_id);
             
             if let Ok(mut c) = state.redis_pool.get().await {
@@ -387,18 +395,35 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 
                 let new_json = serde_json::to_string(&areas).unwrap_or_else(|_| "[]".to_string());
                 let _: () = deadpool_redis::redis::AsyncCommands::set(&mut c, &areas_key, new_json).await.unwrap_or(());
+                
+                // Keep Redis protected_zset and protected_pixels:{offset} in sync!
+                let current_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+                let far_future_expiry = current_time + 3153600000;
+                let zset_key = format!("canvas:{}:protected_zset", canvas_id);
+                
+                let mut pipe = deadpool_redis::redis::pipe();
+                for &offset in &affected_offsets {
+                    let pk = format!("canvas:{}:protected_pixels:{}", canvas_id, offset);
+                    if protect {
+                        pipe.cmd("SET").arg(&pk).arg("admin");
+                        pipe.cmd("ZADD").arg(&zset_key).arg(far_future_expiry).arg(offset.to_string());
+                    } else {
+                        pipe.cmd("DEL").arg(&pk);
+                        pipe.cmd("ZREM").arg(&zset_key).arg(offset.to_string());
+                    }
+                }
+                let _: () = pipe.query_async(&mut c).await.unwrap_or(());
             }
             
-            let offsets_int: Vec<i32> = affected_offsets.iter().filter_map(|s| s.parse::<i32>().ok()).collect();
-            if !offsets_int.is_empty() {
-                db::save_canvas_protections_db(&state.db_pool, canvas_id, &offsets_int, protect, Some(&uid_str)).await;
+            if !affected_offsets.is_empty() {
+                db::save_canvas_protections_db(&state.db_pool, canvas_id, &affected_offsets, protect, Some(&uid_str)).await;
             }
             
             let b_msg = serde_json::json!({
                 "type": "area_protection_changed",
                 "canvas_id": canvas_id,
                 "x1": min_x, "y1": min_y, "x2": max_x, "y2": max_y,
-                "protect": protect, "width": width
+                "protect": protect, "width": db_width
             }).to_string();
             helpers::broadcast_to_room(state, canvas_id, &b_msg).await;
             
@@ -527,7 +552,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 }
             }
 
-            let (config_batch, config_sec, is_premium_locked, board_w) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64));
+            let (config_batch, config_sec, is_premium_locked, board_w, _) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
             if is_premium_locked {
                 let err = serde_json::json!({"type": "canvas_locked_error"}).to_string();
                 helpers::send_to_client(state, connection_id, &err).await;
@@ -666,8 +691,11 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         "bomb_pixel" => {
             let cx = msg.x.unwrap_or(0);
             let cy = msg.y.unwrap_or(0);
-            let width = msg.width.unwrap_or(64);
-            let height = msg.height.unwrap_or(width);
+            
+            // Securely load canvas dimensions from DB instead of trusting client input
+            let (_, _, _, db_width, db_height) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
+            let width = db_width;
+            let height = db_height;
             let perk_id = msg.perk_id.clone().unwrap_or_default();
             
             if perk_id.is_empty() { return; }

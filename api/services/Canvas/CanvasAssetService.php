@@ -19,11 +19,17 @@ use PDO;
 class CanvasAssetService {
     private $canvasRepository;
     private $userRepository;
+    private $paletteRepository;
 
-    public function __construct(CanvasRepositoryInterface $canvasRepository, UserRepositoryInterface $userRepository) {
+    public function __construct(
+        CanvasRepositoryInterface $canvasRepository, 
+        UserRepositoryInterface $userRepository,
+        PaletteRepositoryInterface $paletteRepository
+    ) {
         $this->canvasRepository = $canvasRepository;
         $this->userRepository = $userRepository;
-}
+        $this->paletteRepository = $paletteRepository;
+    }
 
     public function uploadTemplate(int $userId, array $fileInfo): array {
         try {
@@ -157,17 +163,7 @@ class CanvasAssetService {
 
     public function getCustomPalettes(int $userId): array {
         try {
-            $db = new DatabaseManager();
-            $pdo = $db->getConnection(DB::CONN_IDENTITY);
-
-            $stmt = $pdo->prepare("SELECT id, palette_key, name, colors FROM custom_palettes WHERE user_id = :user_id");
-            $stmt->execute([':user_id' => $userId]);
-            
-            $palettes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            foreach ($palettes as &$p) {
-                $p['colors'] = json_decode($p['colors'], true);
-            }
-
+            $palettes = $this->paletteRepository->getCustomPalettes($userId);
             return ['success' => true, 'data' => $palettes];
         } catch (Exception $e) {
             Logger::error('Error getCustomPalettes.', ['user_id' => $userId, 'error' => $e->getMessage()]);
@@ -194,12 +190,7 @@ class CanvasAssetService {
             }
             $validColors = array_slice($validColors, 0, 36);
 
-            $db = new DatabaseManager();
-            $pdo = $db->getConnection(DB::CONN_IDENTITY);
-
-            $stmt = $pdo->prepare("SELECT COUNT(*) FROM custom_palettes WHERE user_id = :user_id");
-            $stmt->execute([':user_id' => $userId]);
-            $count = (int)$stmt->fetchColumn();
+            $count = $this->paletteRepository->countCustomPalettes($userId);
 
             $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
             $maxPalettes = $planLimits['max_custom_palettes'] ?? 0;
@@ -210,15 +201,12 @@ class CanvasAssetService {
 
             $paletteKey = 'custom_' . $userId . '_' . Utils::generateUUID();
 
-            $stmt = $pdo->prepare("INSERT INTO custom_palettes (user_id, palette_key, name, colors) VALUES (:user_id, :palette_key, :name, :colors)");
-            $stmt->execute([
-                ':user_id' => $userId,
-                ':palette_key' => $paletteKey,
-                ':name' => $name,
-                ':colors' => json_encode($validColors)
-            ]);
+            $success = $this->paletteRepository->createCustomPalette($userId, $paletteKey, $name, $validColors);
+            if ($success) {
+                return ['success' => true, 'message' => __('msg_palette_created'), 'data' => ['palette_key' => $paletteKey]];
+            }
 
-            return ['success' => true, 'message' => __('msg_palette_created'), 'data' => ['palette_key' => $paletteKey]];
+            return ['success' => false, 'message' => __('err_palette_create_failed')];
         } catch (Exception $e) {
             Logger::error('Error createCustomPalette.', ['user_id' => $userId, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_palette_create_failed')];
@@ -227,16 +215,8 @@ class CanvasAssetService {
 
     public function deleteCustomPalette(int $userId, string $paletteKey): array {
         try {
-            $db = new DatabaseManager();
-            $pdo = $db->getConnection(DB::CONN_IDENTITY);
-
-            $stmt = $pdo->prepare("DELETE FROM custom_palettes WHERE user_id = :user_id AND palette_key = :palette_key");
-            $stmt->execute([
-                ':user_id' => $userId,
-                ':palette_key' => $paletteKey
-            ]);
-
-            if ($stmt->rowCount() > 0) {
+            $success = $this->paletteRepository->deleteCustomPalette($userId, $paletteKey);
+            if ($success) {
                 return ['success' => true, 'message' => __('msg_palette_deleted')];
             }
             return ['success' => false, 'message' => __('err_palette_not_found')];

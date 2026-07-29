@@ -13,10 +13,19 @@ use App\Core\System\CacheConstants;
 class CanvasLockManager {
     private $canvasRepository;
     private $userRepository;
+    private $dbManager;
+    private $redisCache;
 
-    public function __construct(CanvasRepositoryInterface $canvasRepository, UserRepositoryInterface $userRepository) {
+    public function __construct(
+        CanvasRepositoryInterface $canvasRepository, 
+        UserRepositoryInterface $userRepository,
+        \App\Config\Database\DatabaseManager $dbManager,
+        \App\Config\Database\RedisCache $redisCache
+    ) {
         $this->canvasRepository = $canvasRepository;
         $this->userRepository = $userRepository;
+        $this->dbManager = $dbManager;
+        $this->redisCache = $redisCache;
     }
 
     /**
@@ -37,15 +46,8 @@ class CanvasLockManager {
             $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
             $allSizes = Utils::getCanvasSizes();
 
-            // Fetch all canvases owned by this user (we need a repository method to get ALL by owner without pagination, or just loop pages if too many. Let's assume there is a method or we can just fetch all since it's an internal job)
-            // Wait, we can just use getUserAndJoinedCanvases with a large limit, but we only want OWNED canvases.
-            // Let's rely on a direct DB update or fetching them.
-            // Actually, CanvasRepository should have a method `getOwnedCanvasesList(int $userId)`
-            // I will use DatabaseManager directly here if Repository method is missing, or I'll implement it in Repository.
-            
             // For now, let's inject DatabaseManager to update directly, which is faster and avoids N+1
-            $dbManager = new \App\Config\Database\DatabaseManager();
-            $canvasesDb = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
+            $canvasesDb = $this->dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
             
             $stmt = $canvasesDb->prepare("SELECT id, size, palette_id, max_participants, created_at FROM canvases WHERE owner_id = :owner_id ORDER BY created_at ASC");
             $stmt->execute(['owner_id' => $userId]);
@@ -59,10 +61,7 @@ class CanvasLockManager {
             $updateStmt = $canvasesDb->prepare("UPDATE canvases SET is_subscription_locked = :is_subscription_locked, locked_reasons = :locked_reasons WHERE id = :id");
             $canvasesDb->beginTransaction();
             
-            $redisClient = null;
-            if (class_exists(RedisCache::class)) {
-                $redisClient = (new RedisCache())->getClient();
-            }
+            $redisClient = $this->redisCache->getClient();
 
             foreach ($canvases as $canvas) {
                 $isSubscriptionLocked = false;

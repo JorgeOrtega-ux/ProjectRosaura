@@ -15,15 +15,12 @@ class ChatServices
     private $identityPdo;
     private $redis;
 
-    public function __construct()
+    public function __construct(DatabaseManager $dbManager, RedisCache $redisCache)
     {
-        $dbManager = new DatabaseManager();
         $this->pdo = $dbManager->getConnection(DB::CONN_CANVASES);
         $this->identityPdo = $dbManager->getConnection(DB::CONN_IDENTITY);
-        
-        $redisCache = new RedisCache();
         $this->redis = $redisCache->getClient();
-}
+    }
 
     public function resolveCanvasIntId($uuid)
     {

@@ -139,7 +139,11 @@ class CanvasCoreController extends BaseController {
             );
 
 
-            if (!$result['success'] && strpos($result['message'] ?? '', 'lÃƒÂ­mite') !== false) {
+            if (!$result['success'] && (
+                ($result['error_code'] ?? '') === 'LIMIT_EXCEEDED' || 
+                ($result['error_code'] ?? '') === 'UPGRADE_REQUIRED' ||
+                strpos($result['message'] ?? '', 'lÃƒÂ­mite') !== false
+            )) {
                 $result['http_code'] = 403;
                 $result['error_code'] = 'UPGRADE_REQUIRED';
                 http_response_code(403);

@@ -459,7 +459,11 @@ class CanvasCoreService {
                 if (method_exists($this->canvasRepository, 'countUserCanvases')) {
                     $currentCanvasCount = $this->canvasRepository->countUserCanvases($userId);
                     if ($planLimits['max_canvases'] !== -1 && $currentCanvasCount >= $planLimits['max_canvases']) {
-                        return ['success' => false, 'message' => __('err_canvas_limit_reached') . ' (' . $planLimits['name'] . ').'];
+                        return [
+                            'success' => false, 
+                            'message' => __('err_canvas_limit_reached') . ' (' . $planLimits['name'] . ').',
+                            'error_code' => 'LIMIT_EXCEEDED'
+                        ];
                     }
                 }
 
@@ -477,7 +481,11 @@ class CanvasCoreService {
                 }
                 $requiredTier = $allSizes[$size]['tier'] ?? 0;
                 if ($tier < $requiredTier) {
-                    return ['success' => false, 'message' => __('err_plan_canvas_size')];
+                    return [
+                        'success' => false, 
+                        'message' => __('err_plan_canvas_size'),
+                        'error_code' => 'UPGRADE_REQUIRED'
+                    ];
                 }
             }
 

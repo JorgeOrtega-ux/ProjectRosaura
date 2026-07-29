@@ -19,12 +19,16 @@ class StoreServices {
         return $prices;
     }
 
+    private $redisCache;
+
     public function __construct(
         SessionManagerInterface $sessionManager,
-        StoreRepositoryInterface $storeRepo
+        StoreRepositoryInterface $storeRepo,
+        \App\Config\Database\RedisCache $redisCache
     ) {
         $this->sessionManager = $sessionManager;
         $this->storeRepo = $storeRepo;
+        $this->redisCache = $redisCache;
     }
 
     public function buyPerk(array $input): array {
@@ -72,8 +76,7 @@ class StoreServices {
         $idempotencyKey = $input['idempotency_key'] ?? '';
         $redisClient = null;
         try {
-            $redisInstance = new \App\Config\Database\RedisCache();
-            $redisClient = $redisInstance->getClient();
+            $redisClient = $this->redisCache->getClient();
         } catch (\Throwable $e) {
             Logger::error("Redis Cache Error en buyPerk: " . $e->getMessage());
         }
@@ -215,13 +218,13 @@ class StoreServices {
         $userId = $this->sessionManager->getActiveAccountId();
         $perkId = $input['perk_id'] ?? '';
         
-        if (empty($perkId) || !isset(self::PERK_PRICES[$perkId])) {
+        $perkPrices = $this->getPerkPrices();
+        if (empty($perkId) || !isset($perkPrices[$perkId])) {
             return ['success' => false, 'message_key' => 'store.invalid_perk'];
         }
 
         try {
-            $redisInstance = new \App\Config\Database\RedisCache();
-            $redis = $redisInstance->getClient();
+            $redis = $this->redisCache->getClient();
             
             $perksConfigPath = __DIR__ . '/../../../public/assets/data/perks.json';
             $perksConfig = [];
@@ -238,7 +241,10 @@ class StoreServices {
             return ['success' => false, 'message_key' => 'error.server_error'];
         }
 
-        return ['success' => false, 'message_key' => 'store.bomb_perks_use_direct'];
+        $activated = $this->storeRepo->markPerkAsUsed($userId, $perkId);
+        if (!$activated) {
+            return ['success' => false, 'message_key' => 'store.perk_activation_failed'];
+        }
 
         Logger::info("User activated perk", [
             'user_id' => $userId,

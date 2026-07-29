@@ -2,25 +2,29 @@
 
 namespace App\Api\Controllers\Stripe;
 
-use App\Config\Database\DatabaseManager;
 use App\Config\Database\RedisCache;
-use App\Core\Repositories\SubscriptionRepository;
-use App\Core\Repositories\StoreRepository;
+use App\Core\Interfaces\SubscriptionRepositoryInterface;
+use App\Core\Interfaces\StoreRepositoryInterface;
 use App\Core\System\Logger;
 use App\Core\System\SubscriptionPlanConstants;
 use App\Api\Services\Canvas\CanvasLockManager;
-use App\Core\Container;
 
 class StripeWebhookController {
-    private SubscriptionRepository $subRepo;
-    private StoreRepository $storeRepo;
+    private SubscriptionRepositoryInterface $subRepo;
+    private StoreRepositoryInterface $storeRepo;
     private RedisCache $redisCache;
+    private CanvasLockManager $lockManager;
 
-    public function __construct(?DatabaseManager $db = null, ?RedisCache $redisCache = null) {
-        $db = $db ?? new DatabaseManager();
-        $this->redisCache = $redisCache ?? new RedisCache();
-        $this->subRepo = new SubscriptionRepository($db);
-        $this->storeRepo = new StoreRepository($db, $this->redisCache);
+    public function __construct(
+        SubscriptionRepositoryInterface $subRepo,
+        StoreRepositoryInterface $storeRepo,
+        RedisCache $redisCache,
+        CanvasLockManager $lockManager
+    ) {
+        $this->subRepo = $subRepo;
+        $this->storeRepo = $storeRepo;
+        $this->redisCache = $redisCache;
+        $this->lockManager = $lockManager;
     }
 
     public function handleWebhook(string $payload, string $sigHeader, string $webhookSecret): array {
@@ -89,9 +93,7 @@ class StripeWebhookController {
         } catch (\Throwable $e) {}
 
         try {
-            $container = new Container();
-            $lockManager = $container->get(CanvasLockManager::class);
-            $lockManager->evaluateUserCanvases($userId);
+            $this->lockManager->evaluateUserCanvases($userId);
         } catch (\Throwable $e) {
             Logger::error("Failed to evaluate canvases on webhook tier change", ['user_id' => $userId, 'error' => $e->getMessage()]);
         }
@@ -274,12 +276,10 @@ class StripeWebhookController {
             if ($localSub) {
                 $userId = (int) $localSub['user_id'];
                 $this->subRepo->updateByStripeSubscriptionId($invoice->subscription, [
-                    'status' => 'canceled',
-                    'canceled_at' => date('Y-m-d H:i:s')
+                    'status' => 'past_due'
                 ]);
-                $this->setUserTierAndEvaluateCanvases($userId, 0);
 
-                Logger::warning("Stripe webhook: payment failed for subscription, canceled immediately and user downgraded to Tier 0", [
+                Logger::warning("Stripe webhook: payment failed for subscription, marked status as past_due", [
                     'user_id' => $userId,
                     'invoice_id' => $invoice->id
                 ]);
