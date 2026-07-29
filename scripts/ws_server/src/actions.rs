@@ -52,6 +52,21 @@ pub async fn get_user_cooldown(state: &AppState, canvas_id: &str, user_id: &str,
     (balance, last_t)
 }
 
+pub async fn check_owner_ratelimit(state: &AppState, canvas_id: &str, user_id: &str) -> bool {
+    if let Ok(mut c) = state.redis_pool.get().await {
+        let key = format!("canvas:{}:user:{}:owner_ratelimit", canvas_id, user_id);
+        let res: deadpool_redis::redis::RedisResult<Option<String>> = deadpool_redis::redis::cmd("SET")
+            .arg(&key).arg("1").arg("EX").arg(1).arg("NX")
+            .query_async(&mut c).await;
+        match res {
+            Ok(Some(_)) => return true,
+            Ok(None) => return false,
+            Err(_) => return true,
+        }
+    }
+    true
+}
+
 pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str, state: &AppState) {
     let client_meta = state.ws_meta.get(connection_id).map(|m| m.clone());
     let user_id = client_meta.as_ref().and_then(|m| m.user_id.clone());
@@ -302,6 +317,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         }
         "toggle_freeze" => {
             if uid_str.is_empty() { return; }
+            if !check_owner_ratelimit(state, canvas_id, &uid_str).await { return; }
             if !db::check_is_canvas_owner(&state.db_pool, &uid_str, canvas_id).await { return; }
             
             let frozen = msg.frozen.unwrap_or(false);
@@ -333,6 +349,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         }
         "protect_area" => {
             if uid_str.is_empty() { return; }
+            if !check_owner_ratelimit(state, canvas_id, &uid_str).await { return; }
             if !db::check_is_canvas_owner(&state.db_pool, &uid_str, canvas_id).await { return; }
             
             let x1 = msg.x1.unwrap_or(0);
@@ -399,6 +416,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             let width = msg.width.unwrap_or(64);
 
             if uid_str.is_empty() { return; }
+            if !check_owner_ratelimit(state, canvas_id, &uid_str).await { return; }
             if !db::check_is_canvas_owner(&state.db_pool, &uid_str, canvas_id).await { return; }
 
             let min_x = std::cmp::min(x1, x2).max(0);

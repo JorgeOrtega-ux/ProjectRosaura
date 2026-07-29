@@ -3,7 +3,7 @@ import time
 import json
 from dotenv import load_dotenv
 
-ENV_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
+ENV_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 load_dotenv(dotenv_path=ENV_PATH)
 
 import zlib
@@ -709,7 +709,7 @@ def draw_image_listener_thread():
                         temp_path = temp_file.name
                         s3_client.download_file(bucket, key, temp_path)
                     
-                    script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'draw_image.py'))
+                    script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'utils', 'draw_image.py'))
                     cmd = ["python", script_path, temp_path, str(canvas_id), "--x", str(x), "--y", str(y), "--w", str(w), "--h", str(h), "--angle", str(angle)]
                     logging.info(f"Executing: {' '.join(cmd)}")
                     

@@ -19,7 +19,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
 
 BACKUP_DIR = os.path.join(BASE_DIR, 'storage', 'private', 'backups')

@@ -6,4 +6,4 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir cryptography mysql-connector-python pymysql redis python-dotenv requests websockets Pillow numpy typesense boto3
 
-CMD ["python", "-u", "scripts/worker_backups.py"]
+CMD ["python", "-u", "scripts/workers/worker_backups.py"]

@@ -27,4 +27,9 @@ Debemos implementar un sistema de mensajes como promocioales o de ese tipo de co
 
 
 
-Mira quiero que revises que secciones que requieran un nivel suscripcion para que no sean accesibles ni aunque entres directamente a su url, sin o tienes el nivel requerido, deberas mostrar la seccion 404, no se cuantas secciones haya asi, pero la que si se es la de crear paleta de colores.
+Mira quiero que revises que secciones que requieran un nivel suscripcion para que no sean accesibles ni aunque entres directamente a su url, sin o tienes el nivel requerido, deberas mostrar la seccion 404, no se cuantas secciones haya asi, pero la que si se es la de crear paleta de colores. no se si utilizar el messages.php el de 404 o crearemos otro especial para secciones que requieran suscripcion, con un mensaje dedicado, ahora que recuerdo tambien la secciones de manage roles de los lienzos es una funcionalidad que tambien ciertos niveles de suscripcion tiene, entonces analiza todo eso a fondo, ah y bueno 
+
+
+
+
+Una pregunt

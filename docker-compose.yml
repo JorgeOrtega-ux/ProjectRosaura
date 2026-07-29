@@ -147,7 +147,7 @@ services:
       dockerfile: docker/python/Dockerfile.worker
     container_name: rosaura_worker_backups
     restart: always
-    command: python -u scripts/worker_backups.py
+    command: python -u scripts/workers/worker_backups.py
     volumes:
       - .:/app
     depends_on:
@@ -168,7 +168,7 @@ services:
       dockerfile: docker/python/Dockerfile.worker
     container_name: rosaura_worker_system_tasks
     restart: always
-    command: python -u scripts/worker_system_tasks.py
+    command: python -u scripts/workers/worker_system_tasks.py
     volumes:
       - .:/app
     depends_on:
@@ -191,7 +191,7 @@ services:
       dockerfile: docker/python/Dockerfile.worker
     container_name: rosaura_worker_persistence
     restart: always
-    command: python -u scripts/worker_persistence.py
+    command: python -u scripts/workers/worker_persistence.py
     volumes:
       - .:/app
     depends_on:
@@ -212,7 +212,7 @@ services:
       dockerfile: docker/python/Dockerfile.worker
     container_name: rosaura_worker_canvas_jobs
     restart: always
-    command: python -u scripts/worker_canvas_jobs.py
+    command: python -u scripts/workers/worker_canvas_jobs.py
     volumes:
       - .:/app
     depends_on:
