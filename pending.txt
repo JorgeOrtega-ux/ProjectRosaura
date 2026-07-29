@@ -27,12 +27,6 @@ Debemos implementar un sistema de mensajes como promocioales o de ese tipo de co
 
 
 
-Mira no se si me equivoque o que, pero creo que en los lienzos y asi cuando quieres ver tus ventajas, se hace una consulta sql para ver todas las ventajas que tengascompradas y registrar si ya la usaste o no, pero que no seria mas eficiente tambien si agregaramos unas columnas de que, numero total de esta ventaja, numero total de esta otra y asi sucecivamente? o no se que opines tu.
-
-
-
-
-
 
 
 

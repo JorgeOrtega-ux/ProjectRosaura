@@ -1466,28 +1466,22 @@ export const DesignInteractions = {
         
         if (PerksRegistry.hasScreenFlash(perkId)) {
             const flashMs = PerksRegistry.getFlashDuration(perkId);
-            if (!this.flashOverlay) {
-                this.flashOverlay = document.createElement('div');
-                this.flashOverlay.className = 'canvas-flash-overlay';
-                document.body.appendChild(this.flashOverlay);
-            }
-            this.flashOverlay.style.transition = 'none';
-            this.flashOverlay.classList.add('active');
-
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    if (this.flashOverlay) {
-                        this.flashOverlay.style.transition = `opacity ${flashMs / 1000}s ease-out`;
-                        this.flashOverlay.classList.remove('active');
-                        
-                        // Safety timeout to ensure it gets removed
-                        if (this.flashOverlayTimeout) clearTimeout(this.flashOverlayTimeout);
-                        this.flashOverlayTimeout = setTimeout(() => {
-                            if (this.flashOverlay) this.flashOverlay.classList.remove('active');
-                        }, flashMs + 100);
-                    }
-                });
-            });
+            const flash = document.createElement('div');
+            flash.style.position = 'fixed';
+            flash.style.top = '0';
+            flash.style.left = '0';
+            flash.style.width = '100vw';
+            flash.style.height = '100vh';
+            flash.style.backgroundColor = 'white';
+            flash.style.zIndex = '999999';
+            flash.style.pointerEvents = 'none';
+            flash.style.transition = `opacity ${flashMs / 1000}s ease-out`;
+            document.body.appendChild(flash);
+            void flash.offsetHeight;
+            flash.style.opacity = '0';
+            setTimeout(() => {
+                if (flash.parentNode) flash.parentNode.removeChild(flash);
+            }, flashMs + 100);
         }
         
         if (!this.renderWorker && !this.isExplosionLoopRunning) {

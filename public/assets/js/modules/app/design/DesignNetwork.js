@@ -904,6 +904,9 @@ export const DesignNetwork = {
         if (btnOpenJoinLive) {
             btnOpenJoinLive.classList.remove('component-color-indicator');
             btnOpenJoinLive.style.removeProperty('--active-color');
+            btnOpenJoinLive.setAttribute('data-tooltip', (typeof window.__ === 'function' ? window.__('tooltip_join_live', [], 'Unirse a transmisión') : 'Unirse a transmisión') + ' [J]');
+            const icon = btnOpenJoinLive.querySelector('.material-symbols-rounded');
+            if (icon) icon.textContent = 'sensors';
         }
 
         if (typeof this.updateTemplateUI === 'function') this.updateTemplateUI();
@@ -1066,8 +1069,12 @@ export const DesignNetwork = {
             
             const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
             if (btnOpenJoinLive) {
-                btnOpenJoinLive.classList.remove('disabled-interaction', 'disabled');
+                btnOpenJoinLive.classList.remove('disabled-interaction', 'disabled', 'component-color-indicator');
+                btnOpenJoinLive.style.removeProperty('--active-color');
                 btnOpenJoinLive.removeAttribute('title');
+                btnOpenJoinLive.setAttribute('data-tooltip', (typeof window.__ === 'function' ? window.__('tooltip_join_live', [], 'Unirse a transmisión') : 'Unirse a transmisión') + ' [J]');
+                const icon = btnOpenJoinLive.querySelector('.material-symbols-rounded');
+                if (icon) icon.textContent = 'sensors';
             }
 
             this.requestRender();

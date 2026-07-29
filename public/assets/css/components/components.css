@@ -6860,7 +6860,7 @@ html.dark-theme .component-skeleton-design-bottom {
     }
 
     .nuclear-shake {
-        animation: nuclear-shake 0.1s infinite;
+        animation: nuclear-shake 0.1s infinite !important;
     }
 
     .canvas-flash-overlay {

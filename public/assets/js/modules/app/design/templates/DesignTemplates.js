@@ -145,6 +145,9 @@ export const DesignTemplates = {
                             if (btnOpenJoinLive) {
                                 btnOpenJoinLive.classList.add('component-color-indicator');
                                 btnOpenJoinLive.style.setProperty('--active-color', 'var(--color-danger, #ef4444)');
+                                btnOpenJoinLive.setAttribute('data-tooltip', (typeof window.__ === 'function' ? window.__('btn_leave_broadcast', [], 'Abandonar transmisión') : 'Abandonar transmisión') + ' [J]');
+                                const icon = btnOpenJoinLive.querySelector('.material-symbols-rounded');
+                                if (icon) icon.textContent = 'sensors_off';
                             }
                         } else {
                             btnSubmitJoinLive.innerHTML = originalText;
