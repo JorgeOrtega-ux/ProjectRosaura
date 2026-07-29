@@ -145,7 +145,11 @@ pub async fn consume_user_perk(db: &MySqlPool, user_id: &str, perk_id: &str) -> 
             if let Ok(perk_row_id) = row.try_get::<i32, _>("id") {
                 let query_upd = format!("UPDATE `{}`.`user_perks` SET is_used = 1, used_at = NOW() WHERE id = ? AND is_used = 0", db_identity);
                 if let Ok(res) = sqlx::query(&query_upd).bind(perk_row_id).execute(db).await {
-                    return res.rows_affected() > 0;
+                    if res.rows_affected() > 0 {
+                        let query_bal = format!("UPDATE `{}`.`user_perk_balances` SET quantity_available = GREATEST(0, quantity_available - 1) WHERE user_id = ? AND perk_id = ?", db_identity);
+                        let _ = sqlx::query(&query_bal).bind(uid).bind(perk_id).execute(db).await;
+                        return true;
+                    }
                 }
             }
         }

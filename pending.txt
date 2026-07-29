@@ -12,12 +12,7 @@ proteccion contra uso abusivo de herramientas de deueños de lienzos (ya que cua
 
 
 
-en http://localhost/design/s/7b7306a5-18ff-4c23-ab3b-e39f7465b8fe al eliminar el unico snapshots, no regresa el estado de empty, tambien revisar si funciona el estado privado
 
-
-
-
-al buscar algoen search hace como doble carga o nose
 
 
 
@@ -33,4 +28,3 @@ Debemos implementar un sistema de mensajes como promocioales o de ese tipo de co
 
 
 Mira quiero que revises que secciones que requieran un nivel suscripcion para que no sean accesibles ni aunque entres directamente a su url, sin o tienes el nivel requerido, deberas mostrar la seccion 404, no se cuantas secciones haya asi, pero la que si se es la de crear paleta de colores.
-

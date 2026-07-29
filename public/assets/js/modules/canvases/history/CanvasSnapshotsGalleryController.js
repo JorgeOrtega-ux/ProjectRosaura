@@ -122,6 +122,24 @@ class CanvasSnapshotsGalleryController {
                 if (iconSpan) iconSpan.textContent = 'visibility_off';
                 if (textSpan) textSpan.textContent = window.__('make_private');
             }
+
+            const card = btn.closest('.component-gallery-card');
+            if (card) {
+                const badgesContainer = card.querySelector('.component-gallery-badges-container');
+                if (badgesContainer) {
+                    if (newPrivacy === 'private') {
+                        if (!badgesContainer.querySelector('.component-badge--danger')) {
+                            const badge = document.createElement('div');
+                            badge.className = 'component-badge component-badge--danger';
+                            badge.innerHTML = `<span class="material-symbols-rounded">lock</span><span>${window.__('canvas_privacy_private') || 'Private'}</span>`;
+                            badgesContainer.appendChild(badge);
+                        }
+                    } else {
+                        const badge = badgesContainer.querySelector('.component-badge--danger');
+                        if (badge) badge.remove();
+                    }
+                }
+            }
         } else {
             showMessage(res.message, 'error');
         }
@@ -157,7 +175,20 @@ class CanvasSnapshotsGalleryController {
             showMessage(res.message, 'success');
             const card = document.querySelector(`.component-module[data-module="snapshot-menu-${cardId}"]`)?.closest('.component-gallery-card');
             if (card) {
+                const grid = card.closest('.component-grid');
                 card.remove();
+
+                if (grid && grid.querySelectorAll('.component-gallery-card').length === 0) {
+                    const bottomArea = document.querySelector('[data-ref="dynamic-content-area"]');
+                    if (bottomArea) {
+                        bottomArea.innerHTML = `
+                            <div class="component-empty-state" data-ref="empty-state-rendered">
+                                <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
+                                <p class="component-empty-state-text">${window.__('empty_snapshots_gallery') || 'No snapshots found.'}</p>
+                            </div>
+                        `;
+                    }
+                }
             }
         } else {
             showMessage(res.message, 'error');
