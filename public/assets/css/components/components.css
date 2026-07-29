@@ -7061,3 +7061,171 @@ html.dark-theme .component-skeleton-design-bottom {
     }
 }
 
+/* Upgrade Section Styles */
+.upgrade-bottom-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    padding: 24px 0;
+}
+
+.upgrade-bottom-header {
+    text-align: center;
+}
+
+.upgrade-bottom-title {
+    font-size: 36px;
+    margin: 0 0 8px 0;
+    font-weight: 500;
+}
+
+.upgrade-bottom-desc {
+    font-size: 14px;
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.upgrade-cards-container {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+
+.upgrade-card {
+    flex: 1;
+    min-width: 320px;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    position: relative;
+    box-sizing: border-box;
+    border-radius: 16px;
+}
+
+.upgrade-card--standard {
+    padding: 27px;
+    border: 1px solid var(--border-color);
+}
+
+.upgrade-card--popular {
+    padding: 24px;
+    border: 3px solid transparent;
+    background-image: linear-gradient(var(--bg-surface, #fff), var(--bg-surface, #fff)), linear-gradient(77.04deg, #3186ff 6.99%, #346bf1 45.46%, #4fa0ff 88.2%);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+}
+
+.upgrade-card-popular-badge {
+    color: #3186ff;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.upgrade-card-title {
+    font-size: 24px;
+    margin: 0 0 8px 0;
+    font-weight: 500;
+}
+
+.upgrade-card-desc {
+    font-size: 14px;
+    margin: 0 0 16px 0;
+    color: var(--text-secondary);
+}
+
+.upgrade-card-storage-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.upgrade-card-storage-badge .material-symbols-rounded {
+    font-size: 16px;
+}
+
+.upgrade-card-price-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.upgrade-card-price-container {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.upgrade-card-price {
+    font-size: 32px;
+    font-weight: 500;
+}
+
+.upgrade-card-period {
+    font-size: 24px;
+    color: var(--text-secondary);
+}
+
+.upgrade-card-button {
+    width: 100%;
+    justify-content: center;
+    height: 48px;
+}
+
+.upgrade-card-button--popular {
+    background: #3186ff;
+    color: #fff;
+    border: none;
+}
+
+.upgrade-card-features {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.upgrade-card-feature-divider {
+    margin: 0 0 24px 0;
+}
+
+.upgrade-card-feature-divider-text {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.upgrade-card-feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.upgrade-card-feature-icon {
+    font-size: 24px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    margin-top: -2px;
+}
+
+.upgrade-card-feature-text-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.upgrade-card-feature-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.upgrade-card-feature-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
