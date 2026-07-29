@@ -878,6 +878,42 @@ export const DesignNetwork = {
         }
     },
     
+    leaveLiveImageSession() {
+        if (this.liveShareStatus !== 'spectator') return false;
+        
+        if (this.wsManager && this.liveShareCode) {
+            this.wsManager.send({ type: 'leave_live_share', code: this.liveShareCode });
+        }
+
+        if (this.liveTemplateId) {
+            this.templates = this.templates.filter(t => t.id !== this.liveTemplateId);
+            if (this.activeTemplateId === this.liveTemplateId) {
+                this.activeTemplateId = null;
+            }
+        }
+
+        this.liveShareStatus = 'none';
+        this.liveShareCode = null;
+        this.liveTemplateId = null;
+        this.liveShareCountVal = null;
+
+        const badge = document.getElementById('live-share-badge');
+        if (badge) badge.remove();
+
+        const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
+        if (btnOpenJoinLive) {
+            btnOpenJoinLive.classList.remove('component-color-indicator');
+            btnOpenJoinLive.style.removeProperty('--active-color');
+        }
+
+        if (typeof this.updateTemplateUI === 'function') this.updateTemplateUI();
+        this.requestRender();
+
+        const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
+        showMessage(__('msg_left_live_share', [], 'Has abandonado la transmisión'), 'info');
+        return true;
+    },
+    
     emitLiveImageUpdate() {
         if (this.liveShareStatus !== 'owner' || !this.liveShareCode || !this.wsManager) return;
         

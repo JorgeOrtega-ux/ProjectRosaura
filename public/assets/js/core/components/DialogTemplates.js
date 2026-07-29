@@ -1314,5 +1314,22 @@ export const DialogTemplates = {
                 </div>
             `;
         }
+    },
+
+    confirmLeaveLiveShare: {
+        build: () => {
+            const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${__('title_leave_broadcast', [], '¿Abandonar transmisión?')}</h2>
+                    <p class="component-modal-desc">${__('desc_leave_broadcast', [], 'Saldrás de la transmisión y dejarás de recibir actualizaciones.')}</p>
+                </div>
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [], 'Cancelar')}</button>
+                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_leave_broadcast', [], 'Abandonar')}</button>
+                </div>
+            `;
+        }
     }
 };

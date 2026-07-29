@@ -12,6 +12,18 @@ export const DesignTemplates = {
                 showMessage(__('err_cannot_join_while_streaming'), 'warning');
                 return true;
             }
+            if (this.liveShareStatus === 'spectator') {
+                if (window.dialogSystem) {
+                    window.dialogSystem.show('confirmLeaveLiveShare').then(res => {
+                        if (res && res.confirmed) {
+                            if (typeof this.leaveLiveImageSession === 'function') {
+                                this.leaveLiveImageSession();
+                            }
+                        }
+                    });
+                }
+                return true;
+            }
             if (window.dialogSystem) {
                 window.dialogSystem.show('joinLiveShare');
             }

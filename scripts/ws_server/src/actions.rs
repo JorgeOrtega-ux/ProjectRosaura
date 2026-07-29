@@ -144,29 +144,62 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         }
         "join_live_share" => {
             if let Some(code) = msg.code.clone() {
-                state.live_rooms.entry(code.clone()).or_default().insert(connection_id.to_string());
+                let is_new = state.live_rooms.entry(code.clone()).or_default().insert(connection_id.to_string());
                 
-                if let Ok(mut c) = state.redis_pool.get().await {
-                    let redis_key = format!("live_share:{}:count", code);
-                    let _: () = c.incr(&redis_key, 1).await.unwrap_or(());
-                    let _: () = c.expire(&redis_key, 14400).await.unwrap_or(());
-                    
-                    let global_count: i64 = c.get(&redis_key).await.unwrap_or(1);
-                    
-                    let count_msg = serde_json::json!({
-                        "type": "live_share_count",
-                        "code": code,
-                        "count": global_count
-                    }).to_string();
-                    
-                    helpers::broadcast_to_live_room(state, &code, &count_msg, None).await;
-                    let sync_payload = serde_json::json!({
-                        "source_node": "rust_node",
-                        "target_type": "live",
-                        "code": code,
-                        "payload": count_msg
-                    });
-                    let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
+                if is_new {
+                    if let Ok(mut c) = state.redis_pool.get().await {
+                        let redis_key = format!("live_share:{}:count", code);
+                        let _: () = c.incr(&redis_key, 1).await.unwrap_or(());
+                        let _: () = c.expire(&redis_key, 14400).await.unwrap_or(());
+                        
+                        let global_count: i64 = c.get(&redis_key).await.unwrap_or(1);
+                        
+                        let count_msg = serde_json::json!({
+                            "type": "live_share_count",
+                            "code": code,
+                            "count": global_count
+                        }).to_string();
+                        
+                        helpers::broadcast_to_live_room(state, &code, &count_msg, None).await;
+                        let sync_payload = serde_json::json!({
+                            "source_node": "rust_node",
+                            "target_type": "live",
+                            "code": code,
+                            "payload": count_msg
+                        });
+                        let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
+                    }
+                }
+            }
+        }
+        "leave_live_share" => {
+            if let Some(code) = msg.code.clone() {
+                let mut removed = false;
+                if let Some(mut room) = state.live_rooms.get_mut(&code) {
+                    removed = room.remove(&connection_id.to_string()).is_some();
+                }
+                
+                if removed {
+                    if let Ok(mut c) = state.redis_pool.get().await {
+                        let redis_key = format!("live_share:{}:count", code);
+                        let global_count: i64 = c.decr(&redis_key, 1).await.unwrap_or(0);
+                        let global_count = global_count.max(0);
+                        
+                        let count_msg = serde_json::json!({
+                            "type": "live_share_count",
+                            "code": code,
+                            "count": global_count
+                        }).to_string();
+                        
+                        helpers::broadcast_to_live_room(state, &code, &count_msg, None).await;
+                        let sync_payload = serde_json::json!({
+                            "source_node": "rust_node",
+                            "target_type": "live",
+                            "code": code,
+                            "payload": count_msg
+                        });
+                        let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
+                    }
                 }
             }
         }
