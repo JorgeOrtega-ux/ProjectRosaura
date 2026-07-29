@@ -39,9 +39,6 @@ export class SearchController {
             return;
         }
 
-        if (this.title) {
-            this.title.textContent = window.__('search_searching_for').replace(':query', query);
-        }
         
         try {
             if (this.contentArea) {
