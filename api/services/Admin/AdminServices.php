@@ -16,6 +16,7 @@ use App\Core\Interfaces\RoleRepositoryInterface;
 use App\Core\Interfaces\ProfileLogRepositoryInterface;
 use App\Core\Interfaces\TelemetryRepositoryInterface;
 use App\Config\Database\DatabaseManager;
+use App\Config\Database\CassandraManager;
 use App\Core\System\DatabaseConstants as DB; 
 use App\Core\System\SecurityConstants;
 use App\Core\System\CacheConstants;
@@ -1414,23 +1415,81 @@ class AdminServices {
         $pdoCanvases = $dbManager->getConnection(DB::CONN_CANVASES);
         $pdoIdentity = $dbManager->getConnection(DB::CONN_IDENTITY);
         
-        $countStmt = $pdoCanvases->query("SELECT COUNT(*) FROM canvas_chat_messages");
-        $totalItems = $countStmt->fetchColumn();
+        $cassandra = new CassandraManager();
+        $session = $cassandra->getSession();
+        $allMessages = [];
+        $totalItems = 0;
+        
+        if ($session) {
+            try {
+                // Get approximate count by summing total_messages from canvases table
+                $totalItems = (int)$pdoCanvases->query("SELECT COALESCE(SUM(total_messages), 0) FROM canvases")->fetchColumn();
+                
+                // Scan latest messages from Cassandra (limited to 1000 for admin log view performance)
+                $rows = $session->query("SELECT uuid, canvas_id, user_id, message, attachments, file_size, visibility, created_at FROM canvas_chat_messages LIMIT 1000")->asRowsResult();
+                
+                foreach ($rows as $row) {
+                    $createdAt = '';
+                    if (isset($row['created_at'])) {
+                        $dt = null;
+                        if ($row['created_at'] instanceof \DateTime) {
+                            $dt = $row['created_at'];
+                        } else if (is_string($row['created_at'])) {
+                            try {
+                                $dt = new \DateTime($row['created_at']);
+                            } catch (\Exception $ex) {}
+                        } else if (is_numeric($row['created_at'])) {
+                            $dt = new \DateTime('@' . intval($row['created_at'] / 1000));
+                        }
+                        
+                        if ($dt) {
+                            $dt->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+                            $createdAt = $dt->format('Y-m-d H:i:s');
+                        } else if (is_string($row['created_at'])) {
+                            $createdAt = $row['created_at'];
+                        }
+                    }
+                    
+                    $allMessages[] = [
+                        'id' => $row['uuid'] ?? '',
+                        'uuid' => $row['uuid'] ?? '',
+                        'canvas_id' => (int)($row['canvas_id'] ?? 0),
+                        'user_id' => (int)($row['user_id'] ?? 0),
+                        'message' => $row['message'] ?? '',
+                        'attachments' => $row['attachments'] ?? null,
+                        'visibility' => $row['visibility'] ?? 'visible',
+                        'created_at' => $createdAt
+                    ];
+                }
+                
+                // Sort by created_at DESC
+                usort($allMessages, function($a, $b) {
+                    return strcmp($b['created_at'], $a['created_at']);
+                });
+            } catch (\Exception $e) {
+                Logger::error("Error scanning messages from Cassandra for admin", ['exception' => $e]);
+            }
+        }
         
         $totalPages = ceil($totalItems / $limit);
-
-        $stmt = $pdoCanvases->prepare("
-            SELECT m.id, m.uuid, m.user_id, m.message, m.visibility, m.created_at, m.canvas_id, c.name as canvas_name
-            FROM canvas_chat_messages m
-            LEFT JOIN canvases c ON m.canvas_id = c.id
-            ORDER BY m.id DESC
-            LIMIT ? OFFSET ?
-        ");
-        $stmt->bindValue(1, $limit, \PDO::PARAM_INT);
-        $stmt->bindValue(2, $offset, \PDO::PARAM_INT);
-        $stmt->execute();
+        $messages = array_slice($allMessages, $offset, $limit);
         
-        $messages = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        if (!empty($messages)) {
+            $canvasIds = array_values(array_unique(array_column($messages, 'canvas_id')));
+            if (!empty($canvasIds)) {
+                $placeholders = implode(',', array_fill(0, count($canvasIds), '?'));
+                $canvasStmt = $pdoCanvases->prepare("SELECT id, name FROM canvases WHERE id IN ($placeholders)");
+                $canvasStmt->execute($canvasIds);
+                $canvasMap = [];
+                while ($cRow = $canvasStmt->fetch(\PDO::FETCH_ASSOC)) {
+                    $canvasMap[$cRow['id']] = $cRow['name'];
+                }
+                foreach ($messages as &$msg) {
+                    $msg['canvas_name'] = $canvasMap[$msg['canvas_id']] ?? __('canvas');
+                }
+                unset($msg);
+            }
+        }
 
         if (!empty($messages)) {
             $userIds = array_values(array_unique(array_column($messages, 'user_id')));
@@ -1489,22 +1548,40 @@ class AdminServices {
             }
         }
         
-        $dbManager = new DatabaseManager();
-        $pdoCanvases = $dbManager->getConnection(DB::CONN_CANVASES);
-        
-        $stmt = $pdoCanvases->prepare("
+        $cassandra = new CassandraManager();
+        $session = $cassandra->getSession();
+        if (!$session) {
+            throw new \Exception("Servicio NoSQL no disponible.");
+        }
+
+        // Retrieve message full key using uuid secondary index
+        $stmt = $session->prepare("SELECT canvas_id, created_at FROM canvas_chat_messages WHERE uuid = ?");
+        $rows = $session->execute($stmt, [$messageUuid])->asRowsResult();
+        $msg = null;
+        foreach ($rows as $row) {
+            $msg = $row;
+            break;
+        }
+
+        if (!$msg) {
+            throw new \Exception("Mensaje no encontrado en Cassandra.");
+        }
+
+        $updateStmt = $session->prepare("
             UPDATE canvas_chat_messages 
-            SET visibility = :visibility, 
-                deleted_by = :deleted_by, 
-                delete_reason = :delete_reason 
-            WHERE uuid = :uuid
+            SET visibility = ?, 
+                deleted_by = ?, 
+                delete_reason = ? 
+            WHERE canvas_id = ? AND created_at = ? AND uuid = ?
         ");
         
-        $stmt->execute([
-            ':visibility' => $visibility,
-            ':deleted_by' => $deletedBy,
-            ':delete_reason' => $deleteReason,
-            ':uuid' => $messageUuid
+        $session->execute($updateStmt, [
+            $visibility,
+            $deletedBy,
+            $deleteReason,
+            (int)$msg['canvas_id'],
+            $msg['created_at'],
+            $messageUuid
         ]);
         
         return [
@@ -1524,17 +1601,66 @@ class AdminServices {
         $pdoCanvases = $dbManager->getConnection(DB::CONN_CANVASES);
         $pdoIdentity = $dbManager->getConnection(DB::CONN_IDENTITY);
 
-        $msgStmt = $pdoCanvases->prepare("
-            SELECT m.id, m.uuid, m.user_id, m.message, m.attachments, m.visibility, m.created_at, m.canvas_id, c.name as canvas_name, c.uuid as canvas_uuid
-            FROM canvas_chat_messages m
-            LEFT JOIN canvases c ON m.canvas_id = c.id
-            WHERE m.uuid = :uuid
-        ");
-        $msgStmt->execute([':uuid' => $messageUuid]);
-        $message = $msgStmt->fetch(\PDO::FETCH_ASSOC);
+        $cassandra = new CassandraManager();
+        $session = $cassandra->getSession();
+        $message = null;
+
+        if ($session) {
+            try {
+                $stmt = $session->prepare("SELECT uuid, canvas_id, user_id, message, attachments, visibility, created_at FROM canvas_chat_messages WHERE uuid = ?");
+                $rows = $session->execute($stmt, [$messageUuid])->asRowsResult();
+                
+                foreach ($rows as $row) {
+                    $createdAt = '';
+                    if (isset($row['created_at'])) {
+                        $dt = null;
+                        if ($row['created_at'] instanceof \DateTime) {
+                            $dt = $row['created_at'];
+                        } else if (is_string($row['created_at'])) {
+                            try {
+                                $dt = new \DateTime($row['created_at']);
+                            } catch (\Exception $ex) {}
+                        } else if (is_numeric($row['created_at'])) {
+                            $dt = new \DateTime('@' . intval($row['created_at'] / 1000));
+                        }
+                        
+                        if ($dt) {
+                            $dt->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+                            $createdAt = $dt->format('Y-m-d H:i:s');
+                        } else if (is_string($row['created_at'])) {
+                            $createdAt = $row['created_at'];
+                        }
+                    }
+                    
+                    $message = [
+                        'id' => $row['uuid'] ?? '',
+                        'uuid' => $row['uuid'] ?? '',
+                        'canvas_id' => (int)($row['canvas_id'] ?? 0),
+                        'user_id' => (int)($row['user_id'] ?? 0),
+                        'message' => $row['message'] ?? '',
+                        'attachments' => $row['attachments'] ?? null,
+                        'visibility' => $row['visibility'] ?? 'visible',
+                        'created_at' => $createdAt,
+                        'canvas_name' => '',
+                        'canvas_uuid' => ''
+                    ];
+                    break;
+                }
+            } catch (\Exception $e) {
+                Logger::error("Error querying message for reports from Cassandra", ['exception' => $e]);
+            }
+        }
 
         if (!$message) {
             throw new \Exception("Mensaje no encontrado.");
+        }
+
+        $canvasStmt = $pdoCanvases->prepare("SELECT name, uuid FROM canvases WHERE id = ?");
+        $canvasStmt->execute([$message['canvas_id']]);
+        $canvas = $canvasStmt->fetch(\PDO::FETCH_ASSOC);
+        if ($canvas) {
+            $message['canvas_name'] = $canvas['name'];
+            $message['canvas_uuid'] = $canvas['uuid'];
         }
 
         $senderStmt = $pdoIdentity->prepare("SELECT username FROM users WHERE id = ?");
@@ -1547,7 +1673,7 @@ class AdminServices {
             WHERE r.message_id = :message_id
             ORDER BY r.id DESC
         ");
-        $repStmt->execute([':message_id' => $message['id']]);
+        $repStmt->execute([':message_id' => $message['uuid']]);
         $reports = $repStmt->fetchAll(\PDO::FETCH_ASSOC);
 
         if (!empty($reports)) {

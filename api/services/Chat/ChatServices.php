@@ -4,6 +4,7 @@ namespace App\Api\Services\Chat;
 use App\Core\System\DatabaseConstants as DB;
 use App\Config\Database\DatabaseManager;
 use App\Config\Database\RedisCache;
+use App\Config\Database\CassandraManager;
 use App\Core\System\CacheConstants;
 use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
@@ -45,27 +46,56 @@ class ChatServices
             return ['success' => false, 'message' => __('err_chat_disabled'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
 }
 
-        try {
-            $this->pdo->exec("ALTER TABLE canvas_chat_messages ADD COLUMN attachments JSON DEFAULT NULL AFTER message;");
-        } catch (\Exception $e) {}
-        try {
-            $this->pdo->exec("ALTER TABLE canvas_chat_messages ADD COLUMN visibility ENUM('visible','under_review','deleted') NOT NULL DEFAULT 'visible' AFTER file_size;");
-        } catch (\Exception $e) {}
+        $cassandra = new CassandraManager();
+        $session = $cassandra->getSession();
+        $messages = [];
 
-        $stmt = $this->pdo->prepare("
-            SELECT id, user_id, message, attachments, created_at, visibility 
-            FROM canvas_chat_messages
-            WHERE canvas_id = ?
-            ORDER BY id DESC
-            LIMIT ? OFFSET ?
-        ");
-        
-        $stmt->bindValue(1, $canvasId, PDO::PARAM_INT);
-        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
-        $stmt->bindValue(3, $offset, PDO::PARAM_INT);
-        $stmt->execute();
-        
-        $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($session) {
+            try {
+                $fetchLimit = $offset + $limit;
+                $stmt = $session->prepare("SELECT uuid, user_id, message, attachments, created_at, visibility FROM canvas_chat_messages WHERE canvas_id = ? LIMIT ?");
+                $rows = $session->execute($stmt, [(int)$canvasId, (int)$fetchLimit])->asRowsResult();
+                
+                foreach ($rows as $row) {
+                    $createdAt = '';
+                    if (isset($row['created_at'])) {
+                        $dt = null;
+                        if ($row['created_at'] instanceof \DateTime) {
+                            $dt = $row['created_at'];
+                        } else if (is_string($row['created_at'])) {
+                            try {
+                                $dt = new \DateTime($row['created_at']);
+                            } catch (\Exception $ex) {}
+                        } else if (is_numeric($row['created_at'])) {
+                            $dt = new \DateTime('@' . intval($row['created_at'] / 1000));
+                        }
+                        
+                        if ($dt) {
+                            $dt->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+                            $createdAt = $dt->format('Y-m-d H:i:s');
+                        } else if (is_string($row['created_at'])) {
+                            $createdAt = $row['created_at'];
+                        }
+                    }
+                    
+                    $messages[] = [
+                        'id' => $row['uuid'] ?? '',
+                        'uuid' => $row['uuid'] ?? '',
+                        'user_id' => (int)($row['user_id'] ?? 0),
+                        'message' => $row['message'] ?? '',
+                        'attachments' => $row['attachments'] ?? null,
+                        'created_at' => $createdAt,
+                        'visibility' => $row['visibility'] ?? 'visible'
+                    ];
+                }
+                
+                $messages = array_slice($messages, $offset, $limit);
+            } catch (\Exception $e) {
+                Logger::error("Error querying chat history from Cassandra", ['exception' => $e]);
+            }
+        } else {
+            Logger::error("Cassandra session not available for history query");
+        }
 
         if (!empty($messages)) {
             $userIds = array_values(array_unique(array_column($messages, 'user_id')));
@@ -311,9 +341,29 @@ class ChatServices
             
             $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
         } else {
-            $stmtInsert = $this->pdo->prepare("INSERT INTO canvas_chat_messages (uuid, canvas_id, user_id, message, attachments, file_size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmtInsert->execute([$msgUuid, $canvasId, $userId, $censoredMessageText, $attachmentsJson, $totalSize, $messageData['created_at']]);
-            $messageData['id'] = $this->pdo->lastInsertId();
+            $cassandra = new CassandraManager();
+            $session = $cassandra->getSession();
+            if ($session) {
+                $stmtInsert = $session->prepare("
+                    INSERT INTO canvas_chat_messages (canvas_id, created_at, uuid, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                $session->execute($stmtInsert, [
+                    (int)$canvasId,
+                    new \DateTime($messageData['created_at']),
+                    $msgUuid,
+                    (int)$userId,
+                    $censoredMessageText,
+                    $attachmentsJson,
+                    (int)$totalSize,
+                    'visible',
+                    null,
+                    null
+                ]);
+                $messageData['id'] = $msgUuid;
+            } else {
+                return ['success' => false, 'message' => 'Servicio NoSQL no disponible', 'http_code' => \App\Core\System\HttpConstants::INTERNAL_SERVER_ERROR];
+            }
         }
 
         if ($totalSize > 0) {
@@ -342,9 +392,22 @@ class ChatServices
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 
-        $stmt = $this->pdo->prepare("SELECT id, user_id, file_size, visibility FROM canvas_chat_messages WHERE (id = ? OR uuid = ?) AND canvas_id = ?");
-        $stmt->execute([$msgIntId, $msgUuid, $canvasId]);
-        $msg = $stmt->fetch(PDO::FETCH_ASSOC);
+        $cassandra = new CassandraManager();
+        $session = $cassandra->getSession();
+        if (!$session) {
+            return ['success' => false, 'message' => 'Servicio NoSQL no disponible', 'http_code' => 500];
+        }
+
+        $searchUuid = !empty($msgUuid) ? $msgUuid : (string)$messageId;
+        
+        $stmt = $session->prepare("SELECT canvas_id, created_at, user_id, file_size, visibility FROM canvas_chat_messages WHERE uuid = ?");
+        $rows = $session->execute($stmt, [$searchUuid])->asRowsResult();
+        
+        $msg = null;
+        foreach ($rows as $row) {
+            $msg = $row;
+            break;
+        }
 
         if (!$msg) {
             return ['success' => false, 'message' => __('err_message_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
@@ -354,16 +417,17 @@ class ChatServices
             return ['success' => false, 'message' => __('err_cannot_delete_others_message'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
         }
 
-        // Already deleted — no-op
         if (($msg['visibility'] ?? 'visible') === 'deleted') {
             return ['success' => true, 'message' => __('msg_message_deleted')];
         }
 
-        $resolvedId = (int)$msg['id'];
-
-        // Soft-delete: mark as 'deleted' instead of removing from DB
-        $stmt = $this->pdo->prepare("UPDATE canvas_chat_messages SET visibility = 'deleted' WHERE id = ?");
-        $stmt->execute([$resolvedId]);
+        // Soft-delete in Cassandra
+        $updateStmt = $session->prepare("UPDATE canvas_chat_messages SET visibility = 'deleted' WHERE canvas_id = ? AND created_at = ? AND uuid = ?");
+        $session->execute($updateStmt, [
+            (int)$msg['canvas_id'],
+            $msg['created_at'],
+            $searchUuid
+        ]);
 
         if ($this->redis) {
             $eventPayload = [
@@ -399,17 +463,31 @@ class ChatServices
             return ['success' => false, 'message' => __('validation.invalid_reason'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 
-        $stmt = $this->pdo->prepare("SELECT id FROM canvas_chat_messages WHERE id = ? OR uuid = ?");
-        $stmt->execute([$msgIntId, $msgUuid]);
-        $msg = $stmt->fetch(PDO::FETCH_ASSOC);
+        $cassandra = new CassandraManager();
+        $session = $cassandra->getSession();
+        if (!$session) {
+            return ['success' => false, 'message' => 'Servicio NoSQL no disponible', 'http_code' => 500];
+        }
+
+        $searchUuid = !empty($msgUuid) ? $msgUuid : (string)$messageId;
+        
+        $stmt = $session->prepare("SELECT uuid FROM canvas_chat_messages WHERE uuid = ?");
+        $rows = $session->execute($stmt, [$searchUuid])->asRowsResult();
+        
+        $msg = null;
+        foreach ($rows as $row) {
+            $msg = $row;
+            break;
+        }
+
         if (!$msg) {
             return ['success' => false, 'message' => __('err_message_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
         }
 
-        $resolvedId = (int)$msg['id'];
+        $resolvedUuid = $msg['uuid'];
 
         $stmtInsert = $this->pdo->prepare("INSERT INTO " . DB::TBL_CANVAS_CHAT_REPORTS . " (message_id, reporter_user_id, reason_key, details) VALUES (?, ?, ?, ?)");
-        $stmtInsert->execute([$resolvedId, $userId, $reason, $details]);
+        $stmtInsert->execute([$resolvedUuid, $userId, $reason, $details]);
 
         return ['success' => true, 'message' => __('msg_message_reported')];
     }

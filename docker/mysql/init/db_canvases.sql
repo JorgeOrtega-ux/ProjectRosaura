@@ -279,7 +279,7 @@ CREATE TABLE IF NOT EXISTS `canvas_sanctions` (
 
 CREATE TABLE IF NOT EXISTS `canvas_chat_reports` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `message_id` INT NOT NULL,
+  `message_id` VARCHAR(36) NOT NULL,
   `reporter_user_id` INT NOT NULL,
   `reason_key` VARCHAR(50) NOT NULL,
   `details` TEXT DEFAULT NULL,

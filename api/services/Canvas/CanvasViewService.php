@@ -1583,9 +1583,21 @@ class CanvasViewService {
                     if ($isPending) {
                         $attachments = [];
                     } else {
-                        $stmtMsg = $pdo->prepare("SELECT attachments FROM canvas_chat_messages WHERE id = ? AND canvas_id = ?");
-                        $stmtMsg->execute([$msgId, $canvasId]);
-                        $msg = $stmtMsg->fetch(\PDO::FETCH_ASSOC);
+                        $cassandra = new \App\Config\Database\CassandraManager();
+                        $session = $cassandra->getSession();
+                        $msg = null;
+                        if ($session) {
+                            try {
+                                $stmtMsg = $session->prepare("SELECT attachments FROM canvas_chat_messages WHERE uuid = ?");
+                                $rows = $session->execute($stmtMsg, [(string)$msgId])->asRowsResult();
+                                foreach ($rows as $row) {
+                                    $msg = $row;
+                                    break;
+                                }
+                            } catch (\Exception $e) {
+                                Logger::error("Error fetching message attachments from Cassandra", ['exception' => $e]);
+                            }
+                        }
                         if ($msg && !empty($msg['attachments'])) {
                             $decoded = is_string($msg['attachments']) ? json_decode($msg['attachments'], true) : $msg['attachments'];
                             if (is_array($decoded)) {

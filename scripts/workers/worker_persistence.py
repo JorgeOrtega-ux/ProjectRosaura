@@ -9,6 +9,9 @@ import boto3
 import botocore
 import uuid
 from dotenv import load_dotenv
+from cassandra.cluster import Cluster
+from cassandra.query import BatchStatement
+from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
@@ -39,6 +42,10 @@ DB_PORT = int(os.getenv("DB_PORT") or 3306)
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_NAME = os.getenv("DB_CANVASES_NAME")
+
+CASSANDRA_HOST = os.getenv("CASSANDRA_HOST") or "cassandra"
+CASSANDRA_PORT = int(os.getenv("CASSANDRA_PORT") or 9042)
+CASSANDRA_KEYSPACE = os.getenv("CASSANDRA_KEYSPACE") or "db_canvases_nosql"
 
 # Canvas Persistence Config
 CANVAS_SYNC_INTERVAL = int(os.getenv("WORKER_CANVAS_SYNC_INTERVAL") or 5)
@@ -187,66 +194,153 @@ def canvas_persistence_thread():
 
 
 def chat_persistence_thread():
-    print("[*] Starting Chat Persistence Thread...")
+    print("[*] Starting Chat Persistence Thread (Cassandra)...")
     r = get_redis_client()
     if not r:
         print("[!] Chat thread could not connect to Redis on any host.")
         return
 
+    cassandra_cluster = None
+    cassandra_session = None
+
+    def connect_cassandra():
+        nonlocal cassandra_cluster, cassandra_session
+        try:
+            print(f"[*] Connecting to Cassandra at {CASSANDRA_HOST}:{CASSANDRA_PORT}...")
+            cassandra_cluster = Cluster([CASSANDRA_HOST], port=CASSANDRA_PORT, connect_timeout=10)
+            cassandra_session = cassandra_cluster.connect()
+            
+            # Auto-initialize schema
+            cassandra_session.execute(f"""
+                CREATE KEYSPACE IF NOT EXISTS {CASSANDRA_KEYSPACE}
+                WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}
+            """)
+            cassandra_session.set_keyspace(CASSANDRA_KEYSPACE)
+            cassandra_session.execute("""
+                CREATE TABLE IF NOT EXISTS canvas_chat_messages (
+                    canvas_id int,
+                    created_at timestamp,
+                    uuid text,
+                    user_id int,
+                    message text,
+                    attachments text,
+                    file_size bigint,
+                    visibility text,
+                    deleted_by text,
+                    delete_reason text,
+                    PRIMARY KEY (canvas_id, created_at, uuid)
+                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC)
+            """)
+            cassandra_session.execute("CREATE INDEX IF NOT EXISTS ON canvas_chat_messages (uuid)")
+            cassandra_session.execute("CREATE INDEX IF NOT EXISTS ON canvas_chat_messages (user_id)")
+            print("[+] Cassandra connected and schema verified.")
+            return True
+        except Exception as e:
+            print(f"[!] Cassandra initialization/connection error: {e}")
+            if cassandra_cluster:
+                try:
+                    cassandra_cluster.shutdown()
+                except:
+                    pass
+            cassandra_cluster = None
+            cassandra_session = None
+            return False
+
+    # Attempt initial connection
+    connect_cassandra()
+
     while True:
         try:
+            # Check Redis queue
             queue_len = r.llen('canvas_chat_queue')
             if queue_len > 0:
+                # If Cassandra is not connected, try to connect now
+                if not cassandra_session:
+                    if not connect_cassandra():
+                        print("[!] Cassandra offline, keeping messages in Redis queue...")
+                        time.sleep(CHAT_SYNC_INTERVAL)
+                        continue
+
                 limit = min(queue_len, CHAT_BATCH_SIZE)
                 raw_messages = r.lrange('canvas_chat_queue', 0, limit - 1)
                 if raw_messages:
-                    db_conn = get_db_connection()
-                    if db_conn:
-                        cursor = db_conn.cursor()
+                    insert_data = []
+                    for raw_msg in raw_messages:
                         try:
-                            insert_data = []
-                            for raw_msg in raw_messages:
+                            msg_data = json.loads(raw_msg.decode('utf-8'))
+                            created_at_str = msg_data.get('created_at')
+                            if created_at_str:
                                 try:
-                                    msg_data = json.loads(raw_msg.decode('utf-8'))
-                                    insert_data.append((
-                                        msg_data.get('uuid') or str(uuid.uuid4()),
-                                        msg_data['canvas_id'],
-                                        msg_data['user_id'],
-                                        msg_data['message'],
-                                        msg_data['attachments'],
-                                        msg_data.get('file_size', 0),
-                                        msg_data['created_at']
-                                    ))
-                                except Exception as e:
-                                    print(f"[!] Error parsing message from Redis, discarding: {e}")
-                            
-                            if insert_data:
-                                query = """
-                                    INSERT INTO canvas_chat_messages (uuid, canvas_id, user_id, message, attachments, file_size, created_at) 
-                                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                                """
-                                cursor.executemany(query, insert_data)
+                                    created_at_dt = datetime.strptime(created_at_str, '%Y-%m-%d %H:%M:%S')
+                                except ValueError:
+                                    created_at_dt = datetime.now()
+                            else:
+                                created_at_dt = datetime.now()
 
-                                canvas_msg_counts = {}
-                                for item in insert_data:
-                                    c_id = item[1]
-                                    canvas_msg_counts[c_id] = canvas_msg_counts.get(c_id, 0) + 1
-                                for c_id, count in canvas_msg_counts.items():
-                                    cursor.execute("UPDATE canvases SET total_messages = total_messages + %s WHERE id = %s", (count, c_id))
-
-                                db_conn.commit()
-                                print(f"[+] Bulk inserted {len(insert_data)} chat messages into MySQL and updated total_messages counters.")
-                            
-                            r.ltrim('canvas_chat_queue', limit, -1)
-                        
+                            insert_data.append({
+                                'uuid': msg_data.get('uuid') or str(uuid.uuid4()),
+                                'canvas_id': int(msg_data['canvas_id']),
+                                'user_id': int(msg_data['user_id']),
+                                'message': msg_data['message'],
+                                'attachments': msg_data.get('attachments'), # this is already a JSON string or None
+                                'file_size': int(msg_data.get('file_size') or 0),
+                                'created_at': created_at_dt
+                            })
                         except Exception as e:
-                            print(f"[!] Error bulk inserting chat to DB: {e}")
-                            db_conn.rollback()
-                        finally:
-                            cursor.close()
-                            db_conn.close()
-                    else:
-                        print("[!] MySQL inaccessible, keeping messages in Redis queue...")
+                            print(f"[!] Error parsing message from Redis, discarding: {e}")
+                    
+                    if insert_data:
+                        try:
+                            # Batch insert to Cassandra
+                            insert_stmt = cassandra_session.prepare("""
+                                INSERT INTO canvas_chat_messages (canvas_id, created_at, uuid, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """)
+                            
+                            batch = BatchStatement()
+                            for item in insert_data:
+                                batch.add(insert_stmt, (
+                                    item['canvas_id'],
+                                    item['created_at'],
+                                    item['uuid'],
+                                    item['user_id'],
+                                    item['message'],
+                                    item['attachments'],
+                                    item['file_size'],
+                                    'visible',
+                                    None,
+                                    None
+                                ))
+                            
+                            cassandra_session.execute(batch)
+                            
+                            # Update total_messages in MySQL
+                            db_conn = get_db_connection()
+                            if db_conn:
+                                cursor = db_conn.cursor()
+                                try:
+                                    canvas_msg_counts = {}
+                                    for item in insert_data:
+                                        c_id = item['canvas_id']
+                                        canvas_msg_counts[c_id] = canvas_msg_counts.get(c_id, 0) + 1
+                                    for c_id, count in canvas_msg_counts.items():
+                                        cursor.execute("UPDATE canvases SET total_messages = total_messages + %s WHERE id = %s", (count, c_id))
+                                    db_conn.commit()
+                                except Exception as mysql_err:
+                                    print(f"[!] MySQL total_messages update error: {mysql_err}")
+                                finally:
+                                    cursor.close()
+                                    db_conn.close()
+                            
+                            print(f"[+] Bulk inserted {len(insert_data)} chat messages into Cassandra.")
+                            # Trim Redis queue only after successful Cassandra insert
+                            r.ltrim('canvas_chat_queue', limit, -1)
+
+                        except Exception as cass_err:
+                            print(f"[!] Error bulk inserting chat to Cassandra: {cass_err}")
+                            # Force reconnect Cassandra next run if connection seems lost
+                            cassandra_session = None
+                            cassandra_cluster = None
                         
         except Exception as e:
             print(f"[!] Error processing chat messages from Redis: {e}")

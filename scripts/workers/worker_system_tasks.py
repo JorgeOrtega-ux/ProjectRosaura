@@ -18,6 +18,7 @@ import pymysql
 import typesense
 import logging
 from dotenv import load_dotenv
+from cassandra.cluster import Cluster
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
@@ -205,7 +206,30 @@ def process_deletion(payload):
             # Purge db_canvases tables
             cursor_can.execute("DELETE FROM user_templates WHERE user_id = %s", (user_id,))
             cursor_can.execute("DELETE FROM canvas_snapshots_likes WHERE user_id = %s", (user_id,))
-            cursor_can.execute("DELETE FROM canvas_chat_messages WHERE user_id = %s", (user_id,))
+            
+            # Purge canvas_chat_messages from Cassandra
+            try:
+                cass_host = os.getenv("CASSANDRA_HOST") or "cassandra"
+                cass_port = int(os.getenv("CASSANDRA_PORT") or 9042)
+                cass_keyspace = os.getenv("CASSANDRA_KEYSPACE") or "db_canvases_nosql"
+                cluster = Cluster([cass_host], port=cass_port, connect_timeout=10)
+                session = cluster.connect(cass_keyspace)
+                
+                # Query messages by user_id
+                stmt = session.prepare("SELECT canvas_id, created_at, uuid FROM canvas_chat_messages WHERE user_id = ?")
+                rows = session.execute(stmt, [int(user_id)])
+                
+                delete_stmt = session.prepare("DELETE FROM canvas_chat_messages WHERE canvas_id = ? AND created_at = ? AND uuid = ?")
+                deleted_count = 0
+                for row in rows:
+                    session.execute(delete_stmt, (row.canvas_id, row.created_at, row.uuid))
+                    deleted_count += 1
+                cluster.shutdown()
+                if deleted_count > 0:
+                    Logger.info(f"Purged {deleted_count} chat messages from Cassandra for user_id={user_id}")
+            except Exception as cass_err:
+                Logger.error(f"Error purging chat messages from Cassandra for user_id={user_id}: {cass_err}")
+
             cursor_can.execute("DELETE FROM canvas_chat_reports WHERE reporter_user_id = %s", (user_id,))
             if uuid_str:
                 cursor_can.execute("DELETE FROM canvas_sanctions WHERE user_id = %s OR restricted_by = %s OR user_id = %s OR restricted_by = %s", (str(user_id), str(user_id), uuid_str, uuid_str))

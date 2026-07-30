@@ -527,7 +527,9 @@ class CanvasCoreService {
 
             if (!$isOfficial) {
                 try {
-                    $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository);
+                    $dbManager = new DatabaseManager();
+                    $redisCache = new RedisCache();
+                    $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository, $dbManager, $redisCache);
                     $lockManager->evaluateUserCanvases($userId);
                 } catch (Exception $e) {
                     Logger::error('Error evaluating canvases on create.', ['error' => $e->getMessage()]);
@@ -777,7 +779,9 @@ class CanvasCoreService {
 
             // Re-evaluate user canvases locks to unlock the canvas now that it matches the plan limit
             try {
-                $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository);
+                $dbManager = new DatabaseManager();
+                $redisCache = new RedisCache();
+                $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository, $dbManager, $redisCache);
                 $lockManager->evaluateUserCanvases($userId);
             } catch (\Throwable $e) {
                 Logger::error('Error evaluating canvases on downgrade.', ['error' => $e->getMessage()]);
@@ -835,7 +839,9 @@ class CanvasCoreService {
 
                 if ($canvas['owner_id'] !== null) {
                     try {
-                        $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository);
+                        $dbManager = new DatabaseManager();
+                        $redisCache = new RedisCache();
+                        $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository, $dbManager, $redisCache);
                         $lockManager->evaluateUserCanvases($canvas['owner_id']);
                     } catch (Exception $e) {
                         Logger::error('Error evaluating canvases on delete.', ['error' => $e->getMessage()]);

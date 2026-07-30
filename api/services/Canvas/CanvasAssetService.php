@@ -6,6 +6,7 @@ use Exception;
 use DateTime;
 use App\Core\Interfaces\CanvasRepositoryInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Interfaces\PaletteRepositoryInterface;
 use App\Core\Helpers\Utils;
 use App\Core\Helpers\EnvLoader;
 use App\Core\System\Logger;

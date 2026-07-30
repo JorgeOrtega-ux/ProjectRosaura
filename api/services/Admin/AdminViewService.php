@@ -4,6 +4,7 @@ namespace App\Api\Services\Admin;
 
 use App\Config\Database\DatabaseManager;
 use App\Config\Database\RedisCache;
+use App\Config\Database\CassandraManager;
 use App\Core\Repositories\UserRepository;
 use App\Core\Repositories\RoleRepository;
 use App\Core\System\UserPrefsManager;
@@ -720,12 +721,13 @@ class AdminViewService {
         $limit = 25;
         if ($page < 1) $page = 1;
 
-        $messages = [];
+        $cassandra = new CassandraManager();
+        $session = $cassandra->getSession();
+        $allMessages = [];
         $totalMessages = 0;
 
         try {
-            $stmtCount = $pdo->query("SELECT COUNT(id) FROM canvas_chat_messages");
-            $totalMessages = (int)$stmtCount->fetchColumn();
+            $totalMessages = (int)$pdo->query("SELECT COALESCE(SUM(total_messages), 0) FROM canvases")->fetchColumn();
         } catch (\Throwable $e) {
             Logger::error("getManageMessagesData totalMessages error: " . $e->getMessage(), ['exception' => $e]);
         }
@@ -735,15 +737,56 @@ class AdminViewService {
         if ($page > $totalPages) $page = $totalPages;
         $offset = ($page - 1) * $limit;
 
-        try {
-            $stmt = $pdo->prepare("SELECT * FROM canvas_chat_messages ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
-            $stmt->bindValue(':limit', (int)$limit, \PDO::PARAM_INT);
-            $stmt->bindValue(':offset', (int)$offset, \PDO::PARAM_INT);
-            $stmt->execute();
-            $messages = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {
-            Logger::error("getManageMessagesData select messages error: " . $e->getMessage(), ['exception' => $e]);
+        if ($session) {
+            try {
+                $rows = $session->query("SELECT uuid, canvas_id, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason, created_at FROM canvas_chat_messages LIMIT 1000")->asRowsResult();
+                foreach ($rows as $row) {
+                    $createdAt = '';
+                    if (isset($row['created_at'])) {
+                        $dt = null;
+                        if ($row['created_at'] instanceof \DateTime) {
+                            $dt = $row['created_at'];
+                        } else if (is_string($row['created_at'])) {
+                            try {
+                                $dt = new \DateTime($row['created_at']);
+                            } catch (\Exception $ex) {}
+                        } else if (is_numeric($row['created_at'])) {
+                            $dt = new \DateTime('@' . intval($row['created_at'] / 1000));
+                        }
+                        
+                        if ($dt) {
+                            $dt->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+                            $createdAt = $dt->format('Y-m-d H:i:s');
+                        } else if (is_string($row['created_at'])) {
+                            $createdAt = $row['created_at'];
+                        }
+                    }
+                    
+                    $allMessages[] = [
+                        'id' => $row['uuid'] ?? '',
+                        'uuid' => $row['uuid'] ?? '',
+                        'canvas_id' => (int)($row['canvas_id'] ?? 0),
+                        'user_id' => (int)($row['user_id'] ?? 0),
+                        'message' => $row['message'] ?? '',
+                        'attachments' => $row['attachments'] ?? null,
+                        'file_size' => (int)($row['file_size'] ?? 0),
+                        'visibility' => $row['visibility'] ?? 'visible',
+                        'deleted_by' => $row['deleted_by'] ?? null,
+                        'delete_reason' => $row['delete_reason'] ?? null,
+                        'created_at' => $createdAt
+                    ];
+                }
+                
+                // Sort by created_at DESC
+                usort($allMessages, function($a, $b) {
+                    return strcmp($b['created_at'], $a['created_at']);
+                });
+            } catch (\Throwable $e) {
+                Logger::error("getManageMessagesData select messages error: " . $e->getMessage(), ['exception' => $e]);
+            }
         }
+
+        $messages = array_slice($allMessages, $offset, $limit);
 
         return [
             'messages' => $messages,

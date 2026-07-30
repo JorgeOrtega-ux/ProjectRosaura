@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1e04f169efb04f2a57a9d9748ddfcf01",
+    "content-hash": "d7df65de81628d8dd3248d2cf9aef10f",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -1310,6 +1310,73 @@
                 }
             ],
             "time": "2026-01-02T08:56:05+00:00"
+        },
+        {
+            "name": "mroosz/php-cassandra",
+            "version": "v1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/MichaelRoosz/php-cassandra.git",
+                "reference": "4b44aa5a9ee267e1fe078e33c3a7479fa3736ad1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/MichaelRoosz/php-cassandra/zipball/4b44aa5a9ee267e1fe078e33c3a7479fa3736ad1",
+                "reference": "4b44aa5a9ee267e1fe078e33c3a7479fa3736ad1",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1"
+            },
+            "require-dev": {
+                "bartlett/php-compatinfo": "^7.2.4",
+                "ext-bcmath": "*",
+                "ext-gmp": "*",
+                "friendsofphp/php-cs-fixer": "^3.89.2",
+                "phpbench/phpbench": "^1.4.3",
+                "phpstan/phpstan": "^2.1.32",
+                "phpunit/phpunit": "^10.5.58",
+                "vimeo/psalm": "^7.0.0-beta11"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Cassandra\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Michael Roosz",
+                    "email": "michael.roosz@web.de"
+                },
+                {
+                    "name": "Shen Zhenyu",
+                    "email": "zhenyupku@gmail.com"
+                },
+                {
+                    "name": "Evseev Nikolay",
+                    "email": "evseevnn@gmail.com"
+                }
+            ],
+            "description": "Cassandra client library with support for protocol v5 and asynchronous requests",
+            "homepage": "https://github.com/MichaelRoosz/php-cassandra",
+            "keywords": [
+                "cassandra",
+                "client",
+                "cql",
+                "database",
+                "driver",
+                "nosql"
+            ],
+            "support": {
+                "issues": "https://github.com/MichaelRoosz/php-cassandra/issues",
+                "source": "https://github.com/MichaelRoosz/php-cassandra/tree/v1.2.0"
+            },
+            "time": "2025-11-19T15:21:53+00:00"
         },
         {
             "name": "mtdowling/jmespath.php",
