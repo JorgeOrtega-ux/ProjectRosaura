@@ -27,8 +27,8 @@ export const SkeletonTemplates = {
                 return this.chatSkeleton();
             case 'layout-design':
                 return this.designSkeleton();
-            case 'canvasInfoSkeleton':
-                return this.canvasInfoSkeleton();
+            case 'detailsSkeleton':
+                return this.detailsSkeleton();
             default:
                 return this.basicSkeleton();
         }
@@ -570,47 +570,47 @@ export const SkeletonTemplates = {
         draw();
     },
 
-    canvasInfoSkeleton() {
+    detailsSkeleton() {
         return `
-            <div class="canvas-info-content-container">
-                <div class="canvas-info-image-card component-skeleton"></div>
-                <div class="canvas-info-details-card">
-                    <div class="canvas-info-details-top">
-                        <div class="component-menu-link component-menu-link--bordered nav-item canvas-info-toggle-btn">
+            <div class="component-details-content-container">
+                <div class="component-details-image-card component-skeleton"></div>
+                <div class="component-details-card">
+                    <div class="component-details-card-top">
+                        <div class="component-menu-link component-menu-link--bordered nav-item component-details-toggle-btn">
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w110"></div>
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w40"></div>
                         </div>
                     </div>
-                    <div class="canvas-info-details-rows-container expanded">
-                        <div class="canvas-info-row">
+                    <div class="component-details-rows-container expanded">
+                        <div class="component-details-row">
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w70"></div>
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w90"></div>
                         </div>
-                        <div class="canvas-info-row">
+                        <div class="component-details-row">
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w80"></div>
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w100"></div>
                         </div>
-                        <div class="canvas-info-row">
+                        <div class="component-details-row">
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w70"></div>
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w110"></div>
                         </div>
-                        <div class="canvas-info-row">
+                        <div class="component-details-row">
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w90"></div>
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w80"></div>
                         </div>
-                        <div class="canvas-info-row">
+                        <div class="component-details-row">
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w70"></div>
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w90"></div>
                         </div>
-                        <div class="canvas-info-row">
+                        <div class="component-details-row">
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w80"></div>
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w100"></div>
                         </div>
-                        <div class="canvas-info-row">
+                        <div class="component-details-row">
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w70"></div>
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w90"></div>
                         </div>
-                        <div class="canvas-info-row">
+                        <div class="component-details-row">
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w80"></div>
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w110"></div>
                         </div>

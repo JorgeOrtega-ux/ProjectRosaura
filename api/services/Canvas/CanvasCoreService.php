@@ -44,27 +44,19 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_canvas_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
             }
 
-            $ticketUuid = Utils::generateUUID();
-            
-            $ticketData = [
+            $secret = getenv('INTERNAL_API_SECRET') ?: 'default_secret';
+            $time = time();
+            $tokenData = [
                 'type' => $userId !== null ? 'auth' : 'guest',
                 'user_id' => $userId,
                 'canvas_id' => $canvasId,
-                'created_at' => time()
+                'iat' => $time,
+                'exp' => $time + 15
             ];
 
-            if (class_exists(RedisCache::class)) {
-                $redisInstance = new RedisCache();
-                $redis = $redisInstance->getClient();
-                if ($redis) {
-                    $key = "ws:ticket:{$ticketUuid}";
-                    $redis->setex($key, 15, json_encode($ticketData));
-                    
-                    return ['success' => true, 'data' => ['ticket' => $ticketUuid]];
-                }
-            }
-            
-            return ['success' => false, 'message' => __('err_ws_unavailable'), 'http_code' => 503];
+            $token = \App\Core\Security\JWT::encode($tokenData, $secret);
+
+            return ['success' => true, 'data' => ['ticket' => $token]];
 
         } catch (Exception $e) {
             Logger::error('Error generating WS ticket.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);

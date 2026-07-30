@@ -362,7 +362,7 @@ export class CanvasCardInteractions {
             const toggleBtn = e.target.closest('[data-action="toggleInfoDetails"]');
             if (toggleBtn) {
                 e.preventDefault();
-                const container = toggleBtn.closest('.canvas-info-details-card')?.querySelector('.canvas-info-details-rows-container');
+                const container = toggleBtn.closest('.component-details-card')?.querySelector('.component-details-rows-container');
                 if (container) {
                     const isCollapsed = container.classList.contains('collapsed');
                     if (isCollapsed) {
@@ -404,7 +404,7 @@ export class CanvasCardInteractions {
         const headerSkeletonEl = moduleEl.querySelector('[data-ref="canvas-info-header-skeleton"]');
 
         if (loaderEl) {
-            renderSkeleton(loaderEl, 'canvasInfoSkeleton');
+            renderSkeleton(loaderEl, 'detailsSkeleton');
             loaderEl.classList.remove('disabled');
             loaderEl.classList.add('active');
         }
@@ -417,7 +417,7 @@ export class CanvasCardInteractions {
         if (headerSkeletonEl) headerSkeletonEl.classList.remove('disabled');
 
         const detailsToggleBtn = moduleEl.querySelector('[data-action="toggleInfoDetails"]');
-        const detailsRowsContainer = moduleEl.querySelector('.canvas-info-details-rows-container');
+        const detailsRowsContainer = moduleEl.querySelector('.component-details-rows-container');
         if (detailsToggleBtn && detailsRowsContainer) {
             detailsToggleBtn.classList.remove('expanded');
             detailsRowsContainer.classList.remove('expanded');

@@ -4,17 +4,27 @@ use axum::{
 };
 use std::collections::HashMap;
 use tracing::{info, warn};
-use serde_json::Value;
 use deadpool_redis::redis::AsyncCommands;
 use uuid::Uuid;
 use futures::{sink::SinkExt, stream::StreamExt};
 use tokio::sync::mpsc;
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
+use std::time::{SystemTime, UNIX_EPOCH};
+use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
 
 use crate::state::{AppState, ClientMeta};
 use crate::models::WsMessage;
 use crate::actions;
 use crate::helpers;
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+struct Claims {
+    #[serde(rename = "type")]
+    user_type: String,
+    user_id: Option<serde_json::Value>,
+    canvas_id: serde_json::Value,
+    iat: usize,
+    exp: usize,
+}
 
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
@@ -37,43 +47,49 @@ pub async fn ws_handler(
 }
 
 async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String, state: AppState) {
-    let mut redis_conn = match state.redis_pool.get().await {
-        Ok(conn) => conn,
-        Err(_) => {
+    let secret = std::env::var("INTERNAL_API_SECRET").unwrap_or_else(|_| "default_secret".to_string());
+    
+    let mut validation = Validation::new(Algorithm::HS256);
+    validation.validate_exp = true;
+    
+    let token_data = decode::<Claims>(
+        &ticket,
+        &DecodingKey::from_secret(secret.as_bytes()),
+        &validation,
+    );
+
+    let claims = match token_data {
+        Ok(data) => data.claims,
+        Err(err) => {
+            warn!("Connection rejected: Ticket/Token is invalid. Error: {:?}", err);
             let _ = socket.send(Message::Close(None)).await;
             return;
         }
     };
 
-    let ticket_key = format!("ws:ticket:{}", ticket);
-    let ticket_data_raw: Option<String> = redis_conn.get(&ticket_key).await.unwrap_or(None);
+    // Ensure canvas_id in token matches the path canvas_id
+    let token_canvas_id_str = match &claims.canvas_id {
+        serde_json::Value::Number(num) => num.to_string(),
+        serde_json::Value::String(s) => s.clone(),
+        _ => {
+            warn!("Connection rejected: Invalid canvas_id in token.");
+            let _ = socket.send(Message::Close(None)).await;
+            return;
+        }
+    };
 
-    if ticket_data_raw.is_none() {
-        warn!("Connection rejected: Ticket '{}' invalid or expired.", ticket);
+    if token_canvas_id_str != canvas_id {
+        warn!("Connection rejected: Token canvas_id '{}' does not match path canvas_id '{}'.", token_canvas_id_str, canvas_id);
         let _ = socket.send(Message::Close(None)).await;
         return;
     }
 
-    let _: () = redis_conn.del(&ticket_key).await.unwrap_or(());
-
-    let ticket_data: Value = match serde_json::from_str(&ticket_data_raw.unwrap()) {
-        Ok(data) => data,
-        Err(_) => {
-            let _ = socket.send(Message::Close(None)).await;
-            return;
-        }
+    let user_type = claims.user_type;
+    let user_id = match &claims.user_id {
+        Some(serde_json::Value::Number(num)) => Some(num.to_string()),
+        Some(serde_json::Value::String(s)) => Some(s.clone()),
+        _ => None,
     };
-
-    let user_type = ticket_data.get("type").and_then(|v| v.as_str()).unwrap_or("guest").to_string();
-    let user_id = ticket_data.get("user_id").and_then(|v| {
-        if v.is_string() {
-            Some(v.as_str().unwrap().to_string())
-        } else if v.is_number() {
-            Some(v.as_i64().unwrap().to_string())
-        } else {
-            None
-        }
-    });
 
     let max_connections = std::env::var("WS_MAX_CONNECTIONS").unwrap_or_else(|_| "1000".to_string()).parse::<usize>().unwrap_or(1000);
     let qos_threshold = std::env::var("WS_QOS_THRESHOLD").unwrap_or_else(|_| "900".to_string()).parse::<usize>().unwrap_or(900);
