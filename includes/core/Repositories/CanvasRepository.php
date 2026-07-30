@@ -461,7 +461,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $final = $result ? $this->appendSnapshotUrl($result) : null;
         
         if ($final && $this->redisClient) {
-            $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($final));
+            $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($final));
         }
         
         return $final;
@@ -857,6 +857,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             if ($stmtMembers->rowCount() > 0) {
                 $stmtUpdate = $this->db->prepare("UPDATE " . DB::TBL_CANVASES . " SET members_count = GREATEST(members_count - 1, 0) WHERE id = :cid");
                 $stmtUpdate->execute([':cid' => $canvasId]);
+                $this->invalidateCanvasCache($canvasId);
             }
             
             $this->db->commit();
@@ -992,7 +993,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 take_snapshot = :upd_take_snapshot";
         
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
+        $success = $stmt->execute([
             ':canvas_id'         => $canvasId,
             ':is_active'         => $settings['is_active'],
             ':next_reset_at'     => $settings['next_reset_at'],
@@ -1002,6 +1003,10 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':upd_next_reset_at' => $settings['next_reset_at'],
             ':upd_take_snapshot' => $settings['take_snapshot']
         ]);
+        if ($success) {
+            $this->invalidateCanvasCache($canvasId);
+        }
+        return $success;
     }
 
     public function getResizeSettings(int $canvasId): ?array {
@@ -1024,7 +1029,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 target_size = :upd_target_size";
         
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
+        $success = $stmt->execute([
             ':canvas_id'         => $canvasId,
             ':is_active'         => $settings['is_active'],
             ':next_resize_at'    => $settings['next_resize_at'],
@@ -1034,6 +1039,10 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':upd_next_resize_at'=> $settings['next_resize_at'],
             ':upd_target_size'   => $settings['target_size']
         ]);
+        if ($success) {
+            $this->invalidateCanvasCache($canvasId);
+        }
+        return $success;
     }
 
     public function getSnapshotByUuid(string $uuid): ?array {
@@ -1159,6 +1168,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $newCount = (int)$countStmt->fetchColumn();
 
             $this->db->commit();
+            $this->invalidateCanvasCache($canvasId);
 
             return [
                 'action' => $action,

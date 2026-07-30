@@ -1347,7 +1347,7 @@ export const DialogTemplates = {
                     getValue: (t) => parseInt(t.max_canvases, 10) === -1 ? __('upgrade_val_unlimited', [], 'Ilimitados') : t.max_canvases
                 },
                 {
-                    label: __('plan_limit_snapshots', [], 'Instantáneas por lienzo'),
+                    label: __('plan_limit_capturas', [], 'Capturas por lienzo'),
                     getValue: (t) => parseInt(t.max_snapshots_per_canvas, 10) === -1 ? __('upgrade_val_unlimited', [], 'Ilimitados') : t.max_snapshots_per_canvas
                 },
                 {

@@ -86,11 +86,11 @@ class AppViewService {
                 }
             ],
             [
-                'label' => __('plan_limit_snapshots', 'Snapshots'),
-                'desc' => __('plan_limit_snapshots_desc'),
+                'label' => __('plan_limit_capturas', 'Capturas'),
+                'desc' => __('plan_limit_capturas_desc'),
                 'icon' => 'history',
                 'values_fn' => function($t) {
-                    return $t['max_snapshots_per_canvas'] == -1 ? __('plan_limit_unlimited', 'Ilimitado') : $t['max_snapshots_per_canvas'] . ' ' . __('plan_limit_snapshots', 'Snapshots');
+                    return $t['max_snapshots_per_canvas'] == -1 ? __('plan_limit_unlimited', 'Ilimitado') : $t['max_snapshots_per_canvas'] . ' ' . __('plan_limit_capturas', 'Capturas');
                 }
             ],
             [

@@ -22,7 +22,7 @@ class SubscriptionPlanConstants {
         'feat_unlimited_exports' => [
             'key' => 'feat_unlimited_exports',
             'name' => 'Exportaciones Ilimitadas',
-            'desc' => 'Exportación ilimitada de instantáneas e imágenes'
+            'desc' => 'Exportación ilimitada de capturas e imágenes'
         ],
         'feat_inject_templates' => [
             'key' => 'feat_inject_templates',

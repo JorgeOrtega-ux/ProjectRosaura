@@ -247,7 +247,7 @@ class CanvasSettingsService {
                 if ($planLimits['max_snapshots_per_canvas'] !== -1) {
                     $currentSnapshots = $this->canvasRepository->countCanvasSnapshots($canvasId);
                     if ($currentSnapshots >= $planLimits['max_snapshots_per_canvas']) {
-                        return ['success' => false, 'message' => __('err_max_snapshots_reached')];
+                        return ['success' => false, 'message' => __('err_max_capturas_reached')];
                     }
                 }
             }
@@ -382,7 +382,7 @@ class CanvasSettingsService {
                 if ($planLimits['max_snapshots_per_canvas'] !== -1) {
                     $currentSnapshots = $this->canvasRepository->countCanvasSnapshots($canvasId);
                     if ($currentSnapshots >= $planLimits['max_snapshots_per_canvas']) {
-                        return ['success' => false, 'message' => __('err_max_snapshots_reached')];
+                        return ['success' => false, 'message' => __('err_max_capturas_reached')];
                     }
                 }
             }
@@ -401,7 +401,7 @@ class CanvasSettingsService {
                 Logger::error('Error insertando orden de snapshot en Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
             }
 
-            return ['success' => true, 'message' => __('msg_snapshot_order_sent')];
+            return ['success' => true, 'message' => __('msg_captura_order_sent')];
             
         } catch (Exception $e) {
             Logger::error('Error in createSnapshot.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);

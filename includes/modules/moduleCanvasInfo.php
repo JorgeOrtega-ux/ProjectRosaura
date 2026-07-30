@@ -68,6 +68,10 @@
                             <span class="component-details-label">Favoritos</span>
                             <span data-ref="canvas-info-favorites" class="component-details-value">-</span>
                         </div>
+                        <div class="component-details-row">
+                            <span class="component-details-label">Píxeles colocados</span>
+                            <span data-ref="canvas-info-total-pixels" class="component-details-value">-</span>
+                        </div>
                     </div>
                 </div>
             </div>

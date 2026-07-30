@@ -450,8 +450,8 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_snapshots'); ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_limit_snapshots_desc') ?: 'Historial máximo permitido (-1 = Ilimitado).'; ?></p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_capturas'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_capturas_desc') ?: 'Historial máximo permitido (-1 = Ilimitado).'; ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">

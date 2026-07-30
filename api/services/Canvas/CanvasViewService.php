@@ -276,14 +276,14 @@ class CanvasViewService {
             } catch (\Throwable $e) {
                 Logger::error("Error loading snapshots gallery: " . $e->getMessage(), ['exception' => $e]);
                 $error = true;
-                $errorMessage = __('err_load_snapshots');
+                $errorMessage = __('err_load_capturas');
             }
         } else {
             $error = true;
             $errorMessage = __('err_canvas_uuid_missing');
         }
 
-        $galleryTitle = $error ? __('snapshots_gallery_title_error') : str_replace('{name}', $canvasName, __('snapshots_gallery_title'));
+        $galleryTitle = $error ? __('capturas_gallery_title_error') : str_replace('{name}', $canvasName, __('capturas_gallery_title'));
 
         return [
             'uuid' => $uuid,
@@ -312,7 +312,7 @@ class CanvasViewService {
             }
         }
 
-        $title = __('lbl_snapshot_viewer_title');
+        $title = __('lbl_captura_viewer_title');
         $canvasSize = '64x64';
 
         if ($snapshotId) {

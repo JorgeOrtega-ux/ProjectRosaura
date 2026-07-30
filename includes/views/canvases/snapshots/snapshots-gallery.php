@@ -41,7 +41,7 @@ $isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PAN
             <?php elseif (empty($snapshots)): ?>
                 <div class="component-empty-state" data-ref="empty-state-rendered">
                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                    <p class="component-empty-state-text"><?php echo __('empty_snapshots_gallery'); ?></p>
+                    <p class="component-empty-state-text"><?php echo __('empty_capturas_gallery'); ?></p>
                 </div>
             <?php else: ?>
                 <div class="component-grid" data-ref="gallery-grid">
@@ -54,7 +54,7 @@ $isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PAN
                         ?>
                         <div class="component-gallery-card">
                             <img src="<?php echo $imageUrl; ?>" 
-                                 alt="<?php echo __('alt_snapshot'); ?>" 
+                                 alt="<?php echo __('alt_captura'); ?>" 
                                  class="component-gallery-card__image image-lazy-fade" 
                                  loading="lazy" 
                                  decoding="async"
@@ -113,7 +113,7 @@ $isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PAN
                                             
                                             <button type="button" class="component-menu-link" data-action="deleteSnapshot" data-id="<?php echo $snapshot['snapshot_uuid']; ?>" data-card-id="<?php echo $snapshot['id']; ?>">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('delete_snapshot'); ?></span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('delete_captura'); ?></span></div>
                                             </button>
                                             <?php endif; ?>
                                         </div>

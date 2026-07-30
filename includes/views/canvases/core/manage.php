@@ -44,11 +44,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                         <span class="material-symbols-rounded">update</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40 disabled-interaction" data-ref="btn-nav-snapshots" data-nav="" data-tooltip="<?php echo __('tooltip_view_snapshots'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 disabled-interaction" data-ref="btn-nav-snapshots" data-nav="" data-tooltip="<?php echo __('tooltip_view_capturas'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">collections</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="createSnapshotSelected" data-ref="btn-action-create-snapshot" data-tooltip="<?php echo __('btn_create_snapshot'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="createSnapshotSelected" data-ref="btn-action-create-snapshot" data-tooltip="<?php echo __('btn_create_captura'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">photo_camera</span>
                     </button>
 

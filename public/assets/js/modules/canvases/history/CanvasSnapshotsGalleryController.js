@@ -155,14 +155,14 @@ class CanvasSnapshotsGalleryController {
         let confirmed = false;
         if (window.dialogSystem && window.dialogSystem.show) {
             const confirmRes = await window.dialogSystem.show('confirmActionModal', {
-                title: window.__('delete_snapshot'),
-                message: window.__('confirm_delete_snapshot')
+                title: window.__('delete_captura'),
+                message: window.__('confirm_delete_captura')
             });
             if (confirmRes && confirmRes.confirmed) {
                 confirmed = true;
             }
         } else {
-            confirmed = confirm(window.__('confirm_delete_snapshot_prompt'));
+            confirmed = confirm(window.__('confirm_delete_captura_prompt'));
         }
 
         if (!confirmed) return;
@@ -184,7 +184,7 @@ class CanvasSnapshotsGalleryController {
                         bottomArea.innerHTML = `
                             <div class="component-empty-state" data-ref="empty-state-rendered">
                                 <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                <p class="component-empty-state-text">${window.__('empty_snapshots_gallery')}</p>
+                                <p class="component-empty-state-text">${window.__('empty_capturas_gallery')}</p>
                             </div>
                         `;
                     }

@@ -65,7 +65,7 @@ class CanvasMediaController extends BaseController {
         try {
             $id = $input['id'] ?? null;
             if (!$id) {
-                return $this->respond(['success' => false, 'message' => __('err_snapshot_id_missing')]);
+                return $this->respond(['success' => false, 'message' => __('err_captura_id_missing')]);
             }
             
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
@@ -81,7 +81,7 @@ class CanvasMediaController extends BaseController {
         try {
             $id = $input['id'] ?? null;
             if (!$id) {
-                return $this->respond(['success' => false, 'message' => __('err_snapshot_id_missing')]);
+                return $this->respond(['success' => false, 'message' => __('err_captura_id_missing')]);
             }
             
             if (!$this->session->isLoggedIn()) {
@@ -101,7 +101,7 @@ class CanvasMediaController extends BaseController {
         try {
             $id = $input['id'] ?? null;
             if (!$id) {
-                return $this->respond(['success' => false, 'message' => __('err_snapshot_id_missing')]);
+                return $this->respond(['success' => false, 'message' => __('err_captura_id_missing')]);
             }
             
             if (!$this->session->isLoggedIn()) {
@@ -121,7 +121,7 @@ class CanvasMediaController extends BaseController {
         try {
             $id = $input['id'] ?? null;
             if (!$id) {
-                return $this->respond(['success' => false, 'message' => __('err_snapshot_id_missing')]);
+                return $this->respond(['success' => false, 'message' => __('err_captura_id_missing')]);
             }
             
             if (!$this->session->isLoggedIn()) {

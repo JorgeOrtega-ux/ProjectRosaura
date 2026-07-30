@@ -92,7 +92,7 @@ class CanvasMediaService {
             $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$data) {
-                return ['success' => false, 'message' => __('err_snapshot_not_found')];
+                return ['success' => false, 'message' => __('err_captura_not_found')];
             }
 
             $hasRole = false;
@@ -145,7 +145,7 @@ class CanvasMediaService {
             $snapshot = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$snapshot) {
-                return ['success' => false, 'message' => __('err_snapshot_not_found')];
+                return ['success' => false, 'message' => __('err_captura_not_found')];
             }
 
             $snapshotIntId = $snapshot['id'];
@@ -188,7 +188,7 @@ class CanvasMediaService {
             $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$data) {
-                return ['success' => false, 'message' => __('err_snapshot_not_found')];
+                return ['success' => false, 'message' => __('err_captura_not_found')];
             }
 
             $isOwner = ($data['owner_id'] === $userId) || ($data['owner_id'] === null && $canManageOfficial);
@@ -226,7 +226,7 @@ class CanvasMediaService {
             $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$data) {
-                return ['success' => false, 'message' => __('err_snapshot_not_found')];
+                return ['success' => false, 'message' => __('err_captura_not_found')];
             }
 
             $isOwner = ($data['owner_id'] === $userId) || ($data['owner_id'] === null && $canManageOfficial);
@@ -250,7 +250,7 @@ class CanvasMediaService {
                 }
             }
 
-            return ['success' => true, 'message' => __('msg_snapshot_deleted')];
+            return ['success' => true, 'message' => __('msg_captura_deleted')];
 
         } catch (Exception $e) {
             Logger::error('Error deleting snapshot.', ['snapshot_uuid' => $snapshotId, 'error' => $e->getMessage()]);

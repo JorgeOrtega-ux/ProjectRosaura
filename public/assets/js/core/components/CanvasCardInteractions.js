@@ -328,7 +328,7 @@ export class CanvasCardInteractions {
                         
                         <button type="button" class="component-menu-link" data-nav="${this.basePath}/design/s/${uuid}">
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('view_snapshots_gallery')}</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('view_capturas_gallery')}</span></div>
                         </button>
                         
                         ${warningMenuOption}
@@ -400,6 +400,7 @@ export class CanvasCardInteractions {
         const cooldownEl = moduleEl.querySelector('[data-ref="canvas-info-cooldown"]');
         const privacyEl = moduleEl.querySelector('[data-ref="canvas-info-privacy"]');
         const favoritesEl = moduleEl.querySelector('[data-ref="canvas-info-favorites"]');
+        const totalPixelsEl = moduleEl.querySelector('[data-ref="canvas-info-total-pixels"]');
         const headerContentEl = moduleEl.querySelector('[data-ref="canvas-info-header-content"]');
         const headerSkeletonEl = moduleEl.querySelector('[data-ref="canvas-info-header-skeleton"]');
 
@@ -515,6 +516,10 @@ export class CanvasCardInteractions {
 
                 if (favoritesEl) {
                     favoritesEl.textContent = canvas.favorites_count || 0;
+                }
+
+                if (totalPixelsEl) {
+                    totalPixelsEl.textContent = (canvas.total_pixels !== undefined) ? Number(canvas.total_pixels).toLocaleString() : '0';
                 }
             } else {
                 if (titleEl) titleEl.textContent = 'Error';
