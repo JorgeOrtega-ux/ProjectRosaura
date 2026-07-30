@@ -819,4 +819,9 @@ return [
             ],
         ],
     ],
+    'internal.user.consume_perk' => [
+        'controller' => 'App\\Api\\Controllers\\Internal\\InternalUserController',
+        'action' => 'consume_perk',
+        'middleware' => [],
+    ],
 ];

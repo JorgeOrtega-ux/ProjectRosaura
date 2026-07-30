@@ -243,7 +243,14 @@ $requestToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_GET['csrf_token'] ?? '');
 $isChatAttachment = ($_SERVER['REQUEST_METHOD'] === 'GET' && ($requestRoute === 'chat.attachment'));
 $isReceiptDownload = ($requestRoute === 'stripe.download_receipt');
 
-if (!$isChatAttachment && !$isReceiptDownload && !Utils::validateCSRFToken($requestToken, $sessionManager)) {
+$isInternalApi = false;
+$internalApiKey = $_SERVER['HTTP_X_INTERNAL_API_KEY'] ?? '';
+$configuredSecret = $_ENV['INTERNAL_API_SECRET'] ?? '';
+if (!empty($configuredSecret) && $internalApiKey === $configuredSecret) {
+    $isInternalApi = true;
+}
+
+if (!$isChatAttachment && !$isReceiptDownload && !$isInternalApi && !Utils::validateCSRFToken($requestToken, $sessionManager)) {
     Logger::security("CSRF validation failed.", 'warning', ['ip' => Utils::getIpAddress(), 'token_provided' => $requestToken]);
     http_response_code(403);
     echo json_encode([
@@ -275,6 +282,13 @@ $route = $input['route'] ?? '';
 if (empty($route)) {
     Logger::security("Request without specified route.", 'warning', ['ip' => Utils::getIpAddress()]);
     echo json_encode(['success' => false, 'message_key' => 'error.route_missing']);
+    exit;
+}
+
+if (strpos($route, 'internal.') === 0 && !$isInternalApi) {
+    Logger::security("Attempted to access internal route without valid key. Route: {$route}", 'warning', ['ip' => Utils::getIpAddress()]);
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message_key' => 'error.unauthorized']);
     exit;
 }
 

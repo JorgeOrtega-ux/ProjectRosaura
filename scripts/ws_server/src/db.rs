@@ -138,32 +138,44 @@ pub async fn save_canvas_protections_db(db: &MySqlPool, canvas_id: &str, offsets
     }
 }
 
-pub async fn consume_user_perk(db: &MySqlPool, user_id: &str, perk_id: &str) -> bool {
-    let db_identity = env::var("DB_IDENTITY_NAME").unwrap_or_else(|_| "db_identity".to_string());
-    
-    let query_sel = format!(
-        "SELECT id FROM `{}`.`user_perks` WHERE user_id = ? AND perk_id = ? AND is_used = 0 ORDER BY created_at ASC LIMIT 1",
-        db_identity
-    );
-    
-    let uid = user_id.parse::<i32>().unwrap_or(0);
-    match sqlx::query(&query_sel).bind(uid).bind(perk_id).fetch_optional(db).await {
-        Ok(Some(row)) => {
-            if let Ok(perk_row_id) = row.try_get::<i32, _>("id") {
-                let query_upd = format!("UPDATE `{}`.`user_perks` SET is_used = 1, used_at = NOW() WHERE id = ? AND is_used = 0", db_identity);
-                if let Ok(res) = sqlx::query(&query_upd).bind(perk_row_id).execute(db).await {
-                    if res.rows_affected() > 0 {
-                        let query_bal = format!("UPDATE `{}`.`user_perk_balances` SET quantity_available = GREATEST(0, quantity_available - 1) WHERE user_id = ? AND perk_id = ?", db_identity);
-                        let _ = sqlx::query(&query_bal).bind(uid).bind(perk_id).execute(db).await;
-                        return true;
+pub async fn consume_user_perk(_db: &MySqlPool, user_id: &str, perk_id: &str) -> bool {
+    let api_url = match env::var("PHP_API_INTERNAL_URL") {
+        Ok(val) => val,
+        Err(_) => {
+            tracing::error!("PHP_API_INTERNAL_URL env var not set");
+            return false;
+        }
+    };
+    let api_secret = env::var("INTERNAL_API_SECRET").unwrap_or_default();
+
+    let client = reqwest::Client::new();
+    let payload = serde_json::json!({
+        "route": "internal.user.consume_perk",
+        "user_id": user_id,
+        "perk_id": perk_id
+    });
+
+    match client.post(&api_url)
+        .header("X-Internal-API-Key", &api_secret)
+        .header("Content-Type", "application/json")
+        .json(&payload)
+        .send()
+        .await 
+    {
+        Ok(res) => {
+            if res.status().is_success() {
+                if let Ok(json_res) = res.json::<serde_json::Value>().await {
+                    if let Some(success) = json_res.get("success").and_then(|v| v.as_bool()) {
+                        return success;
                     }
                 }
+            } else {
+                tracing::error!("Internal API consume_perk returned status code: {}", res.status());
             }
         }
         Err(e) => {
-            tracing::error!("consume_user_perk error: {:?}", e);
+            tracing::error!("Failed to contact PHP API for consume_perk: {:?}", e);
         }
-        _ => {}
     }
     false
 }
