@@ -225,7 +225,13 @@ def process_reset_task(r, db, task_data):
         except Exception as s3_err:
             print(f"[!] Error uploading empty snapshot to S3: {s3_err}")
         
+        canvas_uuid = None
         with db.cursor() as cursor:
+            cursor.execute("SELECT uuid FROM canvases WHERE id = %s", (canvas_id,))
+            canvas_row = cursor.fetchone()
+            if canvas_row:
+                canvas_uuid = canvas_row['uuid']
+
             cursor.execute("""
                 INSERT INTO canvas_snapshots (canvas_id, s3_key, snapshot_data, last_updated)
                 VALUES (%s, %s, NULL, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE s3_key = %s, snapshot_data = NULL, last_updated = CURRENT_TIMESTAMP
@@ -241,6 +247,27 @@ def process_reset_task(r, db, task_data):
                 logging.info(f"Public image deleted for canvas {canvas_id}.")
             except Exception as e:
                 logging.error(f"Could not delete public image {canvas_id}: {e}")
+                
+        # Delete S3 thumbnail
+        if canvas_uuid:
+            try:
+                s3 = get_s3_client()
+                s3.delete_object(Bucket=S3_BUCKET, Key=f"thumbnails/canvas_{canvas_uuid}.webp")
+                logging.info(f"S3 thumbnail deleted for canvas {canvas_uuid}.")
+            except Exception as e:
+                logging.error(f"Could not delete S3 thumbnail for canvas {canvas_uuid}: {e}")
+
+        # Delete local thumbnails
+        for filename in [f"canvas_{canvas_id}.webp", f"canvas_{canvas_uuid}.webp" if canvas_uuid else None]:
+            if not filename:
+                continue
+            local_thumb_path = os.path.join(THUMBNAILS_DIR, filename)
+            if os.path.exists(local_thumb_path):
+                try:
+                    os.remove(local_thumb_path)
+                    logging.info(f"Local thumbnail deleted: {filename}")
+                except Exception as e:
+                    logging.error(f"Could not delete local thumbnail {filename}: {e}")
         
         stream_key = f"canvas:{canvas_id}:stream"
         r.xadd(stream_key, {

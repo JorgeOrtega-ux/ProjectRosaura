@@ -150,9 +150,7 @@ class AppViewService {
             'fantasy' => 'auto_fix_high',
             'music' => 'music_note',
             'sports' => 'sports_soccer',
-            'popculture' => 'movie',
-            'abstract' => 'blur_on',
-            'experimental' => 'science'
+            'popculture' => 'movie'
         ];
     }
 

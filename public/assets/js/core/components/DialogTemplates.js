@@ -1315,7 +1315,7 @@ export const DialogTemplates = {
             let cardsHtml = '';
             tiers.forEach((tier, index) => {
                 const isActiveClass = index === 0 ? 'active' : '';
-                const badgeHtml = parseInt(tier.tier_level, 10) === 2 ? `<span class="component-badge component-badge--sm">Recomendado</span>` : '';
+                const badgeHtml = '';
                 const priceText = tier.price_monthly ? `$${parseFloat(tier.price_monthly).toFixed(2)}` : '$12.99';
                 
                 const nameKey = tier.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '_');

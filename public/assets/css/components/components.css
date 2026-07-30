@@ -2296,6 +2296,8 @@ input:checked+.component-toggle-slider:before {
     border-collapse: separate;
     border-spacing: 0;
     font-size: 0.75rem;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .component-table th,
@@ -7589,7 +7591,6 @@ html.dark-theme .component-skeleton-design-bottom {
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
-    background-color: var(--bg-surface-alt);
 }
 
 .component-card--selectable-row:hover {
@@ -7598,13 +7599,14 @@ html.dark-theme .component-skeleton-design-bottom {
 
 .component-card--selectable-row.active {
     border-color: var(--text-primary);
-    background-color: var(--bg-hover-light);
 }
 
 .component-card-left-section {
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
+    max-width: calc(100% - 85px);
 }
 
 .component-radio-circle {
@@ -7636,6 +7638,7 @@ html.dark-theme .component-skeleton-design-bottom {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
 }
 
 .component-card-title {
@@ -7687,12 +7690,22 @@ html.dark-theme .component-skeleton-design-bottom {
 .component-modal-right {
     width: 60%;
     padding: 48px 0;
-    background-color: var(--bg-surface-alt);
     border-left: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     gap: 20px;
     overflow-y: auto;
+}
+
+.component-modal-right .component-table th,
+.component-modal-right .component-table td {
+    border-left: 1px solid transparent;
+    border-right: 1px solid transparent;
+}
+
+.component-modal-right .component-table .check-icon,
+.component-modal-right .component-table .cross-icon {
+    font-size: 14px !important;
 }
 
 /* Highlight column effect for selected plan */

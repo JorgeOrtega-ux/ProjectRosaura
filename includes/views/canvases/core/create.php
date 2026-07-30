@@ -107,7 +107,7 @@ extract($createData);
                                                 </div>
                                                 <div class="component-menu-list component-menu-list--scrollable">
                                                     <?php 
-                                                    $allowedTags = ['art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 'community', 'nature', 'scifi', 'fantasy', 'music', 'sports', 'popculture', 'abstract', 'experimental'];
+                                                    $allowedTags = ['art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 'community', 'nature', 'scifi', 'fantasy', 'music', 'sports', 'popculture'];
                                                     foreach ($allowedTags as $tag): ?>
                                                     <div class="component-menu-link" data-action="toggleTag" data-value="<?php echo $tag; ?>" data-label="<?php echo __('tag_' . $tag); ?>">
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded" data-ref="icon-check">check_box_outline_blank</span></div>

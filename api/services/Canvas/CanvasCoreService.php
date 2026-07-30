@@ -524,7 +524,7 @@ class CanvasCoreService {
                 'tags'                  => array_values(array_intersect($tags, [
                     'art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 
                     'community', 'nature', 'scifi', 'fantasy', 'music', 
-                    'sports', 'popculture', 'abstract', 'experimental'
+                    'sports', 'popculture'
                 ]))
             ];
             
@@ -625,7 +625,7 @@ class CanvasCoreService {
                 $data['tags'] = array_values(array_intersect($data['tags'], [
                     'art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 
                     'community', 'nature', 'scifi', 'fantasy', 'music', 
-                    'sports', 'popculture', 'abstract', 'experimental'
+                    'sports', 'popculture'
                 ]));
                 if (count($data['tags']) > 8) {
                     $data['tags'] = array_slice($data['tags'], 0, 8);

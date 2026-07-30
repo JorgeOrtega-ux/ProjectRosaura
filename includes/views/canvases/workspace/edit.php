@@ -106,7 +106,7 @@ extract($editData);
                                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                                 <div class="component-menu-list component-menu-list--scrollable">
                                                     <?php 
-                                                    $allowedTags = ['art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 'community', 'nature', 'scifi', 'fantasy', 'music', 'sports', 'popculture', 'abstract', 'experimental'];
+                                                    $allowedTags = ['art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 'community', 'nature', 'scifi', 'fantasy', 'music', 'sports', 'popculture'];
                                                     foreach ($allowedTags as $tag): 
                                                         $isActive = in_array($tag, $cTags);
                                                     ?>

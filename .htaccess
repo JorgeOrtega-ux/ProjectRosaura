@@ -12,6 +12,9 @@
     # 1.5. Enrutar webhook de Stripe directamente (sin pasar por el SPA)
     RewriteRule ^stripe/webhook$ stripe/webhook.php [L]
 
+    # 2. Enrutar peticiones de almacenamiento local a storage/public
+    RewriteRule ^storage/(.*)$ storage/public/$1 [L]
+
     # 3. Si la petición ya está apuntando a public/ internamente, la dejamos pasar
     RewriteRule ^public/ - [L]
 
