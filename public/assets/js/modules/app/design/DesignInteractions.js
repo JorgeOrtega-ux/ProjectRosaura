@@ -1773,31 +1773,39 @@ export const DesignInteractions = {
             badgesRight.appendChild(emptyBadge);
         }
 
-        // Badge permanente de Zonas Protegidas del usuario (siempre activo a la derecha)
+        // Badge de Zonas Protegidas del usuario (activo solo si tiene zonas protegidas)
         const myProtectedCount = this.myProtectedPixels ? this.myProtectedPixels.size : 0;
-        const isHighlighting = !!this.showMyProtectionsHighlight;
-        const protBadge = document.createElement('div');
-        protBadge.className = 'component-badge component-badge--clickable';
-        protBadge.style.cursor = 'pointer';
-        if (isHighlighting) {
-            protBadge.style.border = '1px solid var(--color-success)';
-            protBadge.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
-            protBadge.innerHTML = `<span class="material-symbols-rounded component-text-success">shield</span><span>Zonas protegidas (${myProtectedCount})<span data-ref="my-protections-timer-label" style="font-family: monospace; font-size: 11px; margin-left: 4px; opacity: 0.8;"></span></span>`;
-        } else {
-            protBadge.innerHTML = `<span class="material-symbols-rounded">shield</span><span>Zonas protegidas (${myProtectedCount})<span data-ref="my-protections-timer-label" style="font-family: monospace; font-size: 11px; margin-left: 4px; opacity: 0.8;"></span></span>`;
-        }
-        protBadge.addEventListener('click', () => {
-            this.toggleMyProtectionsHighlight();
-        });
-        badgesRight.appendChild(protBadge);
+        if (myProtectedCount > 0) {
+            const isHighlighting = !!this.showMyProtectionsHighlight;
+            const protBadge = document.createElement('div');
+            protBadge.className = 'component-badge component-badge--clickable';
+            protBadge.style.cursor = 'pointer';
+            if (isHighlighting) {
+                protBadge.style.border = '1px solid var(--color-success)';
+                protBadge.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+                protBadge.innerHTML = `<span class="material-symbols-rounded component-text-success">shield</span><span>Zonas protegidas (${myProtectedCount})<span data-ref="my-protections-timer-label" style="font-family: monospace; font-size: 11px; margin-left: 4px; opacity: 0.8;"></span></span>`;
+            } else {
+                protBadge.innerHTML = `<span class="material-symbols-rounded">shield</span><span>Zonas protegidas (${myProtectedCount})<span data-ref="my-protections-timer-label" style="font-family: monospace; font-size: 11px; margin-left: 4px; opacity: 0.8;"></span></span>`;
+            }
+            protBadge.addEventListener('click', () => {
+                this.toggleMyProtectionsHighlight();
+            });
+            badgesRight.appendChild(protBadge);
 
-        this.myProtectionsTimerLabel = protBadge.querySelector('[data-ref="my-protections-timer-label"]');
-        if (!this.myProtectionsTimerInterval) {
-            this.myProtectionsTimerInterval = setInterval(() => {
-                this.updateMyProtectionsTimer();
-            }, 1000);
+            this.myProtectionsTimerLabel = protBadge.querySelector('[data-ref="my-protections-timer-label"]');
+            if (!this.myProtectionsTimerInterval) {
+                this.myProtectionsTimerInterval = setInterval(() => {
+                    this.updateMyProtectionsTimer();
+                }, 1000);
+            }
+            this.updateMyProtectionsTimer();
+        } else {
+            this.myProtectionsTimerLabel = null;
+            if (this.myProtectionsTimerInterval) {
+                clearInterval(this.myProtectionsTimerInterval);
+                this.myProtectionsTimerInterval = null;
+            }
         }
-        this.updateMyProtectionsTimer();
 
         if (this.isOwner) {
             if (this.showOwnerTools || this.interactionMode === 'owner_erasing') {

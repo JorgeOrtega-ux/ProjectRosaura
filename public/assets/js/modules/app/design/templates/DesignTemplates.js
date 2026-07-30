@@ -393,8 +393,7 @@ export const DesignTemplates = {
 
         const btnUpload = document.querySelector('[data-action="triggerTemplateUpload"]');
         if (btnUpload) {
-            btnUpload.classList.add('disabled-interaction');
-            btnUpload.innerHTML = `<span class="material-symbols-rounded icon-spin-slow">autorenew</span> ${window.__('uploading')}...`;
+            setButtonLoading(btnUpload);
         }
 
         const compressedFile = await this._compressTemplateImage(file);
@@ -418,8 +417,7 @@ export const DesignTemplates = {
         } finally {
             this.fileInput.value = '';
             if (btnUpload) {
-                btnUpload.classList.remove('disabled-interaction');
-                btnUpload.innerHTML = `<span class="material-symbols-rounded">cloud_upload</span> ${window.__('upload_to_library')}`;
+                restoreButton(btnUpload);
             }
         }
     },

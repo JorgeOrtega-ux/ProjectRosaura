@@ -375,6 +375,11 @@ class DesignController {
             clearInterval(this.resetTimerInterval);
         }
 
+        if (this.myProtectionsTimerInterval) {
+            clearInterval(this.myProtectionsTimerInterval);
+            this.myProtectionsTimerInterval = null;
+        }
+
         if (this.renderWorker) {
             this.renderWorker.terminate();
             this.renderWorker = null;

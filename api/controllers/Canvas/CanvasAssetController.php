@@ -257,6 +257,7 @@ class CanvasAssetController extends BaseController {
             $redis = (new \App\Config\Database\RedisCache())->getClient();
             $taskData = [
                 'canvas_id' => (int)$canvasId,
+                'user_id' => (int)$userId,
                 'url' => $url,
                 'x' => (int)$x,
                 'y' => (int)$y,

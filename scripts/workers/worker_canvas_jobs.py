@@ -719,7 +719,7 @@ def thumbnails_thread():
 
 import urllib.parse
 
-def execute_canvas_draw_image(r, canvas_id, image_path, start_x, start_y, target_w, target_h, rotate_angle):
+def execute_canvas_draw_image(r, canvas_id, image_path, start_x, start_y, target_w, target_h, rotate_angle, user_id=None):
     logging.info(f"Fetching canvas info for ID {canvas_id}...")
     db_conn = get_db_connection()
     try:
@@ -769,6 +769,7 @@ def execute_canvas_draw_image(r, canvas_id, image_path, start_x, start_y, target
     state = bytearray(raw_state)
     original_pixels = img.load()
     changed = 0
+    pixels_to_persist = []
 
     logging.info("Injecting pixels into Redis state buffer...")
     for iy in range(img_height):
@@ -790,11 +791,66 @@ def execute_canvas_draw_image(r, canvas_id, image_path, start_x, start_y, target
                 state[offset+2] = orig_rgba[2]
                 state[offset+3] = 255
                 changed += 1
+                c_hex = f"#{orig_rgba[0]:02x}{orig_rgba[1]:02x}{orig_rgba[2]:02x}"
+                pixels_to_persist.append((cx, cy, c_hex))
 
     logging.info(f"Saving new state to Redis ({changed} new pixels)...")
     r.set(state_key, bytes(state))
     r.sadd("canvases:dirty_states", canvas_id)
     logging.info("Image drawing successfully completed.")
+
+    if pixels_to_persist and user_id is not None:
+        try:
+            from cassandra.cluster import Cluster
+            from cassandra.query import BatchStatement
+            
+            CASSANDRA_HOST = os.getenv("CASSANDRA_HOST") or "cassandra"
+            CASSANDRA_PORT = int(os.getenv("CASSANDRA_PORT") or 9042)
+            CASSANDRA_KEYSPACE = os.getenv("CASSANDRA_KEYSPACE") or "db_canvases_nosql"
+            
+            logging.info(f"Connecting to Cassandra to persist {len(pixels_to_persist)} injected template pixels...")
+            cluster = Cluster([CASSANDRA_HOST], port=CASSANDRA_PORT, connect_timeout=10)
+            session = cluster.connect()
+            session.set_keyspace(CASSANDRA_KEYSPACE)
+            
+            insert_stmt = session.prepare("""
+                INSERT INTO canvas_pixel_history (canvas_id, x, y, placed_at, user_id, color_hex)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """)
+            
+            batch_size = 500
+            placed_at = datetime.now()
+            
+            for i in range(0, len(pixels_to_persist), batch_size):
+                chunk = pixels_to_persist[i:i + batch_size]
+                batch = BatchStatement()
+                for cx, cy, c_hex in chunk:
+                    batch.add(insert_stmt, (
+                        int(canvas_id),
+                        cx,
+                        cy,
+                        placed_at,
+                        int(user_id),
+                        c_hex
+                    ))
+                session.execute(batch)
+            logging.info(f"Successfully persisted {len(pixels_to_persist)} template pixels to Cassandra.")
+            cluster.shutdown()
+        except Exception as cass_err:
+            logging.error(f"Error persisting template pixels to Cassandra: {cass_err}")
+
+        # Increment total_pixels counter in MySQL canvases table
+        db_conn = get_db_connection()
+        if db_conn:
+            try:
+                with db_conn.cursor() as cursor:
+                    cursor.execute("UPDATE canvases SET total_pixels = total_pixels + %s WHERE id = %s", (len(pixels_to_persist), canvas_id))
+                db_conn.commit()
+                logging.info(f"Updated total_pixels count in MySQL by {len(pixels_to_persist)}")
+            except Exception as sql_err:
+                logging.error(f"Error updating total_pixels count in MySQL: {sql_err}")
+            finally:
+                db_conn.close()
 
 def draw_image_listener_thread():
     logging.info("Starting Draw Image listener thread...")
@@ -807,13 +863,14 @@ def draw_image_listener_thread():
                 task_data = json.loads(task_json)
                 url = task_data.get('url')
                 canvas_id = task_data.get('canvas_id')
+                user_id = task_data.get('user_id')
                 x = task_data.get('x', 0)
                 y = task_data.get('y', 0)
                 w = task_data.get('w', 0)
                 h = task_data.get('h', 0)
                 angle = task_data.get('angle', 0)
                 
-                logging.info(f"Received draw_image task for canvas {canvas_id} at {x},{y} w={w} h={h} a={angle}")
+                logging.info(f"Received draw_image task for canvas {canvas_id} at {x},{y} w={w} h={h} a={angle} user={user_id}")
                 
                 # Broadcast lock event so frontend blocks the canvas & set Redis inject lock
                 inject_lock_key = f"canvas:{canvas_id}:inject_lock"
@@ -837,7 +894,7 @@ def draw_image_listener_thread():
                         s3_client.download_file(bucket, key, temp_path)
                     
                     logging.info(f"Drawing template image in-process for canvas {canvas_id}...")
-                    execute_canvas_draw_image(r, canvas_id, temp_path, x, y, w, h, angle)
+                    execute_canvas_draw_image(r, canvas_id, temp_path, x, y, w, h, angle, user_id=user_id)
                     
                     os.remove(temp_path)
                     affected_chunks = []
