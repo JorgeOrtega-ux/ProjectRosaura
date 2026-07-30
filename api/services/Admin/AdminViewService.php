@@ -52,7 +52,7 @@ class AdminViewService {
 
         $userPermissions = $_SESSION['user_permissions'] ?? [];
         $canManageRoles = in_array(PermissionsConstants::VIEW_ROLES, $userPermissions);
-        $canViewLogs = in_array('view_logs', $userPermissions);
+        $canViewLogs = in_array(PermissionsConstants::VIEW_LOGS, $userPermissions);
         $canManageMessages = true;
 
         $appUrl = defined('APP_URL') ? APP_URL : '';
@@ -101,11 +101,11 @@ class AdminViewService {
 
         $userPerms = $_SESSION['user_permissions'] ?? [];
         $isSuperAdmin = isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4;
-        $canEditUsers = in_array('edit_users', $userPerms);
+        $canEditUsers = in_array(PermissionsConstants::EDIT_USERS, $userPerms);
         $canAssignRoles = in_array(PermissionsConstants::ASSIGN_ROLES, $userPerms);
-        $canDeleteUsers = in_array('delete_users', $userPerms) || $isSuperAdmin;
-        $canModerateUsers = count(array_intersect(['moderate_users', 'delete_users'], $userPerms)) > 0;
-        $canViewKardex = in_array('view_kardex', $userPerms);
+        $canDeleteUsers = in_array(PermissionsConstants::DELETE_USERS, $userPerms) || $isSuperAdmin;
+        $canModerateUsers = count(array_intersect([PermissionsConstants::MODERATE_USERS, PermissionsConstants::DELETE_USERS], $userPerms)) > 0;
+        $canViewKardex = in_array(PermissionsConstants::VIEW_KARDEX, $userPerms);
 
         $limit = 25;
         if ($page < 1) $page = 1;

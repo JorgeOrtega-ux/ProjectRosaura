@@ -11,6 +11,7 @@ use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\CacheConstants;
 use App\Core\System\SubscriptionPlanConstants; 
+use App\Core\System\CanvasPermissionsConstants;
 use App\Config\Database\RedisCache;
 use App\Config\Database\DatabaseManager;
 use PDO;
@@ -322,7 +323,7 @@ class CanvasSettingsService {
             $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
             if (!$isOwner) {
-                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS)) {
+                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS)) {
                     return ['success' => false, 'message' => __('err_unauthorized')];
                 }
             }
@@ -368,7 +369,7 @@ class CanvasSettingsService {
 
             $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId) || ($canvas['owner_id'] === null && $canManageOfficial);
             if (!$isOwner) {
-                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS)) {
+                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS)) {
                     return ['success' => false, 'message' => __('err_unauthorized')];
                 }
             }

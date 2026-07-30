@@ -6,6 +6,7 @@ use App\Core\Interfaces\ModerationRepositoryInterface;
 use App\Config\Database\DatabaseManager;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
+use App\Core\System\ModerationConstants;
 use PDO;
 use PDOException;
 
@@ -80,9 +81,9 @@ class ModerationRepository implements ModerationRepositoryInterface {
 
             $modFilter = "";
             if (!$includeModeration && $includeRole) {
-                $modFilter = " AND ml.action_type = 'role_changed' ";
+                $modFilter = " AND ml.action_type = '" . ModerationConstants::ACTION_ROLE_CHANGED . "' ";
             } elseif ($includeModeration && !$includeRole) {
-                $modFilter = " AND ml.action_type != 'role_changed' ";
+                $modFilter = " AND ml.action_type != '" . ModerationConstants::ACTION_ROLE_CHANGED . "' ";
             }
 
             $unions = [];
@@ -161,9 +162,9 @@ class ModerationRepository implements ModerationRepositoryInterface {
 
             $modFilter = "";
             if (!$includeModeration && $includeRole) {
-                $modFilter = " AND action_type = 'role_changed' ";
+                $modFilter = " AND action_type = '" . ModerationConstants::ACTION_ROLE_CHANGED . "' ";
             } elseif ($includeModeration && !$includeRole) {
-                $modFilter = " AND action_type != 'role_changed' ";
+                $modFilter = " AND action_type != '" . ModerationConstants::ACTION_ROLE_CHANGED . "' ";
             }
 
             $unions = [];

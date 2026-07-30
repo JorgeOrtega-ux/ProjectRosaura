@@ -12,6 +12,7 @@ use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\CacheConstants;
 use App\Core\System\SubscriptionPlanConstants; 
+use App\Core\System\CanvasPermissionsConstants;
 use App\Config\Database\RedisCache;
 use App\Config\Database\DatabaseManager;
 use PDO;
@@ -271,16 +272,24 @@ class CanvasCoreService {
             
             $permissions = [];
             if ($isOwner) {
-                $permissions = [\App\Core\System\PermissionsConstants::PLACE_PIXELS, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS, \App\Core\System\PermissionsConstants::MANAGE_MEMBERS, 'manage_roles', \App\Core\System\PermissionsConstants::ASSIGN_ROLES, 'view_history', 'manage_resets'];
+                $permissions = [
+                    CanvasPermissionsConstants::PLACE_PIXELS,
+                    CanvasPermissionsConstants::MANAGE_SETTINGS,
+                    CanvasPermissionsConstants::MANAGE_MEMBERS,
+                    CanvasPermissionsConstants::MANAGE_ROLES,
+                    CanvasPermissionsConstants::ASSIGN_ROLES,
+                    CanvasPermissionsConstants::VIEW_HISTORY,
+                    CanvasPermissionsConstants::MANAGE_RESETS
+                ];
             } else {
                 foreach ($roles as $r) {
-                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::PLACE_PIXELS)) $permissions[] = \App\Core\System\PermissionsConstants::PLACE_PIXELS;
-                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS)) $permissions[] = \App\Core\System\PermissionsConstants::MANAGE_SETTINGS;
-                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_MEMBERS)) $permissions[] = \App\Core\System\PermissionsConstants::MANAGE_MEMBERS;
-                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) $permissions[] = 'manage_roles';
-                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::ASSIGN_ROLES)) $permissions[] = \App\Core\System\PermissionsConstants::ASSIGN_ROLES;
-                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'view_history')) $permissions[] = 'view_history';
-                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_resets')) $permissions[] = 'manage_resets';
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::PLACE_PIXELS)) $permissions[] = CanvasPermissionsConstants::PLACE_PIXELS;
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS)) $permissions[] = CanvasPermissionsConstants::MANAGE_SETTINGS;
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_MEMBERS)) $permissions[] = CanvasPermissionsConstants::MANAGE_MEMBERS;
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_ROLES)) $permissions[] = CanvasPermissionsConstants::MANAGE_ROLES;
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::ASSIGN_ROLES)) $permissions[] = CanvasPermissionsConstants::ASSIGN_ROLES;
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::VIEW_HISTORY)) $permissions[] = CanvasPermissionsConstants::VIEW_HISTORY;
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_RESETS)) $permissions[] = CanvasPermissionsConstants::MANAGE_RESETS;
                 }
                 $permissions = array_unique($permissions);
             }
@@ -288,9 +297,9 @@ class CanvasCoreService {
 
             if ($isOwner) {
                 $canvas['role'] = 'admin';
-            } elseif (in_array(\App\Core\System\PermissionsConstants::MANAGE_SETTINGS, $permissions) || in_array('manage_roles', $permissions)) {
+            } elseif (in_array(CanvasPermissionsConstants::MANAGE_SETTINGS, $permissions) || in_array(CanvasPermissionsConstants::MANAGE_ROLES, $permissions)) {
                 $canvas['role'] = 'admin';
-            } elseif (in_array(\App\Core\System\PermissionsConstants::PLACE_PIXELS, $permissions)) {
+            } elseif (in_array(CanvasPermissionsConstants::PLACE_PIXELS, $permissions)) {
                 $canvas['role'] = 'editor';
             } else {
                 $canvas['role'] = 'spectator';

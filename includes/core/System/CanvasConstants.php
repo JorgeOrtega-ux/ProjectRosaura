@@ -14,4 +14,8 @@ class CanvasConstants {
     public const PRIVACY_PRIVATE = 'private';
     public const PRIVACY_PUBLIC = 'public';
     public const PRIVACY_UNLISTED = 'unlisted';
+
+    public const MIN_DIMENSION = 10;
+    public const MAX_DIMENSION = 2000;
+    public const DEFAULT_MAX_MEMBERS = 10;
 }

@@ -4,6 +4,7 @@ namespace App\Api\Controllers\Admin;
 use App\Api\Controllers\BaseController;
 
 use App\Api\Services\Admin\AdminServices;
+use App\Core\System\PermissionsConstants;
 
 class AdminController extends BaseController {
     
@@ -21,7 +22,7 @@ class AdminController extends BaseController {
 
     public function get_user($input) {
         try { 
-            $this->requirePermission('view_users');
+            $this->requirePermission(PermissionsConstants::VIEW_USERS);
             $safeInput = ['target_user_id' => $input['target_user_id'] ?? null];
             return $this->respond($this->adminServices->getUser($safeInput)); 
         }
@@ -30,7 +31,7 @@ class AdminController extends BaseController {
 
     public function update_avatar($input) {
         try { 
-            $this->requirePermission('edit_users');
+            $this->requirePermission(PermissionsConstants::EDIT_USERS);
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 '_files' => $input['_files'] ?? null
@@ -42,7 +43,7 @@ class AdminController extends BaseController {
 
     public function delete_avatar($input) {
         try { 
-            $this->requirePermission('edit_users');
+            $this->requirePermission(PermissionsConstants::EDIT_USERS);
             $safeInput = ['target_user_id' => $input['target_user_id'] ?? null];
             return $this->respond($this->adminServices->deleteAvatar($safeInput)); 
         }
@@ -51,7 +52,7 @@ class AdminController extends BaseController {
 
     public function update_username($input) {
         try { 
-            $this->requirePermission('edit_users');
+            $this->requirePermission(PermissionsConstants::EDIT_USERS);
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 'username' => $input['username'] ?? null,
@@ -64,7 +65,7 @@ class AdminController extends BaseController {
 
     public function update_email($input) {
         try { 
-            $this->requirePermission('edit_users');
+            $this->requirePermission(PermissionsConstants::EDIT_USERS);
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 'email' => $input['email'] ?? null,
@@ -77,7 +78,7 @@ class AdminController extends BaseController {
 
     public function update_preference($input) {
         try { 
-            $this->requirePermission('edit_users');
+            $this->requirePermission(PermissionsConstants::EDIT_USERS);
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 'key' => $input['key'] ?? null,
@@ -90,7 +91,7 @@ class AdminController extends BaseController {
 
     public function update_role($input) {
         try { 
-            $this->requirePermission(\App\Core\System\PermissionsConstants::ASSIGN_ROLES);
+            $this->requirePermission(PermissionsConstants::ASSIGN_ROLES);
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 'roles' => $input['roles'] ?? null,
@@ -103,7 +104,7 @@ class AdminController extends BaseController {
 
     public function delete_users($input) {
         try { 
-            $this->requirePermission('delete_users');
+            $this->requirePermission(PermissionsConstants::DELETE_USERS);
             $safeInput = [
                 'user_ids' => $input['user_ids'] ?? [],
                 'password' => $input['password'] ?? null
@@ -115,7 +116,7 @@ class AdminController extends BaseController {
 
     public function update_suspension($input) {
         try { 
-            $this->requirePermission('moderate_users');
+            $this->requirePermission(PermissionsConstants::MODERATE_USERS);
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 'password' => $input['password'] ?? null,
@@ -132,7 +133,7 @@ class AdminController extends BaseController {
 
     public function get_moderation_kardex($input) {
         try { 
-            $this->requirePermission('view_kardex');
+            $this->requirePermission(PermissionsConstants::VIEW_KARDEX);
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 'page' => $input['page'] ?? 1,
@@ -145,7 +146,7 @@ class AdminController extends BaseController {
 
     public function get_roles() {
         try { 
-            $this->requirePermission(\App\Core\System\PermissionsConstants::VIEW_ROLES);
+            $this->requirePermission(PermissionsConstants::VIEW_ROLES);
             return $this->respond($this->adminServices->getRoles()); 
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -153,7 +154,7 @@ class AdminController extends BaseController {
 
     public function create_role($input) {
         try { 
-            $this->requirePermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE);
+            $this->requirePermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE);
             $safeInput = [
                 'name' => $input['name'] ?? null,
                 'color_type' => $input['color_type'] ?? null,
@@ -168,7 +169,7 @@ class AdminController extends BaseController {
 
     public function edit_role($input) {
         try { 
-            $this->requirePermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE);
+            $this->requirePermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE);
             $safeInput = [
                 'id' => $input['id'] ?? null,
                 'name' => $input['name'] ?? null,
@@ -184,7 +185,7 @@ class AdminController extends BaseController {
 
     public function delete_role($input) {
         try { 
-            $this->requirePermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE);
+            $this->requirePermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE);
             $safeInput = ['id' => $input['id'] ?? null];
             return $this->respond($this->adminServices->deleteRole($safeInput)); 
         }
@@ -193,7 +194,7 @@ class AdminController extends BaseController {
 
     public function save_subscription($input) {
         try {
-            $this->requirePermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
             $safeInput = [
                 'uuid' => $input['uuid'] ?? null,
                 'name' => $input['name'] ?? null,
@@ -209,7 +210,7 @@ class AdminController extends BaseController {
     }
     public function toggle_subscription_visibility($input) {
         try {
-            $this->requirePermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
             $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->toggleSubscriptionVisibility($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -217,7 +218,7 @@ class AdminController extends BaseController {
 
     public function set_subscription_popular($input) {
         try {
-            $this->requirePermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
             $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->setSubscriptionPopular($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -225,7 +226,7 @@ class AdminController extends BaseController {
 
     public function delete_subscription($input) {
         try {
-            $this->requirePermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
             $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->deleteSubscription($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -233,7 +234,7 @@ class AdminController extends BaseController {
 
     public function get_permissions() {
         try { 
-            $this->requirePermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE);
+            $this->requirePermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE);
             return $this->respond($this->adminServices->getPermissionsList()); 
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -241,7 +242,7 @@ class AdminController extends BaseController {
 
     public function get_role_permissions($input) {
         try { 
-            $this->requirePermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE);
+            $this->requirePermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE);
             $safeInput = ['id' => $input['id'] ?? null];
             return $this->respond($this->adminServices->getRolePermissions($safeInput)); 
         }
@@ -250,7 +251,7 @@ class AdminController extends BaseController {
 
     public function update_role_permissions($input) {
         try { 
-            $this->requirePermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE);
+            $this->requirePermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE);
             $safeInput = [
                 'id' => $input['id'] ?? null,
                 'permissions' => $input['permissions'] ?? null
@@ -262,7 +263,7 @@ class AdminController extends BaseController {
 
     public function get_server_config() {
         try { 
-            $this->requirePermission('manage_server_config');
+            $this->requirePermission(PermissionsConstants::MANAGE_SERVER_CONFIG);
             return $this->respond($this->adminServices->getServerConfig()); 
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -270,7 +271,7 @@ class AdminController extends BaseController {
 
     public function update_server_config($input) {
         try { 
-            $this->requirePermission('manage_server_config');
+            $this->requirePermission(PermissionsConstants::MANAGE_SERVER_CONFIG);
             $safeInput = [
                 'config' => $input['config'] ?? null,
                 'password' => $input['password'] ?? null
@@ -282,7 +283,7 @@ class AdminController extends BaseController {
 
     public function create_backup($input = []) {
         try { 
-            $this->requirePermission('create_backups');
+            $this->requirePermission(PermissionsConstants::CREATE_BACKUPS);
             return $this->respond($this->adminServices->createBackup($input)); 
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -290,7 +291,7 @@ class AdminController extends BaseController {
 
     public function backup_status($input) {
         try { 
-            $this->requirePermission('create_backups');
+            $this->requirePermission(PermissionsConstants::CREATE_BACKUPS);
             $safeInput = ['job_id' => $input['job_id'] ?? null];
             return $this->respond($this->adminServices->backupStatus($safeInput)); 
         }
@@ -299,7 +300,7 @@ class AdminController extends BaseController {
 
     public function restore_backup($input) {
         try { 
-            $this->requirePermission('restore_backups');
+            $this->requirePermission(PermissionsConstants::RESTORE_BACKUPS);
             $safeInput = [
                 'backup_id' => $input['backup_id'] ?? null,
                 'password' => $input['password'] ?? null
@@ -314,7 +315,7 @@ class AdminController extends BaseController {
 
     public function get_backup_schema() {
         try { 
-            $this->requirePermission('create_backups');
+            $this->requirePermission(PermissionsConstants::CREATE_BACKUPS);
             return $this->respond($this->adminServices->getBackupSchema()); 
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -322,7 +323,7 @@ class AdminController extends BaseController {
 
     public function create_custom_backup($input = []) {
         try { 
-            $this->requirePermission('create_backups');
+            $this->requirePermission(PermissionsConstants::CREATE_BACKUPS);
             $safeInput = [
                 'schema' => $input['schema'] ?? null,
                 'modules' => $input['modules'] ?? null
@@ -334,7 +335,7 @@ class AdminController extends BaseController {
 
     public function read_logs($input) {
         try { 
-            $this->requirePermission('view_logs');
+            $this->requirePermission(PermissionsConstants::VIEW_LOGS);
             $safeInput = ['files' => $input['files'] ?? null];
             return $this->respond($this->adminServices->readLogs($safeInput)); 
         }
@@ -343,7 +344,7 @@ class AdminController extends BaseController {
 
     public function check_worker_status() {
         try { 
-            $this->requirePermission('view_logs');
+            $this->requirePermission(PermissionsConstants::VIEW_LOGS);
             return $this->respond($this->adminServices->checkWorkerStatus()); 
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -351,7 +352,7 @@ class AdminController extends BaseController {
 
     public function get_admin_translations() {
         try {
-            $this->requirePermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -370,7 +371,7 @@ class AdminController extends BaseController {
 
     public function get_dashboard_metrics($input) {
         try {
-            $this->requirePermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
             $safeInput = [
                 'start_date' => $input['start_date'] ?? null,
                 'end_date' => $input['end_date'] ?? null
@@ -395,7 +396,7 @@ class AdminController extends BaseController {
 
     public function update_message_visibility($input) {
         try {
-            $this->requirePermission('view_logs');
+            $this->requirePermission(PermissionsConstants::VIEW_LOGS);
             $data = [
                 'uuid' => $input['uuid'] ?? null,
                 'visibility' => $input['visibility'] ?? null,
@@ -409,7 +410,7 @@ class AdminController extends BaseController {
 
     public function get_message_reports($input) {
         try {
-            $this->requirePermission('view_logs');
+            $this->requirePermission(PermissionsConstants::VIEW_LOGS);
             $uuid = $input['uuid'] ?? $this->request['uuid'] ?? null;
             return $this->respond($this->adminServices->getMessageReports($uuid));
         }
@@ -418,7 +419,7 @@ class AdminController extends BaseController {
 
     public function update_report_status($input) {
         try {
-            $this->requirePermission('view_logs');
+            $this->requirePermission(PermissionsConstants::VIEW_LOGS);
             $data = [
                 'report_id' => $input['report_id'] ?? null,
                 'status' => $input['status'] ?? null

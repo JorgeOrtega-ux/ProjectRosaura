@@ -6,7 +6,7 @@ class StorePackagesConfig {
     public static function getCoinPackages(): array {
         return [
             1000 => [
-                'id' => 'coins_1000',
+                'id' => StoreConstants::COINS_1000,
                 'name' => __('store_coins_1000_name'),
                 'amount' => 1000,
                 'description' => __('store_coins_1000_desc'),
@@ -21,7 +21,7 @@ class StorePackagesConfig {
                 'default_price_id' => 'price_1Tq2JyE4dfTcnyKKhgS3IK9l',
             ],
             2750 => [
-                'id' => 'coins_2750',
+                'id' => StoreConstants::COINS_2750,
                 'name' => __('store_coins_2750_name'),
                 'amount' => 2750,
                 'description' => __('store_coins_2750_desc'),
@@ -36,7 +36,7 @@ class StorePackagesConfig {
                 'default_price_id' => 'price_1Tq2KME4dfTcnyKK8LBoUUWT',
             ],
             5750 => [
-                'id' => 'coins_5750',
+                'id' => StoreConstants::COINS_5750,
                 'name' => __('store_coins_5750_name'),
                 'amount' => 5750,
                 'description' => __('store_coins_5750_desc'),
@@ -51,7 +51,7 @@ class StorePackagesConfig {
                 'default_price_id' => 'price_1Tq2KdE4dfTcnyKKY9DebxeP',
             ],
             13250 => [
-                'id' => 'coins_13250',
+                'id' => StoreConstants::COINS_13250,
                 'name' => __('store_coins_13250_name'),
                 'amount' => 13250,
                 'description' => __('store_coins_13250_desc'),
@@ -69,48 +69,48 @@ class StorePackagesConfig {
     }
     public static function getContentPackages(): array {
         return [
-            'proteccion_pixeles_1' => [
-                'id' => 'proteccion_pixeles_1',
+            StoreConstants::PERK_PIXEL_SHIELD => [
+                'id' => StoreConstants::PERK_PIXEL_SHIELD,
                 'name' => __('store_content_proteccion_pixeles_1_name'),
                 'description' => __('store_content_proteccion_pixeles_1_desc'),
                 'price_coins' => 2000,
                 'icon' => 'shield',
                 'is_single_use' => true,
             ],
-            'pixel_misil_1' => [
-                'id' => 'pixel_misil_1',
+            StoreConstants::PERK_PIXEL_MISSILE => [
+                'id' => StoreConstants::PERK_PIXEL_MISSILE,
                 'name' => __('store_content_pixel_misil_1_name'),
                 'description' => __('store_content_pixel_misil_1_desc'),
                 'price_coins' => 500,
                 'icon' => 'rocket_launch',
                 'is_single_use' => true,
             ],
-            'bomba_pixel_1' => [
-                'id' => 'bomba_pixel_1',
+            StoreConstants::PERK_PIXEL_BOMB => [
+                'id' => StoreConstants::PERK_PIXEL_BOMB,
                 'name' => __('store_content_bomba_pixel_1_name'),
                 'description' => __('store_content_bomba_pixel_1_desc'),
                 'price_coins' => 1000,
                 'icon' => 'bomb',
                 'is_single_use' => true,
             ],
-            'bomba_racimo_1' => [
-                'id' => 'bomba_racimo_1',
+            StoreConstants::PERK_CLUSTER_BOMB => [
+                'id' => StoreConstants::PERK_CLUSTER_BOMB,
                 'name' => __('store_content_bomba_racimo_1_name'),
                 'description' => __('store_content_bomba_racimo_1_desc'),
                 'price_coins' => 2500,
                 'icon' => 'scatter_plot',
                 'is_single_use' => true,
             ],
-            'bomba_atomica_1' => [
-                'id' => 'bomba_atomica_1',
+            StoreConstants::PERK_ATOMIC_BOMB => [
+                'id' => StoreConstants::PERK_ATOMIC_BOMB,
                 'name' => __('store_content_bomba_atomica_1_name'),
                 'description' => __('store_content_bomba_atomica_1_desc'),
                 'price_coins' => 5000,
                 'icon' => 'crisis_alert',
                 'is_single_use' => true,
             ],
-            'lluvia_meteoritos_1' => [
-                'id' => 'lluvia_meteoritos_1',
+            StoreConstants::PERK_METEOR_SHOWER => [
+                'id' => StoreConstants::PERK_METEOR_SHOWER,
                 'name' => __('store_content_lluvia_meteoritos_1_name'),
                 'description' => __('store_content_lluvia_meteoritos_1_desc'),
                 'price_coins' => 10000,

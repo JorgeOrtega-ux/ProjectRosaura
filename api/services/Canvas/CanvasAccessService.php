@@ -11,6 +11,7 @@ use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\CacheConstants;
 use App\Core\System\SubscriptionPlanConstants; 
+use App\Core\System\CanvasPermissionsConstants;
 use App\Config\Database\RedisCache;
 use App\Config\Database\DatabaseManager;
 use PDO;
@@ -89,7 +90,7 @@ class CanvasAccessService {
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
             $isOwner = ($canvas['owner_id'] === $requesterId) || ($canvas['owner_id'] === null && $canManageOfficial);
-            $isAdmin = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, 'manage_roles') || $this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS);
+            $isAdmin = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, CanvasPermissionsConstants::MANAGE_ROLES) || $this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, CanvasPermissionsConstants::MANAGE_SETTINGS);
 
             if (!$isAdmin) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -239,8 +240,8 @@ class CanvasAccessService {
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
             if (!$isOwner) {
-                $hasPermission = $this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::PLACE_PIXELS);
-                if (!$hasPermission && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\PermissionsConstants::MANAGE_SETTINGS)) {
+                $hasPermission = $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::PLACE_PIXELS);
+                if (!$hasPermission && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS)) {
                     return ['success' => false, 'message' => __('err_unauthorized')];
                 }
             }

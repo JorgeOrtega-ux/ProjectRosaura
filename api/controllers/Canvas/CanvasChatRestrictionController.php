@@ -5,8 +5,10 @@ namespace App\Api\Controllers\Canvas;
 use App\Api\Controllers\BaseController;
 
 use App\Config\Database\DatabaseManager;
-use \App\Core\System\DatabaseConstants;
-use \App\Core\System\Logger;
+use App\Core\System\DatabaseConstants;
+use App\Core\System\Logger;
+use App\Core\System\PermissionsConstants;
+use App\Core\System\CanvasPermissionsConstants;
 
 class CanvasChatRestrictionController {
     private $pdo;
@@ -82,7 +84,10 @@ class CanvasChatRestrictionController {
             $perms = array_column($permissionsRows, 'name');
             
             $canModerate = false;
-            if (in_array(\App\Core\System\PermissionsConstants::MANAGE_SETTINGS, $perms) || in_array(\App\Core\System\PermissionsConstants::MANAGE_MEMBERS, $perms) || in_array(\App\Core\System\PermissionsConstants::MODERATE_CHAT, $perms)) {
+            if (in_array(CanvasPermissionsConstants::MANAGE_SETTINGS, $perms) || 
+                in_array(CanvasPermissionsConstants::MANAGE_MEMBERS, $perms) || 
+                in_array(CanvasPermissionsConstants::MANAGE_SANCTIONS, $perms) || 
+                in_array(PermissionsConstants::MODERATE_CHAT, $perms)) {
                 $canModerate = true;
             }
             if (!$canModerate) {

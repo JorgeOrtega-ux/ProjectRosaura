@@ -22,6 +22,8 @@ use App\Core\System\SecurityConstants;
 use App\Core\System\CacheConstants;
 use App\Core\System\RateLimitConstants;
 use App\Core\System\SessionConstants;
+use App\Core\System\PermissionsConstants;
+use App\Core\System\ModerationConstants;
 
 class AdminServices {
     private $userRepository;
@@ -180,7 +182,7 @@ class AdminServices {
     }
 
     public function getUser($data) {
-        if (!$this->hasPermission('view_users')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::VIEW_USERS)) return ['success' => false, 'message' => __('error.unauthorized')];
         
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
@@ -219,7 +221,7 @@ class AdminServices {
     }
 
     public function updateAvatar($data) {
-        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::EDIT_USERS)) return ['success' => false, 'message' => __('error.unauthorized')];
         $targetId = (int)($data['target_user_id'] ?? 0);
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
@@ -252,7 +254,7 @@ class AdminServices {
             if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
                 $currentUserId = $this->sessionManager->get('user_id');
                 $logPayload = json_encode(['event' => 'admin_override_avatar', 'target_user' => $targetId, 'admin_user' => $currentUserId]);
-                $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_avatar', $logPayload, null);
+                $this->moderationRepository->logAction($targetId, $currentUserId, ModerationConstants::ACTION_PROFILE_AVATAR, $logPayload, null);
                 return ['success' => true, 'message' => __('admin.avatar_updated'), 'new_avatar' => \App\Core\Helpers\Utils::getS3PublicUrl($newRelPath)];
             }
         } else {
@@ -263,7 +265,7 @@ class AdminServices {
     }
 
     public function deleteAvatar($data) {
-        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::EDIT_USERS)) return ['success' => false, 'message' => __('error.unauthorized')];
         $targetId = (int)($data['target_user_id'] ?? 0);
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
@@ -283,14 +285,14 @@ class AdminServices {
         if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
             $currentUserId = $this->sessionManager->get('user_id');
             $logPayload = json_encode(['event' => 'admin_delete_avatar', 'target_user' => $targetId, 'admin_user' => $currentUserId]);
-            $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_avatar', $logPayload, null);
+            $this->moderationRepository->logAction($targetId, $currentUserId, ModerationConstants::ACTION_PROFILE_AVATAR, $logPayload, null);
             return ['success' => true, 'message' => __('admin.avatar_deleted'), 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
         }
         return ['success' => false, 'message' => __('error.database')];
     }
 
     public function updateUsername($data) {
-        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::EDIT_USERS)) return ['success' => false, 'message' => __('error.unauthorized')];
         $targetId = (int)($data['target_user_id'] ?? 0);
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
@@ -321,14 +323,14 @@ class AdminServices {
         $oldUsername = $user['username'];
         if ($this->userRepository->updateUsername($targetId, $username)) {
             $logPayload = json_encode(['event' => 'admin_update_username', 'old_username' => $oldUsername, 'new_username' => $username, 'admin_user' => $currentUserId]);
-            $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_username', $logPayload, null);
+            $this->moderationRepository->logAction($targetId, $currentUserId, ModerationConstants::ACTION_PROFILE_USERNAME, $logPayload, null);
             return ['success' => true, 'message' => __('admin.username_updated'), 'new_username' => $username];
         }
         return ['success' => false, 'message' => __('error.update_failed')];
     }
 
     public function updateEmail($data) {
-        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::EDIT_USERS)) return ['success' => false, 'message' => __('error.unauthorized')];
         $targetId = (int)($data['target_user_id'] ?? 0);
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
@@ -353,7 +355,7 @@ class AdminServices {
         $oldEmail = $user['email'];
         if ($this->userRepository->updateEmail($targetId, $email)) {
             $logPayload = json_encode(['event' => 'admin_update_email', 'old_email' => $oldEmail, 'new_email' => $email, 'admin_user' => $currentUserId]);
-            $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_email', $logPayload, null);
+            $this->moderationRepository->logAction($targetId, $currentUserId, ModerationConstants::ACTION_PROFILE_EMAIL, $logPayload, null);
             
             $mailer = new Mailer();
             $mailer->sendSecurityAlertEmailChanged($oldEmail, $user['username'], $email);
@@ -364,7 +366,7 @@ class AdminServices {
     }
 
     public function updatePreference($data) {
-        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::EDIT_USERS)) return ['success' => false, 'message' => __('error.unauthorized')];
         $targetId = (int)($data['target_user_id'] ?? 0);
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
@@ -385,7 +387,7 @@ class AdminServices {
             $currentUserId = $this->sessionManager->get('user_id');
             $valStr = is_bool($value) ? ($value ? 'true' : 'false') : (string)$value;
             $logPayload = json_encode(['event' => 'admin_update_preference', 'key' => $key, 'new_value' => $valStr, 'admin_user' => $currentUserId]);
-            $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_preferences', $logPayload, null);
+            $this->moderationRepository->logAction($targetId, $currentUserId, ModerationConstants::ACTION_PROFILE_PREFERENCES, $logPayload, null);
             return ['success' => true, 'message' => __('admin.preference_updated')];
         }
         
@@ -393,7 +395,7 @@ class AdminServices {
     }
 
     public function updateRoles($data) {
-        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ASSIGN_ROLES)) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::ASSIGN_ROLES)) return ['success' => false, 'message' => __('error.unauthorized')];
 
         $targetId = (int)($data['target_user_id'] ?? 0);
         $rolesIds = $data['roles'] ?? [];
@@ -426,7 +428,7 @@ class AdminServices {
             if ($this->roleRepository->syncUserRoles($targetId, $rolesIds, $currentWeight)) {
                 Logger::info("admin_update_user_roles", ['admin_id' => $currentUserId, 'target_user_id' => $targetId, 'new_roles' => $rolesIds]);
                 $logPayload = json_encode(['event' => 'admin_update_roles', 'new_roles' => $rolesIds, 'admin_user' => $currentUserId]);
-                $this->moderationRepository->logAction($targetId, $currentUserId, 'role_changed', $logPayload, null, null);
+                $this->moderationRepository->logAction($targetId, $currentUserId, ModerationConstants::ACTION_ROLE_CHANGED, $logPayload, null, null);
                 
                 Utils::invalidateUserSessions($this->sessionManager, $targetId);
                 
@@ -443,7 +445,7 @@ class AdminServices {
     }
 
     public function deleteUsers($data) {
-        if (!$this->hasPermission('delete_users')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::DELETE_USERS)) return ['success' => false, 'message' => __('error.unauthorized')];
 
         $userIds = $data['user_ids'] ?? [];
         
@@ -497,7 +499,7 @@ class AdminServices {
                 $redisClient->rpush(CacheConstants::QUEUE_ACCOUNT_DELETION, [$payload]);
                 
                 $logPayload = json_encode(['event' => 'admin_bulk_delete_user', 'admin_user' => $currentUserId]);
-                $this->moderationRepository->logAction($targetId, $currentUserId, 'deleted', $logPayload, null, null);
+                $this->moderationRepository->logAction($targetId, $currentUserId, ModerationConstants::ACTION_DELETED, $logPayload, null, null);
                 
                 $successCount++;
             }
@@ -519,7 +521,7 @@ class AdminServices {
     }
 
     public function updateSuspension($data) {
-        if (!$this->hasPermission('moderate_users')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::MODERATE_USERS)) return ['success' => false, 'message' => __('error.unauthorized')];
 
         $targetId = (int)($data['target_user_id'] ?? 0);
         
@@ -565,13 +567,13 @@ class AdminServices {
         $logReason = null;
         
         if ($dbIsSuspended === 1 && (!isset($user['is_suspended']) || $user['is_suspended'] != 1)) {
-            $actionType = 'suspended';
+            $actionType = ModerationConstants::ACTION_SUSPENDED;
             $logReason = $dbSuspensionReason;
         } elseif ($dbIsSuspended === 0 && (isset($user['is_suspended']) && $user['is_suspended'] == 1)) {
-            $actionType = 'unsuspended';
+            $actionType = ModerationConstants::ACTION_UNSUSPENDED;
         } elseif ($dbIsSuspended === 1 && (isset($user['is_suspended']) && $user['is_suspended'] == 1)) {
             if ($dbSuspensionReason !== $user['suspension_reason'] || $dbEndDate !== $user['suspension_end_date']) {
-                 $actionType = 'suspended'; 
+                 $actionType = ModerationConstants::ACTION_SUSPENDED; 
                  $logReason = $dbSuspensionReason;
             }
         }
@@ -594,7 +596,7 @@ class AdminServices {
     }
 
     public function getModerationKardex($data) {
-        if (!$this->hasPermission('view_kardex')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::VIEW_KARDEX)) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
         
@@ -681,7 +683,7 @@ class AdminServices {
     }
 
     public function saveSubscription($data) {
-        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
         $uuid = Utils::sanitizeText($data['uuid'] ?? '');
         $name = Utils::sanitizeText($data['name'] ?? '');
         $tier_level = (int)($data['tier_level'] ?? 1);
@@ -770,7 +772,7 @@ class AdminServices {
     }
 
     public function toggleSubscriptionVisibility($data) {
-        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
         $uuid = Utils::sanitizeText($data['uuid'] ?? '');
         if (empty($uuid)) return ['success' => false, 'message' => 'UUID requerido'];
 
@@ -787,7 +789,7 @@ class AdminServices {
     }
 
     public function setSubscriptionPopular($data) {
-        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
         $uuid = Utils::sanitizeText($data['uuid'] ?? '');
         if (empty($uuid)) return ['success' => false, 'message' => 'UUID requerido'];
 
@@ -812,7 +814,7 @@ class AdminServices {
     }
 
     public function deleteSubscription($data) {
-        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
         $uuid = Utils::sanitizeText($data['uuid'] ?? '');
         if (empty($uuid)) return ['success' => false, 'message' => 'UUID requerido'];
 
@@ -862,7 +864,7 @@ class AdminServices {
     }
 
     public function getRoles() {
-        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::VIEW_ROLES)) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::VIEW_ROLES)) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
         
@@ -870,7 +872,7 @@ class AdminServices {
     }
 
     public function createRole($data) {
-        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE)) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE)) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -894,7 +896,7 @@ class AdminServices {
     }
 
     public function editRole($data) {
-        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE)) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE)) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -939,7 +941,7 @@ class AdminServices {
     }
 
     public function deleteRole($data) {
-        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE)) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE)) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -985,7 +987,7 @@ class AdminServices {
     }
 
     public function updateRolePermissions($data) {
-        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE)) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE)) return ['success' => false, 'message' => __('error.unauthorized')];
         
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
@@ -1038,12 +1040,12 @@ class AdminServices {
     }
 
     public function getServerConfig() {
-        if (!$this->hasPermission('manage_server_config')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_SERVER_CONFIG)) return ['success' => false, 'message' => __('error.unauthorized')];
         return ['success' => true, 'config' => $this->configRepository->getConfig()];
     }
 
     public function updateServerConfig($data) {
-        if (!$this->hasPermission('manage_server_config')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_SERVER_CONFIG)) return ['success' => false, 'message' => __('error.unauthorized')];
 
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
@@ -1098,7 +1100,7 @@ class AdminServices {
     }
 
     public function createBackup($data = []) {
-        if (!$this->hasPermission('create_backups')) {
+        if (!$this->hasPermission(PermissionsConstants::CREATE_BACKUPS)) {
             return ['success' => false, 'message' => __('error.unauthorized')];
         }
 
@@ -1113,7 +1115,7 @@ class AdminServices {
     }
 
     public function getBackupSchema() {
-        if (!$this->hasPermission('create_backups')) {
+        if (!$this->hasPermission(PermissionsConstants::CREATE_BACKUPS)) {
             return ['success' => false, 'message' => __('error.unauthorized')];
         }
         try {
@@ -1135,7 +1137,7 @@ class AdminServices {
     }
 
     public function createCustomBackup($data) {
-        if (!$this->hasPermission('create_backups')) {
+        if (!$this->hasPermission(PermissionsConstants::CREATE_BACKUPS)) {
             return ['success' => false, 'message' => __('error.unauthorized')];
         }
         
@@ -1153,7 +1155,7 @@ class AdminServices {
     }
 
     public function backupStatus($data) {
-        if (!$this->hasPermission('create_backups') && !$this->hasPermission('restore_backups')) {
+        if (!$this->hasPermission(PermissionsConstants::CREATE_BACKUPS) && !$this->hasPermission(PermissionsConstants::RESTORE_BACKUPS)) {
             return ['success' => false, 'message' => __('error.unauthorized')];
         }
 
@@ -1182,7 +1184,7 @@ class AdminServices {
     }
 
     public function restoreBackup($data) {
-        if (!$this->hasPermission('restore_backups')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::RESTORE_BACKUPS)) return ['success' => false, 'message' => __('error.unauthorized')];
         
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
@@ -1235,7 +1237,7 @@ class AdminServices {
     }
 
     public function readLogs($data) {
-        if (!$this->hasPermission('view_logs')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::VIEW_LOGS)) return ['success' => false, 'message' => __('error.unauthorized')];
         $files = $data['files'] ?? [];
         if (!is_array($files) || empty($files)) return ['success' => false, 'message' => __('validation.no_files_specified')];
         if (count($files) > 10) return ['success' => false, 'message' => __('validation.too_many_files')];
@@ -1272,7 +1274,7 @@ class AdminServices {
     }
 
     public function checkWorkerStatus() {
-        if (!$this->hasPermission('view_logs')) return ['success' => false, 'message' => __('error.unauthorized')];
+        if (!$this->hasPermission(PermissionsConstants::VIEW_LOGS)) return ['success' => false, 'message' => __('error.unauthorized')];
         
         try {
             $redisCache = new \App\Config\Database\RedisCache();
@@ -1291,7 +1293,7 @@ class AdminServices {
     }
 
     public function getDashboardMetrics($data) {
-        if (!$this->hasPermission(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL)) {
+        if (!$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) {
             return ['success' => false, 'message' => __('error.unauthorized')];
         }
         
