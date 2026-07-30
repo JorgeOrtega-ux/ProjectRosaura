@@ -110,6 +110,8 @@
     "desc_confirm_resize_now": "El lienzo cambiará a :size de forma inmediata. ¿Deseas continuar?",
     "err_resize_date_required": "Debes seleccionar una fecha para la expansión programada.",
     "err_date_future": "La fecha debe ser posterior al momento actual.",
+    "err_date_minimum_5_minutes": "La fecha programada debe tener un margen mínimo de 5 minutos al futuro.",
+    "err_schedule_min_5_minutes": "La fecha programada debe tener un margen mínimo de 5 minutos al futuro.",
     "err_size_already_applied": "El lienzo ya tiene ese tamaño.",
     "err_invalid_canvas_id": "Identificador de lienzo no válido.",
     "err_unspecified_canvas": "No se especificó ningún lienzo.",

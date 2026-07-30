@@ -41,6 +41,7 @@ class CanvasResetController {
         this.checkSnapshot = this.wrapper.querySelector('[data-ref="take_snapshot"]');
 
         this.calendar = new CalendarSystem('.component-module[data-module="moduleCalendarDate"]');
+        this.calendar.disablePastDates = true;
         this.calendar.init();
 
         this.setupCalendarCallbacks(this.inputDateTime ? this.inputDateTime.value : '');
@@ -71,6 +72,15 @@ class CanvasResetController {
             const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
             if (textRef) textRef.textContent = __('lbl_select_date');
         });
+
+        if (initialDateStr) {
+            const dateObj = new Date(initialDateStr);
+            if (!isNaN(dateObj.getTime())) {
+                const displayString = this.calendar.getFormattedDisplayDate(dateObj);
+                const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
+                if (textRef) textRef.textContent = displayString;
+            }
+        }
     }
 
     bindEvents() {
@@ -205,6 +215,16 @@ class CanvasResetController {
         if (isActive && !localTimeStr) {
             showMessage(__('err_reset_date_required'), 'warning');
             return;
+        }
+
+        if (isActive) {
+            const date = new Date(localTimeStr);
+            const now = new Date();
+            const minFuture = new Date(now.getTime() + 5 * 60 * 1000);
+            if (isNaN(date.getTime()) || date < minFuture) {
+                showMessage(__('err_date_minimum_5_minutes'), 'error');
+                return;
+            }
         }
 
         const utcNextReset = this.localInputFormatToUtcString(localTimeStr);

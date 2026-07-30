@@ -752,8 +752,8 @@ class CanvasViewService {
 
         if (!empty($resetSettings['next_reset_at'])) {
             try {
-                $dt = new \DateTime($resetSettings['next_reset_at']);
-                $resetDateLocal = $dt->format('Y-m-d\TH:i');
+                $dt = new \DateTime($resetSettings['next_reset_at'], new \DateTimeZone('UTC'));
+                $resetDateLocal = $dt->format('Y-m-d\TH:i:s\Z');
                 $monthIndex = (int)$dt->format('n') - 1;
                 $monthStr = $monthShort[$monthIndex] ?? $dt->format('M');
                 $resetDateDisplay = $dt->format('d') . ' ' . $monthStr . ' ' . $dt->format('Y, H:i');
@@ -865,8 +865,8 @@ class CanvasViewService {
 
         if (!empty($resizeSettings['next_resize_at'])) {
             try {
-                $dt = new \DateTime($resizeSettings['next_resize_at']);
-                $resizeDateLocal = $dt->format('Y-m-d\TH:i');
+                $dt = new \DateTime($resizeSettings['next_resize_at'], new \DateTimeZone('UTC'));
+                $resizeDateLocal = $dt->format('Y-m-d\TH:i:s\Z');
                 $monthIndex = (int)$dt->format('n') - 1;
                 $monthStr = $monthShort[$monthIndex] ?? $dt->format('M');
                 $resizeDateDisplay = $dt->format('d') . ' ' . $monthStr . ' ' . $dt->format('Y, H:i');

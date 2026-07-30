@@ -138,10 +138,16 @@ class CanvasSettingsService {
                     return ['success' => false, 'message' => __('err_resize_date_required')];
                 }
                 
-                $date = DateTime::createFromFormat('Y-m-d H:i:s', $data['next_resize_at']);
+                $date = DateTime::createFromFormat('Y-m-d H:i:s', $data['next_resize_at'], new \DateTimeZone('UTC'));
                 if (!$date || $date->format('Y-m-d H:i:s') !== $data['next_resize_at']) {
                     return ['success' => false, 'message' => __('err_invalid_date_format')];
                 }
+
+                $now = new DateTime('now', new \DateTimeZone('UTC'));
+                if (($date->getTimestamp() - $now->getTimestamp()) < 300) {
+                    return ['success' => false, 'message' => __('err_schedule_min_5_minutes')];
+                }
+
                 $nextResizeAt = $data['next_resize_at'];
             }
 
@@ -250,10 +256,16 @@ class CanvasSettingsService {
                     return ['success' => false, 'message' => __('err_reset_date_required')];
                 }
                 
-                $date = DateTime::createFromFormat('Y-m-d H:i:s', $data['next_reset_at']);
+                $date = DateTime::createFromFormat('Y-m-d H:i:s', $data['next_reset_at'], new \DateTimeZone('UTC'));
                 if (!$date || $date->format('Y-m-d H:i:s') !== $data['next_reset_at']) {
                     return ['success' => false, 'message' => __('err_invalid_date_format')];
                 }
+
+                $now = new DateTime('now', new \DateTimeZone('UTC'));
+                if (($date->getTimestamp() - $now->getTimestamp()) < 300) {
+                    return ['success' => false, 'message' => __('err_schedule_min_5_minutes')];
+                }
+
                 $nextResetAt = $data['next_reset_at'];
             }
 

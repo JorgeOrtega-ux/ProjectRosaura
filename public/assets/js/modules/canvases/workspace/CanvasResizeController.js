@@ -65,6 +65,7 @@ class CanvasResizeController {
 
     initCalendar() {
         this.calendar = new CalendarSystem('[data-module="moduleCalendarDateResize"]');
+        this.calendar.disablePastDates = true;
         this.calendar.init();
 
         const inputDateTime = this.wrapper.querySelector('[data-ref="next_resize_at"]');
@@ -79,6 +80,15 @@ class CanvasResizeController {
             const textRef = this.wrapper.querySelector('[data-ref="resize-date-text"]');
             if (textRef) textRef.textContent = __('lbl_select_date');
         });
+
+        if (initialDate) {
+            const dateObj = new Date(initialDate);
+            if (!isNaN(dateObj.getTime())) {
+                const displayString = this.calendar.getFormattedDisplayDate(dateObj);
+                const textRef = this.wrapper.querySelector('[data-ref="resize-date-text"]');
+                if (textRef) textRef.textContent = displayString;
+            }
+        }
     }
 
     bindEvents() {
@@ -301,8 +311,10 @@ class CanvasResizeController {
             }
 
             const date = new Date(localTimeStr);
-            if (date <= new Date()) {
-                showMessage(__('err_date_future'), 'error');
+            const now = new Date();
+            const minFuture = new Date(now.getTime() + 5 * 60 * 1000);
+            if (isNaN(date.getTime()) || date < minFuture) {
+                showMessage(__('err_date_minimum_5_minutes'), 'error');
                 return;
             }
 

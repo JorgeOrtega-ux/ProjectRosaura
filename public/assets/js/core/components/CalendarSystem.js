@@ -8,6 +8,7 @@ export class CalendarSystem {
         this.onConfirm = null;
         this.onClear = null;
         this.initialized = false;
+        this.disablePastDates = false;
         
         this.monthsStr = [
             __('month_january'), __('month_february'), __('month_march'), __('month_april'),
@@ -53,18 +54,40 @@ export class CalendarSystem {
         this.onClear = onClearCallback;
 
         if (initialDateStr) {
-            const parts = initialDateStr.split('T');
-            const dateParts = parts[0].split('-');
-            const timeParts = parts[1] ? parts[1].split(':') : ['00', '00'];
-            
-            this.selectedDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-            this.currentDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+            let dateObj;
+            if (initialDateStr.includes('Z') || /[-+]\d{2}:?\d{2}$/.test(initialDateStr)) {
+                dateObj = new Date(initialDateStr);
+            } else {
+                const parts = initialDateStr.split('T');
+                const dateParts = parts[0].split('-');
+                const timeParts = parts[1] ? parts[1].split(':') : ['00', '00'];
+                dateObj = new Date(
+                    parseInt(dateParts[0], 10),
+                    parseInt(dateParts[1], 10) - 1,
+                    parseInt(dateParts[2], 10),
+                    parseInt(timeParts[0], 10),
+                    parseInt(timeParts[1], 10)
+                );
+            }
 
-            const container = this.getContainer();
-            const hInput = container.querySelector('[data-ref="calendar-hours"]');
-            const mInput = container.querySelector('[data-ref="calendar-minutes"]');
-            if (hInput) hInput.value = timeParts[0];
-            if (mInput) mInput.value = timeParts[1];
+            if (!isNaN(dateObj.getTime())) {
+                this.selectedDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+                this.currentDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+
+                const container = this.getContainer();
+                const hInput = container.querySelector('[data-ref="calendar-hours"]');
+                const mInput = container.querySelector('[data-ref="calendar-minutes"]');
+                if (hInput) hInput.value = String(dateObj.getHours()).padStart(2, '0');
+                if (mInput) mInput.value = String(dateObj.getMinutes()).padStart(2, '0');
+            } else {
+                this.selectedDate = null;
+                this.currentDate = new Date();
+                const container = this.getContainer();
+                const hInput = container.querySelector('[data-ref="calendar-hours"]');
+                const mInput = container.querySelector('[data-ref="calendar-minutes"]');
+                if (hInput) hInput.value = '00';
+                if (mInput) mInput.value = '00';
+            }
         } else {
             this.selectedDate = null;
             this.currentDate = new Date();
@@ -146,6 +169,9 @@ export class CalendarSystem {
             daysContainer.innerHTML += `<button type="button" class="component-calendar-day muted" disabled>${dayNum}</button>`;
         }
         
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         for (let i = 1; i <= daysInMonth; i++) {
             let isSelected = false;
             if (this.selectedDate && 
@@ -154,8 +180,22 @@ export class CalendarSystem {
                 this.selectedDate.getFullYear() === year) {
                 isSelected = true;
             }
-            const cls = isSelected ? 'component-calendar-day active' : 'component-calendar-day';
-            daysContainer.innerHTML += `<button type="button" class="${cls}" data-action="calendarSelectDay" data-day="${i}">${i}</button>`;
+
+            let isPast = false;
+            if (this.disablePastDates) {
+                const cellDate = new Date(year, month, i);
+                if (cellDate < today) {
+                    isPast = true;
+                }
+            }
+
+            let cls = isSelected ? 'component-calendar-day active' : 'component-calendar-day';
+            let attrs = '';
+            if (isPast) {
+                cls += ' muted';
+                attrs = ' disabled';
+            }
+            daysContainer.innerHTML += `<button type="button" class="${cls}" data-action="calendarSelectDay" data-day="${i}"${attrs}>${i}</button>`;
         }
         
         const totalCells = firstDay + daysInMonth;
@@ -176,9 +216,18 @@ export class CalendarSystem {
         this.render();
     }
 
+    getFormattedDisplayDate(dateObj, h = null, m = null) {
+        if (!dateObj || isNaN(dateObj.getTime())) return '';
+        const d = dateObj.getDate();
+        const mStr = this.monthsShortStr[dateObj.getMonth()];
+        const y = dateObj.getFullYear();
+        const hrs = h !== null ? String(h).padStart(2, '0') : String(dateObj.getHours()).padStart(2, '0');
+        const mins = m !== null ? String(m).padStart(2, '0') : String(dateObj.getMinutes()).padStart(2, '0');
+        return `${d} de ${mStr} ${y}, ${hrs}:${mins}`;
+    }
+
     confirm() {
         if (!this.selectedDate) {
-            
             showMessage(window.__('err_select_day'), 'error');
             return;
         }
@@ -194,8 +243,19 @@ export class CalendarSystem {
         const mo = String(this.selectedDate.getMonth() + 1).padStart(2, '0');
         const d = String(this.selectedDate.getDate()).padStart(2, '0');
         
+        // Validar si la fecha seleccionada con hora es al menos 5 minutos al futuro si disablePastDates está activo
+        if (this.disablePastDates) {
+            const selectedDateTime = new Date(y, this.selectedDate.getMonth(), parseInt(d, 10), parseInt(h, 10), parseInt(m, 10));
+            const now = new Date();
+            const minFuture = new Date(now.getTime() + 5 * 60 * 1000);
+            if (selectedDateTime < minFuture) {
+                showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha programada debe tener un margen mínimo de 5 minutos al futuro.', 'error');
+                return;
+            }
+        }
+
         const isoString = `${y}-${mo}-${d}T${h}:${m}`;
-        const displayString = `${this.selectedDate.getDate()} de ${this.monthsShortStr[this.selectedDate.getMonth()]} ${this.selectedDate.getFullYear()}, ${h}:${m}`;
+        const displayString = this.getFormattedDisplayDate(this.selectedDate, h, m);
         
         if (this.onConfirm) this.onConfirm(isoString, displayString);
         this.closeModule();
