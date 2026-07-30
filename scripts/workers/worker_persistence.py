@@ -12,6 +12,13 @@ from dotenv import load_dotenv
 from cassandra.cluster import Cluster
 from cassandra.query import BatchStatement
 from datetime import datetime
+import sys
+
+# Ensure scripts dir is in path
+_script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _script_dir not in sys.path:
+    sys.path.append(_script_dir)
+from workers.worker_system_tasks import init_cassandra_schemas
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
@@ -97,22 +104,9 @@ def canvas_persistence_thread():
             print(f"[*] Connecting to Cassandra for Pixel History at {CASSANDRA_HOST}:{CASSANDRA_PORT}...")
             cassandra_cluster = Cluster([CASSANDRA_HOST], port=CASSANDRA_PORT, connect_timeout=10)
             cassandra_session = cassandra_cluster.connect()
-            cassandra_session.execute(f"""
-                CREATE KEYSPACE IF NOT EXISTS {CASSANDRA_KEYSPACE}
-                WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}
-            """)
+            # Initialize schema from CQL files
+            init_cassandra_schemas(cassandra_session)
             cassandra_session.set_keyspace(CASSANDRA_KEYSPACE)
-            cassandra_session.execute("""
-                CREATE TABLE IF NOT EXISTS canvas_pixel_history (
-                    canvas_id int,
-                    x int,
-                    y int,
-                    placed_at timestamp,
-                    user_id int,
-                    color_hex text,
-                    PRIMARY KEY ((canvas_id, x, y), placed_at)
-                ) WITH CLUSTERING ORDER BY (placed_at DESC);
-            """)
             print("[+] Cassandra connected and Pixel History schema verified.")
             return True
         except Exception as e:
@@ -295,41 +289,9 @@ def chat_persistence_thread():
             cassandra_cluster = Cluster([CASSANDRA_HOST], port=CASSANDRA_PORT, connect_timeout=10)
             cassandra_session = cassandra_cluster.connect()
             
-            # Auto-initialize schema
-            cassandra_session.execute(f"""
-                CREATE KEYSPACE IF NOT EXISTS {CASSANDRA_KEYSPACE}
-                WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}
-            """)
+            # Auto-initialize schema from CQL files
+            init_cassandra_schemas(cassandra_session)
             cassandra_session.set_keyspace(CASSANDRA_KEYSPACE)
-            cassandra_session.execute("""
-                CREATE TABLE IF NOT EXISTS canvas_chat_messages (
-                    canvas_id int,
-                    created_at timestamp,
-                    uuid text,
-                    user_id int,
-                    message text,
-                    attachments text,
-                    file_size bigint,
-                    visibility text,
-                    deleted_by text,
-                    delete_reason text,
-                    reply_to text,
-                    reply_to_username text,
-                    reply_to_message text,
-                    PRIMARY KEY (canvas_id, created_at, uuid)
-                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC)
-            """)
-            
-            # Safe migrations for existing tables
-            for col in ["reply_to", "reply_to_username", "reply_to_message"]:
-                try:
-                    cassandra_session.execute(f"ALTER TABLE canvas_chat_messages ADD {col} text;")
-                    print(f"[+] Added column '{col}' to Cassandra canvas_chat_messages successfully.")
-                except Exception:
-                    pass
-                    
-            cassandra_session.execute("CREATE INDEX IF NOT EXISTS ON canvas_chat_messages (uuid)")
-            cassandra_session.execute("CREATE INDEX IF NOT EXISTS ON canvas_chat_messages (user_id)")
             print("[+] Cassandra connected and schema verified.")
             return True
         except Exception as e:

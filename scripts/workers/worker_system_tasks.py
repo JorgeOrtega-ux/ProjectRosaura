@@ -21,6 +21,74 @@ from dotenv import load_dotenv
 from cassandra.cluster import Cluster
 from cassandra.query import BatchStatement
 import uuid
+import sys
+
+# Ensure scripts dir is in path
+_script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _script_dir not in sys.path:
+    sys.path.append(_script_dir)
+
+def init_cassandra_schemas(session, base_dir=None):
+    """
+    Find all .cql files in the Cassandra init directory and execute them statement by statement.
+    """
+    if base_dir is None:
+        possible_dirs = [
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "docker", "cassandra", "init"),
+            os.path.join("docker", "cassandra", "init"),
+            "/app/docker/cassandra/init",
+        ]
+        for d in possible_dirs:
+            if os.path.exists(d):
+                base_dir = d
+                break
+    
+    if not base_dir or not os.path.exists(base_dir):
+        print(f"[!] Cassandra init directory not found. Checked: {possible_dirs if 'possible_dirs' in locals() else base_dir}")
+        return False
+        
+    print(f"[*] Found Cassandra init directory: {base_dir}")
+    cql_files = sorted([f for f in os.listdir(base_dir) if f.endswith('.cql')])
+    
+    if not cql_files:
+        print("[!] No .cql files found in Cassandra init directory.")
+        return False
+        
+    for cql_file in cql_files:
+        file_path = os.path.join(base_dir, cql_file)
+        print(f"[*] Executing CQL file: {file_path}")
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            lines = content.split('\n')
+            cleaned_lines = []
+            for line in lines:
+                stripped = line.strip()
+                if stripped.startswith('--') or stripped.startswith('//'):
+                    continue
+                cleaned_lines.append(line)
+            
+            cleaned_content = '\n'.join(cleaned_lines)
+            statements = cleaned_content.split(';')
+            for stmt in statements:
+                stmt = stmt.strip()
+                if not stmt:
+                    continue
+                try:
+                    session.execute(stmt)
+                except Exception as e:
+                    e_str = str(e).lower()
+                    if "already exists" in e_str or "conflicts with an existing column" in e_str:
+                        continue
+                    print(f"[!] Error executing statement in {cql_file}: {e}")
+                    print(f"Statement: {stmt}")
+            print(f"[+] Successfully executed schema file: {cql_file}")
+        except Exception as e:
+            print(f"[!] Failed to execute CQL file {cql_file}: {e}")
+            return False
+            
+    return True
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
@@ -812,159 +880,9 @@ class TelemetryWorker:
             cluster = Cluster([cass_host], port=cass_port, connect_timeout=15)
             session = cluster.connect()
             
-            # Setup keyspace
-            session.execute(f"""
-                CREATE KEYSPACE IF NOT EXISTS {cass_keyspace}
-                WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}
-            """)
+            # Initialize schema from CQL files
+            init_cassandra_schemas(session)
             session.set_keyspace(cass_keyspace)
-
-            # Setup db_identity_nosql keyspace and profile_changes_log table
-            session.execute("""
-                CREATE KEYSPACE IF NOT EXISTS db_identity_nosql
-                WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}
-            """)
-            session.execute("""
-                CREATE TABLE IF NOT EXISTS db_identity_nosql.profile_changes_log (
-                    user_id int,
-                    created_at timestamp,
-                    change_id text,
-                    change_type text,
-                    old_value text,
-                    new_value text,
-                    ip_address text,
-                    asn text,
-                    PRIMARY KEY (user_id, created_at, change_id)
-                ) WITH CLUSTERING ORDER BY (created_at DESC, change_id ASC);
-            """)
-            
-            # Setup tables & indexes
-            session.execute("""
-                CREATE TABLE IF NOT EXISTS api_latency (
-                    date_only text,
-                    created_at timestamp,
-                    uuid uuid,
-                    endpoint text,
-                    method text,
-                    status_code int,
-                    latency_ms float,
-                    user_uuid uuid,
-                    ip_address text,
-                    asn text,
-                    PRIMARY KEY (date_only, created_at, uuid)
-                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
-            """)
-            session.execute("CREATE INDEX IF NOT EXISTS ON api_latency (user_uuid)")
-
-            session.execute("""
-                CREATE TABLE IF NOT EXISTS pageviews (
-                    date_only text,
-                    created_at timestamp,
-                    uuid uuid,
-                    path text,
-                    load_time_ms float,
-                    user_uuid uuid,
-                    session_id text,
-                    device_type text,
-                    theme_preference text,
-                    locale text,
-                    PRIMARY KEY (date_only, created_at, uuid)
-                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
-            """)
-            session.execute("CREATE INDEX IF NOT EXISTS ON pageviews (user_uuid)")
-
-            session.execute("""
-                CREATE TABLE IF NOT EXISTS auth_events (
-                    date_only text,
-                    created_at timestamp,
-                    uuid uuid,
-                    event_type text,
-                    user_uuid uuid,
-                    ip_address text,
-                    asn text,
-                    PRIMARY KEY (date_only, created_at, uuid)
-                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
-            """)
-            session.execute("CREATE INDEX IF NOT EXISTS ON auth_events (user_uuid)")
-
-            session.execute("""
-                CREATE TABLE IF NOT EXISTS websocket_events (
-                    date_only text,
-                    created_at timestamp,
-                    uuid uuid,
-                    event_type text,
-                    user_uuid uuid,
-                    session_id text,
-                    duration_s float,
-                    message_size_bytes int,
-                    error_message text,
-                    ip_address text,
-                    PRIMARY KEY (date_only, created_at, uuid)
-                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
-            """)
-            session.execute("CREATE INDEX IF NOT EXISTS ON websocket_events (user_uuid)")
-
-            session.execute("""
-                CREATE TABLE IF NOT EXISTS system_metrics (
-                    date_only text,
-                    created_at timestamp,
-                    uuid uuid,
-                    host_name text,
-                    cpu_usage_pct float,
-                    memory_usage_bytes bigint,
-                    disk_usage_pct float,
-                    active_connections int,
-                    PRIMARY KEY (date_only, created_at, uuid)
-                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
-            """)
-
-            session.execute("""
-                CREATE TABLE IF NOT EXISTS slow_queries (
-                    date_only text,
-                    created_at timestamp,
-                    uuid uuid,
-                    db_type text,
-                    query_text text,
-                    execution_time_ms float,
-                    user_uuid uuid,
-                    PRIMARY KEY (date_only, created_at, uuid)
-                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
-            """)
-            session.execute("CREATE INDEX IF NOT EXISTS ON slow_queries (user_uuid)")
-
-            session.execute("""
-                CREATE TABLE IF NOT EXISTS client_events (
-                    date_only text,
-                    created_at timestamp,
-                    uuid uuid,
-                    event_type text,
-                    url text,
-                    target_element text,
-                    error_message text,
-                    stack_trace text,
-                    user_uuid uuid,
-                    browser_agent text,
-                    PRIMARY KEY (date_only, created_at, uuid)
-                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
-            """)
-            session.execute("CREATE INDEX IF NOT EXISTS ON client_events (user_uuid)")
-
-            session.execute("""
-                CREATE TABLE IF NOT EXISTS user_actions (
-                    date_only text,
-                    created_at timestamp,
-                    uuid uuid,
-                    user_uuid uuid,
-                    session_id text,
-                    action_category text,
-                    action_name text,
-                    target_id uuid,
-                    metadata text,
-                    ip_address text,
-                    PRIMARY KEY (date_only, created_at, uuid)
-                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
-            """)
-            session.execute("CREATE INDEX IF NOT EXISTS ON user_actions (user_uuid)")
 
             # Prepare statements with TTL (90 days = 7776000 seconds)
             self.insert_api_latency_stmt = session.prepare("""

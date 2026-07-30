@@ -1654,8 +1654,13 @@ export const DesignInteractions = {
         const badgesRight = document.querySelector('[data-ref="badges-right"]');
         if (!badgesRight) return;
 
-        badgesRight.innerHTML = ''; 
-
+        // Clear only non-timer badges to prevent layout shifting/disappearing of scheduled events
+        Array.from(badgesRight.children).forEach(badge => {
+            const badgeId = badge.getAttribute('data-badge-id');
+            if (badgeId !== 'reset-timer' && badgeId !== 'resize-timer') {
+                badge.remove();
+            }
+        });
         const PERK_ORDER = PerksRegistry.getDisplayOrder();
         let renderedInventoryCount = 0;
 
