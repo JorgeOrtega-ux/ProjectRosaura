@@ -195,7 +195,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                         }
                                         if ($attachCount > 0) {
                                             if (!empty($snippet)) $badgeContent .= ' ';
-                                            $viewerUrl = $appUrl . '/canvases/chat-viewer?canvas=' . urlencode($msg['canvas_uuid']) . '&msg=' . urlencode($msg['id']) . '&idx=0';
+                                            $viewerUrl = $appUrl . '/canvases/c/v/' . urlencode($msg['canvas_uuid']) . '/' . urlencode($msg['id']) . '/0';
                                             $badgeContent .= '<a class="component-table-inline-icon" data-nav="' . htmlspecialchars($viewerUrl) . '"><span class="material-symbols-rounded">image</span> ' . $attachCount . '</a>';
                                         }
                                         if (empty($snippet) && $attachCount === 0) {

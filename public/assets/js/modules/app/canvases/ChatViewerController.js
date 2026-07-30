@@ -33,13 +33,13 @@ class ChatViewerController {
     }
 
     handleViewLoaded(e) {
-        if (e && e.detail && !e.detail.cleanUrl.includes('/canvases/chat-viewer')) return;
+        if (e && e.detail && !e.detail.cleanUrl.includes('/canvases/c/v/') && !e.detail.cleanUrl.includes('/canvases/chat-viewer')) return;
         this.loadState();
         this.updateView();
     }
 
     handleClick(e) {
-        if (!window.location.pathname.includes('/canvases/chat-viewer')) return;
+        if (!window.location.pathname.includes('/canvases/c/v/') && !window.location.pathname.includes('/canvases/chat-viewer')) return;
 
         const btnPrev = e.target.closest('#cv-btn-prev');
         if (btnPrev) {
@@ -77,7 +77,13 @@ class ChatViewerController {
             this.images = JSON.parse(wrapper.getAttribute('data-images') || '[]');
             if (this.images.length === 0) {
                 const urlParams = new URLSearchParams(window.location.search);
-                const msgId = urlParams.get('msg');
+                let msgId = urlParams.get('msg');
+                if (!msgId) {
+                    const parts = window.location.pathname.split('/');
+                    if (parts.length >= 6) {
+                        msgId = parts[5];
+                    }
+                }
                 if (msgId) {
                     const stored = sessionStorage.getItem('chat_viewer_images_' + msgId);
                     if (stored) {

@@ -53,7 +53,7 @@ class ChatServices
         if ($session) {
             try {
                 $fetchLimit = $offset + $limit;
-                $stmt = $session->prepare("SELECT uuid, user_id, message, attachments, created_at, visibility FROM canvas_chat_messages WHERE canvas_id = ? LIMIT ?");
+                $stmt = $session->prepare("SELECT uuid, user_id, message, attachments, created_at, visibility, reply_to, reply_to_username, reply_to_message FROM canvas_chat_messages WHERE canvas_id = ? LIMIT ?");
                 $rows = $session->execute($stmt, [(int)$canvasId, (int)$fetchLimit])->asRowsResult();
                 
                 foreach ($rows as $row) {
@@ -85,7 +85,10 @@ class ChatServices
                         'message' => $row['message'] ?? '',
                         'attachments' => $row['attachments'] ?? null,
                         'created_at' => $createdAt,
-                        'visibility' => $row['visibility'] ?? 'visible'
+                        'visibility' => $row['visibility'] ?? 'visible',
+                        'reply_to' => $row['reply_to'] ?? null,
+                        'reply_to_username' => $row['reply_to_username'] ?? null,
+                        'reply_to_message' => $row['reply_to_message'] ?? null
                     ];
                 }
                 
@@ -144,7 +147,10 @@ class ChatServices
                             'attachments' => $data['attachments'] ?? null,
                             'created_at' => $data['created_at'],
                             'username' => $data['username'],
-                            'avatar' => $data['avatar']
+                            'avatar' => $data['avatar'],
+                            'reply_to' => $data['reply_to'] ?? null,
+                            'reply_to_username' => $data['reply_to_username'] ?? null,
+                            'reply_to_message' => $data['reply_to_message'] ?? null
                         ];
                     }
                 }
@@ -195,7 +201,7 @@ class ChatServices
         ];
 }
 
-    public function send($userId, $canvasId, $messageText, $files, $clientId = null)
+    public function send($userId, $canvasId, $messageText, $files, $clientId = null, $replyTo = null)
     {
         if ($canvasId <= 0 || (empty($messageText) && empty($files['name'][0]))) {
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
@@ -301,6 +307,35 @@ class ChatServices
         
         $censoredMessageText = \App\Core\Helpers\Utils::censorText($messageText);
 
+        $replyToUsername = null;
+        $replyToMessage = null;
+        if (!empty($replyTo)) {
+            $cassandra = new CassandraManager();
+            $session = $cassandra->getSession();
+            if ($session) {
+                try {
+                    $stmt = $session->prepare("SELECT user_id, message FROM canvas_chat_messages WHERE uuid = ?");
+                    $rows = $session->execute($stmt, [$replyTo])->asRowsResult();
+                    $parentMsg = null;
+                    foreach ($rows as $row) {
+                        $parentMsg = $row;
+                        break;
+                    }
+                    if ($parentMsg) {
+                        $replyToMessage = $parentMsg['message'] ?? '';
+                        $parentId = (int)($parentMsg['user_id'] ?? 0);
+                        if ($parentId > 0) {
+                            $userStmt = $this->identityPdo->prepare("SELECT username FROM users WHERE id = ? LIMIT 1");
+                            $userStmt->execute([$parentId]);
+                            $replyToUsername = $userStmt->fetchColumn() ?: __('default_user');
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Logger::error("Error querying reply parent message from Cassandra", ['exception' => $e]);
+                }
+            }
+        }
+
         $messageData = [
             'id' => $msgId,
             'client_id' => $clientId,
@@ -311,7 +346,10 @@ class ChatServices
             'subscription_color' => $userInfo['subscription_color'] ?? '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}',
             'message' => htmlspecialchars($censoredMessageText, ENT_QUOTES, 'UTF-8'),
             'attachments' => $safeAttachments,
-            'created_at' => date('Y-m-d H:i:s')
+            'created_at' => date('Y-m-d H:i:s'),
+            'reply_to' => $replyTo,
+            'reply_to_username' => $replyToUsername,
+            'reply_to_message' => $replyToMessage
         ];
 
         if ($this->redis) {
@@ -325,7 +363,10 @@ class ChatServices
                 'temp_id' => $msgId,
                 'uuid' => $msgUuid,
                 'username' => $messageData['username'],
-                'avatar' => $messageData['avatar']
+                'avatar' => $messageData['avatar'],
+                'reply_to' => $replyTo,
+                'reply_to_username' => $replyToUsername,
+                'reply_to_message' => $replyToMessage
             ];
             $this->redis->rpush('canvas_chat_queue', json_encode($queuePayload));
 
@@ -345,8 +386,8 @@ class ChatServices
             $session = $cassandra->getSession();
             if ($session) {
                 $stmtInsert = $session->prepare("
-                    INSERT INTO canvas_chat_messages (canvas_id, created_at, uuid, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO canvas_chat_messages (canvas_id, created_at, uuid, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason, reply_to, reply_to_username, reply_to_message)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 $session->execute($stmtInsert, [
                     (int)$canvasId,
@@ -358,7 +399,10 @@ class ChatServices
                     (int)$totalSize,
                     'visible',
                     null,
-                    null
+                    null,
+                    $replyTo,
+                    $replyToUsername,
+                    $replyToMessage
                 ]);
                 $messageData['id'] = $msgUuid;
             } else {

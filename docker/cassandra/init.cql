@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS canvas_chat_messages (
     visibility text,
     deleted_by text,
     delete_reason text,
+    reply_to text,
+    reply_to_username text,
+    reply_to_message text,
     PRIMARY KEY (canvas_id, created_at, uuid)
 ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
 

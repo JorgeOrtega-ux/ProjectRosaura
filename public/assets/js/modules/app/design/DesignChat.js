@@ -143,6 +143,31 @@ export class DesignChat {
                 if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
             }
 
+            const btnReply = e.target.closest('[data-action="chatReplyMessage"]');
+            if (btnReply) {
+                const id = btnReply.dataset.id;
+                const username = btnReply.dataset.username;
+                const message = btnReply.dataset.message;
+                this.setReplyTarget(id, username, message);
+                const dropdown = btnReply.closest('.chat-dropdown-module');
+                if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
+            }
+
+            const replyContext = e.target.closest('.chat-message-reply-context');
+            if (replyContext) {
+                const replyToId = replyContext.dataset.replyToId;
+                if (replyToId) {
+                    const targetMsg = this.chatContainer.querySelector(`[data-message-id="${replyToId}"]`);
+                    if (targetMsg) {
+                        targetMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        targetMsg.classList.add('chat-message--highlighted');
+                        setTimeout(() => {
+                            targetMsg.classList.remove('chat-message--highlighted');
+                        }, 1500);
+                    }
+                }
+            }
+
             const btnReport = e.target.closest('[data-action="chatReportMessage"]');
             if (btnReport) {
                 const id = btnReport.dataset.id;
@@ -265,9 +290,9 @@ export class DesignChat {
                             }
 
                             if (window.spaRouter) {
-                                window.spaRouter.navigate(`/canvases/chat-viewer?canvas=${canvasUuid}&msg=${msgId}&idx=${index}`);
+                                window.spaRouter.navigate(`/canvases/c/v/${canvasUuid}/${msgId}/${index}`);
                             } else {
-                                window.location.href = (window.AppBasePath || '') + `/canvases/chat-viewer?canvas=${canvasUuid}&msg=${msgId}&idx=${index}`;
+                                window.location.href = (window.AppBasePath || '') + `/canvases/c/v/${canvasUuid}/${msgId}/${index}`;
                             }
                         } catch(err) {  }
                     }
@@ -403,6 +428,59 @@ export class DesignChat {
         });
     }
 
+    setReplyTarget(id, username, message) {
+        this.replyTarget = { id, username, message };
+        
+        let previewEl = document.querySelector('[data-ref="chat-reply-preview"]');
+        if (!previewEl) {
+            previewEl = document.createElement('div');
+            previewEl.className = 'chat-reply-preview-container';
+            previewEl.setAttribute('data-ref', 'chat-reply-preview');
+            
+            const inputArea = document.querySelector('.component-chat-input-area');
+            if (inputArea) {
+                inputArea.insertBefore(previewEl, inputArea.firstChild);
+            }
+        }
+        
+        previewEl.innerHTML = `
+            <div class="chat-reply-preview-content">
+                <div class="chat-reply-preview-header">
+                    <span class="material-symbols-rounded">reply</span>
+                    <span class="chat-reply-preview-title">Respondiendo a <strong class="chat-reply-username">${username}</strong></span>
+                </div>
+                <div class="chat-reply-preview-body">
+                    ${message || '[Imagen]'}
+                </div>
+            </div>
+            <button class="chat-reply-preview-close" data-action="cancelReply">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+        `;
+        
+        previewEl.classList.remove('disabled');
+        previewEl.classList.add('active');
+        
+        const closeBtn = previewEl.querySelector('[data-action="cancelReply"]');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.clearReplyTarget());
+        }
+        
+        if (this.chatInput) {
+            this.chatInput.focus();
+        }
+    }
+
+    clearReplyTarget() {
+        this.replyTarget = null;
+        const previewEl = document.querySelector('[data-ref="chat-reply-preview"]');
+        if (previewEl) {
+            previewEl.classList.remove('active');
+            previewEl.classList.add('disabled');
+            previewEl.innerHTML = '';
+        }
+    }
+
     async loadHistory() {
         if (this.isLoading || !this.hasMore) return;
         this.isLoading = true;
@@ -501,6 +579,10 @@ export class DesignChat {
         const backupText = text;
         const backupFiles = [...this.selectedFiles];
         
+        const replyToId = this.replyTarget ? this.replyTarget.id : null;
+        const replyToUsername = this.replyTarget ? this.replyTarget.username : null;
+        const replyToMessage = this.replyTarget ? this.replyTarget.message : null;
+
         const clientId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         const optimisticAttachments = backupFiles.map(file => URL.createObjectURL(file));
         
@@ -513,7 +595,10 @@ export class DesignChat {
             message: backupText,
             attachments: optimisticAttachments,
             created_at: new Date().toISOString(),
-            is_optimistic: true
+            is_optimistic: true,
+            reply_to: replyToId,
+            reply_to_username: replyToUsername,
+            reply_to_message: replyToMessage
         };
         
         this.appendMessage(optimisticMsg);
@@ -521,6 +606,7 @@ export class DesignChat {
         this.chatInput.value = '';
         this.selectedFiles = [];
         this.renderPreview();
+        this.clearReplyTarget();
         this.btnSend.classList.remove('active');
         if (this.chatInput) this.chatInput.classList.remove('disabled-interaction');
 
@@ -531,17 +617,24 @@ export class DesignChat {
                 formData.append('canvas_id', this.canvasId);
                 formData.append('message', backupText);
                 formData.append('client_id', clientId);
+                if (replyToId) {
+                    formData.append('reply_to', replyToId);
+                }
                 for (let i = 0; i < backupFiles.length; i++) {
                     const compressedFile = await this.compressImage(backupFiles[i]);
                     formData.append('images[]', compressedFile);
                 }
                 response = await this.api.postForm(ApiRoutes.Chat.Send, formData);
             } else {
-                response = await this.api.post(ApiRoutes.Chat.Send, {
+                const payload = {
                     canvas_id: this.canvasId,
                     message: backupText,
                     client_id: clientId
-                });
+                };
+                if (replyToId) {
+                    payload.reply_to = replyToId;
+                }
+                response = await this.api.post(ApiRoutes.Chat.Send, payload);
             }
 
             if (response.success === false || response.status === 'error') {
@@ -829,6 +922,14 @@ export class DesignChat {
                 <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="${uniqueId}-options">
                     <div class="pill-container"><div class="drag-handle"></div></div>
                     <div class="component-menu-list component-menu-list--scrollable">
+                        <div class="component-menu-link" data-action="chatReplyMessage" data-id="${msg.id}" data-username="${msg.username}" data-message="${(msg.message || '').replace(/"/g, '&quot;')}">
+                            <div class="component-menu-link-icon">
+                                <span class="material-symbols-rounded">reply</span>
+                            </div>
+                            <div class="component-menu-link-text">
+                                <span>${window.__('lbl_reply_chat') || 'Responder'}</span>
+                            </div>
+                        </div>
                         <div class="component-menu-link" data-action="chatReportMessage" data-id="${msg.id}">
                             <div class="component-menu-link-icon">
                                 <span class="material-symbols-rounded">report</span>
@@ -908,6 +1009,17 @@ export class DesignChat {
             attachmentsHtml += `</div>`;
         }
 
+        let replyContextHtml = '';
+        if (msg.reply_to) {
+            const cleanReplyMessage = (msg.reply_to_message || '').replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            replyContextHtml = `
+                <div class="chat-message-reply-context" data-reply-to-id="${msg.reply_to}">
+                    <div class="chat-message-reply-context-username">${msg.reply_to_username || 'Usuario'}</div>
+                    <div class="chat-message-reply-context-body">${cleanReplyMessage || '[Imagen]'}</div>
+                </div>
+            `;
+        }
+
         let messageTextHtml = '';
         if (msg.message && msg.message.trim().length > 0) {
             messageTextHtml = `<div class="chat-message-text">${msg.message}</div>`;
@@ -924,6 +1036,7 @@ export class DesignChat {
                     </div>
                     ${menuBtn}
                 </div>
+                ${replyContextHtml}
                 ${messageTextHtml}
                 ${attachmentsHtml}
             </div>

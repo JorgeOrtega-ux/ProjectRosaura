@@ -228,9 +228,21 @@ def chat_persistence_thread():
                     visibility text,
                     deleted_by text,
                     delete_reason text,
+                    reply_to text,
+                    reply_to_username text,
+                    reply_to_message text,
                     PRIMARY KEY (canvas_id, created_at, uuid)
                 ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC)
             """)
+            
+            # Safe migrations for existing tables
+            for col in ["reply_to", "reply_to_username", "reply_to_message"]:
+                try:
+                    cassandra_session.execute(f"ALTER TABLE canvas_chat_messages ADD {col} text;")
+                    print(f"[+] Added column '{col}' to Cassandra canvas_chat_messages successfully.")
+                except Exception:
+                    pass
+                    
             cassandra_session.execute("CREATE INDEX IF NOT EXISTS ON canvas_chat_messages (uuid)")
             cassandra_session.execute("CREATE INDEX IF NOT EXISTS ON canvas_chat_messages (user_id)")
             print("[+] Cassandra connected and schema verified.")
@@ -284,7 +296,10 @@ def chat_persistence_thread():
                                 'message': msg_data['message'],
                                 'attachments': msg_data.get('attachments'), # this is already a JSON string or None
                                 'file_size': int(msg_data.get('file_size') or 0),
-                                'created_at': created_at_dt
+                                'created_at': created_at_dt,
+                                'reply_to': msg_data.get('reply_to'),
+                                'reply_to_username': msg_data.get('reply_to_username'),
+                                'reply_to_message': msg_data.get('reply_to_message')
                             })
                         except Exception as e:
                             print(f"[!] Error parsing message from Redis, discarding: {e}")
@@ -293,8 +308,8 @@ def chat_persistence_thread():
                         try:
                             # Batch insert to Cassandra
                             insert_stmt = cassandra_session.prepare("""
-                                INSERT INTO canvas_chat_messages (canvas_id, created_at, uuid, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                INSERT INTO canvas_chat_messages (canvas_id, created_at, uuid, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason, reply_to, reply_to_username, reply_to_message)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             """)
                             
                             batch = BatchStatement()
@@ -309,7 +324,10 @@ def chat_persistence_thread():
                                     item['file_size'],
                                     'visible',
                                     None,
-                                    None
+                                    None,
+                                    item['reply_to'],
+                                    item['reply_to_username'],
+                                    item['reply_to_message']
                                 ))
                             
                             cassandra_session.execute(batch)

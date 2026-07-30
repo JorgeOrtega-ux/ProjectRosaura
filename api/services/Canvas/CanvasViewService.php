@@ -1546,7 +1546,7 @@ class CanvasViewService {
     public function getCanvasChatViewerData(?string $canvasUuid, ?string $msgIdRaw, int $idx = 0): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
-        $msgId = (int)$msgIdRaw;
+        $msgId = $msgIdRaw;
         $isPending = (strpos((string)$msgIdRaw, 'pending_') === 0);
 
         $hasAccess = false;
@@ -1555,7 +1555,7 @@ class CanvasViewService {
 
         $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
 
-        if ($userId && !empty($canvasUuid) && ($msgId > 0 || $isPending)) {
+        if ($userId && !empty($canvasUuid) && (!empty($msgId) || $isPending)) {
             try {
                 $dbManager = new DatabaseManager();
                 $dbConnName = defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';

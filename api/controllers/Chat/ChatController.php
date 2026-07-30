@@ -52,9 +52,10 @@ class ChatController extends BaseController
             }
             $messageText = trim((string)($request['message'] ?? ''));
             $clientId = trim((string)($request['client_id'] ?? ''));
+            $replyTo = !empty($request['reply_to']) ? trim((string)$request['reply_to']) : null;
             $files = $request['_files']['images'] ?? null;
 
-            $result = $this->chatServices->send($userId, $canvasId, $messageText, $files, $clientId);
+            $result = $this->chatServices->send($userId, $canvasId, $messageText, $files, $clientId, $replyTo);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

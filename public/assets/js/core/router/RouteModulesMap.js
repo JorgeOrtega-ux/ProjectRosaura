@@ -10,7 +10,7 @@ export const RouteModulesMap = {
 
     '/design': { path: './modules/app/design/DesignController.js', className: 'DesignController', skeletonType: 'layout-design' },
     
-    '/canvases/chat-viewer': { path: './modules/app/canvases/ChatViewerController.js', className: 'ChatViewerController', skeletonType: 'layout-basic' },
+    '/canvases/c/v/:canvas/:msg/:idx': { path: './modules/app/canvases/ChatViewerController.js', className: 'ChatViewerController', skeletonType: 'layout-basic' },
 
     '/store/coins': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-table' },
     '/store/content': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-table' },

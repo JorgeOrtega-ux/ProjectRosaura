@@ -70,6 +70,9 @@ def main():
                 visibility text,
                 deleted_by text,
                 delete_reason text,
+                reply_to text,
+                reply_to_username text,
+                reply_to_message text,
                 PRIMARY KEY (canvas_id, created_at, uuid)
             ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC)
         """)
@@ -98,8 +101,8 @@ def main():
     if mysql_messages:
         print("[*] Migrating messages to Cassandra...")
         insert_stmt = session.prepare("""
-            INSERT INTO canvas_chat_messages (canvas_id, created_at, uuid, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO canvas_chat_messages (canvas_id, created_at, uuid, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason, reply_to, reply_to_username, reply_to_message)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """)
         
         batch_size = 100
@@ -141,7 +144,10 @@ def main():
                     int(msg['file_size'] or 0),
                     msg['visibility'] or 'visible',
                     msg['deleted_by'],
-                    msg['delete_reason']
+                    msg['delete_reason'],
+                    None,
+                    None,
+                    None
                 ))
             
             try:

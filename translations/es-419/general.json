@@ -665,6 +665,7 @@
     "report_other_placeholder": "Describe el motivo (opcional)...",
     "btn_report": "Reportar",
     "lbl_report_chat": "Reportar",
+    "lbl_reply_chat": "Responder",
     "msg_report_success": "Mensaje reportado correctamente",
     "err_report_failed": "Error al reportar mensaje",
     "err_report_select_reason": "Selecciona un motivo de reporte",

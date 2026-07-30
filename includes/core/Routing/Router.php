@@ -284,6 +284,17 @@ class Router {
             ];
         }
 
+        if (preg_match('#^/canvases/c/v/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)/([0-9]+)$#', $relativePath, $matches)) {
+            $_GET['canvas'] = $matches[1];
+            $_GET['msg'] = $matches[2];
+            $_GET['idx'] = (int)$matches[3];
+            return $this->routes['/canvases/c/v/:canvas/:msg/:idx'] ?? [
+                'view' => 'canvases/chat/chat-viewer.php',
+                'auth' => true,
+                'requires_2fa' => false
+            ];
+        }
+
         if (!array_key_exists($relativePath, $this->routes)) {
             if ($relativePath !== '/favicon.ico') {
                 Logger::warning("Route not found (404)", [
