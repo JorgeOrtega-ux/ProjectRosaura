@@ -717,8 +717,85 @@ def thumbnails_thread():
 
         time.sleep(SYNC_INTERVAL)
 
-import subprocess
 import urllib.parse
+
+def execute_canvas_draw_image(r, canvas_id, image_path, start_x, start_y, target_w, target_h, rotate_angle):
+    logging.info(f"Fetching canvas info for ID {canvas_id}...")
+    db_conn = get_db_connection()
+    try:
+        with db_conn.cursor() as cursor:
+            cursor.execute("SELECT size FROM canvases WHERE id = %s", (canvas_id,))
+            canvas_row = cursor.fetchone()
+    finally:
+        db_conn.close()
+
+    if not canvas_row:
+        raise Exception(f"Canvas with ID {canvas_id} does not exist.")
+
+    size_str = canvas_row.get('size', '100x100')
+    try:
+        width, height = map(int, size_str.split('x'))
+    except Exception:
+        width, height = 100, 100
+        
+    logging.info(f"Canvas ID {canvas_id} dimensions: {width}x{height}")
+
+    img = Image.open(image_path).convert("RGBA")
+
+    # Resize if specified
+    if target_w > 0 and target_h > 0:
+        img = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
+        
+    # Rotate if specified
+    if rotate_angle != 0:
+        img = img.rotate(-rotate_angle, expand=True, resample=Image.Resampling.BICUBIC)
+        new_w, new_h = img.size
+        cx = start_x + (target_w / 2.0 if target_w > 0 else img.width / 2.0)
+        cy = start_y + (target_h / 2.0 if target_h > 0 else img.height / 2.0)
+        start_x = int(cx - new_w / 2.0)
+        start_y = int(cy - new_h / 2.0)
+
+    img_width, img_height = img.size
+    logging.info(f"Processed image dimensions: {img_width}x{img_height}")
+
+    state_key = f"canvas:{canvas_id}:state"
+    raw_state = r.get(state_key)
+    
+    expected_size = width * height * 4
+    if not raw_state or len(raw_state) != expected_size:
+        logging.warning(f"Redis state for canvas {canvas_id} size mismatch or missing. Resetting buffer.")
+        raw_state = b'\x00\x00\x00\x00' * (width * height)
+
+    state = bytearray(raw_state)
+    original_pixels = img.load()
+    changed = 0
+
+    logging.info("Injecting pixels into Redis state buffer...")
+    for iy in range(img_height):
+        for ix in range(img_width):
+            cx = start_x + ix
+            cy = start_y + iy
+            
+            if cx < 0 or cx >= width or cy < 0 or cy >= height:
+                continue
+
+            orig_rgba = original_pixels[ix, iy]
+            if orig_rgba[3] < 128:
+                continue
+
+            offset = ((cy * width) + cx) * 4
+            if offset + 3 < len(state):
+                state[offset] = orig_rgba[0]
+                state[offset+1] = orig_rgba[1]
+                state[offset+2] = orig_rgba[2]
+                state[offset+3] = 255
+                changed += 1
+
+    logging.info(f"Saving new state to Redis ({changed} new pixels)...")
+    r.set(state_key, bytes(state))
+    r.sadd("canvases:dirty_states", canvas_id)
+    logging.info("Image drawing successfully completed.")
+
 def draw_image_listener_thread():
     logging.info("Starting Draw Image listener thread...")
     r = get_redis_client()
@@ -759,30 +836,11 @@ def draw_image_listener_thread():
                         temp_path = temp_file.name
                         s3_client.download_file(bucket, key, temp_path)
                     
-                    script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'utils', 'draw_image.py'))
-                    cmd = ["python", script_path, temp_path, str(canvas_id), "--x", str(x), "--y", str(y), "--w", str(w), "--h", str(h), "--angle", str(angle)]
-                    logging.info(f"Executing: {' '.join(cmd)}")
+                    logging.info(f"Drawing template image in-process for canvas {canvas_id}...")
+                    execute_canvas_draw_image(r, canvas_id, temp_path, x, y, w, h, angle)
                     
-                    result = subprocess.run(cmd, capture_output=True, text=True)
-                    logging.info(f"Draw script output: {result.stdout}")
-                    if result.stderr:
-                        logging.error(f"Draw script error: {result.stderr}")
-                        
                     os.remove(temp_path)
-                    
-                    if result.returncode != 0:
-                        raise Exception(f"Draw script exited with code {result.returncode}: {result.stderr}")
-                    
-                    # Parse affected chunks from the draw script's stdout
                     affected_chunks = []
-                    for line in result.stdout.strip().split('\n'):
-                        line = line.strip()
-                        if line.startswith('{"affected_chunks"'):
-                            try:
-                                parsed = json.loads(line)
-                                affected_chunks = parsed.get('affected_chunks', [])
-                            except json.JSONDecodeError:
-                                pass
                     
                     # Broadcast completed event so frontend reloads the canvas state
                     r.publish("admin:canvas_events", json.dumps({

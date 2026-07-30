@@ -2034,9 +2034,9 @@ export const DesignInteractions = {
         this.showMyProtectionsHighlight = !this.showMyProtectionsHighlight;
         if (typeof showMessage === 'function') {
             if (this.showMyProtectionsHighlight) {
-                showMessage('Mostrando tus zonas protegidas (resaltadas en rojo)', 'info');
+                showMessage('Mostrando tus zonas protegidas', 'info');
             } else {
-                showMessage('Visualización de zonas protegidas desactivada', 'info');
+                showMessage('Ocultando tus zonas protegidas', 'info');
             }
         }
         this.updatePerkBadges();
