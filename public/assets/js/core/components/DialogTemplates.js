@@ -1220,88 +1220,12 @@ export const DialogTemplates = {
                         </div>
                     </div>
 
-                    <!-- Fecha de Expiración (moduleCalendar) -->
+                    <!-- Fecha de Expiración -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full modal-end-date-group">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="sanctionModuleCalendar" data-ref="end_date" data-val="${endDate}">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="openSanctionCalendarModal" data-ref="end_date" data-val="${endDate}">
                             <span class="material-symbols-rounded">calendar_month</span>
                             <span class="component-dropdown-text" data-ref="sanction-endDate-text">${endDateDisplay}</span>
                             <span class="material-symbols-rounded">expand_more</span>
-                        </div>
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sanctionModuleCalendar">
-                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
-                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-calendar">
-                                    <div class="component-calendar-header">
-                                        <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
-                                            <span class="material-symbols-rounded">chevron_left</span>
-                                        </button>
-                                        <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year') || 'Mes Año'}</div>
-                                        <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
-                                            <span class="material-symbols-rounded">chevron_right</span>
-                                        </button>
-                                    </div>
-                                    <div class="component-calendar-weekdays">
-                                        <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sa'}</span>
-                                    </div>
-                                    <div class="component-calendar-days" data-ref="calendar-days"></div>
-                                    <div class="component-calendar-actions">
-                                        <button type="button" class="component-button component-button--h30" data-action="calendarClear">${__('btn_clear') || 'Limpiar'}</button>
-                                        <div>
-                                            <button type="button" class="component-button component-button--h30" data-action="calendarCancel">${__('btn_cancel')}</button>
-                                            <button type="button" class="component-button component-button--h30 component-button--dark" data-action="calendarConfirm">${__('btn_accept')}</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Horas y Minutos Inline Controls para Sanción -->
-                    <div class="modal-end-date-group" style="margin-top: 15px; display: flex; flex-direction: column; gap: 12px;">
-                        <div>
-                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">${__('lbl_hours') || 'Horas'}</div>
-                            <div class="component-inline-control component-inline-control--full">
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionHours" data-step="-5">
-                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionHours" data-step="-1">
-                                        <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
-                                    </button>
-                                </div>
-                                <div class="component-inline-control__center" data-ref="sanction-hours-val" data-val="${parseInt(sanctionHours) || 0}">${sanctionHours}</div>
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionHours" data-step="1">
-                                        <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionHours" data-step="5">
-                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">${__('lbl_minutes') || 'Minutos'}</div>
-                            <div class="component-inline-control component-inline-control--full">
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionMinutes" data-step="-5">
-                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionMinutes" data-step="-1">
-                                        <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
-                                    </button>
-                                </div>
-                                <div class="component-inline-control__center" data-ref="sanction-minutes-val" data-val="${parseInt(sanctionMinutes) || 0}">${sanctionMinutes}</div>
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionMinutes" data-step="1">
-                                        <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionMinutes" data-step="5">
-                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span>
-                                    </button>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>

@@ -11,6 +11,7 @@ export class DialogSystem {
         this.activeOverlay = null;
         this.activeBox = null;
         this.calendarSystem = null;
+        this.modalStack = [];
 
         this.dragState = { startY: 0, currentDiff: 0, isDragging: false };
 
@@ -81,7 +82,25 @@ export class DialogSystem {
                 return;
             }
 
-            if (this.activeResolveFn) this.closeCurrent(false);
+            if (this.activeResolveFn) {
+                if (!this.modalStack) this.modalStack = [];
+                if (this.activeOverlay) this.activeOverlay.style.display = 'none';
+                if (this.activeWrapper) this.activeWrapper.style.display = 'none';
+                this.modalStack.push({
+                    templateName: this.activeTemplateName,
+                    resolveFn: this.activeResolveFn,
+                    overlay: this.activeOverlay,
+                    wrapper: this.activeWrapper,
+                    box: this.activeBox,
+                    calendarSystem: this.calendarSystem,
+                    dragState: Object.assign({}, this.dragState)
+                });
+                this.activeResolveFn = null;
+                this.activeOverlay = null;
+                this.activeWrapper = null;
+                this.activeBox = null;
+                this.calendarSystem = null;
+            }
 
             this.activeTemplateName = templateName;
 
@@ -198,64 +217,9 @@ export class DialogSystem {
             return;
         }
 
-        const btnSanctionHours = e.target.closest('[data-action="adjustSanctionHours"]');
-        if (btnSanctionHours) {
-            e.preventDefault();
-            const step = parseInt(btnSanctionHours.getAttribute('data-step')) || 0;
-            const centerEl = this.activeBox.querySelector('[data-ref="sanction-hours-val"]');
-            if (centerEl) {
-                let val = parseInt(centerEl.getAttribute('data-val')) || 0;
-                val = (val + step) % 24;
-                if (val < 0) val += 24;
-                centerEl.setAttribute('data-val', val);
-                centerEl.textContent = String(val).padStart(2, '0');
-                this._updateSanctionEndDate();
-            }
-            return;
-        }
-
-        const btnSanctionMinutes = e.target.closest('[data-action="adjustSanctionMinutes"]');
-        if (btnSanctionMinutes) {
-            e.preventDefault();
-            const step = parseInt(btnSanctionMinutes.getAttribute('data-step')) || 0;
-            const centerEl = this.activeBox.querySelector('[data-ref="sanction-minutes-val"]');
-            if (centerEl) {
-                let val = parseInt(centerEl.getAttribute('data-val')) || 0;
-                val = (val + step) % 60;
-                if (val < 0) val += 60;
-                centerEl.setAttribute('data-val', val);
-                centerEl.textContent = String(val).padStart(2, '0');
-                this._updateSanctionEndDate();
-            }
-            return;
-        }
-
         const toggleModuleBtn = e.target.closest('[data-action="toggleModule"]');
         if (toggleModuleBtn) {
             const target = toggleModuleBtn.getAttribute('data-target');
-            if (target === 'sanctionModuleCalendar' && this.activeBox) {
-                if (!this.calendarSystem) {
-                    this.calendarSystem = new CalendarSystem(this.activeBox);
-                    this.calendarSystem.init();
-                }
-                const trigger = this.activeBox.querySelector('[data-target="sanctionModuleCalendar"]');
-                const initialVal = trigger ? trigger.getAttribute('data-val') : '';
-                this.calendarSystem.setup(
-                    initialVal,
-                    (isoString, displayString) => {
-                        if (trigger) trigger.setAttribute('data-val', isoString);
-                        const textEl = this.activeBox.querySelector('[data-ref="sanction-endDate-text"]');
-                        if (textEl) textEl.textContent = displayString;
-                        this._updateSanctionEndDate();
-                    },
-                    () => {
-                        if (trigger) trigger.setAttribute('data-val', '');
-                        const textEl = this.activeBox.querySelector('[data-ref="sanction-endDate-text"]');
-                        if (textEl) textEl.textContent = typeof window.__ === 'function' ? window.__('lbl_select_expiration_date') : 'Seleccionar fecha de expiración';
-                        this._updateSanctionEndDate();
-                    }
-                );
-            }
 
             if (target === 'modalCalendarDateOnly' && this.activeBox) {
                 if (!this.calendarSystem) {
@@ -281,6 +245,52 @@ export class DialogSystem {
                     }
                 );
             }
+        }
+
+        const btnOpenSanctionCalendar = e.target.closest('[data-action="openSanctionCalendarModal"]');
+        if (btnOpenSanctionCalendar) {
+            e.preventDefault();
+            const currentVal = btnOpenSanctionCalendar.getAttribute('data-val') || '';
+            const typeTrigger = this.activeBox.querySelector('[data-ref="suspension_type"]');
+            const sanctionType = typeTrigger ? typeTrigger.getAttribute('data-val') : 'temporary';
+            if (sanctionType === 'permanent') {
+                return;
+            }
+
+            let hours = '00';
+            let minutes = '00';
+            if (currentVal) {
+                const parts = currentVal.split('T');
+                if (parts[1]) {
+                    const timeParts = parts[1].split(':');
+                    hours = (timeParts[0] || '00').padStart(2, '0');
+                    minutes = (timeParts[1] || '00').padStart(2, '0');
+                }
+            }
+
+            this.show('calendarModal', {
+                isoDate: currentVal,
+                hours: hours,
+                minutes: minutes
+            }).then(res => {
+                if (res && res.confirmed) {
+                    const data = res.data || {};
+                    if (data.isoString) {
+                        btnOpenSanctionCalendar.setAttribute('data-val', data.isoString);
+                        const textEl = this.activeBox.querySelector('[data-ref="sanction-endDate-text"]');
+                        if (textEl) {
+                            textEl.textContent = data.displayString;
+                        }
+                    } else {
+                        btnOpenSanctionCalendar.setAttribute('data-val', '');
+                        const textEl = this.activeBox.querySelector('[data-ref="sanction-endDate-text"]');
+                        if (textEl) {
+                            textEl.textContent = typeof window.__ === 'function' ? window.__('lbl_select_expiration_date') : 'Seleccionar fecha de expiración';
+                        }
+                    }
+                }
+            });
+            return;
         }
 
         const selectReasonBtn = e.target.closest('[data-action="selectReportReason"]');
@@ -510,6 +520,20 @@ export class DialogSystem {
 
         resolveToCall({ confirmed: result !== false, action: result, data: formData });
 
+        if (this.modalStack && this.modalStack.length > 0) {
+            const prevModal = this.modalStack.pop();
+            this.activeTemplateName = prevModal.templateName;
+            this.activeResolveFn = prevModal.resolveFn;
+            this.activeOverlay = prevModal.overlay;
+            this.activeWrapper = prevModal.wrapper;
+            this.activeBox = prevModal.box;
+            this.calendarSystem = prevModal.calendarSystem;
+            this.dragState = prevModal.dragState;
+
+            if (this.activeOverlay) this.activeOverlay.style.display = '';
+            if (this.activeWrapper) this.activeWrapper.style.display = '';
+        }
+
         setTimeout(() => {
             if (overlayToRemove && overlayToRemove.parentNode) {
                 overlayToRemove.remove();
@@ -563,40 +587,5 @@ export class DialogSystem {
         }
         
         this.dragState.currentDiff = 0;
-    }
-
-    _updateSanctionEndDate() {
-        if (!this.activeBox) return;
-        const trigger = this.activeBox.querySelector('[data-target="sanctionModuleCalendar"]');
-        if (!trigger) return;
-        
-        const currentVal = trigger.getAttribute('data-val');
-        if (!currentVal) return;
-        
-        const datePart = currentVal.split('T')[0];
-        const hoursEl = this.activeBox.querySelector('[data-ref="sanction-hours-val"]');
-        const minutesEl = this.activeBox.querySelector('[data-ref="sanction-minutes-val"]');
-        
-        const h = hoursEl ? hoursEl.getAttribute('data-val').padStart(2, '0') : '00';
-        const m = minutesEl ? minutesEl.getAttribute('data-val').padStart(2, '0') : '00';
-        
-        const newIso = `${datePart}T${h}:${m}`;
-        trigger.setAttribute('data-val', newIso);
-        
-        const textEl = this.activeBox.querySelector('[data-ref="sanction-endDate-text"]');
-        if (textEl) {
-            const dateObj = new Date(
-                parseInt(datePart.split('-')[0], 10),
-                parseInt(datePart.split('-')[1], 10) - 1,
-                parseInt(datePart.split('-')[2], 10),
-                parseInt(h, 10),
-                parseInt(m, 10)
-            );
-            if (this.calendarSystem) {
-                textEl.textContent = this.calendarSystem.getFormattedDisplayDate(dateObj, h, m);
-            } else {
-                textEl.textContent = `${datePart} ${h}:${m}`;
-            }
-        }
     }
 }

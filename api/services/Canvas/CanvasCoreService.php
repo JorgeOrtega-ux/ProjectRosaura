@@ -245,6 +245,16 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
             
+            if (!empty($canvas['owner_id'])) {
+                $owner = $this->userRepository->findById((int)$canvas['owner_id']);
+                $canvas['owner_username'] = $owner ? ($owner['username'] ?? '-') : '-';
+            } else {
+                $canvas['owner_username'] = '-';
+            }
+            
+            $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
+            $canvas['thumbnail_url'] = $thumbnailUrl;
+            
             $roles = [];
             
             if ($userId !== null) {

@@ -27,6 +27,8 @@ export const SkeletonTemplates = {
                 return this.chatSkeleton();
             case 'layout-design':
                 return this.designSkeleton();
+            case 'canvasInfoSkeleton':
+                return this.canvasInfoSkeleton();
             default:
                 return this.basicSkeleton();
         }
@@ -566,5 +568,55 @@ export const SkeletonTemplates = {
         };
 
         draw();
+    },
+
+    canvasInfoSkeleton() {
+        return `
+            <div class="canvas-info-content-container">
+                <div class="canvas-info-image-card component-skeleton"></div>
+                <div class="canvas-info-details-card">
+                    <div class="canvas-info-details-top">
+                        <div class="component-menu-link component-menu-link--bordered nav-item canvas-info-toggle-btn">
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w110"></div>
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w40"></div>
+                        </div>
+                    </div>
+                    <div class="canvas-info-details-rows-container expanded">
+                        <div class="canvas-info-row">
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w70"></div>
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w90"></div>
+                        </div>
+                        <div class="canvas-info-row">
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w80"></div>
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w100"></div>
+                        </div>
+                        <div class="canvas-info-row">
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w70"></div>
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w110"></div>
+                        </div>
+                        <div class="canvas-info-row">
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w90"></div>
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w80"></div>
+                        </div>
+                        <div class="canvas-info-row">
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w70"></div>
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w90"></div>
+                        </div>
+                        <div class="canvas-info-row">
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w80"></div>
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w100"></div>
+                        </div>
+                        <div class="canvas-info-row">
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w70"></div>
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w90"></div>
+                        </div>
+                        <div class="canvas-info-row">
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w80"></div>
+                            <div class="component-skeleton component-skeleton--h14 component-skeleton--w110"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 };
