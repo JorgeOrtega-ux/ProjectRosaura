@@ -11,6 +11,18 @@ if protected_areas_json then
     end
 end
 
+local canvas_prefix = KEYS[1]:match("^(canvas:[^:]+)")
+if canvas_prefix then
+    local pixel_offset = math.floor(tonumber(ARGV[1]) / 4)
+    local pixel_protected_key = canvas_prefix .. ":protected_pixels:" .. tostring(pixel_offset)
+    local protected_by = redis.call('GET', pixel_protected_key)
+    if protected_by then
+        if protected_by ~= ARGV[6] then
+            return {'PROTECTED_ERROR', protected_by}
+        end
+    end
+end
+
 local config_batch = tonumber(ARGV[3])
 local config_sec = tonumber(ARGV[4])
 local now = tonumber(ARGV[5])

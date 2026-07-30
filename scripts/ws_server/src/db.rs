@@ -97,7 +97,7 @@ pub async fn set_canvas_frozen_db(db: &MySqlPool, canvas_id: &str, is_frozen: bo
 pub async fn get_canvas_protections_db(db: &MySqlPool, canvas_id: &str) -> Vec<i32> {
     let db_name = env::var("DB_CANVASES_NAME").unwrap_or_else(|_| "db_canvases".to_string());
     let query = format!(
-        "SELECT offset FROM `{}`.`canvas_protections` WHERE canvas_id = ?",
+        "SELECT offset FROM `{}`.`canvas_protections` WHERE canvas_id = ? AND (expires_at IS NULL OR expires_at > NOW())",
         db_name
     );
     match sqlx::query(&query).bind(canvas_id).fetch_all(db).await {
@@ -109,21 +109,40 @@ pub async fn get_canvas_protections_db(db: &MySqlPool, canvas_id: &str) -> Vec<i
 }
 
 pub async fn save_canvas_protections_db(db: &MySqlPool, canvas_id: &str, offsets: &[i32], protect: bool, user_id: Option<&str>) {
+    save_canvas_protections_db_with_expiry(db, canvas_id, offsets, protect, user_id, None).await;
+}
+
+pub async fn save_canvas_protections_db_with_expiry(
+    db: &MySqlPool,
+    canvas_id: &str,
+    offsets: &[i32],
+    protect: bool,
+    user_id: Option<&str>,
+    expires_in_secs: Option<i64>
+) {
     if canvas_id.is_empty() || offsets.is_empty() { return; }
     let db_name = env::var("DB_CANVASES_NAME").unwrap_or_else(|_| "db_canvases".to_string());
     
     if protect {
-        let mut query = format!("INSERT IGNORE INTO `{}`.`canvas_protections` (canvas_id, offset, protected_by) VALUES ", db_name);
+        let mut query = format!("INSERT INTO `{}`.`canvas_protections` (canvas_id, offset, protected_by, expires_at) VALUES ", db_name);
         let mut placeholders = Vec::new();
         for _ in 0..offsets.len() {
-            placeholders.push("(?, ?, ?)");
+            if expires_in_secs.is_some() {
+                placeholders.push("(?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))");
+            } else {
+                placeholders.push("(?, ?, ?, NULL)");
+            }
         }
         query.push_str(&placeholders.join(", "));
+        query.push_str(" ON DUPLICATE KEY UPDATE protected_by = VALUES(protected_by), expires_at = VALUES(expires_at)");
         
         let mut q = sqlx::query(&query);
         let uid = user_id.and_then(|u| u.parse::<i32>().ok());
         for &offset in offsets {
             q = q.bind(canvas_id).bind(offset).bind(uid);
+            if let Some(secs) = expires_in_secs {
+                q = q.bind(secs);
+            }
         }
         let _ = q.execute(db).await;
     } else {

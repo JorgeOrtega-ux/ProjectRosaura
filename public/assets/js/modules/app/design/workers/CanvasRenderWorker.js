@@ -19,6 +19,9 @@ let currentColor = '#000000';
 let pixelQueue = [];
 let selectedPixelsArray = new Uint32Array(0); // TypedArray contiguo para píxeles seleccionados
 let protectedPixelsArray = new Uint32Array(0);
+let ownerProtectedPixelsArray = new Uint32Array(0);
+let myProtectedPixelsArray = new Uint32Array(0);
+let showMyProtectionsHighlight = false;
 let protectedBitmask = new Uint8Array(0);
 let protectedOffscreenCanvas = null;
 let protectedOffscreenCtx = null;
@@ -42,10 +45,12 @@ function updateProtectedOffscreen() {
         protectedBitmask.fill(0);
     }
 
-    if (protectedPixelsArray && protectedPixelsArray.length > 0) {
+    const activeArray = isOwnerProtecting ? ownerProtectedPixelsArray : (showMyProtectionsHighlight ? myProtectedPixelsArray : new Uint32Array(0));
+
+    if (activeArray && activeArray.length > 0) {
         protectedOffscreenCtx.fillStyle = 'rgba(239, 68, 68, 0.2)';
-        for (let i = 0; i < protectedPixelsArray.length; i++) {
-            const off = protectedPixelsArray[i];
+        for (let i = 0; i < activeArray.length; i++) {
+            const off = activeArray[i];
             if (off >= 0 && off < totalLen) {
                 protectedBitmask[off] = 1;
                 const px = off % boardWidth;
@@ -770,19 +775,22 @@ function render() {
 
     
 
-    if (isOwnerProtecting) {
+    if (isOwnerProtecting || showMyProtectionsHighlight) {
         if (protectedPixelsDirty) {
             updateProtectedOffscreen();
         }
         if (protectedOffscreenCanvas) {
             ctx.drawImage(protectedOffscreenCanvas, 0, 0);
         }
-        if (protectedPixelsArray && protectedPixelsArray.length > 0) {
+        
+        const activeArray = isOwnerProtecting ? ownerProtectedPixelsArray : myProtectedPixelsArray;
+        if (activeArray && activeArray.length > 0) {
             ctx.strokeStyle = '#ef4444';
             ctx.lineWidth = 1 / transform.scale;
             ctx.beginPath();
-            for (let i = 0; i < protectedPixelsArray.length; i++) {
-                const off = protectedPixelsArray[i];
+            
+            for (let i = 0; i < activeArray.length; i++) {
+                const off = activeArray[i];
                 const x = off % boardWidth;
                 const y = (off / boardWidth) | 0;
                 if (x < 0 || x >= boardWidth || y < 0 || y >= boardHeight) continue;
@@ -1009,6 +1017,17 @@ self.onmessage = function (e) {
             } else {
                 protectedPixelsArray = new Uint32Array(0);
             }
+            if (payload.ownerProtectedPixels) {
+                ownerProtectedPixelsArray = new Uint32Array(payload.ownerProtectedPixels);
+            } else {
+                ownerProtectedPixelsArray = new Uint32Array(0);
+            }
+            if (payload.myProtectedPixels) {
+                myProtectedPixelsArray = new Uint32Array(payload.myProtectedPixels);
+            } else {
+                myProtectedPixelsArray = new Uint32Array(0);
+            }
+            showMyProtectionsHighlight = !!payload.showMyProtectionsHighlight;
             protectedPixelsDirty = true;
             requestRender();
             break;
@@ -1021,7 +1040,10 @@ self.onmessage = function (e) {
             isResetLocked = payload.isResetLocked;
             isFrozen = !!payload.isFrozen;
             isOwner = !!payload.isOwner;
-            isOwnerProtecting = !!payload.isOwnerProtecting;
+            if (isOwnerProtecting !== !!payload.isOwnerProtecting) {
+                isOwnerProtecting = !!payload.isOwnerProtecting;
+                protectedPixelsDirty = true;
+            }
             if (payload.selectedPixels) {
                 selectedPixelsArray = new Uint32Array(payload.selectedPixels);
             } else {

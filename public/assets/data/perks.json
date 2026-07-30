@@ -198,5 +198,16 @@
       "screen_shake": true,
       "screen_flash": false
     }
+  },
+  "proteccion_pixeles_1": {
+    "id": "proteccion_pixeles_1",
+    "type": "buff",
+    "category": "buff",
+    "duration_seconds": 86400,
+    "amount": 1,
+    "icon": "shield",
+    "label_key": "perk_pixel_prot",
+    "short_label_key": "perk_pixel_prot",
+    "button_label_key": "btn_protect"
   }
 }

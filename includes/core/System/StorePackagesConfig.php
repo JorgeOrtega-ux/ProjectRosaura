@@ -69,6 +69,14 @@ class StorePackagesConfig {
     }
     public static function getContentPackages(): array {
         return [
+            'proteccion_pixeles_1' => [
+                'id' => 'proteccion_pixeles_1',
+                'name' => __('store_content_proteccion_pixeles_1_name'),
+                'description' => __('store_content_proteccion_pixeles_1_desc'),
+                'price_coins' => 2000,
+                'icon' => 'shield',
+                'is_single_use' => true,
+            ],
             'pixel_misil_1' => [
                 'id' => 'pixel_misil_1',
                 'name' => __('store_content_pixel_misil_1_name'),

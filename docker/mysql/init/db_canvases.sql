@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS `canvas_protections` (
   `canvas_id` int(11) NOT NULL,
   `offset` int(11) NOT NULL,
   `protected_by` int(11) DEFAULT NULL,
+  `expires_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_cp_canvas_offset` (`canvas_id`, `offset`),

@@ -155,6 +155,52 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                     "offsets": protected_offsets_int
                 });
                 helpers::send_to_client(state, connection_id, &prot_msg.to_string()).await;
+
+                // Clasificar protecciones en memoria
+                let mut my_protected_offsets: Vec<i32> = vec![];
+                let mut owner_protected_offsets: Vec<i32> = vec![];
+                let mut pipe = deadpool_redis::redis::pipe();
+                for off in &protected_offsets_int {
+                    pipe.cmd("GET").arg(format!("canvas:{}:protected_pixels:{}", canvas_id, off));
+                }
+                let owners: Vec<Option<String>> = pipe.query_async(&mut redis_conn).await.unwrap_or_default();
+                for (idx, owner_opt) in owners.into_iter().enumerate() {
+                    if let Some(owner) = owner_opt {
+                        if owner == "admin" {
+                            owner_protected_offsets.push(protected_offsets_int[idx]);
+                        } else if !uid_str.is_empty() && owner == uid_str {
+                            my_protected_offsets.push(protected_offsets_int[idx]);
+                        }
+                    }
+                }
+
+                if !owner_protected_offsets.is_empty() {
+                    let owner_prot_msg = serde_json::json!({
+                        "type": "init_owner_protected_pixels",
+                        "offsets": owner_protected_offsets
+                    });
+                    helpers::send_to_client(state, connection_id, &owner_prot_msg.to_string()).await;
+                }
+
+                if !my_protected_offsets.is_empty() {
+                    let mut my_protected_expiries: Vec<i64> = vec![];
+                    let mut pipe_score = deadpool_redis::redis::pipe();
+                    let zset_key_temp = format!("canvas:{}:protected_zset", canvas_id);
+                    for off in &my_protected_offsets {
+                        pipe_score.cmd("ZSCORE").arg(&zset_key_temp).arg(off.to_string());
+                    }
+                    let scores: Vec<Option<f64>> = pipe_score.query_async(&mut redis_conn).await.unwrap_or_default();
+                    for score_opt in scores {
+                        my_protected_expiries.push(score_opt.unwrap_or(0.0) as i64);
+                    }
+
+                    let my_prot_msg = serde_json::json!({
+                        "type": "init_my_protected_pixels",
+                        "offsets": my_protected_offsets,
+                        "expiries": my_protected_expiries
+                    });
+                    helpers::send_to_client(state, connection_id, &my_prot_msg.to_string()).await;
+                }
             }
         }
         "join_live_share" => {
@@ -433,6 +479,120 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 });
                 let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
             }
+        }
+        "use_pixel_protection" => {
+            if uid_str.is_empty() || uid_str == "guest" { return; }
+            let perk_id = msg.perk_id.clone().unwrap_or_default();
+            if perk_id.is_empty() { return; }
+
+            // Consumir el perk
+            let has_perk = db::consume_user_perk(&state.db_pool, &uid_str, &perk_id).await;
+            if !has_perk {
+                let err = serde_json::json!({
+                    "type": "pixel_protected_error",
+                    "message": "err_perk_not_owned"
+                }).to_string();
+                helpers::send_to_client(state, connection_id, &err).await;
+                return;
+            }
+
+            let x1 = msg.x1.unwrap_or(0);
+            let y1 = msg.y1.unwrap_or(0);
+            let x2 = msg.x2.unwrap_or(0);
+            let y2 = msg.y2.unwrap_or(0);
+
+            // Obtener dimensiones del lienzo
+            let (_, _, _, db_width, db_height) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
+
+            let min_x = std::cmp::min(x1, x2).max(0);
+            let max_x = std::cmp::max(x1, x2).min(db_width - 1);
+            let min_y = std::cmp::min(y1, y2).max(0);
+            let max_y = std::cmp::max(y1, y2).min(db_height - 1);
+
+            let selected_pixels_count = (max_x - min_x + 1) * (max_y - min_y + 1);
+
+            // Calcular presupuesto máximo según la tabla de presupuesto estricto
+            let max_allowed_budget = if db_width <= 32 {
+                16
+            } else if db_width <= 64 {
+                25
+            } else if db_width <= 128 {
+                36
+            } else if db_width <= 256 {
+                49
+            } else if db_width <= 512 {
+                64
+            } else if db_width <= 1024 {
+                100
+            } else if db_width <= 2048 {
+                144
+            } else {
+                256
+            };
+
+            if selected_pixels_count > max_allowed_budget {
+                let err = serde_json::json!({
+                    "type": "pixel_protected_error",
+                    "message": "err_protection_budget_exceeded"
+                }).to_string();
+                helpers::send_to_client(state, connection_id, &err).await;
+                return;
+            }
+
+            let mut affected_offsets = Vec::new();
+            for iy in min_y..=max_y {
+                for ix in min_x..=max_x {
+                    affected_offsets.push(iy * db_width + ix);
+                }
+            }
+
+            // Guardar en Redis: expiración en 24 horas (86400 segundos)
+            let current_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+            let expiry_time = current_time + 86400;
+            let zset_key = format!("canvas:{}:protected_zset", canvas_id);
+
+            if let Ok(mut c) = state.redis_pool.get().await {
+                let mut pipe = deadpool_redis::redis::pipe();
+                for &offset in &affected_offsets {
+                    let pk = format!("canvas:{}:protected_pixels:{}", canvas_id, offset);
+                    pipe.cmd("SET").arg(&pk).arg(&uid_str);
+                    pipe.cmd("EXPIRE").arg(&pk).arg(86400);
+                    pipe.cmd("ZADD").arg(&zset_key).arg(expiry_time).arg(offset.to_string());
+                }
+                let _: () = pipe.query_async(&mut c).await.unwrap_or(());
+            }
+
+            // Guardar en MySQL con expiración
+            if !affected_offsets.is_empty() {
+                db::save_canvas_protections_db_with_expiry(&state.db_pool, canvas_id, &affected_offsets, true, Some(&uid_str), Some(86400)).await;
+            }
+
+            // Broadcast del área protegida para todos los clientes
+            let b_msg = serde_json::json!({
+                "type": "area_protection_changed",
+                "canvas_id": canvas_id,
+                "x1": min_x, "y1": min_y, "x2": max_x, "y2": max_y,
+                "protect": true, "width": db_width
+            }).to_string();
+            helpers::broadcast_to_room(state, canvas_id, &b_msg).await;
+
+            if let Ok(mut c) = state.redis_pool.get().await {
+                let sync_payload = serde_json::json!({
+                    "source_node": &state.node_id, "target_type": "canvas", "canvas_id": canvas_id, "payload": b_msg
+                });
+                let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
+            }
+
+            // Confirmar éxito al cliente que colocó la protección
+            let expiry_time = current_time + 86400;
+            let expiries_list = vec![expiry_time; affected_offsets.len()];
+            let success_confirm = serde_json::json!({
+                "type": "pixel_protection_success",
+                "x1": min_x, "y1": min_y, "x2": max_x, "y2": max_y,
+                "offsets": affected_offsets,
+                "expiries": expiries_list
+            }).to_string();
+            helpers::send_to_client(state, connection_id, &success_confirm).await;
         }
         "clear_area" => {
             let x1 = msg.x1.unwrap_or(0);
@@ -833,6 +993,8 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                         let mut pipe = deadpool_redis::redis::pipe();
                         pipe.cmd("SADD").arg("canvases:dirty_states").arg(&c_id_clone2);
                         
+                        let mut affected_offsets = Vec::new();
+                        
                         for iy in (ty - radius)..=(ty + radius) {
                             let dy = iy - ty;
                             if dy.abs() > radius { continue; }
@@ -851,9 +1013,38 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                             let transparent_bytes = vec![0u8; (length * 4) as usize];
                             
                             pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
+                            
+                            for ix in x_start..=x_end {
+                                affected_offsets.push(iy * width + ix);
+                            }
+                        }
+                        
+                        // Eliminar protecciones de Redis
+                        let zset_key = format!("canvas:{}:protected_zset", c_id_clone2);
+                        for &offset in &affected_offsets {
+                            let pk = format!("canvas:{}:protected_pixels:{}", c_id_clone2, offset);
+                            pipe.cmd("DEL").arg(&pk);
+                            pipe.cmd("ZREM").arg(&zset_key).arg(offset.to_string());
                         }
                         
                         let _: () = pipe.query_async(&mut c).await.unwrap_or(());
+                        
+                        // Eliminar protecciones de MySQL
+                        if !affected_offsets.is_empty() {
+                            db::save_canvas_protections_db_with_expiry(&s_clone2.db_pool, &c_id_clone2, &affected_offsets, false, None, None).await;
+                        }
+                        
+                        // Broadcast de desprotección para actualizar el frontend
+                        let unprotect_msg = serde_json::json!({
+                            "type": "pixel_unprotected_broadcast",
+                            "offsets": affected_offsets
+                        }).to_string();
+                        helpers::broadcast_to_room(&s_clone2, &c_id_clone2, &unprotect_msg).await;
+                        
+                        if let Ok(mut c2) = s_clone2.redis_pool.get().await {
+                            let sync_payload = serde_json::json!({"source_node": &s_clone2.node_id, "target_type": "canvas", "canvas_id": c_id_clone2, "payload": unprotect_msg});
+                            let _: () = c2.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
+                        }
                         
                         let b_msg = serde_json::json!({
                             "type": "bomb_pixel",

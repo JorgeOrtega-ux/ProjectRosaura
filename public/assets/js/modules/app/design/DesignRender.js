@@ -73,7 +73,7 @@ export const DesignRender = {
 
                 const selArray = this.selectedPixels ? Array.from(this.selectedPixels) : [];
                 const hoverKey = this.hoveredPixel ? ((this.hoveredPixel.y << 16) | this.hoveredPixel.x) : -1;
-                const isOwnerProtecting = (this.interactionMode === 'owner_protecting');
+                const isOwnerProtecting = (this.interactionMode === 'owner_protecting' || this.interactionMode === 'user_protecting');
                 
                 this.renderWorker.postMessage({
                     type: 'UPDATE_RENDER_STATE',
@@ -170,10 +170,15 @@ export const DesignRender = {
     syncProtectedPixelsToWorker() {
         if (!this.renderWorker) return;
         const protArray = this.protectedPixels ? Array.from(this.protectedPixels) : [];
+        const ownerProtArray = this.ownerProtectedPixels ? Array.from(this.ownerProtectedPixels) : [];
+        const myProtArray = this.myProtectedPixels ? Array.from(this.myProtectedPixels) : [];
         this.renderWorker.postMessage({
             type: 'UPDATE_PROTECTED_PIXELS',
             payload: {
-                protectedPixels: protArray
+                protectedPixels: protArray,
+                ownerProtectedPixels: ownerProtArray,
+                myProtectedPixels: myProtArray,
+                showMyProtectionsHighlight: !!this.showMyProtectionsHighlight
             }
         });
     },

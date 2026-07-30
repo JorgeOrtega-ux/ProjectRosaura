@@ -18,7 +18,8 @@ const PERK_DISPLAY_ORDER = [
     'bomba_pixel_1',
     'bomba_atomica_1',
     'bomba_racimo_1',
-    'lluvia_meteoritos_1'
+    'lluvia_meteoritos_1',
+    'proteccion_pixeles_1'
 ];
 
 const PerksRegistry = {

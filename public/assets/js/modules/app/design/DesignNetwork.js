@@ -173,6 +173,16 @@ export const DesignNetwork = {
                     this.protectedPixels = new Set(data.offsets);
                     if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
                 }
+                else if (data.type === 'init_my_protected_pixels') {
+                    this.myProtectedPixels = new Set(data.offsets);
+                    this.myProtectedExpiries = {};
+                    if (Array.isArray(data.offsets) && Array.isArray(data.expiries)) {
+                        data.offsets.forEach((off, idx) => {
+                            this.myProtectedExpiries[off] = data.expiries[idx];
+                        });
+                    }
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                }
                 else if (data.type === 'pixel_protected_broadcast') {
                     if (!this.protectedPixels) this.protectedPixels = new Set();
                     this.protectedPixels.add(data.offset);
@@ -180,7 +190,34 @@ export const DesignNetwork = {
                 }
                 else if (data.type === 'pixel_unprotected_broadcast') {
                     if (!this.protectedPixels) this.protectedPixels = new Set();
-                    this.protectedPixels.delete(data.offset);
+                    if (!this.myProtectedPixels) this.myProtectedPixels = new Set();
+                    if (!this.myProtectedExpiries) this.myProtectedExpiries = {};
+                    if (Array.isArray(data.offsets)) {
+                        data.offsets.forEach(off => {
+                            this.protectedPixels.delete(off);
+                            this.myProtectedPixels.delete(off);
+                            delete this.myProtectedExpiries[off];
+                        });
+                    } else if (data.offset !== undefined) {
+                        this.protectedPixels.delete(data.offset);
+                        this.myProtectedPixels.delete(data.offset);
+                        delete this.myProtectedExpiries[data.offset];
+                    }
+                    if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                }
+                else if (data.type === 'pixel_protection_success') {
+                    if (typeof showMessage === 'function') showMessage('Zona protegida con éxito por 24 horas', 'success');
+                    if (!this.myProtectedPixels) this.myProtectedPixels = new Set();
+                    if (!this.myProtectedExpiries) this.myProtectedExpiries = {};
+                    if (Array.isArray(data.offsets) && Array.isArray(data.expiries)) {
+                        data.offsets.forEach((off, idx) => {
+                            this.myProtectedPixels.add(off);
+                            this.myProtectedExpiries[off] = data.expiries[idx];
+                        });
+                    }
+                    if (typeof this.loadUserPerks === 'function') this.loadUserPerks();
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                     if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
                 }
                 else if (data.type === 'pixel_protected_error') {
@@ -211,8 +248,13 @@ export const DesignNetwork = {
                     this.isFrozen = data.frozen;
                     this.updateFreezeUI();
                 }
+                else if (data.type === 'init_owner_protected_pixels') {
+                    this.ownerProtectedPixels = new Set(data.offsets);
+                    if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
+                }
                 else if (data.type === 'area_protection_changed') {
                     if (!this.protectedPixels) this.protectedPixels = new Set();
+                    if (!this.ownerProtectedPixels) this.ownerProtectedPixels = new Set();
                     const w = data.width || this.boardWidth || 64;
                     const minX = data.x1;
                     const maxX = data.x2;
@@ -225,8 +267,10 @@ export const DesignNetwork = {
                             const offset = (y * w) + x;
                             if (protect) {
                                 this.protectedPixels.add(offset);
+                                this.ownerProtectedPixels.add(offset);
                             } else {
                                 this.protectedPixels.delete(offset);
+                                this.ownerProtectedPixels.delete(offset);
                             }
                         }
                     }

@@ -432,7 +432,7 @@ export const DesignInteractions = {
 
         const coords = this.getBoardCoords(e.clientX, e.clientY);
         if (coords) {
-            if (this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') {
+            if (this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting' || this.interactionMode === 'user_protecting') {
                 const bw = this.boardWidth || 64;
                 const offset = (coords.y * bw) + coords.x;
                 
@@ -503,7 +503,7 @@ export const DesignInteractions = {
 
     handleMouseMove(e) {
 
-        if ((this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') && this.ownerEraserStep === 1 && this.ownerEraserStart) {
+        if ((this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting' || this.interactionMode === 'user_protecting') && this.ownerEraserStep === 1 && this.ownerEraserStart) {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
             if (coords) {
                 this.selectOwnerArea(this.ownerEraserStart.x, this.ownerEraserStart.y, coords.x, coords.y, false);
@@ -1125,6 +1125,43 @@ export const DesignInteractions = {
     updateSelectionUI() {
         if (!this.btnPlacePixels || !this.txtPlacePixels) return;
 
+        if (this.interactionMode === 'user_protecting') {
+            this.btnPlacePixels.classList.replace('component-button--primary', 'component-button--success');
+            this.btnPlacePixels.classList.replace('component-button--danger', 'component-button--success');
+
+            const w = this.boardWidth || 64;
+            const maxBudget = w <= 32 ? 16
+                            : w <= 64 ? 25
+                            : w <= 128 ? 36
+                            : w <= 256 ? 49
+                            : w <= 512 ? 64
+                            : w <= 1024 ? 100
+                            : w <= 2048 ? 144
+                            : 256;
+
+            let areaSize = 0;
+            if (this.ownerEraserBox) {
+                areaSize = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
+            }
+
+            if (this.ownerEraserBox && this.ownerEraserStep === 2) {
+                if (areaSize <= maxBudget) {
+                    this.btnPlacePixels.classList.remove('disabled-interaction');
+                    this.txtPlacePixels.textContent = `Proteger zona (${areaSize} px)`;
+                } else {
+                    this.btnPlacePixels.classList.add('disabled-interaction');
+                    this.txtPlacePixels.textContent = `Excede presupuesto (máx ${maxBudget} px)`;
+                }
+            } else if (this.ownerEraserStep === 1) {
+                this.btnPlacePixels.classList.add('disabled-interaction');
+                this.txtPlacePixels.textContent = `Definiendo zona (${areaSize} px)...`;
+            } else {
+                this.btnPlacePixels.classList.add('disabled-interaction');
+                this.txtPlacePixels.textContent = 'Haz clic en el lienzo';
+            }
+            return;
+        }
+
         if (this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') {
             this.btnPlacePixels.classList.replace('component-button--primary', 'component-button--danger');
             this.btnPlacePixels.classList.replace('component-button--success', 'component-button--danger');
@@ -1189,8 +1226,27 @@ export const DesignInteractions = {
     },
 
     placePixels() {
-        if ((this.selectedPixels.size === 0 && this.interactionMode !== 'owner_erasing' && this.interactionMode !== 'owner_protecting') || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+        if ((this.selectedPixels.size === 0 && this.interactionMode !== 'owner_erasing' && this.interactionMode !== 'owner_protecting' && this.interactionMode !== 'user_protecting') || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
         
+        if (this.interactionMode === 'user_protecting') {
+            if (!this.ownerEraserBox) return;
+            const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
+            if (window.dialogSystem) {
+                window.dialogSystem.show('confirmProtectAreaModal', { count }).then(result => {
+                    const actStr = (typeof result === 'string') ? result : (result?.action || (result?.confirmed ? 'protect' : null));
+                    if (actStr === 'protect') {
+                        this.executeUserProtectArea();
+                    }
+                });
+            } else {
+                const act = confirm(`¿Estás seguro de proteger esta zona de ${count} píxeles por 24 horas usando tu ventaja?`);
+                if (act) {
+                    this.executeUserProtectArea();
+                }
+            }
+            return;
+        }
+
         if (this.interactionMode === 'owner_erasing') {
             if (!this.ownerEraserBox) return;
             const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
@@ -1522,6 +1578,35 @@ export const DesignInteractions = {
     async activatePerk(perkId, btn) {
         if (!perkId) return;
 
+        if (perkId === 'proteccion_pixeles_1') {
+            const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
+            const count = owned ? parseInt(owned.count, 10) : 0;
+            if (count <= 0) {
+                if (typeof showMessage === 'function') showMessage(window.__('err_perk_not_owned'), 'warning');
+                return;
+            }
+
+            if (this.interactionMode === 'user_protecting') {
+                this.interactionMode = 'normal';
+                this.ownerEraserBox = null;
+                this.ownerEraserStep = 0;
+                this.ownerEraserStart = null;
+                if (typeof showMessage === 'function') showMessage('Modo Protector de Píxeles desactivado', 'info');
+            } else {
+                this.interactionMode = 'user_protecting';
+                this.activeBomb = null;
+                this.ownerEraserBox = null;
+                this.ownerEraserStep = 0;
+                this.ownerEraserStart = null;
+                if (typeof showMessage === 'function') showMessage('Modo Protector de Píxeles activado. Haz clic en el lienzo para definir la primera esquina.', 'info');
+            }
+
+            if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+            this.updateSelectionUI();
+            this.requestRender();
+            return;
+        }
+
         if (PerksRegistry.isBomb(perkId)) {
             const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
             const count = owned ? parseInt(owned.count, 10) : 0;
@@ -1609,6 +1694,36 @@ export const DesignInteractions = {
                     };
                     renderedInventoryCount++;
                 }
+            } else if (perkId === 'proteccion_pixeles_1') {
+                const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
+                const totalAmount = owned ? parseInt(owned.count, 10) : 0;
+                
+                isActive = (this.interactionMode === 'user_protecting');
+                
+                if (isActive) {
+                    isToggledOn = true;
+                    const titleText = PerksRegistry.getLabel(perkId);
+                    activeHtml = `<span class="material-symbols-rounded component-text-success">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    clickHandler = () => {
+                        this.interactionMode = 'normal';
+                        this.ownerEraserBox = null;
+                        this.ownerEraserStep = 0;
+                        this.ownerEraserStart = null;
+                        this.updateSelectionUI();
+                        this.updatePerkBadges();
+                        this.requestRender();
+                    };
+                    if (this.showInventoryPerks) renderedInventoryCount++;
+                } else if (totalAmount > 0 && this.showInventoryPerks) {
+                    isActive = true;
+                    isToggledOn = false;
+                    const titleText = PerksRegistry.getLabel(perkId);
+                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    clickHandler = () => {
+                        this.activatePerk(perkId);
+                    };
+                    renderedInventoryCount++;
+                }
             }
 
             const invItem = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
@@ -1652,6 +1767,32 @@ export const DesignInteractions = {
             emptyBadge.innerHTML = `<span class="material-symbols-rounded">info</span><span>${displayLabel}</span>`;
             badgesRight.appendChild(emptyBadge);
         }
+
+        // Badge permanente de Zonas Protegidas del usuario (siempre activo a la derecha)
+        const myProtectedCount = this.myProtectedPixels ? this.myProtectedPixels.size : 0;
+        const isHighlighting = !!this.showMyProtectionsHighlight;
+        const protBadge = document.createElement('div');
+        protBadge.className = 'component-badge component-badge--clickable';
+        protBadge.style.cursor = 'pointer';
+        if (isHighlighting) {
+            protBadge.style.border = '1px solid var(--color-success)';
+            protBadge.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+            protBadge.innerHTML = `<span class="material-symbols-rounded component-text-success">shield</span><span>Zonas protegidas (${myProtectedCount})<span data-ref="my-protections-timer-label" style="font-family: monospace; font-size: 11px; margin-left: 4px; opacity: 0.8;"></span></span>`;
+        } else {
+            protBadge.innerHTML = `<span class="material-symbols-rounded">shield</span><span>Zonas protegidas (${myProtectedCount})<span data-ref="my-protections-timer-label" style="font-family: monospace; font-size: 11px; margin-left: 4px; opacity: 0.8;"></span></span>`;
+        }
+        protBadge.addEventListener('click', () => {
+            this.toggleMyProtectionsHighlight();
+        });
+        badgesRight.appendChild(protBadge);
+
+        this.myProtectionsTimerLabel = protBadge.querySelector('[data-ref="my-protections-timer-label"]');
+        if (!this.myProtectionsTimerInterval) {
+            this.myProtectionsTimerInterval = setInterval(() => {
+                this.updateMyProtectionsTimer();
+            }, 1000);
+        }
+        this.updateMyProtectionsTimer();
 
         if (this.isOwner) {
             if (this.showOwnerTools || this.interactionMode === 'owner_erasing') {
@@ -1855,5 +1996,91 @@ export const DesignInteractions = {
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
         this.requestRender();
+    },
+
+    executeUserProtectArea() {
+        if (!this.ownerEraserBox) return;
+
+        const { x1: minX, y1: minY, x2: maxX, y2: maxY } = this.ownerEraserBox;
+
+        if (this.wsManager) {
+            this.wsManager.send({
+                type: "use_pixel_protection",
+                perk: "proteccion_pixeles_1",
+                x1: minX,
+                y1: minY,
+                x2: maxX,
+                y2: maxY
+            });
+        }
+
+        this.interactionMode = 'normal';
+        this.selectedPixels.clear();
+        this.ownerEraserBox = null;
+        this.ownerEraserStep = 0;
+        this.ownerEraserStart = null;
+
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
+    },
+
+    toggleMyProtectionsHighlight() {
+        this.showMyProtectionsHighlight = !this.showMyProtectionsHighlight;
+        if (typeof showMessage === 'function') {
+            if (this.showMyProtectionsHighlight) {
+                showMessage('Mostrando tus zonas protegidas (resaltadas en rojo)', 'info');
+            } else {
+                showMessage('Visualización de zonas protegidas desactivada', 'info');
+            }
+        }
+        this.updatePerkBadges();
+        if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
+        this.requestRender();
+    },
+
+    updateMyProtectionsTimer() {
+        if (!this.myProtectedExpiries || Object.keys(this.myProtectedExpiries).length === 0) {
+            if (this.myProtectionsTimerLabel) {
+                this.myProtectionsTimerLabel.textContent = '';
+            }
+            return;
+        }
+
+        const nowSecs = Math.floor(Date.now() / 1000);
+        let minExpiry = Infinity;
+        let hasExpiredAny = false;
+
+        for (const off in this.myProtectedExpiries) {
+            const exp = this.myProtectedExpiries[off];
+            if (exp <= nowSecs) {
+                if (this.myProtectedPixels) this.myProtectedPixels.delete(parseInt(off, 10));
+                delete this.myProtectedExpiries[off];
+                hasExpiredAny = true;
+            } else if (exp < minExpiry) {
+                minExpiry = exp;
+            }
+        }
+
+        if (hasExpiredAny) {
+            this.updatePerkBadges();
+            if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
+            this.requestRender();
+        }
+
+        if (minExpiry === Infinity) {
+            if (this.myProtectionsTimerLabel) this.myProtectionsTimerLabel.textContent = '';
+            return;
+        }
+
+        const diff = minExpiry - nowSecs;
+        const hrs = String(Math.floor(diff / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+        const secs = String(diff % 60).padStart(2, '0');
+
+        const timeStr = ` - ${hrs}:${mins}:${secs}`;
+        if (this.myProtectionsTimerLabel) {
+            this.myProtectionsTimerLabel.textContent = timeStr;
+        }
     }
 };
