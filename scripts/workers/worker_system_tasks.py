@@ -19,6 +19,8 @@ import typesense
 import logging
 from dotenv import load_dotenv
 from cassandra.cluster import Cluster
+from cassandra.query import BatchStatement
+import uuid
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
@@ -251,27 +253,35 @@ def process_deletion(payload):
                 cursor_can.close()
                 conn_can.close()
 
-        # 4. db_telemetry purge by UUID
+        # 4. db_telemetry purge by UUID in Cassandra
         if uuid_str:
             try:
-                conn_tel = get_telemetry_db_connection()
-                cursor_tel = conn_tel.cursor()
+                cass_host = os.getenv("CASSANDRA_HOST") or "cassandra"
+                cass_port = int(os.getenv("CASSANDRA_PORT") or 9042)
+                cass_keyspace = "db_telemetry_nosql"
+                cluster = Cluster([cass_host], port=cass_port, connect_timeout=10)
+                session = cluster.connect(cass_keyspace)
+                
                 telemetry_tables = ['api_latency', 'pageviews', 'auth_events']
                 total_tel_deleted = 0
+                
                 for table in telemetry_tables:
                     try:
-                        cursor_tel.execute(f"DELETE FROM {table} WHERE user_uuid = %s", (uuid_str,))
-                        total_tel_deleted += cursor_tel.rowcount
-                    except mysql.connector.Error as e:
-                        Logger.warning(f"Telemetry cleanup warning (Table {table}): {e}")
-                conn_tel.commit()
-                Logger.info(f"Telemetry logs successfully purged for UUID {uuid_str}. Total rows affected: {total_tel_deleted}")
-            except mysql.connector.Error as err:
-                Logger.error(f"Telemetry database connection failed for UUID {uuid_str}: {err}")
-            finally:
-                if conn_tel and conn_tel.is_connected():
-                    cursor_tel.close()
-                    conn_tel.close()
+                        # Query records using secondary index on user_uuid
+                        stmt = session.prepare(f"SELECT date_only, created_at, uuid FROM {table} WHERE user_uuid = ?")
+                        rows = session.execute(stmt, [uuid.UUID(uuid_str)])
+                        
+                        delete_stmt = session.prepare(f"DELETE FROM {table} WHERE date_only = ? AND created_at = ? AND uuid = ?")
+                        for row in rows:
+                            session.execute(delete_stmt, (row.date_only, row.created_at, row.uuid))
+                            total_tel_deleted += 1
+                    except Exception as table_err:
+                        Logger.warning(f"Telemetry cleanup warning in Cassandra (Table {table}): {table_err}")
+                
+                cluster.shutdown()
+                Logger.info(f"Telemetry logs successfully purged from Cassandra for UUID {uuid_str}. Total rows deleted: {total_tel_deleted}")
+            except Exception as err:
+                Logger.error(f"Telemetry Cassandra connection/purge failed for UUID {uuid_str}: {err}")
 
         # 5. db_identity purge:
         Logger.info(f"Executing master record eradication in db_identity for User ID: {user_id}")
@@ -374,28 +384,8 @@ def heal_default_avatars():
 
 def cleanup_old_telemetry():
     Logger.info("Initiating historical telemetry log aggregation and clearance.")
-    conn = None
-    try:
-        conn = get_telemetry_db_connection()
-        cursor = conn.cursor()
-        tables = ['api_latency', 'pageviews', 'auth_events']
-        total_deleted = 0
-        
-        for table in tables:
-            cursor.execute(f"DELETE FROM {table} WHERE created_at < NOW() - INTERVAL 90 DAY")
-            deleted = cursor.rowcount
-            total_deleted += deleted
-            if deleted > 0:
-                Logger.info(f"Clearance executed on {table}. Records terminated: {deleted}")
-            
-        conn.commit()
-        Logger.info(f"Telemetry log clearance routine finished. Total storage blocks freed: {total_deleted}")
-    except mysql.connector.Error as err:
-        Logger.error(f"Relational database fault during telemetry clearance: {err}")
-    finally:
-        if conn and conn.is_connected():
-            cursor.close()
-            conn.close()
+    # In Cassandra, this is fully automatic due to TTL 7776000 (90 days) on write operations.
+    Logger.info("Telemetry log clearance skipped. Cassandra handles TTL retention (90 days) automatically.")
 
 def process_email(payload):
     email_type = payload.get('type')
@@ -771,7 +761,8 @@ FLUSH_INTERVAL = 5
 class TelemetryWorker:
     def __init__(self):
         self.r = self.init_redis()
-        self.db_conn = None
+        self.cass_session = None
+        self.cass_cluster = None
         self.connect_db()
 
     def init_redis(self):
@@ -795,18 +786,98 @@ class TelemetryWorker:
             return None
 
     def connect_db(self):
-        if self.db_conn and self.db_conn.is_connected():
+        if self.cass_session:
             return
         try:
-            self.db_conn = mysql.connector.connect(
-                host=DB_TEL_HOST,
-                database=DB_TEL_NAME,
-                user=DB_TEL_USER,
-                password=DB_TEL_PASS
-            )
-        except Error as e:
-            Logger.error(f"Telemetry database connection protocol failure: {e}")
-            self.db_conn = None
+            cass_host = os.getenv("CASSANDRA_HOST") or "cassandra"
+            cass_port = int(os.getenv("CASSANDRA_PORT") or 9042)
+            cass_keyspace = "db_telemetry_nosql"
+            
+            cluster = Cluster([cass_host], port=cass_port, connect_timeout=15)
+            session = cluster.connect()
+            
+            # Setup keyspace
+            session.execute(f"""
+                CREATE KEYSPACE IF NOT EXISTS {cass_keyspace}
+                WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}
+            """)
+            session.set_keyspace(cass_keyspace)
+            
+            # Setup tables & indexes
+            session.execute("""
+                CREATE TABLE IF NOT EXISTS api_latency (
+                    date_only text,
+                    created_at timestamp,
+                    uuid uuid,
+                    endpoint text,
+                    method text,
+                    status_code int,
+                    latency_ms float,
+                    user_uuid uuid,
+                    ip_address text,
+                    asn text,
+                    PRIMARY KEY (date_only, created_at, uuid)
+                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
+            """)
+            session.execute("CREATE INDEX IF NOT EXISTS ON api_latency (user_uuid)")
+
+            session.execute("""
+                CREATE TABLE IF NOT EXISTS pageviews (
+                    date_only text,
+                    created_at timestamp,
+                    uuid uuid,
+                    path text,
+                    load_time_ms float,
+                    user_uuid uuid,
+                    session_id text,
+                    device_type text,
+                    theme_preference text,
+                    locale text,
+                    PRIMARY KEY (date_only, created_at, uuid)
+                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
+            """)
+            session.execute("CREATE INDEX IF NOT EXISTS ON pageviews (user_uuid)")
+
+            session.execute("""
+                CREATE TABLE IF NOT EXISTS auth_events (
+                    date_only text,
+                    created_at timestamp,
+                    uuid uuid,
+                    event_type text,
+                    user_uuid uuid,
+                    ip_address text,
+                    asn text,
+                    PRIMARY KEY (date_only, created_at, uuid)
+                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
+            """)
+            session.execute("CREATE INDEX IF NOT EXISTS ON auth_events (user_uuid)")
+
+            # Prepare statements with TTL (90 days = 7776000 seconds)
+            self.insert_api_latency_stmt = session.prepare("""
+                INSERT INTO api_latency (date_only, created_at, uuid, endpoint, method, status_code, latency_ms, user_uuid, ip_address, asn)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                USING TTL 7776000
+            """)
+            
+            self.insert_pageviews_stmt = session.prepare("""
+                INSERT INTO pageviews (date_only, created_at, uuid, path, load_time_ms, user_uuid, session_id, device_type, theme_preference, locale)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                USING TTL 7776000
+            """)
+            
+            self.insert_auth_events_stmt = session.prepare("""
+                INSERT INTO auth_events (date_only, created_at, uuid, event_type, user_uuid, ip_address, asn)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                USING TTL 7776000
+            """)
+
+            self.cass_cluster = cluster
+            self.cass_session = session
+            Logger.info("Connected to Cassandra telemetry keyspace and prepared statements.")
+        except Exception as e:
+            Logger.error(f"Telemetry database connection protocol failure (Cassandra): {e}")
+            self.cass_session = None
+            self.cass_cluster = None
 
     def process_queues(self):
         if not self.r:
@@ -815,10 +886,8 @@ class TelemetryWorker:
                 return
 
         self.connect_db()
-        if not self.db_conn:
+        if not self.cass_session:
             return
-
-        cursor = self.db_conn.cursor()
 
         try:
             for queue_name, table_name in QUEUES.items():
@@ -846,46 +915,91 @@ class TelemetryWorker:
                             continue
                 
                 if batch:
-                    self.insert_batch(cursor, table_name, queue_name, batch, raw_payloads)
+                    self.insert_batch(table_name, queue_name, batch, raw_payloads)
 
         except Exception as e:
             Logger.critical(f"Critical execution error during queue processing cycle: {e}")
-        finally:
-            if cursor:
-                cursor.close()
 
-    def insert_batch(self, cursor, table_name, queue_name, batch, raw_payloads):
+    def insert_batch(self, table_name, queue_name, batch, raw_payloads):
         if not batch:
             return
 
-        try:
-            cursor.execute(f"SHOW COLUMNS FROM {table_name}")
-            valid_columns = {row[0] for row in cursor.fetchall()}
-        except Error as e:
-            Logger.error(f"Schema evaluation failed for structural table {table_name}: {e}")
+        if table_name == 'api_latency':
+            stmt = self.insert_api_latency_stmt
+        elif table_name == 'pageviews':
+            stmt = self.insert_pageviews_stmt
+        elif table_name == 'auth_events':
+            stmt = self.insert_auth_events_stmt
+        else:
+            Logger.error(f"Unknown telemetry table: {table_name}")
             return
 
-        all_keys = set()
-        for item in batch:
-            all_keys.update(item.keys())
-            
-        keys = list(all_keys.intersection(valid_columns))
+        batch_statement = BatchStatement()
         
-        if not keys:
-            Logger.error(f"Payload schema mismatch. Keys rejected for table {table_name}")
-            return
+        for item in batch:
+            created_at_val = item.get('created_at')
+            if isinstance(created_at_val, str):
+                try:
+                    created_at_dt = datetime.strptime(created_at_val, '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    created_at_dt = datetime.now()
+            else:
+                created_at_dt = datetime.now()
+                
+            date_only = created_at_dt.strftime('%Y-%m-%d')
+            uid = uuid.uuid4()
+            
+            user_uuid_str = item.get('user_uuid')
+            user_uuid = None
+            if user_uuid_str:
+                try:
+                    user_uuid = uuid.UUID(user_uuid_str)
+                except ValueError:
+                    pass
 
-        columns = ', '.join(keys)
-        placeholders = ', '.join(['%s'] * len(keys))
-        sql = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
-        values = [tuple(item.get(key) for key in keys) for item in batch]
+            if table_name == 'api_latency':
+                batch_statement.add(stmt, (
+                    date_only,
+                    created_at_dt,
+                    uid,
+                    item.get('endpoint'),
+                    item.get('method'),
+                    int(item.get('status_code') or 0),
+                    float(item.get('latency_ms') or 0.0),
+                    user_uuid,
+                    item.get('ip_address'),
+                    item.get('asn')
+                ))
+            elif table_name == 'pageviews':
+                batch_statement.add(stmt, (
+                    date_only,
+                    created_at_dt,
+                    uid,
+                    item.get('path'),
+                    float(item.get('load_time_ms') or 0.0),
+                    user_uuid,
+                    item.get('session_id'),
+                    item.get('device_type'),
+                    item.get('theme_preference'),
+                    item.get('locale')
+                ))
+            elif table_name == 'auth_events':
+                batch_statement.add(stmt, (
+                    date_only,
+                    created_at_dt,
+                    uid,
+                    item.get('event_type'),
+                    user_uuid,
+                    item.get('ip_address'),
+                    item.get('asn')
+                ))
 
         try:
-            cursor.executemany(sql, values)
-            self.db_conn.commit()
-        except Error as e:
-            self.db_conn.rollback()
-            Logger.error(f"MySQL transactional insertion failed on {table_name}: {e}. Routing {len(batch)} payloads to DLQ.")
+            self.cass_session.execute(batch_statement)
+        except Exception as e:
+            Logger.error(f"Cassandra batch insertion failed on {table_name}: {e}. Routing {len(batch)} payloads to DLQ.")
+            self.cass_session = None # Force reconnection next run
+            self.cass_cluster = None
             dlq_name = f"{queue_name}_dlq"
             try:
                 self.r.rpush(dlq_name, *raw_payloads)

@@ -1342,7 +1342,6 @@ class AdminServices {
         $dbManager = new \App\Config\Database\DatabaseManager();
         $pdoCanvases = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
         $pdoIdentity = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-        $pdoTelemetry = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_TELEMETRY);
         
         $totalMessages = 0;
         try { 
@@ -1370,9 +1369,17 @@ class AdminServices {
 
         $avgLatency = 0.0;
         try { 
-            $avgLatency = (float)$pdoTelemetry->query("SELECT AVG(latency_ms) FROM " . \App\Core\System\DatabaseConstants::TBL_TELEMETRY_API_LATENCY)->fetchColumn(); 
-            $avgLatency = round($avgLatency, 2);
-        } catch (\Exception $e) {}
+            $latencyStats = $this->telemetryRepository->getApiLatencyStats($start, $end);
+            $totalLatency = 0.0;
+            $totalReqs = 0;
+            foreach ($latencyStats as $stat) {
+                $totalLatency += $stat['avg_latency'] * $stat['total_requests'];
+                $totalReqs += $stat['total_requests'];
+            }
+            $avgLatency = $totalReqs > 0 ? round($totalLatency / $totalReqs, 2) : 0.0;
+        } catch (\Exception $e) {
+            \App\Core\System\Logger::error("Failed to compute average latency", ['exception' => $e->getMessage()]);
+        }
 
         $privacyCounts = ['public' => 0, 'private' => 0, 'unlisted' => 0];
         try {
