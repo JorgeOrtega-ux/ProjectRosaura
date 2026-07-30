@@ -88,6 +88,46 @@ def canvas_persistence_thread():
         print("[!] Canvas thread could not connect to Redis on any host.")
         return
 
+    cassandra_cluster = None
+    cassandra_session = None
+
+    def connect_cassandra():
+        nonlocal cassandra_cluster, cassandra_session
+        try:
+            print(f"[*] Connecting to Cassandra for Pixel History at {CASSANDRA_HOST}:{CASSANDRA_PORT}...")
+            cassandra_cluster = Cluster([CASSANDRA_HOST], port=CASSANDRA_PORT, connect_timeout=10)
+            cassandra_session = cassandra_cluster.connect()
+            cassandra_session.execute(f"""
+                CREATE KEYSPACE IF NOT EXISTS {CASSANDRA_KEYSPACE}
+                WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}
+            """)
+            cassandra_session.set_keyspace(CASSANDRA_KEYSPACE)
+            cassandra_session.execute("""
+                CREATE TABLE IF NOT EXISTS canvas_pixel_history (
+                    canvas_id int,
+                    x int,
+                    y int,
+                    placed_at timestamp,
+                    user_id int,
+                    color_hex text,
+                    PRIMARY KEY ((canvas_id, x, y), placed_at)
+                ) WITH CLUSTERING ORDER BY (placed_at DESC);
+            """)
+            print("[+] Cassandra connected and Pixel History schema verified.")
+            return True
+        except Exception as e:
+            print(f"[!] Cassandra Pixel History initialization/connection error: {e}")
+            if cassandra_cluster:
+                try:
+                    cassandra_cluster.shutdown()
+                except:
+                    pass
+            cassandra_cluster = None
+            cassandra_session = None
+            return False
+
+    connect_cassandra()
+
     canvas_uuid_cache = {}
     canvas_size_cache = {}
 
@@ -130,6 +170,51 @@ def canvas_persistence_thread():
                     if not canvas_uuid:
                         print(f"[!] Could not resolve UUID for canvas {canvas_id}. Skipping.")
                         continue
+
+                    # Batch insert pixel history to Cassandra
+                    if msgs:
+                        if not cassandra_session:
+                            connect_cassandra()
+                        
+                        if cassandra_session:
+                            try:
+                                batch = BatchStatement()
+                                insert_stmt = cassandra_session.prepare("""
+                                    INSERT INTO canvas_pixel_history (canvas_id, x, y, placed_at, user_id, color_hex)
+                                    VALUES (?, ?, ?, ?, ?, ?)
+                                """)
+                                for msg_id, field_dict in msgs:
+                                    if b'u' in field_dict and b'x' in field_dict and b'y' in field_dict:
+                                        try:
+                                            msg_ts_ms = int(msg_id.decode('utf-8').split('-')[0])
+                                            placed_at = datetime.fromtimestamp(msg_ts_ms / 1000.0)
+                                        except Exception:
+                                            placed_at = datetime.now()
+                                        
+                                        try:
+                                            u_val = int(field_dict[b'u'])
+                                            x_val = int(field_dict[b'x'])
+                                            y_val = int(field_dict[b'y'])
+                                            c_val = field_dict[b'c'].decode('utf-8') if b'c' in field_dict else 'transparent'
+                                            
+                                            batch.add(insert_stmt, (
+                                                int(canvas_id),
+                                                x_val,
+                                                y_val,
+                                                placed_at,
+                                                u_val,
+                                                c_val
+                                            ))
+                                        except Exception as item_err:
+                                            print(f"[!] Error parsing pixel history item: {item_err}")
+                                
+                                if len(batch) > 0:
+                                    cassandra_session.execute(batch)
+                                    print(f"[+] Persisted {len(batch)} pixel history records to Cassandra for canvas {canvas_id}.")
+                            except Exception as cass_err:
+                                print(f"[!] Error bulk inserting pixel history to Cassandra: {cass_err}")
+                                cassandra_session = None
+                                cassandra_cluster = None
                     
                     msg_ids = [msg_id_b for msg_id_b, _ in msgs]
                     r.xack(stream_name, CONSUMER_GROUP, *msg_ids)

@@ -139,15 +139,28 @@ class SettingsViewService {
 
         if (isset($_SESSION['user_id'])) {
             try {
-                $db = new DatabaseManager();
-                $pdo = $db->getConnection('identity');
-                $stmt = $pdo->prepare("SELECT created_at FROM profile_changes_log WHERE user_id = ? AND change_type = 'password' ORDER BY created_at DESC LIMIT 1");
-                $stmt->execute([$_SESSION['user_id']]);
-                $log = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-                if ($log && !empty($log['created_at'])) {
-                    $date = new \DateTime($log['created_at']);
-                    $lastUpdateText = $date->format('d/m/Y H:i');
+                $cassandra = new \App\Config\Database\CassandraManager();
+                $session = $cassandra->getSession();
+                if ($session) {
+                    $stmt = $session->prepare("SELECT created_at, change_type FROM db_identity_nosql.profile_changes_log WHERE user_id = ?");
+                    $rows = $session->execute($stmt, [(int)$_SESSION['user_id']])->asRowsResult();
+                    
+                    $latestPasswordChange = null;
+                    foreach ($rows as $row) {
+                        if (($row['change_type'] ?? '') === 'password') {
+                            $latestPasswordChange = $row['created_at'];
+                            break;
+                        }
+                    }
+                    
+                    if ($latestPasswordChange) {
+                        if ($latestPasswordChange instanceof \DateTime) {
+                            $lastUpdateText = $latestPasswordChange->format('d/m/Y H:i');
+                        } else {
+                            $date = new \DateTime($latestPasswordChange);
+                            $lastUpdateText = $date->format('d/m/Y H:i');
+                        }
+                    }
                 }
             } catch (\Throwable $e) {
                 Logger::error("Failed to fetch security info in SettingsViewService", [

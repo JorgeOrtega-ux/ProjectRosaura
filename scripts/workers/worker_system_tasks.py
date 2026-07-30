@@ -253,35 +253,46 @@ def process_deletion(payload):
                 cursor_can.close()
                 conn_can.close()
 
-        # 4. db_telemetry purge by UUID in Cassandra
-        if uuid_str:
+        # 4. db_telemetry and db_identity_nosql purge in Cassandra
+        try:
+            cass_host = os.getenv("CASSANDRA_HOST") or "cassandra"
+            cass_port = int(os.getenv("CASSANDRA_PORT") or 9042)
+            cluster = Cluster([cass_host], port=cass_port, connect_timeout=10)
+            
+            # A. Telemetry purge by user_uuid
+            if uuid_str:
+                try:
+                    session = cluster.connect("db_telemetry_nosql")
+                    telemetry_tables = ['api_latency', 'pageviews', 'auth_events', 'websocket_events', 'slow_queries', 'client_events']
+                    total_tel_deleted = 0
+                    
+                    for table in telemetry_tables:
+                        try:
+                            stmt = session.prepare(f"SELECT date_only, created_at, uuid FROM {table} WHERE user_uuid = ?")
+                            rows = session.execute(stmt, [uuid.UUID(uuid_str)])
+                            
+                            delete_stmt = session.prepare(f"DELETE FROM {table} WHERE date_only = ? AND created_at = ? AND uuid = ?")
+                            for row in rows:
+                                session.execute(delete_stmt, (row.date_only, row.created_at, row.uuid))
+                                total_tel_deleted += 1
+                        except Exception as table_err:
+                            Logger.warning(f"Telemetry cleanup warning in Cassandra (Table {table}): {table_err}")
+                    Logger.info(f"Telemetry logs successfully purged from Cassandra for UUID {uuid_str}. Total rows deleted: {total_tel_deleted}")
+                except Exception as tel_err:
+                    Logger.error(f"Telemetry Cassandra purge failed for UUID {uuid_str}: {tel_err}")
+            
+            # B. Identity log purge by user_id
             try:
-                cass_host = os.getenv("CASSANDRA_HOST") or "cassandra"
-                cass_port = int(os.getenv("CASSANDRA_PORT") or 9042)
-                cass_keyspace = "db_telemetry_nosql"
-                cluster = Cluster([cass_host], port=cass_port, connect_timeout=10)
-                session = cluster.connect(cass_keyspace)
+                session_id = cluster.connect("db_identity_nosql")
+                stmt_del = session_id.prepare("DELETE FROM profile_changes_log WHERE user_id = ?")
+                session_id.execute(stmt_del, [int(user_id)])
+                Logger.info(f"Profile changes log successfully purged from Cassandra for User ID {user_id}")
+            except Exception as id_nosql_err:
+                Logger.warning(f"Identity NoSQL cleanup warning in Cassandra: {id_nosql_err}")
                 
-                telemetry_tables = ['api_latency', 'pageviews', 'auth_events', 'websocket_events', 'slow_queries', 'client_events']
-                total_tel_deleted = 0
-                
-                for table in telemetry_tables:
-                    try:
-                        # Query records using secondary index on user_uuid
-                        stmt = session.prepare(f"SELECT date_only, created_at, uuid FROM {table} WHERE user_uuid = ?")
-                        rows = session.execute(stmt, [uuid.UUID(uuid_str)])
-                        
-                        delete_stmt = session.prepare(f"DELETE FROM {table} WHERE date_only = ? AND created_at = ? AND uuid = ?")
-                        for row in rows:
-                            session.execute(delete_stmt, (row.date_only, row.created_at, row.uuid))
-                            total_tel_deleted += 1
-                    except Exception as table_err:
-                        Logger.warning(f"Telemetry cleanup warning in Cassandra (Table {table}): {table_err}")
-                
-                cluster.shutdown()
-                Logger.info(f"Telemetry logs successfully purged from Cassandra for UUID {uuid_str}. Total rows deleted: {total_tel_deleted}")
-            except Exception as err:
-                Logger.error(f"Telemetry Cassandra connection/purge failed for UUID {uuid_str}: {err}")
+            cluster.shutdown()
+        except Exception as err:
+            Logger.error(f"Cassandra connection/purge failed for user {user_id}: {err}")
 
         # 5. db_identity purge:
         Logger.info(f"Executing master record eradication in db_identity for User ID: {user_id}")
@@ -297,7 +308,7 @@ def process_deletion(payload):
         # Delete non-financial user records
         identity_tables = [
             'user_perks', 'custom_palettes', 'user_flags', 'user_preferences',
-            'profile_changes_log', 'user_restrictions', 'auth_tokens', 'sessions',
+            'user_restrictions', 'auth_tokens', 'sessions',
             'user_roles', 'verification_codes', 'personal_access_tokens'
         ]
         for table in identity_tables:
@@ -807,6 +818,25 @@ class TelemetryWorker:
                 WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}
             """)
             session.set_keyspace(cass_keyspace)
+
+            # Setup db_identity_nosql keyspace and profile_changes_log table
+            session.execute("""
+                CREATE KEYSPACE IF NOT EXISTS db_identity_nosql
+                WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}
+            """)
+            session.execute("""
+                CREATE TABLE IF NOT EXISTS db_identity_nosql.profile_changes_log (
+                    user_id int,
+                    created_at timestamp,
+                    change_id text,
+                    change_type text,
+                    old_value text,
+                    new_value text,
+                    ip_address text,
+                    asn text,
+                    PRIMARY KEY (user_id, created_at, change_id)
+                ) WITH CLUSTERING ORDER BY (created_at DESC, change_id ASC);
+            """)
             
             # Setup tables & indexes
             session.execute("""
