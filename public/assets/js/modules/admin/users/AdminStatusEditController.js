@@ -85,11 +85,11 @@ class AdminStatusEditController {
     }
     handleClick(e) {
         if (!window.location.pathname.includes('/admin/user-moderation')) return;
-        const btnToggleModule = e.target.closest('[data-action="toggleModule"]');
-        if (btnToggleModule && !btnToggleModule.classList.contains('disabled-interaction')) {
-            const target = btnToggleModule.getAttribute('data-target');
+        const btnOpenCalendar = e.target.closest('[data-action="openCalendarModal"]');
+        if (btnOpenCalendar && !btnOpenCalendar.classList.contains('disabled-interaction')) {
+            const target = btnOpenCalendar.getAttribute('data-target');
             if (target === 'adminModuleCalendar' && this.calendarSystem) {
-                this.calendarSystem.setup(
+                this.calendarSystem.openModal(
                     this.state.endDate,
                     (isoString, displayString) => {
                         this.state.endDate = isoString;

@@ -122,6 +122,17 @@ class CanvasResetController {
             }
         }
 
+        const btnOpenCalendar = e.target.closest('[data-action="openCalendarModal"]');
+        if (btnOpenCalendar) {
+            e.preventDefault();
+            const targetId = btnOpenCalendar.getAttribute('data-target');
+            if (targetId === 'moduleCalendarDate' && this.calendar) {
+                const initialDate = this.inputDateTime ? this.inputDateTime.value : '';
+                this.calendar.openModal(initialDate);
+            }
+            return;
+        }
+
         const btnDropdown = e.target.closest('[data-action="toggleDropdown"]');
         if (btnDropdown) {
             e.preventDefault();

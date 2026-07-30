@@ -9,6 +9,32 @@ export class CalendarSystem {
         this.onClear = null;
         this.initialized = false;
         this.disablePastDates = false;
+        this.selectedHours = '00';
+        this.selectedMinutes = '00';
+
+        if (!window.calendarInstances) {
+            window.calendarInstances = {};
+        }
+        if (containerSelector && typeof containerSelector === 'string') {
+            let moduleId = null;
+            const match = containerSelector.match(/data-module=["']([^"']+)["']/);
+            if (match) {
+                moduleId = match[1];
+            } else if (containerSelector.includes('moduleCalendarDateResize')) {
+                moduleId = 'moduleCalendarDateResize';
+            } else if (containerSelector.includes('moduleCalendarDate')) {
+                moduleId = 'moduleCalendarDate';
+            } else if (containerSelector.includes('inviteModuleCalendar')) {
+                moduleId = 'inviteModuleCalendar';
+            } else if (containerSelector.includes('adminModuleCalendar')) {
+                moduleId = 'adminModuleCalendar';
+            } else if (containerSelector.includes('sanctionModuleCalendar')) {
+                moduleId = 'sanctionModuleCalendar';
+            }
+            if (moduleId) {
+                window.calendarInstances[moduleId] = this;
+            }
+        }
         
         this.monthsStr = [
             __('month_january'), __('month_february'), __('month_march'), __('month_april'),
@@ -28,13 +54,13 @@ export class CalendarSystem {
     getContainer() {
         if (this.containerSelector) {
             if (typeof this.containerSelector === 'string') {
-                return document.querySelector(this.containerSelector) || document;
+                return document.querySelector(this.containerSelector) || null;
             }
             if (this.containerSelector instanceof HTMLElement || (typeof this.containerSelector === 'object' && this.containerSelector.querySelector)) {
                 return this.containerSelector;
             }
         }
-        return document;
+        return null;
     }
 
     init() {
@@ -53,12 +79,27 @@ export class CalendarSystem {
         this.onConfirm = onConfirmCallback;
         this.onClear = onClearCallback;
 
+        // Make sure this is mapped in window.calendarInstances
+        const container = this.getContainer();
+        if (container) {
+            let moduleId = container.getAttribute('data-module');
+            if (!moduleId) {
+                const modEl = container.querySelector('[data-module]');
+                if (modEl) moduleId = modEl.getAttribute('data-module');
+            }
+            if (moduleId) {
+                if (!window.calendarInstances) window.calendarInstances = {};
+                window.calendarInstances[moduleId] = this;
+            }
+        }
+
         if (initialDateStr) {
+            const sanitizedDateStr = String(initialDateStr).replace(' ', 'T');
             let dateObj;
-            if (initialDateStr.includes('Z') || /[-+]\d{2}:?\d{2}$/.test(initialDateStr)) {
-                dateObj = new Date(initialDateStr);
+            if (sanitizedDateStr.includes('Z') || /[-+]\d{2}:?\d{2}$/.test(sanitizedDateStr)) {
+                dateObj = new Date(sanitizedDateStr);
             } else {
-                const parts = initialDateStr.split('T');
+                const parts = sanitizedDateStr.split('T');
                 const dateParts = parts[0].split('-');
                 const timeParts = parts[1] ? parts[1].split(':') : ['00', '00'];
                 dateObj = new Date(
@@ -73,28 +114,31 @@ export class CalendarSystem {
             if (!isNaN(dateObj.getTime())) {
                 this.selectedDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
                 this.currentDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+                this.selectedHours = String(dateObj.getHours()).padStart(2, '0');
+                this.selectedMinutes = String(dateObj.getMinutes()).padStart(2, '0');
 
-                const container = this.getContainer();
-                const hInput = container.querySelector('[data-ref="calendar-hours"]');
-                const mInput = container.querySelector('[data-ref="calendar-minutes"]');
-                if (hInput) hInput.value = String(dateObj.getHours()).padStart(2, '0');
-                if (mInput) mInput.value = String(dateObj.getMinutes()).padStart(2, '0');
+                const hInput = container ? container.querySelector('[data-ref="calendar-hours"]') : null;
+                const mInput = container ? container.querySelector('[data-ref="calendar-minutes"]') : null;
+                if (hInput) hInput.value = this.selectedHours;
+                if (mInput) mInput.value = this.selectedMinutes;
             } else {
                 this.selectedDate = null;
                 this.currentDate = new Date();
-                const container = this.getContainer();
-                const hInput = container.querySelector('[data-ref="calendar-hours"]');
-                const mInput = container.querySelector('[data-ref="calendar-minutes"]');
+                this.selectedHours = '00';
+                this.selectedMinutes = '00';
+                const hInput = container ? container.querySelector('[data-ref="calendar-hours"]') : null;
+                const mInput = container ? container.querySelector('[data-ref="calendar-minutes"]') : null;
                 if (hInput) hInput.value = '00';
                 if (mInput) mInput.value = '00';
             }
         } else {
             this.selectedDate = null;
             this.currentDate = new Date();
+            this.selectedHours = '00';
+            this.selectedMinutes = '00';
             
-            const container = this.getContainer();
-            const hInput = container.querySelector('[data-ref="calendar-hours"]');
-            const mInput = container.querySelector('[data-ref="calendar-minutes"]');
+            const hInput = container ? container.querySelector('[data-ref="calendar-hours"]') : null;
+            const mInput = container ? container.querySelector('[data-ref="calendar-minutes"]') : null;
             if (hInput) hInput.value = '00';
             if (mInput) mInput.value = '00';
         }
@@ -110,8 +154,9 @@ export class CalendarSystem {
 
     handleClick(e) {
         const container = this.getContainer();
+        if (!container) return;
         
-        if (container !== document && !container.contains(e.target)) {
+        if (!container.contains(e.target)) {
             return;
         }
 
@@ -132,7 +177,7 @@ export class CalendarSystem {
 
     handleFocusOut(e) {
         const container = this.getContainer();
-        if (container !== document && !container.contains(e.target)) return;
+        if (!container || !container.contains(e.target)) return;
 
         if (e.target.getAttribute('data-ref') === 'calendar-hours') {
             let val = parseInt(e.target.value) || 0;
@@ -150,6 +195,7 @@ export class CalendarSystem {
 
     render() {
         const container = this.getContainer();
+        if (!container) return;
         const year = this.currentDate.getFullYear();
         const month = this.currentDate.getMonth();
         
@@ -233,11 +279,11 @@ export class CalendarSystem {
         }
         
         const container = this.getContainer();
-        const hInput = container.querySelector('[data-ref="calendar-hours"]');
-        const mInput = container.querySelector('[data-ref="calendar-minutes"]');
+        const hInput = container ? container.querySelector('[data-ref="calendar-hours"]') : null;
+        const mInput = container ? container.querySelector('[data-ref="calendar-minutes"]') : null;
         
-        const h = hInput ? hInput.value.padStart(2, '0') : '00';
-        const m = mInput ? mInput.value.padStart(2, '0') : '00';
+        const h = hInput ? hInput.value.padStart(2, '0') : (this.selectedHours || '00');
+        const m = mInput ? mInput.value.padStart(2, '0') : (this.selectedMinutes || '00');
         
         const y = this.selectedDate.getFullYear();
         const mo = String(this.selectedDate.getMonth() + 1).padStart(2, '0');
@@ -274,10 +320,98 @@ export class CalendarSystem {
 
     closeModule() {
         const container = this.getContainer();
-        const daysContainer = container.querySelector('[data-ref="calendar-days"]');
+        const daysContainer = container ? container.querySelector('[data-ref="calendar-days"]') : null;
         if (daysContainer && window.appInstance) {
             const module = daysContainer.closest('.component-module');
             if (module) window.appInstance.closeModule(module);
+        }
+    }
+
+    async openModal(initialVal = null, onConfirmCallback = null, onClearCallback = null) {
+        const confirmCb = onConfirmCallback || this.onConfirm;
+        const clearCb = onClearCallback || this.onClear;
+
+        let hours = this.selectedHours || '00';
+        let minutes = this.selectedMinutes || '00';
+        let isoDate = '';
+        let dateDisplay = '';
+
+        const checkVal = initialVal || (this.selectedDate ? this.getFormattedDisplayDate(this.selectedDate, hours, minutes) : null);
+        
+        if (initialVal) {
+            const sanitized = String(initialVal).replace(' ', 'T');
+            const parts = sanitized.split('T');
+            if (parts[0]) {
+                const dateParts = parts[0].split('-');
+                if (dateParts.length === 3) {
+                    isoDate = parts[0];
+                }
+            }
+            if (parts[1]) {
+                const timeParts = parts[1].split(':');
+                hours = (timeParts[0] || '00').padStart(2, '0');
+                minutes = (timeParts[1] || '00').padStart(2, '0');
+            }
+        } else if (this.selectedDate) {
+            isoDate = `${this.selectedDate.getFullYear()}-${String(this.selectedDate.getMonth() + 1).padStart(2, '0')}-${String(this.selectedDate.getDate()).padStart(2, '0')}`;
+        }
+
+        if (this.selectedDate) {
+            dateDisplay = this.getFormattedDisplayDate(this.selectedDate, hours, minutes).split(',')[0];
+        } else if (isoDate) {
+            const ymd = isoDate.split('-');
+            const tempDateObj = new Date(parseInt(ymd[0], 10), parseInt(ymd[1], 10) - 1, parseInt(ymd[2], 10));
+            dateDisplay = this.getFormattedDisplayDate(tempDateObj, hours, minutes).split(',')[0];
+        }
+
+        let title = typeof window.__ === 'function' ? window.__('calendar_modal_title') : 'Programar fecha y hora';
+        let desc = typeof window.__ === 'function' ? window.__('calendar_modal_desc') : 'Selecciona una fecha y hora para programar la acción.';
+
+        if (this.containerSelector && typeof this.containerSelector === 'string') {
+            if (this.containerSelector.includes('Resize') || this.containerSelector.includes('resize')) {
+                title = (typeof window.__ === 'function' ? window.__('calendar_modal_title_resize') : 'Programar redimensión') || 'Programar redimensión';
+                desc = (typeof window.__ === 'function' ? window.__('calendar_modal_desc_resize') : 'Selecciona la fecha y hora en la que se aplicará el cambio de tamaño del lienzo.') || 'Selecciona la fecha y hora en la que se aplicará el cambio de tamaño del lienzo.';
+            } else if (this.containerSelector.includes('Reset') || this.containerSelector.includes('moduleCalendarDate')) {
+                title = (typeof window.__ === 'function' ? window.__('calendar_modal_title_reset') : 'Programar reinicio') || 'Programar reinicio';
+                desc = (typeof window.__ === 'function' ? window.__('calendar_modal_desc_reset') : 'Selecciona la fecha y hora en la que se restablecerá el lienzo.') || 'Selecciona la fecha y hora en la que se restablecerá el lienzo.';
+            } else if (this.containerSelector.includes('invite')) {
+                title = (typeof window.__ === 'function' ? window.__('calendar_modal_title_invite') : 'Expiración de invitación') || 'Expiración de invitación';
+                desc = (typeof window.__ === 'function' ? window.__('calendar_modal_desc_invite') : 'Selecciona la fecha y hora en la que caducará esta invitación.') || 'Selecciona la fecha y hora en la que caducará esta invitación.';
+            } else if (this.containerSelector.includes('admin')) {
+                title = (typeof window.__ === 'function' ? window.__('calendar_modal_title_admin') : 'Establecer expiración de suspensión') || 'Establecer expiración de suspensión';
+                desc = (typeof window.__ === 'function' ? window.__('calendar_modal_desc_admin') : 'Selecciona la fecha y hora en la que finalizará la sanción del usuario.') || 'Selecciona la fecha y hora en la que finalizará la sanción del usuario.';
+            }
+        }
+
+        const res = await window.dialogSystem.show('calendarModal', {
+            title: title || 'Programar fecha y hora',
+            description: desc || 'Selecciona una fecha y hora para programar la acción.',
+            dateDisplay: dateDisplay || (typeof window.__ === 'function' ? window.__('lbl_select_date') : 'Seleccionar fecha') || 'Seleccionar fecha',
+            hours: hours,
+            minutes: minutes,
+            isoDate: isoDate
+        });
+
+        if (res && res.confirmed) {
+            const data = res.data || {};
+            if (data.isoString) {
+                const parts = data.isoString.split('T');
+                const dateParts = parts[0].split('-');
+                this.selectedDate = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10));
+                this.selectedHours = data.isoString.split('T')[1].split(':')[0];
+                this.selectedMinutes = data.isoString.split('T')[1].split(':')[1];
+
+                if (confirmCb) {
+                    confirmCb(data.isoString, data.displayString);
+                }
+            } else {
+                this.selectedDate = null;
+                this.selectedHours = '00';
+                this.selectedMinutes = '00';
+                if (clearCb) {
+                    clearCb();
+                }
+            }
         }
     }
 }

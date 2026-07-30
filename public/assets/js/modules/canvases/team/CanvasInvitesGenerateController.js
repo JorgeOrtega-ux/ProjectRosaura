@@ -47,6 +47,17 @@ class CanvasInvitesGenerateController {
     handleGlobalClick(e) {
         if (!this.wrapper) return;
 
+        const btnOpenCalendar = e.target.closest('[data-action="openCalendarModal"]');
+        if (btnOpenCalendar) {
+            e.preventDefault();
+            const targetId = btnOpenCalendar.getAttribute('data-target');
+            if (targetId === 'inviteModuleCalendar' && this.calendar) {
+                const initialDate = this.wrapper.querySelector('[data-ref="hidden-expires-at"]').value;
+                this.calendar.openModal(initialDate);
+            }
+            return;
+        }
+
         const btnSubmit = e.target.closest('[data-action="submitGenerateInvite"]');
         const btnRole = e.target.closest('[data-action="selectInviteRole"]');
         const btnAdjustMax = e.target.closest('[data-action="adjustMaxUses"]');

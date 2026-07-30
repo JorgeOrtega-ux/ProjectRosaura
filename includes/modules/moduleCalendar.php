@@ -22,16 +22,6 @@ $calendarModuleId = $calendarModuleId ?? 'adminModuleCalendar';
 
             <div class="component-calendar-days" data-ref="calendar-days"></div>
 
-            <div class="component-calendar-time">
-                <div class="component-input-group component-input-group--h34">
-                    <input type="number" data-ref="calendar-hours" class="component-input-field component-input-field--simple" placeholder="<?php echo __('cal_placeholder_hh'); ?>" min="0" max="23" value="00">
-                </div>
-                <span>:</span>
-                <div class="component-input-group component-input-group--h34">
-                    <input type="number" data-ref="calendar-minutes" class="component-input-field component-input-field--simple" placeholder="<?php echo __('cal_placeholder_mm'); ?>" min="0" max="59" value="00">
-                </div>
-            </div>
-
             <div class="component-calendar-actions">
                 <button type="button" class="component-button component-button--h30" data-action="calendarClear"><?php echo __('btn_clear'); ?></button>
                 <div>

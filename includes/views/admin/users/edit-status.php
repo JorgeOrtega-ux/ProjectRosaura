@@ -298,11 +298,10 @@ if ($initialState['isSuspended'] === '1') {
                                             </div>
                                             <div class="component-card__actions component-card__actions--start">
                                                 <div class="component-dropdown-wrapper">
-                                                    <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleCalendar">
+                                                    <div class="component-dropdown-trigger" data-action="openCalendarModal" data-target="adminModuleCalendar">
                                                         <span class="material-symbols-rounded">calendar_month</span>
                                                         <span class="component-dropdown-text" data-ref="admin-endDate-text"><?php echo $displayTexts['endDate']; ?></span>
                                                     </div>
-                                                    <?php include __DIR__ . '/../../../modules/moduleCalendar.php'; ?>
                                                 </div>
                                             </div>
                                         </div>

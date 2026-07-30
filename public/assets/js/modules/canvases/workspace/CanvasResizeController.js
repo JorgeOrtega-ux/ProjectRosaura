@@ -129,6 +129,18 @@ class CanvasResizeController {
     }
 
     handleGlobalClick(e) {
+        const btnOpenCalendar = e.target.closest('[data-action="openCalendarModal"]');
+        if (btnOpenCalendar) {
+            e.preventDefault();
+            const targetId = btnOpenCalendar.getAttribute('data-target');
+            if (targetId === 'moduleCalendarDateResize' && this.calendar) {
+                const inputDateTime = this.wrapper.querySelector('[data-ref="next_resize_at"]');
+                const initialDate = inputDateTime ? inputDateTime.value : '';
+                this.calendar.openModal(initialDate);
+            }
+            return;
+        }
+
         const dropdownTrigger = e.target.closest('[data-action="toggleDropdown"]');
         const sizeScheduledItem = e.target.closest('[data-type="size_scheduled"]');
         const sizeInstantItem = e.target.closest('[data-type="size_instant"]');

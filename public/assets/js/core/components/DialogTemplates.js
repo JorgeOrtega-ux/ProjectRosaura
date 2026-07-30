@@ -817,7 +817,7 @@ export const DialogTemplates = {
                 </div>
                 <div class="component-modal-body">
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason" data-ref="report_reason" data-val="">
                             <span class="material-symbols-rounded" data-ref="report_trigger_icon">delete</span>
                             <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder') || 'Selecciona un motivo...'}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -831,7 +831,6 @@ export const DialogTemplates = {
                             </div>
                         </div>
                     </div>
-                    <input type="hidden" name="report_reason" id="report_reason" data-ref="report_reason" value="">
                 </div>
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
@@ -859,7 +858,7 @@ export const DialogTemplates = {
                 </div>
                 <div class="component-modal-body">
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason" data-ref="report_reason" data-val="">
                             <span class="material-symbols-rounded" data-ref="report_trigger_icon">report</span>
                             <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder')}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -873,7 +872,6 @@ export const DialogTemplates = {
                             </div>
                         </div>
                     </div>
-                    <input type="hidden" name="report_reason" id="report_reason" data-ref="report_reason" value="">
                 </div>
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
@@ -1107,6 +1105,16 @@ export const DialogTemplates = {
             const suspensionType = data.suspensionType || 'temporary';
             const suspensionReason = data.suspensionReason || '';
             const endDate = data.endDate ? data.endDate.replace(' ', 'T').substring(0, 16) : '';
+            let sanctionHours = '00';
+            let sanctionMinutes = '00';
+            if (endDate) {
+                const parts = endDate.split('T');
+                if (parts[1]) {
+                    const timeParts = parts[1].split(':');
+                    sanctionHours = (timeParts[0] || '00').padStart(2, '0');
+                    sanctionMinutes = (timeParts[1] || '00').padStart(2, '0');
+                }
+            }
 
             const scopes = [
                 { key: 'chat_mute', label: __('sanction_scope_chat_mute') || 'Silenciar Chat', icon: 'speaker_notes_off' },
@@ -1163,7 +1171,7 @@ export const DialogTemplates = {
                 <div class="component-modal-body">
                     <!-- Alcance de la Sanción -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSanctionScope">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSanctionScope" data-ref="sanction_scope" data-val="${activeScope.key}">
                             <span class="material-symbols-rounded" data-ref="sanction_scope_trigger_icon">${activeScope.icon}</span>
                             <span class="component-dropdown-text" data-ref="sanction_scope_trigger_text">${activeScope.label}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -1177,11 +1185,10 @@ export const DialogTemplates = {
                             </div>
                         </div>
                     </div>
-                    <input type="hidden" name="sanction_scope" value="${activeScope.key}">
 
                     <!-- Duración -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionType">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionType" data-ref="suspension_type" data-val="${activeType.key}">
                             <span class="material-symbols-rounded" data-ref="suspension_type_trigger_icon">${activeType.icon}</span>
                             <span class="component-dropdown-text" data-ref="suspension_type_trigger_text">${activeType.label}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -1195,11 +1202,10 @@ export const DialogTemplates = {
                             </div>
                         </div>
                     </div>
-                    <input type="hidden" name="suspension_type" value="${activeType.key}">
 
                     <!-- Motivo -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionReason">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionReason" data-ref="suspension_reason" data-val="${activeReasonKey}">
                             <span class="material-symbols-rounded" data-ref="suspension_reason_trigger_icon">${activeReasonIcon}</span>
                             <span class="component-dropdown-text" data-ref="suspension_reason_trigger_text">${activeReasonLabel}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -1213,11 +1219,10 @@ export const DialogTemplates = {
                             </div>
                         </div>
                     </div>
-                    <input type="hidden" name="suspension_reason" value="${activeReasonKey}">
 
                     <!-- Fecha de Expiración (moduleCalendar) -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full modal-end-date-group">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="sanctionModuleCalendar">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="sanctionModuleCalendar" data-ref="end_date" data-val="${endDate}">
                             <span class="material-symbols-rounded">calendar_month</span>
                             <span class="component-dropdown-text" data-ref="sanction-endDate-text">${endDateDisplay}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -1239,15 +1244,6 @@ export const DialogTemplates = {
                                         <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sa'}</span>
                                     </div>
                                     <div class="component-calendar-days" data-ref="calendar-days"></div>
-                                    <div class="component-calendar-time">
-                                        <div class="component-input-group component-input-group--h34">
-                                            <input type="number" data-ref="calendar-hours" class="component-input-field component-input-field--simple" placeholder="HH" min="0" max="23" value="00">
-                                        </div>
-                                        <span>:</span>
-                                        <div class="component-input-group component-input-group--h34">
-                                            <input type="number" data-ref="calendar-minutes" class="component-input-field component-input-field--simple" placeholder="MM" min="0" max="59" value="00">
-                                        </div>
-                                    </div>
                                     <div class="component-calendar-actions">
                                         <button type="button" class="component-button component-button--h30" data-action="calendarClear">${__('btn_clear') || 'Limpiar'}</button>
                                         <div>
@@ -1258,7 +1254,55 @@ export const DialogTemplates = {
                                 </div>
                             </div>
                         </div>
-                        <input type="hidden" name="end_date" value="${endDate}">
+                    </div>
+
+                    <!-- Horas y Minutos Inline Controls para Sanción -->
+                    <div class="modal-end-date-group" style="margin-top: 15px; display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">${__('lbl_hours') || 'Horas'}</div>
+                            <div class="component-inline-control component-inline-control--full">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionHours" data-step="-5">
+                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionHours" data-step="-1">
+                                        <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
+                                    </button>
+                                </div>
+                                <div class="component-inline-control__center" data-ref="sanction-hours-val" data-val="${parseInt(sanctionHours) || 0}">${sanctionHours}</div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionHours" data-step="1">
+                                        <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionHours" data-step="5">
+                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">${__('lbl_minutes') || 'Minutos'}</div>
+                            <div class="component-inline-control component-inline-control--full">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionMinutes" data-step="-5">
+                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionMinutes" data-step="-1">
+                                        <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
+                                    </button>
+                                </div>
+                                <div class="component-inline-control__center" data-ref="sanction-minutes-val" data-val="${parseInt(sanctionMinutes) || 0}">${sanctionMinutes}</div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionMinutes" data-step="1">
+                                        <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustSanctionMinutes" data-step="5">
+                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="component-modal-actions">
@@ -1268,16 +1312,16 @@ export const DialogTemplates = {
             `;
         },
         getData: (container) => {
-            const scopeInput = container.querySelector('[name="sanction_scope"]');
-            const typeInput = container.querySelector('[name="suspension_type"]');
-            const reasonInput = container.querySelector('[name="suspension_reason"]');
-            const endDateInput = container.querySelector('[name="end_date"]');
+            const scopeTrigger = container.querySelector('[data-ref="sanction_scope"]');
+            const typeTrigger = container.querySelector('[data-ref="suspension_type"]');
+            const reasonTrigger = container.querySelector('[data-ref="suspension_reason"]');
+            const endDateTrigger = container.querySelector('[data-ref="end_date"]');
 
             return {
-                sanction_scope: scopeInput ? scopeInput.value : 'chat_mute',
-                suspension_type: typeInput ? typeInput.value : 'temporary',
-                suspension_reason: reasonInput ? reasonInput.value : 'reason_terms',
-                end_date: endDateInput ? endDateInput.value : null
+                sanction_scope: scopeTrigger ? scopeTrigger.getAttribute('data-val') : 'chat_mute',
+                suspension_type: typeTrigger ? typeTrigger.getAttribute('data-val') : 'temporary',
+                suspension_reason: reasonTrigger ? reasonTrigger.getAttribute('data-val') : 'reason_terms',
+                end_date: endDateTrigger ? endDateTrigger.getAttribute('data-val') : null
             };
         }
     },
@@ -1466,6 +1510,126 @@ export const DialogTemplates = {
                             ${tableRowsHtml}
                         </tbody>
                     </table>
+                </div>
+            `;
+        }
+    },
+
+    calendarModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const title = data.title || __('calendar_modal_title') || 'Programar fecha y hora';
+            const dateDisplay = data.dateDisplay || __('lbl_select_date') || 'Seleccionar fecha';
+            const hours = data.hours || '00';
+            const minutes = data.minutes || '00';
+            const isoDate = data.isoDate || '';
+            const btnCancel = __('btn_cancel') || 'Cancelar';
+            const btnConfirm = __('btn_accept') || 'Aceptar';
+
+            const description = data.desc || data.description || '';
+            const descHtml = description ? `<p class="component-modal-desc">${description}</p>` : '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${title}</h2>
+                    ${descHtml}
+                </div>
+                <div class="component-modal-body">
+                    <!-- Date Selector Trigger inside Modal -->
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="modalCalendarDateOnly" data-ref="modal_selected_iso_date" data-val="${isoDate}">
+                            <span class="material-symbols-rounded">calendar_month</span>
+                            <span class="component-dropdown-text" data-ref="modal-calendar-date-text">${dateDisplay}</span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="modalCalendarDateOnly">
+                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-calendar">
+                                    <div class="component-calendar-header">
+                                        <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                            <span class="material-symbols-rounded">chevron_left</span>
+                                        </button>
+                                        <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year') || 'Mes Año'}</div>
+                                        <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </button>
+                                    </div>
+                                    <div class="component-calendar-weekdays">
+                                        <span>${__('cal_su') || 'Do'}</span>
+                                        <span>${__('cal_mo') || 'Lu'}</span>
+                                        <span>${__('cal_tu') || 'Ma'}</span>
+                                        <span>${__('cal_we') || 'Mi'}</span>
+                                        <span>${__('cal_th') || 'Ju'}</span>
+                                        <span>${__('cal_fr') || 'Vi'}</span>
+                                        <span>${__('cal_sa') || 'Sa'}</span>
+                                    </div>
+                                    <div class="component-calendar-days" data-ref="calendar-days"></div>
+                                    <div class="component-calendar-actions">
+                                        <button type="button" class="component-button component-button--h30" data-action="calendarClear">${__('btn_clear') || 'Limpiar'}</button>
+                                        <div>
+                                            <button type="button" class="component-button component-button--h30" data-action="calendarCancel">${btnCancel}</button>
+                                            <button type="button" class="component-button component-button--h30 component-button--dark" data-action="calendarConfirm">${btnConfirm}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hours and Minutes Inline Controls -->
+                    <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">${__('lbl_hours') || 'Horas'}</div>
+                            <div class="component-inline-control component-inline-control--full">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
+                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
+                                        <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
+                                    </button>
+                                </div>
+                                <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-val="${parseInt(hours) || 0}">${hours}</div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
+                                        <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
+                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">${__('lbl_minutes') || 'Minutos'}</div>
+                            <div class="component-inline-control component-inline-control--full">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
+                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
+                                        <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
+                                    </button>
+                                </div>
+                                <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-val="${parseInt(minutes) || 0}">${minutes}</div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
+                                        <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
+                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${btnConfirm}</button>
                 </div>
             `;
         }
