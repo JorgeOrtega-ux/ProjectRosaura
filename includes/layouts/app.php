@@ -137,9 +137,9 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/icons.css">
     <script src="<?php echo $appPath; ?>/assets/js/icons-init.js"></script>
     
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/styles.css">
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/components/components.css">
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/root.css">
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/styles.css?v=<?php echo filemtime(dirname(__DIR__, 2) . '/public/assets/css/styles.css'); ?>">
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/components/components.css?v=<?php echo filemtime(dirname(__DIR__, 2) . '/public/assets/css/components/components.css'); ?>">
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/root.css?v=<?php echo filemtime(dirname(__DIR__, 2) . '/public/assets/css/root.css'); ?>">
     <title><?php echo htmlspecialchars($initialTitle); ?></title>
     
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

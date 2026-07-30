@@ -185,6 +185,7 @@ html.dark-theme .general-content-top.shadow {
 }
 
 .policy-container {
+    display: block !important;
     padding: 32px;
     max-width: 900px;
     margin: 0 auto;

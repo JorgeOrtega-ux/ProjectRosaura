@@ -76,10 +76,18 @@
 
 .view-content {
     width: 100%;
-    height: 100%;
+    min-height: 100%;
     display: flex;
     flex-direction: column;
     padding: 0;
+}
+
+/* Forzar altura 100% solo cuando se requiere scroll interno */
+.view-content:has(.component-table-wrapper),
+.view-content:has(.component-viewport),
+.view-content:has(.component-bottom--full),
+.view-content[data-ref="chat-viewer-wrapper"] {
+    height: 100%;
 }
 
 .component-wrapper {
@@ -93,6 +101,15 @@
 
 .component-wrapper--full {
     max-width: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Restringir el wrapper de ancho completo a 100% solo si la vista lo requiere */
+.view-content:has(.component-table-wrapper) .component-wrapper--full,
+.view-content:has(.component-bottom--full) .component-wrapper--full,
+.view-content[data-ref="chat-viewer-wrapper"] .component-wrapper--full {
     height: 100%;
     min-height: 0;
 }
@@ -110,6 +127,23 @@
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
     display: flex;
     flex-direction: column;
+}
+
+/* Espaciadores inferiores para evitar el bug de flexbox que colapsa el padding/margin en scroll */
+.view-content:not( :has(.component-table-wrapper) ):not( :has(.component-viewport) ):not( :has(.component-bottom--full) ):not( [data-ref="chat-viewer-wrapper"] )::after {
+    content: '';
+    display: block;
+    height: 32px;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.component-viewport::after {
+    content: '';
+    display: block;
+    height: 32px;
+    width: 100%;
+    flex-shrink: 0;
 }
 
 .component-setup-container {
@@ -4042,7 +4076,6 @@ input:checked+.component-toggle-slider:before {
     color: #ffffff;
     font-size: 0.65rem;
     font-family: inherit;
-    text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
