@@ -671,8 +671,8 @@ export class DesignChat {
     }
 
     async deleteMessage(id) {
-        if (window.dialogSystem) {
-            const res = await window.dialogSystem.show('confirmDeleteMessage');
+        if (window.modalSystem) {
+            const res = await window.modalSystem.show('confirmDeleteMessage');
             if (!res.confirmed) return;
         } else {
             if (!confirm(window.__('confirm_delete_message'))) return;
@@ -700,8 +700,8 @@ export class DesignChat {
         let selectedReason = '';
         let detailsText = '';
 
-        if (window.dialogSystem) {
-            const res = await window.dialogSystem.show('reportMessageDialog');
+        if (window.modalSystem) {
+            const res = await window.modalSystem.show('reportMessageDialog');
             if (!res.confirmed) return;
 
             selectedReason = res.data.report_reason || res.data.report_reason_input;

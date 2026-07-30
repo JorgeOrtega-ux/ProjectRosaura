@@ -124,8 +124,8 @@ export class PremiumController {
                 if (result.success && result.data && (result.data.status === 'active' || result.data.tier > 0)) {
                     window.appUserTier = result.data.tier;
                     window.dispatchEvent(new CustomEvent('subscription-updated', { detail: result.data }));
-                    if (window.dialogSystem) {
-                        window.dialogSystem.show('purchaseSuccessModal', { ...result.data, item_type: 'subscription' });
+                    if (window.modalSystem) {
+                        window.modalSystem.show('purchaseSuccessModal', { ...result.data, item_type: 'subscription' });
                     } else {
                         showMessage(window.__('msg_plan_updated'), 'success');
                     }

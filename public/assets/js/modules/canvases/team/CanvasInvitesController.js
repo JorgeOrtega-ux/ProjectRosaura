@@ -91,7 +91,7 @@ class CanvasInvitesController {
     async revokeSelectedInvites() {
         if (this.selectedInviteIds.size === 0) return;
         
-        const resultDialog = await window.dialogSystem.show('confirmAction', {
+        const resultDialog = await window.modalSystem.show('confirmAction', {
             titleKey: 'Revocar invitación',
             descHtml: `¿Estás seguro de que deseas revocar ${this.selectedInviteIds.size} invitación(es)?`,
             confirmKey: 'Revocar',

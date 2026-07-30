@@ -13,8 +13,8 @@ export const DesignTemplates = {
                 return true;
             }
             if (this.liveShareStatus === 'spectator') {
-                if (window.dialogSystem) {
-                    window.dialogSystem.show('confirmLeaveLiveShare').then(res => {
+                if (window.modalSystem) {
+                    window.modalSystem.show('confirmLeaveLiveShare').then(res => {
                         if (res && res.confirmed) {
                             if (typeof this.leaveLiveImageSession === 'function') {
                                 this.leaveLiveImageSession();
@@ -24,8 +24,8 @@ export const DesignTemplates = {
                 }
                 return true;
             }
-            if (window.dialogSystem) {
-                window.dialogSystem.show('joinLiveShare');
+            if (window.modalSystem) {
+                window.modalSystem.show('joinLiveShare');
             }
             return true;
         }
@@ -43,8 +43,8 @@ export const DesignTemplates = {
             e.stopPropagation();
 
             if (btnToggleLiveBroadcast.getAttribute('data-requires-premium') === 'true') {
-                if (window.dialogSystem && typeof window.dialogSystem.show === 'function') {
-                    window.dialogSystem.show('upgradeSubscriptionModal');
+                if (window.modalSystem && typeof window.modalSystem.show === 'function') {
+                    window.modalSystem.show('upgradeSubscriptionModal');
                 } else {
                     window.location.href = (window.AppBasePath || '') + '/upgrade';
                 }
@@ -53,8 +53,8 @@ export const DesignTemplates = {
 
             if (this.liveShareStatus === 'owner') {
                 // Already broadcasting → confirm stop
-                if (window.dialogSystem) {
-                    window.dialogSystem.show('confirmStopBroadcast').then(res => {
+                if (window.modalSystem) {
+                    window.modalSystem.show('confirmStopBroadcast').then(res => {
                         if (res && res.confirmed) {
                             if (typeof this.stopLiveShare === 'function') {
                                 this.stopLiveShare();
@@ -85,8 +85,8 @@ export const DesignTemplates = {
                     return true;
                 }
 
-                if (window.dialogSystem) {
-                    window.dialogSystem.show('confirmStartBroadcast').then(async (res) => {
+                if (window.modalSystem) {
+                    window.modalSystem.show('confirmStartBroadcast').then(async (res) => {
                         if (res && res.confirmed) {
                             if (typeof this.startLiveShare === 'function') {
                                 const success = await this.startLiveShare();
@@ -143,7 +143,7 @@ export const DesignTemplates = {
                         }
                         
                         if (success) {
-                            if (window.dialogSystem) window.dialogSystem.closeCurrent(true);
+                            if (window.modalSystem) window.modalSystem.closeCurrent(true);
                             
                             const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
                             if (btnOpenJoinLive) {
@@ -815,8 +815,8 @@ export const DesignTemplates = {
             }
         }
 
-        if (window.dialogSystem) {
-            const res = await window.dialogSystem.show('confirmInjectTemplate', { cost: cost, balance: balance });
+        if (window.modalSystem) {
+            const res = await window.modalSystem.show('confirmInjectTemplate', { cost: cost, balance: balance });
             if (!res.confirmed) return;
         }
 

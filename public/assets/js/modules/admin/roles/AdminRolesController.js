@@ -301,7 +301,7 @@ class AdminRolesController {
         }
     }
     async openDeleteRoleDialog() {
-        if (!this.selectedRoleId || !window.dialogSystem) return;
+        if (!this.selectedRoleId || !window.modalSystem) return;
         const roleId = parseInt(this.selectedRoleId, 10);
         const selectedRow = document.querySelector(`[data-action="selectRoleRow"][data-role-id="${roleId}"]`);
         if (selectedRow && parseInt(selectedRow.getAttribute('data-is-system'), 10) === 1) {
@@ -309,7 +309,7 @@ class AdminRolesController {
             return; 
         }
         const roleName = selectedRow ? selectedRow.getAttribute('data-role-name') : '';
-        const response = await window.dialogSystem.show('confirmDeleteRole', { roleName: roleName });
+        const response = await window.modalSystem.show('confirmDeleteRole', { roleName: roleName });
         if (response.confirmed) {
             await this.executeApiAction(ApiRoutes.Admin.DeleteRole, { id: roleId });
         }

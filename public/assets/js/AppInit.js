@@ -1,6 +1,6 @@
 import { MainController } from './MainController.js';
 import { SpaRouter } from './core/router/SpaRouter.js';
-import { DialogSystem } from './core/components/DialogSystem.js';
+import { ModalSystem } from './core/components/ModalSystem.js';
 import { NoticeSystem } from './core/components/NoticeSystem.js';
 import { TooltipSystem } from './core/components/TooltipSystem.js';
 import { TelemetryTracker } from './core/telemetry/TelemetryTracker.js';
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     app.init();
     window.appInstance = app; 
 
-    window.dialogSystem = new DialogSystem();
+    window.modalSystem = new ModalSystem();
     window.noticeSystem = new NoticeSystem();
 
     // Cookie Banner Logic
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const showWelcomeFlow = async () => {
-        if (!window.dialogSystem || !window.AppUserFlags || !window.APP_USER || !window.activeUserId) return;
+        if (!window.modalSystem || !window.AppUserFlags || !window.APP_USER || !window.activeUserId) return;
         if (window.AppUserFlags.includes('welcome_modal_seen')) {
             return;
         }
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
         }
 
-        await window.dialogSystem.show('welcomeUserModal');
+        await window.modalSystem.show('welcomeUserModal');
     };
 
     setTimeout(() => {

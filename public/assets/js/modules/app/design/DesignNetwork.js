@@ -1393,8 +1393,8 @@ export const DesignNetwork = {
     async handleAccessRequest(btn) {
         if (!this.canvasIntId) return;
 
-        if (window.dialogSystem) {
-            const res = await window.dialogSystem.show('joinCanvasTerms');
+        if (window.modalSystem) {
+            const res = await window.modalSystem.show('joinCanvasTerms');
             if (!res.confirmed) {
                 return;
             }

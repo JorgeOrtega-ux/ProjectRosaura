@@ -218,7 +218,7 @@ class AdminUserEditController {
         } else { showMessage(result.message, 'error'); }
     }
     async deleteAvatar(btn) {
-        const isConfirmed = await window.dialogSystem.show('confirmDeleteAvatar');
+        const isConfirmed = await window.modalSystem.show('confirmDeleteAvatar');
         if (!isConfirmed || !isConfirmed.confirmed) return;
         setButtonLoading(btn);
         const result = await this.api.post(ApiRoutes.Admin.DeleteAvatar, { target_user_id: this.targetUserId }, this.abortController.signal);

@@ -261,7 +261,7 @@ class AdminStatusEditController {
                 showMessage(typeof window.__ === 'function' ? window.__('err_select_end_date') : 'Debes seleccionar una fecha', 'error'); return;
             }
         }
-        const resultDialog = await window.dialogSystem.show('verifyPasswordUpdateStatus');
+        const resultDialog = await window.modalSystem.show('verifyPasswordUpdateStatus');
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
         if (!password) { showMessage(typeof window.__ === 'function' ? window.__('err_admin_password_required') : 'Debes ingresar tu contraseña', 'error'); return; }

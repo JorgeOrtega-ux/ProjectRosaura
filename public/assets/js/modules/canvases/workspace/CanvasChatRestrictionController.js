@@ -300,7 +300,7 @@ class CanvasChatRestrictionController {
             }
         }
 
-        const resultDialog = await window.dialogSystem.show('verifyPasswordUpdateStatus');
+        const resultDialog = await window.modalSystem.show('verifyPasswordUpdateStatus');
 
         if (!resultDialog.confirmed) return;
 

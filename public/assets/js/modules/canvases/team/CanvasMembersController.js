@@ -212,7 +212,7 @@ class CanvasMembersController {
             return;
         }
 
-        const resultDialog = await window.dialogSystem.show('confirmRemoveMembers', { count: this.selectedMemberIds.size });
+        const resultDialog = await window.modalSystem.show('confirmRemoveMembers', { count: this.selectedMemberIds.size });
         if (!resultDialog.confirmed) return;
 
         try {

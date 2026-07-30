@@ -153,8 +153,8 @@ class CanvasSnapshotsGalleryController {
         this.closeDropdowns();
 
         let confirmed = false;
-        if (window.dialogSystem && window.dialogSystem.show) {
-            const confirmRes = await window.dialogSystem.show('confirmActionModal', {
+        if (window.modalSystem && window.modalSystem.show) {
+            const confirmRes = await window.modalSystem.show('confirmActionModal', {
                 title: window.__('delete_captura'),
                 message: window.__('confirm_delete_captura')
             });

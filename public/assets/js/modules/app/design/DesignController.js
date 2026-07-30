@@ -228,8 +228,8 @@ class DesignController {
                 liveShareMenuBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (window.dialogSystem && typeof window.dialogSystem.show === 'function') {
-                        window.dialogSystem.show('upgradeSubscriptionModal');
+                    if (window.modalSystem && typeof window.modalSystem.show === 'function') {
+                        window.modalSystem.show('upgradeSubscriptionModal');
                     } else {
                         window.location.href = (window.AppBasePath || '') + '/upgrade';
                     }

@@ -129,7 +129,7 @@ class TwoFactorController {
     }
 
     async enable2FA(btn) {
-        const isConfirmed = await window.dialogSystem.show('activate2FADialog');
+        const isConfirmed = await window.modalSystem.show('activate2FADialog');
         if (!isConfirmed.confirmed) return;
 
         const code = isConfirmed.data['modal_2fa_code'] ? isConfirmed.data['modal_2fa_code'].trim() : '';

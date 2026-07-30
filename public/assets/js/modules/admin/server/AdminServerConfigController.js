@@ -230,7 +230,7 @@ class AdminServerConfigController {
         }
     }
     async submitConfig(btn) {
-        const resultDialog = await window.dialogSystem.show('verifyPasswordSaveConfig');
+        const resultDialog = await window.modalSystem.show('verifyPasswordSaveConfig');
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
         if (!password) {

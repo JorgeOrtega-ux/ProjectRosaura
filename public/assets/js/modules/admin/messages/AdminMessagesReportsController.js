@@ -220,8 +220,8 @@ class AdminMessagesReportsController {
         let deleteReason = null;
 
         if (this.state.visibility === 'deleted') {
-            if (window.dialogSystem) {
-                const dialogRes = await window.dialogSystem.show('deleteMessageDialog');
+            if (window.modalSystem) {
+                const dialogRes = await window.modalSystem.show('deleteMessageDialog');
                 if (!dialogRes) {
                     this.state = Object.assign({}, this.initialState);
                     this.renderUI();

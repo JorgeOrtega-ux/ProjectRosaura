@@ -79,8 +79,8 @@ export class MainController {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                if (window.dialogSystem && typeof window.dialogSystem.show === 'function') {
-                    window.dialogSystem.show('upgradeSubscriptionModal');
+                if (window.modalSystem && typeof window.modalSystem.show === 'function') {
+                    window.modalSystem.show('upgradeSubscriptionModal');
                 } else {
                     const basePath = window.AppBasePath || '';
                     if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
@@ -218,8 +218,8 @@ export class MainController {
         const previousValue = this.getPref(key);
 
         if (key === 'purchase_preference' && value === 'fast' && !password) {
-            if (window.dialogSystem) {
-                const res = await window.dialogSystem.show('confirmPasswordModal', {
+            if (window.modalSystem) {
+                const res = await window.modalSystem.show('confirmPasswordModal', {
                     title: window.__('title_confirm_fast_payment'),
                     desc: window.__('desc_confirm_fast_payment')
                 });

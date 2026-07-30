@@ -121,8 +121,8 @@ export class CanvasCardInteractions {
 
         this.closeDropdowns();
 
-        if (window.dialogSystem) {
-            const confirm = await window.dialogSystem.show('verifyPasswordDeleteCanvas', { uuid: uuid });
+        if (window.modalSystem) {
+            const confirm = await window.modalSystem.show('verifyPasswordDeleteCanvas', { uuid: uuid });
             if (!confirm.confirmed) return;
             
             const password = confirm.data['modal_verify_password'] ? confirm.data['modal_verify_password'].trim() : '';
@@ -157,8 +157,8 @@ export class CanvasCardInteractions {
 
         this.closeDropdowns();
 
-        if (window.dialogSystem) {
-            const confirm = await window.dialogSystem.show('confirmLeaveCanvas', { uuid: uuid });
+        if (window.modalSystem) {
+            const confirm = await window.modalSystem.show('confirmLeaveCanvas', { uuid: uuid });
             if (!confirm.confirmed) return;
         }
 
@@ -182,8 +182,8 @@ export class CanvasCardInteractions {
 
         this.closeDropdowns();
 
-        if (window.dialogSystem) {
-            const res = await window.dialogSystem.show('joinCanvasTerms');
+        if (window.modalSystem) {
+            const res = await window.modalSystem.show('joinCanvasTerms');
             if (!res || !res.confirmed) return;
         }
 
@@ -213,8 +213,8 @@ export class CanvasCardInteractions {
 
         this.closeDropdowns();
 
-        if (window.dialogSystem && window.dialogSystem.show) {
-            const confirmRes = await window.dialogSystem.show('downgradeCanvasModal');
+        if (window.modalSystem && window.modalSystem.show) {
+            const confirmRes = await window.modalSystem.show('downgradeCanvasModal');
 
             if (!confirmRes || !confirmRes.confirmed) return;
 

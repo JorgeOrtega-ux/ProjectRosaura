@@ -154,7 +154,7 @@ class CanvasRolesController {
     async deleteRole(btn) {
         if (!this.selectedRoleId) return;
         
-        const resultDialog = await window.dialogSystem.show('confirmAction', { 
+        const resultDialog = await window.modalSystem.show('confirmAction', { 
             title: window.__('delete_role'), 
             message: window.__('confirm_delete_role') 
         });

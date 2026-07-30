@@ -1,7 +1,7 @@
-export const DialogTemplates = {
+export const ModalTemplates = {
     welcomePremiumModal: {
         fullScreen: true,
-        build: (data = {}) => DialogTemplates.purchaseSuccessModal.build({ ...data, item_type: 'subscription' })
+        build: (data = {}) => ModalTemplates.purchaseSuccessModal.build({ ...data, item_type: 'subscription' })
     },
 
     purchaseSuccessModal: {
@@ -64,7 +64,7 @@ export const DialogTemplates = {
                         </button>
 
                         <p class="component-hero-support-text">
-                            <a href="/support" onclick="if(window.spaRouter){window.spaRouter.navigate('/support');} if(window.dialogSystem){window.dialogSystem.closeCurrent();} return false;">
+                            <a href="/support" onclick="if(window.spaRouter){window.spaRouter.navigate('/support');} if(window.modalSystem){window.modalSystem.closeCurrent();} return false;">
                                 ${supportText}
                             </a>
                         </p>
@@ -170,7 +170,7 @@ export const DialogTemplates = {
                             </div>
 
                             <div class="step-modal-actions">
-                                <button class="component-button component-button--h40 component-button--ghost" onclick="if(window.spaRouter){window.spaRouter.navigate('/upgrade');}else{window.location.href='/upgrade';} if(window.dialogSystem){window.dialogSystem.closeCurrent();}">
+                                <button class="component-button component-button--h40 component-button--ghost" onclick="if(window.spaRouter){window.spaRouter.navigate('/upgrade');}else{window.location.href='/upgrade';} if(window.modalSystem){window.modalSystem.closeCurrent();}">
                                     ${window.__('btn_more_info')}
                                 </button>
                                 <button class="component-button component-button--h40 component-button--dark" data-modal-action="finish">
@@ -477,7 +477,7 @@ export const DialogTemplates = {
     },
 
     confirmRemoveMembers: {
-        build: (data) => DialogTemplates.confirmAction.build({
+        build: (data) => ModalTemplates.confirmAction.build({
             titleKey: 'title_remove_member',
             descHtml: __('desc_remove_member').replace(':count', data.count || 1),
             confirmClass: 'component-button--danger',
@@ -486,7 +486,7 @@ export const DialogTemplates = {
     },
 
     confirmCreateCanvas: {
-        build: () => DialogTemplates.confirmAction.build({
+        build: () => ModalTemplates.confirmAction.build({
             titleKey: 'title_confirm_create_canvas',
             descKey: 'desc_confirm_create_canvas',
             confirmClass: 'component-button--dark',
@@ -495,7 +495,7 @@ export const DialogTemplates = {
     },
 
     verifyPasswordDeleteCanvas: {
-        build: () => DialogTemplates.verifyPasswordDialog.build({
+        build: () => ModalTemplates.verifyPasswordDialog.build({
             titleKey: 'title_confirm_delete_canvas',
             descKey: 'desc_confirm_delete_canvas',
             confirmClass: 'component-button--danger',
@@ -504,7 +504,7 @@ export const DialogTemplates = {
     },
 
     confirmLeaveCanvas: {
-        build: () => DialogTemplates.confirmAction.build({
+        build: () => ModalTemplates.confirmAction.build({
             titleKey: 'title_confirm_leave_canvas',
             descKey: 'desc_confirm_leave_canvas',
             confirmClass: 'component-button--danger',
@@ -513,7 +513,7 @@ export const DialogTemplates = {
     },
 
     confirmResetNow: {
-        build: () => DialogTemplates.confirmAction.build({
+        build: () => ModalTemplates.confirmAction.build({
             titleKey: 'title_confirm_reset_now',
             descKey: 'desc_confirm_reset_now',
             confirmClass: 'component-button--danger',
@@ -522,7 +522,7 @@ export const DialogTemplates = {
     },
 
     confirmResizeNow: {
-        build: (data) => DialogTemplates.confirmAction.build({
+        build: (data) => ModalTemplates.confirmAction.build({
             titleKey: 'title_confirm_resize_now',
             descKey: 'desc_confirm_resize_now',
             descHtml: data?.sizeLabel
@@ -621,7 +621,7 @@ export const DialogTemplates = {
     },
 
     verifyPasswordDeleteUsers: {
-        build: (data) => DialogTemplates.verifyPasswordDialog.build({
+        build: (data) => ModalTemplates.verifyPasswordDialog.build({
             titleKey: 'title_verify_delete_users',
             descHtml: __('desc_verify_delete_users').replace(':count', data.count || 0),
             confirmKey: 'btn_destroy_users'
@@ -629,7 +629,7 @@ export const DialogTemplates = {
     },
 
     verifyPasswordDeleteCanvases: {
-        build: (data) => DialogTemplates.verifyPasswordDialog.build({
+        build: (data) => ModalTemplates.verifyPasswordDialog.build({
             titleKey: 'title_verify_delete_canvases',
             descHtml: __('desc_verify_delete_canvases').replace(':count', data.count || 0),
             confirmKey: 'btn_delete_canvas'
@@ -637,7 +637,7 @@ export const DialogTemplates = {
     },
 
     verifyPasswordUpdateRole: {
-        build: () => DialogTemplates.verifyPasswordDialog.build({
+        build: () => ModalTemplates.verifyPasswordDialog.build({
             titleKey: 'admin_verify_identity_title',
             descKey: 'admin_verify_identity_roles_desc',
             confirmKey: 'btn_verify_execute'
@@ -645,7 +645,7 @@ export const DialogTemplates = {
     },
 
     verifyPasswordUpdateStatus: {
-        build: () => DialogTemplates.verifyPasswordDialog.build({
+        build: () => ModalTemplates.verifyPasswordDialog.build({
             titleKey: 'admin_verify_identity_title',
             descKey: 'admin_verify_identity_status_desc',
             confirmKey: 'tooltip_save_status'
@@ -653,7 +653,7 @@ export const DialogTemplates = {
     },
 
     verifyPasswordSaveConfig: {
-        build: () => DialogTemplates.verifyPasswordDialog.build({
+        build: () => ModalTemplates.verifyPasswordDialog.build({
             titleKey: 'admin_verify_identity_title',
             descKey: 'admin_verify_identity_desc_config',
             confirmKey: 'btn_verify_execute'
@@ -661,7 +661,7 @@ export const DialogTemplates = {
     },
 
     verifyPasswordSaveAutomation: {
-        build: () => DialogTemplates.verifyPasswordDialog.build({
+        build: () => ModalTemplates.verifyPasswordDialog.build({
             titleKey: 'admin_verify_identity_title',
             descKey: 'admin_verify_identity_desc_automation',
             confirmKey: 'btn_verify_execute'
@@ -669,7 +669,7 @@ export const DialogTemplates = {
     },
 
     verifyPasswordRestoreBackup: {
-        build: () => DialogTemplates.verifyPasswordDialog.build({
+        build: () => ModalTemplates.verifyPasswordDialog.build({
             titleKey: 'title_confirm_restore',
             descKey: 'msg_confirm_restore_password',
             confirmKey: 'btn_confirm_restore'
@@ -792,7 +792,7 @@ export const DialogTemplates = {
     },
 
     confirmDeleteMessage: {
-        build: () => DialogTemplates.confirmAction.build({
+        build: () => ModalTemplates.confirmAction.build({
             titleKey: 'title_confirm_action',
             descHtml: __('confirm_delete_message'),
             confirmClass: 'component-button--danger'
@@ -882,7 +882,7 @@ export const DialogTemplates = {
     },
 
     downgradeCanvasModal: {
-        build: (data = {}) => DialogTemplates.verifyPasswordDialog.build({
+        build: (data = {}) => ModalTemplates.verifyPasswordDialog.build({
             titleKey: data.titleKey || 'downgrade_basic_title',
             descKey: data.descKey || 'downgrade_basic_message',
             confirmKey: 'btn_confirm'
@@ -898,7 +898,7 @@ export const DialogTemplates = {
             const tokenInfo = `(${__('lbl_cost')}: ${cost.toLocaleString()} tokens · ${__('lbl_remaining_balance')}: ${remaining.toLocaleString()} tokens)`;
             const desc = `${msgConfirm} ${tokenInfo}`;
             
-            return DialogTemplates.confirmAction.build({
+            return ModalTemplates.confirmAction.build({
                 titleKey: 'title_confirm_action',
                 descHtml: desc,
                 confirmClass: 'component-button--warning'

@@ -61,7 +61,7 @@ class AdminUserRoleEditController {
             showMessage(_t(), 'warning');
             return;
         }
-        const resultDialog = await window.dialogSystem.show('verifyPasswordUpdateRole');
+        const resultDialog = await window.modalSystem.show('verifyPasswordUpdateRole');
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
         if (!password) {

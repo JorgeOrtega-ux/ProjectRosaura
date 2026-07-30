@@ -255,9 +255,9 @@ export class BillingController {
         const pmId = btn.dataset.pmId;
         if (!pmId) return;
 
-        if (!window.dialogSystem) return;
+        if (!window.modalSystem) return;
 
-        const confirm = await window.dialogSystem.show('confirmAction', {
+        const confirm = await window.modalSystem.show('confirmAction', {
             title: window.__('title_delete_payment_method'),
             message: window.__('desc_delete_payment_method'),
             confirmClass: 'component-button--danger',

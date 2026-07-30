@@ -74,7 +74,7 @@ class AdminBackupsRestoreController {
             showMessage(window.__('err_backup_id_missing'), 'error');
             return;
         }
-        const resultDialog = await window.dialogSystem.show('verifyPasswordRestoreBackup');
+        const resultDialog = await window.modalSystem.show('verifyPasswordRestoreBackup');
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
         if (!password) {

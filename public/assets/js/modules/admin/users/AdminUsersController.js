@@ -229,7 +229,7 @@ class AdminUsersController {
     }
     async deleteSelectedUsers(btn) {
         if (this.selectedUserIds.size === 0) return;
-        const resultDialog = await window.dialogSystem.show('verifyPasswordDeleteUsers', {
+        const resultDialog = await window.modalSystem.show('verifyPasswordDeleteUsers', {
             count: this.selectedUserIds.size
         });
         if (!resultDialog.confirmed) return;

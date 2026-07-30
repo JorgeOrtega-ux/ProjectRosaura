@@ -383,7 +383,7 @@ export class CalendarSystem {
             }
         }
 
-        const res = await window.dialogSystem.show('calendarModal', {
+        const res = await window.modalSystem.show('calendarModal', {
             title: title || 'Programar fecha y hora',
             description: desc || 'Selecciona una fecha y hora para programar la acción.',
             dateDisplay: dateDisplay || (typeof window.__ === 'function' ? window.__('lbl_select_date') : 'Seleccionar fecha') || 'Seleccionar fecha',

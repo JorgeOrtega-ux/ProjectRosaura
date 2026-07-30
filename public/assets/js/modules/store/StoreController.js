@@ -125,8 +125,8 @@ export class StoreController {
         }));
         const totalCoins = items.reduce((sum, item) => sum + item.price, 0);
 
-        if (window.dialogSystem) {
-            const res = await window.dialogSystem.show('confirmBulkPerkPurchaseModal', { items, totalCoins });
+        if (window.modalSystem) {
+            const res = await window.modalSystem.show('confirmBulkPerkPurchaseModal', { items, totalCoins });
             if (res && res.confirmed) {
                 await this.processBulkPerkPurchase(items, btn, selectedRows);
             }
@@ -263,8 +263,8 @@ export class StoreController {
                 }
             } catch (e) {}
 
-            if (window.dialogSystem) {
-                window.dialogSystem.show('purchaseSuccessModal', {
+            if (window.modalSystem) {
+                window.modalSystem.show('purchaseSuccessModal', {
                     item_type: 'coins',
                     coins: purchasedCoins || 0
                 });

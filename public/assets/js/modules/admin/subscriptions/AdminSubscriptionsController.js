@@ -322,7 +322,7 @@ class AdminSubscriptionsController {
     }
 
     async deleteTier(btn = null) {
-        if (!this.selectedTierId || !window.dialogSystem) return;
+        if (!this.selectedTierId || !window.modalSystem) return;
         const tierId = this.selectedTierId;
         const selectedRow = document.querySelector(`[data-action="selectTierRow"][data-tier-id="${tierId}"]`);
         if (selectedRow && parseInt(selectedRow.getAttribute('data-is-system'), 10) === 1) {
@@ -330,7 +330,7 @@ class AdminSubscriptionsController {
             return; 
         }
         const tierName = selectedRow ? selectedRow.getAttribute('data-tier-name') : _t('unknown_tier', 'Suscripción desconocida');
-        const response = await window.dialogSystem.show('confirmDeleteTier', { tierName: tierName });
+        const response = await window.modalSystem.show('confirmDeleteTier', { tierName: tierName });
         if (response.confirmed) {
             await this.executeApiAction(btn, ApiRoutes.Admin.DeleteTier, { uuid: tierId });
         }

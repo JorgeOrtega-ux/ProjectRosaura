@@ -439,8 +439,8 @@ export const DesignInteractions = {
                 if (this.interactionMode === 'owner_protecting' && (this.ownerEraserStep === 0 || this.ownerEraserStep === 2)) {
                     if (this.protectedPixels && this.protectedPixels.has(offset)) {
 
-                        if (window.dialogSystem) {
-                            window.dialogSystem.show('confirmUnprotectAreaModal', { count: 1 }).then(res => {
+                        if (window.modalSystem) {
+                            window.modalSystem.show('confirmUnprotectAreaModal', { count: 1 }).then(res => {
                                 const actStr = (typeof res === 'string') ? res : (res?.action || null);
                                 if (actStr === 'unprotect') {
                                     this.ownerEraserBox = { x1: coords.x, y1: coords.y, x2: coords.x, y2: coords.y };
@@ -1231,8 +1231,8 @@ export const DesignInteractions = {
         if (this.interactionMode === 'user_protecting') {
             if (!this.ownerEraserBox) return;
             const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
-            if (window.dialogSystem) {
-                window.dialogSystem.show('confirmProtectAreaModal', { count }).then(result => {
+            if (window.modalSystem) {
+                window.modalSystem.show('confirmProtectAreaModal', { count }).then(result => {
                     const actStr = (typeof result === 'string') ? result : (result?.action || (result?.confirmed ? 'protect' : null));
                     if (actStr === 'protect') {
                         this.executeUserProtectArea();
@@ -1250,8 +1250,8 @@ export const DesignInteractions = {
         if (this.interactionMode === 'owner_erasing') {
             if (!this.ownerEraserBox) return;
             const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
-            if (window.dialogSystem) {
-                window.dialogSystem.show('confirmClearAreaModal', { count }).then(result => {
+            if (window.modalSystem) {
+                window.modalSystem.show('confirmClearAreaModal', { count }).then(result => {
                     if (result && result.confirmed) {
                         this.executeOwnerClearArea();
                     }
@@ -1265,8 +1265,8 @@ export const DesignInteractions = {
         if (this.interactionMode === 'owner_protecting') {
             if (!this.ownerEraserBox) return;
             const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
-            if (window.dialogSystem) {
-                window.dialogSystem.show('confirmProtectAreaModal', { count }).then(result => {
+            if (window.modalSystem) {
+                window.modalSystem.show('confirmProtectAreaModal', { count }).then(result => {
                     const actStr = (typeof result === 'string') ? result : (result?.action || (result?.confirmed ? 'protect' : null));
                     if (actStr === 'protect' || actStr === 'unprotect') {
                         this.executeOwnerProtectArea(actStr === 'protect');

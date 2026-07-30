@@ -209,7 +209,7 @@ class ProfileController {
     }
 
     async deleteAvatar(btn) {
-        const isConfirmed = await window.dialogSystem.show('confirmDeleteAvatar');
+        const isConfirmed = await window.modalSystem.show('confirmDeleteAvatar');
         if (!isConfirmed.confirmed) return;
         
         setButtonLoading(btn);
@@ -259,15 +259,15 @@ class ProfileController {
     }
 
     async handleEmailUpdateRequest() {
-        window.dialogSystem.show('loadingEmailCode');
+        window.modalSystem.show('loadingEmailCode');
         const res = await this.api.post(ApiRoutes.Settings.RequestEmailCode, {}, this.abortController.signal);
         
         if (res.aborted) {
-            window.dialogSystem.closeCurrent(false);
+            window.modalSystem.closeCurrent(false);
             return;
         }
         
-        window.dialogSystem.closeCurrent(false);
+        window.modalSystem.closeCurrent(false);
         await new Promise(resolve => setTimeout(resolve, 350));
         
         if (res.success) {
@@ -275,7 +275,7 @@ class ProfileController {
             showMessage(res.message, 'success');
             
             const currentEmail = document.querySelector('[data-ref="display-email"]').textContent.trim();
-            const verifyDialogPromise = window.dialogSystem.show('verifyEmailCode', { email: currentEmail });
+            const verifyDialogPromise = window.modalSystem.show('verifyEmailCode', { email: currentEmail });
             
             const resendBtn = document.querySelector('[data-action="dialogResendCode"]');
             if (resendBtn) {
@@ -468,12 +468,12 @@ class ProfileController {
     }
 
     async openUnlinkGoogleModal(btn) {
-        if (!window.dialogSystem) return;
+        if (!window.modalSystem) return;
 
         const googleName = btn ? (btn.getAttribute('data-google-name') || '') : '';
         const userEmail = btn ? (btn.getAttribute('data-user-email') || '') : '';
 
-        const result = await window.dialogSystem.show('confirmUnlinkGoogleModal', {
+        const result = await window.modalSystem.show('confirmUnlinkGoogleModal', {
             googleName: googleName,
             userEmail: userEmail
         });

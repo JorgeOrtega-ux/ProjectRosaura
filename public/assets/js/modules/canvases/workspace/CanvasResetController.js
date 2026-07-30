@@ -263,7 +263,7 @@ class CanvasResetController {
     }
 
     async confirmResetNow(btnResetNow) {
-        const result = await window.dialogSystem.show('confirmResetNow', {});
+        const result = await window.modalSystem.show('confirmResetNow', {});
         if (result.confirmed) {
             this.executeResetNow(btnResetNow);
         }

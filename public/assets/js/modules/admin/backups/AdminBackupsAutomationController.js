@@ -246,7 +246,7 @@ class AdminBackupsAutomationController {
         if (btnSave) btnSave.classList.toggle('disabled-interaction', !hasChanges);
     }
     async handleSave(btn) {
-        const resultDialog = await window.dialogSystem.show('verifyPasswordSaveAutomation');
+        const resultDialog = await window.modalSystem.show('verifyPasswordSaveAutomation');
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password']?.trim();
         if (!password) {

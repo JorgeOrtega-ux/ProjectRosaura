@@ -128,7 +128,7 @@ class SecurityController {
     async promptDeleteAccount(btn) {
         if (btn.classList.contains('disabled-interaction')) return;
 
-        const dialog = await window.dialogSystem.show('confirmDeleteAccountDialog');
+        const dialog = await window.modalSystem.show('confirmDeleteAccountDialog');
 
         if (dialog.confirmed) {
             const passInput = dialog.data['modal_delete_password'];
@@ -158,9 +158,9 @@ class SecurityController {
     }
 
     async logoutAllDevices(btn) {
-        if (!window.dialogSystem) return;
+        if (!window.modalSystem) return;
 
-        const resultDialog = await window.dialogSystem.show('confirmRevokeAllDevices');
+        const resultDialog = await window.modalSystem.show('confirmRevokeAllDevices');
 
         if (resultDialog && resultDialog.confirmed) {
             setButtonLoading(btn);

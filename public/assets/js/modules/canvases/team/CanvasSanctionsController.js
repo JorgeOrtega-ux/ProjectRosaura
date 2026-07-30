@@ -231,7 +231,7 @@ export class CanvasSanctionsController {
         const currentReason = selectedRow && hasSanction ? (selectedRow.getAttribute('data-suspension-reason') || '') : '';
         const currentEndDate = selectedRow && hasSanction ? (selectedRow.getAttribute('data-end-date') || '') : '';
 
-        const resultDialog = await window.dialogSystem.show('manageSanctionModal', {
+        const resultDialog = await window.modalSystem.show('manageSanctionModal', {
             username: this.selectedUsername,
             sanctionScope: currentScope,
             suspensionType: currentType,
@@ -242,7 +242,7 @@ export class CanvasSanctionsController {
         if (!resultDialog.confirmed) return;
 
         const formData = resultDialog.data || {};
-        const passwordDialog = await window.dialogSystem.show('verifyPasswordUpdateStatus');
+        const passwordDialog = await window.modalSystem.show('verifyPasswordUpdateStatus');
         if (!passwordDialog.confirmed) return;
 
         const password = passwordDialog.data['modal_verify_password'] ? passwordDialog.data['modal_verify_password'].trim() : '';
@@ -279,7 +279,7 @@ export class CanvasSanctionsController {
     async liftSanction() {
         if (!this.selectedUserId) return;
 
-        const passwordDialog = await window.dialogSystem.show('verifyPasswordUpdateStatus');
+        const passwordDialog = await window.modalSystem.show('verifyPasswordUpdateStatus');
         if (!passwordDialog.confirmed) return;
 
         const password = passwordDialog.data['modal_verify_password'] ? passwordDialog.data['modal_verify_password'].trim() : '';

@@ -1,10 +1,10 @@
-import { DialogTemplates } from './DialogTemplates.js';
+import { ModalTemplates } from './ModalTemplates.js';
 import { CalendarSystem } from './CalendarSystem.js';
 import { showMessage } from '../utils/uiUtils.js';
 
-export class DialogSystem {
+export class ModalSystem {
     constructor() {
-        this.templates = DialogTemplates;
+        this.templates = ModalTemplates;
 
         this.activeResolveFn = null;
         this.activeWrapper = null;

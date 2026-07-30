@@ -226,7 +226,7 @@ class CanvasesManageController {
     async deleteSelectedCanvases(btn) {
         if (this.selectedCanvasIds.size === 0) return;
 
-        const resultDialog = await window.dialogSystem.show('verifyPasswordDeleteCanvases', { count: this.selectedCanvasIds.size });
+        const resultDialog = await window.modalSystem.show('verifyPasswordDeleteCanvases', { count: this.selectedCanvasIds.size });
 
         if (!resultDialog.confirmed) return;
 

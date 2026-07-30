@@ -155,8 +155,8 @@ export class UpgradeController {
                 if (result.success && result.data && (result.data.status === 'active' || result.data.tier > 0)) {
                     window.appUserTier = result.data.tier;
                     window.dispatchEvent(new CustomEvent('subscription-updated', { detail: result.data }));
-                    if (window.dialogSystem) {
-                        window.dialogSystem.show('welcomePremiumModal', result.data);
+                    if (window.modalSystem) {
+                        window.modalSystem.show('welcomePremiumModal', result.data);
                     } else {
                         showMessage(window.__('msg_plan_updated'), 'success');
                     }
@@ -208,7 +208,7 @@ export class UpgradeController {
     }
 
     async _showConfirmModal(previewData, tier, billingPeriod, btn) {
-        if (!window.dialogSystem) {
+        if (!window.modalSystem) {
             this._processActualSubscription(tier, billingPeriod, btn);
             return;
         }
@@ -217,7 +217,7 @@ export class UpgradeController {
         const currency = previewData.currency;
         const isUpgrade = previewData.is_upgrade;
 
-        const confirmRes = await window.dialogSystem.show('confirmUpgradeModal', {
+        const confirmRes = await window.modalSystem.show('confirmUpgradeModal', {
             amount: amount,
             currency: currency,
             isUpgrade: isUpgrade
@@ -255,8 +255,8 @@ export class UpgradeController {
                 } else if (result.success && result.updated) {
                     window.appUserTier = tier;
                     window.dispatchEvent(new CustomEvent('subscription-updated', { detail: { tier: tier } }));
-                    if (window.dialogSystem) {
-                        window.dialogSystem.show('welcomePremiumModal', { tier: tier, item_type: 'subscription' }).then(() => {
+                    if (window.modalSystem) {
+                        window.modalSystem.show('welcomePremiumModal', { tier: tier, item_type: 'subscription' }).then(() => {
                             window.location.reload();
                         });
                     } else {
@@ -280,8 +280,8 @@ export class UpgradeController {
                 } else if (result.success && result.updated) {
                     window.appUserTier = tier;
                     window.dispatchEvent(new CustomEvent('subscription-updated', { detail: { tier: tier } }));
-                    if (window.dialogSystem) {
-                        window.dialogSystem.show('welcomePremiumModal', { tier: tier, item_type: 'subscription' }).then(() => {
+                    if (window.modalSystem) {
+                        window.modalSystem.show('welcomePremiumModal', { tier: tier, item_type: 'subscription' }).then(() => {
                             window.location.reload();
                         });
                     } else {

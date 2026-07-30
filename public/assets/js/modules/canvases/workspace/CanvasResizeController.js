@@ -276,7 +276,7 @@ class CanvasResizeController {
         const activeLink = this.wrapper.querySelector('.component-menu-link[data-type="size_instant"].active');
         const sizeLabel = activeLink ? activeLink.getAttribute('data-label') : newSize;
 
-        const result = await window.dialogSystem.show('confirmResizeNow', { sizeLabel });
+        const result = await window.modalSystem.show('confirmResizeNow', { sizeLabel });
         if (result.confirmed) {
             this.applyResizeNow(btn, newSize);
         }
