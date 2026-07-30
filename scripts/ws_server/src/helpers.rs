@@ -2,7 +2,7 @@ use crate::state::AppState;
 use crate::models::{PerksConfig, PubSubSyncEvent}; 
 use deadpool_redis::redis::AsyncCommands;
 use sqlx::Row;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use flate2::read::ZlibDecoder;
 use std::io::Read;
 use std::time::Duration;
@@ -156,36 +156,48 @@ pub async fn admin_events_listener(state: AppState) {
     );
     let client = match deadpool_redis::redis::Client::open(redis_url) {
         Ok(c) => c,
-        Err(_) => return,
+        Err(e) => {
+            error!("Failed to open Redis client for admin_events_listener: {}", e);
+            return;
+        }
     };
     
-    let mut pubsub = match client.get_async_pubsub().await {
-        Ok(c) => c,
-        Err(e) => { error!("Pubsub error: {}", e); return; }
-    };
+    loop {
+        let mut pubsub = match client.get_async_pubsub().await {
+            Ok(c) => c,
+            Err(e) => {
+                error!("Pubsub error in admin_events_listener (retrying in 2s): {}", e);
+                sleep(Duration::from_secs(2)).await;
+                continue;
+            }
+        };
 
-    if let Err(e) = pubsub.subscribe("admin:canvas_events").await {
-        error!("Failed to subscribe to admin:canvas_events: {}", e);
-        return;
-    }
-    info!("WS Server listening for administrative events on 'admin:canvas_events'");
+        if let Err(e) = pubsub.subscribe("admin:canvas_events").await {
+            error!("Failed to subscribe to admin:canvas_events (retrying in 2s): {}", e);
+            sleep(Duration::from_secs(2)).await;
+            continue;
+        }
+        info!("WS Server listening for administrative events on 'admin:canvas_events'");
 
-    let mut stream = pubsub.on_message();
-    while let Some(msg) = stream.next().await {
-        if let Ok(payload) = msg.get_payload::<String>() {
-            if let Ok(event) = serde_json::from_str::<serde_json::Value>(&payload) {
-                if let Some(canvas_id_val) = event.get("canvas_id") {
-                    let canvas_id = if canvas_id_val.is_number() {
-                        canvas_id_val.as_i64().unwrap().to_string()
-                    } else if canvas_id_val.is_string() {
-                        canvas_id_val.as_str().unwrap().to_string()
-                    } else {
-                        continue;
-                    };
-                    broadcast_to_room(&state, &canvas_id, &payload).await;
+        let mut stream = pubsub.on_message();
+        while let Some(msg) = stream.next().await {
+            if let Ok(payload) = msg.get_payload::<String>() {
+                if let Ok(event) = serde_json::from_str::<serde_json::Value>(&payload) {
+                    if let Some(canvas_id_val) = event.get("canvas_id") {
+                        let canvas_id = if canvas_id_val.is_number() {
+                            canvas_id_val.as_i64().unwrap().to_string()
+                        } else if canvas_id_val.is_string() {
+                            canvas_id_val.as_str().unwrap().to_string()
+                        } else {
+                            continue;
+                        };
+                        broadcast_to_room(&state, &canvas_id, &payload).await;
+                    }
                 }
             }
         }
+        warn!("Admin events stream closed, reconnecting in 2s...");
+        sleep(Duration::from_secs(2)).await;
     }
 }
 
@@ -198,42 +210,54 @@ pub async fn sync_events_listener(state: AppState) {
     );
     let client = match deadpool_redis::redis::Client::open(redis_url) {
         Ok(c) => c,
-        Err(_) => return,
+        Err(e) => {
+            error!("Failed to open Redis client for sync_events_listener: {}", e);
+            return;
+        }
     };
     
-    let mut pubsub = match client.get_async_pubsub().await {
-        Ok(c) => c,
-        Err(e) => { error!("Pubsub error: {}", e); return; }
-    };
+    loop {
+        let mut pubsub = match client.get_async_pubsub().await {
+            Ok(c) => c,
+            Err(e) => {
+                error!("Pubsub error in sync_events_listener (retrying in 2s): {}", e);
+                sleep(Duration::from_secs(2)).await;
+                continue;
+            }
+        };
 
-    if let Err(e) = pubsub.subscribe("canvas:sync_events").await {
-        error!("Failed to subscribe to canvas:sync_events: {}", e);
-        return;
-    }
-    info!("WS Server listening for global sync events on 'canvas:sync_events'");
+        if let Err(e) = pubsub.subscribe("canvas:sync_events").await {
+            error!("Failed to subscribe to canvas:sync_events (retrying in 2s): {}", e);
+            sleep(Duration::from_secs(2)).await;
+            continue;
+        }
+        info!("WS Server listening for global sync events on 'canvas:sync_events'");
 
-    let mut stream = pubsub.on_message();
-    while let Some(msg) = stream.next().await {
-        if let Ok(payload) = msg.get_payload::<String>() {
-            if let Ok(event) = serde_json::from_str::<serde_json::Value>(&payload) {
-                if event.get("source_node").and_then(|v| v.as_str()) == Some(state.node_id.as_str()) {
-                    continue;
-                }
-                
-                if let (Some(t_type), Some(p)) = (event.get("target_type").and_then(|v| v.as_str()), event.get("payload").and_then(|v| v.as_str())) {
-                    if t_type == "canvas" {
-                        if let Some(c_id_val) = event.get("canvas_id") {
-                            let c_id = if c_id_val.is_number() { c_id_val.as_i64().unwrap().to_string() } else { c_id_val.as_str().unwrap().to_string() };
-                            broadcast_to_room(&state, &c_id, p).await;
-                        }
-                    } else if t_type == "live" {
-                        if let Some(code) = event.get("code").and_then(|v| v.as_str()) {
-                            broadcast_to_live_room(&state, code, p, None).await;
+        let mut stream = pubsub.on_message();
+        while let Some(msg) = stream.next().await {
+            if let Ok(payload) = msg.get_payload::<String>() {
+                if let Ok(event) = serde_json::from_str::<serde_json::Value>(&payload) {
+                    if event.get("source_node").and_then(|v| v.as_str()) == Some(state.node_id.as_str()) {
+                        continue;
+                    }
+                    
+                    if let (Some(t_type), Some(p)) = (event.get("target_type").and_then(|v| v.as_str()), event.get("payload").and_then(|v| v.as_str())) {
+                        if t_type == "canvas" {
+                            if let Some(c_id_val) = event.get("canvas_id") {
+                                let c_id = if c_id_val.is_number() { c_id_val.as_i64().unwrap().to_string() } else { c_id_val.as_str().unwrap().to_string() };
+                                broadcast_to_room(&state, &c_id, p).await;
+                            }
+                        } else if t_type == "live" {
+                            if let Some(code) = event.get("code").and_then(|v| v.as_str()) {
+                                broadcast_to_live_room(&state, code, p, None).await;
+                            }
                         }
                     }
                 }
             }
         }
+        warn!("Sync events stream closed, reconnecting in 2s...");
+        sleep(Duration::from_secs(2)).await;
     }
 }
 
