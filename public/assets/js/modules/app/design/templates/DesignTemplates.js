@@ -43,7 +43,11 @@ export const DesignTemplates = {
             e.stopPropagation();
 
             if (btnToggleLiveBroadcast.getAttribute('data-requires-premium') === 'true') {
-                window.location.href = (window.AppBasePath || '') + '/upgrade';
+                if (window.dialogSystem && typeof window.dialogSystem.show === 'function') {
+                    window.dialogSystem.show('upgradeSubscriptionModal');
+                } else {
+                    window.location.href = (window.AppBasePath || '') + '/upgrade';
+                }
                 return true;
             }
 
@@ -572,7 +576,6 @@ export const DesignTemplates = {
                 if (btnRotate) btnRotate.classList.remove('disabled');
                 if (btnInject) btnInject.classList.remove('disabled');
                 if (btnDel) btnDel.classList.remove('disabled');
-                if (btnLive) btnLive.classList.remove('disabled');
                 
                 if (btnLock) {
                     const iconLock = btnLock.querySelector('.material-symbols-rounded');
@@ -590,8 +593,19 @@ export const DesignTemplates = {
             if (btnRotate) btnRotate.classList.add('disabled');
             if (btnInject) btnInject.classList.add('disabled');
             if (btnDel) btnDel.classList.add('disabled');
-            if (btnLive) btnLive.classList.add('disabled');
             if (toolbarEl) toolbarEl.classList.remove('active');
+        }
+
+        if (btnLive) {
+            if (btnLive.classList.contains('premium-locked')) {
+                btnLive.classList.remove('disabled');
+            } else {
+                if (this.activeTemplateId && this.templates && this.templates.some(t => t.id === this.activeTemplateId)) {
+                    btnLive.classList.remove('disabled');
+                } else {
+                    btnLive.classList.add('disabled');
+                }
+            }
         }
     },
 

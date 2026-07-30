@@ -78,12 +78,16 @@ export class MainController {
             if (premiumLockedBtn) {
                 e.preventDefault();
                 e.stopPropagation();
-                const basePath = window.AppBasePath || '';
                 
-                if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
-                    window.spaRouter.navigate(basePath + '/upgrade');
+                if (window.dialogSystem && typeof window.dialogSystem.show === 'function') {
+                    window.dialogSystem.show('upgradeSubscriptionModal');
                 } else {
-                    window.location.href = basePath + '/upgrade';
+                    const basePath = window.AppBasePath || '';
+                    if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                        window.spaRouter.navigate(basePath + '/upgrade');
+                    } else {
+                        window.location.href = basePath + '/upgrade';
+                    }
                 }
             }
         }, true);
@@ -362,6 +366,31 @@ export class MainController {
     }
 
     handleDocumentClick(e) {
+        const planCard = e.target.closest('.component-card--selectable-row');
+        if (planCard) {
+            e.preventDefault();
+            const modal = planCard.closest('.component-modal-box');
+            if (modal) {
+                modal.querySelectorAll('.component-card--selectable-row').forEach(c => c.classList.remove('active'));
+                planCard.classList.add('active');
+                
+                const submitBtn = modal.querySelector('[data-action="confirmModalUpgrade"]');
+                const tierVal = planCard.getAttribute('data-tier');
+                if (submitBtn) {
+                    submitBtn.setAttribute('data-selected-tier', tierVal);
+                }
+
+                // Highlight corresponding column in the comparative table
+                modal.querySelectorAll('.component-table th, .component-table td').forEach(cell => {
+                    cell.classList.remove('highlight-col');
+                    if (cell.classList.contains(`col-tier-${tierVal}`)) {
+                        cell.classList.add('highlight-col');
+                    }
+                });
+            }
+            return;
+        }
+
         const btn = e.target.closest('[data-action]');
         
         if (btn) {
@@ -421,6 +450,10 @@ export class MainController {
                 if (accordion) accordion.classList.toggle('active');
             }
             else if (action === 'toggleEditState') this.toggleEditState(btn.getAttribute('data-target'));
+            else if (action === 'confirmModalUpgrade') {
+                e.preventDefault();
+                this.handleModalUpgradeCheckout(btn);
+            }
             else if (action === 'setPref') {
                 const key = btn.getAttribute('data-key');
                 const value = btn.getAttribute('data-value');
@@ -439,6 +472,35 @@ export class MainController {
             });
             if (!clickedInside) this.closeModule(module);
         });
+    }
+
+    async handleModalUpgradeCheckout(btn) {
+        const tierVal = parseInt(btn.getAttribute('data-selected-tier'), 10);
+        
+        if (!window.activeUserId) {
+            const basePath = window.AppBasePath || '';
+            window.location.href = basePath + '/login';
+            return;
+        }
+
+        setButtonLoading(btn);
+
+        try {
+            const response = await this.api.post(ApiRoutes.Stripe.CreateCheckout, {
+                tier: tierVal,
+                billing_period: 'monthly'
+            });
+
+            if (response.success && response.checkout_url) {
+                window.location.href = response.checkout_url;
+            } else {
+                restoreButton(btn);
+                showMessage(response.message || 'Error al iniciar el pago', 'error');
+            }
+        } catch (err) {
+            restoreButton(btn);
+            showMessage('Error de conexión', 'error');
+        }
     }
 
     handleDocumentChange(e) {

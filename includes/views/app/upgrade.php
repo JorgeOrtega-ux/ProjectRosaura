@@ -160,7 +160,7 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
                                         endforeach; ?>
                                         
                                         <?php if ($featureIndex > 5): ?>
-                                            <div>
+                                            <div class="upgrade-card-features-toggle-container">
                                                 <span class="component-badge component-cursor-pointer" data-action="toggle-plan-features">Mostrar todos los beneficios</span>
                                             </div>
                                         <?php endif; ?>

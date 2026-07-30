@@ -22,6 +22,26 @@ class TelemetryServices {
         $this->pushToQueue('telemetry_auth', $data);
     }
 
+    public function logWebSocketEvent(array $data): void {
+        $this->pushToQueue('telemetry_websocket', $data);
+    }
+
+    public function logSystemMetric(array $data): void {
+        $this->pushToQueue('telemetry_system', $data);
+    }
+
+    public function logSlowQuery(array $data): void {
+        $this->pushToQueue('telemetry_slow_queries', $data);
+    }
+
+    public function logClientEvent(array $data): void {
+        $this->pushToQueue('telemetry_client_events', $data);
+    }
+
+    public function logUserAction(array $data): void {
+        $this->pushToQueue('telemetry_user_action', $data);
+    }
+
     public function processFrontendPayload(array $payload, ?string $userUuid, ?string $ipAddress): void {
         if (!isset($payload['type']) || !isset($payload['data'])) {
             return;

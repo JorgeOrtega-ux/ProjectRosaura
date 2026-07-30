@@ -106,6 +106,10 @@ export class DialogSystem {
             if (template.noPadding) {
                 this.activeBox.classList.add('component-modal-box--no-padding');
             }
+
+            if (template.customClass) {
+                this.activeBox.classList.add(template.customClass);
+            }
             this.activeBox.innerHTML = template.build(data);
             
             this.activeWrapper.appendChild(this.activeBox);

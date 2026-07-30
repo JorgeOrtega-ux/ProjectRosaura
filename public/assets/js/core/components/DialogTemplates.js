@@ -1331,6 +1331,143 @@ export const DialogTemplates = {
                 </div>
             `;
         }
-    }
+    },
 
+    upgradeSubscriptionModal: {
+        noPadding: true,
+        customClass: 'component-modal-box--columns',
+        build: (data = {}) => {
+            const tiers = (window.APP_TIERS && Array.isArray(window.APP_TIERS))
+                ? window.APP_TIERS.filter(t => parseInt(t.tier_level, 10) > 0 && t.is_active !== 0 && t.is_active !== false)
+                : [
+                    { tier_level: 1, name: 'Pro', price_monthly: 12.99, desc: 'Para particulares', max_canvases: 10, max_snapshots_per_canvas: 50, max_members_per_canvas: 20, max_storage_mb: 200, feat_advanced_roles: 1, feat_chat_restriction: 1, feat_custom_palettes: 1, feat_unlimited_exports: 0, feat_inject_templates: 1, feat_live_share: 1 },
+                    { tier_level: 2, name: 'Negocios', price_monthly: 24.99, desc: 'Para particulares y equipos', max_canvases: -1, max_snapshots_per_canvas: -1, max_members_per_canvas: -1, max_storage_mb: 1024, feat_advanced_roles: 1, feat_chat_restriction: 1, feat_custom_palettes: 1, feat_unlimited_exports: 1, feat_inject_templates: 1, feat_live_share: 1 }
+                  ];
+
+            let cardsHtml = '';
+            tiers.forEach((tier, index) => {
+                const isActiveClass = index === 0 ? 'active' : '';
+                const badgeHtml = parseInt(tier.tier_level, 10) === 2 ? `<span class="component-badge component-badge--sm">Recomendado</span>` : '';
+                const priceText = tier.price_monthly ? `$${parseFloat(tier.price_monthly).toFixed(2)}` : '$12.99';
+                
+                const nameKey = tier.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '_');
+                const translationKey = `plan_desc_${nameKey}`;
+                
+                const planDesc = __(translationKey, [], '');
+                const planDescHtml = planDesc ? `<span class="component-card-desc">${planDesc}</span>` : '';
+                
+                cardsHtml += `
+                    <div class="component-card--selectable-row ${isActiveClass}" data-tier="${tier.tier_level}">
+                        <div class="component-card-left-section">
+                            <div class="component-radio-circle"></div>
+                            <div class="component-card-info">
+                                <span class="component-card-title">${tier.name} ${badgeHtml}</span>
+                                ${planDescHtml}
+                            </div>
+                        </div>
+                        <div class="component-card-price">
+                            <span class="component-card-price-amount">${priceText}</span>
+                            <span class="component-card-price-period">/mes</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const comparisonRows = [
+                {
+                    label: __('plan_limit_canvases', [], 'Proyectos simultáneos'),
+                    getValue: (t) => parseInt(t.max_canvases, 10) === -1 ? __('upgrade_val_unlimited', [], 'Ilimitados') : t.max_canvases
+                },
+                {
+                    label: __('plan_limit_snapshots', [], 'Instantáneas por lienzo'),
+                    getValue: (t) => parseInt(t.max_snapshots_per_canvas, 10) === -1 ? __('upgrade_val_unlimited', [], 'Ilimitados') : t.max_snapshots_per_canvas
+                },
+                {
+                    label: __('plan_limit_members', [], 'Miembros por lienzo'),
+                    getValue: (t) => parseInt(t.max_members_per_canvas, 10) === -1 ? __('upgrade_val_unlimited', [], 'Ilimitados') : t.max_members_per_canvas
+                },
+                {
+                    label: __('lbl_storage', [], 'Almacenamiento en la nube'),
+                    getValue: (t) => {
+                        const mb = parseInt(t.max_storage_mb || 0, 10);
+                        return mb >= 1024 ? `${(mb / 1024).toFixed(0)} GB` : `${mb} MB`;
+                    }
+                },
+                {
+                    label: __('plan_feat_advanced_roles_short', [], 'Roles Avanzados'),
+                    getValue: (t) => t.feat_advanced_roles ? '<span class="material-symbols-rounded check-icon">check</span>' : '<span class="material-symbols-rounded cross-icon">close</span>'
+                },
+                {
+                    label: __('plan_feat_chat_restriction_short', [], 'Chat en vivo'),
+                    getValue: (t) => t.feat_chat_restriction ? '<span class="material-symbols-rounded check-icon">check</span>' : '<span class="material-symbols-rounded cross-icon">close</span>'
+                },
+                {
+                    label: __('plan_feat_custom_palettes_short', [], 'Paletas Pro'),
+                    getValue: (t) => t.feat_custom_palettes ? '<span class="material-symbols-rounded check-icon">check</span>' : '<span class="material-symbols-rounded cross-icon">close</span>'
+                },
+                {
+                    label: __('plan_feat_inject_templates_short', [], 'Inyectar Plantillas'),
+                    getValue: (t) => t.feat_inject_templates ? '<span class="material-symbols-rounded check-icon">check</span>' : '<span class="material-symbols-rounded cross-icon">close</span>'
+                },
+                {
+                    label: __('plan_feat_live_share_short', [], 'Transmisión en vivo'),
+                    getValue: (t) => t.feat_live_share ? '<span class="material-symbols-rounded check-icon">check</span>' : '<span class="material-symbols-rounded cross-icon">close</span>'
+                },
+                {
+                    label: __('plan_feat_unlimited_exports_short', [], 'Exportación libre'),
+                    getValue: (t) => t.feat_unlimited_exports ? '<span class="material-symbols-rounded check-icon">check</span>' : '<span class="material-symbols-rounded cross-icon">close</span>'
+                }
+            ];
+
+            let tableHeaders = '<th>Beneficios prémium</th>';
+            tiers.forEach((t, idx) => {
+                const isHighlight = idx === 0 ? 'highlight-col' : '';
+                tableHeaders += `<th class="col-tier-${t.tier_level} ${isHighlight}">${t.name}</th>`;
+            });
+
+            let tableRowsHtml = '';
+            comparisonRows.forEach(row => {
+                tableRowsHtml += `<tr><td>${row.label}</td>`;
+                tiers.forEach((t, idx) => {
+                    const isHighlight = idx === 0 ? 'highlight-col' : '';
+                    tableRowsHtml += `<td class="col-tier-${t.tier_level} ${isHighlight}">${row.getValue(t)}</td>`;
+                });
+                tableRowsHtml += `</tr>`;
+            });
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-left">
+                    <h2 class="component-modal-title component-modal-title--lg">Actualiza para obtener más acceso</h2>
+                    <p class="component-modal-desc component-modal-desc--lg">Elige tu plan. Puedes cancelar tu suscripción cuando quieras.</p>
+                    
+                    <div class="component-modal-list">
+                        ${cardsHtml}
+                    </div>
+                    
+                    <button class="component-button component-button--dark component-button--rounded-pill component-button--hover-text component-button--h40 component-modal-submit-btn" data-action="confirmModalUpgrade" data-selected-tier="${tiers[0]?.tier_level || 1}">
+                        <span class="btn-default-text">Continuar con la compra</span>
+                        <span class="btn-hover-text">Confirmar pago</span>
+                    </button>
+                    
+                    <p class="component-modal-disclaimer">
+                        Te enviaremos un recordatorio antes de cada renovación. Puedes cancelar tu suscripción cuando quieras en pocos clics.
+                    </p>
+                </div>
+                
+                <div class="component-modal-right">
+                    <table class="component-table">
+                        <thead>
+                            <tr>
+                                ${tableHeaders}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+    }
 };

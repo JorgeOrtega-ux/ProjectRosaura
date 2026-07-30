@@ -107,7 +107,7 @@ extract($designData);
                     
                     <div class="component-divider-vertical" data-ref="main-actions-divider"></div>
 
-                    <button class="component-button component-button--icon component-button--h40 <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'component-button--premium premium-locked' : ''; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'component-button--premium premium-locked' : ''; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom" <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'data-requires-premium="true"' : ''; ?>>
                         <span class="material-symbols-rounded">stream</span>
                     </button>
                     

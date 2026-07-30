@@ -262,7 +262,7 @@ def process_deletion(payload):
                 cluster = Cluster([cass_host], port=cass_port, connect_timeout=10)
                 session = cluster.connect(cass_keyspace)
                 
-                telemetry_tables = ['api_latency', 'pageviews', 'auth_events']
+                telemetry_tables = ['api_latency', 'pageviews', 'auth_events', 'websocket_events', 'slow_queries', 'client_events']
                 total_tel_deleted = 0
                 
                 for table in telemetry_tables:
@@ -752,7 +752,12 @@ REDIS_PASSWORD = os.getenv('REDIS_PASS')
 QUEUES = {
     'telemetry_api_latency': 'api_latency',
     'telemetry_pageviews': 'pageviews',
-    'telemetry_auth': 'auth_events'
+    'telemetry_auth': 'auth_events',
+    'telemetry_websocket': 'websocket_events',
+    'telemetry_system': 'system_metrics',
+    'telemetry_slow_queries': 'slow_queries',
+    'telemetry_client_events': 'client_events',
+    'telemetry_user_action': 'user_actions'
 }
 
 BATCH_SIZE = 500
@@ -852,6 +857,85 @@ class TelemetryWorker:
             """)
             session.execute("CREATE INDEX IF NOT EXISTS ON auth_events (user_uuid)")
 
+            session.execute("""
+                CREATE TABLE IF NOT EXISTS websocket_events (
+                    date_only text,
+                    created_at timestamp,
+                    uuid uuid,
+                    event_type text,
+                    user_uuid uuid,
+                    session_id text,
+                    duration_s float,
+                    message_size_bytes int,
+                    error_message text,
+                    ip_address text,
+                    PRIMARY KEY (date_only, created_at, uuid)
+                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
+            """)
+            session.execute("CREATE INDEX IF NOT EXISTS ON websocket_events (user_uuid)")
+
+            session.execute("""
+                CREATE TABLE IF NOT EXISTS system_metrics (
+                    date_only text,
+                    created_at timestamp,
+                    uuid uuid,
+                    host_name text,
+                    cpu_usage_pct float,
+                    memory_usage_bytes bigint,
+                    disk_usage_pct float,
+                    active_connections int,
+                    PRIMARY KEY (date_only, created_at, uuid)
+                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
+            """)
+
+            session.execute("""
+                CREATE TABLE IF NOT EXISTS slow_queries (
+                    date_only text,
+                    created_at timestamp,
+                    uuid uuid,
+                    db_type text,
+                    query_text text,
+                    execution_time_ms float,
+                    user_uuid uuid,
+                    PRIMARY KEY (date_only, created_at, uuid)
+                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
+            """)
+            session.execute("CREATE INDEX IF NOT EXISTS ON slow_queries (user_uuid)")
+
+            session.execute("""
+                CREATE TABLE IF NOT EXISTS client_events (
+                    date_only text,
+                    created_at timestamp,
+                    uuid uuid,
+                    event_type text,
+                    url text,
+                    target_element text,
+                    error_message text,
+                    stack_trace text,
+                    user_uuid uuid,
+                    browser_agent text,
+                    PRIMARY KEY (date_only, created_at, uuid)
+                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
+            """)
+            session.execute("CREATE INDEX IF NOT EXISTS ON client_events (user_uuid)")
+
+            session.execute("""
+                CREATE TABLE IF NOT EXISTS user_actions (
+                    date_only text,
+                    created_at timestamp,
+                    uuid uuid,
+                    user_uuid uuid,
+                    session_id text,
+                    action_category text,
+                    action_name text,
+                    target_id uuid,
+                    metadata text,
+                    ip_address text,
+                    PRIMARY KEY (date_only, created_at, uuid)
+                ) WITH CLUSTERING ORDER BY (created_at DESC, uuid ASC);
+            """)
+            session.execute("CREATE INDEX IF NOT EXISTS ON user_actions (user_uuid)")
+
             # Prepare statements with TTL (90 days = 7776000 seconds)
             self.insert_api_latency_stmt = session.prepare("""
                 INSERT INTO api_latency (date_only, created_at, uuid, endpoint, method, status_code, latency_ms, user_uuid, ip_address, asn)
@@ -868,6 +952,36 @@ class TelemetryWorker:
             self.insert_auth_events_stmt = session.prepare("""
                 INSERT INTO auth_events (date_only, created_at, uuid, event_type, user_uuid, ip_address, asn)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
+                USING TTL 7776000
+            """)
+
+            self.insert_websocket_events_stmt = session.prepare("""
+                INSERT INTO websocket_events (date_only, created_at, uuid, event_type, user_uuid, session_id, duration_s, message_size_bytes, error_message, ip_address)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                USING TTL 7776000
+            """)
+            
+            self.insert_system_metrics_stmt = session.prepare("""
+                INSERT INTO system_metrics (date_only, created_at, uuid, host_name, cpu_usage_pct, memory_usage_bytes, disk_usage_pct, active_connections)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                USING TTL 7776000
+            """)
+            
+            self.insert_slow_queries_stmt = session.prepare("""
+                INSERT INTO slow_queries (date_only, created_at, uuid, db_type, query_text, execution_time_ms, user_uuid)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                USING TTL 7776000
+            """)
+            
+            self.insert_client_events_stmt = session.prepare("""
+                INSERT INTO client_events (date_only, created_at, uuid, event_type, url, target_element, error_message, stack_trace, user_uuid, browser_agent)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                USING TTL 7776000
+            """)
+
+            self.insert_user_actions_stmt = session.prepare("""
+                INSERT INTO user_actions (date_only, created_at, uuid, user_uuid, session_id, action_category, action_name, target_id, metadata, ip_address)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 USING TTL 7776000
             """)
 
@@ -930,6 +1044,16 @@ class TelemetryWorker:
             stmt = self.insert_pageviews_stmt
         elif table_name == 'auth_events':
             stmt = self.insert_auth_events_stmt
+        elif table_name == 'websocket_events':
+            stmt = self.insert_websocket_events_stmt
+        elif table_name == 'system_metrics':
+            stmt = self.insert_system_metrics_stmt
+        elif table_name == 'slow_queries':
+            stmt = self.insert_slow_queries_stmt
+        elif table_name == 'client_events':
+            stmt = self.insert_client_events_stmt
+        elif table_name == 'user_actions':
+            stmt = self.insert_user_actions_stmt
         else:
             Logger.error(f"Unknown telemetry table: {table_name}")
             return
@@ -992,6 +1116,82 @@ class TelemetryWorker:
                     user_uuid,
                     item.get('ip_address'),
                     item.get('asn')
+                ))
+            elif table_name == 'websocket_events':
+                batch_statement.add(stmt, (
+                    date_only,
+                    created_at_dt,
+                    uid,
+                    item.get('event_type'),
+                    user_uuid,
+                    item.get('session_id'),
+                    float(item.get('duration_s') or 0.0) if item.get('duration_s') is not None else None,
+                    int(item.get('message_size_bytes') or 0) if item.get('message_size_bytes') is not None else None,
+                    item.get('error_message'),
+                    item.get('ip_address')
+                ))
+            elif table_name == 'system_metrics':
+                batch_statement.add(stmt, (
+                    date_only,
+                    created_at_dt,
+                    uid,
+                    item.get('host_name'),
+                    float(item.get('cpu_usage_pct') or 0.0) if item.get('cpu_usage_pct') is not None else None,
+                    int(item.get('memory_usage_bytes') or 0) if item.get('memory_usage_bytes') is not None else None,
+                    float(item.get('disk_usage_pct') or 0.0) if item.get('disk_usage_pct') is not None else None,
+                    int(item.get('active_connections') or 0) if item.get('active_connections') is not None else None
+                ))
+            elif table_name == 'slow_queries':
+                batch_statement.add(stmt, (
+                    date_only,
+                    created_at_dt,
+                    uid,
+                    item.get('db_type'),
+                    item.get('query_text'),
+                    float(item.get('execution_time_ms') or 0.0) if item.get('execution_time_ms') is not None else None,
+                    user_uuid
+                ))
+            elif table_name == 'client_events':
+                batch_statement.add(stmt, (
+                    date_only,
+                    created_at_dt,
+                    uid,
+                    item.get('event_type'),
+                    item.get('url'),
+                    item.get('target_element'),
+                    item.get('error_message'),
+                    item.get('stack_trace'),
+                    user_uuid,
+                    item.get('browser_agent')
+                ))
+            elif table_name == 'user_actions':
+                target_id_str = item.get('target_id')
+                target_id = None
+                if target_id_str:
+                    try:
+                        target_id = uuid.UUID(target_id_str)
+                    except ValueError:
+                        pass
+                
+                metadata_val = item.get('metadata')
+                metadata_str = None
+                if metadata_val is not None:
+                    if isinstance(metadata_val, (dict, list)):
+                        metadata_str = json.dumps(metadata_val)
+                    else:
+                        metadata_str = str(metadata_val)
+
+                batch_statement.add(stmt, (
+                    date_only,
+                    created_at_dt,
+                    uid,
+                    user_uuid,
+                    item.get('session_id'),
+                    item.get('action_category'),
+                    item.get('action_name'),
+                    target_id,
+                    metadata_str,
+                    item.get('ip_address')
                 ))
 
         try:
