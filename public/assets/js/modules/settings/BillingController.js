@@ -295,7 +295,7 @@ export class BillingController {
         const cancelAtPeriodEnd = cancelStateStr === 'true';
 
         try {
-            const response = await this.api.post('stripe.toggle_auto_renewal', {
+            const response = await this.api.post(ApiRoutes.Stripe.ToggleAutoRenewal, {
                 cancel_at_period_end: cancelAtPeriodEnd
             }, this.abortController.signal);
 
@@ -321,7 +321,7 @@ export class BillingController {
     async handleAddNewCard(btn) {
         setButtonLoading(btn);
         try {
-            const response = await this.api.post('stripe.create_setup_session', {}, this.abortController.signal);
+            const response = await this.api.post(ApiRoutes.Stripe.CreateSetupSession, {}, this.abortController.signal);
             if (response.success && response.checkout_url) {
                 window.location.href = response.checkout_url;
             } else {

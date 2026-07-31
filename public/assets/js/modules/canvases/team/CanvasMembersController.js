@@ -1,4 +1,5 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
 class CanvasMembersController {
@@ -214,7 +215,7 @@ class CanvasMembersController {
             let failCount = 0;
 
             for (const targetUserId of this.selectedMemberIds) {
-                const response = await this.api.post('canvases.remove_member', {
+                const response = await this.api.post(ApiRoutes.Canvases.RemoveMember, {
                     canvas_id: canvasId,
                     target_user_id: targetUserId
                 });

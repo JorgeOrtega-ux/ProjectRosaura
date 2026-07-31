@@ -145,24 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (moduleConfig) {
             if (moduleConfig.requiresAdminLang && !window.adminLangLoaded) {
                 try {
-                    const reqUrl = (window.AppBasePath || '') + '/api/index.php';
-                    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-                    const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-
-                    const response = await fetch(reqUrl, {
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'X-CSRF-Token': csrfToken
-                        },
-                        body: JSON.stringify({ route: 'admin.get_translations' }) 
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const resData = await response.json();
+                    const api = new ApiService();
+                    const resData = await api.post(ApiRoutes.Admin.GetTranslations);
                     
                     if (resData && resData.success && resData.data) {
                         window.AppTranslations = { ...(window.AppTranslations || {}), ...resData.data };

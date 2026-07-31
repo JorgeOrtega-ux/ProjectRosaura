@@ -1,6 +1,9 @@
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
+
+const api = new ApiService();
 
 export const DesignSetup = {
     loadCanvasConfigForSnapshot() {
@@ -381,22 +384,17 @@ export const DesignSetup = {
             fetchPromises.push((async () => {
                 try {
                     // Fetch directly from Nginx -> Go, bypassing PHP completely
-                    const response = await fetch('/api/go/canvases/get_chunks', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            canvas_id: parseInt(this.canvasIntId, 10),
-                            board_w: this.boardWidth,
-                            board_h: this.boardHeight,
-                            chunks: batch
-                        })
+                    const result = await api.postCustom('/api/go/canvases/get_chunks', {
+                        canvas_id: parseInt(this.canvasIntId, 10),
+                        board_w: this.boardWidth,
+                        board_h: this.boardHeight,
+                        chunks: batch
                     });
                     
-                    if (!response.ok) {
+                    if (!result || !result.success) {
                         batch.forEach(k => this.loadingChunks.delete(k));
                         return;
                     }
-                    const result = await response.json();
                     
                     if (result && result.success && result.data?.chunks) {
                         const receivedKeys = Object.keys(result.data.chunks);

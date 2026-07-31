@@ -13,11 +13,22 @@ export class UpgradeController {
     init() {
         this.wrapper = document.querySelector('[data-ref="subscription-wrapper"]');
         window.isYearlyPremium = false;
-        document.body.addEventListener('click', this._boundHandleClick);
+        this.bindEvents();
         this._handleUrlParams();
     }
 
+    bindEvents() {
+        if (this.wrapper) {
+            this.wrapper.addEventListener('click', this._boundHandleClick);
+        } else {
+            document.body.addEventListener('click', this._boundHandleClick);
+        }
+    }
+
     destroy() {
+        if (this.wrapper) {
+            this.wrapper.removeEventListener('click', this._boundHandleClick);
+        }
         document.body.removeEventListener('click', this._boundHandleClick);
     }
 
@@ -37,8 +48,7 @@ export class UpgradeController {
 
         const closeModalBtn = e.target.closest('[data-action="closeUpgradeModal"]');
         if (closeModalBtn) {
-            const modal = document.getElementById('upgradeConfirmModal');
-            if (modal) modal.style.display = 'none';
+            if (window.modalSystem) window.modalSystem.closeCurrent();
             return;
         }
         

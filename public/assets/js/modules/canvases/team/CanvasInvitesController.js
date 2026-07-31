@@ -1,4 +1,5 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 
 class CanvasInvitesController {
@@ -105,7 +106,7 @@ class CanvasInvitesController {
 
         try {
             for (const inviteId of this.selectedInviteIds) {
-                const response = await this.api.post('canvases.revoke_invite', {
+                const response = await this.api.post(ApiRoutes.Canvases.RevokeInvite, {
                     canvas_id: this.canvasId,
                     invite_id: inviteId
                 });

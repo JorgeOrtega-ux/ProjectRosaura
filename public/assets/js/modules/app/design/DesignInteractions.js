@@ -1622,7 +1622,7 @@ export const DesignInteractions = {
 
     async loadUserPerks() {
         try {
-            const result = await this.api.post('store.get_my_perks', {});
+            const result = await this.api.post(ApiRoutes.Store.GetMyPerks, {});
             if (result && result.success) {
                 const grouped = {};
                 result.data.forEach(p => {
@@ -1696,7 +1696,7 @@ export const DesignInteractions = {
 
         try {
             if (btn) btn.classList.add('loading');
-            const result = await this.api.post('store.activate_perk', { perk_id: perkId });
+            const result = await this.api.post(ApiRoutes.Store.ActivatePerk, { perk_id: perkId });
             if (btn) btn.classList.remove('loading');
             
             if (result && result.success) {

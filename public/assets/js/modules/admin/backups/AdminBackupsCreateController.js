@@ -95,7 +95,7 @@ class AdminBackupsCreateController {
         container.innerHTML = '<div class="component-spinner component-spinner--centered"></div>';
 
         try {
-            const resSchema = await this.api.post('admin.get_backup_schema', {}, this.abortController.signal);
+            const resSchema = await this.api.post(ApiRoutes.Admin.GetBackupSchema, {}, this.abortController.signal);
             if (resSchema.aborted) return;
             if (!resSchema.success || !resSchema.schema) {
                 showMessage(__('err_get_db_schema'), 'error');
@@ -110,6 +110,7 @@ class AdminBackupsCreateController {
             this.buildInitialHTML(container);
             this.updateUIState();
         } catch (error) {
+            console.error('[AdminBackupsCreateController] Error loading schema:', error);
         } finally {
             const schemaAccordion = document.querySelector('[data-ref="custom-schema-accordion"]');
             if (schemaAccordion) {
@@ -240,7 +241,7 @@ class AdminBackupsCreateController {
         };
         const originalText = setButtonLoading(btn);
         showMessage(__('msg_sending_custom_schema'), 'success');
-        const res = await this.api.post('admin.create_custom_backup', { schema: payloadSchema, modules: payloadModules }, this.abortController.signal);
+        const res = await this.api.post(ApiRoutes.Admin.CreateCustomBackup, { schema: payloadSchema, modules: payloadModules }, this.abortController.signal);
         if (res.aborted) return;
         if (res.success && res.job_id) {
             this.pollBackupStatus(res.job_id, btn, originalText);
@@ -252,7 +253,7 @@ class AdminBackupsCreateController {
     async pollBackupStatus(jobId, btn, originalText) {
         if (this.pollInterval) clearInterval(this.pollInterval);
         this.pollInterval = setInterval(async () => {
-            const res = await this.api.post('admin.backup_status', { job_id: jobId }, this.abortController.signal);
+            const res = await this.api.post(ApiRoutes.Admin.BackupStatus, { job_id: jobId }, this.abortController.signal);
             if (res.aborted) return;
             if (res.success) {
                 if (res.status === 'completed') {

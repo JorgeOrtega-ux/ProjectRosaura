@@ -22,7 +22,8 @@ export const ApiRoutes = {
         Logout: 'auth.logout',
 
         ForgotPassword: 'auth.forgot_password',
-        ResetPassword: 'auth.reset_password'
+        ResetPassword: 'auth.reset_password',
+        Google: 'auth.google'
     },
     Settings: {
         UpdateAvatar: 'settings.update_avatar',
@@ -89,6 +90,12 @@ export const ApiRoutes = {
         DeleteTier: 'admin.subscriptions.delete',
         ToggleVisibilityTier: 'admin.subscriptions.toggle_visibility',
         SetPopularTier: 'admin.subscriptions.set_popular',
+
+        GetTranslations: 'admin.get_translations',
+        GetBackupSchema: 'admin.get_backup_schema',
+        CreateCustomBackup: 'admin.create_custom_backup',
+        BackupStatus: 'admin.backup_status',
+        CheckWorkerStatus: 'admin.backups.check_worker_status'
     },
     Canvases: {
         GetHomeFeed: 'canvases.get_home_feed',
@@ -138,7 +145,15 @@ export const ApiRoutes = {
         CreateCustomPalette: 'canvases.create_custom_palette',
         DeleteCustomPalette: 'canvases.delete_custom_palette',
         GetRecentColors: 'canvases.get_recent_colors',
-        AddRecentColor: 'canvases.add_recent_color'
+        AddRecentColor: 'canvases.add_recent_color',
+
+        JoinViaInvite: 'canvases.join_via_invite',
+        RevokeInvite: 'canvases.revoke_invite',
+        GenerateInvite: 'canvases.generate_invite',
+        AssignMemberRole: 'canvases.assign_member_role',
+        RemoveMember: 'canvases.remove_member',
+        UpdateRolePermissions: 'canvases.update_role_permissions',
+        DeleteRole: 'canvases.delete_role'
     },
     Search: {
         Query: 'search.query'
@@ -154,16 +169,22 @@ export const ApiRoutes = {
         GetSubscriptionStatus: 'stripe.get_subscription_status',
         CreateSetupSession: 'stripe.create_setup_session',
         GetPaymentMethods: 'stripe.get_payment_methods',
-        DeletePaymentMethod: 'stripe.delete_payment_method'
+        DeletePaymentMethod: 'stripe.delete_payment_method',
+        ToggleAutoRenewal: 'stripe.toggle_auto_renewal'
     },
     Store: {
         GetBalance: 'store.get_balance',
-        BuyPerk: 'store.buy_perk'
+        BuyPerk: 'store.buy_perk',
+        GetMyPerks: 'store.get_my_perks',
+        ActivatePerk: 'store.activate_perk'
     },
     Chat: {
         History: 'chat.history',
         Send: 'chat.send',
         Delete: 'chat.delete',
         Report: 'chat.report'
+    },
+    Telemetry: {
+        Collect: 'telemetry.collect'
     }
 };

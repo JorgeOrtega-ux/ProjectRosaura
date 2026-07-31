@@ -1,4 +1,5 @@
 import { ApiService } from '../api/ApiServices.js';
+import { ApiRoutes } from '../api/ApiRoutes.js';
 
 class TelemetryTracker {
     constructor(options = {}) {
@@ -95,7 +96,7 @@ class TelemetryTracker {
             const csrfMeta = document.querySelector('meta[name="csrf-token"]');
             const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
-            fetch(this.basePath + '/api/index.php?route=telemetry.collect', {
+            fetch(this.basePath + '/api/index.php?route=' + ApiRoutes.Telemetry.Collect, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -105,8 +106,7 @@ class TelemetryTracker {
                 keepalive: true
             }).catch(() => {});
         } else {
-            const route = 'telemetry.collect';
-            this.api.post(route, payload, this.abortController.signal).catch(() => {});
+            this.api.post(ApiRoutes.Telemetry.Collect, payload, this.abortController.signal).catch(() => {});
         }
     }
 

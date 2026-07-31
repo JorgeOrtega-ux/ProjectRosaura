@@ -294,7 +294,9 @@ export class DesignChat {
                             } else {
                                 window.location.href = (window.AppBasePath || '') + `/canvases/c/v/${canvasUuid}/${msgId}/${index}`;
                             }
-                        } catch(err) {  }
+                        } catch(err) {
+                            console.error('[DesignChat] Error opening image viewer:', err);
+                        }
                     }
                 }
             });
@@ -556,7 +558,7 @@ export class DesignChat {
                 showMessage(response.message, 'error');
             }
         } catch (error) {
-            
+            console.error('[DesignChat] Error loading history:', error);
             if (this.offset === 0 && this.loader) {
                 this.loader.innerHTML = window.__('err_load_messages');
             }
@@ -643,6 +645,7 @@ export class DesignChat {
                 if (optEl) optEl.remove();
             }
         } catch (error) {
+            console.error('[DesignChat] Error sending message:', error);
             showMessage(window.__('err_send_message'), 'error');
             const optEl = this.chatContainer.querySelector(`[data-client-id="${clientId}"]`);
             if (optEl) optEl.remove();
@@ -691,7 +694,7 @@ export class DesignChat {
                 showMessage(response.message, 'error');
             }
         } catch (error) {
-            
+            console.error('[DesignChat] Error deleting message:', error);
             showMessage(window.__('err_delete_message'), 'error');
         }
     }
@@ -731,6 +734,7 @@ export class DesignChat {
                 showMessage(response.message, 'error');
             }
         } catch (error) {
+            console.error('[DesignChat] Error reporting message:', error);
             showMessage(__('err_report_failed'), 'error');
         }
     }
@@ -902,6 +906,7 @@ export class DesignChat {
                     subColorCSS = msg.subscription_color;
                 }
             } catch (e) {
+                console.error('[DesignChat] Error parsing subscription color:', e);
                 subColorCSS = '#808080';
             }
         }

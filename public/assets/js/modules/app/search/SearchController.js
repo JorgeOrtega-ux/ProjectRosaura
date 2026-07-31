@@ -46,32 +46,7 @@ export class SearchController {
                 renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
             }
 
-            const reqUrl = (window.AppBasePath || '') + '/api/index.php';
-            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-
-            const response = await fetch(reqUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken
-                },
-                body: JSON.stringify({
-                    route: ApiRoutes.Search.Query,
-                    q: query
-                })
-            });
-
-            let resData;
-            try {
-                resData = await response.json();
-            } catch (jsonErr) {
-                if (this.title) this.title.textContent = window.__('err_critical_server');
-                if (this.contentArea) {
-                    this.contentArea.innerHTML = CardTemplates.emptyState(window.__('err_server_response'), 'error');
-                }
-                return;
-            }
+            const resData = await this.api.post(ApiRoutes.Search.Query, { q: query }, this.abortController ? this.abortController.signal : null);
 
             if (resData && resData.success) {
                 const results = resData.data || [];

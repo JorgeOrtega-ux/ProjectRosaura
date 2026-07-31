@@ -99,7 +99,7 @@ class AdminBackupsRestoreController {
     async pollRestoreStatus(jobId, btn, originalText) {
         if (this.pollInterval) clearInterval(this.pollInterval);
         this.pollInterval = setInterval(async () => {
-            const res = await this.api.post('admin.backups.check_worker_status', {}, this.abortController.signal);
+            const res = await this.api.post(ApiRoutes.Admin.CheckWorkerStatus, {}, this.abortController.signal);
             if (res.aborted) return;
             if (res.success) {
                 if (res.status === 'finished') {

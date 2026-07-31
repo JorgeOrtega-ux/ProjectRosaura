@@ -1,4 +1,5 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
 class CanvasRolesController {
@@ -163,7 +164,7 @@ class CanvasRolesController {
         setButtonLoading(btn);
 
         try {
-            const response = await this.api.post('canvases.delete_role', {
+            const response = await this.api.post(ApiRoutes.Canvases.DeleteRole, {
                 canvas_id: this.canvasId,
                 role_id: this.selectedRoleId
             });

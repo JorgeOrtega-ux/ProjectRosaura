@@ -1,4 +1,5 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
 class CanvasRolePermissionsController {
@@ -64,7 +65,7 @@ class CanvasRolePermissionsController {
         };
 
         try {
-            const response = await this.api.post('canvases.update_role_permissions', payload);
+            const response = await this.api.post(ApiRoutes.Canvases.UpdateRolePermissions, payload);
             
             if (response.success) {
                 showMessage(response.message, "success");

@@ -45,7 +45,7 @@ export class ApiService {
         this.baseUrl = (window.AppBasePath || '') + '/api/index.php'; 
     }
 
-    async _handleCsrfRetry(originalFetchOptions, serverCsrfToken = null) {
+    async _handleCsrfRetry(originalFetchOptions, serverCsrfToken = null, url = null) {
         if (serverCsrfToken) {
             const meta = document.querySelector('meta[name="csrf-token"]');
             if (meta) meta.setAttribute('content', serverCsrfToken);
@@ -56,7 +56,7 @@ export class ApiService {
             ApiService.onCsrfRefreshed(serverCsrfToken);
 
             try {
-                return await fetch(this.baseUrl, originalFetchOptions);
+                return await fetch(url || this.baseUrl, originalFetchOptions);
             } catch (e) {
                 return null;
             }
@@ -67,7 +67,7 @@ export class ApiService {
                 if (newToken) {
                     originalFetchOptions.headers['X-CSRF-Token'] = newToken;
                     try {
-                        const retryResponse = await fetch(this.baseUrl, originalFetchOptions);
+                        const retryResponse = await fetch(url || this.baseUrl, originalFetchOptions);
                         resolve(retryResponse);
                     } catch (e) {
                         resolve(null);
@@ -207,9 +207,9 @@ export class ApiService {
         return csrfMeta ? csrfMeta.getAttribute('content') : '';
     }
 
-    async _executeFetch(fetchOptions, route = '') {
+    async _executeFetch(fetchOptions, route = '', url = null) {
         try {
-            const response = await fetch(this.baseUrl, fetchOptions);
+            const response = await fetch(url || this.baseUrl, fetchOptions);
 
             if (!response.ok) {
                 const handledError = await this._handleHttpErrors(response, route);
@@ -219,7 +219,7 @@ export class ApiService {
                     const result = await this._parseJsonResponse(response); 
 
                     if (response.status === 403 && result.message_key === 'error.invalid_csrf_token') {
-                        const retryResponse = await this._handleCsrfRetry(fetchOptions, result.csrf_token);
+                        const retryResponse = await this._handleCsrfRetry(fetchOptions, result.csrf_token, url);
                         if (retryResponse && retryResponse.ok) {
                             const retryResult = await this._parseJsonResponse(retryResponse);
                             return this._processResponse(retryResult);
@@ -286,6 +286,26 @@ export class ApiService {
         if (signal) fetchOptions.signal = signal;
 
         const res = await this._executeFetch(fetchOptions, route);
+        if (res && res.ok) {
+            const result = await this._parseJsonResponse(res);
+            return this._processResponse(result);
+        }
+        return res;
+    }
+
+    async postCustom(url, data = {}, signal = null) {
+        const fetchOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': this._getCsrfToken()
+            },
+            body: JSON.stringify(data)
+        };
+
+        if (signal) fetchOptions.signal = signal;
+
+        const res = await this._executeFetch(fetchOptions, '', url);
         if (res && res.ok) {
             const result = await this._parseJsonResponse(res);
             return this._processResponse(result);
@@ -373,7 +393,14 @@ export class ApiService {
                 ...(options.headers || {})
             }
         };
+        // Remove returnResponse from options passed to fetch to prevent errors
+        if ('returnResponse' in fetchOptions) {
+            delete fetchOptions.returnResponse;
+        }
         const response = await fetch(url, fetchOptions);
+        if (options.returnResponse) {
+            return response;
+        }
         if (!response.ok) {
             throw new Error(`HTTP Status ${response.status}`);
         }

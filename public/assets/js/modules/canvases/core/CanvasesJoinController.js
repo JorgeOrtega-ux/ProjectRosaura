@@ -1,4 +1,5 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
 class CanvasesJoinController {
@@ -75,7 +76,7 @@ class CanvasesJoinController {
         btn.disabled = true;
 
         try {
-            const response = await this.api.post('canvases.join_via_invite', { code: code, terms_accepted: true });
+            const response = await this.api.post(ApiRoutes.Canvases.JoinViaInvite, { code: code, terms_accepted: true });
             
             if (response && response.success) {
                 showMessage(response.message || __('msg_joined_successfully'), 'success');

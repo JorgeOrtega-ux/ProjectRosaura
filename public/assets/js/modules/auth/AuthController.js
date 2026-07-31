@@ -429,7 +429,7 @@ class AuthController {
     async handleGoogleLogin(credential) {
         this.clearMessages();
         const data = { credential: credential };
-        const result = await this.api.post('auth.google', data, this.abortController?.signal);
+        const result = await this.api.post(ApiRoutes.Auth.Google, data, this.abortController?.signal);
 
         if (result.aborted) return;
 

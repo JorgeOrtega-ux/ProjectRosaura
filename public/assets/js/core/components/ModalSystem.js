@@ -290,6 +290,7 @@ export class ModalSystem {
                     }
                 }
             });
+        }
         const stepTargetBtn = e.target.closest('[data-step-target]');
         if (stepTargetBtn) {
             const targetStepId = stepTargetBtn.getAttribute('data-step-target');

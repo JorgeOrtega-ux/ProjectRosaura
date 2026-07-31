@@ -1,11 +1,13 @@
 import { RouteModulesMap } from './RouteModulesMap.js';
 import { SkeletonTemplates } from '../components/SkeletonTemplates.js';
+import { ApiService } from '../api/ApiServices.js';
 
 export class SpaRouter {
     constructor(options = {}) {
         this.outlet = document.querySelector(options.outlet || '[data-ref="app-router-outlet"]');
         this.basePath = window.AppBasePath || ''; 
         this.abortController = null; 
+        this.api = new ApiService();
         
         this.handlePopState = this.handlePopState.bind(this);
         this.handleBodyClick = this.handleBodyClick.bind(this);
@@ -165,10 +167,10 @@ export class SpaRouter {
         const startTime = performance.now();
 
         try {
-            const response = await fetch(url, {
-                method: 'GET',
+            const response = await this.api.fetchHtml(url, {
                 headers: { 'X-SPA-Request': 'true' },
-                signal: signal 
+                signal: signal,
+                returnResponse: true
             });
 
             if (response.status === 503) {

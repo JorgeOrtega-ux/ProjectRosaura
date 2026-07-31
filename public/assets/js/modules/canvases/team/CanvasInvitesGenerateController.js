@@ -1,4 +1,5 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
 
@@ -139,7 +140,7 @@ class CanvasInvitesGenerateController {
         if (btnSubmit) setButtonLoading(btnSubmit);
 
         try {
-            const response = await this.api.post('canvases.generate_invite', data);
+            const response = await this.api.post(ApiRoutes.Canvases.GenerateInvite, data);
             
             if (response && response.success) {
                 showMessage(response.message || __('msg_invite_generated'), 'success');

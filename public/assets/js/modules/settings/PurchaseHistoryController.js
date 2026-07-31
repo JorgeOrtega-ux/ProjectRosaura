@@ -14,7 +14,8 @@ export class PurchaseHistoryController {
         this.selectedReceiptUrl = null;
         this.selectedPdfUrl = null;
 
-        
+        this._boundHandleClick = this.handleGlobalClick.bind(this);
+        this._boundHandleChange = this.handleGlobalChange.bind(this);
 
         this.currentPage = 1;
         this.limit = 10;
@@ -38,6 +39,16 @@ export class PurchaseHistoryController {
         await this.loadHistory();
     }
 
+    destroy() {
+        if (this.abortController) {
+            this.abortController.abort();
+        }
+        if (this.container) {
+            this.container.removeEventListener('click', this._boundHandleClick);
+            this.container.removeEventListener('change', this._boundHandleChange);
+        }
+    }
+
     parseInitialDOMItems() {
         if (!this.tbody) return;
         const rows = this.tbody.querySelectorAll('tr.component-table-row');
@@ -59,8 +70,8 @@ export class PurchaseHistoryController {
     bindEvents() {
         if (!this.container) return;
 
-        this.container.addEventListener('click', (e) => this.handleGlobalClick(e));
-        this.container.addEventListener('change', (e) => this.handleGlobalChange(e));
+        this.container.addEventListener('click', this._boundHandleClick);
+        this.container.addEventListener('change', this._boundHandleChange);
     }
 
     handleGlobalClick(e) {
@@ -336,33 +347,17 @@ export class PurchaseHistoryController {
         }
 
         if (btn) setButtonLoading(btn);
-
+        
         try {
-            const downloadUrl = `${window.AppBasePath || ''}/api/index.php?route=stripe.download_receipt&id=${encodeURIComponent(this.selectedPurchaseId)}`;
-            
-            const response = await fetch(downloadUrl, {
-                method: 'GET',
-                credentials: 'same-origin',
-                signal: this.abortController ? this.abortController.signal : undefined
-            });
-
-            if (!response.ok) {
-                throw new Error('Error de respuesta del servidor');
+            const result = await this.api.downloadFile(
+                ApiRoutes.Stripe.DownloadReceipt, 
+                { id: this.selectedPurchaseId }, 
+                `Comprobante_${this.selectedPurchaseId}.pdf`,
+                this.abortController ? this.abortController.signal : null
+            );
+            if (result && !result.success && !result.aborted) {
+                showMessage(result.message || window.__('err_download_receipt'), 'error');
             }
-
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = `Comprobante_${this.selectedPurchaseId}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            
-            setTimeout(() => {
-                window.URL.revokeObjectURL(blobUrl);
-            }, 1000);
 
         } catch (error) {
             if (error.name !== 'AbortError') {
