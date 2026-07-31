@@ -205,10 +205,22 @@ class CanvasesCreateController {
             const templateId = actionBtn.getAttribute('data-template-id');
             this.formState.template_id = templateId || null;
             
-            const grid = document.getElementById('canvas_templates_grid');
-            if (grid) {
-                grid.querySelectorAll('.template-card').forEach(el => el.classList.remove('active'));
+            const listContainer = document.getElementById('canvas_templates_list');
+            if (listContainer) {
+                listContainer.querySelectorAll('.component-menu-link').forEach(el => el.classList.remove('active'));
                 actionBtn.classList.add('active');
+            }
+            
+            const triggerText = document.getElementById('text-template');
+            if (triggerText) {
+                const label = actionBtn.getAttribute('data-label');
+                triggerText.textContent = label || 'Seleccionar plantilla';
+            }
+            
+            const dropdownModule = actionBtn.closest('.component-module--dropdown');
+            if (dropdownModule) {
+                dropdownModule.classList.remove('active');
+                dropdownModule.classList.add('disabled');
             }
             
             const hiddenInput = document.getElementById('canvas_template_id');
@@ -559,49 +571,64 @@ class CanvasesCreateController {
     }
 
     renderTemplatesGrid(size) {
-        const grid = document.getElementById('canvas_templates_grid');
-        if (!grid) return;
+        const trigger = document.getElementById('template_dropdown_trigger');
+        const triggerText = document.getElementById('text-template');
+        const listContainer = document.getElementById('canvas_templates_list');
+        const hiddenInput = document.getElementById('canvas_template_id');
 
-        grid.innerHTML = '';
-        
+        if (!trigger || !listContainer) return;
+
         const templates = this.templates || [];
+        
+        // Filter templates compatible with current size
+        const availableTemplates = templates.filter(tpl => tpl.sizes.includes(size));
         
         // If current template is not compatible with new size, reset it
         const currentTpl = templates.find(t => t.id === this.formState.template_id);
         if (currentTpl && !currentTpl.sizes.includes(size)) {
             this.formState.template_id = null;
-            const hiddenInput = document.getElementById('canvas_template_id');
             if (hiddenInput) hiddenInput.value = '';
         }
-        
-        // Render empty card
-        const emptyActive = !this.formState.template_id ? 'active' : '';
-        let html = `
-            <div class="template-card ${emptyActive}" data-action="selectCanvasTemplate" data-template-id="" style="border: 2px dashed var(--border-color); border-radius: 8px; padding: 8px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; aspect-ratio: 1; transition: all 0.2s ease;">
-                <span class="material-symbols-rounded" style="font-size: 28px; opacity: 0.6; color: var(--text-primary);">crop_free</span>
-                <div style="font-size: 11px; font-weight: 600; color: var(--text-primary);">${window.__ ? window.__('canvas_template_empty') : 'Lienzo Vacío'}</div>
-            </div>
-        `;
-        
-        templates.forEach(tpl => {
-            if (tpl.sizes.includes(size)) {
+
+        if (availableTemplates.length === 0) {
+            triggerText.textContent = 'Sin plantillas disponibles';
+            trigger.classList.add('disabled-interaction');
+            listContainer.innerHTML = '';
+        } else {
+            trigger.classList.remove('disabled-interaction');
+
+            let html = '';
+            
+            // Add default (Lienzo Vacío) option
+            const isNoneActive = !this.formState.template_id ? 'active' : '';
+            html += `
+                <div class="component-menu-link ${isNoneActive}" data-action="selectCanvasTemplate" data-template-id="" data-label="Lienzo Vacío">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_free</span></div>
+                    <div class="component-menu-link-text"><span>Lienzo Vacío</span></div>
+                </div>
+            `;
+            
+            availableTemplates.forEach(tpl => {
                 const isActive = this.formState.template_id === tpl.id ? 'active' : '';
                 const name = window.__ ? window.__(tpl.name_key) : tpl.id;
-                const desc = window.__ ? window.__(tpl.description_key) : '';
-                const thumb = this.basePath + tpl.thumbnail;
                 
                 html += `
-                    <div class="template-card ${isActive}" data-action="selectCanvasTemplate" data-template-id="${tpl.id}" title="${desc}">
-                        <div style="flex-grow: 1; width: 100%; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--bg-hover-light);">
-                            <img src="${thumb}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-                        </div>
-                        <div style="font-size: 11px; font-weight: 600; text-align: center; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; color: var(--text-primary); padding: 2px 4px 4px;">${name}</div>
+                    <div class="component-menu-link ${isActive}" data-action="selectCanvasTemplate" data-template-id="${tpl.id}" data-label="${name}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_free</span></div>
+                        <div class="component-menu-link-text"><span>${name}</span></div>
                     </div>
                 `;
+            });
+            
+            listContainer.innerHTML = html;
+            
+            const selectedTpl = availableTemplates.find(t => t.id === this.formState.template_id);
+            if (selectedTpl) {
+                triggerText.textContent = window.__ ? window.__(selectedTpl.name_key) : selectedTpl.id;
+            } else {
+                triggerText.textContent = 'Seleccionar plantilla';
             }
-        });
-        
-        grid.innerHTML = html;
+        }
     }
 }
 

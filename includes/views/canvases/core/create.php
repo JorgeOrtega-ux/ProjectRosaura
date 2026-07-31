@@ -246,13 +246,25 @@ extract($createData);
                                         <p class="component-card__description"><?php echo __('canvas_template_desc'); ?></p>
                                     </div>
                                 </div>
-                                <div class="component-card__actions component-card__actions--start" style="width: 100%;">
-                                    <div class="templates-grid" id="canvas_templates_grid">
-                                        <!-- Renderizado dinámico desde JS -->
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-wrapper">
+                                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownTemplate" id="template_dropdown_trigger">
+                                            <span class="material-symbols-rounded">crop_free</span>
+                                            <span class="component-dropdown-text" data-ref="text-template" id="text-template">Seleccionar plantilla</span>
+                                            <span class="material-symbols-rounded">expand_more</span>
+                                        </div>
+                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownTemplate">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                                <div class="component-menu-list component-menu-list--scrollable" id="canvas_templates_list">
+                                                    <!-- Renderizado dinámico desde JS -->
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <input type="hidden" id="canvas_template_id" name="canvas_template_id" value="">
                                 </div>
                             </div>
+                            <input type="hidden" id="canvas_template_id" name="canvas_template_id" value="">
                             <hr class="component-divider">
                             <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">

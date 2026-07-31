@@ -2005,6 +2005,9 @@ export const ModalTemplates = {
                         flex-direction: row;
                         width: 100%;
                     }
+                    .sandbox-stage .component-card-icon-sm {
+                        color: var(--text-primary) !important;
+                    }
                     .sandbox-list-scrollable {
                         display: flex;
                         flex-direction: column;
@@ -2012,7 +2015,6 @@ export const ModalTemplates = {
                         max-height: 240px;
                         overflow-y: auto;
                         padding-right: 6px;
-                        margin-top: 10px;
                     }
                     .sandbox-list-scrollable::-webkit-scrollbar {
                         width: 6px;
@@ -2028,14 +2030,18 @@ export const ModalTemplates = {
                         background: var(--text-tertiary);
                     }
                     .create-new-world-btn {
-                        border: 1px dashed var(--text-brand) !important;
-                        background: rgba(99, 102, 241, 0.05) !important;
+                        border: 1px dashed var(--border-color) !important;
+                        background: transparent !important;
                         transition: all 0.2s ease;
                     }
                     .create-new-world-btn:hover {
-                        background: rgba(99, 102, 241, 0.1) !important;
-                        transform: translateY(-2px);
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                        background: transparent !important;
+                        transform: none !important;
+                        box-shadow: none !important;
+                    }
+                    .create-new-world-btn .component-card-title-sm {
+                        color: var(--text-primary) !important;
+                        font-weight: 700;
                     }
                     .component-card--selectable-row {
                         transition: all 0.2s ease;
@@ -2079,6 +2085,113 @@ export const ModalTemplates = {
                     .sandbox-header-with-back .component-modal-title {
                         margin: 0;
                     }
+                    
+                    /* CSS mapping of structural styles - no static inline styles */
+                    .sandbox-stage .component-modal-right {
+                        padding: 32px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: space-between;
+                        height: auto;
+                    }
+                    .sandbox-preview-card-wrapper {
+                        flex-grow: 1;
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: center;
+                        width: 100%;
+                    }
+                    .sandbox-preview-card {
+                        width: 100%;
+                        border: 1px dashed var(--border-color);
+                        border-radius: 16px;
+                        padding: 24px;
+                        text-align: center;
+                        color: var(--text-secondary);
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: flex-start;
+                        gap: 12px;
+                        min-height: 200px;
+                    }
+                    .sandbox-preview-card .material-symbols-rounded {
+                        font-size: 48px;
+                        opacity: 0.5;
+                    }
+                    .sandbox-preview-card p {
+                        margin: 0;
+                        font-size: 14px;
+                    }
+                    .sandbox-play-wrapper {
+                        margin-top: 24px;
+                        width: 100%;
+                    }
+                    .sandbox-stage .component-modal-right button {
+                        width: 100%;
+                    }
+                    
+                    /* Stage 3 specific styling */
+                    .sandbox-header-with-back button {
+                        background: transparent !important;
+                        border: none !important;
+                        padding: 0 !important;
+                        min-width: auto !important;
+                        height: auto !important;
+                    }
+                    .sandbox-header-with-back button span {
+                        color: var(--text-primary) !important;
+                        font-size: 24px !important;
+                        cursor: pointer !important;
+                    }
+                    .sandbox-stage[data-stage="3"] .component-modal-left > div {
+                        margin-top: 15px;
+                    }
+                    .sandbox-stage[data-stage="3"] .component-modal-right > div:first-child {
+                        flex-grow: 1;
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: center;
+                        width: 100%;
+                    }
+                    .sandbox-stage[data-stage="3"] .component-modal-right > div:first-child > div {
+                        width: 100%;
+                        border: 1px solid var(--border-color);
+                        border-radius: 16px;
+                        padding: 24px;
+                        text-align: center;
+                        color: var(--text-secondary);
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: flex-start;
+                        gap: 16px;
+                        background: var(--bg-hover-light);
+                    }
+                    .sandbox-stage[data-stage="3"] .component-modal-right > div:first-child > div > span {
+                        font-size: 64px;
+                        color: var(--text-primary);
+                    }
+                    .sandbox-stage[data-stage="3"] .component-modal-right > div:first-child > div > div {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                    }
+                    .sandbox-stage[data-stage="3"] .component-modal-right > div:first-child > div h4 {
+                        margin: 0;
+                        font-size: 15px;
+                        font-weight: 600;
+                        color: var(--text-primary);
+                    }
+                    .sandbox-stage[data-stage="3"] .component-modal-right > div:first-child > div p {
+                        margin: 0;
+                        font-size: 13px;
+                    }
+                    .sandbox-stage[data-stage="3"] .component-modal-right > div:last-child {
+                        margin-top: 24px;
+                        width: 100%;
+                    }
+
                     @media (max-width: 1024px) {
                         .sandbox-stage {
                             flex-direction: column !important;
@@ -2167,35 +2280,43 @@ export const ModalTemplates = {
                         <!-- Create New Card Button -->
                         <div class="component-card--selectable-row create-new-world-btn" data-action="goCreateForm">
                             <div class="component-card-left-section component-card-left-section--full component-card-left-section--top">
-                                <span class="material-symbols-rounded component-card-icon-sm" style="color: var(--text-brand) !important;">add_circle</span>
+                                <span class="material-symbols-rounded component-card-icon-sm">add_circle</span>
                                 <div class="component-card-info">
-                                    <span class="component-card-title-sm" style="color: var(--text-brand) !important; font-weight: 700;">Crear Nuevo Mundo</span>
+                                    <span class="component-card-title-sm">Crear Nuevo Mundo</span>
                                     <span class="component-card-desc-sm">Diseña un nuevo lienzo local sin conexión.</span>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- List Header -->
-                        <div style="font-size: 13px; font-weight: 600; margin: 16px 0 8px 0; opacity: 0.7; color: var(--text-primary);">Tus Mundos Sandbox (${sbs.length}/10)</div>
-                        
-                        <!-- Sandboxes List -->
-                        <div class="sandbox-list-scrollable">
-                            ${sandboxesListHtml}
+                        <!-- Tus mundos list in an expandible -->
+                        <div class="component-details-card">
+                            <div class="component-details-card-top">
+                                <button type="button" class="component-menu-link component-menu-link--bordered nav-item component-details-toggle-btn expanded" data-action="toggleInfoDetails">
+                                    <span>Tus Mundos Sandbox (${sbs.length}/10)</span>
+                                    <span class="material-symbols-rounded component-details-toggle-arrow msr-expand_more">expand_more</span>
+                                </button>
+                            </div>
+                            
+                            <div class="component-details-rows-container expanded">
+                                <div class="sandbox-list-scrollable">
+                                    ${sandboxesListHtml}
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="component-modal-right" style="padding: 32px; display: flex; flex-direction: column; justify-content: space-between; height: auto;">
+                    <div class="component-modal-right">
                         <!-- TOP: Sandbox Preview Card -->
-                        <div class="sandbox-preview-card-wrapper" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%;">
-                            <div class="sandbox-preview-card" style="width: 100%; border: 1px dashed var(--border-color); border-radius: 16px; padding: 24px; text-align: center; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 200px;">
-                                <span class="material-symbols-rounded" style="font-size: 48px; opacity: 0.5;">science</span>
-                                <p style="margin: 0; font-size: 14px;">Selecciona un mundo sandbox de la lista para ver su vista previa y jugar.</p>
+                        <div class="sandbox-preview-card-wrapper">
+                            <div class="sandbox-preview-card">
+                                <span class="material-symbols-rounded">science</span>
+                                <p>Selecciona un mundo sandbox de la lista para ver su vista previa y jugar.</p>
                             </div>
                         </div>
                         
                         <!-- BOTTOM: Play Button -->
-                        <div class="sandbox-play-wrapper" style="margin-top: 24px; width: 100%;">
-                            <button class="component-button component-button--brand component-button--rounded-pill component-button--h48 component-button--full sandbox-play-btn" data-modal-action="confirm" disabled style="width: 100%;">
+                        <div class="sandbox-play-wrapper">
+                            <button class="component-button component-button--dark component-button--rounded-pill component-button--h48 component-button--full component-cursor-pointer sandbox-play-btn" data-modal-action="confirm" disabled>
                                 <span class="material-symbols-rounded">play_arrow</span>
                                 <span>Jugar</span>
                             </button>
@@ -2207,21 +2328,21 @@ export const ModalTemplates = {
                 <div class="sandbox-stage" data-stage="3" style="display: none;">
                     <div class="component-modal-left">
                         <div class="sandbox-header-with-back">
-                            <button type="button" class="component-button component-button--icon component-button--h36" data-action="backToLobby" style="background: transparent; border: none; padding: 0; min-width: auto; height: auto;">
-                                <span class="material-symbols-rounded" style="color: var(--text-primary); font-size: 24px; cursor: pointer;">arrow_back</span>
+                            <button type="button" class="component-button component-button--icon component-button--h36" data-action="backToLobby">
+                                <span class="material-symbols-rounded">arrow_back</span>
                             </button>
                             <h2 class="component-modal-title">Crear Nuevo Mundo</h2>
                         </div>
                         <p class="component-modal-desc">Configura las opciones de tu nuevo lienzo local offline.</p>
                         
                         <!-- Nombre del Sandbox -->
-                        <div class="component-input-group" style="margin-top: 15px;">
+                        <div>
                             <input type="text" id="sandbox_name" name="sandbox_name" class="component-input-field" placeholder=" " maxlength="50" autocomplete="off">
                             <label class="component-input-label">Nombre del Mundo</label>
                         </div>
 
                         <!-- Tamaño del Lienzo -->
-                        <div style="margin-top: 15px;">
+                        <div>
                             <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8; color: var(--text-primary);">Tamaño del Lienzo</div>
                             <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
                                 <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleDropdown" data-target="sandboxLobbyDropdownSize">
@@ -2243,16 +2364,28 @@ export const ModalTemplates = {
                         </div>
                         
                         <!-- Plantilla de Lienzo (Opcional) -->
-                        <div style="margin-top: 15px;">
+                        <div>
                             <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8; color: var(--text-primary);">Plantilla de Lienzo (Opcional)</div>
-                            <div class="templates-grid" id="sandbox_templates_grid">
-                                <!-- Renderizado dinámico desde JS -->
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleDropdown" data-target="sandboxLobbyDropdownTemplate" id="sandbox_template_dropdown_trigger">
+                                    <span class="material-symbols-rounded">crop_free</span>
+                                    <span class="component-dropdown-text" data-ref="text-template" id="sandbox_text_template">Seleccionar plantilla</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sandboxLobbyDropdownTemplate">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable" id="sandbox_canvas_templates_list">
+                                            <!-- Renderizado dinámico desde JS -->
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <input type="hidden" id="sandbox_template_id" name="sandbox_template_id" value="">
                         </div>
                         
                         <!-- Límite de Píxeles por Lote -->
-                        <div style="margin-top: 15px;">
+                        <div>
                             <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8; color: var(--text-primary);">Límite de Píxeles por Lote</div>
                             <div class="component-inline-control component-inline-control--full">
                                 <div class="component-inline-control__group">
@@ -2277,7 +2410,7 @@ export const ModalTemplates = {
                         </div>
 
                         <!-- Paleta de Colores -->
-                        <div style="margin-top: 15px;">
+                        <div>
                             <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8; color: var(--text-primary);">Paleta de Colores</div>
                             <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
                                 <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleDropdown" data-target="sandboxLobbyDropdownPalette">
@@ -2298,21 +2431,21 @@ export const ModalTemplates = {
                         </div>
                     </div>
                     
-                    <div class="component-modal-right" style="padding: 32px; display: flex; flex-direction: column; justify-content: space-between; height: auto;">
+                    <div class="component-modal-right">
                         <!-- TOP: Config Illustration -->
-                        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%;">
-                            <div style="width: 100%; border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; text-align: center; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--bg-hover-light);">
-                                <span class="material-symbols-rounded" style="font-size: 64px; color: var(--text-brand);">design_services</span>
-                                <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    <h4 style="margin: 0; font-size: 15px; font-weight: 600; color: var(--text-primary);">Configuración del Mundo</h4>
-                                    <p style="margin: 0; font-size: 13px;">Personaliza el tamaño y estilo de tu espacio creativo.</p>
+                        <div>
+                            <div>
+                                <span class="material-symbols-rounded">design_services</span>
+                                <div>
+                                    <h4>Configuración del Mundo</h4>
+                                    <p>Personaliza el tamaño y estilo de tu espacio creativo.</p>
                                 </div>
                             </div>
                         </div>
                         
                         <!-- BOTTOM: Play / Create Button -->
-                        <div style="margin-top: 24px; width: 100%;">
-                            <button class="component-button component-button--brand component-button--rounded-pill component-button--h48 component-button--full" data-modal-action="confirm" style="width: 100%;">
+                        <div>
+                            <button class="component-button component-button--dark component-button--rounded-pill component-button--h48 component-button--full component-cursor-pointer" data-modal-action="confirm">
                                 <span class="material-symbols-rounded">play_arrow</span>
                                 <span>Jugar</span>
                             </button>
