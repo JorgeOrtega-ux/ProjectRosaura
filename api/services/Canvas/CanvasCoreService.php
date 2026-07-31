@@ -245,7 +245,16 @@ class CanvasCoreService {
                 $canvas['owner_username'] = '-';
             }
             
-            $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
+            $thumbnailUrl = null;
+            try {
+                $thumbCheckRedis = class_exists(RedisCache::class) ? (new RedisCache())->getClient() : null;
+                $isPending = $thumbCheckRedis ? $thumbCheckRedis->sIsMember('canvases:pending_snapshots', (string)$canvasId) : false;
+                if (!$isPending) {
+                    $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
+                }
+            } catch (\Throwable $e) {
+                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
+            }
             $canvas['thumbnail_url'] = $thumbnailUrl;
             
             $roles = [];
@@ -608,6 +617,17 @@ class CanvasCoreService {
 
                                             // Save to Database
                                             $this->canvasRepository->saveSnapshot($canvasId, $binaryData);
+
+                                            // Enqueue for Python worker to generate thumbnail
+                                            if (class_exists(RedisCache::class)) {
+                                                $thumbRedis = (new RedisCache())->getClient();
+                                                if ($thumbRedis) {
+                                                    $thumbRedis->sAdd('canvases:pending_snapshots', (string)$canvasId);
+                                                }
+                                            }
+
+                                            // Note: template pixels are NOT counted in total_pixels
+                                            // to keep the metric reflecting actual user engagement
                                         }
                                         imagedestroy($img);
                                     }
