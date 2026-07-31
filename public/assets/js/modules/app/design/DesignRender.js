@@ -46,6 +46,15 @@ export const DesignRender = {
             container.appendChild(btn);
         });
 
+        const activeColorSection = document.querySelector('[data-ref="active-color-section"]');
+        if (activeColorSection) {
+            if (this.allowCustomColors) {
+                activeColorSection.classList.remove('disabled');
+            } else {
+                activeColorSection.classList.add('disabled');
+            }
+        }
+
         const recentPickerWrapper = document.querySelector('[data-ref="recent-picker-dropdown-wrapper"]');
         if (recentPickerWrapper) {
             if (this.allowCustomColors) {

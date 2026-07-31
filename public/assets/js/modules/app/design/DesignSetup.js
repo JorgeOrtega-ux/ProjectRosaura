@@ -60,7 +60,11 @@ export const DesignSetup = {
                     img.crossOrigin = null;
                     img.src = url;
                 } else {
-                    showMessage(__('err_history_image_missing'), 'error');
+                    if (this.isSnapshotMode) {
+                        showMessage(__('err_history_image_missing'), 'error');
+                    } else {
+                        console.warn('[DesignSetup] Failed to load canvas thumbnail:', url);
+                    }
                     resolve(false);
                 }
             };
