@@ -1,25 +1,212 @@
 [
   {
-    "id": "playa_tropical",
-    "name_key": "template_playa_tropical",
-    "description_key": "template_playa_tropical_desc",
-    "thumbnail": "/assets/img/templates/playa_thumbnail.png",
-    "sizes": ["64x64", "128x128", "256x256"],
+    "id": "tokyo_alley",
+    "name_key": "template_tokyo_alley",
+    "description_key": "template_tokyo_alley_desc",
+    "thumbnail": "/assets/img/templates/tokyo_alley/thumbnail.png",
+    "sizes": ["64x64", "128x64", "128x128", "256x128", "256x256", "512x256", "512x512", "1024x512", "1024x1024", "2048x1024", "2048x2048", "4096x4096"],
     "image_paths": {
-      "64x64": "/assets/img/templates/playa_64.png",
-      "128x128": "/assets/img/templates/playa_128.png",
-      "256x256": "/assets/img/templates/playa_256.png"
+      "64x64": "/assets/img/templates/tokyo_alley/64x64.png",
+      "128x64": "/assets/img/templates/tokyo_alley/128x64.png",
+      "128x128": "/assets/img/templates/tokyo_alley/128x128.png",
+      "256x128": "/assets/img/templates/tokyo_alley/256x128.png",
+      "256x256": "/assets/img/templates/tokyo_alley/256x256.png",
+      "512x256": "/assets/img/templates/tokyo_alley/512x256.png",
+      "512x512": "/assets/img/templates/tokyo_alley/512x512.png",
+      "1024x512": "/assets/img/templates/tokyo_alley/1024x512.png",
+      "1024x1024": "/assets/img/templates/tokyo_alley/1024x1024.png",
+      "2048x1024": "/assets/img/templates/tokyo_alley/2048x1024.png",
+      "2048x2048": "/assets/img/templates/tokyo_alley/2048x2048.png",
+      "4096x4096": "/assets/img/templates/tokyo_alley/4096x4096.png"
     }
   },
   {
-    "id": "bosque_mistico",
-    "name_key": "template_bosque_mistico",
-    "description_key": "template_bosque_mistico_desc",
-    "thumbnail": "/assets/img/templates/bosque_thumbnail.png",
-    "sizes": ["128x128", "256x256"],
+    "id": "cherry_blossom_valley",
+    "name_key": "template_cherry_blossom_valley",
+    "description_key": "template_cherry_blossom_valley_desc",
+    "thumbnail": "/assets/img/templates/cherry_blossom_valley/thumbnail.png",
+    "sizes": ["64x64", "128x64", "128x128", "256x128", "256x256", "512x256", "512x512", "1024x512", "1024x1024", "2048x1024", "2048x2048", "4096x4096"],
     "image_paths": {
-      "128x128": "/assets/img/templates/bosque_128.png",
-      "256x256": "/assets/img/templates/bosque_256.png"
+      "64x64": "/assets/img/templates/cherry_blossom_valley/64x64.png",
+      "128x64": "/assets/img/templates/cherry_blossom_valley/128x64.png",
+      "128x128": "/assets/img/templates/cherry_blossom_valley/128x128.png",
+      "256x128": "/assets/img/templates/cherry_blossom_valley/256x128.png",
+      "256x256": "/assets/img/templates/cherry_blossom_valley/256x256.png",
+      "512x256": "/assets/img/templates/cherry_blossom_valley/512x256.png",
+      "512x512": "/assets/img/templates/cherry_blossom_valley/512x512.png",
+      "1024x512": "/assets/img/templates/cherry_blossom_valley/1024x512.png",
+      "1024x1024": "/assets/img/templates/cherry_blossom_valley/1024x1024.png",
+      "2048x1024": "/assets/img/templates/cherry_blossom_valley/2048x1024.png",
+      "2048x2048": "/assets/img/templates/cherry_blossom_valley/2048x2048.png",
+      "4096x4096": "/assets/img/templates/cherry_blossom_valley/4096x4096.png"
+    }
+  },
+  {
+    "id": "autumn_trail",
+    "name_key": "template_autumn_trail",
+    "description_key": "template_autumn_trail_desc",
+    "thumbnail": "/assets/img/templates/autumn_trail/thumbnail.png",
+    "sizes": ["64x64", "128x64", "128x128", "256x128", "256x256", "512x256", "512x512", "1024x512", "1024x1024", "2048x1024", "2048x2048", "4096x4096"],
+    "image_paths": {
+      "64x64": "/assets/img/templates/autumn_trail/64x64.png",
+      "128x64": "/assets/img/templates/autumn_trail/128x64.png",
+      "128x128": "/assets/img/templates/autumn_trail/128x128.png",
+      "256x128": "/assets/img/templates/autumn_trail/256x128.png",
+      "256x256": "/assets/img/templates/autumn_trail/256x256.png",
+      "512x256": "/assets/img/templates/autumn_trail/512x256.png",
+      "512x512": "/assets/img/templates/autumn_trail/512x512.png",
+      "1024x512": "/assets/img/templates/autumn_trail/1024x512.png",
+      "1024x1024": "/assets/img/templates/autumn_trail/1024x1024.png",
+      "2048x1024": "/assets/img/templates/autumn_trail/2048x1024.png",
+      "2048x2048": "/assets/img/templates/autumn_trail/2048x2048.png",
+      "4096x4096": "/assets/img/templates/autumn_trail/4096x4096.png"
+    }
+  },
+  {
+    "id": "magic_library",
+    "name_key": "template_magic_library",
+    "description_key": "template_magic_library_desc",
+    "thumbnail": "/assets/img/templates/magic_library/thumbnail.png",
+    "sizes": ["64x64", "128x64", "128x128", "256x128", "256x256", "512x256", "512x512", "1024x512", "1024x1024", "2048x1024", "2048x2048", "4096x4096"],
+    "image_paths": {
+      "64x64": "/assets/img/templates/magic_library/64x64.png",
+      "128x64": "/assets/img/templates/magic_library/128x64.png",
+      "128x128": "/assets/img/templates/magic_library/128x128.png",
+      "256x128": "/assets/img/templates/magic_library/256x128.png",
+      "256x256": "/assets/img/templates/magic_library/256x256.png",
+      "512x256": "/assets/img/templates/magic_library/512x256.png",
+      "512x512": "/assets/img/templates/magic_library/512x512.png",
+      "1024x512": "/assets/img/templates/magic_library/1024x512.png",
+      "1024x1024": "/assets/img/templates/magic_library/1024x1024.png",
+      "2048x1024": "/assets/img/templates/magic_library/2048x1024.png",
+      "2048x2048": "/assets/img/templates/magic_library/2048x2048.png",
+      "4096x4096": "/assets/img/templates/magic_library/4096x4096.png"
+    }
+  },
+  {
+    "id": "wizards_cottage",
+    "name_key": "template_wizards_cottage",
+    "description_key": "template_wizards_cottage_desc",
+    "thumbnail": "/assets/img/templates/wizards_cottage/thumbnail.png",
+    "sizes": ["64x64", "128x64", "128x128", "256x128", "256x256", "512x256", "512x512", "1024x512", "1024x1024", "2048x1024", "2048x2048", "4096x4096"],
+    "image_paths": {
+      "64x64": "/assets/img/templates/wizards_cottage/64x64.png",
+      "128x64": "/assets/img/templates/wizards_cottage/128x64.png",
+      "128x128": "/assets/img/templates/wizards_cottage/128x128.png",
+      "256x128": "/assets/img/templates/wizards_cottage/256x128.png",
+      "256x256": "/assets/img/templates/wizards_cottage/256x256.png",
+      "512x256": "/assets/img/templates/wizards_cottage/512x256.png",
+      "512x512": "/assets/img/templates/wizards_cottage/512x512.png",
+      "1024x512": "/assets/img/templates/wizards_cottage/1024x512.png",
+      "1024x1024": "/assets/img/templates/wizards_cottage/1024x1024.png",
+      "2048x1024": "/assets/img/templates/wizards_cottage/2048x1024.png",
+      "2048x2048": "/assets/img/templates/wizards_cottage/2048x2048.png",
+      "4096x4096": "/assets/img/templates/wizards_cottage/4096x4096.png"
+    }
+  },
+  {
+    "id": "mountain_pagoda",
+    "name_key": "template_mountain_pagoda",
+    "description_key": "template_mountain_pagoda_desc",
+    "thumbnail": "/assets/img/templates/mountain_pagoda/thumbnail.png",
+    "sizes": ["64x64", "128x64", "128x128", "256x128", "256x256", "512x256", "512x512", "1024x512", "1024x1024", "2048x1024", "2048x2048", "4096x4096"],
+    "image_paths": {
+      "64x64": "/assets/img/templates/mountain_pagoda/64x64.png",
+      "128x64": "/assets/img/templates/mountain_pagoda/128x64.png",
+      "128x128": "/assets/img/templates/mountain_pagoda/128x128.png",
+      "256x128": "/assets/img/templates/mountain_pagoda/256x128.png",
+      "256x256": "/assets/img/templates/mountain_pagoda/256x256.png",
+      "512x256": "/assets/img/templates/mountain_pagoda/512x256.png",
+      "512x512": "/assets/img/templates/mountain_pagoda/512x512.png",
+      "1024x512": "/assets/img/templates/mountain_pagoda/1024x512.png",
+      "1024x1024": "/assets/img/templates/mountain_pagoda/1024x1024.png",
+      "2048x1024": "/assets/img/templates/mountain_pagoda/2048x1024.png",
+      "2048x2048": "/assets/img/templates/mountain_pagoda/2048x2048.png",
+      "4096x4096": "/assets/img/templates/mountain_pagoda/4096x4096.png"
+    }
+  },
+  {
+    "id": "carnival_night",
+    "name_key": "template_carnival_night",
+    "description_key": "template_carnival_night_desc",
+    "thumbnail": "/assets/img/templates/carnival_night/thumbnail.png",
+    "sizes": ["64x64", "128x64", "128x128", "256x128", "256x256", "512x256", "512x512", "1024x512", "1024x1024", "2048x1024", "2048x2048", "4096x4096"],
+    "image_paths": {
+      "64x64": "/assets/img/templates/carnival_night/64x64.png",
+      "128x64": "/assets/img/templates/carnival_night/128x64.png",
+      "128x128": "/assets/img/templates/carnival_night/128x128.png",
+      "256x128": "/assets/img/templates/carnival_night/256x128.png",
+      "256x256": "/assets/img/templates/carnival_night/256x256.png",
+      "512x256": "/assets/img/templates/carnival_night/512x256.png",
+      "512x512": "/assets/img/templates/carnival_night/512x512.png",
+      "1024x512": "/assets/img/templates/carnival_night/1024x512.png",
+      "1024x1024": "/assets/img/templates/carnival_night/1024x1024.png",
+      "2048x1024": "/assets/img/templates/carnival_night/2048x1024.png",
+      "2048x2048": "/assets/img/templates/carnival_night/2048x2048.png",
+      "4096x4096": "/assets/img/templates/carnival_night/4096x4096.png"
+    }
+  },
+  {
+    "id": "steampunk_station",
+    "name_key": "template_steampunk_station",
+    "description_key": "template_steampunk_station_desc",
+    "thumbnail": "/assets/img/templates/steampunk_station/thumbnail.png",
+    "sizes": ["64x64", "128x64", "128x128", "256x128", "256x256", "512x256", "512x512", "1024x512", "1024x1024", "2048x1024", "2048x2048", "4096x4096"],
+    "image_paths": {
+      "64x64": "/assets/img/templates/steampunk_station/64x64.png",
+      "128x64": "/assets/img/templates/steampunk_station/128x64.png",
+      "128x128": "/assets/img/templates/steampunk_station/128x128.png",
+      "256x128": "/assets/img/templates/steampunk_station/256x128.png",
+      "256x256": "/assets/img/templates/steampunk_station/256x256.png",
+      "512x256": "/assets/img/templates/steampunk_station/512x256.png",
+      "512x512": "/assets/img/templates/steampunk_station/512x512.png",
+      "1024x512": "/assets/img/templates/steampunk_station/1024x512.png",
+      "1024x1024": "/assets/img/templates/steampunk_station/1024x1024.png",
+      "2048x1024": "/assets/img/templates/steampunk_station/2048x1024.png",
+      "2048x2048": "/assets/img/templates/steampunk_station/2048x2048.png",
+      "4096x4096": "/assets/img/templates/steampunk_station/4096x4096.png"
+    }
+  },
+  {
+    "id": "rainy_cafe",
+    "name_key": "template_rainy_cafe",
+    "description_key": "template_rainy_cafe_desc",
+    "thumbnail": "/assets/img/templates/rainy_cafe/thumbnail.png",
+    "sizes": ["64x64", "128x64", "128x128", "256x128", "256x256", "512x256", "512x512", "1024x512", "1024x1024", "2048x1024", "2048x2048", "4096x4096"],
+    "image_paths": {
+      "64x64": "/assets/img/templates/rainy_cafe/64x64.png",
+      "128x64": "/assets/img/templates/rainy_cafe/128x64.png",
+      "128x128": "/assets/img/templates/rainy_cafe/128x128.png",
+      "256x128": "/assets/img/templates/rainy_cafe/256x128.png",
+      "256x256": "/assets/img/templates/rainy_cafe/256x256.png",
+      "512x256": "/assets/img/templates/rainy_cafe/512x256.png",
+      "512x512": "/assets/img/templates/rainy_cafe/512x512.png",
+      "1024x512": "/assets/img/templates/rainy_cafe/1024x512.png",
+      "1024x1024": "/assets/img/templates/rainy_cafe/1024x1024.png",
+      "2048x1024": "/assets/img/templates/rainy_cafe/2048x1024.png",
+      "2048x2048": "/assets/img/templates/rainy_cafe/2048x2048.png",
+      "4096x4096": "/assets/img/templates/rainy_cafe/4096x4096.png"
+    }
+  },
+  {
+    "id": "sunset_harbor",
+    "name_key": "template_sunset_harbor",
+    "description_key": "template_sunset_harbor_desc",
+    "thumbnail": "/assets/img/templates/sunset_harbor/thumbnail.png",
+    "sizes": ["64x64", "128x64", "128x128", "256x128", "256x256", "512x256", "512x512", "1024x512", "1024x1024", "2048x1024", "2048x2048", "4096x4096"],
+    "image_paths": {
+      "64x64": "/assets/img/templates/sunset_harbor/64x64.png",
+      "128x64": "/assets/img/templates/sunset_harbor/128x64.png",
+      "128x128": "/assets/img/templates/sunset_harbor/128x128.png",
+      "256x128": "/assets/img/templates/sunset_harbor/256x128.png",
+      "256x256": "/assets/img/templates/sunset_harbor/256x256.png",
+      "512x256": "/assets/img/templates/sunset_harbor/512x256.png",
+      "512x512": "/assets/img/templates/sunset_harbor/512x512.png",
+      "1024x512": "/assets/img/templates/sunset_harbor/1024x512.png",
+      "1024x1024": "/assets/img/templates/sunset_harbor/1024x1024.png",
+      "2048x1024": "/assets/img/templates/sunset_harbor/2048x1024.png",
+      "2048x2048": "/assets/img/templates/sunset_harbor/2048x2048.png",
+      "4096x4096": "/assets/img/templates/sunset_harbor/4096x4096.png"
     }
   }
 ]

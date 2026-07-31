@@ -135,7 +135,46 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/icons.css">
-    <script src="<?php echo $appPath; ?>/assets/js/icons-init.js"></script>
+    <script>
+        (function() {
+            function applyIcon(el) {
+                if (el.childNodes.length > 0) {
+                    let text = el.textContent.trim();
+                    if (text && /^[a-z0-9_]+$/.test(text) && !el.classList.contains('msr-' + text)) {
+                        el.classList.add('msr-' + text);
+                    }
+                }
+            }
+            document.addEventListener('DOMContentLoaded', () => {
+                document.querySelectorAll('.material-symbols-rounded').forEach(applyIcon);
+            });
+            const iconObserver = new MutationObserver(mutations => {
+                mutations.forEach(m => {
+                    m.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) {
+                            if (node.matches && node.matches('.material-symbols-rounded')) {
+                                applyIcon(node);
+                            }
+                            if (node.querySelectorAll) {
+                                node.querySelectorAll('.material-symbols-rounded').forEach(applyIcon);
+                            }
+                        }
+                    });
+                    if (m.type === 'characterData' && m.target.parentNode && m.target.parentNode.matches && m.target.parentNode.matches('.material-symbols-rounded')) {
+                        m.target.parentNode.className.split(' ').forEach(cls => {
+                            if (cls.startsWith('msr-')) m.target.parentNode.classList.remove(cls);
+                        });
+                        applyIcon(m.target.parentNode);
+                    }
+                });
+            });
+            iconObserver.observe(document.documentElement, { 
+                childList: true, 
+                subtree: true,
+                characterData: true 
+            });
+        })();
+    </script>
     
     <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/styles.css?v=<?php echo filemtime(dirname(__DIR__, 2) . '/public/assets/css/styles.css'); ?>">
     <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/components/components.css?v=<?php echo filemtime(dirname(__DIR__, 2) . '/public/assets/css/components/components.css'); ?>">

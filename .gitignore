@@ -55,3 +55,6 @@ storage/private/backups/*.gz
 /storage/public/templates/
 
 /storage/public/canvases/
+
+# Ignorar imágenes de plantillas (templates)
+/public/assets/img/templates/

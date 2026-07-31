@@ -29,8 +29,9 @@ class CanvasesCreateController {
         
         this.formState = {
             name: '',
-            size: '64',
+            size: '64x64',
             privacy: 'private',
+            requires_approval: 'false',
             palette_id: 'default',
             limit: 10,
             cooldown_pixels_batch: 5,
@@ -48,6 +49,7 @@ class CanvasesCreateController {
         this.cardInteractions = new CanvasCardInteractions(this.api, this.basePath, this.abortController);
         this.bindEvents();
         this.setupDefaultValues();
+        this.syncStateWithDOM();
         this.renderPalettes();
         this.checkAdminPermissions();
 
@@ -103,6 +105,82 @@ class CanvasesCreateController {
         if (inputEl) {
             inputEl.value = timestampName;
             inputEl.setAttribute('data-original-value', timestampName);
+        }
+    }
+
+    syncStateWithDOM() {
+        // Name
+        const nameInput = document.querySelector('[data-ref="input-canvasname"]');
+        if (nameInput) {
+            this.formState.name = nameInput.value.trim();
+        }
+
+        // Size
+        const activeSizeEl = document.querySelector('.component-menu-link[data-type="size"].active');
+        if (activeSizeEl) {
+            this.formState.size = activeSizeEl.getAttribute('data-value');
+        } else {
+            this.formState.size = '64x64';
+        }
+
+        // Privacy
+        const activePrivacyEl = document.querySelector('.component-menu-link[data-type="privacy"].active');
+        if (activePrivacyEl) {
+            this.formState.privacy = activePrivacyEl.getAttribute('data-value');
+        }
+
+        // Requires approval
+        const activeApprovalEl = document.querySelector('.component-menu-link[data-type="requires_approval"].active');
+        if (activeApprovalEl) {
+            this.formState.requires_approval = activeApprovalEl.getAttribute('data-value');
+        }
+
+        // Palette ID
+        const activePaletteEl = document.querySelector('.component-menu-link[data-action="selectPalette"].active');
+        if (activePaletteEl) {
+            this.formState.palette_id = activePaletteEl.getAttribute('data-palette-id');
+        }
+
+        // Cooldown pixels batch
+        const cooldownBatchEl = document.querySelector('[data-ref="val_cooldown_batch"]');
+        if (cooldownBatchEl) {
+            this.formState.cooldown_pixels_batch = parseInt(cooldownBatchEl.getAttribute('data-val'), 10) || 5;
+        }
+
+        // Cooldown seconds
+        const cooldownSecondsEl = document.querySelector('[data-ref="val_cooldown_seconds"]');
+        if (cooldownSecondsEl) {
+            this.formState.cooldown_seconds = parseInt(cooldownSecondsEl.getAttribute('data-val'), 10) || 10;
+        }
+
+        // Limit
+        const limitEl = document.querySelector('[data-ref="val_limit"]');
+        if (limitEl) {
+            this.formState.limit = parseInt(limitEl.getAttribute('data-val'), 10) || 10;
+        }
+
+        // Allow Purchases
+        const allowPurchasesEl = document.querySelector('[data-ref="val_allow_purchases"]');
+        if (allowPurchasesEl) {
+            this.formState.allow_purchases = allowPurchasesEl.checked ? 1 : 0;
+        }
+
+        // Allow Chat
+        const allowChatEl = document.querySelector('[data-ref="val_allow_chat"]');
+        if (allowChatEl) {
+            this.formState.allow_chat = allowChatEl.checked ? 1 : 0;
+        }
+
+        // Is Official
+        const isOfficialEl = document.querySelector('[data-ref="val_is_official"]');
+        if (isOfficialEl) {
+            this.formState.is_official = isOfficialEl.checked ? 1 : 0;
+        }
+
+        // Template ID
+        const templateEl = document.getElementById('canvas_template_id');
+        if (templateEl) {
+            this.formState.template_id = templateEl.value || null;
         }
     }
 
@@ -518,40 +596,8 @@ class CanvasesCreateController {
     }
 
     async submitCanvas(btn) {
-        const inputName = document.querySelector('[data-ref="input-canvasname"]');
-        if (inputName) {
-            this.formState.name = inputName.value.trim();
-        }
-        
-        const inputBatch = document.querySelector('[data-ref="val_cooldown_batch"]');
-        if (inputBatch) {
-            this.formState.cooldown_pixels_batch = parseInt(inputBatch.getAttribute('data-val'), 10) || 5;
-        }
-
-        const inputSec = document.querySelector('[data-ref="val_cooldown_seconds"]');
-        if (inputSec) {
-            this.formState.cooldown_seconds = parseInt(inputSec.getAttribute('data-val'), 10) || 10;
-        }
-
-        const inputPurchases = document.querySelector('[data-ref="val_allow_purchases"]');
-        if (inputPurchases) {
-            this.formState.allow_purchases = inputPurchases.checked ? 1 : 0;
-        }
-
-        const inputChat = document.querySelector('[data-ref="val_allow_chat"]');
-        if (inputChat) {
-            this.formState.allow_chat = inputChat.checked ? 1 : 0;
-        }
-
-        const inputOfficial = document.querySelector('[data-ref="val_is_official"]');
-        if (inputOfficial) {
-            this.formState.is_official = inputOfficial.checked ? 1 : 0;
-        }
-
-        const inputTemplate = document.getElementById('canvas_template_id');
-        if (inputTemplate) {
-            this.formState.template_id = inputTemplate.value || null;
-        }
+        // Final synchronization with DOM before sending to ensure no stale state
+        this.syncStateWithDOM();
 
         setButtonLoading(btn);
 
