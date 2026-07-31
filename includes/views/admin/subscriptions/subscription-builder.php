@@ -122,7 +122,7 @@ function renderColorBlock($hex, $percentage, $isSolid = false) {
     $html .= '                                      <button type="button" class="component-inline-control__btn" data-action="adjustColorStop" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>';
     $html .= '                                      <button type="button" class="component-inline-control__btn" data-action="adjustColorStop" data-step="-5"><span class="material-symbols-rounded">chevron_left</span></button>';
     $html .= '                                  </div>';
-    $html .= '                                  <div class="component-inline-control__center" data-val="' . $actualPercentage . '" data-ref="percentageCenter">';
+    $html .= '                                  <div class="component-inline-control__center" data-value="' . $actualPercentage . '" data-ref="percentageCenter">';
     $html .= '                                      <span data-ref="stopValueDisplay">' . $actualPercentage . '</span>%';
     $html .= '                                  </div>';
     $html .= '                                  <div class="component-inline-control__group">';
@@ -256,7 +256,7 @@ $featuresData = [
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="-5" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="-1" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_tierLevel" data-val="<?php echo (int)$tierData['tier_level']; ?>"><?php echo (int)$tierData['tier_level']; ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_tierLevel" data-value="<?php echo (int)$tierData['tier_level']; ?>"><?php echo (int)$tierData['tier_level']; ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="1" data-max="99"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="5" data-max="99"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -282,7 +282,7 @@ $featuresData = [
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="-5" data-min="0" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="-1" data-min="0" data-decimal="true"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_priceMonthly" data-val="<?php echo (float)($tierData['price_monthly'] ?? 0); ?>"><?php echo number_format((float)($tierData['price_monthly'] ?? 0), 2); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_priceMonthly" data-value="<?php echo (float)($tierData['price_monthly'] ?? 0); ?>"><?php echo number_format((float)($tierData['price_monthly'] ?? 0), 2); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="1" data-max="999" data-decimal="true"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="5" data-max="999" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -306,7 +306,7 @@ $featuresData = [
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="-10" data-min="0" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="-1" data-min="0" data-decimal="true"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_priceYearly" data-val="<?php echo (float)($tierData['price_yearly'] ?? 0); ?>"><?php echo number_format((float)($tierData['price_yearly'] ?? 0), 2); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_priceYearly" data-value="<?php echo (float)($tierData['price_yearly'] ?? 0); ?>"><?php echo number_format((float)($tierData['price_yearly'] ?? 0), 2); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="1" data-max="9999" data-decimal="true"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="10" data-max="9999" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -413,7 +413,7 @@ $featuresData = [
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCanvases" data-step="-10" data-min="-1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCanvases" data-step="-1" data-min="-1"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_featMaxCanvases" data-val="<?php echo (int)($featuresData['limits']['max_canvases'] ?? 0); ?>"><?php echo ((int)($featuresData['limits']['max_canvases'] ?? 0)) === -1 ? '∞' : (int)($featuresData['limits']['max_canvases'] ?? 0); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxCanvases" data-value="<?php echo (int)($featuresData['limits']['max_canvases'] ?? 0); ?>"><?php echo ((int)($featuresData['limits']['max_canvases'] ?? 0)) === -1 ? '∞' : (int)($featuresData['limits']['max_canvases'] ?? 0); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCanvases" data-step="1" data-max="999"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCanvases" data-step="10" data-max="999"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -437,7 +437,7 @@ $featuresData = [
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxStorage" data-step="-100" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxStorage" data-step="-10" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_featMaxStorage" data-val="<?php echo (int)($featuresData['limits']['max_storage_mb'] ?? 0); ?>"><?php echo (int)($featuresData['limits']['max_storage_mb'] ?? 0); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxStorage" data-value="<?php echo (int)($featuresData['limits']['max_storage_mb'] ?? 0); ?>"><?php echo (int)($featuresData['limits']['max_storage_mb'] ?? 0); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxStorage" data-step="10" data-max="5000"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxStorage" data-step="100" data-max="5000"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -461,7 +461,7 @@ $featuresData = [
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxSnapshots" data-step="-10" data-min="-1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxSnapshots" data-step="-1" data-min="-1"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_featMaxSnapshots" data-val="<?php echo (int)($featuresData['limits']['max_snapshots_per_canvas'] ?? 0); ?>"><?php echo ((int)($featuresData['limits']['max_snapshots_per_canvas'] ?? 0)) === -1 ? '∞' : (int)($featuresData['limits']['max_snapshots_per_canvas'] ?? 0); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxSnapshots" data-value="<?php echo (int)($featuresData['limits']['max_snapshots_per_canvas'] ?? 0); ?>"><?php echo ((int)($featuresData['limits']['max_snapshots_per_canvas'] ?? 0)) === -1 ? '∞' : (int)($featuresData['limits']['max_snapshots_per_canvas'] ?? 0); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxSnapshots" data-step="1" data-max="999"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxSnapshots" data-step="10" data-max="999"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -485,7 +485,7 @@ $featuresData = [
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxMembers" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxMembers" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_featMaxMembers" data-val="<?php echo (int)($featuresData['limits']['max_members_per_canvas'] ?? 1); ?>"><?php echo (int)($featuresData['limits']['max_members_per_canvas'] ?? 1); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxMembers" data-value="<?php echo (int)($featuresData['limits']['max_members_per_canvas'] ?? 1); ?>"><?php echo (int)($featuresData['limits']['max_members_per_canvas'] ?? 1); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxMembers" data-step="1" data-max="100"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxMembers" data-step="10" data-max="100"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -509,7 +509,7 @@ $featuresData = [
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCustomPalettes" data-step="-5" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCustomPalettes" data-step="-1" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_featMaxCustomPalettes" data-val="<?php echo (int)($featuresData['limits']['max_custom_palettes'] ?? 0); ?>"><?php echo (int)($featuresData['limits']['max_custom_palettes'] ?? 0); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxCustomPalettes" data-value="<?php echo (int)($featuresData['limits']['max_custom_palettes'] ?? 0); ?>"><?php echo (int)($featuresData['limits']['max_custom_palettes'] ?? 0); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCustomPalettes" data-step="1" data-max="50"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxCustomPalettes" data-step="5" data-max="50"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -533,7 +533,7 @@ $featuresData = [
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxTemplateTokens" data-step="-250" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxTemplateTokens" data-step="-50" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_featMaxTemplateTokens" data-val="<?php echo (int)($featuresData['limits']['max_template_tokens'] ?? 0); ?>"><?php echo (int)($featuresData['limits']['max_template_tokens'] ?? 0); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxTemplateTokens" data-value="<?php echo (int)($featuresData['limits']['max_template_tokens'] ?? 0); ?>"><?php echo (int)($featuresData['limits']['max_template_tokens'] ?? 0); ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxTemplateTokens" data-step="50" data-max="10000"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxTemplateTokens" data-step="250" data-max="10000"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -660,7 +660,7 @@ $featuresData = [
                                     </div>
                                     <div class="component-card__actions component-card__actions--start">
                                         <div class="component-dropdown-wrapper">
-                                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleGradientAngle" data-val="<?php echo $gradientAngle; ?>" data-ref="gradientAngleTrigger">
+                                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleGradientAngle" data-value="<?php echo $gradientAngle; ?>" data-ref="gradientAngleTrigger">
                                                 <span class="material-symbols-rounded">rotate_right</span>
                                                 <span class="component-dropdown-text" data-ref="gradientAngleText"><?php echo $gradientAngle; ?>°</span>
                                                 <span class="material-symbols-rounded">expand_more</span>

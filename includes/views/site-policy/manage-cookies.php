@@ -22,7 +22,7 @@
                 </div>
 
                 <div class="component-card--grouped component-accordion component-mb-3">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" onclick="this.parentElement.classList.toggle('active')">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">security</span>
@@ -80,7 +80,7 @@
                 </div>
 
                 <div class="component-card--grouped component-accordion component-mb-3">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" onclick="this.parentElement.classList.toggle('active')">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">palette</span>
@@ -91,7 +91,7 @@
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <div onclick="event.stopPropagation()">
+                            <div>
                                 <label class="component-toggle-switch">
                                     <input type="checkbox" name="cookie_func" id="cookie_func" checked>
                                     <span class="component-toggle-slider"></span>
@@ -125,7 +125,7 @@
                 </div>
 
                 <div class="component-card--grouped component-accordion component-mb-3">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" onclick="this.parentElement.classList.toggle('active')">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">monitoring</span>
@@ -136,7 +136,7 @@
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <div onclick="event.stopPropagation()">
+                            <div>
                                 <label class="component-toggle-switch">
                                     <input type="checkbox" name="cookie_perf" id="cookie_perf" checked>
                                     <span class="component-toggle-slider"></span>
@@ -170,7 +170,7 @@
                 </div>
 
                 <div class="component-card--grouped component-accordion component-mb-3">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" onclick="this.parentElement.classList.toggle('active')">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">target</span>
@@ -181,7 +181,7 @@
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <div onclick="event.stopPropagation()">
+                            <div>
                                 <label class="component-toggle-switch">
                                     <input type="checkbox" name="cookie_target" id="cookie_target" checked>
                                     <span class="component-toggle-slider"></span>

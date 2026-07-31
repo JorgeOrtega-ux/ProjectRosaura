@@ -117,7 +117,7 @@ if (trim($rawName) !== '') {
                                     <button type="button" class="component-inline-control__btn" data-action="adjustWeight" data-step="-5" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                     <button type="button" class="component-inline-control__btn" data-action="adjustWeight" data-step="-1" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
                                 </div>
-                                <div class="component-inline-control__center" data-ref="val_role_weight" data-val="<?php echo (int)$roleData['weight']; ?>"><?php echo (int)$roleData['weight']; ?></div>
+                                <div class="component-inline-control__center" data-ref="val_role_weight" data-value="<?php echo (int)$roleData['weight']; ?>"><?php echo (int)$roleData['weight']; ?></div>
                                 <div class="component-inline-control__group">
                                     <button type="button" class="component-inline-control__btn" data-action="adjustWeight" data-step="1" data-max="99"><span class="material-symbols-rounded">chevron_right</span></button>
                                     <button type="button" class="component-inline-control__btn" data-action="adjustWeight" data-step="5" data-max="99"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>

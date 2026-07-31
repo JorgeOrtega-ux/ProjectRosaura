@@ -84,7 +84,7 @@ class AdminServerConfigController {
         const state = {};
         document.querySelectorAll('[data-ref^="val_"]').forEach(el => {
             const key = el.getAttribute('data-ref').replace('val_', '');
-            state[key] = Number(el.getAttribute('data-val'));
+            state[key] = Number(el.getAttribute('data-value'));
         });
         document.querySelectorAll('input[data-action="updateTextConfig"]').forEach(input => {
             const key = input.getAttribute('data-field');
@@ -116,7 +116,7 @@ class AdminServerConfigController {
             const el = document.querySelector(`[data-ref="val_${key}"]`);
             if (el) {
                 el.textContent = this.state[key];
-                el.setAttribute('data-val', this.state[key]);
+                el.setAttribute('data-value', this.state[key]);
             }
             const inputEl = document.querySelector(`[data-ref="input_${key}"]`);
             if (inputEl) {

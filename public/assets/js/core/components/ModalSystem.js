@@ -193,10 +193,10 @@ export class ModalSystem {
             const step = parseInt(btnAdjustHours.getAttribute('data-step')) || 0;
             const centerEl = this.activeBox.querySelector('[data-ref="calendar-modal-hours-val"]');
             if (centerEl) {
-                let val = parseInt(centerEl.getAttribute('data-val')) || 0;
+                let val = parseInt(centerEl.getAttribute('data-value')) || 0;
                 val = (val + step) % 24;
                 if (val < 0) val += 24;
-                centerEl.setAttribute('data-val', val);
+                centerEl.setAttribute('data-value', val);
                 centerEl.textContent = String(val).padStart(2, '0');
             }
             return;
@@ -208,10 +208,10 @@ export class ModalSystem {
             const step = parseInt(btnAdjustMinutes.getAttribute('data-step')) || 0;
             const centerEl = this.activeBox.querySelector('[data-ref="calendar-modal-minutes-val"]');
             if (centerEl) {
-                let val = parseInt(centerEl.getAttribute('data-val')) || 0;
+                let val = parseInt(centerEl.getAttribute('data-value')) || 0;
                 val = (val + step) % 60;
                 if (val < 0) val += 60;
-                centerEl.setAttribute('data-val', val);
+                centerEl.setAttribute('data-value', val);
                 centerEl.textContent = String(val).padStart(2, '0');
             }
             return;
@@ -228,18 +228,18 @@ export class ModalSystem {
                     this.calendarSystem.init();
                 }
                 const trigger = this.activeBox.querySelector('[data-target="modalCalendarDateOnly"]');
-                const initialVal = trigger ? trigger.getAttribute('data-val') : '';
+                const initialVal = trigger ? trigger.getAttribute('data-value') : '';
                 this.calendarSystem.setup(
                     initialVal,
                     (isoString, displayString) => {
-                        if (trigger) trigger.setAttribute('data-val', isoString);
+                        if (trigger) trigger.setAttribute('data-value', isoString);
                         const textEl = this.activeBox.querySelector('[data-ref="modal-calendar-date-text"]');
                         if (textEl) {
                             textEl.textContent = displayString.split(',')[0];
                         }
                     },
                     () => {
-                        if (trigger) trigger.setAttribute('data-val', '');
+                        if (trigger) trigger.setAttribute('data-value', '');
                         const textEl = this.activeBox.querySelector('[data-ref="modal-calendar-date-text"]');
                         if (textEl) textEl.textContent = typeof window.__ === 'function' ? window.__('lbl_select_date') : 'Seleccionar fecha';
                     }
@@ -250,9 +250,9 @@ export class ModalSystem {
         const btnOpenSanctionCalendar = e.target.closest('[data-action="openSanctionCalendarModal"]');
         if (btnOpenSanctionCalendar) {
             e.preventDefault();
-            const currentVal = btnOpenSanctionCalendar.getAttribute('data-val') || '';
+            const currentVal = btnOpenSanctionCalendar.getAttribute('data-value') || '';
             const typeTrigger = this.activeBox.querySelector('[data-ref="suspension_type"]');
-            const sanctionType = typeTrigger ? typeTrigger.getAttribute('data-val') : 'temporary';
+            const sanctionType = typeTrigger ? typeTrigger.getAttribute('data-value') : 'temporary';
             if (sanctionType === 'permanent') {
                 return;
             }
@@ -276,13 +276,13 @@ export class ModalSystem {
                 if (res && res.confirmed) {
                     const data = res.data || {};
                     if (data.isoString) {
-                        btnOpenSanctionCalendar.setAttribute('data-val', data.isoString);
+                        btnOpenSanctionCalendar.setAttribute('data-value', data.isoString);
                         const textEl = this.activeBox.querySelector('[data-ref="sanction-endDate-text"]');
                         if (textEl) {
                             textEl.textContent = data.displayString;
                         }
                     } else {
-                        btnOpenSanctionCalendar.setAttribute('data-val', '');
+                        btnOpenSanctionCalendar.setAttribute('data-value', '');
                         const textEl = this.activeBox.querySelector('[data-ref="sanction-endDate-text"]');
                         if (textEl) {
                             textEl.textContent = typeof window.__ === 'function' ? window.__('lbl_select_expiration_date') : 'Seleccionar fecha de expiración';
@@ -290,6 +290,15 @@ export class ModalSystem {
                     }
                 }
             });
+        const stepTargetBtn = e.target.closest('[data-step-target]');
+        if (stepTargetBtn) {
+            const targetStepId = stepTargetBtn.getAttribute('data-step-target');
+            const stepContainer = stepTargetBtn.closest('.step-modal-content') || (this.activeBox ? this.activeBox.querySelector('.step-modal-content') : document);
+            if (stepContainer) {
+                stepContainer.querySelectorAll('.step-modal-step').forEach(step => step.classList.remove('active'));
+                const targetStep = stepContainer.querySelector(`#${targetStepId}`);
+                if (targetStep) targetStep.classList.add('active');
+            }
             return;
         }
 
@@ -303,7 +312,7 @@ export class ModalSystem {
                 const inputs = modal.querySelectorAll('#report_reason, #report_reason_input, [data-ref="report_reason"]');
                 inputs.forEach(inp => {
                     inp.value = val;
-                    inp.setAttribute('data-val', val);
+                    inp.setAttribute('data-value', val);
                 });
                 
                 const triggerText = modal.querySelector('[data-ref="report_trigger_text"]');
@@ -343,7 +352,7 @@ export class ModalSystem {
             const modal = this.activeBox;
             if (modal) {
                 const trigger = modal.querySelector(`[data-ref="${inputName}"]`);
-                if (trigger) trigger.setAttribute('data-val', val);
+                if (trigger) trigger.setAttribute('data-value', val);
 
                 const wrapper = selectSanctionOptionBtn.closest('.component-dropdown-wrapper');
                 if (wrapper) {
@@ -427,14 +436,14 @@ export class ModalSystem {
             if (result !== false && this.activeBox) {
                 if (this.activeTemplateName === 'calendarModal') {
                     const trigger = this.activeBox.querySelector('[data-target="modalCalendarDateOnly"]');
-                    const isoDateVal = trigger ? trigger.getAttribute('data-val') : '';
+                    const isoDateVal = trigger ? trigger.getAttribute('data-value') : '';
                     const hoursEl = this.activeBox.querySelector('[data-ref="calendar-modal-hours-val"]');
                     const minutesEl = this.activeBox.querySelector('[data-ref="calendar-modal-minutes-val"]');
                     
                     if (isoDateVal) {
                         const datePart = isoDateVal.split('T')[0]; // YYYY-MM-DD
-                        const h = hoursEl ? hoursEl.getAttribute('data-val').padStart(2, '0') : '00';
-                        const m = minutesEl ? minutesEl.getAttribute('data-val').padStart(2, '0') : '00';
+                        const h = hoursEl ? hoursEl.getAttribute('data-value').padStart(2, '0') : '00';
+                        const m = minutesEl ? minutesEl.getAttribute('data-value').padStart(2, '0') : '00';
                         
                         const dateObj = new Date(
                             parseInt(datePart.split('-')[0], 10),
@@ -487,12 +496,12 @@ export class ModalSystem {
                     } 
                 });
 
-                // Collect elements with data-val (like custom dropdown triggers)
-                const valElements = this.activeBox.querySelectorAll('[data-val]');
+                // Collect elements with data-value (like custom dropdown triggers)
+                const valElements = this.activeBox.querySelectorAll('[data-value]');
                 valElements.forEach(el => {
-                    const key = el.getAttribute('name') || el.getAttribute('data-ref');
+                    const key = el.getAttribute('data-ref') || el.id;
                     if (key && !key.endsWith('-val') && !key.includes('val_') && !formData[key]) {
-                        formData[key] = el.getAttribute('data-val');
+                        formData[key] = el.getAttribute('data-value');
                     }
                 });
             }

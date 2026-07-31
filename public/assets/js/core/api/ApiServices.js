@@ -358,6 +358,29 @@ export class ApiService {
         }
     }
 
+    async fetchHtml(url, options = {}) {
+        const csrfToken = this._getCsrfToken();
+        const defaultHeaders = {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'text/html',
+            'X-CSRF-Token': csrfToken
+        };
+        const fetchOptions = {
+            method: 'GET',
+            ...options,
+            headers: {
+                ...defaultHeaders,
+                ...(options.headers || {})
+            }
+        };
+        const response = await fetch(url, fetchOptions);
+        if (!response.ok) {
+            throw new Error(`HTTP Status ${response.status}`);
+        }
+        return await response.text();
+    }
+
+
     async downloadText(route, data = {}, signal = null) {
         const payload = {
             route: route,

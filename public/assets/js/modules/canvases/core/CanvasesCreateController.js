@@ -144,19 +144,19 @@ class CanvasesCreateController {
         // Cooldown pixels batch
         const cooldownBatchEl = document.querySelector('[data-ref="val_cooldown_batch"]');
         if (cooldownBatchEl) {
-            this.formState.cooldown_pixels_batch = parseInt(cooldownBatchEl.getAttribute('data-val'), 10) || 5;
+            this.formState.cooldown_pixels_batch = parseInt(cooldownBatchEl.getAttribute('data-value'), 10) || 5;
         }
 
         // Cooldown seconds
         const cooldownSecondsEl = document.querySelector('[data-ref="val_cooldown_seconds"]');
         if (cooldownSecondsEl) {
-            this.formState.cooldown_seconds = parseInt(cooldownSecondsEl.getAttribute('data-val'), 10) || 10;
+            this.formState.cooldown_seconds = parseInt(cooldownSecondsEl.getAttribute('data-value'), 10) || 10;
         }
 
         // Limit
         const limitEl = document.querySelector('[data-ref="val_limit"]');
         if (limitEl) {
-            this.formState.limit = parseInt(limitEl.getAttribute('data-val'), 10) || 10;
+            this.formState.limit = parseInt(limitEl.getAttribute('data-value'), 10) || 10;
         }
 
         // Allow Purchases
@@ -556,14 +556,14 @@ class CanvasesCreateController {
         const centerElement = document.querySelector('[data-ref="val_limit"]');
         if (!centerElement) return;
 
-        let currentVal = parseInt(centerElement.getAttribute('data-val'), 10) || min;
+        let currentVal = parseInt(centerElement.getAttribute('data-value'), 10) || min;
         let newVal = currentVal + step;
         
         if (newVal < min) newVal = min;
         if (newVal > max) newVal = max;
 
         this.formState.limit = newVal;
-        centerElement.setAttribute('data-val', newVal);
+        centerElement.setAttribute('data-value', newVal);
         centerElement.textContent = newVal;
     }
 
@@ -574,13 +574,13 @@ class CanvasesCreateController {
         const valRef = document.querySelector('[data-ref="val_cooldown_batch"]');
         
         if (valRef) {
-            let currentVal = parseInt(valRef.getAttribute('data-val'), 10) || min;
+            let currentVal = parseInt(valRef.getAttribute('data-value'), 10) || min;
             let newVal = currentVal + step;
             if (newVal < min) newVal = min;
             if (newVal > max) newVal = max;
             this.formState.cooldown_pixels_batch = newVal;
             valRef.textContent = newVal;
-            valRef.setAttribute('data-val', newVal);
+            valRef.setAttribute('data-value', newVal);
         }
     }
 
@@ -591,13 +591,13 @@ class CanvasesCreateController {
         const valRef = document.querySelector('[data-ref="val_cooldown_seconds"]');
         
         if (valRef) {
-            let currentVal = parseInt(valRef.getAttribute('data-val'), 10) || min;
+            let currentVal = parseInt(valRef.getAttribute('data-value'), 10) || min;
             let newVal = currentVal + step;
             if (newVal < min) newVal = min;
             if (newVal > max) newVal = max;
             this.formState.cooldown_seconds = newVal;
             valRef.textContent = newVal;
-            valRef.setAttribute('data-val', newVal);
+            valRef.setAttribute('data-value', newVal);
         }
     }
 

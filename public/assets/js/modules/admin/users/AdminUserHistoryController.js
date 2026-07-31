@@ -1,5 +1,7 @@
+import { ApiService } from '../../../core/api/ApiServices.js';
 class AdminUserHistoryController {
     constructor() {
+        this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
         this.isInitialized = false; 
@@ -76,12 +78,7 @@ class AdminUserHistoryController {
             .classList.add('disabled-interaction');
         }
         try {
-            const response = await fetch(url, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
-                signal: this.abortController.signal
-            });
-            if (!response.ok) throw new Error(`HTTP Status ${response.status}`);
-            const html = await response.text();
+            const html = await this.api.fetchHtml(url, { signal: this.abortController ? this.abortController.signal : null });
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             const newTable = doc.querySelector('[data-ref="view-table"]');

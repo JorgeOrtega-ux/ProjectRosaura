@@ -722,11 +722,11 @@ export const DesignInteractions = {
 
             if (this.liveShareStatus === 'owner' && this.activeTemplateId === this.liveTemplateId) {
                 if (this.uiLiveInputX) {
-                    this.uiLiveInputX.setAttribute('data-val', tpl.x);
+                    this.uiLiveInputX.setAttribute('data-value', tpl.x);
                     this.uiLiveInputX.textContent = tpl.x;
                 }
                 if (this.uiLiveInputY) {
-                    this.uiLiveInputY.setAttribute('data-val', tpl.y);
+                    this.uiLiveInputY.setAttribute('data-value', tpl.y);
                     this.uiLiveInputY.textContent = tpl.y;
                 }
             }
@@ -1048,11 +1048,11 @@ export const DesignInteractions = {
 
             if (this.liveShareStatus === 'owner' && this.activeTemplateId === this.liveTemplateId) {
                 if (this.uiLiveInputX) {
-                    this.uiLiveInputX.setAttribute('data-val', tpl.x);
+                    this.uiLiveInputX.setAttribute('data-value', tpl.x);
                     this.uiLiveInputX.textContent = tpl.x;
                 }
                 if (this.uiLiveInputY) {
-                    this.uiLiveInputY.setAttribute('data-val', tpl.y);
+                    this.uiLiveInputY.setAttribute('data-value', tpl.y);
                     this.uiLiveInputY.textContent = tpl.y;
                 }
             }

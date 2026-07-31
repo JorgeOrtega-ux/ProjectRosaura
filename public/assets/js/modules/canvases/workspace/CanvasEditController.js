@@ -72,13 +72,13 @@ class CanvasEditController {
         if (nameInput) this.state.name = nameInput.value.trim();
 
         const limitVal = this.container.querySelector('[data-ref="val_limit"]');
-        if (limitVal) this.state.max_members = parseInt(limitVal.getAttribute('data-val'), 10) || 10;
+        if (limitVal) this.state.max_members = parseInt(limitVal.getAttribute('data-value'), 10) || 10;
 
         const batchVal = this.container.querySelector('[data-ref="val_cooldown_batch"]');
-        if (batchVal) this.state.cooldown_pixels_batch = parseInt(batchVal.getAttribute('data-val'), 10) || 5;
+        if (batchVal) this.state.cooldown_pixels_batch = parseInt(batchVal.getAttribute('data-value'), 10) || 5;
 
         const secVal = this.container.querySelector('[data-ref="val_cooldown_seconds"]');
-        if (secVal) this.state.cooldown_seconds = parseInt(secVal.getAttribute('data-val'), 10) || 10;
+        if (secVal) this.state.cooldown_seconds = parseInt(secVal.getAttribute('data-value'), 10) || 10;
 
         const activePrivacy = this.container.querySelector('[data-type="privacy"].active');
         if (activePrivacy) this.state.privacy = activePrivacy.getAttribute('data-value');
@@ -327,7 +327,7 @@ class CanvasEditController {
         const valRef = this.container.querySelector('[data-ref="val_limit"]');
         
         if (valRef) {
-            let currentVal = parseInt(valRef.getAttribute('data-val'), 10);
+            let currentVal = parseInt(valRef.getAttribute('data-value'), 10);
             let newVal = currentVal + step;
             
             if (newVal < min) newVal = min;
@@ -335,7 +335,7 @@ class CanvasEditController {
             
             this.state.max_members = newVal;
             valRef.textContent = newVal;
-            valRef.setAttribute('data-val', newVal);
+            valRef.setAttribute('data-value', newVal);
         }
     }
 
@@ -346,7 +346,7 @@ class CanvasEditController {
         const valRef = this.container.querySelector('[data-ref="val_cooldown_batch"]');
         
         if (valRef) {
-            let currentVal = parseInt(valRef.getAttribute('data-val'), 10) || min;
+            let currentVal = parseInt(valRef.getAttribute('data-value'), 10) || min;
             let newVal = currentVal + step;
             
             if (newVal < min) newVal = min;
@@ -354,7 +354,7 @@ class CanvasEditController {
             
             this.state.cooldown_pixels_batch = newVal;
             valRef.textContent = newVal;
-            valRef.setAttribute('data-val', newVal);
+            valRef.setAttribute('data-value', newVal);
         }
     }
 
@@ -365,7 +365,7 @@ class CanvasEditController {
         const valRef = this.container.querySelector('[data-ref="val_cooldown_seconds"]');
         
         if (valRef) {
-            let currentVal = parseInt(valRef.getAttribute('data-val'), 10) || min;
+            let currentVal = parseInt(valRef.getAttribute('data-value'), 10) || min;
             let newVal = currentVal + step;
             
             if (newVal < min) newVal = min;
@@ -373,7 +373,7 @@ class CanvasEditController {
             
             this.state.cooldown_seconds = newVal;
             valRef.textContent = newVal;
-            valRef.setAttribute('data-val', newVal);
+            valRef.setAttribute('data-value', newVal);
         }
     }
 
@@ -393,12 +393,12 @@ class CanvasEditController {
 
         const inputBatch = this.container.querySelector('[data-ref="val_cooldown_batch"]');
         if (inputBatch) {
-            this.state.cooldown_pixels_batch = parseInt(inputBatch.getAttribute('data-val'), 10) || 5;
+            this.state.cooldown_pixels_batch = parseInt(inputBatch.getAttribute('data-value'), 10) || 5;
         }
 
         const inputSec = this.container.querySelector('[data-ref="val_cooldown_seconds"]');
         if (inputSec) {
-            this.state.cooldown_seconds = parseInt(inputSec.getAttribute('data-val'), 10) || 10;
+            this.state.cooldown_seconds = parseInt(inputSec.getAttribute('data-value'), 10) || 10;
         }
 
         const allowPurchasesInput = this.container.querySelector('[data-ref="val_allow_purchases"]');

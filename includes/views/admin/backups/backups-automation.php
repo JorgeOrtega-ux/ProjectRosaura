@@ -98,7 +98,7 @@ $selectedModules = [
                                     <div class="component-dropdown-wrapper">
                                         <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleAutoFreq">
                                             <span class="material-symbols-rounded">update</span>
-                                            <span class="component-dropdown-text" data-ref="admin-autoFreq-text" data-val="<?php echo $autoFreq; ?>">
+                                            <span class="component-dropdown-text" data-ref="admin-autoFreq-text" data-value="<?php echo $autoFreq; ?>">
                                                 <?php echo htmlspecialchars($currentFreqText); ?>
                                             </span>
                                             <span class="material-symbols-rounded">expand_more</span>
@@ -139,7 +139,7 @@ $selectedModules = [
                                             <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="-5" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_auto_backup_retention_count" data-val="<?php echo $autoRetention; ?>"><?php echo $autoRetention; ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_auto_backup_retention_count" data-value="<?php echo $autoRetention; ?>"><?php echo $autoRetention; ?></div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="1" data-max="100"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="5" data-max="100"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>

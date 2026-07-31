@@ -31,6 +31,14 @@ export class ManageCookiesController {
     }
 
     _handleClick(e) {
+        const accordionHeader = e.target.closest('.component-accordion-header');
+        if (accordionHeader && !e.target.closest('input, label, .component-toggle-switch')) {
+            const accordionGroup = accordionHeader.closest('.component-accordion');
+            if (accordionGroup) {
+                accordionGroup.classList.toggle('active');
+            }
+        }
+
         const actionBtn = e.target.closest('[data-action]');
         if (actionBtn) {
             const action = actionBtn.getAttribute('data-action');

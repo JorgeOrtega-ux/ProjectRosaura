@@ -267,7 +267,7 @@ extract($editData);
                                         <span class="material-symbols-rounded">chevron_left</span>
                                     </button>
                                 </div>
-                                <div class="component-inline-control__center" data-ref="val_cooldown_batch" data-val="<?php echo $cBatch; ?>"><?php echo $cBatch; ?></div>
+                                <div class="component-inline-control__center" data-ref="val_cooldown_batch" data-value="<?php echo $cBatch; ?>"><?php echo $cBatch; ?></div>
                                 <div class="component-inline-control__group">
                                     <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="1" data-max="100">
                                         <span class="material-symbols-rounded">chevron_right</span>
@@ -297,7 +297,7 @@ extract($editData);
                                         <span class="material-symbols-rounded">chevron_left</span>
                                     </button>
                                 </div>
-                                <div class="component-inline-control__center" data-ref="val_cooldown_seconds" data-val="<?php echo $cCooldown; ?>"><?php echo $cCooldown; ?></div>
+                                <div class="component-inline-control__center" data-ref="val_cooldown_seconds" data-value="<?php echo $cCooldown; ?>"><?php echo $cCooldown; ?></div>
                                 <div class="component-inline-control__group">
                                     <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="1" data-max="3600">
                                         <span class="material-symbols-rounded">chevron_right</span>
@@ -327,7 +327,7 @@ extract($editData);
                                         <span class="material-symbols-rounded">chevron_left</span>
                                     </button>
                                 </div>
-                                <div class="component-inline-control__center" data-ref="val_limit" data-val="<?php echo $cLimit; ?>"><?php echo $cLimit; ?></div>
+                                <div class="component-inline-control__center" data-ref="val_limit" data-value="<?php echo $cLimit; ?>"><?php echo $cLimit; ?></div>
                                 <div class="component-inline-control__group">
                                     <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="10" data-max="<?php echo $maxMembers; ?>">
                                         <span class="material-symbols-rounded">chevron_right</span>

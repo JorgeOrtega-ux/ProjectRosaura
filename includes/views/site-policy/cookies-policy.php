@@ -8,7 +8,7 @@ $appName = htmlspecialchars($_ENV['APP_NAME']);
                 <h1 class="component-top-title"><?php echo __('policy_cookies_title'); ?></h1>
                 <p class="policy-subtitle"><?php echo __('cookies_policy_subtitle'); ?></p>
                 <div>
-                    <a href="/site-policy/manage-cookies" class="component-button component-button--h40 component-button--outline" onclick="if(window.spaRouter){event.preventDefault();window.spaRouter.navigate('/site-policy/manage-cookies');}">
+                    <a href="/site-policy/manage-cookies" class="component-button component-button--h40 component-button--outline" data-nav="/site-policy/manage-cookies">
                         <span class="material-symbols-rounded">tune</span>
                         Configurar mis preferencias
                     </a>

@@ -1,4 +1,4 @@
-﻿export const ModalTemplates = {
+export const ModalTemplates = {
     welcomePremiumModal: {
         fullScreen: true,
         build: (data = {}) => ModalTemplates.purchaseSuccessModal.build({ ...data, item_type: 'subscription' })
@@ -64,7 +64,7 @@
                         </button>
 
                         <p class="component-hero-support-text">
-                            <a href="/support" onclick="if(window.spaRouter){window.spaRouter.navigate('/support');} if(window.modalSystem){window.modalSystem.closeCurrent();} return false;">
+                            <a href="/support" data-nav="/support" data-action="close_modal">
                                 ${supportText}
                             </a>
                         </p>
@@ -93,12 +93,12 @@
                             
                             <div class="step-modal-dots">
                                 <div class="step-modal-dot active"></div>
-                                <div class="step-modal-dot" onclick="document.getElementById('welcome-step-1').classList.remove('active'); document.getElementById('welcome-step-2').classList.add('active');"></div>
-                                <div class="step-modal-dot" onclick="document.getElementById('welcome-step-1').classList.remove('active'); document.getElementById('welcome-step-3').classList.add('active');"></div>
+                                <div class="step-modal-dot" data-step-target="welcome-step-2"></div>
+                                <div class="step-modal-dot" data-step-target="welcome-step-3"></div>
                             </div>
 
                             <div class="step-modal-actions">
-                                <button class="component-button component-button--h40 component-button--dark" onclick="document.getElementById('welcome-step-1').classList.remove('active'); document.getElementById('welcome-step-2').classList.add('active');">
+                                <button class="component-button component-button--h40 component-button--dark" data-step-target="welcome-step-2">
                                     ${window.__('welcome_modal_btn_next')}
                                 </button>
                             </div>
@@ -112,13 +112,13 @@
                             </p>
                             
                             <div class="step-modal-dots">
-                                <div class="step-modal-dot" onclick="document.getElementById('welcome-step-2').classList.remove('active'); document.getElementById('welcome-step-1').classList.add('active');"></div>
+                                <div class="step-modal-dot" data-step-target="welcome-step-1"></div>
                                 <div class="step-modal-dot active"></div>
-                                <div class="step-modal-dot" onclick="document.getElementById('welcome-step-2').classList.remove('active'); document.getElementById('welcome-step-3').classList.add('active');"></div>
+                                <div class="step-modal-dot" data-step-target="welcome-step-3"></div>
                             </div>
 
                             <div class="step-modal-actions">
-                                <button class="component-button component-button--h40 component-button--dark" onclick="document.getElementById('welcome-step-2').classList.remove('active'); document.getElementById('welcome-step-3').classList.add('active');">
+                                <button class="component-button component-button--h40 component-button--dark" data-step-target="welcome-step-3">
                                     ${window.__('welcome_modal_btn_next')}
                                 </button>
                             </div>
@@ -164,13 +164,13 @@
                             </div>
                             
                             <div class="step-modal-dots">
-                                <div class="step-modal-dot" onclick="document.getElementById('welcome-step-3').classList.remove('active'); document.getElementById('welcome-step-1').classList.add('active');"></div>
-                                <div class="step-modal-dot" onclick="document.getElementById('welcome-step-3').classList.remove('active'); document.getElementById('welcome-step-2').classList.add('active');"></div>
+                                <div class="step-modal-dot" data-step-target="welcome-step-1"></div>
+                                <div class="step-modal-dot" data-step-target="welcome-step-2"></div>
                                 <div class="step-modal-dot active"></div>
                             </div>
 
                             <div class="step-modal-actions">
-                                <button class="component-button component-button--h40 component-button--ghost" onclick="if(window.spaRouter){window.spaRouter.navigate('/upgrade');}else{window.location.href='/upgrade';} if(window.modalSystem){window.modalSystem.closeCurrent();}">
+                                <button class="component-button component-button--h40 component-button--ghost" data-nav="/upgrade" data-action="close_modal">
                                     ${window.__('btn_more_info')}
                                 </button>
                                 <button class="component-button component-button--h40 component-button--dark" data-modal-action="finish">
@@ -727,7 +727,7 @@
                                     <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="x" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                     <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="x" data-step="-1"><span class="material-symbols-rounded">chevron_left</span></button>
                                 </div>
-                                <div class="component-inline-control__center" data-ref="live-input-x" data-val="${data.x || 0}">${data.x || 0}</div>
+                                <div class="component-inline-control__center" data-ref="live-input-x" data-value="${data.x || 0}">${data.x || 0}</div>
                                 <div class="component-inline-control__group">
                                     <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="x" data-step="1"><span class="material-symbols-rounded">chevron_right</span></button>
                                     <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="x" data-step="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -741,7 +741,7 @@
                                     <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="y" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                     <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="y" data-step="-1"><span class="material-symbols-rounded">chevron_left</span></button>
                                 </div>
-                                <div class="component-inline-control__center" data-ref="live-input-y" data-val="${data.y || 0}">${data.y || 0}</div>
+                                <div class="component-inline-control__center" data-ref="live-input-y" data-value="${data.y || 0}">${data.y || 0}</div>
                                 <div class="component-inline-control__group">
                                     <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="y" data-step="1"><span class="material-symbols-rounded">chevron_right</span></button>
                                     <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="y" data-step="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -757,7 +757,7 @@
                                 <button type="button" class="component-inline-control__btn" data-action="adjustLiveOpacity" data-step="-0.10" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                 <button type="button" class="component-inline-control__btn" data-action="adjustLiveOpacity" data-step="-0.05" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
                             </div>
-                            <div class="component-inline-control__center" data-ref="live-input-opacity" data-val="${data.opacity !== undefined ? data.opacity : 1}">${Math.round((data.opacity !== undefined ? data.opacity : 1) * 100)}%</div>
+                            <div class="component-inline-control__center" data-ref="live-input-opacity" data-value="${data.opacity !== undefined ? data.opacity : 1}">${Math.round((data.opacity !== undefined ? data.opacity : 1) * 100)}%</div>
                             <div class="component-inline-control__group">
                                 <button type="button" class="component-inline-control__btn" data-action="adjustLiveOpacity" data-step="0.05" data-max="1"><span class="material-symbols-rounded">chevron_right</span></button>
                                 <button type="button" class="component-inline-control__btn" data-action="adjustLiveOpacity" data-step="0.10" data-max="1"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -817,7 +817,7 @@
                 </div>
                 <div class="component-modal-body">
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason" data-ref="report_reason" data-val="">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason" data-ref="report_reason" data-value="">
                             <span class="material-symbols-rounded" data-ref="report_trigger_icon">delete</span>
                             <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder') || 'Selecciona un motivo...'}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -858,7 +858,7 @@
                 </div>
                 <div class="component-modal-body">
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason" data-ref="report_reason" data-val="">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason" data-ref="report_reason" data-value="">
                             <span class="material-symbols-rounded" data-ref="report_trigger_icon">report</span>
                             <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder')}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -1171,7 +1171,7 @@
                 <div class="component-modal-body">
                     <!-- Alcance de la SanciÃ³n -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSanctionScope" data-ref="sanction_scope" data-val="${activeScope.key}">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSanctionScope" data-ref="sanction_scope" data-value="${activeScope.key}">
                             <span class="material-symbols-rounded" data-ref="sanction_scope_trigger_icon">${activeScope.icon}</span>
                             <span class="component-dropdown-text" data-ref="sanction_scope_trigger_text">${activeScope.label}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -1188,7 +1188,7 @@
 
                     <!-- DuraciÃ³n -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionType" data-ref="suspension_type" data-val="${activeType.key}">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionType" data-ref="suspension_type" data-value="${activeType.key}">
                             <span class="material-symbols-rounded" data-ref="suspension_type_trigger_icon">${activeType.icon}</span>
                             <span class="component-dropdown-text" data-ref="suspension_type_trigger_text">${activeType.label}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -1205,7 +1205,7 @@
 
                     <!-- Motivo -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionReason" data-ref="suspension_reason" data-val="${activeReasonKey}">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionReason" data-ref="suspension_reason" data-value="${activeReasonKey}">
                             <span class="material-symbols-rounded" data-ref="suspension_reason_trigger_icon">${activeReasonIcon}</span>
                             <span class="component-dropdown-text" data-ref="suspension_reason_trigger_text">${activeReasonLabel}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -1222,7 +1222,7 @@
 
                     <!-- Fecha de ExpiraciÃ³n -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full modal-end-date-group">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="openSanctionCalendarModal" data-ref="end_date" data-val="${endDate}">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="openSanctionCalendarModal" data-ref="end_date" data-value="${endDate}">
                             <span class="material-symbols-rounded">calendar_month</span>
                             <span class="component-dropdown-text" data-ref="sanction-endDate-text">${endDateDisplay}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -1242,10 +1242,10 @@
             const endDateTrigger = container.querySelector('[data-ref="end_date"]');
 
             return {
-                sanction_scope: scopeTrigger ? scopeTrigger.getAttribute('data-val') : 'chat_mute',
-                suspension_type: typeTrigger ? typeTrigger.getAttribute('data-val') : 'temporary',
-                suspension_reason: reasonTrigger ? reasonTrigger.getAttribute('data-val') : 'reason_terms',
-                end_date: endDateTrigger ? endDateTrigger.getAttribute('data-val') : null
+                sanction_scope: scopeTrigger ? scopeTrigger.getAttribute('data-value') : 'chat_mute',
+                suspension_type: typeTrigger ? typeTrigger.getAttribute('data-value') : 'temporary',
+                suspension_reason: reasonTrigger ? reasonTrigger.getAttribute('data-value') : 'reason_terms',
+                end_date: endDateTrigger ? endDateTrigger.getAttribute('data-value') : null
             };
         }
     },
@@ -1462,7 +1462,7 @@
                 <div class="component-modal-body">
                     <!-- Date Selector Trigger inside Modal -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="modalCalendarDateOnly" data-ref="modal_selected_iso_date" data-val="${isoDate}">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="modalCalendarDateOnly" data-ref="modal_selected_iso_date" data-value="${isoDate}">
                             <span class="material-symbols-rounded">calendar_month</span>
                             <span class="component-dropdown-text" data-ref="modal-calendar-date-text">${dateDisplay}</span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -1515,7 +1515,7 @@
                                         <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
                                     </button>
                                 </div>
-                                <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-val="${parseInt(hours) || 0}">${hours}</div>
+                                <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${parseInt(hours) || 0}">${hours}</div>
                                 <div class="component-inline-control__group">
                                     <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
                                         <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
@@ -1538,7 +1538,7 @@
                                         <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
                                     </button>
                                 </div>
-                                <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-val="${parseInt(minutes) || 0}">${minutes}</div>
+                                <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${parseInt(minutes) || 0}">${minutes}</div>
                                 <div class="component-inline-control__group">
                                     <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
                                         <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>

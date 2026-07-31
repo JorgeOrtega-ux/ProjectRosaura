@@ -63,9 +63,9 @@ class AdminBackupsAutomationController {
                 : currentAutoEnabled;
 
             const freqTextNode = document.querySelector('[data-ref="admin-autoFreq-text"]');
-            const autoFreq = freqTextNode ? parseInt(freqTextNode.getAttribute('data-val')) : 24;
+            const autoFreq = freqTextNode ? parseInt(freqTextNode.getAttribute('data-value')) : 24;
             const retentionNode = document.querySelector('[data-ref="val_auto_backup_retention_count"]');
-            const autoRetention = retentionNode ? parseInt(retentionNode.getAttribute('data-val')) : 5;
+            const autoRetention = retentionNode ? parseInt(retentionNode.getAttribute('data-value')) : 5;
             this.selectedState = {};
             for (const dbName in this.availableSchema) {
                 this.selectedState[dbName] = [];
@@ -197,7 +197,7 @@ class AdminBackupsAutomationController {
         if (freqText) {
             let translated = typeof window.__ === 'function' ? window.__('freq_every_x_hours') : 'Cada :hours horas';
             freqText.textContent = this.freqMap[this.state.auto_backup_frequency_hours] || translated.replace(':hours', this.state.auto_backup_frequency_hours);
-            freqText.setAttribute('data-val', this.state.auto_backup_frequency_hours);
+            freqText.setAttribute('data-value', this.state.auto_backup_frequency_hours);
         }
         document.querySelectorAll('[data-action="adminSetDropdown"][data-key="auto_backup_frequency_hours"]').forEach(el => {
             el.classList.toggle('active', parseInt(el.getAttribute('data-value')) === this.state.auto_backup_frequency_hours);
@@ -205,7 +205,7 @@ class AdminBackupsAutomationController {
         const elRet = document.querySelector('[data-ref="val_auto_backup_retention_count"]');
         if (elRet) {
             elRet.textContent = this.state.auto_backup_retention_count;
-            elRet.setAttribute('data-val', this.state.auto_backup_retention_count);
+            elRet.setAttribute('data-value', this.state.auto_backup_retention_count);
         }
     }
     renderVisibility() {

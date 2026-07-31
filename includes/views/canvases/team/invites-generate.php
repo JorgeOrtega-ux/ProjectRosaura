@@ -127,7 +127,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                         <button type="button" class="component-inline-control__btn" data-action="adjustMaxUses" data-step="-5" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                         <button type="button" class="component-inline-control__btn" data-action="adjustMaxUses" data-step="-1" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
                                     </div>
-                                    <div class="component-inline-control__center" data-ref="val_max_uses" data-val="0"><?php echo __('lbl_no_limit'); ?></div>
+                                    <div class="component-inline-control__center" data-ref="val_max_uses" data-value="0"><?php echo __('lbl_no_limit'); ?></div>
                                     <div class="component-inline-control__group">
                                         <button type="button" class="component-inline-control__btn" data-action="adjustMaxUses" data-step="1" data-max="999"><span class="material-symbols-rounded">chevron_right</span></button>
                                         <button type="button" class="component-inline-control__btn" data-action="adjustMaxUses" data-step="5" data-max="999"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>

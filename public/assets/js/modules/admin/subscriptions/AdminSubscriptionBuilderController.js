@@ -108,7 +108,7 @@ class AdminSubscriptionBuilderController {
                                                     <button type="button" class="component-inline-control__btn" data-action="adjustColorStop" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                                     <button type="button" class="component-inline-control__btn" data-action="adjustColorStop" data-step="-5"><span class="material-symbols-rounded">chevron_left</span></button>
                                                 </div>
-                                                <div class="component-inline-control__center" data-val="100" data-ref="percentageCenter">
+                                                <div class="component-inline-control__center" data-value="100" data-ref="percentageCenter">
                                                     <span data-ref="stopValueDisplay">100</span>%
                                                 </div>
                                                 <div class="component-inline-control__group">
@@ -365,7 +365,7 @@ class AdminSubscriptionBuilderController {
         const trigger = document.querySelector('[data-ref="gradientAngleTrigger"]');
         const triggerText = document.querySelector('[data-ref="gradientAngleText"]');
         if (trigger && triggerText) {
-            trigger.dataset.val = angle;
+            trigger.dataset.value = angle;
             triggerText.textContent = `${angle}°`;
         }
         const currentModule = btn.closest('.component-module');
@@ -387,7 +387,7 @@ class AdminSubscriptionBuilderController {
         const center = document.querySelector(`[data-ref="val_${field}"]`);
         if (!center) return;
         
-        let currentVal = isDecimal ? parseFloat(center.dataset.val || 0) : parseInt(center.dataset.val || 0, 10);
+        let currentVal = isDecimal ? parseFloat(center.dataset.value || 0) : parseInt(center.dataset.value || 0, 10);
         let newVal = currentVal + step;
         
         if (newVal < min) newVal = min;
@@ -395,10 +395,10 @@ class AdminSubscriptionBuilderController {
         
         if (isDecimal) {
             newVal = Math.round(newVal * 100) / 100;
-            center.dataset.val = newVal;
+            center.dataset.value = newVal;
             center.textContent = newVal.toFixed(2);
         } else {
-            center.dataset.val = newVal;
+            center.dataset.value = newVal;
             if (newVal === -1 && (field === 'featMaxCanvases' || field === 'featMaxSnapshots')) {
                 center.textContent = '∞';
             } else {
@@ -412,7 +412,7 @@ class AdminSubscriptionBuilderController {
         const targetRow = btn.closest('[data-component="color-block"]');
         const index = rows.indexOf(targetRow);
         if (rows.length <= 1) return;
-        let currentVals = rows.map(r => parseInt(r.querySelector('[data-ref="percentageCenter"]').dataset.val, 10) || 0);
+        let currentVals = rows.map(r => parseInt(r.querySelector('[data-ref="percentageCenter"]').dataset.value, 10) || 0);
         let targetVal = Math.max(0, Math.min(100, currentVals[index] + step));
         const actualDelta = targetVal - currentVals[index];
         if (actualDelta === 0) return;
@@ -441,7 +441,7 @@ class AdminSubscriptionBuilderController {
         rows.forEach((r, i) => {
             const center = r.querySelector('[data-ref="percentageCenter"]');
             const display = r.querySelector('[data-ref="stopValueDisplay"]');
-            center.dataset.val = currentVals[i];
+            center.dataset.value = currentVals[i];
             display.textContent = currentVals[i];
         });
         this.updateLivePreview();
@@ -559,7 +559,7 @@ class AdminSubscriptionBuilderController {
             const pCenter = block.querySelector('[data-ref="percentageCenter"]');
             const pDisplay = block.querySelector('[data-ref="stopValueDisplay"]');
             if(pCenter && pDisplay) {
-                pCenter.dataset.val = actualPercentage;
+                pCenter.dataset.value = actualPercentage;
                 pDisplay.textContent = actualPercentage;
             }
         }
@@ -585,7 +585,7 @@ class AdminSubscriptionBuilderController {
             const center = row.querySelector('[data-ref="percentageCenter"]');
             const display = row.querySelector('[data-ref="stopValueDisplay"]');
             if (center && display) {
-                center.dataset.val = val;
+                center.dataset.value = val;
                 display.textContent = val;
             }
         });
@@ -599,14 +599,14 @@ class AdminSubscriptionBuilderController {
             ring.style.background = hexText ? hexText.textContent : '#808080';
         } else {
             const angleTrigger = document.querySelector('[data-ref="gradientAngleTrigger"]');
-            const angle = parseInt(angleTrigger ? angleTrigger.dataset.val : 0, 10);
+            const angle = parseInt(angleTrigger ? angleTrigger.dataset.value : 0, 10);
             const rows = Array.from(document.querySelectorAll('[data-ref="gradientColorsContainer"] [data-component="color-block"]'));
             if (rows.length < 2) return;
             let prevStop = 0;
             let segments = rows.map((row) => {
                 let hexText = row.querySelector('[data-ref="triggerHex"]')?.textContent || '#808080';
                 let center = row.querySelector('[data-ref="percentageCenter"]');
-                let percentage = parseInt(center?.dataset.val || 0, 10);
+                let percentage = parseInt(center?.dataset.value || 0, 10);
                 let endStop = prevStop + percentage;
                 let segment = `${hexText} ${prevStop}% ${endStop}%`;
                 prevStop = endStop;
@@ -617,7 +617,7 @@ class AdminSubscriptionBuilderController {
     }
     extractTierColorPayload() {
         const angleTrigger = document.querySelector('[data-ref="gradientAngleTrigger"]');
-        const angle = parseInt(angleTrigger ? angleTrigger.dataset.val : 0, 10);
+        const angle = parseInt(angleTrigger ? angleTrigger.dataset.value : 0, 10);
         let colors = [];
         if (this.currentColorType === 'solid') {
             const container = document.querySelector('[data-ref="solidColorContainer"]');
@@ -630,7 +630,7 @@ class AdminSubscriptionBuilderController {
                 const center = row.querySelector('[data-ref="percentageCenter"]');
                 colors.push({
                     hex: hexText ? hexText.textContent : '#808080',
-                    percentage: parseInt(center ? center.dataset.val : 0, 10)
+                    percentage: parseInt(center ? center.dataset.value : 0, 10)
                 });
             });
         }
@@ -638,15 +638,15 @@ class AdminSubscriptionBuilderController {
     }
     extractFeaturesPayload() {
         const payload = {
-            price_monthly: parseFloat(document.querySelector('[data-ref="val_priceMonthly"]')?.dataset.val || 0),
-            price_yearly: parseFloat(document.querySelector('[data-ref="val_priceYearly"]')?.dataset.val || 0),
+            price_monthly: parseFloat(document.querySelector('[data-ref="val_priceMonthly"]')?.dataset.value || 0),
+            price_yearly: parseFloat(document.querySelector('[data-ref="val_priceYearly"]')?.dataset.value || 0),
             limits: {
-                max_canvases: parseInt(document.querySelector('[data-ref="val_featMaxCanvases"]')?.dataset.val || 0, 10),
-                max_storage_mb: parseInt(document.querySelector('[data-ref="val_featMaxStorage"]')?.dataset.val || 0, 10),
-                max_snapshots_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxSnapshots"]')?.dataset.val || 0, 10),
-                max_members_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxMembers"]')?.dataset.val || 0, 10),
-                max_custom_palettes: parseInt(document.querySelector('[data-ref="val_featMaxCustomPalettes"]')?.dataset.val || 0, 10),
-                max_template_tokens: parseInt(document.querySelector('[data-ref="val_featMaxTemplateTokens"]')?.dataset.val || 0, 10)
+                max_canvases: parseInt(document.querySelector('[data-ref="val_featMaxCanvases"]')?.dataset.value || 0, 10),
+                max_storage_mb: parseInt(document.querySelector('[data-ref="val_featMaxStorage"]')?.dataset.value || 0, 10),
+                max_snapshots_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxSnapshots"]')?.dataset.value || 0, 10),
+                max_members_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxMembers"]')?.dataset.value || 0, 10),
+                max_custom_palettes: parseInt(document.querySelector('[data-ref="val_featMaxCustomPalettes"]')?.dataset.value || 0, 10),
+                max_template_tokens: parseInt(document.querySelector('[data-ref="val_featMaxTemplateTokens"]')?.dataset.value || 0, 10)
             }
         };
         
@@ -661,7 +661,7 @@ class AdminSubscriptionBuilderController {
 
     async saveTier(btn) {
         const tierName = document.getElementById('tierName')?.value.trim();
-        const tierLevel = document.querySelector('[data-ref="val_tierLevel"]')?.dataset.val;
+        const tierLevel = document.querySelector('[data-ref="val_tierLevel"]')?.dataset.value;
         const wrapper = document.querySelector('[data-ref="admin-subscriptions-wrapper"]');
         const isActive = wrapper && wrapper.dataset.tierActive !== undefined ? parseInt(wrapper.dataset.tierActive, 10) : 1;
         

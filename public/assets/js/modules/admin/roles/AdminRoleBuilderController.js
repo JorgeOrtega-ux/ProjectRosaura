@@ -108,7 +108,7 @@ class AdminRoleBuilderController {
                                                     <button type="button" class="component-inline-control__btn" data-action="adjustColorStop" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                                     <button type="button" class="component-inline-control__btn" data-action="adjustColorStop" data-step="-5"><span class="material-symbols-rounded">chevron_left</span></button>
                                                 </div>
-                                                <div class="component-inline-control__center" data-val="100" data-ref="percentageCenter">
+                                                <div class="component-inline-control__center" data-value="100" data-ref="percentageCenter">
                                                     <span data-ref="stopValueDisplay">100</span>%
                                                 </div>
                                                 <div class="component-inline-control__group">
@@ -314,11 +314,11 @@ class AdminRoleBuilderController {
         const safeWeight = this.currentUserWeight > 0 ? this.currentUserWeight : 100;
         const min = 1;
         const dynamicMax = safeWeight === 100 ? 100 : Math.max(1, safeWeight - 1);
-        let currentVal = parseInt(display.dataset.val, 10) || 1;
+        let currentVal = parseInt(display.dataset.value, 10) || 1;
         let newVal = currentVal + step;
         if (newVal < min) newVal = min;
         if (newVal > dynamicMax) newVal = dynamicMax;
-        display.dataset.val = newVal;
+        display.dataset.value = newVal;
         display.textContent = newVal;
     }
     handleSetColorType(btn) {
@@ -363,7 +363,7 @@ class AdminRoleBuilderController {
         const trigger = document.querySelector('[data-ref="gradientAngleTrigger"]');
         const triggerText = document.querySelector('[data-ref="gradientAngleText"]');
         if (trigger && triggerText) {
-            trigger.dataset.val = angle;
+            trigger.dataset.value = angle;
             triggerText.textContent = `${angle}°`;
         }
         const currentModule = btn.closest('.component-module');
@@ -381,7 +381,7 @@ class AdminRoleBuilderController {
         const targetRow = btn.closest('[data-component="color-block"]');
         const index = rows.indexOf(targetRow);
         if (rows.length <= 1) return;
-        let currentVals = rows.map(r => parseInt(r.querySelector('[data-ref="percentageCenter"]').dataset.val, 10) || 0);
+        let currentVals = rows.map(r => parseInt(r.querySelector('[data-ref="percentageCenter"]').dataset.value, 10) || 0);
         let targetVal = Math.max(0, Math.min(100, currentVals[index] + step));
         const actualDelta = targetVal - currentVals[index];
         if (actualDelta === 0) return;
@@ -410,7 +410,7 @@ class AdminRoleBuilderController {
         rows.forEach((r, i) => {
             const center = r.querySelector('[data-ref="percentageCenter"]');
             const display = r.querySelector('[data-ref="stopValueDisplay"]');
-            center.dataset.val = currentVals[i];
+            center.dataset.value = currentVals[i];
             display.textContent = currentVals[i];
         });
         this.updateLivePreview();
@@ -467,7 +467,7 @@ class AdminRoleBuilderController {
             const pCenter = block.querySelector('[data-ref="percentageCenter"]');
             const pDisplay = block.querySelector('[data-ref="stopValueDisplay"]');
             if(pCenter && pDisplay) {
-                pCenter.dataset.val = actualPercentage;
+                pCenter.dataset.value = actualPercentage;
                 pDisplay.textContent = actualPercentage;
             }
         }
@@ -493,7 +493,7 @@ class AdminRoleBuilderController {
             const center = row.querySelector('[data-ref="percentageCenter"]');
             const display = row.querySelector('[data-ref="stopValueDisplay"]');
             if (center && display) {
-                center.dataset.val = val;
+                center.dataset.value = val;
                 display.textContent = val;
             }
         });
@@ -507,14 +507,14 @@ class AdminRoleBuilderController {
             ring.style.background = hexText ? hexText.textContent : '#808080';
         } else {
             const angleTrigger = document.querySelector('[data-ref="gradientAngleTrigger"]');
-            const angle = parseInt(angleTrigger ? angleTrigger.dataset.val : 0, 10);
+            const angle = parseInt(angleTrigger ? angleTrigger.dataset.value : 0, 10);
             const rows = Array.from(document.querySelectorAll('[data-ref="gradientColorsContainer"] [data-component="color-block"]'));
             if (rows.length < 2) return;
             let prevStop = 0;
             let segments = rows.map((row) => {
                 let hexText = row.querySelector('[data-ref="triggerHex"]')?.textContent || '#808080';
                 let center = row.querySelector('[data-ref="percentageCenter"]');
-                let percentage = parseInt(center?.dataset.val || 0, 10);
+                let percentage = parseInt(center?.dataset.value || 0, 10);
                 let endStop = prevStop + percentage;
                 let segment = `${hexText} ${prevStop}% ${endStop}%`;
                 prevStop = endStop;
@@ -525,7 +525,7 @@ class AdminRoleBuilderController {
     }
     extractRoleColorPayload() {
         const angleTrigger = document.querySelector('[data-ref="gradientAngleTrigger"]');
-        const angle = parseInt(angleTrigger ? angleTrigger.dataset.val : 0, 10);
+        const angle = parseInt(angleTrigger ? angleTrigger.dataset.value : 0, 10);
         let colors = [];
         if (this.currentColorType === 'solid') {
             const container = document.querySelector('[data-ref="solidColorContainer"]');
@@ -538,7 +538,7 @@ class AdminRoleBuilderController {
                 const center = row.querySelector('[data-ref="percentageCenter"]');
                 colors.push({
                     hex: hexText ? hexText.textContent : '#808080',
-                    percentage: parseInt(center ? center.dataset.val : 0, 10)
+                    percentage: parseInt(center ? center.dataset.value : 0, 10)
                 });
             });
         }
@@ -548,7 +548,7 @@ class AdminRoleBuilderController {
         const nameInput = document.querySelector('[data-ref="roleNameInput"]');
         const weightDisplay = document.querySelector('[data-ref="val_role_weight"]');
         const roleName = nameInput ? nameInput.value.trim() : '';
-        const roleWeight = weightDisplay ? parseInt(weightDisplay.dataset.val, 10) : 1;
+        const roleWeight = weightDisplay ? parseInt(weightDisplay.dataset.value, 10) : 1;
         if (!roleName && !this.isSystemRole) {
             showMessage(_t(), 'error');
             return;

@@ -100,13 +100,13 @@ class CanvasRoleBuilderController {
         const min = 1;
         const dynamicMax = safeWeight === 100 ? 100 : Math.max(1, safeWeight - 1);
         
-        let currentVal = parseInt(display.dataset.val, 10) || 1;
+        let currentVal = parseInt(display.dataset.value, 10) || 1;
         let newVal = currentVal + step;
 
         if (newVal < min) newVal = min;
         if (newVal > dynamicMax) newVal = dynamicMax;
 
-        display.dataset.val = newVal;
+        display.dataset.value = newVal;
         display.textContent = newVal;
     }
 
@@ -117,7 +117,7 @@ class CanvasRoleBuilderController {
         const weightDisplay = document.querySelector('[data-ref="val_role_weight"]');
         
         const roleName = nameInput ? nameInput.value.trim() : '';
-        const roleWeight = weightDisplay ? parseInt(weightDisplay.dataset.val, 10) : 1;
+        const roleWeight = weightDisplay ? parseInt(weightDisplay.dataset.value, 10) : 1;
 
         if (!roleName && !this.isSystemRole) {
             showMessage(window.__('err_role_name_required'), 'error');
