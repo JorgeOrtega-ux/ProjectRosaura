@@ -2,8 +2,6 @@
 use App\Api\Services\App\AppViewService;
 use App\Core\Helpers\Utils;
 
-$isSandboxMode = (isset($_GET['id']) && ($_GET['id'] === 'sandbox' || str_starts_with($_GET['id'], 'sandbox_')));
-
 $viewService = new AppViewService();
 $designData = $viewService->getCanvasDesignData($_GET['id'] ?? '', isset($_GET['snapshot']));
 
@@ -103,17 +101,6 @@ extract($designData);
                 </div>
 
                 <div class="component-actions <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="design-tools-actions">
-                    <?php if ($isSandboxMode): ?>
-                    <button class="component-button component-button--icon component-button--h40 component-button--warning" data-action="openSandboxSettingsModal" data-tooltip="Ajustes de Sandbox" data-position="bottom">
-                        <span class="material-symbols-rounded">tune</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="syncSandboxCloud" data-ref="btn-sandbox-sync" data-tooltip="Sincronizar con la nube" data-position="bottom" style="<?php echo (isset($_SESSION['active_account']) && $_SESSION['active_account']) ? 'display: inline-flex;' : 'display: none;'; ?>">
-                        <span class="material-symbols-rounded">cloud_queue</span>
-                    </button>
-                    <div class="component-divider-vertical" data-ref="sandbox-actions-divider"></div>
-                    <?php endif; ?>
-
-                    <?php if (!$isSandboxMode): ?>
                     <button class="component-button component-button--icon component-button--h40" data-action="openJoinLiveModal" data-tooltip="<?php echo __('tooltip_join_live'); ?> [J]" data-position="bottom">
                         <span class="material-symbols-rounded">sensors</span>
                     </button>
@@ -123,12 +110,10 @@ extract($designData);
                     <button class="component-button component-button--icon component-button--h40 <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'component-button--premium premium-locked' : ''; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom" <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'data-requires-premium="true"' : ''; ?>>
                         <span class="material-symbols-rounded">stream</span>
                     </button>
-                    <?php endif; ?>
                     
                     <button class="component-button component-button--icon component-button--h40 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?> [C]" data-position="bottom">
                         <span class="material-symbols-rounded">palette</span>
                     </button>
-                    <?php if (!$isSandboxMode): ?>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?> [T]" data-position="bottom">
                         <span class="material-symbols-rounded">photo_library</span>
                     </button>
@@ -136,7 +121,6 @@ extract($designData);
                     <button class="component-button component-button--icon component-button--h40 component-button--warning disabled" data-action="unlockTemplateTop" data-ref="btn-top-unlock-template" data-tooltip="Desfijar Plantilla [U]" data-position="bottom">
                         <span class="material-symbols-rounded">lock_open</span>
                     </button>
-                    <?php endif; ?>
                     
                     <?php if ($canvasAllowPurchases == '1'): ?>
                     <div class="component-divider-vertical" data-ref="advantages-actions-divider"></div>
@@ -152,7 +136,7 @@ extract($designData);
                     </button>
                     <?php endif; ?>
                     
-                    <?php if ($canvasAllowChat == '1' && !$isSandboxMode): ?>
+                    <?php if ($canvasAllowChat == '1'): ?>
                     <div class="component-divider-vertical" data-ref="chat-actions-divider"></div>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom">
                         <span class="material-symbols-rounded">chat</span>

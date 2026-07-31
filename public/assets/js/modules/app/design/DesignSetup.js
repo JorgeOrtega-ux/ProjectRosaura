@@ -116,156 +116,13 @@ export const DesignSetup = {
             }
 
             this.updateLockBadges();
-            if (!this.isSandbox) {
-                this.initWebSocket();
-            }
+            this.initWebSocket();
         } else {
             this.setupCanvas();
             this.centerBoard();
             this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
             this.renderColorPalette('default');
             this.updateLockBadges();
-        }
-    },
-
-    async initSandboxMode() {
-        console.log('[Rosaura Sandbox] Initializing offline sandbox mode...');
-        try {
-            const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
-            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
-
-            // 1. Load local settings first to render immediately
-            let settings = await DesignSandboxDb.getSettings(this.sandboxUuid);
-            if (!settings) {
-                let name = '';
-                try {
-                    const listJson = localStorage.getItem('rosaura_sandboxes_list');
-                    if (listJson) {
-                        const list = JSON.parse(listJson);
-                        const item = list.find(s => s.uuid === this.sandboxUuid);
-                        if (item) name = item.name;
-                    }
-                } catch (e) {}
-
-                settings = {
-                    name: name || '',
-                    width: this.boardWidth || 64,
-                    height: this.boardHeight || 64,
-                    paletteId: this.canvasPaletteId || 'default',
-                    cooldownBatch: this.cooldownMax || 100
-                };
-                await DesignSandboxDb.saveSettings(settings, this.sandboxUuid);
-            }
-
-            // 2. Set dimensions and titles from local settings immediately
-            this.boardWidth = parseInt(settings.width, 10) || 64;
-            this.boardHeight = parseInt(settings.height, 10) || 64;
-            this.canvasPaletteId = settings.paletteId || 'default';
-            this.cooldownMax = parseInt(settings.cooldownBatch, 10) || 100;
-            this.cooldownBalance = this.cooldownMax;
-            
-            // Update page/canvas title elements immediately
-            const titleElements = document.querySelectorAll('.component-top-title');
-            const displayName = settings.name ? `${settings.name} (Sandbox)` : 'Modo Sandbox (Sandbox)';
-            if (titleElements.length > 1) {
-                titleElements[1].textContent = displayName;
-            } else if (titleElements.length > 0) {
-                titleElements[0].textContent = displayName;
-            }
-
-            // Load Sandbox pixel protection sets
-            if (settings.ownerProtectedOffsets) {
-                this.ownerProtectedPixels = new Set(settings.ownerProtectedOffsets);
-            } else {
-                this.ownerProtectedOffsets = [];
-                this.ownerProtectedPixels = new Set();
-            }
-
-            if (settings.myProtectedOffsets) {
-                this.myProtectedPixels = new Set(settings.myProtectedOffsets);
-                this.protectedPixels = new Set(settings.myProtectedOffsets);
-            } else {
-                this.myProtectedOffsets = [];
-                this.myProtectedPixels = new Set();
-                this.protectedPixels = new Set();
-            }
-
-            this.myProtectedExpiries = settings.myProtectedExpiries || {};
-
-            if (typeof this.syncProtectedPixelsToWorker === 'function') {
-                this.syncProtectedPixelsToWorker();
-            }
-
-            this.isProgressive = true;
-            this.setupCanvas();
-            this.centerBoard();
-            this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
-            this.renderColorPalette(this.canvasPaletteId);
-
-            this.loadedChunks = new Set();
-            this.loadingChunks = new Set();
-            this.updateVisibleChunks();
-
-            const btnSync = document.querySelector('[data-ref="btn-sandbox-sync"]');
-            if (btnSync && typeof this.getSyncTooltipText === 'function') {
-                btnSync.setAttribute('data-tooltip', this.getSyncTooltipText());
-                btnSync.addEventListener('mouseenter', () => {
-                    btnSync.setAttribute('data-tooltip', this.getSyncTooltipText());
-                });
-            }
-
-            // 3. Asynchronously check the cloud for updates in the background without blocking the UI
-            const activeUserId = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
-            if (activeUserId) {
-                (async () => {
-                    try {
-                        const cloudRes = await this.api.post('sandbox.get_state', { uuid: this.sandboxUuid });
-                        if (cloudRes && cloudRes.success && cloudRes.settings) {
-                            const oldWidth = settings.width;
-                            const oldHeight = settings.height;
-                            const oldName = settings.name;
-
-                            await DesignSandboxDb.saveSettings(cloudRes.settings, this.sandboxUuid);
-                            if (cloudRes.chunks) {
-                                for (const [key, base64Data] of Object.entries(cloudRes.chunks)) {
-                                    await DesignSandboxDb.saveChunk(key, base64Data, this.sandboxUuid);
-                                }
-                            }
-                            // Initialize dirty chunks tracking to empty since it is fresh from the cloud
-                            localStorage.setItem(`rosaura_dirty_chunks_${this.sandboxUuid}`, JSON.stringify([]));
-                            console.log('[Sandbox Sync] Asynchronously loaded and restored cloud state:', this.sandboxUuid);
-                            
-                            const icon = btnSync ? btnSync.querySelector('.material-symbols-rounded') : null;
-                            if (icon) {
-                                icon.textContent = 'cloud_done';
-                                icon.style.color = '';
-                            }
-
-                            // If name/size changed in the cloud on another device, adjust layout on the fly
-                            if (cloudRes.settings.width !== oldWidth || cloudRes.settings.height !== oldHeight || cloudRes.settings.name !== oldName) {
-                                this.boardWidth = parseInt(cloudRes.settings.width, 10) || 64;
-                                this.boardHeight = parseInt(cloudRes.settings.height, 10) || 64;
-                                
-                                const newDisplayName = cloudRes.settings.name ? `${cloudRes.settings.name} (Sandbox)` : 'Modo Sandbox (Sandbox)';
-                                if (titleElements.length > 1) {
-                                    titleElements[1].textContent = newDisplayName;
-                                } else if (titleElements.length > 0) {
-                                    titleElements[0].textContent = newDisplayName;
-                                }
-
-                                this.setupCanvas();
-                                this.centerBoard();
-                                this.loadedChunks.clear();
-                                this.updateVisibleChunks();
-                            }
-                        }
-                    } catch (err) {
-                        console.warn('[Sandbox Sync] Background cloud download failed:', err);
-                    }
-                })();
-            }
-        } catch (e) {
-            console.error('[Sandbox] Failed to initialize Sandbox mode:', e);
         }
     },
 
@@ -512,35 +369,6 @@ export const DesignSetup = {
         
         validKeys.forEach(k => this.loadingChunks.add(k));
 
-        if (this.isSandbox) {
-            const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
-            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
-            const chunkSize = 512;
-
-            validKeys.forEach(async (key) => {
-                const [cx, cy] = key.split(',').map(Number);
-                try {
-                    let base64 = await DesignSandboxDb.getChunk(key, this.sandboxUuid);
-                    if (!base64) {
-                        const actualW = Math.min(chunkSize, this.boardWidth - cx * chunkSize);
-                        const actualH = Math.min(chunkSize, this.boardHeight - cy * chunkSize);
-                        if (actualW > 0 && actualH > 0) {
-                            const emptyBytes = new Uint8Array(actualW * actualH * 4);
-                            base64 = await DesignSandboxDb.compressAndEncode(emptyBytes);
-                        }
-                    }
-                    if (base64) {
-                        this.hydrateChunk(cx, cy, base64);
-                        this.loadedChunks.add(key);
-                    }
-                } catch (e) {
-                    console.error('[Sandbox] Failed to load chunk:', key, e);
-                } finally {
-                    this.loadingChunks.delete(key);
-                }
-            });
-            return;
-        }
 
         // Batch chunk requests to prevent massive 48MB JSON payloads and blocking
         const BATCH_SIZE = 4;

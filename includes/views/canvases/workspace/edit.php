@@ -14,13 +14,6 @@ if (empty($editData['canvasId'])) {
 
 extract($editData);
 ?>
-<?php if (!empty($isSandbox)): ?>
-<style>
-    [data-compatible="cloud"] {
-        display: none !important;
-    }
-</style>
-<?php endif; ?>
 <div class="view-content" data-ref="canvas-edit-wrapper" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>">
     
     <div class="component-top">
@@ -89,10 +82,10 @@ extract($editData);
                                 </div>
                             </div>
 
-                            <hr class="component-divider" data-compatible="cloud">
+                            <hr class="component-divider">
 
                             <!-- 2. Etiquetas del Lienzo -->
-                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
+                            <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('canvas_tags_title'); ?></h2>
@@ -131,8 +124,8 @@ extract($editData);
 
                             <!-- 3. Lienzo Oficial -->
                             <?php if ($canCreateOfficial): ?>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--wrap">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--wrap">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('canvas_is_official_title'); ?></h2>
@@ -170,7 +163,7 @@ extract($editData);
                     </div>
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked disabled-interaction" data-tooltip="<?php echo __('canvas_size_locked_tooltip'); ?>" data-position="top">
+                            <div class="component-group-item component-group-item--stacked disabled-interaction" data-tooltip="<?php echo __('canvas_size_locked_tooltip'); ?>" data-position="top">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
@@ -190,8 +183,8 @@ extract($editData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_privacy_title'); ?></h2>
@@ -223,8 +216,8 @@ extract($editData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_approval_title'); ?></h2>
@@ -286,8 +279,8 @@ extract($editData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_cooldown_seconds_title'); ?></h2>
@@ -316,8 +309,8 @@ extract($editData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_limit_title'); ?></h2>
@@ -400,8 +393,8 @@ extract($editData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--wrap">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--wrap">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('lbl_allow_purchases'); ?></h2>
@@ -415,8 +408,8 @@ extract($editData);
                             </label>
                         </div>
                     </div>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">

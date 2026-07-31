@@ -29,7 +29,7 @@ class CanvasesCreateController {
         
         this.formState = {
             name: '',
-            size: '64x64',
+            size: '64',
             privacy: 'private',
             palette_id: 'default',
             limit: 10,
@@ -48,23 +48,8 @@ class CanvasesCreateController {
         this.cardInteractions = new CanvasCardInteractions(this.api, this.basePath, this.abortController);
         this.bindEvents();
         this.setupDefaultValues();
-
-        // Read the canvas type directly from the server-rendered DOM
-        const trigger = document.getElementById("canvastype_dropdown_trigger");
-        const initialType = trigger ? (trigger.getAttribute("data-val") || "cloud") : "cloud";
-        this.formState.canvas_type = initialType;
-
         this.renderPalettes();
-        this.updateSizesAvailability(false);
         this.checkAdminPermissions();
-
-        // Hide cloud compatible blocks if initial type is sandbox
-        const cloudBlocks = document.querySelectorAll('[data-compatible="cloud"]');
-        if (initialType === "sandbox") {
-            cloudBlocks.forEach(el => {
-                el.classList.add("disabled");
-            });
-        }
 
         // Fetch templates and render
         fetch(`${this.basePath}/assets/config/canvas_templates.json`)
@@ -99,6 +84,8 @@ class CanvasesCreateController {
         if (officialToggle) {
             if (hasPerm) {
                 officialToggle.disabled = false;
+            } else {
+                officialToggle.disabled = true;
             }
         }
         
@@ -139,8 +126,7 @@ class CanvasesCreateController {
                 if (paid.length > 0) fallbackTier = parseInt(paid[0].tier_level, 10);
             }
             const reqTier = palette.tier !== undefined ? palette.tier : (isDefault ? 0 : fallbackTier);
-            const canvasType = this.formState.canvas_type || 'cloud';
-            const isLocked = isDefault ? false : (canvasType === 'sandbox' ? false : (palette.id.startsWith('custom_') || palette.is_custom ? !canUseCustomPalettes : (userTier < reqTier)));
+            const isLocked = isDefault ? false : (palette.id.startsWith('custom_') || palette.is_custom ? !canUseCustomPalettes : (userTier < reqTier));
             
             const translatedName = window.__ ? window.__(palette.name_key) : palette.id;
 
@@ -244,10 +230,7 @@ class CanvasesCreateController {
             return;
         }
 
-        if (action === 'setCanvasType') {
-            this.setCanvasType(actionBtn);
-            this.selectDropdownValue(actionBtn);
-        } else if (action === 'toggleDropdown') {
+        if (action === 'toggleDropdown') {
             this.toggleDropdown(actionBtn);
         } else if (action === 'selectValue') {
             this.selectDropdownValue(actionBtn);
@@ -266,6 +249,7 @@ class CanvasesCreateController {
         } else if (action === 'createCanvas') {
             e.preventDefault();
             this.submitCanvas(actionBtn);
+
         } else if (action === 'navigateCustomPalette') {
             if (window.spaRouter) {
                 window.spaRouter.navigate(`${this.basePath}/canvases/palettes/create`);
@@ -274,68 +258,6 @@ class CanvasesCreateController {
             }
         }
     }
-
-    setCanvasType(btn) {
-        const type = btn.getAttribute("data-type");
-        const label = btn.getAttribute("data-label");
-        
-        // Update active class in dropdown menu links
-        const menuList = btn.closest('.component-menu-list');
-        if (menuList) {
-            menuList.querySelectorAll('.component-menu-link').forEach(link => {
-                link.classList.remove('active');
-            });
-            btn.classList.add('active');
-        }
-
-        // Update dropdown text
-        const triggerText = document.getElementById("text-canvastype");
-        if (triggerText && label) {
-            triggerText.textContent = label;
-        }
-
-        // Close dropdown
-        const dropdownModule = document.querySelector('[data-module="dropdownCanvasType"]');
-        if (dropdownModule) {
-            dropdownModule.classList.remove("active");
-            dropdownModule.classList.add("disabled");
-        }
-
-        // Save state
-        this.formState.canvas_type = type;
-        const trigger = document.getElementById("canvastype_dropdown_trigger");
-        if (trigger) {
-            trigger.setAttribute("data-val", type);
-            const iconSpan = trigger.querySelector('.material-symbols-rounded:first-child');
-            if (iconSpan) {
-                iconSpan.textContent = type === "sandbox" ? "science" : "cloud";
-                if (type === "sandbox") {
-                    iconSpan.classList.remove("msr-cloud");
-                    iconSpan.classList.add("msr-science");
-                } else {
-                    iconSpan.classList.remove("msr-science");
-                    iconSpan.classList.add("msr-cloud");
-                }
-            }
-        }
-        
-        // Show/hide compatible blocks using the standard disabled class
-        const cloudBlocks = document.querySelectorAll('[data-compatible="cloud"]');
-        if (type === "sandbox") {
-            cloudBlocks.forEach(el => {
-                el.classList.add("disabled");
-            });
-        } else {
-            cloudBlocks.forEach(el => {
-                el.classList.remove("disabled");
-            });
-        }
-
-        // Update availability of sizes and palettes based on new type
-        this.updateSizesAvailability(false);
-        this.renderPalettes();
-    }
-
 
     updateSizesAvailability(isOfficial) {
         const wrapper = document.querySelector('[data-ref="canvas-create-wrapper"]');
@@ -360,8 +282,7 @@ class CanvasesCreateController {
                 }
             }
             
-            const canvasType = this.formState.canvas_type || 'cloud';
-            const isAllowed = isOfficial || (canvasType === 'sandbox') || (userTier >= reqTier);
+            const isAllowed = isOfficial || (userTier >= reqTier);
             
             if (isAllowed) {
                 link.classList.remove('disabled-interaction');
@@ -395,6 +316,8 @@ class CanvasesCreateController {
             }
         }
     }
+
+
 
     saveCanvasName(btn) {
         const container = btn.closest('.component-group-item--stateful');
@@ -595,9 +518,6 @@ class CanvasesCreateController {
     }
 
     async submitCanvas(btn) {
-        const trigger = document.getElementById("canvastype_dropdown_trigger");
-        const isSandbox = (trigger && trigger.getAttribute("data-val") === "sandbox") || this.formState.canvas_type === "sandbox";
-
         const inputName = document.querySelector('[data-ref="input-canvasname"]');
         if (inputName) {
             this.formState.name = inputName.value.trim();
@@ -633,11 +553,6 @@ class CanvasesCreateController {
             this.formState.template_id = inputTemplate.value || null;
         }
 
-        if (isSandbox) {
-            this.submitSandbox(btn);
-            return;
-        }
-
         setButtonLoading(btn);
 
         const res = await this.api.post(ApiRoutes.Canvases.Create, this.formState, this.abortController.signal);
@@ -649,155 +564,9 @@ class CanvasesCreateController {
             showMessage(window.__('msg_canvas_created'), 'success');
             if (window.spaRouter) {
                 window.spaRouter.navigate(`${this.basePath}/design/${res.data.uuid}`);
-            } else {
-                window.location.href = `${this.basePath}/design/${res.data.uuid}`;
             }
         } else {
             showMessage(res.message, 'error');
-        }
-    }
-
-    generateUuid() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
-
-    async prepaintSandboxWithTemplate(uuid, relativeImgPath, width, height) {
-        const DesignSandboxDbModule = await import('../../app/design/DesignSandboxDb.js');
-        const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
-
-        const img = new Image();
-        img.crossOrigin = "Anonymous";
-        img.src = `${this.basePath}${relativeImgPath}`;
-        
-        await new Promise((resolve, reject) => {
-            img.onload = () => resolve();
-            img.onerror = () => reject(new Error('Failed to load template image: ' + img.src));
-        });
-
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = width;
-        tempCanvas.height = height;
-        const ctx = tempCanvas.getContext('2d', { willReadFrequently: true });
-        ctx.drawImage(img, 0, 0);
-        
-        const imgData = ctx.getImageData(0, 0, width, height).data;
-        
-        const chunkSize = 512;
-        const numCols = Math.ceil(width / chunkSize);
-        const numRows = Math.ceil(height / chunkSize);
-
-        for (let cy = 0; cy < numRows; cy++) {
-            for (let cx = 0; cx < numCols; cx++) {
-                const chunkW = Math.min(chunkSize, width - cx * chunkSize);
-                const chunkH = Math.min(chunkSize, height - cy * chunkSize);
-                
-                const chunkBytes = new Uint8Array(chunkW * chunkH * 4);
-                
-                for (let y = 0; y < chunkH; y++) {
-                    const globalY = cy * chunkSize + y;
-                    const srcOffset = (globalY * width + (cx * chunkSize)) * 4;
-                    const destOffset = y * chunkW * 4;
-                    
-                    for (let i = 0; i < chunkW * 4; i++) {
-                        chunkBytes[destOffset + i] = imgData[srcOffset + i];
-                    }
-                }
-                
-                const key = `${cx},${cy}`;
-                const base64 = await DesignSandboxDb.compressAndEncode(chunkBytes);
-                await DesignSandboxDb.saveChunk(key, base64, uuid);
-            }
-        }
-
-        // Generate 256x256 thumbnail
-        const smCanvas = document.createElement("canvas");
-        smCanvas.width = 256;
-        smCanvas.height = 256;
-        const smCtx = smCanvas.getContext("2d");
-        smCtx.imageSmoothingEnabled = false;
-        smCtx.drawImage(tempCanvas, 0, 0, width, height, 0, 0, 256, 256);
-        const thumb = smCanvas.toDataURL("image/png");
-        
-        const currentSettings = await DesignSandboxDb.getSettings(uuid);
-        if (currentSettings) {
-            currentSettings.thumbnail = thumb;
-            await DesignSandboxDb.saveSettings(currentSettings, uuid);
-        }
-    }
-
-    async submitSandbox(btn) {
-        let currentList = [];
-        try {
-            const listJson = localStorage.getItem('rosaura_sandboxes_list');
-            if (listJson) currentList = JSON.parse(listJson);
-        } catch (e) {}
-
-        if (currentList.length >= 10) {
-            showMessage('Has alcanzado el lÃ­mite mÃ¡ximo de 10 lienzos sandbox locales.', 'error');
-            return;
-        }
-
-        const name = this.formState.name;
-        if (!name) {
-            showMessage('El nombre del lienzo es obligatorio', 'error');
-            return;
-        }
-
-        const sizeValue = this.formState.size || '64';
-        const width = parseInt(sizeValue, 10) || 64;
-        const height = parseInt(sizeValue, 10) || 64;
-        const cooldownBatch = this.formState.cooldown_pixels_batch || 100;
-        const palette = this.formState.palette_id || 'default';
-        const uuid = this.generateUuid();
-
-        setButtonLoading(btn);
-
-        const newSandbox = {
-            uuid: uuid,
-            name: name,
-            size: width,
-            palette: palette,
-            createdAt: Date.now()
-        };
-        currentList.push(newSandbox);
-        localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(currentList));
-
-        try {
-            const DesignSandboxDbModule = await import('../../app/design/DesignSandboxDb.js');
-            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
-            await DesignSandboxDb.saveSettings({
-                name: name,
-                width: width,
-                height: height,
-                paletteId: palette,
-                cooldownBatch: cooldownBatch
-            }, uuid);
-
-            const templateId = this.formState.template_id;
-            if (templateId && this.templates) {
-                const template = this.templates.find(t => t.id === templateId);
-                if (template) {
-                    const sizeStr = `${width}x${height}`;
-                    const relativeImgPath = template.image_paths[sizeStr];
-                    if (relativeImgPath) {
-                        await this.prepaintSandboxWithTemplate(uuid, relativeImgPath, width, height);
-                    }
-                }
-            }
-        } catch (e) {
-            console.error('Error saving sandbox settings:', e);
-        }
-
-        restoreButton(btn);
-        showMessage('Lienzo Sandbox creado con Ã©xito', 'success');
-
-        if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/design/sandbox/${uuid}`);
-        } else {
-            window.location.href = `${this.basePath}/design/sandbox/${uuid}`;
         }
     }
 

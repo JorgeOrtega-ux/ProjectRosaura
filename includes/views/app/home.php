@@ -7,7 +7,7 @@ $initialCanvasesJson = $initialCanvasesJson ?? '[]';
 $viewService = new AppViewService();
 $tagsList = $viewService->getHomeTags();
 ?>
-<div class="view-content" style="position: relative;">
+<div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="purchase-history-wrapper">
         
         <div class="component-top">
@@ -40,5 +40,5 @@ $tagsList = $viewService->getHomeTags();
         <div class="component-bottom" data-ref="dynamic-content-area" data-initial-canvases="<?php echo $initialCanvasesJson; ?>">
                     </div>
     </div>
-
 </div>
+

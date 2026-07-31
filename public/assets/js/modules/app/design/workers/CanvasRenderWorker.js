@@ -341,13 +341,6 @@ function clearBombPixels(cX, cY, r) {
     if (!pixelBuffer) return;
     const radius = Math.max(1, parseInt(r || 1, 10));
     const rSq = radius * radius;
-
-    const isProtected = (offset) => {
-        return (protectedPixelsArray && protectedPixelsArray.indexOf(offset) !== -1) ||
-               (ownerProtectedPixelsArray && ownerProtectedPixelsArray.indexOf(offset) !== -1) ||
-               (myProtectedPixelsArray && myProtectedPixelsArray.indexOf(offset) !== -1);
-    };
-
     for (let y = cY - radius; y <= cY + radius; y++) {
         if (y < 0 || y >= boardHeight) continue;
         const dy = y - cY;
@@ -355,13 +348,11 @@ function clearBombPixels(cX, cY, r) {
         let startX = Math.max(0, cX - dx);
         let endX = Math.min(boardWidth - 1, cX + dx);
         
-        for (let x = startX; x <= endX; x++) {
-            const idx = y * boardWidth + x;
-            if (isProtected(idx)) {
-                continue;
-            }
-            pixelBuffer[idx] = 0;
-            markDirty(x, y);
+        if (startX <= endX) {
+            const idx = y * boardWidth + startX;
+            pixelBuffer.fill(0, idx, idx + (endX - startX + 1));
+            markDirty(startX, y);
+            markDirty(endX, y);
         }
     }
     flushDirtyRect();
@@ -975,44 +966,17 @@ self.onmessage = function (e) {
             injectAnimation = null;
             eraserAnimations = [];
 
-            if (isProgressive) {
-                const newW = payload.boardWidth;
-                const newH = payload.boardHeight;
-                const newImgData = new ImageData(newW, newH);
-                const newBuffer = new Uint32Array(newImgData.data.buffer);
-                
-                if (pixelBuffer) {
-                    const minH = Math.min(boardHeight, newH);
-                    const minW = Math.min(boardWidth, newW);
-                    for (let y = 0; y < minH; y++) {
-                        const srcIdx = y * boardWidth;
-                        const destIdx = y * newW;
-                        newBuffer.set(pixelBuffer.subarray(srcIdx, srcIdx + minW), destIdx);
-                    }
-                }
-                
-                boardWidth = newW;
-                boardHeight = newH;
-                mainImageData = newImgData;
-                pixelBuffer = newBuffer;
-                if (offscreenCanvas) {
-                    offscreenCanvas.width = boardWidth;
-                    offscreenCanvas.height = boardHeight;
-                    offscreenCtx.putImageData(mainImageData, 0, 0);
-                }
-            } else {
-                if (!resizeAnimation) {
-                    resizeAnimation = {
-                        startTime: Date.now(),
-                        duration: 1500,
-                        startW: boardWidth,
-                        startH: boardHeight,
-                        endW: payload.boardWidth,
-                        endH: payload.boardHeight,
-                        totalPixels: boardWidth * boardHeight,
-                        clearedCount: 0
-                    };
-                }
+            if (!resizeAnimation) {
+                resizeAnimation = {
+                    startTime: Date.now(),
+                    duration: 1500,
+                    startW: boardWidth,
+                    startH: boardHeight,
+                    endW: payload.boardWidth,
+                    endH: payload.boardHeight,
+                    totalPixels: boardWidth * boardHeight,
+                    clearedCount: 0
+                };
             }
             requestRender();
             break;

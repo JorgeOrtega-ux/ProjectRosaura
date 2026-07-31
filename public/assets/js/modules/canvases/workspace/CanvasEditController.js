@@ -56,50 +56,6 @@ class CanvasEditController {
         
         this.bindEvents();
         this.hydrateStateFromDOM();
-
-        if (this.canvasId.startsWith('sandbox_')) {
-            this.loadSandboxData();
-            const cloudBlocks = this.container.querySelectorAll('[data-compatible="cloud"]');
-            cloudBlocks.forEach(el => {
-                el.classList.add('disabled');
-            });
-        }
-    }
-
-    loadSandboxData() {
-        const realUuid = this.canvasId.replace('sandbox_', '');
-        let localList = [];
-        try {
-            const listJson = localStorage.getItem('rosaura_sandboxes_list');
-            if (listJson) localList = JSON.parse(listJson);
-        } catch (e) {}
-
-        const match = localList.find(s => s.uuid === realUuid);
-        if (match) {
-            this.state.name = match.name || 'Sandbox';
-            this.state.palette_id = match.palette || 'default';
-            this.state.cooldown_pixels_batch = match.cooldownBatch || 100;
-
-            // Update DOM display values
-            const nameInput = this.container.querySelector('[data-ref="input-canvasname"]');
-            if (nameInput) {
-                nameInput.value = this.state.name;
-                nameInput.setAttribute('data-original-value', this.state.name);
-            }
-            const nameDisplay = this.container.querySelector('[data-ref="display-canvasname"]');
-            if (nameDisplay) nameDisplay.textContent = this.state.name;
-
-            const batchVal = this.container.querySelector('[data-ref="val_cooldown_batch"]');
-            if (batchVal) {
-                batchVal.textContent = this.state.cooldown_pixels_batch;
-                batchVal.setAttribute('data-val', this.state.cooldown_pixels_batch);
-            }
-
-            const textPalette = this.container.querySelector('[data-ref="text-palette"]');
-            if (textPalette) {
-                textPalette.setAttribute('data-current-palette', this.state.palette_id);
-            }
-        }
     }
 
     destroy() {
@@ -462,71 +418,6 @@ class CanvasEditController {
 
         if (!this.state.name) {
             showMessage(window.__('err_field_required'), 'warning');
-            return;
-        }
-
-        if (this.canvasId.startsWith('sandbox_')) {
-            setButtonLoading(btn);
-            const realUuid = this.canvasId.replace('sandbox_', '');
-
-            // 1. Optional: Sync state if user is logged in and sandbox exists on server
-            const activeUserId = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
-            let syncSuccess = false;
-            if (activeUserId) {
-                try {
-                    const syncRes = await this.api.post('sandbox.sync_state', {
-                        uuid: realUuid,
-                        settings: {
-                            name: this.state.name,
-                            paletteId: this.state.palette_id,
-                            cooldownBatch: this.state.cooldown_pixels_batch
-                        }
-                    });
-                    if (syncRes && syncRes.success) {
-                        syncSuccess = true;
-                    }
-                } catch(e) {}
-            }
-
-            // 2. Update localStorage list
-            let localList = [];
-            try {
-                const listJson = localStorage.getItem('rosaura_sandboxes_list');
-                if (listJson) localList = JSON.parse(listJson);
-            } catch (e) {}
-
-            const match = localList.find(s => s.uuid === realUuid);
-            if (match) {
-                match.name = this.state.name;
-                match.palette = this.state.palette_id;
-                match.cooldownBatch = this.state.cooldown_pixels_batch;
-                if (syncSuccess) {
-                    match.syncedAt = Date.now();
-                }
-                localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(localList));
-            }
-
-            // 3. Update IndexedDB Settings
-            try {
-                const DesignSandboxDbModule = await import('../../app/design/DesignSandboxDb.js');
-                const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
-                const settings = await DesignSandboxDb.getSettings(realUuid);
-                if (settings) {
-                    settings.name = this.state.name;
-                    settings.paletteId = this.state.palette_id;
-                    settings.cooldownBatch = this.state.cooldown_pixels_batch;
-                    await DesignSandboxDb.saveSettings(settings, realUuid);
-                }
-            } catch (e) {
-                console.error('[Sandbox Edit] Failed to save settings to IndexedDB:', e);
-            }
-
-            restoreButton(btn);
-            showMessage('Cambios guardados con éxito', 'success');
-            setTimeout(() => {
-                if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage`);
-                else window.location.href = `${this.basePath}/canvases/manage`;
-            }, 1000);
             return;
         }
 

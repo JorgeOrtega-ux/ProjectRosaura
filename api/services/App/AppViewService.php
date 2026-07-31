@@ -158,49 +158,6 @@ class AppViewService {
 
      */
     public function getCanvasDesignData(?string $canvasUuid, bool $isSnapshot = false): array {
-        $isSandboxMode = ($canvasUuid === 'sandbox' || str_starts_with($canvasUuid, 'sandbox_'));
-
-        if ($isSandboxMode) {
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
-            return [
-                'canvasIntId' => $canvasUuid,
-                'canvasUuid' => $canvasUuid,
-                'canvasName' => 'Modo Sandbox (Sandbox)',
-                'canvasSize' => '64',
-                'canvasPalette' => 'default',
-                'canvasPrivacy' => 'public',
-                'canvasApproval' => '0',
-                'canvasAllowChat' => '0',
-                'canvasAllowPurchases' => '1',
-                'canvasCooldownBatch' => '100',
-                'canvasCooldownSeconds' => '0',
-                'resetActive' => '0',
-                'nextResetAt' => '',
-                'timerAction' => 'restart',
-                'resizeActive' => '0',
-                'nextResizeAt' => '',
-                'resizeTargetSize' => '64',
-                'resizeTimerAction' => 'restart',
-                'isMember' => true,
-                'userRole' => 'admin',
-                'userId' => $_SESSION['active_account'] ?? 1,
-                'isOwner' => true,
-                'isBlockedInit' => false,
-                'isSpectatorInit' => false,
-                'isSubscriptionLockedInit' => false,
-                'canvasInitialZoom' => 1.0,
-                'isChatRestricted' => false,
-                'chatRestrictionType' => null,
-                'chatRestrictionEnd' => null,
-                'canInjectTemplate' => true,
-                'canLiveShare' => false,
-                'isBanned' => false,
-                'isSnapshot' => false
-            ];
-        }
-
         $canvasIntId = 0; 
         $canvasName = '';
         $canvasSize = '64'; 

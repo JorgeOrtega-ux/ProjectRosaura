@@ -24,55 +24,6 @@ extract($createData);
     <div class="component-viewport">
         <div class="component-wrapper">
             <div class="component-bottom">
-                <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">dashboard_customize</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Tipo de Lienzo</h2>
-                                <p class="component-card__description">Elige entre un lienzo colaborativo en la nube o un entorno sandbox local y privado.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-dropdown-wrapper">
-                                <?php
-                                $isGuest = empty($_SESSION['active_account']);
-                                $defaultType = ($isGuest || (isset($_GET['mode']) && $_GET['mode'] === 'sandbox')) ? 'sandbox' : 'cloud';
-                                ?>
-                                <div class="<?php echo $isGuest ? 'component-dropdown-trigger disabled-interaction' : 'component-dropdown-trigger'; ?>" 
-                                     <?php if (!$isGuest): ?>data-action="toggleDropdown" data-target="dropdownCanvasType"<?php endif; ?> 
-                                     id="canvastype_dropdown_trigger" 
-                                     data-val="<?php echo $defaultType; ?>">
-                                    <?php if ($defaultType === 'sandbox'): ?>
-                                        <span class="material-symbols-rounded msr-science">science</span>
-                                        <span class="component-dropdown-text" data-ref="text-canvastype" id="text-canvastype">Sandbox</span>
-                                    <?php else: ?>
-                                        <span class="material-symbols-rounded msr-cloud">cloud</span>
-                                        <span class="component-dropdown-text" data-ref="text-canvastype" id="text-canvastype">Nube</span>
-                                    <?php endif; ?>
-                                    <span class="material-symbols-rounded msr-expand_more">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownCanvasType">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
-                                            <div class="component-menu-link <?php echo $defaultType === 'cloud' ? 'active' : ''; ?>" data-action="setCanvasType" data-type="cloud" data-label="Nube">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded msr-cloud">cloud</span></div>
-                                                <div class="component-menu-link-text"><span>Nube</span></div>
-                                            </div>
-                                            <div class="component-menu-link <?php echo $defaultType === 'sandbox' ? 'active' : ''; ?>" data-action="setCanvasType" data-type="sandbox" data-label="Sandbox">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded msr-science">science</span></div>
-                                                <div class="component-menu-link-text"><span>Sandbox</span></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <div class="component-card--grouped component-accordion active">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
@@ -124,10 +75,10 @@ extract($createData);
                                 </div>
                             </div>
                             
-                            <hr class="component-divider" data-compatible="cloud">
+                            <hr class="component-divider">
 
                             <!-- 2. Etiquetas del Lienzo -->
-                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
+                            <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('canvas_tags_title'); ?></h2>
@@ -172,8 +123,8 @@ extract($createData);
 
                             <!-- 3. Lienzo Oficial -->
                             <?php if ($canCreateOfficial): ?>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--wrap">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--wrap">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('canvas_is_official_title'); ?></h2>
@@ -313,9 +264,9 @@ extract($createData);
                                     </div>
                                 </div>
                             </div>
-                            
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
+                            <input type="hidden" id="canvas_template_id" name="canvas_template_id" value="">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_privacy_title'); ?></h2>
@@ -347,8 +298,8 @@ extract($createData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_approval_title'); ?></h2>
@@ -380,8 +331,8 @@ extract($createData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_cooldown_batch_title'); ?></h2>
@@ -410,8 +361,8 @@ extract($createData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_cooldown_seconds_title'); ?></h2>
@@ -440,8 +391,8 @@ extract($createData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_limit_title'); ?></h2>
@@ -524,8 +475,8 @@ extract($createData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--wrap">
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--wrap">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('lbl_allow_purchases'); ?></h2>
@@ -539,8 +490,8 @@ extract($createData);
                             </label>
                         </div>
                     </div>
-                            <hr class="component-divider" data-compatible="cloud">
-                            <div data-compatible="cloud" class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">

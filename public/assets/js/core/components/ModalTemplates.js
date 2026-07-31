@@ -1,4 +1,4 @@
-export const ModalTemplates = {
+﻿export const ModalTemplates = {
     welcomePremiumModal: {
         fullScreen: true,
         build: (data = {}) => ModalTemplates.purchaseSuccessModal.build({ ...data, item_type: 'subscription' })
@@ -138,7 +138,7 @@ export const ModalTemplates = {
                                     </div>
                                     <div class="welcome-feature-text">
                                         <span class="welcome-feature-title">${window.__('welcome_adv_storage_title')}</span>
-                                        <span class="welcome-feature-desc">${window.__('welcome_adv_storage_desc') || 'Aumenta tu capacidad de almacenamiento en la nube y crea múltiples proyectos sin restricciones.'}</span>
+                                        <span class="welcome-feature-desc">${window.__('welcome_adv_storage_desc') || 'Aumenta tu capacidad de almacenamiento en la nube y crea mÃºltiples proyectos sin restricciones.'}</span>
                                     </div>
                                 </div>
 
@@ -326,10 +326,10 @@ export const ModalTemplates = {
             };
 
             const title = data.title || (data.titleKey ? getTrans(data.titleKey, 'Verificar Identidad') : getTrans('title_verify_identity', 'Verificar Identidad'));
-            const desc = data.descHtml || data.message || (data.descKey ? getTrans(data.descKey, 'Confirma tu acción para continuar.') : getTrans('desc_verify_identity', 'Confirma tu contraseña para continuar.'));
+            const desc = data.descHtml || data.message || (data.descKey ? getTrans(data.descKey, 'Confirma tu acciÃ³n para continuar.') : getTrans('desc_verify_identity', 'Confirma tu contraseÃ±a para continuar.'));
             const cancelBtnText = getTrans('btn_cancel', 'Cancelar');
             const confirmBtnText = data.confirmKey ? getTrans(data.confirmKey, 'Continuar') : getTrans('btn_continue', 'Continuar');
-            const passwordLblText = getTrans('lbl_current_password', 'Contraseña actual');
+            const passwordLblText = getTrans('lbl_current_password', 'ContraseÃ±a actual');
             const confirmClass = data.confirmClass || 'component-button--dark';
 
             return `
@@ -491,15 +491,6 @@ export const ModalTemplates = {
             descKey: 'desc_confirm_create_canvas',
             confirmClass: 'component-button--dark',
             confirmKey: 'btn_create_canvas'
-        })
-    },
-
-    confirmDeleteSandbox: {
-        build: () => ModalTemplates.confirmAction.build({
-            titleKey: 'Eliminar lienzo Sandbox',
-            descHtml: 'Al eliminar este lienzo Sandbox, se borrarán todos sus datos locales de forma permanente. Si el lienzo ha sido sincronizado con la nube, también se eliminará de tu cuenta en el servidor. ¿Deseas continuar?',
-            confirmClass: 'component-button--danger',
-            confirmKey: 'Eliminar'
         })
     },
 
@@ -904,7 +895,7 @@ export const ModalTemplates = {
             const balance = data.balance || 0;
             const remaining = Math.max(0, balance - cost);
             const msgConfirm = __('confirm_inject_template');
-            const tokenInfo = `(${__('lbl_cost')}: ${cost.toLocaleString()} tokens · ${__('lbl_remaining_balance')}: ${remaining.toLocaleString()} tokens)`;
+            const tokenInfo = `(${__('lbl_cost')}: ${cost.toLocaleString()} tokens Â· ${__('lbl_remaining_balance')}: ${remaining.toLocaleString()} tokens)`;
             const desc = `${msgConfirm} ${tokenInfo}`;
             
             return ModalTemplates.confirmAction.build({
@@ -923,9 +914,9 @@ export const ModalTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
-                    <h2 class="component-modal-title">¿De verdad quieres desvincular la cuenta de Google “${googleName}”?</h2>
+                    <h2 class="component-modal-title">Â¿De verdad quieres desvincular la cuenta de Google â€œ${googleName}â€?</h2>
                     <p class="component-modal-desc">
-                        La próxima vez que inicies sesión en ${appName}, tendrás que usar tu dirección de correo electrónico ${userEmail} y tu contraseña.
+                        La prÃ³xima vez que inicies sesiÃ³n en ${appName}, tendrÃ¡s que usar tu direcciÃ³n de correo electrÃ³nico ${userEmail} y tu contraseÃ±a.
                     </p>
                 </div>
                 <div class="component-modal-actions">
@@ -973,8 +964,8 @@ export const ModalTemplates = {
 
     confirmPasswordModal: {
         build: (data = {}) => {
-            const title = data.title || 'Verificación de Seguridad';
-            const desc = data.desc || 'Ingresa tu contraseña para autorizar este cambio.';
+            const title = data.title || 'VerificaciÃ³n de Seguridad';
+            const desc = data.desc || 'Ingresa tu contraseÃ±a para autorizar este cambio.';
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
@@ -984,7 +975,7 @@ export const ModalTemplates = {
                 <div class="component-modal-body">
                     <div class="component-input-group">
                         <input type="password" id="confirmSecPasswordInput" data-ref="confirmSecPasswordInput" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="current-password">
-                        <label class="component-input-label">Contraseña de tu cuenta</label>
+                        <label class="component-input-label">ContraseÃ±a de tu cuenta</label>
                         <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
                     </div>
                 </div>
@@ -1000,7 +991,7 @@ export const ModalTemplates = {
         build: (data = {}) => {
             const count = data.count || 0;
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
-            const titleStr = __('title_confirm_clear_area', [], '¿Vaciar zona seleccionada?');
+            const titleStr = __('title_confirm_clear_area', [], 'Â¿Vaciar zona seleccionada?');
             const descRaw = __('desc_confirm_clear_area', []);
             const descStr = descRaw.replace(':count', `<strong>${count}</strong>`);
             const btnCancel = __('btn_cancel', []);
@@ -1088,9 +1079,9 @@ export const ModalTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
-                    <h2 class="component-modal-title">¿Estás seguro de gastar ${formattedTotal} monedas?</h2>
+                    <h2 class="component-modal-title">Â¿EstÃ¡s seguro de gastar ${formattedTotal} monedas?</h2>
                     <p class="component-modal-desc">
-                        Estás a punto de adquirir los siguientes elementos para tu cuenta:
+                        EstÃ¡s a punto de adquirir los siguientes elementos para tu cuenta:
                     </p>
                 </div>
                 <div class="component-modal-body">
@@ -1174,11 +1165,11 @@ export const ModalTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
-                    <h2 class="component-modal-title">${__('canvases_sanctions_title') || 'Gestionar Sanción'}: ${username}</h2>
+                    <h2 class="component-modal-title">${__('canvases_sanctions_title') || 'Gestionar SanciÃ³n'}: ${username}</h2>
                     <p class="component-modal-desc">${__('desc_chat_restriction')}</p>
                 </div>
                 <div class="component-modal-body">
-                    <!-- Alcance de la Sanción -->
+                    <!-- Alcance de la SanciÃ³n -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
                         <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSanctionScope" data-ref="sanction_scope" data-val="${activeScope.key}">
                             <span class="material-symbols-rounded" data-ref="sanction_scope_trigger_icon">${activeScope.icon}</span>
@@ -1195,7 +1186,7 @@ export const ModalTemplates = {
                         </div>
                     </div>
 
-                    <!-- Duración -->
+                    <!-- DuraciÃ³n -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
                         <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionType" data-ref="suspension_type" data-val="${activeType.key}">
                             <span class="material-symbols-rounded" data-ref="suspension_type_trigger_icon">${activeType.icon}</span>
@@ -1229,7 +1220,7 @@ export const ModalTemplates = {
                         </div>
                     </div>
 
-                    <!-- Fecha de Expiración -->
+                    <!-- Fecha de ExpiraciÃ³n -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full modal-end-date-group">
                         <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="openSanctionCalendarModal" data-ref="end_date" data-val="${endDate}">
                             <span class="material-symbols-rounded">calendar_month</span>
@@ -1282,7 +1273,7 @@ export const ModalTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
-                    <h2 class="component-modal-title">${__('title_stop_broadcast', [], '¿Finalizar transmisión?')}</h2>
+                    <h2 class="component-modal-title">${__('title_stop_broadcast', [], 'Â¿Finalizar transmisiÃ³n?')}</h2>
                     <p class="component-modal-desc">${__('desc_stop_broadcast', [])}</p>
                 </div>
                 <div class="component-modal-actions">
@@ -1299,7 +1290,7 @@ export const ModalTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
-                    <h2 class="component-modal-title">${__('title_leave_broadcast', [], '¿Abandonar transmisión?')}</h2>
+                    <h2 class="component-modal-title">${__('title_leave_broadcast', [], 'Â¿Abandonar transmisiÃ³n?')}</h2>
                     <p class="component-modal-desc">${__('desc_leave_broadcast', [])}</p>
                 </div>
                 <div class="component-modal-actions">
@@ -1352,7 +1343,7 @@ export const ModalTemplates = {
 
             const comparisonRows = [
                 {
-                    label: __('plan_limit_canvases', [], 'Proyectos simultáneos'),
+                    label: __('plan_limit_canvases', [], 'Proyectos simultÃ¡neos'),
                     getValue: (t) => parseInt(t.max_canvases, 10) === -1 ? __('upgrade_val_unlimited', [], 'Ilimitados') : t.max_canvases
                 },
                 {
@@ -1387,16 +1378,16 @@ export const ModalTemplates = {
                     getValue: (t) => t.feat_inject_templates ? '<span class="material-symbols-rounded check-icon">check</span>' : '<span class="material-symbols-rounded cross-icon">close</span>'
                 },
                 {
-                    label: __('plan_feat_live_share_short', [], 'Transmisión en vivo'),
+                    label: __('plan_feat_live_share_short', [], 'TransmisiÃ³n en vivo'),
                     getValue: (t) => t.feat_live_share ? '<span class="material-symbols-rounded check-icon">check</span>' : '<span class="material-symbols-rounded cross-icon">close</span>'
                 },
                 {
-                    label: __('plan_feat_unlimited_exports_short', [], 'Exportación libre'),
+                    label: __('plan_feat_unlimited_exports_short', [], 'ExportaciÃ³n libre'),
                     getValue: (t) => t.feat_unlimited_exports ? '<span class="material-symbols-rounded check-icon">check</span>' : '<span class="material-symbols-rounded cross-icon">close</span>'
                 }
             ];
 
-            let tableHeaders = '<th>Beneficios prémium</th>';
+            let tableHeaders = '<th>Beneficios prÃ©mium</th>';
             tiers.forEach((t, idx) => {
                 const isHighlight = idx === 0 ? 'highlight-col' : '';
                 tableHeaders += `<th class="col-tier-${t.tier_level} ${isHighlight}">${t.name}</th>`;
@@ -1415,8 +1406,8 @@ export const ModalTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-left">
-                    <h2 class="component-modal-title component-modal-title--lg">Actualiza para obtener más acceso</h2>
-                    <p class="component-modal-desc component-modal-desc--lg">Elige tu plan. Puedes cancelar tu suscripción cuando quieras.</p>
+                    <h2 class="component-modal-title component-modal-title--lg">Actualiza para obtener mÃ¡s acceso</h2>
+                    <p class="component-modal-desc component-modal-desc--lg">Elige tu plan. Puedes cancelar tu suscripciÃ³n cuando quieras.</p>
                     
                     <div class="component-modal-list">
                         ${cardsHtml}
@@ -1428,7 +1419,7 @@ export const ModalTemplates = {
                     </button>
                     
                     <p class="component-modal-disclaimer">
-                        Te enviaremos un recordatorio antes de cada renovación. Puedes cancelar tu suscripción cuando quieras en pocos clics.
+                        Te enviaremos un recordatorio antes de cada renovaciÃ³n. Puedes cancelar tu suscripciÃ³n cuando quieras en pocos clics.
                     </p>
                 </div>
                 
@@ -1484,7 +1475,7 @@ export const ModalTemplates = {
                                         <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
                                             <span class="material-symbols-rounded">chevron_left</span>
                                         </button>
-                                        <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year') || 'Mes Año'}</div>
+                                        <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year') || 'Mes AÃ±o'}</div>
                                         <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
                                             <span class="material-symbols-rounded">chevron_right</span>
                                         </button>
@@ -1563,242 +1554,6 @@ export const ModalTemplates = {
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
                     <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${btnConfirm}</button>
-                </div>
-            `;
-        }
-    },
-
-    sandboxSettingsModal: {
-        build: (data = {}) => {
-            const currentWidth = data.width || 64;
-            const currentHeight = data.height || 64;
-            const currentPalette = data.paletteId || 'default';
-            const currentLimit = data.cooldownBatch || 100;
-            
-            const sizeStr = `${currentWidth}x${currentHeight}`;
-            
-            const sizes = [
-                { val: '16x16', label: '16x16', icon: 'crop_square' },
-                { val: '32x32', label: '32x32', icon: 'crop_square' },
-                { val: '64x64', label: '64x64', icon: 'crop_square' },
-                { val: '128x64', label: '128x64', icon: 'aspect_ratio' },
-                { val: '128x128', label: '128x128', icon: 'aspect_ratio' },
-                { val: '256x128', label: '256x128', icon: 'aspect_ratio' },
-                { val: '256x256', label: '256x256', icon: 'grid_4x4' },
-                { val: '512x256', label: '512x256', icon: 'aspect_ratio' },
-                { val: '512x512', label: '512x512', icon: 'grid_on' },
-                { val: '1024x512', label: '1024x512', icon: 'aspect_ratio' },
-                { val: '1024x1024', label: '1024x1024', icon: 'grid_on' },
-                { val: '2048x1024', label: '2048x1024', icon: 'aspect_ratio' },
-                { val: '2048x2048', label: '2048x2048', icon: 'grid_on' },
-                { val: '4096x4096', label: '4096x4096', icon: 'grid_on' }
-            ];
-
-            let activeSize = sizes.find(s => s.val === sizeStr);
-            if (!activeSize) {
-                activeSize = sizes[2]; 
-            }
-
-            let sizeMenuLinks = '';
-            sizes.forEach(s => {
-                const isActive = s.val === activeSize.val ? 'active' : '';
-                sizeMenuLinks += `
-                    <div class="component-menu-link ${isActive}" data-action="selectValue" data-type="size" data-value="${s.val}" data-label="${s.label}" data-icon="${s.icon}">
-                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${s.icon}</span></div>
-                        <div class="component-menu-link-text"><span>${s.label}</span></div>
-                    </div>
-                `;
-            });
-
-            let palettes = [];
-            if (window.APP_PALETTES) {
-                Object.entries(window.APP_PALETTES).forEach(([id, pal]) => {
-                    palettes.push({
-                        id: id,
-                        label: window.__ ? window.__(pal.name_key) : id,
-                        icon: 'palette'
-                    });
-                });
-            }
-            if (window.APP_CUSTOM_PALETTES) {
-                if (Array.isArray(window.APP_CUSTOM_PALETTES)) {
-                    window.APP_CUSTOM_PALETTES.forEach(pal => {
-                        palettes.push({
-                            id: pal.id,
-                            label: pal.name || pal.id,
-                            icon: 'palette'
-                        });
-                    });
-                } else {
-                    Object.entries(window.APP_CUSTOM_PALETTES).forEach(([id, pal]) => {
-                        palettes.push({
-                            id: id,
-                            label: pal.name || id,
-                            icon: 'palette'
-                        });
-                    });
-                }
-            }
-
-            let activePalette = palettes.find(p => p.id === currentPalette);
-            if (!activePalette) {
-                activePalette = palettes[0] || { id: 'default', label: 'Por defecto', icon: 'palette' };
-            }
-
-            let paletteMenuLinks = '';
-            palettes.forEach(p => {
-                const isActive = p.id === activePalette.id ? 'active' : '';
-                paletteMenuLinks += `
-                    <div class="component-menu-link ${isActive}" data-action="selectValue" data-type="palette" data-value="${p.id}" data-label="${p.label}" data-icon="${p.icon}">
-                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${p.icon}</span></div>
-                        <div class="component-menu-link-text"><span>${p.label}</span></div>
-                    </div>
-                `;
-            });
-
-            const titleStr = 'Ajustes del Sandbox';
-            const descStr = 'Configura tu lienzo offline de forma visual. Las selecciones de tamaño y paleta se aplicarán al confirmar.';
-            const btnCancel = 'Cancelar';
-            const btnSave = 'Aplicar Cambios';
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <h2 class="component-modal-title">${titleStr}</h2>
-                    <p class="component-modal-desc">${descStr}</p>
-                </div>
-                
-                <div class="component-modal-body">
-                    <!-- Tamaño del Lienzo -->
-                    <div>
-                        <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">Tamaño del Lienzo</div>
-                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleDropdown" data-target="sandboxDropdownSize">
-                                <span class="material-symbols-rounded">${activeSize.icon}</span>
-                                <span class="component-dropdown-text" data-ref="text-size">${activeSize.label}</span>
-                                <span class="material-symbols-rounded">expand_more</span>
-                            </div>
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sandboxDropdownSize">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list component-menu-list--scrollable">
-                                        ${sizeMenuLinks}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <input type="hidden" id="sandbox_width" name="sandbox_width" value="${activeSize.val.split('x')[0]}">
-                        <input type="hidden" id="sandbox_height" name="sandbox_height" value="${activeSize.val.split('x')[1]}">
-                    </div>
-                    
-                    <!-- Paleta de Colores -->
-                    <div style="margin-top: 15px;">
-                        <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">Paleta de Colores</div>
-                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleDropdown" data-target="sandboxDropdownPalette">
-                                <span class="material-symbols-rounded">${activePalette.icon}</span>
-                                <span class="component-dropdown-text" data-ref="text-palette">${activePalette.label}</span>
-                                <span class="material-symbols-rounded">expand_more</span>
-                            </div>
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sandboxDropdownPalette">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list component-menu-list--scrollable">
-                                        ${paletteMenuLinks}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <input type="hidden" id="sandbox_palette" name="sandbox_palette" value="${activePalette.id}">
-                    </div>
-
-                    <!-- Límite de Píxeles por Lote -->
-                    <div style="margin-top: 15px;">
-                        <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">Límite de Píxeles por Lote</div>
-                        <div class="component-inline-control component-inline-control--full">
-                            <div class="component-inline-control__group">
-                                <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="-5" data-min="1">
-                                    <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
-                                </button>
-                                <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="-1" data-min="1">
-                                    <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
-                                </button>
-                            </div>
-                            <div class="component-inline-control__center" id="sandbox_cooldown_batch_val" data-val="${currentLimit}">${currentLimit}</div>
-                            <div class="component-inline-control__group">
-                                <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="1" data-max="1000">
-                                    <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
-                                </button>
-                                <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="5" data-max="1000">
-                                    <span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span>
-                                </button>
-                            </div>
-                        </div>
-                        <input type="hidden" id="sandbox_cooldown_batch" name="sandbox_cooldown_batch" value="${currentLimit}">
-                    </div>
-                </div>
-
-                <div class="component-modal-actions">
-                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--success" data-modal-action="confirm">${btnSave}</button>
-                </div>
-            `;
-        }
-    },
-
-    createSandboxModal: {
-        build: () => {
-            const titleStr = 'Crear Lienzo Sandbox';
-            const descStr = 'Crea un lienzo sandbox personal. Se guardará localmente y se sincronizará automáticamente con tu cuenta en la nube.';
-            const btnCancel = 'Cancelar';
-            const btnCreate = 'Crear Lienzo';
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <h2 class="component-modal-title">${titleStr}</h2>
-                    <p class="component-modal-desc">${descStr}</p>
-                </div>
-                
-                <div class="component-modal-body">
-                    <!-- Nombre del Sandbox -->
-                    <div class="component-input-group">
-                        <input type="text" id="sandbox_name" class="component-input-field" placeholder=" " maxlength="50" autocomplete="off" required>
-                        <label class="component-input-label">Nombre del Lienzo</label>
-                    </div>
-                </div>
-                
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
-                    <button class="component-button component-button--h40 component-button--brand" data-modal-action="confirm">${btnCreate}</button>
-                </div>
-            `;
-        }
-    },
-
-    renameSandboxModal: {
-        build: (data) => {
-            const titleStr = 'Renombrar Lienzo Sandbox';
-            const btnCancel = 'Cancelar';
-            const btnSave = 'Guardar';
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <h2 class="component-modal-title">${titleStr}</h2>
-                </div>
-                
-                <div class="component-modal-body">
-                    <!-- Nombre del Sandbox -->
-                    <div class="component-input-group">
-                        <input type="text" id="sandbox_name" class="component-input-field" placeholder=" " value="${data.nameValue || ''}" maxlength="50" autocomplete="off" required>
-                        <label class="component-input-label">Nuevo Nombre del Lienzo</label>
-                    </div>
-                </div>
-                
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
-                    <button class="component-button component-button--h40 component-button--brand" data-modal-action="confirm">${btnSave}</button>
                 </div>
             `;
         }

@@ -5,15 +5,10 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const uuid = escapeHTML(canvas.uuid);
         const basePath = config.basePath || '';
         const isFavoriteClass = canvas.is_favorite ? 'is-favorite' : '';
-        
-        const isLocalSandbox = uuid.startsWith('sandbox_') || !!canvas.is_sandbox;
-        const realUuid = isLocalSandbox ? uuid.replace('sandbox_', '') : uuid;
-        const navAction = isLocalSandbox 
-            ? `data-nav="${basePath}/design/sandbox/${realUuid}"` 
-            : `data-nav="${basePath}/design/${uuid}"`;
 
         const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
         const srcUrl = canvas.thumbnail_url ? escapeHTML(canvas.thumbnail_url) : fallbackImg;
+
         const imgHtml = `
             <img src="${srcUrl}" 
                  alt="${name}" 
@@ -29,16 +24,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const isOfficial = canvas.is_official;
 
         let badgeHtml = '';
-        if (isLocalSandbox) {
-            badgeHtml = `
-                <div class="component-gallery-badges-container">
-                    <div class="component-badge component-badge--warning">
-                        <span class="material-symbols-rounded">science</span>
-                        <span>Sandbox</span>
-                    </div>
-                </div>
-            `;
-        } else if (isOfficial) {
+        if (isOfficial) {
             badgeHtml = `
                 <div class="component-gallery-badges-container">
                     <div class="component-badge component-badge--glass">
@@ -74,7 +60,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         
         let warningOverlay = '';
         
-        if (canvas.locked_requires_downgrade && !isLocalSandbox) {
+        if (canvas.locked_requires_downgrade) {
             warningOverlay = `
                 <div class="component-gallery-warning-overlay" data-nav="${basePath}/design/${uuid}">
                     <div class="component-gallery-warning-content">
@@ -86,9 +72,8 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             `;
         }
 
+        const navAction = `data-nav="${basePath}/design/${uuid}"`;
         const linkClass = '';
-
-        const cardUuid = isLocalSandbox && !uuid.startsWith('sandbox_') ? `sandbox_${uuid}` : uuid;
 
         return `
             <div class="component-gallery-card" data-card-id="${canvas.id}">
@@ -102,12 +87,12 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
 
                 <div class="component-gallery-actions-wrapper component-dropdown-wrapper">
                     <div class="component-gallery-actions">
-                        ${(window.activeUserId && !isLocalSandbox) ? `
+                        ${window.activeUserId ? `
                         <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite ${isFavoriteClass}" data-action="toggleFavorite" data-id="${canvas.id}">
                             <span class="material-symbols-rounded component-icon--20">favorite</span>
                         </button>
                         ` : ''}
-                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleDynamicMenu" data-id="${canvas.id}" data-uuid="${cardUuid}" data-owner="${canvas.is_owner ? '1' : '0'}" data-locked="${canvas.locked_requires_downgrade ? '1' : '0'}" data-member="${canvas.is_member ? '1' : '0'}">
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleDynamicMenu" data-id="${canvas.id}" data-uuid="${uuid}" data-owner="${canvas.is_owner ? '1' : '0'}" data-locked="${canvas.locked_requires_downgrade ? '1' : '0'}" data-member="${canvas.is_member ? '1' : '0'}">
                             <span class="material-symbols-rounded">more_vert</span>
                         </button>
                     </div>

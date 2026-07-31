@@ -107,7 +107,8 @@ if ($isLoggedIn) {
             <?php endif; ?>
             
 
-            <?php if (($isLoggedIn && $hasCanvasAccess) || !$isLoggedIn): ?>
+
+            <?php if ($isLoggedIn && $hasCanvasAccess): ?>
                 <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleCanvases" data-tooltip="<?php echo __('tooltip_canvases'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">palette</span>
                 </button>
@@ -139,5 +140,5 @@ if ($isLoggedIn) {
     </div>
 
     <?php include __DIR__ . '/../modules/moduleMainOptions.php'; ?>
-    <?php if (($isLoggedIn && $hasCanvasAccess) || !$isLoggedIn) { include __DIR__ . '/../modules/moduleCanvases.php'; } ?>
+    <?php if ($isLoggedIn && $hasCanvasAccess) { include __DIR__ . '/../modules/moduleCanvases.php'; } ?>
 </div>
