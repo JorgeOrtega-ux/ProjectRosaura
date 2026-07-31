@@ -126,6 +126,10 @@ class CanvasCoreController extends BaseController {
             $allowPurchases = isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : 1;
             $allowChat = isset($input['allow_chat']) ? (int)$input['allow_chat'] : 0;
             $tags = isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : [];
+            $templateId = $input['template_id'] ?? null;
+            if ($templateId === '') {
+                $templateId = null;
+            }
 
             if (empty(trim($name))) {
                 return $this->respond(['success' => false, 'message' => __('err_canvas_name_required')]);
@@ -135,7 +139,7 @@ class CanvasCoreController extends BaseController {
                 $userId, $name, $privacy, $requiresApproval, 
                 $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds,
                 $isOfficial, $this->canCreateOfficial(),
-                $allowPurchases, $allowChat, $tags
+                $allowPurchases, $allowChat, $tags, $templateId
             );
 
 

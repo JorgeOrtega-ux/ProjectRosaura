@@ -2047,6 +2047,29 @@ export const ModalTemplates = {
                         background: var(--bg-hover-light) !important;
                         border-color: var(--text-brand) !important;
                     }
+                    .template-card {
+                        border: 2px solid var(--border-color);
+                        border-radius: 8px;
+                        padding: 4px;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        aspect-ratio: 1;
+                        overflow: hidden;
+                        position: relative;
+                        transition: all 0.2s ease;
+                        background: var(--bg-surface);
+                    }
+                    .template-card:hover {
+                        border-color: var(--text-secondary) !important;
+                        background: var(--bg-hover-light) !important;
+                    }
+                    .template-card.active {
+                        border-color: var(--text-brand) !important;
+                        background: var(--bg-brand-light, rgba(99, 102, 241, 0.1)) !important;
+                        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+                    }
                     .sandbox-header-with-back {
                         display: flex;
                         align-items: center;
@@ -2217,6 +2240,15 @@ export const ModalTemplates = {
                             </div>
                             <input type="hidden" id="sandbox_width" name="sandbox_width" value="${activeSize.val.split('x')[0]}">
                             <input type="hidden" id="sandbox_height" name="sandbox_height" value="${activeSize.val.split('x')[1]}">
+                        </div>
+                        
+                        <!-- Plantilla de Lienzo (Opcional) -->
+                        <div style="margin-top: 15px;">
+                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8; color: var(--text-primary);">Plantilla de Lienzo (Opcional)</div>
+                            <div class="templates-grid" id="sandbox_templates_grid">
+                                <!-- Renderizado dinámico desde JS -->
+                            </div>
+                            <input type="hidden" id="sandbox_template_id" name="sandbox_template_id" value="">
                         </div>
                         
                         <!-- Límite de Píxeles por Lote -->

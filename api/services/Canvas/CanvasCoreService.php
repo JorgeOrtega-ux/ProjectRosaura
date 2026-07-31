@@ -455,7 +455,8 @@ class CanvasCoreService {
         bool $canCreateOfficial = false,
         int $allowPurchases = 1,
         int $allowChat = 0,
-        array $tags = []
+        array $tags = [],
+        ?string $templateId = null
     ): array {
         try {
             if ($isOfficial && !$canCreateOfficial) {
@@ -535,6 +536,83 @@ class CanvasCoreService {
             $canvasId = $this->canvasRepository->create($canvasData);
 
             $this->canvasRepository->addMember($canvasId, $userId, 4);
+
+            // Pre-paint template if selected
+            if ($templateId !== null) {
+                try {
+                    $templatePath = dirname(__DIR__, 3) . '/public/assets/config/canvas_templates.json';
+                    if (file_exists($templatePath)) {
+                        $templates = json_decode(file_get_contents($templatePath), true);
+                        $foundTpl = null;
+                        foreach ($templates as $tpl) {
+                            if ($tpl['id'] === $templateId) {
+                                $foundTpl = $tpl;
+                                break;
+                            }
+                        }
+
+                        if ($foundTpl && in_array($size, $foundTpl['sizes'])) {
+                            $imgPath = $foundTpl['image_paths'][$size] ?? null;
+                            if ($imgPath) {
+                                $fullImgPath = dirname(__DIR__, 3) . '/public' . $imgPath;
+                                if (file_exists($fullImgPath) && extension_loaded('gd')) {
+                                    $ext = strtolower(pathinfo($fullImgPath, PATHINFO_EXTENSION));
+                                    $img = null;
+                                    if ($ext === 'png') {
+                                        $img = @imagecreatefrompng($fullImgPath);
+                                    } else if ($ext === 'jpg' || $ext === 'jpeg') {
+                                        $img = @imagecreatefromjpeg($fullImgPath);
+                                    }
+
+                                    if ($img) {
+                                        $targetW = 64;
+                                        $targetH = 64;
+                                        if (strpos($size, 'x') !== false) {
+                                            list($targetW, $targetH) = explode('x', $size);
+                                            $targetW = (int)$targetW;
+                                            $targetH = (int)$targetH;
+                                        }
+
+                                        if (imagesx($img) === $targetW && imagesy($img) === $targetH) {
+                                            $binaryData = '';
+                                            for ($y = 0; $y < $targetH; $y++) {
+                                                for ($x = 0; $x < $targetW; $x++) {
+                                                    $rgbIndex = imagecolorat($img, $x, $y);
+                                                    $colors = imagecolorsforindex($img, $rgbIndex);
+                                                    $r = $colors['red'];
+                                                    $g = $colors['green'];
+                                                    $b = $colors['blue'];
+                                                    $gdAlpha = $colors['alpha'];
+                                                    $a = (int)round((127 - $gdAlpha) * 255 / 127);
+                                                    $binaryData .= pack('C4', $r, $g, $b, $a);
+                                                }
+                                            }
+
+                                            // Save to Redis
+                                            if (class_exists(RedisCache::class)) {
+                                                $redis = (new RedisCache())->getClient();
+                                                if ($redis) {
+                                                    $redis->set("canvas:{$canvasId}:state", $binaryData);
+                                                }
+                                            }
+
+                                            // Save to Database
+                                            $this->canvasRepository->saveSnapshot($canvasId, $binaryData);
+                                        }
+                                        imagedestroy($img);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    Logger::error('Error pre-painting canvas from template.', [
+                        'canvas_id' => $canvasId,
+                        'template_id' => $templateId,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
 
             if (!$isOfficial) {
                 try {

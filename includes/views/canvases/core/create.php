@@ -203,6 +203,56 @@ extract($createData);
                             </div>
                         </div>
                     </div>
+                            <style>
+                                .templates-grid {
+                                    display: grid;
+                                    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                                    gap: 10px;
+                                    max-height: 180px;
+                                    overflow-y: auto;
+                                    width: 100%;
+                                    margin-top: 10px;
+                                    padding: 4px;
+                                }
+                                .template-card {
+                                    border: 2px solid var(--border-color);
+                                    border-radius: 8px;
+                                    padding: 6px;
+                                    cursor: pointer;
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 6px;
+                                    aspect-ratio: 1;
+                                    overflow: hidden;
+                                    position: relative;
+                                    transition: all 0.2s ease;
+                                    background: var(--bg-surface);
+                                }
+                                .template-card:hover {
+                                    border-color: var(--text-secondary) !important;
+                                    background: var(--bg-hover-light) !important;
+                                }
+                                .template-card.active {
+                                    border-color: var(--text-brand) !important;
+                                    background: var(--bg-brand-light, rgba(99, 102, 241, 0.1)) !important;
+                                    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+                                }
+                            </style>
+                            <hr class="component-divider">
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('canvas_template_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('canvas_template_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start" style="width: 100%;">
+                                    <div class="templates-grid" id="canvas_templates_grid">
+                                        <!-- Renderizado dinámico desde JS -->
+                                    </div>
+                                    <input type="hidden" id="canvas_template_id" name="canvas_template_id" value="">
+                                </div>
+                            </div>
                             <hr class="component-divider">
                             <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">

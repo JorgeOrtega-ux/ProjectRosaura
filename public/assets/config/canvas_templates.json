@@ -1,0 +1,25 @@
+[
+  {
+    "id": "playa_tropical",
+    "name_key": "template_playa_tropical",
+    "description_key": "template_playa_tropical_desc",
+    "thumbnail": "/assets/img/templates/playa_thumbnail.png",
+    "sizes": ["64x64", "128x128", "256x256"],
+    "image_paths": {
+      "64x64": "/assets/img/templates/playa_64.png",
+      "128x128": "/assets/img/templates/playa_128.png",
+      "256x256": "/assets/img/templates/playa_256.png"
+    }
+  },
+  {
+    "id": "bosque_mistico",
+    "name_key": "template_bosque_mistico",
+    "description_key": "template_bosque_mistico_desc",
+    "thumbnail": "/assets/img/templates/bosque_thumbnail.png",
+    "sizes": ["128x128", "256x256"],
+    "image_paths": {
+      "128x128": "/assets/img/templates/bosque_128.png",
+      "256x256": "/assets/img/templates/bosque_256.png"
+    }
+  }
+]

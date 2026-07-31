@@ -50,6 +50,16 @@ class CanvasesCreateController {
         this.setupDefaultValues();
         this.renderPalettes();
         this.checkAdminPermissions();
+
+        // Fetch templates and render
+        fetch(`${this.basePath}/assets/config/canvas_templates.json`)
+            .then(res => res.ok ? res.json() : [])
+            .then(data => {
+                this.templates = data;
+                const initialSize = this.formState.size || '64x64';
+                this.renderTemplatesGrid(initialSize);
+            })
+            .catch(e => console.error('Error fetching templates:', e));
     }
 
     destroy() {
@@ -191,7 +201,20 @@ class CanvasesCreateController {
 
         const action = actionBtn.getAttribute('data-action');
 
-        if (this.cardInteractions && this.cardInteractions.handleAction(action, actionBtn)) {
+        if (action === 'selectCanvasTemplate') {
+            const templateId = actionBtn.getAttribute('data-template-id');
+            this.formState.template_id = templateId || null;
+            
+            const grid = document.getElementById('canvas_templates_grid');
+            if (grid) {
+                grid.querySelectorAll('.template-card').forEach(el => el.classList.remove('active'));
+                actionBtn.classList.add('active');
+            }
+            
+            const hiddenInput = document.getElementById('canvas_template_id');
+            if (hiddenInput) {
+                hiddenInput.value = templateId || '';
+            }
             return;
         }
 
@@ -339,6 +362,10 @@ class CanvasesCreateController {
         const icon = optionBtn.getAttribute('data-icon');
 
         this.formState[type] = value;
+
+        if (type === 'size') {
+            this.renderTemplatesGrid(value);
+        }
 
         const menu = optionBtn.closest('.component-menu-list');
         if (menu) {
@@ -509,6 +536,11 @@ class CanvasesCreateController {
             this.formState.is_official = inputOfficial.checked ? 1 : 0;
         }
 
+        const inputTemplate = document.getElementById('canvas_template_id');
+        if (inputTemplate) {
+            this.formState.template_id = inputTemplate.value || null;
+        }
+
         setButtonLoading(btn);
 
         const res = await this.api.post(ApiRoutes.Canvases.Create, this.formState, this.abortController.signal);
@@ -524,6 +556,52 @@ class CanvasesCreateController {
         } else {
             showMessage(res.message, 'error');
         }
+    }
+
+    renderTemplatesGrid(size) {
+        const grid = document.getElementById('canvas_templates_grid');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+        
+        const templates = this.templates || [];
+        
+        // If current template is not compatible with new size, reset it
+        const currentTpl = templates.find(t => t.id === this.formState.template_id);
+        if (currentTpl && !currentTpl.sizes.includes(size)) {
+            this.formState.template_id = null;
+            const hiddenInput = document.getElementById('canvas_template_id');
+            if (hiddenInput) hiddenInput.value = '';
+        }
+        
+        // Render empty card
+        const emptyActive = !this.formState.template_id ? 'active' : '';
+        let html = `
+            <div class="template-card ${emptyActive}" data-action="selectCanvasTemplate" data-template-id="" style="border: 2px dashed var(--border-color); border-radius: 8px; padding: 8px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; aspect-ratio: 1; transition: all 0.2s ease;">
+                <span class="material-symbols-rounded" style="font-size: 28px; opacity: 0.6; color: var(--text-primary);">crop_free</span>
+                <div style="font-size: 11px; font-weight: 600; color: var(--text-primary);">${window.__ ? window.__('canvas_template_empty') : 'Lienzo Vacío'}</div>
+            </div>
+        `;
+        
+        templates.forEach(tpl => {
+            if (tpl.sizes.includes(size)) {
+                const isActive = this.formState.template_id === tpl.id ? 'active' : '';
+                const name = window.__ ? window.__(tpl.name_key) : tpl.id;
+                const desc = window.__ ? window.__(tpl.description_key) : '';
+                const thumb = this.basePath + tpl.thumbnail;
+                
+                html += `
+                    <div class="template-card ${isActive}" data-action="selectCanvasTemplate" data-template-id="${tpl.id}" title="${desc}">
+                        <div style="flex-grow: 1; width: 100%; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--bg-hover-light);">
+                            <img src="${thumb}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </div>
+                        <div style="font-size: 11px; font-weight: 600; text-align: center; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; color: var(--text-primary); padding: 2px 4px 4px;">${name}</div>
+                    </div>
+                `;
+            }
+        });
+        
+        grid.innerHTML = html;
     }
 }
 

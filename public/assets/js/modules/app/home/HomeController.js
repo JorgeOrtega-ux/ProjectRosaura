@@ -192,6 +192,40 @@ class HomeController {
             return;
         }
 
+        if (action === 'goCreateForm') {
+            setTimeout(() => {
+                const size = this.getSandboxSelectedSize();
+                this.selectedSandboxTemplateId = "";
+                const hiddenInput = document.getElementById('sandbox_template_id');
+                if (hiddenInput) hiddenInput.value = "";
+                this.updateSandboxTemplatesGrid(size);
+            }, 0);
+        }
+
+        if (action === 'selectValue' && actionBtn.getAttribute('data-type') === 'size') {
+            setTimeout(() => {
+                const size = actionBtn.getAttribute('data-value');
+                this.updateSandboxTemplatesGrid(size);
+            }, 0);
+        }
+
+        if (action === 'selectSandboxTemplate') {
+            const templateId = actionBtn.getAttribute('data-template-id');
+            this.selectedSandboxTemplateId = templateId || "";
+            
+            const grid = document.getElementById('sandbox_templates_grid');
+            if (grid) {
+                grid.querySelectorAll('.template-card').forEach(el => el.classList.remove('active'));
+                actionBtn.classList.add('active');
+            }
+            
+            const hiddenInput = document.getElementById('sandbox_template_id');
+            if (hiddenInput) {
+                hiddenInput.value = templateId || "";
+            }
+            return;
+        }
+
         if (this.cardInteractions && this.cardInteractions.handleAction(action, actionBtn)) {
             return;
         }
@@ -499,6 +533,19 @@ class HomeController {
             }));
         }
 
+        // Fetch templates
+        let templates = [];
+        try {
+            const resTemplates = await fetch(`${this.basePath}/assets/config/canvas_templates.json`);
+            if (resTemplates.ok) {
+                templates = await resTemplates.json();
+            }
+        } catch (e) {
+            console.error('Error cargando plantillas de lienzo:', e);
+        }
+        this.canvasTemplates = templates;
+        this.selectedSandboxTemplateId = "";
+
         // Mostrar el modal unificado
         const res = await window.modalSystem.show('sandboxLobbyModal', {
             hasOnboarded: hasOnboarded,
@@ -559,6 +606,22 @@ class HomeController {
                         paletteId: palette,
                         cooldownBatch: cooldownBatch
                     }, uuid);
+
+                    const templateId = res.data.sandbox_template_id || '';
+                    if (templateId && this.canvasTemplates) {
+                        const template = this.canvasTemplates.find(t => t.id === templateId);
+                        if (template) {
+                            const sizeStr = `${width}x${height}`;
+                            const relativeImgPath = template.image_paths[sizeStr];
+                            if (relativeImgPath) {
+                                try {
+                                    await this.prepaintSandboxWithTemplate(uuid, relativeImgPath, width, height);
+                                } catch (err) {
+                                    console.error('Error pre-pintando lienzo con plantilla:', err);
+                                }
+                            }
+                        }
+                    }
                 } catch (e) {
                     console.error('Error saving sandbox settings to IndexedDB:', e);
                 }
@@ -570,6 +633,107 @@ class HomeController {
 
                 // Redirigir al nuevo sandbox creado
                 window.open(`${this.basePath}/design/sandbox/${uuid}`, '_blank');
+            }
+        }
+    }
+
+    getSandboxSelectedSize() {
+        const widthInput = document.getElementById('sandbox_width');
+        const heightInput = document.getElementById('sandbox_height');
+        if (widthInput && heightInput) {
+            return `${widthInput.value}x${heightInput.value}`;
+        }
+        return '64x64';
+    }
+
+    updateSandboxTemplatesGrid(size) {
+        const grid = document.getElementById('sandbox_templates_grid');
+        if (!grid) return;
+        
+        grid.innerHTML = '';
+        
+        // If current template is not compatible with new size, reset it
+        const templates = this.canvasTemplates || [];
+        const selectedTpl = templates.find(t => t.id === this.selectedSandboxTemplateId);
+        if (selectedTpl && !selectedTpl.sizes.includes(size)) {
+            this.selectedSandboxTemplateId = "";
+            const hiddenInput = document.getElementById('sandbox_template_id');
+            if (hiddenInput) hiddenInput.value = "";
+        }
+        
+        const emptyActive = !this.selectedSandboxTemplateId ? 'active' : '';
+        let html = `
+            <div class="template-card ${emptyActive}" data-action="selectSandboxTemplate" data-template-id="" style="border: 2px dashed var(--border-color); border-radius: 8px; padding: 8px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; aspect-ratio: 1; transition: all 0.2s ease;">
+                <span class="material-symbols-rounded" style="font-size: 28px; opacity: 0.6; color: var(--text-primary);">crop_free</span>
+                <div style="font-size: 11px; font-weight: 600; color: var(--text-primary);">Lienzo Vacío</div>
+            </div>
+        `;
+        
+        templates.forEach(tpl => {
+            if (tpl.sizes.includes(size)) {
+                const isActive = this.selectedSandboxTemplateId === tpl.id ? 'active' : '';
+                const name = window.__ ? window.__(tpl.name_key) : tpl.id;
+                const desc = window.__ ? window.__(tpl.description_key) : '';
+                const thumb = this.basePath + tpl.thumbnail;
+                
+                html += `
+                    <div class="template-card ${isActive}" data-action="selectSandboxTemplate" data-template-id="${tpl.id}" title="${desc}">
+                        <div style="flex-grow: 1; width: 100%; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--bg-hover-light);">
+                            <img src="${thumb}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </div>
+                        <div style="font-size: 11px; font-weight: 600; text-align: center; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; color: var(--text-primary); padding: 2px 4px 4px;">${name}</div>
+                    </div>
+                `;
+            }
+        });
+        
+        grid.innerHTML = html;
+    }
+
+    async prepaintSandboxWithTemplate(uuid, relativeImgPath, width, height) {
+        const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
+        const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+        const img = new Image();
+        img.src = this.basePath + relativeImgPath;
+        
+        await new Promise((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error('Failed to load template image: ' + img.src));
+        });
+
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        const ctx = tempCanvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        
+        const imgData = ctx.getImageData(0, 0, width, height).data;
+        
+        const chunkSize = 512;
+        const numCols = Math.ceil(width / chunkSize);
+        const numRows = Math.ceil(height / chunkSize);
+
+        for (let cy = 0; cy < numRows; cy++) {
+            for (let cx = 0; cx < numCols; cx++) {
+                const chunkW = Math.min(chunkSize, width - cx * chunkSize);
+                const chunkH = Math.min(chunkSize, height - cy * chunkSize);
+                
+                const chunkBytes = new Uint8Array(chunkW * chunkH * 4);
+                
+                for (let y = 0; y < chunkH; y++) {
+                    const globalY = cy * chunkSize + y;
+                    const srcOffset = (globalY * width + (cx * chunkSize)) * 4;
+                    const destOffset = y * chunkW * 4;
+                    
+                    for (let i = 0; i < chunkW * 4; i++) {
+                        chunkBytes[destOffset + i] = imgData[srcOffset + i];
+                    }
+                }
+                
+                const key = `${cx},${cy}`;
+                const base64 = await DesignSandboxDb.compressAndEncode(chunkBytes);
+                await DesignSandboxDb.saveChunk(key, base64, uuid);
             }
         }
     }

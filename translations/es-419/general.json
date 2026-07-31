@@ -1934,5 +1934,12 @@
     "welcome_adv_storage_desc": "Almacenamiento en la nube adicional para guardar más plantillas y capturas.",
     "welcome_adv_storage_title": "Mayor almacenamiento",
     "welcome_adv_tools_desc": "Acceso a herramientas avanzadas de diseño, paletas personalizadas y más.",
-    "welcome_adv_tools_title": "Herramientas premium"
+    "welcome_adv_tools_title": "Herramientas premium",
+    "canvas_template_title": "Plantilla de Lienzo",
+    "canvas_template_desc": "Elige una plantilla para iniciar tu lienzo con un diseño de base, o selecciona vacío para empezar desde cero.",
+    "canvas_template_empty": "Lienzo Vacío",
+    "template_playa_tropical": "Playa Tropical",
+    "template_playa_tropical_desc": "Un hermoso paisaje de playa tropical con palmeras y arena dorada.",
+    "template_bosque_mistico": "Bosque Místico",
+    "template_bosque_mistico_desc": "Un espeso bosque con árboles altos y un río cristalino."
 }
