@@ -112,10 +112,10 @@ extract($createData);
                                 </div>
                             </div>
                             
-                            <hr class="component-divider">
+                            <hr class="component-divider" data-compatible="cloud">
 
                             <!-- 2. Etiquetas del Lienzo -->
-                            <div class="component-group-item component-group-item--stacked">
+                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('canvas_tags_title'); ?></h2>
@@ -302,8 +302,8 @@ extract($createData);
                                 </div>
                             </div>
                             
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider" data-compatible="cloud">
+                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_privacy_title'); ?></h2>
@@ -335,8 +335,8 @@ extract($createData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider" data-compatible="cloud">
+                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_approval_title'); ?></h2>
@@ -368,8 +368,8 @@ extract($createData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider" data-compatible="cloud">
+                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_cooldown_batch_title'); ?></h2>
@@ -512,8 +512,8 @@ extract($createData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap">
+                            <hr class="component-divider" data-compatible="cloud">
+                            <div data-compatible="cloud" class="component-group-item component-group-item--wrap">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('lbl_allow_purchases'); ?></h2>
@@ -527,8 +527,8 @@ extract($createData);
                             </label>
                         </div>
                     </div>
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
+                            <hr class="component-divider" data-compatible="cloud">
+                            <div data-compatible="cloud" class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">

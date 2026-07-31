@@ -762,12 +762,10 @@ class CanvasesCreateController {
         restoreButton(btn);
         showMessage('Lienzo Sandbox creado con Ã©xito', 'success');
 
-        window.open(`${this.basePath}/design/sandbox/${uuid}`, '_blank');
-        
         if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/home`);
+            window.spaRouter.navigate(`${this.basePath}/design/sandbox/${uuid}`);
         } else {
-            window.location.href = `${this.basePath}/home`;
+            window.location.href = `${this.basePath}/design/sandbox/${uuid}`;
         }
     }
 

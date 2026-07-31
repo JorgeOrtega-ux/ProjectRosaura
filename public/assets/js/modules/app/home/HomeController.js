@@ -284,6 +284,7 @@ class HomeController {
                         uuid: sb.uuid,
                         name: sb.name || 'Sandbox',
                         type: 'sandbox',
+                        is_sandbox: true,
                         thumbnail_url: sb.thumbnail || null, // Might be loaded later
                         players_count: 1,
                         created_at: sb.createdAt || Date.now()
