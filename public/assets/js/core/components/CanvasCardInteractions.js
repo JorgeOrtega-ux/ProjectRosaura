@@ -292,12 +292,7 @@ export class CanvasCardInteractions {
                         <div class="pill-container"><div class="drag-handle"></div></div>
                         
                         <div class="component-menu-list">
-                            <button type="button" class="component-menu-link" data-action="renameSandbox" data-id="${id}" data-uuid="${uuid}">
-                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">edit</span></div>
-                                <div class="component-menu-link-text"><span>Cambiar Nombre</span></div>
-                            </button>
-
-                            <button type="button" class="component-menu-link component-menu-link--bordered component-text-danger" data-action="deleteSandbox" data-id="${id}" data-uuid="${uuid}">
+                            <button type="button" class="component-menu-link component-text-danger" data-action="deleteSandbox" data-id="${id}" data-uuid="${uuid}">
                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
                                 <div class="component-menu-link-text"><span>Eliminar Sandbox</span></div>
                             </button>
@@ -657,7 +652,7 @@ export class CanvasCardInteractions {
         const realUuid = uuid.replace('sandbox_', '');
 
         if (window.modalSystem) {
-            const confirm = await window.modalSystem.show('confirmDeleteSandboxModal');
+            const confirm = await window.modalSystem.show('confirmDeleteSandbox');
             if (!confirm.confirmed) return;
 
             // Eliminar de localStorage

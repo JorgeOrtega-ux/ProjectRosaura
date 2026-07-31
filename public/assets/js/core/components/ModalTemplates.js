@@ -1802,27 +1802,5 @@ export const ModalTemplates = {
                 </div>
             `;
         }
-    },
-
-    confirmDeleteSandboxModal: {
-        build: () => {
-            const titleStr = 'Eliminar Lienzo Sandbox';
-            const descStr = '¿Estás seguro de que deseas eliminar este lienzo sandbox? Todos tus píxeles y configuraciones se borrarán permanentemente del dispositivo y de la nube.';
-            const btnCancel = 'Cancelar';
-            const btnDelete = 'Eliminar permanentemente';
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <h2 class="component-modal-title component-text-danger">${titleStr}</h2>
-                    <p class="component-modal-desc">${descStr}</p>
-                </div>
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
-                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${btnDelete}</button>
-                </div>
-            `;
-        }
-    },
-
+    }
 };

@@ -377,6 +377,40 @@ class HomeController {
 
         this.reinitializeUI();
         this.setupInfiniteScroll();
+        this.loadSandboxThumbnails();
+    }
+
+    async loadSandboxThumbnails() {
+        const sandboxes = this.allCanvases.filter(c => c.is_sandbox);
+        if (sandboxes.length === 0) return;
+
+        try {
+            const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
+            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+            for (const sb of sandboxes) {
+                const settings = await DesignSandboxDb.getSettings(sb.uuid);
+                if (settings && settings.thumbnail) {
+                    // Update in-memory canvas object to preserve the thumbnail upon scroll/virtualization
+                    sb.thumbnail_url = settings.thumbnail;
+
+                    // Update DOM element src directly if the card is already rendered
+                    const btn = document.querySelector(`[data-uuid="sandbox_${sb.uuid}"]`);
+                    if (btn) {
+                        const cardEl = btn.closest('.component-gallery-card');
+                        if (cardEl) {
+                            const imgEl = cardEl.querySelector('.component-gallery-card__image');
+                            if (imgEl) {
+                                imgEl.src = settings.thumbnail;
+                                imgEl.classList.add('image-loaded');
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('[Home] Failed to load sandbox thumbnails from IndexedDB:', e);
+        }
     }
 
     setupInfiniteScroll() {
