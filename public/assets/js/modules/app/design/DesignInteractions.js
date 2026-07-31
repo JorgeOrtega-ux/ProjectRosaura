@@ -34,6 +34,14 @@ export const DesignInteractions = {
     },
 
     getMaxBalance() {
+        if (this.isSandbox) {
+            if (this.interactionMode === 'owner_erasing') return Infinity;
+            if (this.perkNoCooldown) return Infinity;
+            if (this.interactionMode === 'bombing') {
+                return typeof PerksRegistry !== 'undefined' ? PerksRegistry.getTargetCount(this.activeBomb) : 1;
+            }
+            return this.cooldownMax;
+        }
         if (this.interactionMode === 'owner_erasing') return Infinity;
         if (this.perkNoCooldown) return Infinity;
         if (this.interactionMode === 'protecting') return this.perkProtectionLeft || 0;
@@ -45,6 +53,50 @@ export const DesignInteractions = {
     },
 
     handleClick(e) {
+        const btnSandboxSettings = e.target.closest('[data-action="openSandboxSettingsModal"]');
+        if (btnSandboxSettings) {
+            e.preventDefault();
+            this.openSandboxSettingsModal();
+            return;
+        }
+
+        if (this.isSandbox) {
+            const btnToggleDropdown = e.target.closest('[data-action="toggleDropdown"]');
+            if (btnToggleDropdown) {
+                e.preventDefault();
+                this.toggleModalDropdown(btnToggleDropdown);
+                return;
+            }
+
+            const btnSelectValue = e.target.closest('[data-action="selectValue"]');
+            if (btnSelectValue) {
+                e.preventDefault();
+                this.selectModalDropdownValue(btnSelectValue);
+                return;
+            }
+
+            const btnAdjust = e.target.closest('[data-action="adjustSandboxCooldownBatch"]');
+            if (btnAdjust) {
+                e.preventDefault();
+                const step = parseInt(btnAdjust.getAttribute('data-step'), 10);
+                const min = parseInt(btnAdjust.getAttribute('data-min') || '1', 10);
+                const max = parseInt(btnAdjust.getAttribute('data-max') || '1000', 10);
+                
+                const valEl = document.getElementById('sandbox_cooldown_batch_val');
+                const inputEl = document.getElementById('sandbox_cooldown_batch');
+                if (valEl && inputEl) {
+                    let curVal = parseInt(valEl.getAttribute('data-val') || '100', 10);
+                    let newVal = curVal + step;
+                    if (newVal < min) newVal = min;
+                    if (newVal > max) newVal = max;
+                    
+                    valEl.setAttribute('data-val', newVal);
+                    valEl.textContent = newVal;
+                    inputEl.value = newVal;
+                }
+                return;
+            }
+        }
         
         if (typeof this.handleTemplateModals === 'function' && this.handleTemplateModals(e)) {
             return; 
@@ -1321,23 +1373,38 @@ export const DesignInteractions = {
                 }
             });
 
-            if (this.wsManager) {
-                this.wsManager.send({
-                    type: 'bomb_pixel',
-                    targets: targets,
-                    x: targets[0]?.x ?? 0,
-                    y: targets[0]?.y ?? 0,
-                    perk: usedPerk,
-                    width: this.boardWidth,
-                    userId: window.activeUserId || null
-                });
-            }
-            if (this.inventoryPerks && usedPerk) {
-                const perkObj = this.inventoryPerks.find(p => p.perk_id === usedPerk);
-                if (perkObj) {
-                    perkObj.count = Math.max(0, parseInt(perkObj.count, 10) - 1);
-                    if (perkObj.count === 0) {
-                        this.inventoryPerks = this.inventoryPerks.filter(p => p.perk_id !== usedPerk);
+            if (this.isSandbox) {
+                setTimeout(() => {
+                    if (this.renderWorker) {
+                        this.renderWorker.postMessage({
+                            type: 'BOMB_PIXEL',
+                            payload: { cX: targets[0]?.x ?? 0, cY: targets[0]?.y ?? 0, r: perkRadius, perkId: usedPerk }
+                        });
+                    }
+                    if (typeof this.triggerExplosionEffect === 'function') {
+                        this.triggerExplosionEffect(targets[0]?.x ?? 0, targets[0]?.y ?? 0, perkRadius, usedPerk);
+                    }
+                    this.persistBombExplosion(targets[0]?.x ?? 0, targets[0]?.y ?? 0, perkRadius);
+                }, durationSecs * 1000);
+            } else {
+                if (this.wsManager) {
+                    this.wsManager.send({
+                        type: 'bomb_pixel',
+                        targets: targets,
+                        x: targets[0]?.x ?? 0,
+                        y: targets[0]?.y ?? 0,
+                        perk: usedPerk,
+                        width: this.boardWidth,
+                        userId: window.activeUserId || null
+                    });
+                }
+                if (this.inventoryPerks && usedPerk) {
+                    const perkObj = this.inventoryPerks.find(p => p.perk_id === usedPerk);
+                    if (perkObj) {
+                        perkObj.count = Math.max(0, parseInt(perkObj.count, 10) - 1);
+                        if (perkObj.count === 0) {
+                            this.inventoryPerks = this.inventoryPerks.filter(p => p.perk_id !== usedPerk);
+                        }
                     }
                 }
             }
@@ -1409,6 +1476,73 @@ export const DesignInteractions = {
             });
         }
         
+        if (this.isSandbox) {
+            (async () => {
+                try {
+                    const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+                    const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+                    const chunkSize = 512;
+                    const chunkGroups = {};
+                    
+                    validPixels.forEach(p => {
+                        const cx = Math.floor(p.x / chunkSize);
+                        const cy = Math.floor(p.y / chunkSize);
+                        const key = `${cx},${cy}`;
+                        if (!chunkGroups[key]) {
+                            chunkGroups[key] = [];
+                        }
+                        chunkGroups[key].push(p);
+                    });
+
+                    for (const [key, pixels] of Object.entries(chunkGroups)) {
+                        const [cx, cy] = key.split(',').map(Number);
+                        const actualW = Math.min(chunkSize, this.boardWidth - cx * chunkSize);
+                        const actualH = Math.min(chunkSize, this.boardHeight - cy * chunkSize);
+
+                        let base64 = await DesignSandboxDb.getChunk(key);
+                        let bytes;
+                        if (base64) {
+                            bytes = await DesignSandboxDb.decompress(base64);
+                        }
+                        if (!bytes || bytes.length !== actualW * actualH * 4) {
+                            bytes = new Uint8Array(actualW * actualH * 4);
+                        }
+
+                        const colorHex = this.interactionMode === 'erasing' ? '#000000' : this.currentColor;
+                        const r = parseInt(colorHex.slice(1, 3), 16);
+                        const g = parseInt(colorHex.slice(3, 5), 16);
+                        const b = parseInt(colorHex.slice(5, 7), 16);
+                        const a = this.interactionMode === 'erasing' ? 0 : 255;
+
+                        pixels.forEach(p => {
+                            const lx = p.x % chunkSize;
+                            const ly = p.y % chunkSize;
+                            const pixelOffset = (ly * actualW + lx) * 4;
+                            if (pixelOffset >= 0 && pixelOffset + 3 < bytes.length) {
+                                bytes[pixelOffset] = r;
+                                bytes[pixelOffset + 1] = g;
+                                bytes[pixelOffset + 2] = b;
+                                bytes[pixelOffset + 3] = a;
+                            }
+                        });
+
+                        const newBase64 = await DesignSandboxDb.compressAndEncode(bytes);
+                        await DesignSandboxDb.saveChunk(key, newBase64);
+                    }
+                } catch (e) {
+                    console.error('[Sandbox] Error saving pixels to IndexedDB:', e);
+                }
+            })();
+
+            showMessage('Píxeles guardados localmente', 'success');
+
+            this.selectedPixels.clear();
+            this.updateSelectionUI();
+            this.requestRender();
+            return;
+        }
+
         if (this.wsManager && validPixels.length > 0) {
             if (validPixels.length === 1) {
                 const p = validPixels[0];
@@ -1558,6 +1692,18 @@ export const DesignInteractions = {
     // handleNuclearWarning gestionado por DesignNetwork.js
 
     async loadUserPerks() {
+        if (this.isSandbox) {
+            this.inventoryPerks = [
+                { perk_id: 'pixel_misil_1', count: 999 },
+                { perk_id: 'bomba_pixel_1', count: 999 },
+                { perk_id: 'bomba_atomica_1', count: 999 },
+                { perk_id: 'bomba_racimo_1', count: 999 },
+                { perk_id: 'lluvia_meteoritos_1', count: 999 },
+                { perk_id: 'proteccion_pixeles_1', count: 999 }
+            ];
+            if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+            return;
+        }
         try {
             const result = await this.api.post('store.get_my_perks', {});
             if (result && result.success) {
@@ -1628,6 +1774,20 @@ export const DesignInteractions = {
 
             if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
             this.updateSelectionUI();
+            return;
+        }
+
+        if (this.isSandbox) {
+            if (perkId.includes('cooldown') || perkId.includes('no_cooldown')) {
+                this.perkNoCooldown = true;
+                this.perkNoCooldownExpires = Date.now() + 60000;
+                showMessage('Ventaja Sin Cooldown activada (60s)', 'success');
+            } else {
+                showMessage('Ventaja activada con éxito', 'success');
+            }
+            if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+            this.updateSelectionUI();
+            this.requestRender();
             return;
         }
 
@@ -2094,6 +2254,222 @@ export const DesignInteractions = {
         const timeStr = ` - ${hrs}:${mins}:${secs}`;
         if (this.myProtectionsTimerLabel) {
             this.myProtectionsTimerLabel.textContent = timeStr;
+        }
+    },
+
+    async openSandboxSettingsModal() {
+        if (!window.modalSystem) return;
+
+        try {
+            const res = await window.modalSystem.show('sandboxSettingsModal', {
+                width: this.boardWidth,
+                height: this.boardHeight,
+                paletteId: this.canvasPaletteId,
+                cooldownBatch: this.cooldownMax
+            });
+
+            if (res && res.confirmed && res.data) {
+                const newWidth = parseInt(res.data.sandbox_width, 10);
+                const newHeight = parseInt(res.data.sandbox_height, 10);
+                const newPalette = res.data.sandbox_palette;
+                const newLimit = parseInt(res.data.sandbox_cooldown_batch, 10);
+
+                if (isNaN(newWidth) || newWidth < 1 || newWidth > 4096 || isNaN(newHeight) || newHeight < 1 || newHeight > 4096) {
+                    showMessage('Dimensiones inválidas (deben ser entre 1 y 4096 px)', 'error');
+                    return;
+                }
+                if (isNaN(newLimit) || newLimit < 1) {
+                    showMessage('Límite de lote inválido', 'error');
+                    return;
+                }
+
+                const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+                const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+                const widthChanged = this.boardWidth !== newWidth;
+                const heightChanged = this.boardHeight !== newHeight;
+
+                if (widthChanged || heightChanged) {
+                    try {
+                        await DesignSandboxDb.migrateChunks(this.boardWidth, this.boardHeight, newWidth, newHeight);
+                    } catch (e) {
+                        console.error('[Sandbox] Chunk migration failed:', e);
+                    }
+                }
+
+                await DesignSandboxDb.saveSettings({
+                    width: newWidth,
+                    height: newHeight,
+                    paletteId: newPalette,
+                    cooldownBatch: newLimit
+                });
+                
+                this.boardWidth = newWidth;
+                this.boardHeight = newHeight;
+                this.canvasPaletteId = newPalette;
+                this.cooldownMax = newLimit;
+                this.cooldownBalance = newLimit;
+
+                this.renderColorPalette(this.canvasPaletteId);
+
+                this.setupCanvas();
+                this.centerBoard();
+
+                if (this.loadedChunks) this.loadedChunks.clear();
+                if (this.loadingChunks) this.loadingChunks.clear();
+
+                if (this.renderWorker) {
+                    if (widthChanged || heightChanged) {
+                        this.renderWorker.postMessage({
+                            type: 'RESIZE_BOARD',
+                            payload: { boardWidth: this.boardWidth, boardHeight: this.boardHeight }
+                        });
+                    }
+                }
+
+                this.updateVisibleChunks();
+                this.requestRender();
+                showMessage('Ajustes del Sandbox actualizados con éxito', 'success');
+            }
+        } catch (e) {
+            console.error('[Sandbox] Error saving settings from modal:', e);
+        }
+    },
+
+    async persistBombExplosion(cX, cY, r) {
+        try {
+            const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+            const chunkSize = 512;
+            const rSq = r * r;
+
+            const minCx = Math.max(0, Math.floor((cX - r) / chunkSize));
+            const maxCx = Math.min(Math.floor((this.boardWidth - 1) / chunkSize), Math.floor((cX + r) / chunkSize));
+            const minCy = Math.max(0, Math.floor((cY - r) / chunkSize));
+            const maxCy = Math.min(Math.floor((this.boardHeight - 1) / chunkSize), Math.floor((cY + r) / chunkSize));
+
+            for (let cx = minCx; cx <= maxCx; cx++) {
+                for (let cy = minCy; cy <= maxCy; cy++) {
+                    const key = `${cx},${cy}`;
+                    const actualW = Math.min(chunkSize, this.boardWidth - cx * chunkSize);
+                    const actualH = Math.min(chunkSize, this.boardHeight - cy * chunkSize);
+
+                    let base64 = await DesignSandboxDb.getChunk(key);
+                    let bytes;
+                    if (base64) {
+                        bytes = await DesignSandboxDb.decompress(base64);
+                    }
+                    if (!bytes || bytes.length !== actualW * actualH * 4) {
+                        bytes = new Uint8Array(actualW * actualH * 4);
+                    }
+
+                    let chunkChanged = false;
+                    const startX = cx * chunkSize;
+                    const startY = cy * chunkSize;
+
+                    for (let ly = 0; ly < actualH; ly++) {
+                        const y = startY + ly;
+                        const dy = y - cY;
+                        if (Math.abs(dy) > r) continue;
+
+                        for (let lx = 0; lx < actualW; lx++) {
+                            const x = startX + lx;
+                            const dx = x - cX;
+                            if (dx * dx + dy * dy <= rSq) {
+                                const offset = (ly * actualW + lx) * 4;
+                                bytes[offset] = 0;
+                                bytes[offset + 1] = 0;
+                                bytes[offset + 2] = 0;
+                                bytes[offset + 3] = 0;
+                                chunkChanged = true;
+                            }
+                        }
+                    }
+
+                    if (chunkChanged) {
+                        const newBase64 = await DesignSandboxDb.compressAndEncode(bytes);
+                        await DesignSandboxDb.saveChunk(key, newBase64);
+                    }
+                }
+            }
+
+            if (this.loadedChunks) this.loadedChunks.clear();
+            if (this.loadingChunks) this.loadingChunks.clear();
+            this.updateVisibleChunks();
+            this.requestRender();
+        } catch (e) {
+            console.error('[Sandbox] Failed to persist bomb explosion in IndexedDB:', e);
+        }
+    },
+
+    toggleModalDropdown(triggerBtn) {
+        if (triggerBtn.classList.contains('disabled-interaction')) return;
+        const targetId = triggerBtn.getAttribute('data-target');
+        const targetDropdown = document.querySelector(`[data-module="${targetId}"]`);
+        
+        document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
+            if (el !== targetDropdown) {
+                el.classList.remove('active');
+                el.classList.add('disabled');
+            }
+        });
+
+        if (targetDropdown) {
+            if (targetDropdown.classList.contains('disabled')) {
+                targetDropdown.classList.remove('disabled');
+                targetDropdown.classList.add('active');
+            } else {
+                targetDropdown.classList.remove('active');
+                targetDropdown.classList.add('disabled');
+            }
+        }
+    },
+
+    selectModalDropdownValue(optionBtn) {
+        const type = optionBtn.getAttribute('data-type');
+        const value = optionBtn.getAttribute('data-value');
+        const label = optionBtn.getAttribute('data-label');
+        const icon = optionBtn.getAttribute('data-icon');
+
+        if (type === 'size') {
+            const widthInput = document.getElementById('sandbox_width');
+            const heightInput = document.getElementById('sandbox_height');
+            if (widthInput && heightInput) {
+                if (value !== 'custom') {
+                    const [w, h] = value.split('x').map(Number);
+                    widthInput.value = w;
+                    heightInput.value = h;
+                }
+            }
+        } else if (type === 'palette') {
+            const paletteInput = document.getElementById('sandbox_palette');
+            if (paletteInput) {
+                paletteInput.value = value;
+            }
+        }
+
+        const menu = optionBtn.closest('.component-menu-list');
+        if (menu) {
+            menu.querySelectorAll('.component-menu-link').forEach(el => el.classList.remove('active'));
+            optionBtn.classList.add('active');
+        }
+
+        const dropdownWrapper = optionBtn.closest('.component-dropdown-wrapper');
+        if (dropdownWrapper) {
+            const triggerText = dropdownWrapper.querySelector('.component-dropdown-text');
+            if (triggerText) {
+                triggerText.textContent = label;
+            }
+            const triggerIcon = dropdownWrapper.querySelector('.component-dropdown-trigger span:first-child');
+            if (triggerIcon && icon) {
+                triggerIcon.textContent = icon;
+            }
+            const targetModule = dropdownWrapper.querySelector('.component-module--dropdown');
+            if (targetModule) {
+                targetModule.classList.remove('active');
+                targetModule.classList.add('disabled');
+            }
         }
     }
 };

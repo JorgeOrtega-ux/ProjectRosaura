@@ -181,6 +181,11 @@ class DesignController {
             this.cooldownMax = parseInt(wrapper.getAttribute('data-cooldown-batch'), 10) || 5;
             this.cooldownSec = parseInt(wrapper.getAttribute('data-cooldown-seconds'), 10) || 10;
             this.cooldownBalance = this.cooldownMax;
+            
+            const uuid = wrapper.getAttribute('data-canvas-uuid');
+            if (uuid === 'sandbox') {
+                this.isSandbox = true;
+            }
         }
 
         this.lastCooldownHtml = null;
@@ -192,22 +197,286 @@ class DesignController {
         if (this.isSnapshotMode) {
             this.loadCanvasConfigForSnapshot();
         } else {
+            if (this.isSandbox) {
+                this.isProgressive = true;
+                this.initWebSocket = () => {
+                    console.log('[Sandbox] WebSocket bypassed.');
+                };
+
+                this.fetchChunks = async (chunkKeys) => {
+                    if (!chunkKeys || chunkKeys.length === 0) return;
+                    if (!this.loadingChunks) this.loadingChunks = new Set();
+                    if (!this.loadedChunks) this.loadedChunks = new Set();
+                    
+                    const validKeys = chunkKeys.filter(k => !this.loadedChunks.has(k) && !this.loadingChunks.has(k));
+                    if (validKeys.length === 0) return;
+                    
+                    validKeys.forEach(k => this.loadingChunks.add(k));
+
+                    try {
+                        const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+                        const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+                        const chunkSize = 512;
+
+                        for (const key of validKeys) {
+                            const [cx, cy] = key.split(',').map(Number);
+                            try {
+                                let base64 = await DesignSandboxDb.getChunk(key);
+                                if (!base64) {
+                                    const actualW = Math.min(chunkSize, this.boardWidth - cx * chunkSize);
+                                    const actualH = Math.min(chunkSize, this.boardHeight - cy * chunkSize);
+                                    if (actualW > 0 && actualH > 0) {
+                                        const emptyBytes = new Uint8Array(actualW * actualH * 4);
+                                        base64 = await DesignSandboxDb.compressAndEncode(emptyBytes);
+                                    }
+                                }
+                                if (base64) {
+                                    this.hydrateChunk(cx, cy, base64);
+                                    this.loadedChunks.add(key);
+                                }
+                            } catch (e) {
+                                console.error('[Sandbox] Failed to load chunk:', key, e);
+                            } finally {
+                                this.loadingChunks.delete(key);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('[Sandbox] Failed to load chunks in sandbox:', e);
+                    }
+                };
+
+                this.loadUserPerks = () => {
+                    this.inventoryPerks = [
+                        { perk_id: 'pixel_misil_1', count: 999 },
+                        { perk_id: 'bomba_pixel_1', count: 999 },
+                        { perk_id: 'bomba_atomica_1', count: 999 },
+                        { perk_id: 'bomba_racimo_1', count: 999 },
+                        { perk_id: 'lluvia_meteoritos_1', count: 999 },
+                        { perk_id: 'proteccion_pixeles_1', count: 999 }
+                    ];
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                };
+
+                this.activatePerk = async (perkId, btn) => {
+                    if (!perkId) return;
+
+                    if (perkId === 'proteccion_pixeles_1') {
+                        if (this.interactionMode === 'user_protecting') {
+                            this.interactionMode = 'normal';
+                            if (typeof showMessage === 'function') showMessage('Modo Protector de Píxeles desactivado', 'info');
+                        } else {
+                            this.interactionMode = 'user_protecting';
+                            this.activeBomb = null;
+                            if (typeof showMessage === 'function') showMessage('Modo Protector de Píxeles activado. Haz clic en el lienzo para definir la primera esquina.', 'info');
+                        }
+                        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                        this.updateSelectionUI();
+                        this.requestRender();
+                        return;
+                    }
+
+                    if (PerksRegistry.isBomb(perkId)) {
+                        if (this.activeBomb === perkId && this.interactionMode === 'bombing') {
+                            this.perkBombReady = null;
+                            this.interactionMode = 'normal';
+                            this.activeBomb = null;
+                        } else {
+                            this.perkBombReady = perkId;
+                            this.interactionMode = 'bombing';
+                            this.activeBomb = perkId;
+                            if (typeof showMessage === 'function') showMessage(window.__('msg_perk_equipped_select_target'), 'info');
+                        }
+                        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                        this.updateSelectionUI();
+                        return;
+                    }
+
+                    if (perkId.includes('cooldown') || perkId.includes('no_cooldown')) {
+                        this.perkNoCooldown = true;
+                        this.perkNoCooldownExpires = Date.now() + 60000;
+                        showMessage('Ventaja Sin Cooldown activada (60s)', 'success');
+                    } else {
+                        showMessage('Ventaja activada con éxito', 'success');
+                    }
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    this.updateSelectionUI();
+                    this.requestRender();
+                };
+
+                this.placePixels = async () => {
+                    if (this.isSelecting) return;
+                    if (this.selectedPixels.size === 0) return;
+
+                    const maxBalance = this.getMaxBalance();
+                    if (this.selectedPixels.size > maxBalance) {
+                        showMessage('Superas el límite permitido.', 'warning');
+                        return;
+                    }
+
+                    const validPixels = [];
+                    this.selectedPixels.forEach(key => {
+                        const x = key & 0xFFFF;
+                        const y = key >> 16;
+                        validPixels.push({ x, y });
+                    });
+
+                    if (validPixels.length === 0) return;
+
+                    const usedPerk = this.activeBomb;
+                    const perkConfig = typeof PerksRegistry !== 'undefined' ? PerksRegistry.get(usedPerk) : null;
+                    const durationSecs = parseInt(perkConfig?.warning_seconds || 3, 10);
+                    const perkRadius = typeof PerksRegistry !== 'undefined' 
+                        ? PerksRegistry.getExplosionRadius(usedPerk, this.boardWidth, this.boardHeight) 
+                        : 10;
+
+                    if (this.interactionMode === 'bombing') {
+                        const requiredTargets = typeof PerksRegistry !== 'undefined' ? PerksRegistry.getTargetCount(this.activeBomb) : 1;
+                        if (this.selectedPixels.size < requiredTargets) {
+                            showMessage(`Selecciona ${requiredTargets} objetivo(s)`, 'warning');
+                            return;
+                        }
+
+                        validPixels.forEach(tgt => {
+                            const warningData = {
+                                x: tgt.x,
+                                y: tgt.y,
+                                duration: durationSecs,
+                                perk: usedPerk,
+                                radius: perkRadius
+                            };
+                            if (typeof this.handleBombWarning === 'function') {
+                                this.handleBombWarning(warningData);
+                            } else if (typeof this.handleNuclearWarning === 'function') {
+                                this.handleNuclearWarning(warningData);
+                            }
+                        });
+
+                        setTimeout(() => {
+                            if (this.renderWorker) {
+                                this.renderWorker.postMessage({
+                                    type: 'BOMB_PIXEL',
+                                    payload: { cX: validPixels[0]?.x ?? 0, cY: validPixels[0]?.y ?? 0, r: perkRadius, perkId: usedPerk }
+                                });
+                            }
+                            if (typeof this.triggerExplosionEffect === 'function') {
+                                this.triggerExplosionEffect(validPixels[0]?.x ?? 0, validPixels[0]?.y ?? 0, perkRadius, usedPerk);
+                            }
+                            this.persistBombExplosion(validPixels[0]?.x ?? 0, validPixels[0]?.y ?? 0, perkRadius);
+                        }, durationSecs * 1000);
+
+                        this.interactionMode = 'normal';
+                        this.activeBomb = null;
+                        this.perkBombReady = null;
+                        this.selectedPixels.clear();
+                        this.updateSelectionUI();
+                        this.requestRender();
+                        return;
+                    }
+
+                    if (this.renderWorker) {
+                        const pixelsToPush = validPixels.map(p => ({
+                            x: p.x,
+                            y: p.y,
+                            color: this.interactionMode === 'normal' ? this.currentColor : 'transparent'
+                        }));
+                        this.renderWorker.postMessage({ type: 'PUSH_PIXELS', payload: { pixels: pixelsToPush } });
+                    } else if (this.offscreenCtx) {
+                        validPixels.forEach(p => {
+                            if (this.interactionMode === 'normal') {
+                                this.offscreenCtx.fillStyle = this.currentColor;
+                                this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
+                                this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
+                            } else {
+                                this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
+                            }
+                        });
+                    }
+
+                    try {
+                        const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+                        const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+                        const chunkSize = 512;
+                        const chunkGroups = {};
+                        
+                        validPixels.forEach(p => {
+                            const cx = Math.floor(p.x / chunkSize);
+                            const cy = Math.floor(p.y / chunkSize);
+                            const key = `${cx},${cy}`;
+                            if (!chunkGroups[key]) chunkGroups[key] = [];
+                            chunkGroups[key].push(p);
+                        });
+
+                        for (const [key, pixels] of Object.entries(chunkGroups)) {
+                            const [cx, cy] = key.split(',').map(Number);
+                            const actualW = Math.min(chunkSize, this.boardWidth - cx * chunkSize);
+                            const actualH = Math.min(chunkSize, this.boardHeight - cy * chunkSize);
+
+                            let base64 = await DesignSandboxDb.getChunk(key);
+                            let bytes;
+                            if (base64) {
+                                bytes = await DesignSandboxDb.decompress(base64);
+                            }
+                            if (!bytes || bytes.length !== actualW * actualH * 4) {
+                                bytes = new Uint8Array(actualW * actualH * 4);
+                            }
+
+                            const colorHex = this.interactionMode === 'erasing' ? '#000000' : this.currentColor;
+                            const r = parseInt(colorHex.slice(1, 3), 16);
+                            const g = parseInt(colorHex.slice(3, 5), 16);
+                            const b = parseInt(colorHex.slice(5, 7), 16);
+                            const a = this.interactionMode === 'erasing' ? 0 : 255;
+
+                            pixels.forEach(p => {
+                                const lx = p.x % chunkSize;
+                                const ly = p.y % chunkSize;
+                                const pixelOffset = (ly * actualW + lx) * 4;
+                                if (pixelOffset >= 0 && pixelOffset + 3 < bytes.length) {
+                                    bytes[pixelOffset] = r;
+                                    bytes[pixelOffset + 1] = g;
+                                    bytes[pixelOffset + 2] = b;
+                                    bytes[pixelOffset + 3] = a;
+                                }
+                            });
+
+                            const newBase64 = await DesignSandboxDb.compressAndEncode(bytes);
+                            await DesignSandboxDb.saveChunk(key, newBase64);
+                        }
+                    } catch (e) {
+                        console.error('[Sandbox] Error saving pixels to IndexedDB:', e);
+                    }
+
+                    showMessage('Píxeles guardados localmente', 'success');
+
+                    this.selectedPixels.clear();
+                    this.updateSelectionUI();
+                    this.requestRender();
+                };
+            }
+
             this.loadCanvasConfig();
-            this.checkCanvasAccess();
             
-            const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
-            if (uid) {
-                if (typeof this.loadUserPerks === 'function') {
-                    this.loadUserPerks();
+            if (this.isSandbox) {
+                this.initSandboxMode();
+            } else {
+                this.checkCanvasAccess();
+                
+                const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+                if (uid) {
+                    if (typeof this.loadUserPerks === 'function') {
+                        this.loadUserPerks();
+                    }
                 }
             }
             
             this.startCooldownLoop();
             
-            if (this.chat && typeof this.chat.destroy === 'function') {
-                this.chat.destroy();
+            if (!this.isSandbox) {
+                if (this.chat && typeof this.chat.destroy === 'function') {
+                    this.chat.destroy();
+                }
+                this.chat = new DesignChat(this);
             }
-            this.chat = new DesignChat(this);
         }
         console.log('%c[Rosaura App] DesignController ready!', 'color: #4caf50; font-weight: bold;');
     }
@@ -235,6 +504,42 @@ class DesignController {
                     }
                 }, true); 
             }
+        }
+    }
+
+    async initSandboxMode() {
+        console.log('[Rosaura Sandbox] Initializing offline sandbox mode...');
+        try {
+            const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+            const settings = await DesignSandboxDb.getSettings();
+            if (settings) {
+                this.boardWidth = parseInt(settings.width, 10) || 64;
+                this.boardHeight = parseInt(settings.height, 10) || 64;
+                this.canvasPaletteId = settings.paletteId || 'default';
+                this.cooldownMax = parseInt(settings.cooldownBatch, 10) || 100;
+                this.cooldownBalance = this.cooldownMax;
+            } else {
+                await DesignSandboxDb.saveSettings({
+                    width: this.boardWidth,
+                    height: this.boardHeight,
+                    paletteId: this.canvasPaletteId,
+                    cooldownBatch: this.cooldownMax
+                });
+            }
+
+            this.isProgressive = true;
+            this.setupCanvas();
+            this.centerBoard();
+            this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
+            this.renderColorPalette(this.canvasPaletteId);
+
+            this.loadedChunks = new Set();
+            this.loadingChunks = new Set();
+            this.updateVisibleChunks();
+        } catch (e) {
+            console.error('[Sandbox] Failed to initialize Sandbox mode:', e);
         }
     }
 
@@ -286,7 +591,22 @@ class DesignController {
 
                 if (this.uiCooldownBadge) {
                     let newHtml = '';
-                    if (this.interactionMode === 'bombing' && this.activeBomb) {
+                    if (this.isSandbox) {
+                        if (this.interactionMode === 'bombing' && this.activeBomb) {
+                            const icon = PerksRegistry.getIcon(this.activeBomb);
+                            const targetMax = PerksRegistry.getTargetCount(this.activeBomb);
+                            const currentSel = this.selectedPixels ? this.selectedPixels.size : 0;
+                            newHtml = `
+                                <span class="material-symbols-rounded">${icon}</span>
+                                <span>${currentSel}/${targetMax}</span>
+                            `;
+                        } else {
+                            newHtml = `
+                                <span class="material-symbols-rounded">bolt</span>
+                                <span>${Math.floor(this.cooldownBalance)}/${this.cooldownMax}</span>
+                            `;
+                        }
+                    } else if (this.interactionMode === 'bombing' && this.activeBomb) {
                         const icon = PerksRegistry.getIcon(this.activeBomb);
                         const targetMax = PerksRegistry.getTargetCount(this.activeBomb);
                         const currentSel = this.selectedPixels ? this.selectedPixels.size : 0;

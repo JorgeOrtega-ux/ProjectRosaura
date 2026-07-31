@@ -116,13 +116,51 @@ export const DesignSetup = {
             }
 
             this.updateLockBadges();
-            this.initWebSocket();
+            if (!this.isSandbox) {
+                this.initWebSocket();
+            }
         } else {
             this.setupCanvas();
             this.centerBoard();
             this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
             this.renderColorPalette('default');
             this.updateLockBadges();
+        }
+    },
+
+    async initSandboxMode() {
+        console.log('[Rosaura Sandbox] Initializing offline sandbox mode...');
+        try {
+            const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+            const settings = await DesignSandboxDb.getSettings();
+            if (settings) {
+                this.boardWidth = parseInt(settings.width, 10) || 64;
+                this.boardHeight = parseInt(settings.height, 10) || 64;
+                this.canvasPaletteId = settings.paletteId || 'default';
+                this.cooldownMax = parseInt(settings.cooldownBatch, 10) || 100;
+                this.cooldownBalance = this.cooldownMax;
+            } else {
+                await DesignSandboxDb.saveSettings({
+                    width: this.boardWidth,
+                    height: this.boardHeight,
+                    paletteId: this.canvasPaletteId,
+                    cooldownBatch: this.cooldownMax
+                });
+            }
+
+            this.isProgressive = true;
+            this.setupCanvas();
+            this.centerBoard();
+            this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
+            this.renderColorPalette(this.canvasPaletteId);
+
+            this.loadedChunks = new Set();
+            this.loadingChunks = new Set();
+            this.updateVisibleChunks();
+        } catch (e) {
+            console.error('[Sandbox] Failed to initialize Sandbox mode:', e);
         }
     },
 
@@ -369,6 +407,35 @@ export const DesignSetup = {
         
         validKeys.forEach(k => this.loadingChunks.add(k));
 
+        if (this.isSandbox) {
+            const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+            const chunkSize = 512;
+
+            validKeys.forEach(async (key) => {
+                const [cx, cy] = key.split(',').map(Number);
+                try {
+                    let base64 = await DesignSandboxDb.getChunk(key);
+                    if (!base64) {
+                        const actualW = Math.min(chunkSize, this.boardWidth - cx * chunkSize);
+                        const actualH = Math.min(chunkSize, this.boardHeight - cy * chunkSize);
+                        if (actualW > 0 && actualH > 0) {
+                            const emptyBytes = new Uint8Array(actualW * actualH * 4);
+                            base64 = await DesignSandboxDb.compressAndEncode(emptyBytes);
+                        }
+                    }
+                    if (base64) {
+                        this.hydrateChunk(cx, cy, base64);
+                        this.loadedChunks.add(key);
+                    }
+                } catch (e) {
+                    console.error('[Sandbox] Failed to load chunk:', key, e);
+                } finally {
+                    this.loadingChunks.delete(key);
+                }
+            });
+            return;
+        }
 
         // Batch chunk requests to prevent massive 48MB JSON payloads and blocking
         const BATCH_SIZE = 4;

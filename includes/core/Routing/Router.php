@@ -45,6 +45,11 @@ class Router {
             return ['view' => 'canvases/snapshots/snapshot-viewer.php'];
         }
 
+        if ($relativePath === '/design/sandbox') {
+            $_GET['id'] = 'sandbox';
+            return ['view' => 'app/design.php'];
+        }
+
         if (preg_match('#^/design/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['id'] = $matches[1];
             return ['view' => 'app/design.php'];

@@ -2,8 +2,46 @@
 use App\Api\Services\App\AppViewService;
 use App\Core\Helpers\Utils;
 
-$viewService = new AppViewService();
-$designData = $viewService->getCanvasDesignData($_GET['id'] ?? '', isset($_GET['snapshot']));
+if (isset($_GET['id']) && $_GET['id'] === 'sandbox') {
+    $designData = [
+        'canvasIntId' => 'sandbox',
+        'canvasUuid' => 'sandbox',
+        'canvasName' => 'Modo Sandbox Local',
+        'canvasSize' => '64',
+        'canvasPalette' => 'default',
+        'canvasPrivacy' => 'public',
+        'canvasApproval' => '0',
+        'canvasAllowChat' => '0',
+        'canvasAllowPurchases' => '1',
+        'canvasCooldownBatch' => '100',
+        'canvasCooldownSeconds' => '0',
+        'resetActive' => '0',
+        'nextResetAt' => '',
+        'timerAction' => 'restart',
+        'resizeActive' => '0',
+        'nextResizeAt' => '',
+        'resizeTargetSize' => '64',
+        'resizeTimerAction' => 'restart',
+        'isMember' => true,
+        'userRole' => 'admin',
+        'userId' => $_SESSION['active_account'] ?? 1,
+        'isOwner' => true,
+        'isBlockedInit' => false,
+        'isSpectatorInit' => false,
+        'isSubscriptionLockedInit' => false,
+        'canvasInitialZoom' => 1.0,
+        'isChatRestricted' => false,
+        'chatRestrictionType' => null,
+        'chatRestrictionEnd' => null,
+        'canInjectTemplate' => true,
+        'canLiveShare' => false,
+        'isBanned' => false,
+        'isSnapshot' => false
+    ];
+} else {
+    $viewService = new AppViewService();
+    $designData = $viewService->getCanvasDesignData($_GET['id'] ?? '', isset($_GET['snapshot']));
+}
 
 if ($designData['isBanned']) {
     echo "<div class='view-content'><p>".__('err_user_banned_from_canvas')."</p></div>";
@@ -101,6 +139,14 @@ extract($designData);
                 </div>
 
                 <div class="component-actions <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="design-tools-actions">
+                    <?php if (isset($_GET['id']) && $_GET['id'] === 'sandbox'): ?>
+                    <button class="component-button component-button--icon component-button--h40 component-button--warning" data-action="openSandboxSettingsModal" data-tooltip="Ajustes de Sandbox" data-position="bottom">
+                        <span class="material-symbols-rounded">tune</span>
+                    </button>
+                    <div class="component-divider-vertical" data-ref="sandbox-actions-divider"></div>
+                    <?php endif; ?>
+
+                    <?php if (($_GET['id'] ?? '') !== 'sandbox'): ?>
                     <button class="component-button component-button--icon component-button--h40" data-action="openJoinLiveModal" data-tooltip="<?php echo __('tooltip_join_live'); ?> [J]" data-position="bottom">
                         <span class="material-symbols-rounded">sensors</span>
                     </button>
@@ -110,10 +156,12 @@ extract($designData);
                     <button class="component-button component-button--icon component-button--h40 <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'component-button--premium premium-locked' : ''; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom" <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'data-requires-premium="true"' : ''; ?>>
                         <span class="material-symbols-rounded">stream</span>
                     </button>
+                    <?php endif; ?>
                     
                     <button class="component-button component-button--icon component-button--h40 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?> [C]" data-position="bottom">
                         <span class="material-symbols-rounded">palette</span>
                     </button>
+                    <?php if (($_GET['id'] ?? '') !== 'sandbox'): ?>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?> [T]" data-position="bottom">
                         <span class="material-symbols-rounded">photo_library</span>
                     </button>
@@ -121,6 +169,7 @@ extract($designData);
                     <button class="component-button component-button--icon component-button--h40 component-button--warning disabled" data-action="unlockTemplateTop" data-ref="btn-top-unlock-template" data-tooltip="Desfijar Plantilla [U]" data-position="bottom">
                         <span class="material-symbols-rounded">lock_open</span>
                     </button>
+                    <?php endif; ?>
                     
                     <?php if ($canvasAllowPurchases == '1'): ?>
                     <div class="component-divider-vertical" data-ref="advantages-actions-divider"></div>
@@ -129,14 +178,14 @@ extract($designData);
                     </button>
                     <?php endif; ?>
 
-                    <?php if (isset($isOwner) && $isOwner): ?>
+                    <?php if (isset($isOwner) && $isOwner && ($_GET['id'] ?? '') !== 'sandbox'): ?>
                     <div class="component-divider-vertical" data-ref="owner-tools-actions-divider"></div>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
                         <span class="material-symbols-rounded">construction</span>
                     </button>
                     <?php endif; ?>
                     
-                    <?php if ($canvasAllowChat == '1'): ?>
+                    <?php if ($canvasAllowChat == '1' && ($_GET['id'] ?? '') !== 'sandbox'): ?>
                     <div class="component-divider-vertical" data-ref="chat-actions-divider"></div>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom">
                         <span class="material-symbols-rounded">chat</span>

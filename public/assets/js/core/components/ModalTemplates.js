@@ -1557,5 +1557,201 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+
+    sandboxSettingsModal: {
+        build: (data = {}) => {
+            const currentWidth = data.width || 64;
+            const currentHeight = data.height || 64;
+            const currentPalette = data.paletteId || 'default';
+            const currentLimit = data.cooldownBatch || 100;
+            
+            const sizeStr = `${currentWidth}x${currentHeight}`;
+            
+            const sizes = [
+                { val: '16x16', label: '16x16', icon: 'crop_square' },
+                { val: '32x32', label: '32x32', icon: 'crop_square' },
+                { val: '64x64', label: '64x64', icon: 'crop_square' },
+                { val: '128x64', label: '128x64', icon: 'aspect_ratio' },
+                { val: '128x128', label: '128x128', icon: 'aspect_ratio' },
+                { val: '256x128', label: '256x128', icon: 'aspect_ratio' },
+                { val: '256x256', label: '256x256', icon: 'grid_4x4' },
+                { val: '512x256', label: '512x256', icon: 'aspect_ratio' },
+                { val: '512x512', label: '512x512', icon: 'grid_on' },
+                { val: '1024x512', label: '1024x512', icon: 'aspect_ratio' },
+                { val: '1024x1024', label: '1024x1024', icon: 'grid_on' },
+                { val: '2048x1024', label: '2048x1024', icon: 'aspect_ratio' },
+                { val: '2048x2048', label: '2048x2048', icon: 'grid_on' },
+                { val: '4096x4096', label: '4096x4096', icon: 'grid_on' }
+            ];
+
+            let activeSize = sizes.find(s => s.val === sizeStr);
+            if (!activeSize) {
+                activeSize = sizes[2]; 
+            }
+
+            let sizeMenuLinks = '';
+            sizes.forEach(s => {
+                const isActive = s.val === activeSize.val ? 'active' : '';
+                sizeMenuLinks += `
+                    <div class="component-menu-link ${isActive}" data-action="selectValue" data-type="size" data-value="${s.val}" data-label="${s.label}" data-icon="${s.icon}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${s.icon}</span></div>
+                        <div class="component-menu-link-text"><span>${s.label}</span></div>
+                    </div>
+                `;
+            });
+
+            let palettes = [];
+            if (window.APP_PALETTES) {
+                Object.entries(window.APP_PALETTES).forEach(([id, pal]) => {
+                    palettes.push({
+                        id: id,
+                        label: window.__ ? window.__(pal.name_key) : id,
+                        icon: 'palette'
+                    });
+                });
+            }
+            if (window.APP_CUSTOM_PALETTES) {
+                if (Array.isArray(window.APP_CUSTOM_PALETTES)) {
+                    window.APP_CUSTOM_PALETTES.forEach(pal => {
+                        palettes.push({
+                            id: pal.id,
+                            label: pal.name || pal.id,
+                            icon: 'palette'
+                        });
+                    });
+                } else {
+                    Object.entries(window.APP_CUSTOM_PALETTES).forEach(([id, pal]) => {
+                        palettes.push({
+                            id: id,
+                            label: pal.name || id,
+                            icon: 'palette'
+                        });
+                    });
+                }
+            }
+
+            let activePalette = palettes.find(p => p.id === currentPalette);
+            if (!activePalette) {
+                activePalette = palettes[0] || { id: 'default', label: 'Por defecto', icon: 'palette' };
+            }
+
+            let paletteMenuLinks = '';
+            palettes.forEach(p => {
+                const isActive = p.id === activePalette.id ? 'active' : '';
+                paletteMenuLinks += `
+                    <div class="component-menu-link ${isActive}" data-action="selectValue" data-type="palette" data-value="${p.id}" data-label="${p.label}" data-icon="${p.icon}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${p.icon}</span></div>
+                        <div class="component-menu-link-text"><span>${p.label}</span></div>
+                    </div>
+                `;
+            });
+
+            const titleStr = 'Ajustes del Sandbox';
+            const descStr = 'Configura tu lienzo offline de forma visual. Las selecciones de tamaño y paleta se aplicarán al confirmar.';
+            const btnCancel = 'Cancelar';
+            const btnSave = 'Aplicar Cambios';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${titleStr}</h2>
+                    <p class="component-modal-desc">${descStr}</p>
+                </div>
+                
+                <div class="component-card--grouped component-card--flush" style="margin: 0 20px 15px 20px;">
+                    
+                    <!-- Preajuste de tamaño (Dropdown) -->
+                    <div class="component-group-item component-group-item--wrap">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Tamaño del Lienzo</h2>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="sandboxDropdownSize">
+                                    <span class="material-symbols-rounded">${activeSize.icon}</span>
+                                    <span class="component-dropdown-text" data-ref="text-size">${activeSize.label}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sandboxDropdownSize">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            ${sizeMenuLinks}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="sandbox_width" name="sandbox_width" value="${activeSize.val.split('x')[0]}">
+                        <input type="hidden" id="sandbox_height" name="sandbox_height" value="${activeSize.val.split('x')[1]}">
+                    </div>
+                    
+                    <!-- Paleta de colores (Dropdown) -->
+                    <div class="component-group-item component-group-item--wrap">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Paleta de Colores</h2>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="sandboxDropdownPalette">
+                                    <span class="material-symbols-rounded">${activePalette.icon}</span>
+                                    <span class="component-dropdown-text" data-ref="text-palette">${activePalette.label}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sandboxDropdownPalette">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            ${paletteMenuLinks}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="sandbox_palette" name="sandbox_palette" value="${activePalette.id}">
+                    </div>
+
+                    <!-- Límite de píxeles por lote (Inline control) -->
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content" style="padding: 0 0 10px 0;">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Límite de Píxeles por Lote</h2>
+                                <p class="component-card__description">Ajusta cuántos píxeles puedes colocar por cada click.</p>
+                            </div>
+                        </div>
+                        <div class="component-inline-control component-inline-control--full component-inline-control--fixed">
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="-5" data-min="1">
+                                    <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
+                                </button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="-1" data-min="1">
+                                    <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
+                                </button>
+                            </div>
+                            <div class="component-inline-control__center" id="sandbox_cooldown_batch_val" data-val="${currentLimit}">${currentLimit}</div>
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="1" data-max="1000">
+                                    <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
+                                </button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="5" data-max="1000">
+                                    <span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="hidden" id="sandbox_cooldown_batch" name="sandbox_cooldown_batch" value="${currentLimit}">
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--success" data-modal-action="confirm">${btnSave}</button>
+                </div>
+            `;
+        }
     }
 };

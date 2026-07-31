@@ -966,17 +966,44 @@ self.onmessage = function (e) {
             injectAnimation = null;
             eraserAnimations = [];
 
-            if (!resizeAnimation) {
-                resizeAnimation = {
-                    startTime: Date.now(),
-                    duration: 1500,
-                    startW: boardWidth,
-                    startH: boardHeight,
-                    endW: payload.boardWidth,
-                    endH: payload.boardHeight,
-                    totalPixels: boardWidth * boardHeight,
-                    clearedCount: 0
-                };
+            if (isProgressive) {
+                const newW = payload.boardWidth;
+                const newH = payload.boardHeight;
+                const newImgData = new ImageData(newW, newH);
+                const newBuffer = new Uint32Array(newImgData.data.buffer);
+                
+                if (pixelBuffer) {
+                    const minH = Math.min(boardHeight, newH);
+                    const minW = Math.min(boardWidth, newW);
+                    for (let y = 0; y < minH; y++) {
+                        const srcIdx = y * boardWidth;
+                        const destIdx = y * newW;
+                        newBuffer.set(pixelBuffer.subarray(srcIdx, srcIdx + minW), destIdx);
+                    }
+                }
+                
+                boardWidth = newW;
+                boardHeight = newH;
+                mainImageData = newImgData;
+                pixelBuffer = newBuffer;
+                if (offscreenCanvas) {
+                    offscreenCanvas.width = boardWidth;
+                    offscreenCanvas.height = boardHeight;
+                    offscreenCtx.putImageData(mainImageData, 0, 0);
+                }
+            } else {
+                if (!resizeAnimation) {
+                    resizeAnimation = {
+                        startTime: Date.now(),
+                        duration: 1500,
+                        startW: boardWidth,
+                        startH: boardHeight,
+                        endW: payload.boardWidth,
+                        endH: payload.boardHeight,
+                        totalPixels: boardWidth * boardHeight,
+                        clearedCount: 0
+                    };
+                }
             }
             requestRender();
             break;
