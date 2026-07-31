@@ -1659,28 +1659,21 @@ export const ModalTemplates = {
                     <p class="component-modal-desc">${descStr}</p>
                 </div>
                 
-                <div class="component-card--grouped component-card--flush" style="margin: 0 20px 15px 20px;">
-                    
-                    <!-- Preajuste de tamaño (Dropdown) -->
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Tamaño del Lienzo</h2>
+                <div class="component-modal-body">
+                    <!-- Tamaño del Lienzo -->
+                    <div>
+                        <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">Tamaño del Lienzo</div>
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleDropdown" data-target="sandboxDropdownSize">
+                                <span class="material-symbols-rounded">${activeSize.icon}</span>
+                                <span class="component-dropdown-text" data-ref="text-size">${activeSize.label}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="sandboxDropdownSize">
-                                    <span class="material-symbols-rounded">${activeSize.icon}</span>
-                                    <span class="component-dropdown-text" data-ref="text-size">${activeSize.label}</span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sandboxDropdownSize">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
-                                            ${sizeMenuLinks}
-                                        </div>
+                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sandboxDropdownSize">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list component-menu-list--scrollable">
+                                        ${sizeMenuLinks}
                                     </div>
                                 </div>
                             </div>
@@ -1689,26 +1682,20 @@ export const ModalTemplates = {
                         <input type="hidden" id="sandbox_height" name="sandbox_height" value="${activeSize.val.split('x')[1]}">
                     </div>
                     
-                    <!-- Paleta de colores (Dropdown) -->
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Paleta de Colores</h2>
+                    <!-- Paleta de Colores -->
+                    <div style="margin-top: 15px;">
+                        <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">Paleta de Colores</div>
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleDropdown" data-target="sandboxDropdownPalette">
+                                <span class="material-symbols-rounded">${activePalette.icon}</span>
+                                <span class="component-dropdown-text" data-ref="text-palette">${activePalette.label}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="sandboxDropdownPalette">
-                                    <span class="material-symbols-rounded">${activePalette.icon}</span>
-                                    <span class="component-dropdown-text" data-ref="text-palette">${activePalette.label}</span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sandboxDropdownPalette">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
-                                            ${paletteMenuLinks}
-                                        </div>
+                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sandboxDropdownPalette">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list component-menu-list--scrollable">
+                                        ${paletteMenuLinks}
                                     </div>
                                 </div>
                             </div>
@@ -1716,15 +1703,10 @@ export const ModalTemplates = {
                         <input type="hidden" id="sandbox_palette" name="sandbox_palette" value="${activePalette.id}">
                     </div>
 
-                    <!-- Límite de píxeles por lote (Inline control) -->
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content" style="padding: 0 0 10px 0;">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Límite de Píxeles por Lote</h2>
-                                <p class="component-card__description">Ajusta cuántos píxeles puedes colocar por cada click.</p>
-                            </div>
-                        </div>
-                        <div class="component-inline-control component-inline-control--full component-inline-control--fixed">
+                    <!-- Límite de Píxeles por Lote -->
+                    <div style="margin-top: 15px;">
+                        <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">Límite de Píxeles por Lote</div>
+                        <div class="component-inline-control component-inline-control--full">
                             <div class="component-inline-control__group">
                                 <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="-5" data-min="1">
                                     <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
@@ -1769,13 +1751,11 @@ export const ModalTemplates = {
                     <p class="component-modal-desc">${descStr}</p>
                 </div>
                 
-                <div class="component-card--grouped component-card--flush" style="margin: 0 20px 15px 20px;">
+                <div class="component-modal-body">
                     <!-- Nombre del Sandbox -->
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-input-group">
-                            <input type="text" id="sandbox_name" class="component-input-field" placeholder=" " maxlength="50" autocomplete="off" required>
-                            <label class="component-input-label">Nombre del Lienzo</label>
-                        </div>
+                    <div class="component-input-group">
+                        <input type="text" id="sandbox_name" class="component-input-field" placeholder=" " maxlength="50" autocomplete="off" required>
+                        <label class="component-input-label">Nombre del Lienzo</label>
                     </div>
                 </div>
                 
@@ -1799,12 +1779,11 @@ export const ModalTemplates = {
                     <h2 class="component-modal-title">${titleStr}</h2>
                 </div>
                 
-                <div class="component-card--grouped component-card--flush" style="margin: 0 20px 15px 20px;">
-                    <div class="component-group-item component-group-item--wrap">
-                        <div class="component-input-group">
-                            <input type="text" id="sandbox_name" class="component-input-field" placeholder=" " value="${data.nameValue || ''}" maxlength="50" autocomplete="off" required>
-                            <label class="component-input-label">Nuevo Nombre del Lienzo</label>
-                        </div>
+                <div class="component-modal-body">
+                    <!-- Nombre del Sandbox -->
+                    <div class="component-input-group">
+                        <input type="text" id="sandbox_name" class="component-input-field" placeholder=" " value="${data.nameValue || ''}" maxlength="50" autocomplete="off" required>
+                        <label class="component-input-label">Nuevo Nombre del Lienzo</label>
                     </div>
                 </div>
                 
@@ -1842,53 +1821,471 @@ export const ModalTemplates = {
         customClass: 'component-modal-box--columns',
         build: () => {
             const titleStr = 'Explora a lo grande con mundos Sandbox';
-            const descStr = 'Disfruta de la libertad total de diseñar sin límites y 100% offline.';
+            const descStr = 'Disfruta de la libertad total de diseñar sin límites con tus propios mundos de prueba.';
             const btnAction = 'Comenzar a explorar';
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-left" style="display: flex; flex-direction: column; justify-content: space-between; padding: 30px;">
-                    <div>
-                        <h2 class="component-modal-title component-modal-title--lg" style="margin-bottom: 12px; line-height: 1.3;">${titleStr}</h2>
-                        <p class="component-modal-desc component-modal-desc--lg" style="margin-bottom: 25px;">${descStr}</p>
+                <div class="component-modal-left">
+                    <h2 class="component-modal-title component-modal-title--lg">${titleStr}</h2>
+                    <p class="component-modal-desc component-modal-desc--lg">${descStr}</p>
+                    
+                    <div class="component-modal-list">
+                        <!-- Card 1 -->
+                        <div class="component-card--selectable-row active">
+                            <div class="component-card-left-section component-card-left-section--full component-card-left-section--top">
+                                <span class="material-symbols-rounded component-card-icon-sm">grid_view</span>
+                                <div class="component-card-info">
+                                    <span class="component-card-title-sm">Hasta 10 mundos independientes</span>
+                                    <span class="component-card-desc-sm">Crea, nombra y administra múltiples tableros sandbox simultáneos directamente desde tu galería.</span>
+                                </div>
+                            </div>
+                        </div>
                         
-                        <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 30px;">
-                            <div style="display: flex; align-items: flex-start; gap: 12px;">
-                                <span class="material-symbols-rounded" style="color: var(--color-brand-primary, #6200ee); font-size: 24px; padding-top: 2px;">science</span>
-                                <div>
-                                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">Hasta 10 mundos independientes</h4>
-                                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Crea y administra múltiples tableros locales guardados directamente en tu navegador.</p>
+                        <!-- Card 2 -->
+                        <div class="component-card--selectable-row">
+                            <div class="component-card-left-section component-card-left-section--full component-card-left-section--top">
+                                <span class="material-symbols-rounded component-card-icon-sm">lock_open</span>
+                                <div class="component-card-info">
+                                    <span class="component-card-title-sm">Todo Desbloqueado</span>
+                                    <span class="component-card-desc-sm">Disfruta de paletas de colores completas, límites de píxeles personalizados y colocación instantánea de bloques.</span>
                                 </div>
                             </div>
-                            
-                            <div style="display: flex; align-items: flex-start; gap: 12px;">
-                                <span class="material-symbols-rounded" style="color: var(--color-brand-primary, #6200ee); font-size: 24px; padding-top: 2px;">extension</span>
-                                <div>
-                                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">Todo Desbloqueado</h4>
-                                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Límites de píxeles elevados, paletas de colores exclusivas y herramientas libres.</p>
-                                </div>
-                            </div>
-                            
-                            <div style="display: flex; align-items: flex-start; gap: 12px;">
-                                <span class="material-symbols-rounded" style="color: var(--color-brand-primary, #6200ee); font-size: 24px; padding-top: 2px;">signal_wifi_off</span>
-                                <div>
-                                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">100% Offline</h4>
-                                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Diseña sin conexión a internet y tus datos se mantendrán seguros en tu disco.</p>
+                        </div>
+                        
+                        <!-- Card 3 -->
+                        <div class="component-card--selectable-row">
+                            <div class="component-card-left-section component-card-left-section--full component-card-left-section--top">
+                                <span class="material-symbols-rounded component-card-icon-sm">design_services</span>
+                                <div class="component-card-info">
+                                    <span class="component-card-title-sm">Herramientas de Administración</span>
+                                    <span class="component-card-desc-sm">Experimenta libremente con herramientas del dueño para vaciar áreas seleccionadas o aplicar protecciones de píxeles.</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <button class="component-button component-button--brand component-button--rounded-pill component-button--h40" data-modal-action="confirm" style="width: 100%; font-weight: 600;">
+                    <button class="component-button component-button--brand component-button--rounded-pill component-button--h40 component-modal-submit-btn" data-modal-action="confirm">
                         <span>${btnAction}</span>
-                        <span class="material-symbols-rounded" style="font-size: 20px; margin-left: 6px;">arrow_forward</span>
                     </button>
+                    
+                    <p class="component-modal-disclaimer">
+                        * Los mundos sandbox son simulaciones locales de lienzo. Los cambios no se sincronizan con la red global de Rosaura ni afectan a los tableros públicos.
+                    </p>
                 </div>
                 
-                <div class="component-modal-right" style="background: linear-gradient(135deg, #121214 0%, #1c1c20 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
-                    <!-- Espacio de imagen vacío por ahora, con un diseño premium sutil -->
-                    <div style="position: absolute; width: 150px; height: 150px; background: radial-gradient(circle, rgba(98, 0, 238, 0.15) 0%, rgba(0,0,0,0) 70%); filter: blur(20px);"></div>
-                    <span class="material-symbols-rounded" style="font-size: 110px; color: rgba(255, 255, 255, 0.04); user-select: none;">toys</span>
+                <div class="component-modal-right">
+                    <div class="component-modal-right-image-container">
+                        <img src="assets/img/sandbox-promo.jpg" alt="Sandbox Onboarding" onerror="this.style.display='none'">
+                    </div>
+                </div>
+            `;
+        }
+    },
+
+    sandboxLobbyModal: {
+        noPadding: true,
+        customClass: 'component-modal-box--columns',
+        build: (data = {}) => {
+            const initialStage = data.hasOnboarded ? 2 : 1;
+            const sbs = data.sandboxes || [];
+
+            const escapeHtml = (str) => {
+                if (typeof str !== 'string') return '';
+                return str.replace(/[&<>'"]/g, 
+                    tag => ({
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        "'": '&#39;',
+                        '"': '&quot;'
+                    }[tag] || tag)
+                );
+            };
+
+            let sandboxesListHtml = '';
+            if (sbs.length > 0) {
+                sbs.forEach(sb => {
+                    const thumbAttr = sb.thumbnail ? sb.thumbnail : 'null';
+                    sandboxesListHtml += `
+                        <div class="component-card--selectable-row" data-action="selectSandbox" data-uuid="${sb.uuid}" data-name="${escapeHtml(sb.name)}" data-size="${sb.width}x${sb.height}" data-palette="${sb.palette}" data-thumbnail="${thumbAttr}">
+                            <div class="component-card-left-section component-card-left-section--full component-card-left-section--top">
+                                <span class="material-symbols-rounded component-card-icon-sm">science</span>
+                                <div class="component-card-info">
+                                    <span class="component-card-title-sm">${escapeHtml(sb.name)}</span>
+                                    <span class="component-card-desc-sm">Lienzo local • ${sb.width}x${sb.height}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                sandboxesListHtml = `
+                    <div style="text-align: center; padding: 24px; color: var(--text-secondary); opacity: 0.6; font-size: 13px;">
+                        No tienes mundos sandbox creados aún.
+                    </div>
+                `;
+            }
+
+            const sizes = [
+                { val: '16x16', label: '16x16', icon: 'crop_square' },
+                { val: '32x32', label: '32x32', icon: 'crop_square' },
+                { val: '64x64', label: '64x64', icon: 'crop_square' },
+                { val: '128x64', label: '128x64', icon: 'aspect_ratio' },
+                { val: '128x128', label: '128x128', icon: 'aspect_ratio' },
+                { val: '256x128', label: '256x128', icon: 'aspect_ratio' },
+                { val: '256x256', label: '256x256', icon: 'grid_4x4' },
+                { val: '512x256', label: '512x256', icon: 'aspect_ratio' },
+                { val: '512x512', label: '512x512', icon: 'grid_on' },
+                { val: '1024x512', label: '1024x512', icon: 'aspect_ratio' },
+                { val: '1024x1024', label: '1024x1024', icon: 'grid_on' },
+                { val: '2048x1024', label: '2048x1024', icon: 'aspect_ratio' },
+                { val: '2048x2048', label: '2048x2048', icon: 'grid_on' },
+                { val: '4096x4096', label: '4096x4096', icon: 'grid_on' }
+            ];
+
+            let activeSize = sizes[2]; // default 64x64
+            let sizeMenuLinks = '';
+            sizes.forEach(s => {
+                const isActive = s.val === activeSize.val ? 'active' : '';
+                sizeMenuLinks += `
+                    <div class="component-menu-link ${isActive}" data-action="selectValue" data-type="size" data-value="${s.val}" data-label="${s.label}" data-icon="${s.icon}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${s.icon}</span></div>
+                        <div class="component-menu-link-text"><span>${s.label}</span></div>
+                    </div>
+                `;
+            });
+
+            let palettes = [];
+            if (window.APP_PALETTES) {
+                Object.entries(window.APP_PALETTES).forEach(([id, pal]) => {
+                    palettes.push({
+                        id: id,
+                        label: window.__ ? window.__(pal.name_key) : id,
+                        icon: 'palette'
+                    });
+                });
+            }
+            if (window.APP_CUSTOM_PALETTES) {
+                if (Array.isArray(window.APP_CUSTOM_PALETTES)) {
+                    window.APP_CUSTOM_PALETTES.forEach(pal => {
+                        palettes.push({
+                            id: pal.id,
+                            label: pal.name || pal.id,
+                            icon: 'palette'
+                        });
+                    });
+                } else {
+                    Object.entries(window.APP_CUSTOM_PALETTES).forEach(([id, pal]) => {
+                        palettes.push({
+                            id: id,
+                            label: pal.name || id,
+                            icon: 'palette'
+                        });
+                    });
+                }
+            }
+
+            let activePalette = palettes[0] || { id: 'default', label: 'Por defecto', icon: 'palette' };
+            let paletteMenuLinks = '';
+            palettes.forEach(p => {
+                const isActive = p.id === activePalette.id ? 'active' : '';
+                paletteMenuLinks += `
+                    <div class="component-menu-link ${isActive}" data-action="selectValue" data-type="palette" data-value="${p.id}" data-label="${p.label}" data-icon="${p.icon}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${p.icon}</span></div>
+                        <div class="component-menu-link-text"><span>${p.label}</span></div>
+                    </div>
+                `;
+            });
+
+            return `
+                <style>
+                    .sandbox-stage {
+                        display: flex;
+                        flex-direction: row;
+                        width: 100%;
+                    }
+                    .sandbox-list-scrollable {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                        max-height: 240px;
+                        overflow-y: auto;
+                        padding-right: 6px;
+                        margin-top: 10px;
+                    }
+                    .sandbox-list-scrollable::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    .sandbox-list-scrollable::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    .sandbox-list-scrollable::-webkit-scrollbar-thumb {
+                        background: var(--border-color);
+                        border-radius: 4px;
+                    }
+                    .sandbox-list-scrollable::-webkit-scrollbar-thumb:hover {
+                        background: var(--text-tertiary);
+                    }
+                    .create-new-world-btn {
+                        border: 1px dashed var(--text-brand) !important;
+                        background: rgba(99, 102, 241, 0.05) !important;
+                        transition: all 0.2s ease;
+                    }
+                    .create-new-world-btn:hover {
+                        background: rgba(99, 102, 241, 0.1) !important;
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                    }
+                    .component-card--selectable-row {
+                        transition: all 0.2s ease;
+                    }
+                    .component-card--selectable-row:hover {
+                        transform: translateX(4px);
+                    }
+                    .component-card--selectable-row.active {
+                        background: var(--bg-hover-light) !important;
+                        border-color: var(--text-brand) !important;
+                    }
+                    .sandbox-header-with-back {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        margin-bottom: 8px;
+                    }
+                    .sandbox-header-with-back .component-modal-title {
+                        margin: 0;
+                    }
+                    @media (max-width: 1024px) {
+                        .sandbox-stage {
+                            flex-direction: column !important;
+                        }
+                        .sandbox-stage .component-modal-left {
+                            width: 100% !important;
+                            padding: 24px !important;
+                        }
+                        .sandbox-stage .component-modal-right {
+                            display: flex !important;
+                            width: 100% !important;
+                            border-left: none !important;
+                            border-top: 1px solid var(--border-color) !important;
+                            padding: 24px !important;
+                        }
+                    }
+                </style>
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                
+                <!-- STAGE 1: ONBOARDING / INTRO -->
+                <div class="sandbox-stage" data-stage="1" style="display: ${initialStage === 1 ? 'flex' : 'none'};">
+                    <div class="component-modal-left">
+                        <h2 class="component-modal-title component-modal-title--lg">Explora a lo grande con mundos Sandbox</h2>
+                        <p class="component-modal-desc component-modal-desc--lg">Disfruta de la libertad total de diseñar sin límites con tus propios mundos de prueba locales.</p>
+                        
+                        <div class="component-modal-list">
+                            <!-- Card 1 -->
+                            <div class="component-card--selectable-row active">
+                                <div class="component-card-left-section component-card-left-section--full component-card-left-section--top">
+                                    <span class="material-symbols-rounded component-card-icon-sm">grid_view</span>
+                                    <div class="component-card-info">
+                                        <span class="component-card-title-sm">Hasta 10 mundos independientes</span>
+                                        <span class="component-card-desc-sm">Crea, nombra y administra múltiples tableros sandbox simultáneos directamente desde tu galería.</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Card 2 -->
+                            <div class="component-card--selectable-row">
+                                <div class="component-card-left-section component-card-left-section--full component-card-left-section--top">
+                                    <span class="material-symbols-rounded component-card-icon-sm">lock_open</span>
+                                    <div class="component-card-info">
+                                        <span class="component-card-title-sm">Todo Desbloqueado</span>
+                                        <span class="component-card-desc-sm">Disfruta de paletas de colores completas, límites de píxeles personalizados y colocación instantánea de bloques.</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Card 3 -->
+                            <div class="component-card--selectable-row">
+                                <div class="component-card-left-section component-card-left-section--full component-card-left-section--top">
+                                    <span class="material-symbols-rounded component-card-icon-sm">design_services</span>
+                                    <div class="component-card-info">
+                                        <span class="component-card-title-sm">Herramientas de Administración</span>
+                                        <span class="component-card-desc-sm">Experimenta libremente con herramientas del dueño para vaciar áreas seleccionadas o aplicar protecciones de píxeles.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="component-button component-button--brand component-button--rounded-pill component-button--h40 component-modal-submit-btn" data-action="nextStage">
+                            <span>Comenzar a explorar</span>
+                        </button>
+                        
+                        <p class="component-modal-disclaimer">
+                            * Los mundos sandbox son simulaciones locales de lienzo. Los cambios no se sincronizan con la red global de Rosaura ni afectan a los tableros públicos.
+                        </p>
+                    </div>
+                    
+                    <div class="component-modal-right">
+                        <div class="component-modal-right-image-container">
+                            <img src="assets/img/sandbox-promo.jpg" alt="Sandbox Onboarding" onerror="this.style.display='none'">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STAGE 2: LOBBY / SELECTION -->
+                <div class="sandbox-stage" data-stage="2" style="display: ${initialStage === 2 ? 'flex' : 'none'};">
+                    <div class="component-modal-left">
+                        <h2 class="component-modal-title">Mundos Sandbox Locales</h2>
+                        <p class="component-modal-desc">Crea o selecciona un lienzo fuera de línea. Todo el progreso se guardará de forma local en tu navegador.</p>
+                        
+                        <input type="hidden" id="sandbox_action" name="sandbox_action" value="play_existing">
+                        <input type="hidden" id="selected_sandbox_uuid" name="selected_sandbox_uuid" value="">
+                        
+                        <!-- Create New Card Button -->
+                        <div class="component-card--selectable-row create-new-world-btn" data-action="goCreateForm">
+                            <div class="component-card-left-section component-card-left-section--full component-card-left-section--top">
+                                <span class="material-symbols-rounded component-card-icon-sm" style="color: var(--text-brand) !important;">add_circle</span>
+                                <div class="component-card-info">
+                                    <span class="component-card-title-sm" style="color: var(--text-brand) !important; font-weight: 700;">Crear Nuevo Mundo</span>
+                                    <span class="component-card-desc-sm">Diseña un nuevo lienzo local sin conexión.</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- List Header -->
+                        <div style="font-size: 13px; font-weight: 600; margin: 16px 0 8px 0; opacity: 0.7; color: var(--text-primary);">Tus Mundos Sandbox (${sbs.length}/10)</div>
+                        
+                        <!-- Sandboxes List -->
+                        <div class="sandbox-list-scrollable">
+                            ${sandboxesListHtml}
+                        </div>
+                    </div>
+                    
+                    <div class="component-modal-right" style="padding: 32px; display: flex; flex-direction: column; justify-content: space-between; height: auto;">
+                        <!-- TOP: Sandbox Preview Card -->
+                        <div class="sandbox-preview-card-wrapper" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%;">
+                            <div class="sandbox-preview-card" style="width: 100%; border: 1px dashed var(--border-color); border-radius: 16px; padding: 24px; text-align: center; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 200px;">
+                                <span class="material-symbols-rounded" style="font-size: 48px; opacity: 0.5;">science</span>
+                                <p style="margin: 0; font-size: 14px;">Selecciona un mundo sandbox de la lista para ver su vista previa y jugar.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- BOTTOM: Play Button -->
+                        <div class="sandbox-play-wrapper" style="margin-top: 24px; width: 100%;">
+                            <button class="component-button component-button--brand component-button--rounded-pill component-button--h48 component-button--full sandbox-play-btn" data-modal-action="confirm" disabled style="width: 100%;">
+                                <span class="material-symbols-rounded">play_arrow</span>
+                                <span>Jugar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STAGE 3: CREATION FORM -->
+                <div class="sandbox-stage" data-stage="3" style="display: none;">
+                    <div class="component-modal-left">
+                        <div class="sandbox-header-with-back">
+                            <button type="button" class="component-button component-button--icon component-button--h36" data-action="backToLobby" style="background: transparent; border: none; padding: 0; min-width: auto; height: auto;">
+                                <span class="material-symbols-rounded" style="color: var(--text-primary); font-size: 24px; cursor: pointer;">arrow_back</span>
+                            </button>
+                            <h2 class="component-modal-title">Crear Nuevo Mundo</h2>
+                        </div>
+                        <p class="component-modal-desc">Configura las opciones de tu nuevo lienzo local offline.</p>
+                        
+                        <!-- Nombre del Sandbox -->
+                        <div class="component-input-group" style="margin-top: 15px;">
+                            <input type="text" id="sandbox_name" name="sandbox_name" class="component-input-field" placeholder=" " maxlength="50" autocomplete="off">
+                            <label class="component-input-label">Nombre del Mundo</label>
+                        </div>
+
+                        <!-- Tamaño del Lienzo -->
+                        <div style="margin-top: 15px;">
+                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8; color: var(--text-primary);">Tamaño del Lienzo</div>
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleDropdown" data-target="sandboxLobbyDropdownSize">
+                                    <span class="material-symbols-rounded">${activeSize.icon}</span>
+                                    <span class="component-dropdown-text" data-ref="text-size">${activeSize.label}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sandboxLobbyDropdownSize">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            ${sizeMenuLinks}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="sandbox_width" name="sandbox_width" value="${activeSize.val.split('x')[0]}">
+                            <input type="hidden" id="sandbox_height" name="sandbox_height" value="${activeSize.val.split('x')[1]}">
+                        </div>
+                        
+                        <!-- Límite de Píxeles por Lote -->
+                        <div style="margin-top: 15px;">
+                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8; color: var(--text-primary);">Límite de Píxeles por Lote</div>
+                            <div class="component-inline-control component-inline-control--full">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="-5" data-min="1">
+                                        <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="-1" data-min="1">
+                                        <span class="material-symbols-rounded">chevron_left</span>
+                                    </button>
+                                </div>
+                                <div class="component-inline-control__center" id="sandbox_cooldown_batch_val" data-val="100" style="color: var(--text-primary);">100</div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="1" data-max="1000">
+                                        <span class="material-symbols-rounded">chevron_right</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustSandboxCooldownBatch" data-step="5" data-max="1000">
+                                        <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="hidden" id="sandbox_cooldown_batch" name="sandbox_cooldown_batch" value="100">
+                        </div>
+
+                        <!-- Paleta de Colores -->
+                        <div style="margin-top: 15px;">
+                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8; color: var(--text-primary);">Paleta de Colores</div>
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleDropdown" data-target="sandboxLobbyDropdownPalette">
+                                    <span class="material-symbols-rounded">${activePalette.icon}</span>
+                                    <span class="component-dropdown-text" data-ref="text-palette">${activePalette.label}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="sandboxLobbyDropdownPalette">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            ${paletteMenuLinks}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="sandbox_palette" name="sandbox_palette" value="${activePalette.id}">
+                        </div>
+                    </div>
+                    
+                    <div class="component-modal-right" style="padding: 32px; display: flex; flex-direction: column; justify-content: space-between; height: auto;">
+                        <!-- TOP: Config Illustration -->
+                        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%;">
+                            <div style="width: 100%; border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; text-align: center; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--bg-hover-light);">
+                                <span class="material-symbols-rounded" style="font-size: 64px; color: var(--text-brand);">design_services</span>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <h4 style="margin: 0; font-size: 15px; font-weight: 600; color: var(--text-primary);">Configuración del Mundo</h4>
+                                    <p style="margin: 0; font-size: 13px;">Personaliza el tamaño y estilo de tu espacio creativo.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- BOTTOM: Play / Create Button -->
+                        <div style="margin-top: 24px; width: 100%;">
+                            <button class="component-button component-button--brand component-button--rounded-pill component-button--h48 component-button--full" data-modal-action="confirm" style="width: 100%;">
+                                <span class="material-symbols-rounded">play_arrow</span>
+                                <span>Jugar</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             `;
         }

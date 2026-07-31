@@ -134,28 +134,62 @@ export const DesignSetup = {
             const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
             const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
 
-            const settings = await DesignSandboxDb.getSettings(this.sandboxUuid);
-            if (settings) {
-                this.boardWidth = parseInt(settings.width, 10) || 64;
-                this.boardHeight = parseInt(settings.height, 10) || 64;
-                this.canvasPaletteId = settings.paletteId || 'default';
-                this.cooldownMax = parseInt(settings.cooldownBatch, 10) || 100;
-                this.cooldownBalance = this.cooldownMax;
-                
-                // Actualizar el título de la página/lienzo
-                const titleElements = document.querySelectorAll('.component-top-title');
-                if (titleElements.length > 1 && settings.name) {
-                    titleElements[1].textContent = settings.name;
-                } else if (titleElements.length > 0 && settings.name) {
-                    titleElements[0].textContent = settings.name;
-                }
+            let settings = await DesignSandboxDb.getSettings(this.sandboxUuid);
+            if (!settings) {
+                let name = '';
+                try {
+                    const listJson = localStorage.getItem('rosaura_sandboxes_list');
+                    if (listJson) {
+                        const list = JSON.parse(listJson);
+                        const item = list.find(s => s.uuid === this.sandboxUuid);
+                        if (item) name = item.name;
+                    }
+                } catch (e) {}
+
+                settings = {
+                    name: name || '',
+                    width: this.boardWidth || 64,
+                    height: this.boardHeight || 64,
+                    paletteId: this.canvasPaletteId || 'default',
+                    cooldownBatch: this.cooldownMax || 100
+                };
+                await DesignSandboxDb.saveSettings(settings, this.sandboxUuid);
+            }
+
+            this.boardWidth = parseInt(settings.width, 10) || 64;
+            this.boardHeight = parseInt(settings.height, 10) || 64;
+            this.canvasPaletteId = settings.paletteId || 'default';
+            this.cooldownMax = parseInt(settings.cooldownBatch, 10) || 100;
+            this.cooldownBalance = this.cooldownMax;
+            
+            // Actualizar el título de la página/lienzo
+            const titleElements = document.querySelectorAll('.component-top-title');
+            const displayName = settings.name ? `${settings.name} (Sandbox)` : 'Modo Sandbox Local (Sandbox)';
+            if (titleElements.length > 1) {
+                titleElements[1].textContent = displayName;
+            } else if (titleElements.length > 0) {
+                titleElements[0].textContent = displayName;
+            }
+
+            // Cargar protecciones de Sandbox
+            if (settings.ownerProtectedOffsets) {
+                this.ownerProtectedPixels = new Set(settings.ownerProtectedOffsets);
             } else {
-                await DesignSandboxDb.saveSettings({
-                    width: this.boardWidth,
-                    height: this.boardHeight,
-                    paletteId: this.canvasPaletteId,
-                    cooldownBatch: this.cooldownMax
-                }, this.sandboxUuid);
+                this.ownerProtectedPixels = new Set();
+            }
+
+            if (settings.myProtectedOffsets) {
+                this.myProtectedPixels = new Set(settings.myProtectedOffsets);
+                this.protectedPixels = new Set(settings.myProtectedOffsets);
+            } else {
+                this.myProtectedPixels = new Set();
+                this.protectedPixels = new Set();
+            }
+
+            this.myProtectedExpiries = settings.myProtectedExpiries || {};
+
+            if (typeof this.syncProtectedPixelsToWorker === 'function') {
+                this.syncProtectedPixelsToWorker();
             }
 
             this.isProgressive = true;

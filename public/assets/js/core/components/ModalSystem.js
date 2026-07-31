@@ -377,6 +377,192 @@ export class ModalSystem {
             return;
         }
 
+        // Dropdown toggling inside modals
+        const btnToggleDropdown = e.target.closest('[data-action="toggleDropdown"]');
+        if (btnToggleDropdown) {
+            e.preventDefault();
+            const targetId = btnToggleDropdown.getAttribute('data-target');
+            const targetDropdown = this.activeBox.querySelector(`[data-module="${targetId}"]`);
+            
+            this.activeBox.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
+                if (el !== targetDropdown) {
+                    el.classList.remove('active');
+                    el.classList.add('disabled');
+                }
+            });
+
+            if (targetDropdown) {
+                if (targetDropdown.classList.contains('disabled')) {
+                    targetDropdown.classList.remove('disabled');
+                    targetDropdown.classList.add('active');
+                } else {
+                    targetDropdown.classList.remove('active');
+                    targetDropdown.classList.add('disabled');
+                }
+            }
+            return;
+        }
+
+        // Dropdown value selection inside modals
+        const btnSelectValue = e.target.closest('[data-action="selectValue"]');
+        if (btnSelectValue) {
+            e.preventDefault();
+            const type = btnSelectValue.getAttribute('data-type');
+            const value = btnSelectValue.getAttribute('data-value');
+            const label = btnSelectValue.getAttribute('data-label');
+            const icon = btnSelectValue.getAttribute('data-icon');
+
+            if (type === 'size') {
+                const widthInput = this.activeBox.querySelector('#sandbox_width');
+                const heightInput = this.activeBox.querySelector('#sandbox_height');
+                if (widthInput && heightInput) {
+                    const [w, h] = value.split('x').map(Number);
+                    widthInput.value = w;
+                    heightInput.value = h;
+                }
+            } else if (type === 'palette') {
+                const paletteInput = this.activeBox.querySelector('#sandbox_palette');
+                if (paletteInput) {
+                    paletteInput.value = value;
+                }
+            }
+
+            const menu = btnSelectValue.closest('.component-menu-list');
+            if (menu) {
+                menu.querySelectorAll('.component-menu-link').forEach(el => el.classList.remove('active'));
+                btnSelectValue.classList.add('active');
+            }
+
+            const dropdownWrapper = btnSelectValue.closest('.component-dropdown-wrapper');
+            if (dropdownWrapper) {
+                const triggerText = dropdownWrapper.querySelector('.component-dropdown-text');
+                if (triggerText) {
+                    triggerText.textContent = label;
+                }
+                const triggerIcon = dropdownWrapper.querySelector('.component-dropdown-trigger span:first-child');
+                if (triggerIcon && icon) {
+                    triggerIcon.textContent = icon;
+                }
+                const targetModule = dropdownWrapper.querySelector('.component-module--dropdown');
+                if (targetModule) {
+                    targetModule.classList.remove('active');
+                    targetModule.classList.add('disabled');
+                }
+            }
+            return;
+        }
+
+        // Stepper controls inside modals (e.g. cooldown Batch adjust)
+        const btnAdjustSandboxCooldown = e.target.closest('[data-action="adjustSandboxCooldownBatch"]');
+        if (btnAdjustSandboxCooldown) {
+            e.preventDefault();
+            const step = parseInt(btnAdjustSandboxCooldown.getAttribute('data-step'), 10);
+            const min = parseInt(btnAdjustSandboxCooldown.getAttribute('data-min') || '1', 10);
+            const max = parseInt(btnAdjustSandboxCooldown.getAttribute('data-max') || '1000', 10);
+            
+            const valEl = this.activeBox.querySelector('#sandbox_cooldown_batch_val');
+            const inputEl = this.activeBox.querySelector('#sandbox_cooldown_batch');
+            if (valEl && inputEl) {
+                let curVal = parseInt(valEl.getAttribute('data-val') || '100', 10);
+                let newVal = curVal + step;
+                if (newVal < min) newVal = min;
+                if (newVal > max) newVal = max;
+                
+                valEl.setAttribute('data-val', newVal);
+                valEl.textContent = newVal;
+                inputEl.value = newVal;
+            }
+            return;
+        }
+
+        // Sandbox multi-stage modal navigation
+        const btnNextStage = e.target.closest('[data-action="nextStage"]');
+        if (btnNextStage) {
+            e.preventDefault();
+            localStorage.setItem('rosaura_sandbox_onboarded', 'true');
+            const stage1 = this.activeBox.querySelector('.sandbox-stage[data-stage="1"]');
+            const stage2 = this.activeBox.querySelector('.sandbox-stage[data-stage="2"]');
+            if (stage1 && stage2) {
+                stage1.style.display = 'none';
+                stage2.style.display = 'flex';
+            }
+            return;
+        }
+
+        const btnGoCreateForm = e.target.closest('[data-action="goCreateForm"]');
+        if (btnGoCreateForm) {
+            e.preventDefault();
+            const stage2 = this.activeBox.querySelector('.sandbox-stage[data-stage="2"]');
+            const stage3 = this.activeBox.querySelector('.sandbox-stage[data-stage="3"]');
+            if (stage2 && stage3) {
+                stage2.style.display = 'none';
+                stage3.style.display = 'flex';
+            }
+            const actionInput = this.activeBox.querySelector('#sandbox_action');
+            if (actionInput) actionInput.value = 'create_new';
+            return;
+        }
+
+        const btnBackToLobby = e.target.closest('[data-action="backToLobby"]');
+        if (btnBackToLobby) {
+            e.preventDefault();
+            const stage2 = this.activeBox.querySelector('.sandbox-stage[data-stage="2"]');
+            const stage3 = this.activeBox.querySelector('.sandbox-stage[data-stage="3"]');
+            if (stage2 && stage3) {
+                stage3.style.display = 'none';
+                stage2.style.display = 'flex';
+            }
+            const actionInput = this.activeBox.querySelector('#sandbox_action');
+            if (actionInput) actionInput.value = 'play_existing';
+            return;
+        }
+
+        const btnSelectSandbox = e.target.closest('[data-action="selectSandbox"]');
+        if (btnSelectSandbox) {
+            e.preventDefault();
+            
+            this.activeBox.querySelectorAll('[data-action="selectSandbox"]').forEach(row => {
+                row.classList.remove('active');
+            });
+            btnSelectSandbox.classList.add('active');
+            
+            const uuid = btnSelectSandbox.getAttribute('data-uuid');
+            const name = btnSelectSandbox.getAttribute('data-name');
+            const size = btnSelectSandbox.getAttribute('data-size');
+            const palette = btnSelectSandbox.getAttribute('data-palette');
+            const thumbnail = btnSelectSandbox.getAttribute('data-thumbnail');
+            
+            const uuidInput = this.activeBox.querySelector('#selected_sandbox_uuid');
+            if (uuidInput) uuidInput.value = uuid;
+            
+            const actionInput = this.activeBox.querySelector('#sandbox_action');
+            if (actionInput) actionInput.value = 'play_existing';
+            
+            const previewCardWrapper = this.activeBox.querySelector('.sandbox-preview-card-wrapper');
+            if (previewCardWrapper) {
+                const hasThumb = thumbnail && thumbnail !== 'null' && thumbnail !== '';
+                previewCardWrapper.innerHTML = `
+                    <div class="sandbox-preview-card" style="width: 100%; border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; text-align: left; display: flex; flex-direction: column; gap: 16px; background: var(--bg-surface-elevated); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                        <div class="sandbox-preview-thumb-container" style="width: 100%; height: 160px; border-radius: 12px; background: var(--bg-hover-light); overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color);">
+                            ${hasThumb ? `<img src="${thumbnail}" style="width: 100%; height: 100%; object-fit: contain;">` : `<span class="material-symbols-rounded" style="font-size: 64px; opacity: 0.3; color: var(--text-primary);">science</span>`}
+                        </div>
+                        <div class="sandbox-preview-details" style="display: flex; flex-direction: column; gap: 4px;">
+                            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);">${name}</h3>
+                            <span style="font-size: 13px; color: var(--text-secondary);">Lienzo local: ${size}</span>
+                            <span style="font-size: 13px; color: var(--text-secondary); text-transform: capitalize;">Paleta: ${palette}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            const playBtn = this.activeBox.querySelector('.sandbox-play-btn');
+            if (playBtn) {
+                playBtn.disabled = false;
+                playBtn.classList.remove('disabled');
+            }
+            return;
+        }
+
         const actionBtn = e.target.closest('[data-modal-action], [data-action="confirm"], [data-action="cancel"], #btn_confirm_custom_backup');
         
         if (actionBtn) {

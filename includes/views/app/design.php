@@ -9,7 +9,7 @@ if ($isSandboxMode) {
     $designData = [
         'canvasIntId' => $canvasUuid,
         'canvasUuid' => $canvasUuid,
-        'canvasName' => 'Modo Sandbox Local',
+        'canvasName' => 'Modo Sandbox Local (Sandbox)',
         'canvasSize' => '64',
         'canvasPalette' => 'default',
         'canvasPrivacy' => 'public',
@@ -181,7 +181,7 @@ extract($designData);
                     </button>
                     <?php endif; ?>
 
-                    <?php if (isset($isOwner) && $isOwner && !$isSandboxMode): ?>
+                    <?php if (isset($isOwner) && $isOwner): ?>
                     <div class="component-divider-vertical" data-ref="owner-tools-actions-divider"></div>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
                         <span class="material-symbols-rounded">construction</span>

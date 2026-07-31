@@ -341,6 +341,13 @@ function clearBombPixels(cX, cY, r) {
     if (!pixelBuffer) return;
     const radius = Math.max(1, parseInt(r || 1, 10));
     const rSq = radius * radius;
+
+    const isProtected = (offset) => {
+        return (protectedPixelsArray && protectedPixelsArray.indexOf(offset) !== -1) ||
+               (ownerProtectedPixelsArray && ownerProtectedPixelsArray.indexOf(offset) !== -1) ||
+               (myProtectedPixelsArray && myProtectedPixelsArray.indexOf(offset) !== -1);
+    };
+
     for (let y = cY - radius; y <= cY + radius; y++) {
         if (y < 0 || y >= boardHeight) continue;
         const dy = y - cY;
@@ -348,11 +355,13 @@ function clearBombPixels(cX, cY, r) {
         let startX = Math.max(0, cX - dx);
         let endX = Math.min(boardWidth - 1, cX + dx);
         
-        if (startX <= endX) {
-            const idx = y * boardWidth + startX;
-            pixelBuffer.fill(0, idx, idx + (endX - startX + 1));
-            markDirty(startX, y);
-            markDirty(endX, y);
+        for (let x = startX; x <= endX; x++) {
+            const idx = y * boardWidth + x;
+            if (isProtected(idx)) {
+                continue;
+            }
+            pixelBuffer[idx] = 0;
+            markDirty(x, y);
         }
     }
     flushDirtyRect();

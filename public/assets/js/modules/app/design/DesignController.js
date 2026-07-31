@@ -308,6 +308,57 @@ class DesignController {
 
                 this.placePixels = async () => {
                     if (this.isSelecting) return;
+                    if (this.interactionMode === 'user_protecting') {
+                        if (!this.ownerEraserBox) return;
+                        const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
+                        if (window.modalSystem) {
+                            window.modalSystem.show('confirmProtectAreaModal', { count }).then(result => {
+                                const actStr = (typeof result === 'string') ? result : (result?.action || (result?.confirmed ? 'protect' : null));
+                                if (actStr === 'protect') {
+                                    this.executeUserProtectArea();
+                                }
+                            });
+                        } else {
+                            const act = confirm(`¿Estás seguro de proteger esta zona de ${count} píxeles por 24 horas usando tu ventaja?`);
+                            if (act) {
+                                this.executeUserProtectArea();
+                            }
+                        }
+                        return;
+                    }
+
+                    if (this.interactionMode === 'owner_erasing') {
+                        if (!this.ownerEraserBox) return;
+                        const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
+                        if (window.modalSystem) {
+                            window.modalSystem.show('confirmClearAreaModal', { count }).then(result => {
+                                if (result && result.confirmed) {
+                                    this.executeOwnerClearArea();
+                                }
+                            });
+                        } else if (confirm(`¿Estás seguro de vaciar esta zona de ${count} píxeles?`)) {
+                            this.executeOwnerClearArea();
+                        }
+                        return;
+                    }
+
+                    if (this.interactionMode === 'owner_protecting') {
+                        if (!this.ownerEraserBox) return;
+                        const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
+                        if (window.modalSystem) {
+                            window.modalSystem.show('confirmProtectAreaModal', { count }).then(result => {
+                                const actStr = (typeof result === 'string') ? result : (result?.action || (result?.confirmed ? 'protect' : null));
+                                if (actStr === 'protect' || actStr === 'unprotect') {
+                                    this.executeOwnerProtectArea(actStr === 'protect');
+                                }
+                            });
+                        } else {
+                            const act = confirm(`Aceptar para Proteger la zona (${count} px). Cancelar para Desproteger la zona.`);
+                            this.executeOwnerProtectArea(act);
+                        }
+                        return;
+                    }
+
                     if (this.selectedPixels.size === 0) return;
 
                     const maxBalance = this.getMaxBalance();
@@ -516,41 +567,7 @@ class DesignController {
         }
     }
 
-    async initSandboxMode() {
-        console.log('[Rosaura Sandbox] Initializing offline sandbox mode...');
-        try {
-            const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
-            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
 
-            const settings = await DesignSandboxDb.getSettings();
-            if (settings) {
-                this.boardWidth = parseInt(settings.width, 10) || 64;
-                this.boardHeight = parseInt(settings.height, 10) || 64;
-                this.canvasPaletteId = settings.paletteId || 'default';
-                this.cooldownMax = parseInt(settings.cooldownBatch, 10) || 100;
-                this.cooldownBalance = this.cooldownMax;
-            } else {
-                await DesignSandboxDb.saveSettings({
-                    width: this.boardWidth,
-                    height: this.boardHeight,
-                    paletteId: this.canvasPaletteId,
-                    cooldownBatch: this.cooldownMax
-                });
-            }
-
-            this.isProgressive = true;
-            this.setupCanvas();
-            this.centerBoard();
-            this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
-            this.renderColorPalette(this.canvasPaletteId);
-
-            this.loadedChunks = new Set();
-            this.loadingChunks = new Set();
-            this.updateVisibleChunks();
-        } catch (e) {
-            console.error('[Sandbox] Failed to initialize Sandbox mode:', e);
-        }
-    }
 
     startCooldownLoop() {
         if (this.cooldownLoopId) cancelAnimationFrame(this.cooldownLoopId);

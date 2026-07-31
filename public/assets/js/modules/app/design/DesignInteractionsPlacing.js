@@ -678,13 +678,14 @@ export const DesignInteractionsPlacing = {
             if (PerksRegistry.isBomb(perkId)) {
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 const totalAmount = owned ? parseInt(owned.count, 10) : 0;
+                const qtySuffix = this.isSandbox ? '' : ` (${totalAmount})`;
                 
                 isActive = (this.activeBomb === perkId && this.interactionMode === 'bombing');
                 
                 if (isActive) {
                     isToggledOn = true;
                     const titleText = PerksRegistry.getLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded component-text-danger">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    activeHtml = `<span class="material-symbols-rounded component-text-danger">${icon}</span><span>${titleText}${qtySuffix}</span>`;
                     clickHandler = () => {
                         this.interactionMode = 'normal';
                         this.activeBomb = null;
@@ -697,7 +698,7 @@ export const DesignInteractionsPlacing = {
                     isActive = true; 
                     isToggledOn = false;
                     const titleText = PerksRegistry.getLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText}${qtySuffix}</span>`;
                     clickHandler = () => {
                         this.activatePerk(perkId);
                     };
@@ -706,13 +707,14 @@ export const DesignInteractionsPlacing = {
             } else if (perkId === 'proteccion_pixeles_1') {
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 const totalAmount = owned ? parseInt(owned.count, 10) : 0;
+                const qtySuffix = this.isSandbox ? '' : ` (${totalAmount})`;
                 
                 isActive = (this.interactionMode === 'user_protecting');
                 
                 if (isActive) {
                     isToggledOn = true;
                     const titleText = PerksRegistry.getLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded component-text-success">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    activeHtml = `<span class="material-symbols-rounded component-text-success">${icon}</span><span>${titleText}${qtySuffix}</span>`;
                     clickHandler = () => {
                         this.interactionMode = 'normal';
                         this.ownerEraserBox = null;
@@ -727,7 +729,7 @@ export const DesignInteractionsPlacing = {
                     isActive = true;
                     isToggledOn = false;
                     const titleText = PerksRegistry.getLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText}${qtySuffix}</span>`;
                     clickHandler = () => {
                         this.activatePerk(perkId);
                     };
@@ -759,7 +761,8 @@ export const DesignInteractionsPlacing = {
                 badge.className = 'component-badge inventory-badge-temp';
                 badge.style.cursor = 'pointer';
                 const titleText = PerksRegistry.getLabel(perkId);
-                badge.innerHTML = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${invItem.count})</span>`;
+                const qtySuffix = this.isSandbox ? '' : ` (${invItem.count})`;
+                badge.innerHTML = `<span class="material-symbols-rounded">${icon}</span><span>${titleText}${qtySuffix}</span>`;
                 badge.addEventListener('click', () => {
                     this.activatePerk(perkId, badge);
                 });
@@ -830,7 +833,7 @@ export const DesignInteractionsPlacing = {
                 badgesRight.appendChild(badgeEl);
             }
 
-            if (this.showOwnerTools || this.isFrozen) {
+            if ((this.showOwnerTools || this.isFrozen) && !this.isSandbox) {
                 const isToggledOn = this.isFrozen;
                 const colorClass = isToggledOn ? 'component-text-warning' : '';
                 const badgeEl = document.createElement('div');
@@ -910,6 +913,13 @@ export const DesignInteractionsPlacing = {
                             const dx = x - cX;
                             if (dx * dx + dy * dy <= rSq) {
                                 const offset = (ly * actualW + lx) * 4;
+                                const offsetIndex = y * this.boardWidth + x;
+                                const isProtected = (this.protectedPixels && this.protectedPixels.has(offsetIndex)) ||
+                                                    (this.ownerProtectedPixels && this.ownerProtectedPixels.has(offsetIndex)) ||
+                                                    (this.myProtectedPixels && this.myProtectedPixels.has(offsetIndex));
+                                if (isProtected) {
+                                    continue;
+                                }
                                 bytes[offset] = 0;
                                 bytes[offset + 1] = 0;
                                 bytes[offset + 2] = 0;

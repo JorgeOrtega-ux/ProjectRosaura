@@ -46,7 +46,7 @@ export const DesignInteractionsOwner = {
         this.requestRender();
     },
 
-    executeOwnerClearArea() {
+    async executeOwnerClearArea() {
         if (!this.ownerEraserBox) return;
 
         // Implement cooldown of 5 seconds
@@ -62,17 +62,104 @@ export const DesignInteractionsOwner = {
 
         const { x1: minX, y1: minY, x2: maxX, y2: maxY } = this.ownerEraserBox;
 
-        // 2. Broadcast via WebSocket server
-        if (this.wsManager) {
-            this.wsManager.send({
-                type: 'clear_area',
-                x1: minX,
-                y1: minY,
-                x2: maxX,
-                y2: maxY,
-                width: this.boardWidth || 64,
-                canvasId: this.canvasIntId
-            });
+        if (this.isSandbox) {
+            try {
+                const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+                const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+                const chunkSize = 512;
+                const minCx = Math.max(0, Math.floor(minX / chunkSize));
+                const maxCx = Math.min(Math.floor((this.boardWidth - 1) / chunkSize), Math.floor(maxX / chunkSize));
+                const minCy = Math.max(0, Math.floor(minY / chunkSize));
+                const maxCy = Math.min(Math.floor((this.boardHeight - 1) / chunkSize), Math.floor(maxY / chunkSize));
+
+                for (let cx = minCx; cx <= maxCx; cx++) {
+                    for (let cy = minCy; cy <= maxCy; cy++) {
+                        const key = `${cx},${cy}`;
+                        const actualW = Math.min(chunkSize, this.boardWidth - cx * chunkSize);
+                        const actualH = Math.min(chunkSize, this.boardHeight - cy * chunkSize);
+
+                        let base64 = await DesignSandboxDb.getChunk(key, this.sandboxUuid);
+                        let bytes;
+                        if (base64) {
+                            bytes = await DesignSandboxDb.decompress(base64);
+                        }
+                        if (!bytes || bytes.length !== actualW * actualH * 4) {
+                            bytes = new Uint8Array(actualW * actualH * 4);
+                        }
+
+                        let chunkChanged = false;
+                        const startX = cx * chunkSize;
+                        const startY = cy * chunkSize;
+
+                        const localX1 = Math.max(0, minX - startX);
+                        const localX2 = Math.min(actualW - 1, maxX - startX);
+                        const localY1 = Math.max(0, minY - startY);
+                        const localY2 = Math.min(actualH - 1, maxY - startY);
+
+                        for (let ly = localY1; ly <= localY2; ly++) {
+                            for (let lx = localX1; lx <= localX2; lx++) {
+                                const offset = (ly * actualW + lx) * 4;
+                                if (bytes[offset + 3] !== 0) {
+                                    bytes[offset] = 0;
+                                    bytes[offset + 1] = 0;
+                                    bytes[offset + 2] = 0;
+                                    bytes[offset + 3] = 0;
+                                    chunkChanged = true;
+                                }
+                            }
+                        }
+
+                        if (chunkChanged) {
+                            const newBase64 = await DesignSandboxDb.compressAndEncode(bytes);
+                            await DesignSandboxDb.saveChunk(key, newBase64, this.sandboxUuid);
+                        }
+                    }
+                }
+
+                // Update settings thumbnail
+                try {
+                    const settings = await DesignSandboxDb.getSettings(this.sandboxUuid);
+                    if (settings) {
+                        settings.thumbnail = await this.generateSandboxThumbnail();
+                        await DesignSandboxDb.saveSettings(settings, this.sandboxUuid);
+                    }
+                } catch (err) {}
+
+                // Trigger render worker or offscreenCtx update
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'CLEAR_AREA',
+                        payload: { x1: minX, y1: minY, x2: maxX, y2: maxY }
+                    });
+                }
+                if (this.offscreenCtx) {
+                    const w = Math.max(1, maxX - minX + 1);
+                    const h = Math.max(1, maxY - minY + 1);
+                    this.offscreenCtx.clearRect(minX, minY, w, h);
+                }
+
+                if (this.loadedChunks) this.loadedChunks.clear();
+                if (this.loadingChunks) this.loadingChunks.clear();
+                this.updateVisibleChunks();
+                this.requestRender();
+
+            } catch (e) {
+                console.error('[Sandbox] Failed to clear area locally:', e);
+            }
+        } else {
+            // 2. Broadcast via WebSocket server
+            if (this.wsManager) {
+                this.wsManager.send({
+                    type: 'clear_area',
+                    x1: minX,
+                    y1: minY,
+                    x2: maxX,
+                    y2: maxY,
+                    width: this.boardWidth || 64,
+                    canvasId: this.canvasIntId
+                });
+            }
         }
 
         this.selectedPixels.clear();
@@ -125,16 +212,50 @@ export const DesignInteractionsOwner = {
 
         const { x1: minX, y1: minY, x2: maxX, y2: maxY } = this.ownerEraserBox;
 
-        if (this.wsManager) {
-            this.wsManager.send({
-                type: "protect_area",
-                x1: minX,
-                y1: minY,
-                x2: maxX,
-                y2: maxY,
-                width: this.boardWidth || 64,
-                protect: protect
-            });
+        if (this.isSandbox) {
+            if (!this.ownerProtectedPixels) this.ownerProtectedPixels = new Set();
+            if (!this.protectedPixels) this.protectedPixels = new Set();
+
+            const w = this.boardWidth || 64;
+
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    const offset = y * w + x;
+                    if (protect) {
+                        this.ownerProtectedPixels.add(offset);
+                    } else {
+                        this.ownerProtectedPixels.delete(offset);
+                    }
+                }
+            }
+
+            (async () => {
+                try {
+                    const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+                    const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+                    const settings = await DesignSandboxDb.getSettings(this.sandboxUuid) || {};
+                    settings.ownerProtectedOffsets = Array.from(this.ownerProtectedPixels);
+                    await DesignSandboxDb.saveSettings(settings, this.sandboxUuid);
+                } catch (e) {
+                    console.error('[Sandbox] Failed to save owner protected pixels:', e);
+                }
+            })();
+
+            if (typeof this.syncProtectedPixelsToWorker === 'function') {
+                this.syncProtectedPixelsToWorker();
+            }
+        } else {
+            if (this.wsManager) {
+                this.wsManager.send({
+                    type: "protect_area",
+                    x1: minX,
+                    y1: minY,
+                    x2: maxX,
+                    y2: maxY,
+                    width: this.boardWidth || 64,
+                    protect: protect
+                });
+            }
         }
 
         this.interactionMode = 'normal';
@@ -153,15 +274,51 @@ export const DesignInteractionsOwner = {
 
         const { x1: minX, y1: minY, x2: maxX, y2: maxY } = this.ownerEraserBox;
 
-        if (this.wsManager) {
-            this.wsManager.send({
-                type: "use_pixel_protection",
-                perk: "proteccion_pixeles_1",
-                x1: minX,
-                y1: minY,
-                x2: maxX,
-                y2: maxY
-            });
+        if (this.isSandbox) {
+            if (!this.myProtectedPixels) this.myProtectedPixels = new Set();
+            if (!this.protectedPixels) this.protectedPixels = new Set();
+            if (!this.myProtectedExpiries) this.myProtectedExpiries = {};
+
+            const w = this.boardWidth || 64;
+            const nowSecs = Math.floor(Date.now() / 1000);
+            const expirySecs = nowSecs + 86400; // 24 hours
+
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    const offset = y * w + x;
+                    this.myProtectedPixels.add(offset);
+                    this.protectedPixels.add(offset);
+                    this.myProtectedExpiries[offset] = expirySecs;
+                }
+            }
+
+            (async () => {
+                try {
+                    const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+                    const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+                    const settings = await DesignSandboxDb.getSettings(this.sandboxUuid) || {};
+                    settings.myProtectedOffsets = Array.from(this.myProtectedPixels);
+                    settings.myProtectedExpiries = this.myProtectedExpiries;
+                    await DesignSandboxDb.saveSettings(settings, this.sandboxUuid);
+                } catch (e) {
+                    console.error('[Sandbox] Failed to save user protected pixels:', e);
+                }
+            })();
+
+            if (typeof this.syncProtectedPixelsToWorker === 'function') {
+                this.syncProtectedPixelsToWorker();
+            }
+        } else {
+            if (this.wsManager) {
+                this.wsManager.send({
+                    type: "use_pixel_protection",
+                    perk: "proteccion_pixeles_1",
+                    x1: minX,
+                    y1: minY,
+                    x2: maxX,
+                    y2: maxY
+                });
+            }
         }
 
         this.interactionMode = 'normal';
@@ -205,6 +362,7 @@ export const DesignInteractionsOwner = {
             const exp = this.myProtectedExpiries[off];
             if (exp <= nowSecs) {
                 if (this.myProtectedPixels) this.myProtectedPixels.delete(parseInt(off, 10));
+                if (this.protectedPixels) this.protectedPixels.delete(parseInt(off, 10));
                 delete this.myProtectedExpiries[off];
                 hasExpiredAny = true;
             } else if (exp < minExpiry) {
@@ -213,6 +371,20 @@ export const DesignInteractionsOwner = {
         }
 
         if (hasExpiredAny) {
+            if (this.isSandbox) {
+                (async () => {
+                    try {
+                        const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+                        const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+                        const settings = await DesignSandboxDb.getSettings(this.sandboxUuid) || {};
+                        settings.myProtectedOffsets = Array.from(this.myProtectedPixels);
+                        settings.myProtectedExpiries = this.myProtectedExpiries;
+                        await DesignSandboxDb.saveSettings(settings, this.sandboxUuid);
+                    } catch (e) {
+                        console.error('[Sandbox] Failed to update expired pixels in DB:', e);
+                    }
+                })();
+            }
             this.updatePerkBadges();
             if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
             this.requestRender();
@@ -274,7 +446,9 @@ export const DesignInteractionsOwner = {
                     }
                 }
 
+                const currentSettings = await DesignSandboxDb.getSettings(this.sandboxUuid) || {};
                 await DesignSandboxDb.saveSettings({
+                    ...currentSettings,
                     width: newWidth,
                     height: newHeight,
                     paletteId: newPalette,

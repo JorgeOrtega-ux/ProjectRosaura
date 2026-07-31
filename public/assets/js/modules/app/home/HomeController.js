@@ -445,79 +445,132 @@ class HomeController {
     async openCreateSandboxModal() {
         if (!window.modalSystem) return;
 
-        // Comprobar límite de 10 sandboxes
+        // Comprobar si es la primera vez (onboarding)
+        const hasOnboarded = localStorage.getItem('rosaura_sandbox_onboarded') === 'true';
+
+        // Cargar lista actual de sandboxes
         let currentList = [];
         try {
             const listJson = localStorage.getItem('rosaura_sandboxes_list');
             if (listJson) currentList = JSON.parse(listJson);
         } catch (e) {}
 
-        if (currentList.length >= 10) {
-            showMessage('Has alcanzado el límite máximo de 10 lienzos sandbox locales.', 'error');
-            return;
+        // Cargar configuraciones (incluyendo thumbnail) para cada sandbox
+        let detailedSandboxesList = [];
+        try {
+            const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
+            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+            detailedSandboxesList = await Promise.all(currentList.map(async (sb) => {
+                let thumb = null;
+                let width = 64;
+                let height = 64;
+                let palette = 'default';
+                let cooldownBatch = 100;
+                try {
+                    const settings = await DesignSandboxDb.getSettings(sb.uuid);
+                    if (settings) {
+                        thumb = settings.thumbnail || null;
+                        width = settings.width || 64;
+                        height = settings.height || 64;
+                        palette = settings.paletteId || 'default';
+                        cooldownBatch = settings.cooldownBatch || 100;
+                    }
+                } catch (err) {}
+                return {
+                    uuid: sb.uuid,
+                    name: sb.name,
+                    width: width,
+                    height: height,
+                    palette: palette,
+                    cooldownBatch: cooldownBatch,
+                    thumbnail: thumb
+                };
+            }));
+        } catch (err) {
+            console.error('Error precargando detalles de sandboxes:', err);
+            detailedSandboxesList = currentList.map(sb => ({
+                uuid: sb.uuid,
+                name: sb.name,
+                width: 64,
+                height: 64,
+                palette: 'default',
+                cooldownBatch: 100,
+                thumbnail: null
+            }));
         }
 
-        // Comprobar si es la primera vez (onboarding) - Desactivado temporalmente a petición del usuario para depuración
-        const hasOnboarded = false;
-        
-        let proceedToCreate = false;
+        // Mostrar el modal unificado
+        const res = await window.modalSystem.show('sandboxLobbyModal', {
+            hasOnboarded: hasOnboarded,
+            sandboxes: detailedSandboxesList
+        });
 
-        if (!hasOnboarded) {
-            const onboardingRes = await window.modalSystem.show('sandboxOnboardingModal');
-            if (onboardingRes && onboardingRes.confirmed) {
-                localStorage.setItem('rosaura_sandbox_onboarded', 'true');
-                proceedToCreate = true;
-            }
-        } else {
-            proceedToCreate = true;
-        }
-
-        if (!proceedToCreate) return;
-
-        const res = await window.modalSystem.show('createSandboxModal');
         if (res && res.confirmed && res.data) {
-            const name = res.data.sandbox_name ? res.data.sandbox_name.trim() : '';
-            const size = 64;
-            const palette = 'default';
+            const action = res.data.sandbox_action;
 
-            if (!name) {
-                showMessage('El nombre del lienzo es obligatorio', 'error');
-                return;
-            }
+            if (action === 'play_existing') {
+                const selectedUuid = res.data.selected_sandbox_uuid;
+                if (!selectedUuid) {
+                    showMessage('Por favor selecciona un mundo para jugar', 'error');
+                    return;
+                }
+                // Redirigir al sandbox seleccionado en una nueva pestaña
+                window.open(`${this.basePath}/design/sandbox/${selectedUuid}`, '_blank');
+            } else if (action === 'create_new') {
+                // Comprobar límite de 10 sandboxes
+                if (currentList.length >= 10) {
+                    showMessage('Has alcanzado el límite máximo de 10 lienzos sandbox locales.', 'error');
+                    return;
+                }
 
-            // Generar UUID único
-            const uuid = this.generateUuid();
+                const name = res.data.sandbox_name ? res.data.sandbox_name.trim() : '';
+                const width = parseInt(res.data.sandbox_width, 10) || 64;
+                const height = parseInt(res.data.sandbox_height, 10) || 64;
+                const cooldownBatch = parseInt(res.data.sandbox_cooldown_batch, 10) || 100;
+                const palette = res.data.sandbox_palette || 'default';
 
-            // Guardar en la lista en localStorage
-            const newSandbox = {
-                uuid: uuid,
-                name: name,
-                size: size,
-                palette: palette,
-                createdAt: Date.now()
-            };
-            currentList.push(newSandbox);
-            localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(currentList));
+                if (!name) {
+                    showMessage('El nombre del lienzo es obligatorio', 'error');
+                    return;
+                }
 
-            // Guardar configuración inicial en IndexedDB
-            try {
-                const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
-                const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
-                await DesignSandboxDb.saveSettings({
+                // Generar UUID único
+                const uuid = this.generateUuid();
+
+                // Guardar en la lista en localStorage
+                const newSandbox = {
+                    uuid: uuid,
                     name: name,
-                    width: size,
-                    height: size,
-                    paletteId: palette,
-                    cooldownBatch: 100
-                }, uuid);
-            } catch (e) {
-                console.error('Error saving sandbox settings to IndexedDB:', e);
+                    size: width, // mantenemos compatibilidad con el esquema original
+                    palette: palette,
+                    createdAt: Date.now()
+                };
+                currentList.push(newSandbox);
+                localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(currentList));
+
+                // Guardar configuración inicial en IndexedDB
+                try {
+                    const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
+                    const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+                    await DesignSandboxDb.saveSettings({
+                        name: name,
+                        width: width,
+                        height: height,
+                        paletteId: palette,
+                        cooldownBatch: cooldownBatch
+                    }, uuid);
+                } catch (e) {
+                    console.error('Error saving sandbox settings to IndexedDB:', e);
+                }
+
+                showMessage('Lienzo Sandbox creado con éxito', 'success');
+
+                // Recargar feed para mostrar el nuevo canvas
+                this.loadCanvases();
+
+                // Redirigir al nuevo sandbox creado
+                window.open(`${this.basePath}/design/sandbox/${uuid}`, '_blank');
             }
-
-            showMessage('Lienzo Sandbox creado con éxito', 'success');
-
-            // Recargar feed para mostrar el nuevo canvas
-            this.loadCanvases();
         }
     }
 
