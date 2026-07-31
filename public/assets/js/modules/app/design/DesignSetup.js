@@ -134,31 +134,7 @@ export const DesignSetup = {
             const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
             const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
 
-            const activeUserId = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
-            if (activeUserId) {
-                try {
-                    const cloudRes = await this.api.post('sandbox.get_state', { uuid: this.sandboxUuid });
-                    if (cloudRes && cloudRes.success && cloudRes.settings) {
-                        await DesignSandboxDb.saveSettings(cloudRes.settings, this.sandboxUuid);
-                        if (cloudRes.chunks) {
-                            for (const [key, base64Data] of Object.entries(cloudRes.chunks)) {
-                                await DesignSandboxDb.saveChunk(key, base64Data, this.sandboxUuid);
-                            }
-                        }
-                        console.log('[Sandbox Sync] Downloaded and restored cloud state of sandbox:', this.sandboxUuid);
-                        
-                        const btnSync = document.querySelector('[data-ref="btn-sandbox-sync"]');
-                        const icon = btnSync ? btnSync.querySelector('.material-symbols-rounded') : null;
-                        if (icon) {
-                            icon.textContent = 'cloud_done';
-                            icon.style.color = '';
-                        }
-                    }
-                } catch (err) {
-                    console.warn('[Sandbox Sync] Cloud download failed (offline or missing in cloud):', err);
-                }
-            }
-
+            // 1. Load local settings first to render immediately
             let settings = await DesignSandboxDb.getSettings(this.sandboxUuid);
             if (!settings) {
                 let name = '';
@@ -181,13 +157,14 @@ export const DesignSetup = {
                 await DesignSandboxDb.saveSettings(settings, this.sandboxUuid);
             }
 
+            // 2. Set dimensions and titles from local settings immediately
             this.boardWidth = parseInt(settings.width, 10) || 64;
             this.boardHeight = parseInt(settings.height, 10) || 64;
             this.canvasPaletteId = settings.paletteId || 'default';
             this.cooldownMax = parseInt(settings.cooldownBatch, 10) || 100;
             this.cooldownBalance = this.cooldownMax;
             
-            // Actualizar el título de la página/lienzo
+            // Update page/canvas title elements immediately
             const titleElements = document.querySelectorAll('.component-top-title');
             const displayName = settings.name ? `${settings.name} (Sandbox)` : 'Modo Sandbox (Sandbox)';
             if (titleElements.length > 1) {
@@ -196,10 +173,11 @@ export const DesignSetup = {
                 titleElements[0].textContent = displayName;
             }
 
-            // Cargar protecciones de Sandbox
+            // Load Sandbox pixel protection sets
             if (settings.ownerProtectedOffsets) {
                 this.ownerProtectedPixels = new Set(settings.ownerProtectedOffsets);
             } else {
+                this.ownerProtectedOffsets = [];
                 this.ownerProtectedPixels = new Set();
             }
 
@@ -207,6 +185,7 @@ export const DesignSetup = {
                 this.myProtectedPixels = new Set(settings.myProtectedOffsets);
                 this.protectedPixels = new Set(settings.myProtectedOffsets);
             } else {
+                this.myProtectedOffsets = [];
                 this.myProtectedPixels = new Set();
                 this.protectedPixels = new Set();
             }
@@ -233,6 +212,55 @@ export const DesignSetup = {
                 btnSync.addEventListener('mouseenter', () => {
                     btnSync.setAttribute('data-tooltip', this.getSyncTooltipText());
                 });
+            }
+
+            // 3. Asynchronously check the cloud for updates in the background without blocking the UI
+            const activeUserId = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+            if (activeUserId) {
+                (async () => {
+                    try {
+                        const cloudRes = await this.api.post('sandbox.get_state', { uuid: this.sandboxUuid });
+                        if (cloudRes && cloudRes.success && cloudRes.settings) {
+                            const oldWidth = settings.width;
+                            const oldHeight = settings.height;
+                            const oldName = settings.name;
+
+                            await DesignSandboxDb.saveSettings(cloudRes.settings, this.sandboxUuid);
+                            if (cloudRes.chunks) {
+                                for (const [key, base64Data] of Object.entries(cloudRes.chunks)) {
+                                    await DesignSandboxDb.saveChunk(key, base64Data, this.sandboxUuid);
+                                }
+                            }
+                            console.log('[Sandbox Sync] Asynchronously loaded and restored cloud state:', this.sandboxUuid);
+                            
+                            const icon = btnSync ? btnSync.querySelector('.material-symbols-rounded') : null;
+                            if (icon) {
+                                icon.textContent = 'cloud_done';
+                                icon.style.color = '';
+                            }
+
+                            // If name/size changed in the cloud on another device, adjust layout on the fly
+                            if (cloudRes.settings.width !== oldWidth || cloudRes.settings.height !== oldHeight || cloudRes.settings.name !== oldName) {
+                                this.boardWidth = parseInt(cloudRes.settings.width, 10) || 64;
+                                this.boardHeight = parseInt(cloudRes.settings.height, 10) || 64;
+                                
+                                const newDisplayName = cloudRes.settings.name ? `${cloudRes.settings.name} (Sandbox)` : 'Modo Sandbox (Sandbox)';
+                                if (titleElements.length > 1) {
+                                    titleElements[1].textContent = newDisplayName;
+                                } else if (titleElements.length > 0) {
+                                    titleElements[0].textContent = newDisplayName;
+                                }
+
+                                this.setupCanvas();
+                                this.centerBoard();
+                                this.loadedChunks.clear();
+                                this.updateVisibleChunks();
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('[Sandbox Sync] Background cloud download failed:', err);
+                    }
+                })();
             }
         } catch (e) {
             console.error('[Sandbox] Failed to initialize Sandbox mode:', e);
