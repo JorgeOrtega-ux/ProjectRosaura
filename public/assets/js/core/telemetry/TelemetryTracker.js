@@ -92,23 +92,13 @@ class TelemetryTracker {
         
         this.batch = [];
 
-        if (isUnloading && navigator.sendBeacon) {
-            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-
-            fetch(this.basePath + '/api/index.php?route=' + ApiRoutes.Telemetry.Collect, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
-                },
-                body: JSON.stringify(payload),
-                keepalive: true
-            }).catch(() => {});
+        if (isUnloading) {
+            this.api.postKeepalive(ApiRoutes.Telemetry.Collect, payload).catch(() => {});
         } else {
             this.api.post(ApiRoutes.Telemetry.Collect, payload, this.abortController.signal).catch(() => {});
         }
     }
+
 
     generateSessionUUID() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {

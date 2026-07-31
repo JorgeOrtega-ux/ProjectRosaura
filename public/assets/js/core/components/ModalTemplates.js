@@ -1503,9 +1503,9 @@ export const ModalTemplates = {
                     </div>
 
                     <!-- Hours and Minutes Inline Controls -->
-                    <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 12px;">
+                    <div class="calendar-modal-controls">
                         <div>
-                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">${__('lbl_hours') || 'Horas'}</div>
+                            <div class="calendar-control-label">${__('lbl_hours')}</div>
                             <div class="component-inline-control component-inline-control--full">
                                 <div class="component-inline-control__group">
                                     <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
@@ -1528,7 +1528,7 @@ export const ModalTemplates = {
                         </div>
 
                         <div>
-                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">${__('lbl_minutes') || 'Minutos'}</div>
+                            <div class="calendar-control-label">${__('lbl_minutes')}</div>
                             <div class="component-inline-control component-inline-control--full">
                                 <div class="component-inline-control__group">
                                     <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">

@@ -220,27 +220,19 @@ class AdminMessagesReportsController {
         let deleteReason = null;
 
         if (this.state.visibility === 'deleted') {
-            if (window.modalSystem) {
-                const dialogRes = await window.modalSystem.show('deleteMessageDialog');
-                if (!dialogRes) {
-                    this.state = Object.assign({}, this.initialState);
-                    this.renderUI();
-                    return; // Admin se arrepintió o cerró el modal
-                }
-
-                if (dialogRes.report_reason) {
-                    deleteReason = window.__('report_reason_' + dialogRes.report_reason);
-                } else {
-                    deleteReason = 'Moderación administrativa';
-                }
-            } else {
-                deleteReason = prompt('Motivo de eliminación:');
-                if (deleteReason === null) {
-                    this.state = Object.assign({}, this.initialState);
-                    this.renderUI();
-                    return;
-                }
+            const dialogRes = await window.modalSystem.show('deleteMessageDialog');
+            if (!dialogRes) {
+                this.state = Object.assign({}, this.initialState);
+                this.renderUI();
+                return;
             }
+
+            if (dialogRes.report_reason) {
+                deleteReason = window.__('report_reason_' + dialogRes.report_reason);
+            } else {
+                deleteReason = 'Moderación administrativa';
+            }
+
             this.state.deleteReason = deleteReason;
         }
 

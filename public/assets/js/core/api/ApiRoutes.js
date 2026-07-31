@@ -90,6 +90,8 @@ export const ApiRoutes = {
         DeleteTier: 'admin.subscriptions.delete',
         ToggleVisibilityTier: 'admin.subscriptions.toggle_visibility',
         SetPopularTier: 'admin.subscriptions.set_popular',
+        SaveTier: 'admin.subscriptions.save',
+
 
         GetTranslations: 'admin.get_translations',
         GetBackupSchema: 'admin.get_backup_schema',

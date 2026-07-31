@@ -1,27 +1,39 @@
-import { ApiService } from '../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
+import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton, formatNumber } from '../../core/utils/uiUtils.js';
+
 
 export class StoreController {
     constructor() {
         this.api = new ApiService();
-        this.handleDocumentClickBound = this.handleDocumentClick.bind(this);
         this.selectedCoinRow = null;
         this.selectedCoinAmount = null;
         this.selectedPerkRow = null;
         this.selectedPerkId = null;
+        this.abortController = null;
+        this.container = null;
+        this.handleDocumentClickBound = this.handleDocumentClick.bind(this);
     }
 
     init() {
         this.container = document.querySelector('[data-ref="store-coins-wrapper"], [data-ref="store-content-wrapper"]');
-        document.addEventListener('click', this.handleDocumentClickBound);
+        this.abortController = new AbortController();
+        this.bindEvents();
         this.pendingPurchaseBtn = null;
         this.checkCheckoutSuccess();
     }
 
+    bindEvents() {
+        document.addEventListener('click', this.handleDocumentClickBound);
+    }
+
     destroy() {
+        if (this.abortController) {
+            this.abortController.abort();
+        }
         document.removeEventListener('click', this.handleDocumentClickBound);
     }
+
 
     handleDocumentClick(e) {
         const actionEl = e.target.closest('[data-action]');
@@ -125,16 +137,11 @@ export class StoreController {
         }));
         const totalCoins = items.reduce((sum, item) => sum + item.price, 0);
 
-        if (window.modalSystem) {
-            const res = await window.modalSystem.show('confirmBulkPerkPurchaseModal', { items, totalCoins });
-            if (res && res.confirmed) {
-                await this.processBulkPerkPurchase(items, btn, selectedRows);
-            }
-        } else {
-            if (confirm(`¿Estás seguro de gastar ${totalCoins} monedas en estos ${items.length} ítems?`)) {
-                await this.processBulkPerkPurchase(items, btn, selectedRows);
-            }
+        const res = await window.modalSystem.show('confirmBulkPerkPurchaseModal', { items, totalCoins });
+        if (res && res.confirmed) {
+            await this.processBulkPerkPurchase(items, btn, selectedRows);
         }
+
     }
 
     async processBulkPerkPurchase(items, btn, selectedRows) {

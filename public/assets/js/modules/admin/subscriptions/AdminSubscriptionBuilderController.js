@@ -698,7 +698,6 @@ class AdminSubscriptionBuilderController {
         const colorData = this.extractTierColorPayload();
 
         const payload = {
-            route: 'admin.subscriptions.save',
             uuid: this.tierId,
             name: tierName,
             tier_level: parseInt(tierLevel, 10),
@@ -709,7 +708,8 @@ class AdminSubscriptionBuilderController {
             features: featuresPayload
         };
 
-        const res = await this.api.post('/api.php', payload, this.abortController.signal);
+        const res = await this.api.post(ApiRoutes.Admin.SaveTier, payload, this.abortController.signal);
+
         if (res.aborted) return;
         restoreButton(btn);
 

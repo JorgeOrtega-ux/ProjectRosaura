@@ -674,12 +674,9 @@ export class DesignChat {
     }
 
     async deleteMessage(id) {
-        if (window.modalSystem) {
-            const res = await window.modalSystem.show('confirmDeleteMessage');
-            if (!res.confirmed) return;
-        } else {
-            if (!confirm(window.__('confirm_delete_message'))) return;
-        }
+        const res = await window.modalSystem.show('confirmDeleteMessage');
+        if (!res || !res.confirmed) return;
+
 
         try {
             const response = await this.api.post(ApiRoutes.Chat.Delete, {
@@ -703,22 +700,17 @@ export class DesignChat {
         let selectedReason = '';
         let detailsText = '';
 
-        if (window.modalSystem) {
-            const res = await window.modalSystem.show('reportMessageDialog');
-            if (!res.confirmed) return;
+        const res = await window.modalSystem.show('reportMessageDialog');
+        if (!res || !res.confirmed) return;
 
-            selectedReason = res.data.report_reason || res.data.report_reason_input;
-            if (!selectedReason) {
-                showMessage(__('err_report_select_reason'), 'error');
-                return;
-            }
-
-            detailsText = (res.data.report_other_text || res.data.report_other_textarea || '').trim();
-        } else {
-            selectedReason = 'other';
-            detailsText = prompt(__('report_desc')) || '';
-            if (!detailsText) return;
+        selectedReason = res.data.report_reason || res.data.report_reason_input;
+        if (!selectedReason) {
+            showMessage(__('err_report_select_reason'), 'error');
+            return;
         }
+
+        detailsText = (res.data.report_other_text || res.data.report_other_textarea || '').trim();
+
 
         try {
             const response = await this.api.post(ApiRoutes.Chat.Report, {

@@ -472,23 +472,15 @@ export const DesignInteractions = {
                 if (this.interactionMode === 'owner_protecting' && (this.ownerEraserStep === 0 || this.ownerEraserStep === 2)) {
                     if (this.protectedPixels && this.protectedPixels.has(offset)) {
 
-                        if (window.modalSystem) {
-                            window.modalSystem.show('confirmUnprotectAreaModal', { count: 1 }).then(res => {
-                                const actStr = (typeof res === 'string') ? res : (res?.action || null);
-                                if (actStr === 'unprotect') {
-                                    this.ownerEraserBox = { x1: coords.x, y1: coords.y, x2: coords.x, y2: coords.y };
-                                    this.ownerEraserStep = 2;
-                                    this.executeOwnerProtectArea(false);
-                                }
-                            });
-                        } else {
-                            const act = confirm(window.__('confirm_unprotect_pixel'));
-                            if (act) {
+                        window.modalSystem.show('confirmUnprotectAreaModal', { count: 1 }).then(res => {
+                            const actStr = (typeof res === 'string') ? res : (res?.action || null);
+                            if (actStr === 'unprotect') {
                                 this.ownerEraserBox = { x1: coords.x, y1: coords.y, x2: coords.x, y2: coords.y };
                                 this.ownerEraserStep = 2;
                                 this.executeOwnerProtectArea(false);
                             }
-                        }
+                        });
+
                         return;
                     }
                 }
@@ -1294,53 +1286,38 @@ export const DesignInteractions = {
         if (this.interactionMode === 'user_protecting') {
             if (!this.ownerEraserBox) return;
             const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
-            if (window.modalSystem) {
-                window.modalSystem.show('confirmProtectAreaModal', { count }).then(result => {
-                    const actStr = (typeof result === 'string') ? result : (result?.action || (result?.confirmed ? 'protect' : null));
-                    if (actStr === 'protect') {
-                        this.executeUserProtectArea();
-                    }
-                });
-            } else {
-                const act = confirm(`¿Estás seguro de proteger esta zona de ${count} píxeles por 24 horas usando tu ventaja?`);
-                if (act) {
+            window.modalSystem.show('confirmProtectAreaModal', { count }).then(result => {
+                const actStr = (typeof result === 'string') ? result : (result?.action || (result?.confirmed ? 'protect' : null));
+                if (actStr === 'protect') {
                     this.executeUserProtectArea();
                 }
-            }
+            });
             return;
         }
 
         if (this.interactionMode === 'owner_erasing') {
             if (!this.ownerEraserBox) return;
             const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
-            if (window.modalSystem) {
-                window.modalSystem.show('confirmClearAreaModal', { count }).then(result => {
-                    if (result && result.confirmed) {
-                        this.executeOwnerClearArea();
-                    }
-                });
-            } else if (confirm(`¿Estás seguro de vaciar esta zona de ${count} píxeles?`)) {
-                this.executeOwnerClearArea();
-            }
+            window.modalSystem.show('confirmClearAreaModal', { count }).then(result => {
+                if (result && result.confirmed) {
+                    this.executeOwnerClearArea();
+                }
+            });
             return;
         }
 
         if (this.interactionMode === 'owner_protecting') {
             if (!this.ownerEraserBox) return;
             const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
-            if (window.modalSystem) {
-                window.modalSystem.show('confirmProtectAreaModal', { count }).then(result => {
-                    const actStr = (typeof result === 'string') ? result : (result?.action || (result?.confirmed ? 'protect' : null));
-                    if (actStr === 'protect' || actStr === 'unprotect') {
-                        this.executeOwnerProtectArea(actStr === 'protect');
-                    }
-                });
-            } else {
-                const act = confirm(`Aceptar para Proteger la zona (${count} px). Cancelar para Desproteger la zona.`);
-                this.executeOwnerProtectArea(act);
-            }
+            window.modalSystem.show('confirmProtectAreaModal', { count }).then(result => {
+                const actStr = (typeof result === 'string') ? result : (result?.action || (result?.confirmed ? 'protect' : null));
+                if (actStr === 'protect' || actStr === 'unprotect') {
+                    this.executeOwnerProtectArea(actStr === 'protect');
+                }
+            });
             return;
         }
+
 
         let maxBalance = this.getMaxBalance();
 
@@ -1842,18 +1819,17 @@ export const DesignInteractions = {
             const isHighlighting = !!this.showMyProtectionsHighlight;
             const protBadge = document.createElement('div');
             protBadge.className = 'component-badge component-badge--clickable';
-            protBadge.style.cursor = 'pointer';
             if (isHighlighting) {
-                protBadge.style.border = '1px solid var(--color-success)';
-                protBadge.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
-                protBadge.innerHTML = `<span class="material-symbols-rounded component-text-success">shield</span><span>Zonas protegidas (${myProtectedCount})<span data-ref="my-protections-timer-label" style="font-family: monospace; font-size: 11px; margin-left: 4px; opacity: 0.8;"></span></span>`;
+                protBadge.classList.add('component-badge--success-highlighted');
+                protBadge.innerHTML = `<span class="material-symbols-rounded component-text-success">shield</span><span>Zonas protegidas (${myProtectedCount})<span data-ref="my-protections-timer-label" class="protection-timer-label"></span></span>`;
             } else {
-                protBadge.innerHTML = `<span class="material-symbols-rounded">shield</span><span>Zonas protegidas (${myProtectedCount})<span data-ref="my-protections-timer-label" style="font-family: monospace; font-size: 11px; margin-left: 4px; opacity: 0.8;"></span></span>`;
+                protBadge.innerHTML = `<span class="material-symbols-rounded">shield</span><span>Zonas protegidas (${myProtectedCount})<span data-ref="my-protections-timer-label" class="protection-timer-label"></span></span>`;
             }
             protBadge.addEventListener('click', () => {
                 this.toggleMyProtectionsHighlight();
             });
             badgesRight.appendChild(protBadge);
+
 
             this.myProtectionsTimerLabel = protBadge.querySelector('[data-ref="my-protections-timer-label"]');
             if (!this.myProtectionsTimerInterval) {

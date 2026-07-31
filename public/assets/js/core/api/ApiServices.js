@@ -272,6 +272,31 @@ export class ApiService {
         return res;
     }
 
+    async postKeepalive(route, data = {}) {
+        const payload = {
+            route: route,
+            ...data
+        };
+
+        const fetchOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': this._getCsrfToken()
+            },
+            body: JSON.stringify(payload),
+            keepalive: true
+        };
+
+        const res = await this._executeFetch(fetchOptions, route);
+        if (res && res.ok) {
+            const result = await this._parseJsonResponse(res);
+            return this._processResponse(result);
+        }
+        return res;
+    }
+
+
     async postForm(route, formData, signal = null) {
         formData.append('route', route);
 

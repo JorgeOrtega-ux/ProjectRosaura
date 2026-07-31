@@ -152,20 +152,12 @@ class CanvasSnapshotsGalleryController {
 
         this.closeDropdowns();
 
-        let confirmed = false;
-        if (window.modalSystem && window.modalSystem.show) {
-            const confirmRes = await window.modalSystem.show('confirmActionModal', {
-                title: window.__('delete_captura'),
-                message: window.__('confirm_delete_captura')
-            });
-            if (confirmRes && confirmRes.confirmed) {
-                confirmed = true;
-            }
-        } else {
-            confirmed = confirm(window.__('confirm_delete_captura_prompt'));
-        }
+        const confirmRes = await window.modalSystem.show('confirmActionModal', {
+            title: window.__('delete_captura'),
+            message: window.__('confirm_delete_captura')
+        });
+        if (!confirmRes || !confirmRes.confirmed) return;
 
-        if (!confirmed) return;
 
         const res = await this.api.post(ApiRoutes.Canvases.DeleteSnapshot, { id: snapshotUuid }, this.abortController.signal);
         
