@@ -849,33 +849,45 @@ class DesignController {
             settings.thumbnail = await this.generateSandboxThumbnail();
             await DesignSandboxDb.saveSettings(settings, this.sandboxUuid);
 
-            const db = await DesignSandboxDb.init();
-            const keys = await new Promise((resolve, reject) => {
-                const tx = db.transaction('chunks', 'readonly');
-                const store = tx.objectStore('chunks');
-                const request = store.openKeyCursor();
-                const list = [];
-                request.onsuccess = (e) => {
-                    const cursor = e.target.result;
-                    if (cursor) {
-                        const key = cursor.key;
-                        const isTarget = (this.sandboxUuid === 'current') 
-                            ? (!key.includes('_')) 
-                            : (typeof key === 'string' && key.startsWith(this.sandboxUuid + '_'));
-                        if (isTarget) {
-                            list.push(key);
+            // Check dirty chunks for incremental sync
+            const storageKey = `rosaura_dirty_chunks_${this.sandboxUuid}`;
+            const existingDirty = localStorage.getItem(storageKey);
+            let keysToSync = [];
+
+            if (existingDirty !== null) {
+                const dirtyList = JSON.parse(existingDirty) || [];
+                // Format keys with uuid prefix if needed to match IndexedDB keys
+                keysToSync = dirtyList.map(k => (this.sandboxUuid === 'current' || this.sandboxUuid === 'sandbox') ? k : `${this.sandboxUuid}_${k}`);
+            } else {
+                // If null, perform a full sync by reading all chunks in IndexedDB
+                const db = await DesignSandboxDb.init();
+                keysToSync = await new Promise((resolve, reject) => {
+                    const tx = db.transaction('chunks', 'readonly');
+                    const store = tx.objectStore('chunks');
+                    const request = store.openKeyCursor();
+                    const list = [];
+                    request.onsuccess = (e) => {
+                        const cursor = e.target.result;
+                        if (cursor) {
+                            const key = cursor.key;
+                            const isTarget = (this.sandboxUuid === 'current') 
+                                ? (!key.includes('_')) 
+                                : (typeof key === 'string' && key.startsWith(this.sandboxUuid + '_'));
+                            if (isTarget) {
+                                list.push(key);
+                            }
+                            cursor.continue();
+                        } else {
+                            resolve(list);
                         }
-                        cursor.continue();
-                    } else {
-                        resolve(list);
-                    }
-                };
-                request.onerror = () => reject(request.error);
-            });
+                    };
+                    request.onerror = () => reject(request.error);
+                });
+            }
 
             const chunksToSend = {};
-            for (const fullKey of keys) {
-                const coordsPart = (this.sandboxUuid === 'current') 
+            for (const fullKey of keysToSync) {
+                const coordsPart = (this.sandboxUuid === 'current' || this.sandboxUuid === 'sandbox') 
                     ? fullKey 
                     : fullKey.substring(this.sandboxUuid.length + 1);
                 const data = await DesignSandboxDb.getChunk(coordsPart, this.sandboxUuid);
@@ -945,6 +957,9 @@ class DesignController {
                 currentSb.syncedAt = Date.now();
                 localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(localList));
             }
+
+            // Clear dirty list on successful sync
+            localStorage.setItem(`rosaura_dirty_chunks_${this.sandboxUuid}`, JSON.stringify([]));
 
             btnSync.setAttribute('data-tooltip', this.getSyncTooltipText());
             if (this.dirtyChunks) {

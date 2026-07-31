@@ -231,6 +231,8 @@ export const DesignSetup = {
                                     await DesignSandboxDb.saveChunk(key, base64Data, this.sandboxUuid);
                                 }
                             }
+                            // Initialize dirty chunks tracking to empty since it is fresh from the cloud
+                            localStorage.setItem(`rosaura_dirty_chunks_${this.sandboxUuid}`, JSON.stringify([]));
                             console.log('[Sandbox Sync] Asynchronously loaded and restored cloud state:', this.sandboxUuid);
                             
                             const icon = btnSync ? btnSync.querySelector('.material-symbols-rounded') : null;

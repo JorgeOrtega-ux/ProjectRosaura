@@ -72,6 +72,22 @@ export class DesignSandboxDb {
 
     static saveChunk(key, base64Data, uuid = 'current') {
         const fullKey = uuid === 'current' || uuid === 'sandbox' ? key : `${uuid}_${key}`;
+
+        // Track dirty chunk for incremental sync
+        try {
+            const storageKey = `rosaura_dirty_chunks_${uuid}`;
+            const existing = localStorage.getItem(storageKey);
+            if (existing !== null) {
+                let dirtyList = JSON.parse(existing) || [];
+                if (!dirtyList.includes(key)) {
+                    dirtyList.push(key);
+                    localStorage.setItem(storageKey, JSON.stringify(dirtyList));
+                }
+            }
+        } catch (e) {
+            console.error('[Sandbox Db] Error tracking dirty chunk:', e);
+        }
+
         return this.init().then(db => {
             return new Promise((resolve, reject) => {
                 const tx = db.transaction('chunks', 'readwrite');
