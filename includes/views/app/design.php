@@ -9,7 +9,7 @@ if ($isSandboxMode) {
     $designData = [
         'canvasIntId' => $canvasUuid,
         'canvasUuid' => $canvasUuid,
-        'canvasName' => 'Modo Sandbox Local (Sandbox)',
+        'canvasName' => 'Modo Sandbox (Sandbox)',
         'canvasSize' => '64',
         'canvasPalette' => 'default',
         'canvasPrivacy' => 'public',
@@ -145,6 +145,9 @@ extract($designData);
                     <?php if ($isSandboxMode): ?>
                     <button class="component-button component-button--icon component-button--h40 component-button--warning" data-action="openSandboxSettingsModal" data-tooltip="Ajustes de Sandbox" data-position="bottom">
                         <span class="material-symbols-rounded">tune</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h40" data-action="syncSandboxCloud" data-ref="btn-sandbox-sync" data-tooltip="Sincronizar con la nube" data-position="bottom" style="display: none; color: var(--color-text-muted);">
+                        <span class="material-symbols-rounded">cloud_queue</span>
                     </button>
                     <div class="component-divider-vertical" data-ref="sandbox-actions-divider"></div>
                     <?php endif; ?>

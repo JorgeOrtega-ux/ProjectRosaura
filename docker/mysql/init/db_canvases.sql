@@ -291,3 +291,29 @@ CREATE TABLE IF NOT EXISTS `canvas_chat_reports` (
   INDEX (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `user_sandboxes` (
+  `uuid` varchar(36) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `width` int(11) NOT NULL DEFAULT 64,
+  `height` int(11) NOT NULL DEFAULT 64,
+  `palette_id` varchar(50) NOT NULL DEFAULT 'default',
+  `cooldown_batch` int(11) NOT NULL DEFAULT 100,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`uuid`),
+  INDEX `idx_us_user` (`user_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `user_sandbox_chunks` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sandbox_uuid` varchar(36) NOT NULL,
+  `chunk_key` varchar(10) NOT NULL,
+  `data` LONGTEXT DEFAULT NULL,
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_usc_sandbox_chunk` (`sandbox_uuid`, `chunk_key`),
+  CONSTRAINT `fk_usc_sandbox` FOREIGN KEY (`sandbox_uuid`) REFERENCES `user_sandboxes` (`uuid`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+

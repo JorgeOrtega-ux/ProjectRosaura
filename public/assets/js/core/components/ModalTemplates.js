@@ -1740,7 +1740,7 @@ export const ModalTemplates = {
     createSandboxModal: {
         build: () => {
             const titleStr = 'Crear Lienzo Sandbox';
-            const descStr = 'Crea un lienzo local offline. Se guardará de forma local en tu navegador (máximo 10 lienzos).';
+            const descStr = 'Crea un lienzo sandbox personal. Se guardará localmente y se sincronizará automáticamente con tu cuenta en la nube.';
             const btnCancel = 'Cancelar';
             const btnCreate = 'Crear Lienzo';
 
@@ -1798,7 +1798,7 @@ export const ModalTemplates = {
     confirmDeleteSandboxModal: {
         build: () => {
             const titleStr = 'Eliminar Lienzo Sandbox';
-            const descStr = '¿Estás seguro de que deseas eliminar este lienzo sandbox? Todos tus píxeles y configuraciones de este lienzo se perderán permanentemente de forma local.';
+            const descStr = '¿Estás seguro de que deseas eliminar este lienzo sandbox? Todos tus píxeles y configuraciones se borrarán permanentemente del dispositivo y de la nube.';
             const btnCancel = 'Cancelar';
             const btnDelete = 'Eliminar permanentemente';
 
@@ -1870,7 +1870,7 @@ export const ModalTemplates = {
                     </button>
                     
                     <p class="component-modal-disclaimer">
-                        * Los mundos sandbox son simulaciones locales de lienzo. Los cambios no se sincronizan con la red global de Rosaura ni afectan a los tableros públicos.
+                        * Los mundos sandbox son simulaciones personales de lienzo. Tus cambios se sincronizan en la nube bajo tu cuenta y no afectan a los tableros públicos.
                     </p>
                 </div>
                 
@@ -1913,7 +1913,7 @@ export const ModalTemplates = {
                                 <span class="material-symbols-rounded component-card-icon-sm">science</span>
                                 <div class="component-card-info">
                                     <span class="component-card-title-sm">${escapeHtml(sb.name)}</span>
-                                    <span class="component-card-desc-sm">Lienzo local • ${sb.width}x${sb.height}</span>
+                                    <span class="component-card-desc-sm">Lienzo Sincronizado • ${sb.width}x${sb.height}</span>
                                 </div>
                             </div>
                         </div>
@@ -2215,7 +2215,7 @@ export const ModalTemplates = {
                 <div class="sandbox-stage" data-stage="1" style="display: ${initialStage === 1 ? 'flex' : 'none'};">
                     <div class="component-modal-left">
                         <h2 class="component-modal-title component-modal-title--lg">Explora a lo grande con mundos Sandbox</h2>
-                        <p class="component-modal-desc component-modal-desc--lg">Disfruta de la libertad total de diseñar sin límites con tus propios mundos de prueba locales.</p>
+                        <p class="component-modal-desc component-modal-desc--lg">Disfruta de la libertad total de diseñar sin límites con tus propios mundos de prueba sincronizados en la nube.</p>
                         
                         <div class="component-modal-list">
                             <!-- Card 1 -->
@@ -2257,7 +2257,7 @@ export const ModalTemplates = {
                         </button>
                         
                         <p class="component-modal-disclaimer">
-                            * Los mundos sandbox son simulaciones locales de lienzo. Los cambios no se sincronizan con la red global de Rosaura ni afectan a los tableros públicos.
+                            * Los mundos sandbox son simulaciones personales de lienzo. Tus cambios se sincronizan en la nube bajo tu cuenta y no afectan a los tableros públicos.
                         </p>
                     </div>
                     
@@ -2271,8 +2271,8 @@ export const ModalTemplates = {
                 <!-- STAGE 2: LOBBY / SELECTION -->
                 <div class="sandbox-stage" data-stage="2" style="display: ${initialStage === 2 ? 'flex' : 'none'};">
                     <div class="component-modal-left">
-                        <h2 class="component-modal-title">Mundos Sandbox Locales</h2>
-                        <p class="component-modal-desc">Crea o selecciona un lienzo fuera de línea. Todo el progreso se guardará de forma local en tu navegador.</p>
+                        <h2 class="component-modal-title">Mundos Sandbox Sincronizados</h2>
+                        <p class="component-modal-desc">Crea o selecciona un lienzo personal. El progreso se guarda localmente y se sincroniza en la nube.</p>
                         
                         <input type="hidden" id="sandbox_action" name="sandbox_action" value="play_existing">
                         <input type="hidden" id="selected_sandbox_uuid" name="selected_sandbox_uuid" value="">
@@ -2283,7 +2283,7 @@ export const ModalTemplates = {
                                 <span class="material-symbols-rounded component-card-icon-sm">add_circle</span>
                                 <div class="component-card-info">
                                     <span class="component-card-title-sm">Crear Nuevo Mundo</span>
-                                    <span class="component-card-desc-sm">Diseña un nuevo lienzo local sin conexión.</span>
+                                    <span class="component-card-desc-sm">Diseña un nuevo lienzo personal sincronizado.</span>
                                 </div>
                             </div>
                         </div>
@@ -2333,7 +2333,7 @@ export const ModalTemplates = {
                             </button>
                             <h2 class="component-modal-title">Crear Nuevo Mundo</h2>
                         </div>
-                        <p class="component-modal-desc">Configura las opciones de tu nuevo lienzo local offline.</p>
+                        <p class="component-modal-desc">Configura las opciones de tu nuevo lienzo personal.</p>
                         
                         <!-- Nombre del Sandbox -->
                         <div>

@@ -134,6 +134,31 @@ export const DesignSetup = {
             const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
             const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
 
+            const activeUserId = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+            if (activeUserId) {
+                try {
+                    const cloudRes = await this.api.post('sandbox.get_state', { uuid: this.sandboxUuid });
+                    if (cloudRes && cloudRes.success && cloudRes.settings) {
+                        await DesignSandboxDb.saveSettings(cloudRes.settings, this.sandboxUuid);
+                        if (cloudRes.chunks) {
+                            for (const [key, base64Data] of Object.entries(cloudRes.chunks)) {
+                                await DesignSandboxDb.saveChunk(key, base64Data, this.sandboxUuid);
+                            }
+                        }
+                        console.log('[Sandbox Sync] Downloaded and restored cloud state of sandbox:', this.sandboxUuid);
+                        
+                        const btnSync = document.querySelector('[data-ref="btn-sandbox-sync"]');
+                        const icon = btnSync ? btnSync.querySelector('.material-symbols-rounded') : null;
+                        if (icon) {
+                            icon.textContent = 'cloud_done';
+                            icon.style.color = 'var(--color-success, #4caf50)';
+                        }
+                    }
+                } catch (err) {
+                    console.warn('[Sandbox Sync] Cloud download failed (offline or missing in cloud):', err);
+                }
+            }
+
             let settings = await DesignSandboxDb.getSettings(this.sandboxUuid);
             if (!settings) {
                 let name = '';
@@ -164,7 +189,7 @@ export const DesignSetup = {
             
             // Actualizar el título de la página/lienzo
             const titleElements = document.querySelectorAll('.component-top-title');
-            const displayName = settings.name ? `${settings.name} (Sandbox)` : 'Modo Sandbox Local (Sandbox)';
+            const displayName = settings.name ? `${settings.name} (Sandbox)` : 'Modo Sandbox (Sandbox)';
             if (titleElements.length > 1) {
                 titleElements[1].textContent = displayName;
             } else if (titleElements.length > 0) {

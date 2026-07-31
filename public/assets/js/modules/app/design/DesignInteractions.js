@@ -44,6 +44,13 @@ const DesignInteractionsBase = {
             return;
         }
 
+        const btnSyncSandbox = e.target.closest('[data-action="syncSandboxCloud"]');
+        if (btnSyncSandbox) {
+            e.preventDefault();
+            this.syncSandboxCloud();
+            return;
+        }
+
         if (this.isSandbox) {
             const btnToggleDropdown = e.target.closest('[data-action="toggleDropdown"]');
             if (btnToggleDropdown) {

@@ -93,6 +93,7 @@ class DesignController {
         this.uiLiveInputX = null;
         this.uiLiveInputY = null;
         this.uiLiveInputOpacity = null;
+        this.dirtyChunks = new Set();
         
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
@@ -518,6 +519,12 @@ class DesignController {
             
             if (this.isSandbox) {
                 this.initSandboxMode();
+                const activeUserId = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+                const btnSync = document.querySelector('[data-ref="btn-sandbox-sync"]');
+                if (activeUserId && btnSync) {
+                    btnSync.style.display = 'inline-flex';
+                    this.autosaveInterval = setInterval(() => this.autosaveSandbox(), 120000);
+                }
             } else {
                 this.checkCanvasAccess();
                 
@@ -721,6 +728,10 @@ class DesignController {
             clearInterval(this.resetTimerInterval);
         }
 
+        if (this.autosaveInterval) {
+            clearInterval(this.autosaveInterval);
+        }
+
         if (this.myProtectionsTimerInterval) {
             clearInterval(this.myProtectionsTimerInterval);
             this.myProtectionsTimerInterval = null;
@@ -802,6 +813,181 @@ class DesignController {
         } catch (e) {
             console.error('[Sandbox] Failed to generate thumbnail from IndexedDB:', e);
             return null;
+        }
+    }
+
+    async syncSandboxCloud() {
+        if (!this.isSandbox) return;
+        const btnSync = document.querySelector('[data-ref="btn-sandbox-sync"]');
+        if (!btnSync) return;
+
+        const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+        if (!uid) {
+            showMessage('Inicia sesión para sincronizar tus sandboxes en la nube.', 'warning');
+            return;
+        }
+
+        const icon = btnSync.querySelector('.material-symbols-rounded');
+        if (icon) {
+            icon.classList.add('icon-spin-slow');
+            icon.textContent = 'autorenew';
+            icon.style.color = '';
+        }
+        btnSync.setAttribute('data-tooltip', 'Sincronizando con la nube...');
+        btnSync.classList.add('disabled-interaction');
+
+        try {
+            const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+            const settings = await DesignSandboxDb.getSettings(this.sandboxUuid);
+            if (!settings) {
+                throw new Error('No se encontraron ajustes locales del sandbox');
+            }
+
+            settings.thumbnail = await this.generateSandboxThumbnail();
+            await DesignSandboxDb.saveSettings(settings, this.sandboxUuid);
+
+            const db = await DesignSandboxDb.init();
+            const keys = await new Promise((resolve, reject) => {
+                const tx = db.transaction('chunks', 'readonly');
+                const store = tx.objectStore('chunks');
+                const request = store.openKeyCursor();
+                const list = [];
+                request.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        const key = cursor.key;
+                        const isTarget = (this.sandboxUuid === 'current') 
+                            ? (!key.includes('_')) 
+                            : (typeof key === 'string' && key.startsWith(this.sandboxUuid + '_'));
+                        if (isTarget) {
+                            list.push(key);
+                        }
+                        cursor.continue();
+                    } else {
+                        resolve(list);
+                    }
+                };
+                request.onerror = () => reject(request.error);
+            });
+
+            const chunksToSend = {};
+            for (const fullKey of keys) {
+                const coordsPart = (this.sandboxUuid === 'current') 
+                    ? fullKey 
+                    : fullKey.substring(this.sandboxUuid.length + 1);
+                const data = await DesignSandboxDb.getChunk(coordsPart, this.sandboxUuid);
+                if (data) {
+                    chunksToSend[coordsPart] = data;
+                }
+            }
+
+            const response = await this.api.post('sandbox.sync_state', {
+                uuid: this.sandboxUuid,
+                settings: {
+                    name: settings.name || 'Sandbox',
+                    width: settings.width || 64,
+                    height: settings.height || 64,
+                    paletteId: settings.paletteId || 'default',
+                    cooldownBatch: settings.cooldownBatch || 100
+                },
+                chunks: chunksToSend
+            });
+
+            if (response && response.success) {
+                if (icon) {
+                    icon.textContent = 'cloud_done';
+                    icon.style.color = 'var(--color-success, #4caf50)';
+                }
+                btnSync.setAttribute('data-tooltip', 'Sincronizado con la nube');
+                if (this.dirtyChunks) {
+                    this.dirtyChunks.clear();
+                }
+                showMessage('Sincronizado con la nube con éxito', 'success');
+            } else {
+                throw new Error(response?.message || 'Error en respuesta del servidor');
+            }
+        } catch (e) {
+            console.error('[Sandbox Sync] Cloud sync failed:', e);
+            if (icon) {
+                icon.textContent = 'cloud_off';
+                icon.style.color = 'var(--color-danger, #f44336)';
+            }
+            btnSync.setAttribute('data-tooltip', 'Error al sincronizar');
+            showMessage('Error al sincronizar con la nube', 'error');
+        } finally {
+            if (icon) {
+                icon.classList.remove('icon-spin-slow');
+            }
+            btnSync.classList.remove('disabled-interaction');
+        }
+    }
+
+    async autosaveSandbox() {
+        if (!this.isSandbox) return;
+        const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+        if (!uid) return;
+
+        if (!this.dirtyChunks || this.dirtyChunks.size === 0) return;
+
+        const btnSync = document.querySelector('[data-ref="btn-sandbox-sync"]');
+        const icon = btnSync ? btnSync.querySelector('.material-symbols-rounded') : null;
+
+        if (icon) {
+            icon.textContent = 'sync';
+            icon.classList.add('icon-spin-slow');
+            icon.style.color = '';
+        }
+
+        try {
+            const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+            const settings = await DesignSandboxDb.getSettings(this.sandboxUuid);
+            const chunksToSend = {};
+            const dirtyKeys = Array.from(this.dirtyChunks);
+
+            for (const coordsPart of dirtyKeys) {
+                const data = await DesignSandboxDb.getChunk(coordsPart, this.sandboxUuid);
+                if (data) {
+                    chunksToSend[coordsPart] = data;
+                }
+            }
+
+            const response = await this.api.post('sandbox.sync_state', {
+                uuid: this.sandboxUuid,
+                settings: settings ? {
+                    name: settings.name || 'Sandbox',
+                    width: settings.width || 64,
+                    height: settings.height || 64,
+                    paletteId: settings.paletteId || 'default',
+                    cooldownBatch: settings.cooldownBatch || 100
+                } : null,
+                chunks: chunksToSend
+            });
+
+            if (response && response.success) {
+                this.dirtyChunks.clear();
+                if (icon) {
+                    icon.textContent = 'cloud_done';
+                    icon.style.color = 'var(--color-success, #4caf50)';
+                }
+                if (btnSync) btnSync.setAttribute('data-tooltip', 'Autoguardado completado');
+            } else {
+                throw new Error(response?.message || 'Error en respuesta');
+            }
+        } catch (e) {
+            console.warn('[Autosave] Failed to autosave sandbox:', e);
+            if (icon) {
+                icon.textContent = 'cloud_off';
+                icon.style.color = 'var(--color-danger, #f44336)';
+            }
+            if (btnSync) btnSync.setAttribute('data-tooltip', 'Error de autoguardado');
+        } finally {
+            if (icon) {
+                icon.classList.remove('icon-spin-slow');
+            }
         }
     }
 }

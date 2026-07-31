@@ -56,6 +56,7 @@ class HomeController {
         this.loadCanvases();
         this.checkCheckoutSuccess();
         this.setupCarouselDrag();
+        this.syncOfflineSandboxes();
     }
 
     destroy() {
@@ -274,43 +275,6 @@ class HomeController {
         const limit = 20;
 
         let localSandboxes = [];
-        if (!isLoadMore && (currentTag === 'all' || currentTag === 'sandbox')) {
-            try {
-                const listJson = localStorage.getItem('rosaura_sandboxes_list');
-                if (listJson) {
-                    const list = JSON.parse(listJson);
-                    const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
-                    const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
-
-                    localSandboxes = await Promise.all(list.map(async (sb) => {
-                        let thumb = null;
-                        try {
-                            const settings = await DesignSandboxDb.getSettings(sb.uuid);
-                            if (settings && settings.thumbnail) {
-                                thumb = settings.thumbnail;
-                            }
-                        } catch (err) {}
-
-                        return {
-                            id: 'sandbox_' + sb.uuid,
-                            uuid: 'sandbox_' + sb.uuid,
-                            name: sb.name,
-                            thumbnail_url: thumb,
-                            online_players: 0,
-                            members_count: 1,
-                            favorites_count: 0,
-                            is_official: false,
-                            is_favorite: false,
-                            is_owner: true,
-                            is_member: true,
-                            is_sandbox: true
-                        };
-                    }));
-                }
-            } catch (e) {
-                console.error('Error loading local sandboxes:', e);
-            }
-        }
 
         // If tag is 'sandbox', bypass API calls completely since sandboxes are strictly client-side
         if (currentTag === 'sandbox') {
@@ -772,6 +736,80 @@ class HomeController {
             var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
+    }
+
+    async syncOfflineSandboxes() {
+        const activeUserId = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+        if (!activeUserId) return;
+
+        try {
+            let localList = [];
+            try {
+                const listJson = localStorage.getItem('rosaura_sandboxes_list');
+                if (listJson) {
+                    localList = JSON.parse(listJson);
+                }
+            } catch (e) {
+                console.error('[Lobby Sync] Failed to parse local sandbox list', e);
+            }
+
+            const sandboxesToSync = localList.map(sb => ({
+                uuid: sb.uuid,
+                name: sb.name || 'Sandbox',
+                width: parseInt(sb.size || sb.width || 64, 10),
+                height: parseInt(sb.size || sb.height || 64, 10),
+                palette: sb.palette || 'default',
+                cooldownBatch: parseInt(sb.cooldownBatch || sb.cooldown_batch || 100, 10)
+            }));
+
+            console.log('[Lobby Sync] Syncing sandboxes list with cloud...', sandboxesToSync);
+            const response = await this.api.post('sandbox.sync_list', { sandboxes: sandboxesToSync });
+
+            if (response && response.success && response.sandboxes) {
+                const cloudList = response.sandboxes;
+                const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
+                const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+                const updatedLocalList = [];
+
+                for (const cloudSb of cloudList) {
+                    const localMatch = localList.find(s => s.uuid === cloudSb.uuid);
+                    
+                    if (!localMatch) {
+                        try {
+                            console.log('[Lobby Sync] Downloading sandbox state for:', cloudSb.uuid);
+                            const stateRes = await this.api.post('sandbox.get_state', { uuid: cloudSb.uuid });
+                            if (stateRes && stateRes.success && stateRes.settings) {
+                                await DesignSandboxDb.saveSettings(stateRes.settings, cloudSb.uuid);
+                                if (stateRes.chunks) {
+                                    for (const [key, base64Data] of Object.entries(stateRes.chunks)) {
+                                        await DesignSandboxDb.saveChunk(key, base64Data, cloudSb.uuid);
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            console.warn('[Lobby Sync] Failed to download state for sandbox:', cloudSb.uuid, err);
+                        }
+                    }
+
+                    updatedLocalList.push({
+                        uuid: cloudSb.uuid,
+                        name: cloudSb.name,
+                        size: cloudSb.width,
+                        width: cloudSb.width,
+                        height: cloudSb.height,
+                        palette: cloudSb.palette,
+                        cooldownBatch: cloudSb.cooldownBatch,
+                        createdAt: localMatch ? (localMatch.createdAt || Date.now()) : Date.now()
+                    });
+                }
+
+                localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(updatedLocalList));
+                console.log('[Lobby Sync] Sandboxes list synced successfully with server.');
+            }
+        } catch (e) {
+            console.warn('[Lobby Sync] Failed to synchronize sandbox list with the server:', e);
+        }
     }
 }
 

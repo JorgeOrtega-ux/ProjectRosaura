@@ -375,6 +375,19 @@ export const DesignInteractionsPlacing = {
 
                         const newBase64 = await DesignSandboxDb.compressAndEncode(bytes);
                         await DesignSandboxDb.saveChunk(key, newBase64, this.sandboxUuid);
+                        if (this.dirtyChunks) {
+                            this.dirtyChunks.add(key);
+                        }
+                    }
+
+                    if (this.dirtyChunks && this.dirtyChunks.size > 0) {
+                        const btnSync = document.querySelector('[data-ref="btn-sandbox-sync"]');
+                        const icon = btnSync ? btnSync.querySelector('.material-symbols-rounded') : null;
+                        if (icon) {
+                            icon.textContent = 'cloud_upload';
+                            icon.style.color = 'var(--color-warning, #ff9800)';
+                        }
+                        if (btnSync) btnSync.setAttribute('data-tooltip', 'Cambios sin sincronizar. Haz clic para guardar.');
                     }
 
                     // Capturar miniatura

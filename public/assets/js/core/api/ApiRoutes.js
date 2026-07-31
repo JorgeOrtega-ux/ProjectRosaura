@@ -163,5 +163,10 @@ export const ApiRoutes = {
         Send: 'chat.send',
         Delete: 'chat.delete',
         Report: 'chat.report'
+    },
+    Sandbox: {
+        SyncList: 'sandbox.sync_list',
+        SyncState: 'sandbox.sync_state',
+        GetState: 'sandbox.get_state'
     }
-};
+};
