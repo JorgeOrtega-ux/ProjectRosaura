@@ -1835,5 +1835,62 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+
+    sandboxOnboardingModal: {
+        noPadding: true,
+        customClass: 'component-modal-box--columns',
+        build: () => {
+            const titleStr = 'Explora a lo grande con mundos Sandbox';
+            const descStr = 'Disfruta de la libertad total de diseñar sin límites y 100% offline.';
+            const btnAction = 'Comenzar a explorar';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-left" style="display: flex; flex-direction: column; justify-content: space-between; padding: 30px;">
+                    <div>
+                        <h2 class="component-modal-title component-modal-title--lg" style="margin-bottom: 12px; line-height: 1.3;">${titleStr}</h2>
+                        <p class="component-modal-desc component-modal-desc--lg" style="margin-bottom: 25px;">${descStr}</p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 30px;">
+                            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                <span class="material-symbols-rounded" style="color: var(--color-brand-primary, #6200ee); font-size: 24px; padding-top: 2px;">science</span>
+                                <div>
+                                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">Hasta 10 mundos independientes</h4>
+                                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Crea y administra múltiples tableros locales guardados directamente en tu navegador.</p>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                <span class="material-symbols-rounded" style="color: var(--color-brand-primary, #6200ee); font-size: 24px; padding-top: 2px;">extension</span>
+                                <div>
+                                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">Todo Desbloqueado</h4>
+                                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Límites de píxeles elevados, paletas de colores exclusivas y herramientas libres.</p>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                <span class="material-symbols-rounded" style="color: var(--color-brand-primary, #6200ee); font-size: 24px; padding-top: 2px;">signal_wifi_off</span>
+                                <div>
+                                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">100% Offline</h4>
+                                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Diseña sin conexión a internet y tus datos se mantendrán seguros en tu disco.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="component-button component-button--brand component-button--rounded-pill component-button--h40" data-modal-action="confirm" style="width: 100%; font-weight: 600;">
+                        <span>${btnAction}</span>
+                        <span class="material-symbols-rounded" style="font-size: 20px; margin-left: 6px;">arrow_forward</span>
+                    </button>
+                </div>
+                
+                <div class="component-modal-right" style="background: linear-gradient(135deg, #121214 0%, #1c1c20 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+                    <!-- Espacio de imagen vacío por ahora, con un diseño premium sutil -->
+                    <div style="position: absolute; width: 150px; height: 150px; background: radial-gradient(circle, rgba(98, 0, 238, 0.15) 0%, rgba(0,0,0,0) 70%); filter: blur(20px);"></div>
+                    <span class="material-symbols-rounded" style="font-size: 110px; color: rgba(255, 255, 255, 0.04); user-select: none;">toys</span>
+                </div>
+            `;
+        }
     }
 };

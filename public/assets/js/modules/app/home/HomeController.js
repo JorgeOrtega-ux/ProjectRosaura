@@ -457,6 +457,23 @@ class HomeController {
             return;
         }
 
+        // Comprobar si es la primera vez (onboarding) - Desactivado temporalmente a petición del usuario para depuración
+        const hasOnboarded = false;
+        
+        let proceedToCreate = false;
+
+        if (!hasOnboarded) {
+            const onboardingRes = await window.modalSystem.show('sandboxOnboardingModal');
+            if (onboardingRes && onboardingRes.confirmed) {
+                localStorage.setItem('rosaura_sandbox_onboarded', 'true');
+                proceedToCreate = true;
+            }
+        } else {
+            proceedToCreate = true;
+        }
+
+        if (!proceedToCreate) return;
+
         const res = await window.modalSystem.show('createSandboxModal');
         if (res && res.confirmed && res.data) {
             const name = res.data.sandbox_name ? res.data.sandbox_name.trim() : '';

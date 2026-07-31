@@ -53,6 +53,9 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                     <div class="component-badge component-badge--warning">
                         <span class="material-symbols-rounded">science</span>
                         <span>Sandbox</span>
+                        <span class="component-badge-divider">|</span>
+                        <span class="material-symbols-rounded" style="font-size: 14px; margin-right: 4px;">signal_wifi_off</span>
+                        <span>Sin conexión</span>
                     </div>
                 </div>
             `;
