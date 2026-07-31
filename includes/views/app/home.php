@@ -41,36 +41,4 @@ $tagsList = $viewService->getHomeTags();
                     </div>
     </div>
 
-    <!-- Botón Flotante Redondo Negro/Blanco con Borde e Icono de Ciencia para Sandbox -->
-    <button class="component-sandbox-fab" data-action="openCreateSandboxModal" title="Crear Sandbox">
-        <span class="material-symbols-rounded">science</span>
-    </button>
 </div>
-
-<style>
-.component-sandbox-fab {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background-color: var(--text-primary, #ffffff) !important;
-    border: 1px solid var(--text-inverse, #1c1c20) !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: none;
-    z-index: 99;
-    transition: opacity 0.2s ease, border-color 0.2s ease;
-}
-.component-sandbox-fab:hover {
-    opacity: 0.85;
-}
-.component-sandbox-fab span {
-    color: var(--text-inverse, #1c1c20) !important;
-    font-size: 21px;
-    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-}
-</style>

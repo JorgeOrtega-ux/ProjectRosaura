@@ -197,8 +197,8 @@ class HomeController {
             setTimeout(() => {
                 const size = this.getSandboxSelectedSize();
                 this.selectedSandboxTemplateId = "";
-                const hiddenInput = document.getElementById('sandbox_template_id');
-                if (hiddenInput) hiddenInput.value = "";
+                const hiddenInput = document.querySelector('[data-ref="sandbox_template_id"]');
+                if (hiddenInput) hiddenInput.setAttribute('data-val', '');
                 this.updateSandboxTemplatesGrid(size);
             }, 0);
         }
@@ -214,13 +214,13 @@ class HomeController {
             const templateId = actionBtn.getAttribute('data-template-id');
             this.selectedSandboxTemplateId = templateId || "";
             
-            const listContainer = document.getElementById('sandbox_canvas_templates_list');
+            const listContainer = document.querySelector('[data-ref="sandbox_canvas_templates_list"]');
             if (listContainer) {
                 listContainer.querySelectorAll('.component-menu-link').forEach(el => el.classList.remove('active'));
                 actionBtn.classList.add('active');
             }
             
-            const triggerText = document.getElementById('sandbox_text_template');
+            const triggerText = document.querySelector('[data-ref="text-template"]');
             if (triggerText) {
                 const label = actionBtn.getAttribute('data-label');
                 triggerText.textContent = label || 'Seleccionar plantilla';
@@ -232,9 +232,9 @@ class HomeController {
                 dropdownModule.classList.add('disabled');
             }
             
-            const hiddenInput = document.getElementById('sandbox_template_id');
+            const hiddenInput = document.querySelector('[data-ref="sandbox_template_id"]');
             if (hiddenInput) {
-                hiddenInput.value = templateId || "";
+                hiddenInput.setAttribute('data-val', templateId || "");
             }
             return;
         }
@@ -275,6 +275,22 @@ class HomeController {
         const limit = 20;
 
         let localSandboxes = [];
+        if (!isLoadMore && (currentTag === 'all' || currentTag === 'sandbox')) {
+            try {
+                const listJson = localStorage.getItem('rosaura_sandboxes_list');
+                if (listJson) {
+                    const parsed = JSON.parse(listJson);
+                    localSandboxes = parsed.map(sb => ({
+                        uuid: sb.uuid,
+                        name: sb.name || 'Sandbox',
+                        type: 'sandbox',
+                        thumbnail_url: sb.thumbnail || null, // Might be loaded later
+                        players_count: 1,
+                        created_at: sb.createdAt || Date.now()
+                    }));
+                }
+            } catch (e) {}
+        }
 
         // If tag is 'sandbox', bypass API calls completely since sandboxes are strictly client-side
         if (currentTag === 'sandbox') {
@@ -316,7 +332,7 @@ class HomeController {
                         <span class="material-symbols-rounded component-empty-state-icon">science</span>
                         <p class="component-empty-state-text">No tienes lienzos sandbox creados. ¡Crea uno nuevo para empezar a diseñar sin conexión!</p>
                         <div class="component-empty-state-actions">
-                            <button class="component-button component-button--h36 component-button--brand component-button--rounded-pill" data-action="openCreateSandboxModal">
+                            <button class="component-button component-button--h36 component-button--brand component-button--rounded-pill" data-nav="${this.basePath}/canvases/create">
                                 <span class="material-symbols-rounded">add_box</span>
                                 <span>Crear Primer Sandbox</span>
                             </button>
@@ -452,236 +468,7 @@ class HomeController {
         }
     }
 
-    async openCreateSandboxModal() {
-        if (!window.modalSystem) return;
 
-        // Comprobar si es la primera vez (onboarding)
-        const hasOnboarded = localStorage.getItem('rosaura_sandbox_onboarded') === 'true';
-
-        // Cargar lista actual de sandboxes
-        let currentList = [];
-        try {
-            const listJson = localStorage.getItem('rosaura_sandboxes_list');
-            if (listJson) currentList = JSON.parse(listJson);
-        } catch (e) {}
-
-        // Cargar configuraciones (incluyendo thumbnail) para cada sandbox
-        let detailedSandboxesList = [];
-        try {
-            const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
-            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
-            detailedSandboxesList = await Promise.all(currentList.map(async (sb) => {
-                let thumb = null;
-                let width = 64;
-                let height = 64;
-                let palette = 'default';
-                let cooldownBatch = 100;
-                try {
-                    const settings = await DesignSandboxDb.getSettings(sb.uuid);
-                    if (settings) {
-                        thumb = settings.thumbnail || null;
-                        width = settings.width || 64;
-                        height = settings.height || 64;
-                        palette = settings.paletteId || 'default';
-                        cooldownBatch = settings.cooldownBatch || 100;
-                    }
-                } catch (err) {}
-                return {
-                    uuid: sb.uuid,
-                    name: sb.name,
-                    width: width,
-                    height: height,
-                    palette: palette,
-                    cooldownBatch: cooldownBatch,
-                    thumbnail: thumb
-                };
-            }));
-        } catch (err) {
-            console.error('Error precargando detalles de sandboxes:', err);
-            detailedSandboxesList = currentList.map(sb => ({
-                uuid: sb.uuid,
-                name: sb.name,
-                width: 64,
-                height: 64,
-                palette: 'default',
-                cooldownBatch: 100,
-                thumbnail: null
-            }));
-        }
-
-        // Fetch templates
-        let templates = [];
-        try {
-            const resTemplates = await fetch(`${this.basePath}/assets/config/canvas_templates.json`);
-            if (resTemplates.ok) {
-                templates = await resTemplates.json();
-            }
-        } catch (e) {
-            console.error('Error cargando plantillas de lienzo:', e);
-        }
-        this.canvasTemplates = templates;
-        this.selectedSandboxTemplateId = "";
-
-        // Mostrar el modal unificado
-        const res = await window.modalSystem.show('sandboxLobbyModal', {
-            hasOnboarded: hasOnboarded,
-            sandboxes: detailedSandboxesList
-        });
-
-        if (res && res.confirmed && res.data) {
-            const action = res.data.sandbox_action;
-
-            if (action === 'play_existing') {
-                const selectedUuid = res.data.selected_sandbox_uuid;
-                if (!selectedUuid) {
-                    showMessage('Por favor selecciona un mundo para jugar', 'error');
-                    return;
-                }
-                // Redirigir al sandbox seleccionado en una nueva pestaña
-                window.open(`${this.basePath}/design/sandbox/${selectedUuid}`, '_blank');
-            } else if (action === 'create_new') {
-                // Comprobar límite de 10 sandboxes
-                if (currentList.length >= 10) {
-                    showMessage('Has alcanzado el límite máximo de 10 lienzos sandbox locales.', 'error');
-                    return;
-                }
-
-                const name = res.data.sandbox_name ? res.data.sandbox_name.trim() : '';
-                const width = parseInt(res.data.sandbox_width, 10) || 64;
-                const height = parseInt(res.data.sandbox_height, 10) || 64;
-                const cooldownBatch = parseInt(res.data.sandbox_cooldown_batch, 10) || 100;
-                const palette = res.data.sandbox_palette || 'default';
-
-                if (!name) {
-                    showMessage('El nombre del lienzo es obligatorio', 'error');
-                    return;
-                }
-
-                // Generar UUID único
-                const uuid = this.generateUuid();
-
-                // Guardar en la lista en localStorage
-                const newSandbox = {
-                    uuid: uuid,
-                    name: name,
-                    size: width, // mantenemos compatibilidad con el esquema original
-                    palette: palette,
-                    createdAt: Date.now()
-                };
-                currentList.push(newSandbox);
-                localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(currentList));
-
-                // Guardar configuración inicial en IndexedDB
-                try {
-                    const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
-                    const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
-                    await DesignSandboxDb.saveSettings({
-                        name: name,
-                        width: width,
-                        height: height,
-                        paletteId: palette,
-                        cooldownBatch: cooldownBatch
-                    }, uuid);
-
-                    const templateId = res.data.sandbox_template_id || '';
-                    if (templateId && this.canvasTemplates) {
-                        const template = this.canvasTemplates.find(t => t.id === templateId);
-                        if (template) {
-                            const sizeStr = `${width}x${height}`;
-                            const relativeImgPath = template.image_paths[sizeStr];
-                            if (relativeImgPath) {
-                                try {
-                                    await this.prepaintSandboxWithTemplate(uuid, relativeImgPath, width, height);
-                                } catch (err) {
-                                    console.error('Error pre-pintando lienzo con plantilla:', err);
-                                }
-                            }
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error saving sandbox settings to IndexedDB:', e);
-                }
-
-                showMessage('Lienzo Sandbox creado con éxito', 'success');
-
-                // Recargar feed para mostrar el nuevo canvas
-                this.loadCanvases();
-
-                // Redirigir al nuevo sandbox creado
-                window.open(`${this.basePath}/design/sandbox/${uuid}`, '_blank');
-            }
-        }
-    }
-
-    getSandboxSelectedSize() {
-        const widthInput = document.getElementById('sandbox_width');
-        const heightInput = document.getElementById('sandbox_height');
-        if (widthInput && heightInput) {
-            return `${widthInput.value}x${heightInput.value}`;
-        }
-        return '64x64';
-    }
-
-    updateSandboxTemplatesGrid(size) {
-        const trigger = document.getElementById('sandbox_template_dropdown_trigger');
-        const triggerText = document.getElementById('sandbox_text_template');
-        const listContainer = document.getElementById('sandbox_canvas_templates_list');
-        const hiddenInput = document.getElementById('sandbox_template_id');
-
-        if (!trigger || !listContainer) return;
-
-        const templates = this.canvasTemplates || [];
-        
-        // Filter templates compatible with current size
-        const availableTemplates = templates.filter(tpl => tpl.sizes.includes(size));
-        
-        // If current template is not compatible with new size, reset it
-        const selectedTpl = templates.find(t => t.id === this.selectedSandboxTemplateId);
-        if (selectedTpl && !selectedTpl.sizes.includes(size)) {
-            this.selectedSandboxTemplateId = "";
-            if (hiddenInput) hiddenInput.value = "";
-        }
-
-        if (availableTemplates.length === 0) {
-            triggerText.textContent = 'Sin plantillas disponibles';
-            trigger.classList.add('disabled-interaction');
-            listContainer.innerHTML = '';
-        } else {
-            trigger.classList.remove('disabled-interaction');
-
-            let html = '';
-            
-            // Add default (Lienzo Vacío) option
-            const isNoneActive = !this.selectedSandboxTemplateId ? 'active' : '';
-            html += `
-                <div class="component-menu-link ${isNoneActive}" data-action="selectSandboxTemplate" data-template-id="" data-label="Lienzo Vacío">
-                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_free</span></div>
-                    <div class="component-menu-link-text"><span>Lienzo Vacío</span></div>
-                </div>
-            `;
-            
-            availableTemplates.forEach(tpl => {
-                const isActive = this.selectedSandboxTemplateId === tpl.id ? 'active' : '';
-                const name = window.__ ? window.__(tpl.name_key) : tpl.id;
-                
-                html += `
-                    <div class="component-menu-link ${isActive}" data-action="selectSandboxTemplate" data-template-id="${tpl.id}" data-label="${name}">
-                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_free</span></div>
-                        <div class="component-menu-link-text"><span>${name}</span></div>
-                    </div>
-                `;
-            });
-            
-            listContainer.innerHTML = html;
-            
-            const currentSelected = availableTemplates.find(t => t.id === this.selectedSandboxTemplateId);
-            if (currentSelected) {
-                triggerText.textContent = window.__ ? window.__(currentSelected.name_key) : currentSelected.id;
-            } else {
-                triggerText.textContent = 'Seleccionar plantilla';
-            }
-        }
-    }
 
     async prepaintSandboxWithTemplate(uuid, relativeImgPath, width, height) {
         const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');

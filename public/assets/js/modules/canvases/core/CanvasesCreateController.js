@@ -51,9 +51,25 @@ class CanvasesCreateController {
         this.renderPalettes();
         this.checkAdminPermissions();
 
+        // Check if mode is sandbox in URL or user is guest
+        const urlParams = new URLSearchParams(window.location.search);
+        const isGuest = typeof window.appUser === "undefined" || !window.appUser;
+        if (urlParams.get("mode") === "sandbox" || isGuest) {
+            const sandboxBtn = document.querySelector('[data-action="setCanvasType"][data-type="sandbox"]');
+            if (sandboxBtn) {
+                this.setCanvasType(sandboxBtn);
+            }
+            if (isGuest) {
+                const trigger = document.getElementById("canvastype_dropdown_trigger");
+                if (trigger) {
+                    trigger.classList.add("disabled-interaction");
+                    trigger.removeAttribute("data-action");
+                }
+            }
+        }
+
         // Fetch templates and render
-        fetch(`${this.basePath}/assets/config/canvas_templates.json`)
-            .then(res => res.ok ? res.json() : [])
+        fetch(`${this.basePath}/assets/config/canvas_templates.json`)            .then(res => res.ok ? res.json() : [])
             .then(data => {
                 this.templates = data;
                 const initialSize = this.formState.size || '64x64';
@@ -230,7 +246,9 @@ class CanvasesCreateController {
             return;
         }
 
-        if (action === 'toggleDropdown') {
+        if (action === 'setCanvasType') {
+            this.setCanvasType(actionBtn);
+        } else if (action === 'toggleDropdown') {
             this.toggleDropdown(actionBtn);
         } else if (action === 'selectValue') {
             this.selectDropdownValue(actionBtn);
@@ -256,6 +274,41 @@ class CanvasesCreateController {
             } else {
                 window.location.href = `${this.basePath}/canvases/palettes/create`;
             }
+        }
+    }
+
+    setCanvasType(btn) {
+        const type = btn.getAttribute("data-type");
+        const label = btn.getAttribute("data-label");
+        
+        // Update dropdown text
+        const triggerText = document.getElementById("text-canvastype");
+        if (triggerText && label) {
+            triggerText.textContent = label;
+        }
+
+        // Close dropdown
+        const dropdownModule = document.querySelector('[data-module="dropdownCanvasType"]');
+        if (dropdownModule) {
+            dropdownModule.classList.remove("active");
+            dropdownModule.classList.add("disabled");
+        }
+
+        // Save state
+        this.formState.canvas_type = type;
+        const trigger = document.getElementById("canvastype_dropdown_trigger");
+        if (trigger) trigger.setAttribute("data-val", type);
+        
+        // Show/hide compatible blocks using a CSS class
+        const cloudBlocks = document.querySelectorAll('[data-compatible="cloud"]');
+        if (type === "sandbox") {
+            cloudBlocks.forEach(el => {
+                el.classList.add("component-hidden");
+            });
+        } else {
+            cloudBlocks.forEach(el => {
+                el.classList.remove("component-hidden");
+            });
         }
     }
 
@@ -518,6 +571,9 @@ class CanvasesCreateController {
     }
 
     async submitCanvas(btn) {
+        const typeInput = document.querySelector('[data-ref="input-canvastype"]');
+        const isSandbox = typeInput && typeInput.value === "sandbox";
+
         const inputName = document.querySelector('[data-ref="input-canvasname"]');
         if (inputName) {
             this.formState.name = inputName.value.trim();
@@ -553,6 +609,11 @@ class CanvasesCreateController {
             this.formState.template_id = inputTemplate.value || null;
         }
 
+        if (isSandbox) {
+            this.submitSandbox(btn);
+            return;
+        }
+
         setButtonLoading(btn);
 
         const res = await this.api.post(ApiRoutes.Canvases.Create, this.formState, this.abortController.signal);
@@ -564,9 +625,149 @@ class CanvasesCreateController {
             showMessage(window.__('msg_canvas_created'), 'success');
             if (window.spaRouter) {
                 window.spaRouter.navigate(`${this.basePath}/design/${res.data.uuid}`);
+            } else {
+                window.location.href = `${this.basePath}/design/${res.data.uuid}`;
             }
         } else {
             showMessage(res.message, 'error');
+        }
+    }
+
+    generateUuid() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    async prepaintSandboxWithTemplate(uuid, relativeImgPath, width, height) {
+        const DesignSandboxDbModule = await import('../../design/DesignSandboxDb.js');
+        const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = async () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d", { willReadFrequently: true });
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const dbChunks = [];
+                for (let cx = 0; cx < width / 32; cx++) {
+                    for (let cy = 0; cy < height / 32; cy++) {
+                        const chunkCanvas = document.createElement("canvas");
+                        chunkCanvas.width = 32;
+                        chunkCanvas.height = 32;
+                        const chunkCtx = chunkCanvas.getContext("2d", { willReadFrequently: true });
+                        chunkCtx.drawImage(canvas, cx * 32, cy * 32, 32, 32, 0, 0, 32, 32);
+
+                        dbChunks.push({
+                            id: `${cx},${cy}`,
+                            dataUrl: chunkCanvas.toDataURL("image/png")
+                        });
+                    }
+                }
+                
+                try {
+                    await DesignSandboxDb.saveChunks(dbChunks, uuid);
+                    
+                    const smCanvas = document.createElement("canvas");
+                    smCanvas.width = 64;
+                    smCanvas.height = 64;
+                    const smCtx = smCanvas.getContext("2d");
+                    smCtx.imageSmoothingEnabled = false;
+                    smCtx.drawImage(canvas, 0, 0, width, height, 0, 0, 64, 64);
+                    const thumb = smCanvas.toDataURL("image/png");
+                    
+                    const currentSettings = await DesignSandboxDb.getSettings(uuid);
+                    if (currentSettings) {
+                        currentSettings.thumbnail = thumb;
+                        await DesignSandboxDb.saveSettings(currentSettings, uuid);
+                    }
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            img.onerror = reject;
+            img.src = `${this.basePath}${relativeImgPath}`;
+        });
+    }
+
+    async submitSandbox(btn) {
+        let currentList = [];
+        try {
+            const listJson = localStorage.getItem('rosaura_sandboxes_list');
+            if (listJson) currentList = JSON.parse(listJson);
+        } catch (e) {}
+
+        if (currentList.length >= 10) {
+            showMessage('Has alcanzado el lÃ­mite mÃ¡ximo de 10 lienzos sandbox locales.', 'error');
+            return;
+        }
+
+        const name = this.formState.name;
+        if (!name) {
+            showMessage('El nombre del lienzo es obligatorio', 'error');
+            return;
+        }
+
+        const sizeValue = this.formState.size || '64';
+        const width = parseInt(sizeValue, 10) || 64;
+        const height = parseInt(sizeValue, 10) || 64;
+        const cooldownBatch = this.formState.cooldown_pixels_batch || 100;
+        const palette = this.formState.palette_id || 'default';
+        const uuid = this.generateUuid();
+
+        setButtonLoading(btn);
+
+        const newSandbox = {
+            uuid: uuid,
+            name: name,
+            size: width,
+            palette: palette,
+            createdAt: Date.now()
+        };
+        currentList.push(newSandbox);
+        localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(currentList));
+
+        try {
+            const DesignSandboxDbModule = await import('../../design/DesignSandboxDb.js');
+            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+            await DesignSandboxDb.saveSettings({
+                name: name,
+                width: width,
+                height: height,
+                paletteId: palette,
+                cooldownBatch: cooldownBatch
+            }, uuid);
+
+            const templateId = this.formState.template_id;
+            if (templateId && this.templates) {
+                const template = this.templates.find(t => t.id === templateId);
+                if (template) {
+                    const sizeStr = `${width}x${height}`;
+                    const relativeImgPath = template.image_paths[sizeStr];
+                    if (relativeImgPath) {
+                        await this.prepaintSandboxWithTemplate(uuid, relativeImgPath, width, height);
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Error saving sandbox settings:', e);
+        }
+
+        restoreButton(btn);
+        showMessage('Lienzo Sandbox creado con Ã©xito', 'success');
+
+        window.open(`${this.basePath}/design/sandbox/${uuid}`, '_blank');
+        
+        if (window.spaRouter) {
+            window.spaRouter.navigate(`${this.basePath}/home`);
+        } else {
+            window.location.href = `${this.basePath}/home`;
         }
     }
 

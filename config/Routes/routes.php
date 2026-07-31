@@ -39,7 +39,7 @@ return [
     '/settings/2fa/recovery-codes' => ['view' => 'settings/security/2fa-recovery-codes.php', 'auth' => true],
     '/settings/2fa/deactivate' => ['view' => 'settings/security/2fa-deactivate.php', 'auth' => true],
     '/settings/delete-account' => ['view' => 'settings/profile/delete-account.php', 'auth' => true],
-    '/canvases/create' => ['view' => 'canvases/core/create.php', 'auth' => true, 'permissions' => [PC::CREATE_CANVAS], 'requires_2fa' => false],
+    '/canvases/create' => ['view' => 'canvases/core/create.php', 'auth' => false, 'permissions' => [PC::CREATE_CANVAS], 'requires_2fa' => false],
     '/canvases/manage' => ['view' => 'canvases/core/manage.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/manage/requests/:uuid' => ['view' => 'canvases/team/requests.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/manage/resets/:uuid' => ['view' => 'canvases/workspace/reset.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],

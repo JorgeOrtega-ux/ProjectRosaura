@@ -140,5 +140,5 @@ if ($isLoggedIn) {
     </div>
 
     <?php include __DIR__ . '/../modules/moduleMainOptions.php'; ?>
-    <?php if ($isLoggedIn && $hasCanvasAccess) { include __DIR__ . '/../modules/moduleCanvases.php'; } ?>
+    <?php if (($isLoggedIn && $hasCanvasAccess) || !$isLoggedIn) { include __DIR__ . '/../modules/moduleCanvases.php'; } ?>
 </div>

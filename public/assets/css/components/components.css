@@ -8122,3 +8122,160 @@ html.dark-theme .component-skeleton-design-bottom {
 .component-card-left-section--top {
     align-items: flex-start;
 }
+
+/* Modal Stages and Shared Generic Layouts */
+.component-modal-stage {
+    display: none;
+    flex-direction: row;
+    width: 100%;
+}
+
+.component-modal-stage.active {
+    display: flex;
+}
+
+.component-scrollable-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+.component-scrollable-list::-webkit-scrollbar {
+    width: 6px;
+}
+.component-scrollable-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.component-scrollable-list::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+.component-scrollable-list::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}
+
+.component-card--dashed {
+    border: 1px dashed var(--border-color) !important;
+    background: transparent !important;
+    transition: all 0.2s ease;
+}
+.component-card--dashed:hover {
+    background: transparent !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+.component-card--dashed .component-card-title-sm {
+    color: var(--text-primary) !important;
+    font-weight: 700;
+}
+
+.component-modal-header-with-back {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.component-modal-header-with-back .component-modal-title {
+    margin: 0;
+}
+.component-modal-header-with-back button {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    min-width: auto !important;
+    height: auto !important;
+}
+.component-modal-header-with-back button span {
+    color: var(--text-primary) !important;
+    font-size: 24px !important;
+    cursor: pointer !important;
+}
+
+.component-modal-stage .component-modal-right {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: auto;
+}
+
+.component-preview-card-wrapper {
+    flex-grow: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+}
+
+.component-preview-card {
+    width: 100%;
+    border: 1px dashed var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    min-height: 200px;
+}
+.component-preview-card .material-symbols-rounded {
+    font-size: 48px;
+    opacity: 0.5;
+}
+.component-preview-card p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.component-preview-card--elevated {
+    border: 1px solid var(--border-color);
+    background: var(--bg-hover-light);
+    gap: 16px;
+}
+.component-preview-card--elevated .material-symbols-rounded {
+    opacity: 1;
+}
+
+.component-play-wrapper {
+    margin-top: 24px;
+    width: 100%;
+}
+.component-modal-stage .component-modal-right button {
+    width: 100%;
+}
+
+.component-input-group-label {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    opacity: 0.8;
+    color: var(--text-primary);
+}
+
+.component-modal-stage[data-stage="3"] .component-modal-left > div {
+    margin-top: 15px;
+}
+
+@media (max-width: 1024px) {
+    .component-modal-stage {
+        flex-direction: column !important;
+    }
+    .component-modal-stage .component-modal-left {
+        width: 100% !important;
+        padding: 24px !important;
+    }
+    .component-modal-stage .component-modal-right {
+        display: flex !important;
+        width: 100% !important;
+        border-left: none !important;
+        border-top: 1px solid var(--border-color) !important;
+        padding: 24px !important;
+    }
+}
+
+.component-hidden { display: none !important; }

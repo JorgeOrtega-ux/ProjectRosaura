@@ -413,17 +413,19 @@ export class ModalSystem {
             const icon = btnSelectValue.getAttribute('data-icon');
 
             if (type === 'size') {
-                const widthInput = this.activeBox.querySelector('#sandbox_width');
-                const heightInput = this.activeBox.querySelector('#sandbox_height');
-                if (widthInput && heightInput) {
-                    const [w, h] = value.split('x').map(Number);
-                    widthInput.value = w;
-                    heightInput.value = h;
+                const sizeTrigger = this.activeBox.querySelector('[data-ref="sandbox_size"]');
+                if (sizeTrigger) {
+                    sizeTrigger.setAttribute('data-val', value);
                 }
             } else if (type === 'palette') {
-                const paletteInput = this.activeBox.querySelector('#sandbox_palette');
-                if (paletteInput) {
-                    paletteInput.value = value;
+                const paletteTrigger = this.activeBox.querySelector('[data-ref="sandbox_palette"]');
+                if (paletteTrigger) {
+                    paletteTrigger.setAttribute('data-val', value);
+                }
+            } else if (type === 'template') {
+                const templateTrigger = this.activeBox.querySelector('[data-ref="sandbox_template_id"]');
+                if (templateTrigger) {
+                    templateTrigger.setAttribute('data-val', value);
                 }
             }
 
@@ -460,9 +462,8 @@ export class ModalSystem {
             const min = parseInt(btnAdjustSandboxCooldown.getAttribute('data-min') || '1', 10);
             const max = parseInt(btnAdjustSandboxCooldown.getAttribute('data-max') || '1000', 10);
             
-            const valEl = this.activeBox.querySelector('#sandbox_cooldown_batch_val');
-            const inputEl = this.activeBox.querySelector('#sandbox_cooldown_batch');
-            if (valEl && inputEl) {
+            const valEl = this.activeBox.querySelector('[data-ref="sandbox_cooldown_batch"]');
+            if (valEl) {
                 let curVal = parseInt(valEl.getAttribute('data-val') || '100', 10);
                 let newVal = curVal + step;
                 if (newVal < min) newVal = min;
@@ -470,7 +471,6 @@ export class ModalSystem {
                 
                 valEl.setAttribute('data-val', newVal);
                 valEl.textContent = newVal;
-                inputEl.value = newVal;
             }
             return;
         }
@@ -480,11 +480,11 @@ export class ModalSystem {
         if (btnNextStage) {
             e.preventDefault();
             localStorage.setItem('rosaura_sandbox_onboarded', 'true');
-            const stage1 = this.activeBox.querySelector('.sandbox-stage[data-stage="1"]');
-            const stage2 = this.activeBox.querySelector('.sandbox-stage[data-stage="2"]');
+            const stage1 = this.activeBox.querySelector('.component-modal-stage[data-stage="1"]');
+            const stage2 = this.activeBox.querySelector('.component-modal-stage[data-stage="2"]');
             if (stage1 && stage2) {
-                stage1.style.display = 'none';
-                stage2.style.display = 'flex';
+                stage1.classList.remove('active');
+                stage2.classList.add('active');
             }
             return;
         }
@@ -492,28 +492,28 @@ export class ModalSystem {
         const btnGoCreateForm = e.target.closest('[data-action="goCreateForm"]');
         if (btnGoCreateForm) {
             e.preventDefault();
-            const stage2 = this.activeBox.querySelector('.sandbox-stage[data-stage="2"]');
-            const stage3 = this.activeBox.querySelector('.sandbox-stage[data-stage="3"]');
+            const stage2 = this.activeBox.querySelector('.component-modal-stage[data-stage="2"]');
+            const stage3 = this.activeBox.querySelector('.component-modal-stage[data-stage="3"]');
             if (stage2 && stage3) {
-                stage2.style.display = 'none';
-                stage3.style.display = 'flex';
+                stage2.classList.remove('active');
+                stage3.classList.add('active');
             }
-            const actionInput = this.activeBox.querySelector('#sandbox_action');
-            if (actionInput) actionInput.value = 'create_new';
+            const actionInput = this.activeBox.querySelector('[data-ref="sandbox_action"]');
+            if (actionInput) actionInput.setAttribute('data-val', 'create_new');
             return;
         }
 
         const btnBackToLobby = e.target.closest('[data-action="backToLobby"]');
         if (btnBackToLobby) {
             e.preventDefault();
-            const stage2 = this.activeBox.querySelector('.sandbox-stage[data-stage="2"]');
-            const stage3 = this.activeBox.querySelector('.sandbox-stage[data-stage="3"]');
+            const stage2 = this.activeBox.querySelector('.component-modal-stage[data-stage="2"]');
+            const stage3 = this.activeBox.querySelector('.component-modal-stage[data-stage="3"]');
             if (stage2 && stage3) {
-                stage3.style.display = 'none';
-                stage2.style.display = 'flex';
+                stage3.classList.remove('active');
+                stage2.classList.add('active');
             }
-            const actionInput = this.activeBox.querySelector('#sandbox_action');
-            if (actionInput) actionInput.value = 'play_existing';
+            const actionInput = this.activeBox.querySelector('[data-ref="sandbox_action"]');
+            if (actionInput) actionInput.setAttribute('data-val', 'play_existing');
             return;
         }
 
@@ -532,13 +532,13 @@ export class ModalSystem {
             const palette = btnSelectSandbox.getAttribute('data-palette');
             const thumbnail = btnSelectSandbox.getAttribute('data-thumbnail');
             
-            const uuidInput = this.activeBox.querySelector('#selected_sandbox_uuid');
-            if (uuidInput) uuidInput.value = uuid;
+            const uuidInput = this.activeBox.querySelector('[data-ref="selected_sandbox_uuid"]');
+            if (uuidInput) uuidInput.setAttribute('data-val', uuid);
             
-            const actionInput = this.activeBox.querySelector('#sandbox_action');
-            if (actionInput) actionInput.value = 'play_existing';
+            const actionInput = this.activeBox.querySelector('[data-ref="sandbox_action"]');
+            if (actionInput) actionInput.setAttribute('data-val', 'play_existing');
             
-            const previewCardWrapper = this.activeBox.querySelector('.sandbox-preview-card-wrapper');
+            const previewCardWrapper = this.activeBox.querySelector('[data-ref="previewCardWrapper"]');
             if (previewCardWrapper) {
                 const hasThumb = thumbnail && thumbnail !== 'null' && thumbnail !== '';
                 previewCardWrapper.innerHTML = `
