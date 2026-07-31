@@ -139,12 +139,12 @@ class AdminUserHistoryController {
         this.updateFilterButtonsState();
         
         const viewContent = document.querySelector('.view-content');
-        const targetUserId = viewContent ? viewContent.getAttribute('data-user-id') : null;
-        if (!targetUserId) return;
+        const targetUserUuid = viewContent ? viewContent.getAttribute('data-user-uuid') : null;
+        if (!targetUserUuid) return;
 
         const urlParams = new URLSearchParams(window.location.search);
         urlParams.set('page', '1');
-        urlParams.set('id', targetUserId);
+        urlParams.delete('id');
         
         if (checkedCategories.length < categoryCheckboxes.length) {
             urlParams.set('category', checkedCategories.join(','));
@@ -152,7 +152,7 @@ class AdminUserHistoryController {
             urlParams.delete('category');
         }
         
-        const url = `${this.basePath}/admin/user-activity?${urlParams.toString()}`;
+        const url = `${this.basePath}/admin/user-activity/${targetUserUuid}?${urlParams.toString()}`;
         this.handlePagination(url);
     }
 }

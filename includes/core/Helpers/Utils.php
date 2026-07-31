@@ -175,9 +175,6 @@ class Utils {
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
-    public static function getRandomColor() {
-        return '#' . str_pad(dechex(mt_rand(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT);
-    }
 
     public static function generateProfilePicture($text) {
         $colors = ['2563eb', '16a34a', '7c3aed', 'dc2626', 'ea580c', '374151'];
@@ -401,13 +398,6 @@ class Utils {
         return true;
     }
 
-    public static function disableMaintenance() {
-        $path = self::getMaintenanceFilePath();
-        if (file_exists($path)) {
-            unlink($path);
-        }
-        return true;
-    }
 
     private static $fallbacks = [
         'avatar' => 'public/assets/img/fallbacks/avatar-default.png',

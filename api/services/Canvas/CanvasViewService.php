@@ -1137,73 +1137,7 @@ class CanvasViewService {
         ];
     }
 
-    /**
-     * Obtiene los datos para la vista de restricciones de chat (team/chat-restriction.php).
-     */
-    public function getCanvasChatRestrictionData(?string $canvasUuid, ?string $targetUserUuid): array {
-        if (session_status() === PHP_SESSION_NONE) session_start();
 
-        if (empty($canvasUuid) || empty($targetUserUuid)) {
-            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . '/'];
-        }
-
-        $userId = $_SESSION['active_account'] ?? $_SESSION['user_id'] ?? null;
-        $db = new DatabaseManager();
-        $pdo = $db->getConnection(defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
-
-        $stmt = $pdo->prepare("SELECT id, uuid, owner_id as user_id FROM canvases WHERE uuid = :uuid OR id = :uuid_alt LIMIT 1");
-        $stmt->execute(['uuid' => $canvasUuid, 'uuid_alt' => $canvasUuid]);
-        $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$canvas || (int)$canvas['user_id'] !== (int)$userId) {
-            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . '/'];
-        }
-
-        $redis = new \App\Config\Database\RedisCache();
-        $roleRepo = new \App\Core\Repositories\RoleRepository($db, $redis);
-        $userRepo = new \App\Core\Repositories\UserRepository($db, $roleRepo);
-        $targetUser = is_numeric($targetUserUuid) ? $userRepo->findById((int)$targetUserUuid) : $userRepo->findByUuid($targetUserUuid);
-
-        $realCanvasUuid = !empty($canvas['uuid']) ? $canvas['uuid'] : $canvasUuid;
-
-        if (!$targetUser) {
-            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/canvases/manage/{$realCanvasUuid}"];
-        }
-
-        $canvasId = (int)$canvas['id'];
-        $targetUserId = (int)$targetUser['id'];
-        $realUserUuid = !empty($targetUser['uuid']) ? $targetUser['uuid'] : $targetUserUuid;
-
-        if ($canvasUuid !== $realCanvasUuid || $targetUserUuid !== $realUserUuid) {
-            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/canvases/manage/chat-restriction/{$realCanvasUuid}/{$realUserUuid}"];
-        }
-
-        $stmt = $pdo->prepare("SELECT * FROM canvas_chat_restrictions WHERE canvas_id = ? AND user_id = ?");
-        $stmt->execute([$canvasId, $targetUserId]);
-        $restriction = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        $initialState = [
-            'isSuspended' => $restriction ? '1' : '0',
-            'suspensionReason' => '',
-            'customSuspensionReason' => '',
-            'suspendedType' => $restriction ? $restriction['suspension_type'] : 'temporary',
-            'suspensionDuration' => '7',
-            'endDate' => ''
-        ];
-
-        return [
-            'redirect' => null,
-            'canvas' => $canvas,
-            'canvasId' => $canvasId,
-            'canvasUuid' => $realCanvasUuid,
-            'targetUser' => $targetUser,
-            'targetUserId' => $targetUserId,
-            'targetUserUuid' => $realUserUuid,
-            'restriction' => $restriction,
-            'initialState' => $initialState,
-            'appUrl' => defined('APP_URL') ? APP_URL : ''
-        ];
-    }
 
     /**
 

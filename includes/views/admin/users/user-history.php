@@ -19,10 +19,10 @@ $queryParams = $_GET;
 unset($queryParams['url'], $queryParams['page']);
 $queryString = !empty($queryParams) ? '&' . http_build_query($queryParams) : '';
 
-$prevPageUrl = $page > 1 ? $appUrl . '/admin/user-activity?id=' . $targetUserId . '&page=' . ($page - 1) . $queryString : '#';
-$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity?id=' . $targetUserId . '&page=' . ($page + 1) . $queryString : '#';
+$prevPageUrl = $page > 1 ? $appUrl . '/admin/user-activity/' . $user['uuid'] . '?page=' . ($page - 1) . $queryString : '#';
+$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['uuid'] . '?page=' . ($page + 1) . $queryString : '#';
 ?>
-<div class="view-content" data-user-id="<?php echo $targetUserId; ?>">
+<div class="view-content" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($user['uuid']); ?>">
     <div class="component-top">
         <div class="component-top-left">
             <h1 class="component-top-title"><?php echo __('admin_user_history_title'); ?></h1>
