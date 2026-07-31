@@ -14,6 +14,13 @@ if (empty($editData['canvasId'])) {
 
 extract($editData);
 ?>
+<?php if (!empty($isSandbox)): ?>
+<style>
+    [data-compatible="cloud"] {
+        display: none !important;
+    }
+</style>
+<?php endif; ?>
 <div class="view-content" data-ref="canvas-edit-wrapper" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>">
     
     <div class="component-top">

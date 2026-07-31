@@ -608,6 +608,11 @@ class CanvasesManageController {
             if (listJson) localList = JSON.parse(listJson);
         } catch (e) {}
 
+        const emptySystemRow = tbody.querySelector('[data-ref="empty-system-table"]');
+        if (emptySystemRow) {
+            emptySystemRow.style.display = localList.length > 0 ? 'none' : '';
+        }
+
         if (localList.length === 0) return;
 
         const activeUserId = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;

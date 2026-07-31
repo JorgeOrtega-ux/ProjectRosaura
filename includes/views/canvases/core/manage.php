@@ -212,7 +212,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                             </tr>
 
                         <?php else: ?>
-                            <tr>
+                            <tr data-ref="empty-system-table" style="display: none;">
                                 <td colspan="7" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">palette</span>

@@ -29,7 +29,7 @@ class CanvasesCreateController {
         
         this.formState = {
             name: '',
-            size: '64',
+            size: '64x64',
             privacy: 'private',
             palette_id: 'default',
             limit: 10,
@@ -48,28 +48,27 @@ class CanvasesCreateController {
         this.cardInteractions = new CanvasCardInteractions(this.api, this.basePath, this.abortController);
         this.bindEvents();
         this.setupDefaultValues();
+
+        // Read the canvas type directly from the server-rendered DOM
+        const trigger = document.getElementById("canvastype_dropdown_trigger");
+        const initialType = trigger ? (trigger.getAttribute("data-val") || "cloud") : "cloud";
+        this.formState.canvas_type = initialType;
+
         this.renderPalettes();
+        this.updateSizesAvailability(false);
         this.checkAdminPermissions();
 
-        // Check if mode is sandbox in URL or user is guest
-        const urlParams = new URLSearchParams(window.location.search);
-        const isGuest = !window.activeUserId;
-        if (urlParams.get("mode") === "sandbox" || isGuest) {
-            const sandboxBtn = document.querySelector('[data-action="setCanvasType"][data-type="sandbox"]');
-            if (sandboxBtn) {
-                this.setCanvasType(sandboxBtn);
-            }
-            if (isGuest) {
-                const trigger = document.getElementById("canvastype_dropdown_trigger");
-                if (trigger) {
-                    trigger.classList.add("disabled-interaction");
-                    trigger.removeAttribute("data-action");
-                }
-            }
+        // Hide cloud compatible blocks if initial type is sandbox
+        const cloudBlocks = document.querySelectorAll('[data-compatible="cloud"]');
+        if (initialType === "sandbox") {
+            cloudBlocks.forEach(el => {
+                el.classList.add("disabled");
+            });
         }
 
         // Fetch templates and render
-        fetch(`${this.basePath}/assets/config/canvas_templates.json`)            .then(res => res.ok ? res.json() : [])
+        fetch(`${this.basePath}/assets/config/canvas_templates.json`)
+            .then(res => res.ok ? res.json() : [])
             .then(data => {
                 this.templates = data;
                 const initialSize = this.formState.size || '64x64';
@@ -100,8 +99,6 @@ class CanvasesCreateController {
         if (officialToggle) {
             if (hasPerm) {
                 officialToggle.disabled = false;
-            } else {
-                officialToggle.disabled = true;
             }
         }
         
@@ -142,7 +139,8 @@ class CanvasesCreateController {
                 if (paid.length > 0) fallbackTier = parseInt(paid[0].tier_level, 10);
             }
             const reqTier = palette.tier !== undefined ? palette.tier : (isDefault ? 0 : fallbackTier);
-            const isLocked = isDefault ? false : (palette.id.startsWith('custom_') || palette.is_custom ? !canUseCustomPalettes : (userTier < reqTier));
+            const canvasType = this.formState.canvas_type || 'cloud';
+            const isLocked = isDefault ? false : (canvasType === 'sandbox' ? false : (palette.id.startsWith('custom_') || palette.is_custom ? !canUseCustomPalettes : (userTier < reqTier)));
             
             const translatedName = window.__ ? window.__(palette.name_key) : palette.id;
 
@@ -248,6 +246,7 @@ class CanvasesCreateController {
 
         if (action === 'setCanvasType') {
             this.setCanvasType(actionBtn);
+            this.selectDropdownValue(actionBtn);
         } else if (action === 'toggleDropdown') {
             this.toggleDropdown(actionBtn);
         } else if (action === 'selectValue') {
@@ -267,7 +266,6 @@ class CanvasesCreateController {
         } else if (action === 'createCanvas') {
             e.preventDefault();
             this.submitCanvas(actionBtn);
-
         } else if (action === 'navigateCustomPalette') {
             if (window.spaRouter) {
                 window.spaRouter.navigate(`${this.basePath}/canvases/palettes/create`);
@@ -332,7 +330,12 @@ class CanvasesCreateController {
                 el.classList.remove("disabled");
             });
         }
+
+        // Update availability of sizes and palettes based on new type
+        this.updateSizesAvailability(false);
+        this.renderPalettes();
     }
+
 
     updateSizesAvailability(isOfficial) {
         const wrapper = document.querySelector('[data-ref="canvas-create-wrapper"]');
@@ -357,7 +360,8 @@ class CanvasesCreateController {
                 }
             }
             
-            const isAllowed = isOfficial || (userTier >= reqTier);
+            const canvasType = this.formState.canvas_type || 'cloud';
+            const isAllowed = isOfficial || (canvasType === 'sandbox') || (userTier >= reqTier);
             
             if (isAllowed) {
                 link.classList.remove('disabled-interaction');
@@ -391,8 +395,6 @@ class CanvasesCreateController {
             }
         }
     }
-
-
 
     saveCanvasName(btn) {
         const container = btn.closest('.component-group-item--stateful');
@@ -666,56 +668,64 @@ class CanvasesCreateController {
         const DesignSandboxDbModule = await import('../../app/design/DesignSandboxDb.js');
         const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
 
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.crossOrigin = "Anonymous";
-            img.onload = async () => {
-                const canvas = document.createElement("canvas");
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext("2d", { willReadFrequently: true });
-                ctx.drawImage(img, 0, 0, width, height);
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = `${this.basePath}${relativeImgPath}`;
+        
+        await new Promise((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error('Failed to load template image: ' + img.src));
+        });
 
-                const dbChunks = [];
-                for (let cx = 0; cx < width / 32; cx++) {
-                    for (let cy = 0; cy < height / 32; cy++) {
-                        const chunkCanvas = document.createElement("canvas");
-                        chunkCanvas.width = 32;
-                        chunkCanvas.height = 32;
-                        const chunkCtx = chunkCanvas.getContext("2d", { willReadFrequently: true });
-                        chunkCtx.drawImage(canvas, cx * 32, cy * 32, 32, 32, 0, 0, 32, 32);
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        const ctx = tempCanvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0);
+        
+        const imgData = ctx.getImageData(0, 0, width, height).data;
+        
+        const chunkSize = 512;
+        const numCols = Math.ceil(width / chunkSize);
+        const numRows = Math.ceil(height / chunkSize);
 
-                        dbChunks.push({
-                            id: `${cx},${cy}`,
-                            dataUrl: chunkCanvas.toDataURL("image/png")
-                        });
+        for (let cy = 0; cy < numRows; cy++) {
+            for (let cx = 0; cx < numCols; cx++) {
+                const chunkW = Math.min(chunkSize, width - cx * chunkSize);
+                const chunkH = Math.min(chunkSize, height - cy * chunkSize);
+                
+                const chunkBytes = new Uint8Array(chunkW * chunkH * 4);
+                
+                for (let y = 0; y < chunkH; y++) {
+                    const globalY = cy * chunkSize + y;
+                    const srcOffset = (globalY * width + (cx * chunkSize)) * 4;
+                    const destOffset = y * chunkW * 4;
+                    
+                    for (let i = 0; i < chunkW * 4; i++) {
+                        chunkBytes[destOffset + i] = imgData[srcOffset + i];
                     }
                 }
                 
-                try {
-                    await DesignSandboxDb.saveChunks(dbChunks, uuid);
-                    
-                    const smCanvas = document.createElement("canvas");
-                    smCanvas.width = 64;
-                    smCanvas.height = 64;
-                    const smCtx = smCanvas.getContext("2d");
-                    smCtx.imageSmoothingEnabled = false;
-                    smCtx.drawImage(canvas, 0, 0, width, height, 0, 0, 64, 64);
-                    const thumb = smCanvas.toDataURL("image/png");
-                    
-                    const currentSettings = await DesignSandboxDb.getSettings(uuid);
-                    if (currentSettings) {
-                        currentSettings.thumbnail = thumb;
-                        await DesignSandboxDb.saveSettings(currentSettings, uuid);
-                    }
-                    resolve();
-                } catch (e) {
-                    reject(e);
-                }
-            };
-            img.onerror = reject;
-            img.src = `${this.basePath}${relativeImgPath}`;
-        });
+                const key = `${cx},${cy}`;
+                const base64 = await DesignSandboxDb.compressAndEncode(chunkBytes);
+                await DesignSandboxDb.saveChunk(key, base64, uuid);
+            }
+        }
+
+        // Generate 256x256 thumbnail
+        const smCanvas = document.createElement("canvas");
+        smCanvas.width = 256;
+        smCanvas.height = 256;
+        const smCtx = smCanvas.getContext("2d");
+        smCtx.imageSmoothingEnabled = false;
+        smCtx.drawImage(tempCanvas, 0, 0, width, height, 0, 0, 256, 256);
+        const thumb = smCanvas.toDataURL("image/png");
+        
+        const currentSettings = await DesignSandboxDb.getSettings(uuid);
+        if (currentSettings) {
+            currentSettings.thumbnail = thumb;
+            await DesignSandboxDb.saveSettings(currentSettings, uuid);
+        }
     }
 
     async submitSandbox(btn) {

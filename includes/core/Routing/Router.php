@@ -109,7 +109,7 @@ class Router {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/edit/:uuid'] ?? [
                 'view' => 'canvases/workspace/edit.php',
-                'auth' => true,
+                'auth' => false,
                 'permissions' => ['manage_canvases'],
                 'requires_2fa' => false
             ];

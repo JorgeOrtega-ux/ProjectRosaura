@@ -66,7 +66,7 @@ class CanvasViewService {
         $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
         if (!$userId) {
             return [
-                'unauthorized' => true,
+                'unauthorized' => false,
                 'canvases' => [],
                 'totalItems' => 0,
                 'totalPages' => 0,

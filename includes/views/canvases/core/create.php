@@ -37,20 +37,32 @@ extract($createData);
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownCanvasType" id="canvastype_dropdown_trigger" data-val="cloud">
-                                    <span class="material-symbols-rounded msr-cloud">cloud</span>
-                                    <span class="component-dropdown-text" data-ref="text-canvastype" id="text-canvastype">Nube</span>
+                                <?php
+                                $isGuest = empty($_SESSION['active_account']);
+                                $defaultType = ($isGuest || (isset($_GET['mode']) && $_GET['mode'] === 'sandbox')) ? 'sandbox' : 'cloud';
+                                ?>
+                                <div class="<?php echo $isGuest ? 'component-dropdown-trigger disabled-interaction' : 'component-dropdown-trigger'; ?>" 
+                                     <?php if (!$isGuest): ?>data-action="toggleDropdown" data-target="dropdownCanvasType"<?php endif; ?> 
+                                     id="canvastype_dropdown_trigger" 
+                                     data-val="<?php echo $defaultType; ?>">
+                                    <?php if ($defaultType === 'sandbox'): ?>
+                                        <span class="material-symbols-rounded msr-science">science</span>
+                                        <span class="component-dropdown-text" data-ref="text-canvastype" id="text-canvastype">Sandbox</span>
+                                    <?php else: ?>
+                                        <span class="material-symbols-rounded msr-cloud">cloud</span>
+                                        <span class="component-dropdown-text" data-ref="text-canvastype" id="text-canvastype">Nube</span>
+                                    <?php endif; ?>
                                     <span class="material-symbols-rounded msr-expand_more">expand_more</span>
                                 </div>
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownCanvasType">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">
-                                            <div class="component-menu-link active" data-action="setCanvasType" data-type="cloud" data-label="Nube">
+                                            <div class="component-menu-link <?php echo $defaultType === 'cloud' ? 'active' : ''; ?>" data-action="setCanvasType" data-type="cloud" data-label="Nube">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded msr-cloud">cloud</span></div>
                                                 <div class="component-menu-link-text"><span>Nube</span></div>
                                             </div>
-                                            <div class="component-menu-link" data-action="setCanvasType" data-type="sandbox" data-label="Sandbox">
+                                            <div class="component-menu-link <?php echo $defaultType === 'sandbox' ? 'active' : ''; ?>" data-action="setCanvasType" data-type="sandbox" data-label="Sandbox">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded msr-science">science</span></div>
                                                 <div class="component-menu-link-text"><span>Sandbox</span></div>
                                             </div>

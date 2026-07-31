@@ -2,9 +2,9 @@
 $isLoggedIn = isset($_SESSION['active_account']) && $_SESSION['active_account'] !== null;
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 $canCreateCanvas = $isLoggedIn ? in_array('create_canvas', $userPermissions) : true;
-$canManageCanvases = $isLoggedIn ? in_array('manage_canvases', $userPermissions) : false;
+$canManageCanvases = $isLoggedIn ? in_array('manage_canvases', $userPermissions) : true;
 $canJoinCanvas = $isLoggedIn ? in_array('join_canvas', $userPermissions) : false;
-$createUrl = $isLoggedIn ? APP_URL . '/canvases/create' : APP_URL . '/canvases/create?mode=sandbox';
+$createUrl = APP_URL . '/canvases/create';
 ?>
 
 <div class="component-module component-module--dropdown disabled" data-module="moduleCanvases">

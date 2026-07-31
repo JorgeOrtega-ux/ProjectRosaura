@@ -4,47 +4,8 @@ use App\Core\Helpers\Utils;
 
 $isSandboxMode = (isset($_GET['id']) && ($_GET['id'] === 'sandbox' || str_starts_with($_GET['id'], 'sandbox_')));
 
-if ($isSandboxMode) {
-    $canvasUuid = $_GET['id'];
-    $designData = [
-        'canvasIntId' => $canvasUuid,
-        'canvasUuid' => $canvasUuid,
-        'canvasName' => 'Modo Sandbox (Sandbox)',
-        'canvasSize' => '64',
-        'canvasPalette' => 'default',
-        'canvasPrivacy' => 'public',
-        'canvasApproval' => '0',
-        'canvasAllowChat' => '0',
-        'canvasAllowPurchases' => '1',
-        'canvasCooldownBatch' => '100',
-        'canvasCooldownSeconds' => '0',
-        'resetActive' => '0',
-        'nextResetAt' => '',
-        'timerAction' => 'restart',
-        'resizeActive' => '0',
-        'nextResizeAt' => '',
-        'resizeTargetSize' => '64',
-        'resizeTimerAction' => 'restart',
-        'isMember' => true,
-        'userRole' => 'admin',
-        'userId' => $_SESSION['active_account'] ?? 1,
-        'isOwner' => true,
-        'isBlockedInit' => false,
-        'isSpectatorInit' => false,
-        'isSubscriptionLockedInit' => false,
-        'canvasInitialZoom' => 1.0,
-        'isChatRestricted' => false,
-        'chatRestrictionType' => null,
-        'chatRestrictionEnd' => null,
-        'canInjectTemplate' => true,
-        'canLiveShare' => false,
-        'isBanned' => false,
-        'isSnapshot' => false
-    ];
-} else {
-    $viewService = new AppViewService();
-    $designData = $viewService->getCanvasDesignData($_GET['id'] ?? '', isset($_GET['snapshot']));
-}
+$viewService = new AppViewService();
+$designData = $viewService->getCanvasDesignData($_GET['id'] ?? '', isset($_GET['snapshot']));
 
 if ($designData['isBanned']) {
     echo "<div class='view-content'><p>".__('err_user_banned_from_canvas')."</p></div>";
