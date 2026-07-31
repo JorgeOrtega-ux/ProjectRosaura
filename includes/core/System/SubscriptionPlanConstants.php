@@ -104,6 +104,9 @@ class SubscriptionPlanConstants {
         if ($featureKey === 'allow_live_chat') {
             $featureKey = 'chat_restriction';
         }
+        if ($featureKey === 'live_templates') {
+            $featureKey = 'live_share';
+        }
         $limits = self::getTierLimits($tier);
         if (isset($limits[$featureKey])) {
             return $limits[$featureKey] === true;
