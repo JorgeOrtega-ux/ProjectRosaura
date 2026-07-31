@@ -1530,6 +1530,13 @@ export const DesignInteractions = {
                         const newBase64 = await DesignSandboxDb.compressAndEncode(bytes);
                         await DesignSandboxDb.saveChunk(key, newBase64, this.sandboxUuid);
                     }
+
+                    // Capturar miniatura
+                    const settings = await DesignSandboxDb.getSettings(this.sandboxUuid);
+                    if (settings) {
+                        settings.thumbnail = await this.generateSandboxThumbnail();
+                        await DesignSandboxDb.saveSettings(settings, this.sandboxUuid);
+                    }
                 } catch (e) {
                     console.error('[Sandbox] Error saving pixels to IndexedDB:', e);
                 }
@@ -2393,6 +2400,15 @@ export const DesignInteractions = {
                     }
                 }
             }
+
+            // Capturar miniatura para la explosión de la bomba
+            try {
+                const settings = await DesignSandboxDb.getSettings(this.sandboxUuid);
+                if (settings) {
+                    settings.thumbnail = await this.generateSandboxThumbnail();
+                    await DesignSandboxDb.saveSettings(settings, this.sandboxUuid);
+                }
+            } catch (err) {}
 
             if (this.loadedChunks) this.loadedChunks.clear();
             if (this.loadingChunks) this.loadingChunks.clear();

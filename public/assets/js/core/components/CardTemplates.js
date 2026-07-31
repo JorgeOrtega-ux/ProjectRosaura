@@ -14,11 +14,20 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
 
         let imgHtml = '';
         if (isLocalSandbox) {
-            imgHtml = `
-                <div ${navAction} class="component-gallery-card__image-placeholder" style="background: linear-gradient(135deg, #FF9800, #F44336); display: flex; align-items: center; justify-content: center; height: 100%; min-height: 150px; color: white; cursor: pointer;">
-                    <span class="material-symbols-rounded" style="font-size: 52px; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">architecture</span>
-                </div>
-            `;
+            if (canvas.thumbnail_url) {
+                imgHtml = `
+                    <img src="${canvas.thumbnail_url}" 
+                         alt="${name}" 
+                         class="component-gallery-card__image image-lazy-fade image-loaded" 
+                         loading="lazy" 
+                         decoding="async">`;
+            } else {
+                imgHtml = `
+                    <div ${navAction} class="component-gallery-card__image-placeholder" style="background: linear-gradient(135deg, #FF9800, #F44336); display: flex; align-items: center; justify-content: center; height: 100%; min-height: 150px; color: white; cursor: pointer;">
+                        <span class="material-symbols-rounded" style="font-size: 52px; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">architecture</span>
+                    </div>
+                `;
+            }
         } else {
             const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
             const srcUrl = canvas.thumbnail_url ? escapeHTML(canvas.thumbnail_url) : fallbackImg;

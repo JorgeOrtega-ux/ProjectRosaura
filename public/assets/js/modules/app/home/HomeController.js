@@ -233,19 +233,32 @@ class HomeController {
                 const listJson = localStorage.getItem('rosaura_sandboxes_list');
                 if (listJson) {
                     const list = JSON.parse(listJson);
-                    localSandboxes = list.map(sb => ({
-                        id: 'sandbox_' + sb.uuid,
-                        uuid: 'sandbox_' + sb.uuid,
-                        name: sb.name,
-                        thumbnail_url: null,
-                        online_players: 0,
-                        members_count: 1,
-                        favorites_count: 0,
-                        is_official: false,
-                        is_favorite: false,
-                        is_owner: true,
-                        is_member: true,
-                        is_sandbox: true
+                    const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
+                    const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+                    localSandboxes = await Promise.all(list.map(async (sb) => {
+                        let thumb = null;
+                        try {
+                            const settings = await DesignSandboxDb.getSettings(sb.uuid);
+                            if (settings && settings.thumbnail) {
+                                thumb = settings.thumbnail;
+                            }
+                        } catch (err) {}
+
+                        return {
+                            id: 'sandbox_' + sb.uuid,
+                            uuid: 'sandbox_' + sb.uuid,
+                            name: sb.name,
+                            thumbnail_url: thumb,
+                            online_players: 0,
+                            members_count: 1,
+                            favorites_count: 0,
+                            is_official: false,
+                            is_favorite: false,
+                            is_owner: true,
+                            is_member: true,
+                            is_sandbox: true
+                        };
                     }));
                 }
             } catch (e) {

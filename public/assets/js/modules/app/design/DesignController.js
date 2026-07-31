@@ -445,6 +445,12 @@ class DesignController {
                             const newBase64 = await DesignSandboxDb.compressAndEncode(bytes);
                             await DesignSandboxDb.saveChunk(key, newBase64, this.sandboxUuid);
                         }
+
+                        const settings = await DesignSandboxDb.getSettings(this.sandboxUuid);
+                        if (settings) {
+                            settings.thumbnail = await this.generateSandboxThumbnail();
+                            await DesignSandboxDb.saveSettings(settings, this.sandboxUuid);
+                        }
                     } catch (e) {
                         console.error('[Sandbox] Error saving pixels to IndexedDB:', e);
                     }
@@ -717,6 +723,69 @@ class DesignController {
         this._lastDpr = null;
         this.loadedChunks = null;
         this.pixelQueue = null;
+    }
+
+    async generateSandboxThumbnail() {
+        try {
+            const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
+            const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+            const width = this.boardWidth || 64;
+            const height = this.boardHeight || 64;
+
+            const thumbCanvas = document.createElement('canvas');
+            thumbCanvas.width = width;
+            thumbCanvas.height = height;
+            const thumbCtx = thumbCanvas.getContext('2d');
+
+            // Rellenar el fondo con blanco para evitar transparencia negra
+            thumbCtx.fillStyle = '#ffffff';
+            thumbCtx.fillRect(0, 0, width, height);
+
+            const chunkSize = 512;
+            const cols = Math.ceil(width / chunkSize);
+            const rows = Math.ceil(height / chunkSize);
+
+            for (let cx = 0; cx < cols; cx++) {
+                for (let cy = 0; cy < rows; cy++) {
+                    const key = `${cx},${cy}`;
+                    const base64 = await DesignSandboxDb.getChunk(key, this.sandboxUuid);
+                    if (base64) {
+                        const bytes = await DesignSandboxDb.decompress(base64);
+                        if (bytes) {
+                            const chunkW = Math.min(chunkSize, width - cx * chunkSize);
+                            const chunkH = Math.min(chunkSize, height - cy * chunkSize);
+                            const imgData = new ImageData(new Uint8ClampedArray(bytes.buffer), chunkW, chunkH);
+                            
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = chunkW;
+                            tempCanvas.height = chunkH;
+                            const tempCtx = tempCanvas.getContext('2d');
+                            tempCtx.putImageData(imgData, 0, 0);
+
+                            thumbCtx.drawImage(tempCanvas, cx * chunkSize, cy * chunkSize);
+                        }
+                    }
+                }
+            }
+
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = 256;
+            finalCanvas.height = 256;
+            const finalCtx = finalCanvas.getContext('2d');
+            
+            finalCtx.imageSmoothingEnabled = false;
+            finalCtx.mozImageSmoothingEnabled = false;
+            finalCtx.webkitImageSmoothingEnabled = false;
+            finalCtx.msImageSmoothingEnabled = false;
+
+            finalCtx.drawImage(thumbCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
+
+            return finalCanvas.toDataURL('image/png');
+        } catch (e) {
+            console.error('[Sandbox] Failed to generate thumbnail from IndexedDB:', e);
+            return null;
+        }
     }
 }
 
