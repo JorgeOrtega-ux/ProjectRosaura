@@ -1500,7 +1500,7 @@ export const DesignInteractions = {
                         const actualW = Math.min(chunkSize, this.boardWidth - cx * chunkSize);
                         const actualH = Math.min(chunkSize, this.boardHeight - cy * chunkSize);
 
-                        let base64 = await DesignSandboxDb.getChunk(key);
+                        let base64 = await DesignSandboxDb.getChunk(key, this.sandboxUuid);
                         let bytes;
                         if (base64) {
                             bytes = await DesignSandboxDb.decompress(base64);
@@ -1528,7 +1528,7 @@ export const DesignInteractions = {
                         });
 
                         const newBase64 = await DesignSandboxDb.compressAndEncode(bytes);
-                        await DesignSandboxDb.saveChunk(key, newBase64);
+                        await DesignSandboxDb.saveChunk(key, newBase64, this.sandboxUuid);
                     }
                 } catch (e) {
                     console.error('[Sandbox] Error saving pixels to IndexedDB:', e);
@@ -2291,7 +2291,7 @@ export const DesignInteractions = {
 
                 if (widthChanged || heightChanged) {
                     try {
-                        await DesignSandboxDb.migrateChunks(this.boardWidth, this.boardHeight, newWidth, newHeight);
+                        await DesignSandboxDb.migrateChunks(this.boardWidth, this.boardHeight, newWidth, newHeight, this.sandboxUuid);
                     } catch (e) {
                         console.error('[Sandbox] Chunk migration failed:', e);
                     }
@@ -2302,7 +2302,7 @@ export const DesignInteractions = {
                     height: newHeight,
                     paletteId: newPalette,
                     cooldownBatch: newLimit
-                });
+                }, this.sandboxUuid);
                 
                 this.boardWidth = newWidth;
                 this.boardHeight = newHeight;
@@ -2355,7 +2355,7 @@ export const DesignInteractions = {
                     const actualW = Math.min(chunkSize, this.boardWidth - cx * chunkSize);
                     const actualH = Math.min(chunkSize, this.boardHeight - cy * chunkSize);
 
-                    let base64 = await DesignSandboxDb.getChunk(key);
+                    let base64 = await DesignSandboxDb.getChunk(key, this.sandboxUuid);
                     let bytes;
                     if (base64) {
                         bytes = await DesignSandboxDb.decompress(base64);
@@ -2389,7 +2389,7 @@ export const DesignInteractions = {
 
                     if (chunkChanged) {
                         const newBase64 = await DesignSandboxDb.compressAndEncode(bytes);
-                        await DesignSandboxDb.saveChunk(key, newBase64);
+                        await DesignSandboxDb.saveChunk(key, newBase64, this.sandboxUuid);
                     }
                 }
             }

@@ -5,18 +5,32 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const uuid = escapeHTML(canvas.uuid);
         const basePath = config.basePath || '';
         const isFavoriteClass = canvas.is_favorite ? 'is-favorite' : '';
+        
+        const isLocalSandbox = uuid.startsWith('sandbox_') || !!canvas.is_sandbox;
+        const realUuid = isLocalSandbox ? uuid.replace('sandbox_', '') : uuid;
+        const navAction = isLocalSandbox 
+            ? `data-nav="${basePath}/design/sandbox/${realUuid}"` 
+            : `data-nav="${basePath}/design/${uuid}"`;
 
-        const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
-        const srcUrl = canvas.thumbnail_url ? escapeHTML(canvas.thumbnail_url) : fallbackImg;
-
-        const imgHtml = `
-            <img src="${srcUrl}" 
-                 alt="${name}" 
-                 class="component-gallery-card__image image-lazy-fade" 
-                 loading="lazy" 
-                 decoding="async" 
-                 onload="this.classList.add('image-loaded')"
-                 onerror="this.onerror=null; this.src='${fallbackImg}'; this.classList.add('image-loaded');">`;
+        let imgHtml = '';
+        if (isLocalSandbox) {
+            imgHtml = `
+                <div ${navAction} class="component-gallery-card__image-placeholder" style="background: linear-gradient(135deg, #FF9800, #F44336); display: flex; align-items: center; justify-content: center; height: 100%; min-height: 150px; color: white; cursor: pointer;">
+                    <span class="material-symbols-rounded" style="font-size: 52px; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">architecture</span>
+                </div>
+            `;
+        } else {
+            const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
+            const srcUrl = canvas.thumbnail_url ? escapeHTML(canvas.thumbnail_url) : fallbackImg;
+            imgHtml = `
+                <img src="${srcUrl}" 
+                     alt="${name}" 
+                     class="component-gallery-card__image image-lazy-fade" 
+                     loading="lazy" 
+                     decoding="async" 
+                     onload="this.classList.add('image-loaded')"
+                     onerror="this.onerror=null; this.src='${fallbackImg}'; this.classList.add('image-loaded');">`;
+        }
 
         const onlinePlayers = parseInt(canvas.online_players || 0, 10);
         const membersCount = parseInt(canvas.members_count || 0, 10);
@@ -24,7 +38,16 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const isOfficial = canvas.is_official;
 
         let badgeHtml = '';
-        if (isOfficial) {
+        if (isLocalSandbox) {
+            badgeHtml = `
+                <div class="component-gallery-badges-container">
+                    <div class="component-badge component-badge--warning">
+                        <span class="material-symbols-rounded">science</span>
+                        <span>Sandbox</span>
+                    </div>
+                </div>
+            `;
+        } else if (isOfficial) {
             badgeHtml = `
                 <div class="component-gallery-badges-container">
                     <div class="component-badge component-badge--glass">
@@ -60,7 +83,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         
         let warningOverlay = '';
         
-        if (canvas.locked_requires_downgrade) {
+        if (canvas.locked_requires_downgrade && !isLocalSandbox) {
             warningOverlay = `
                 <div class="component-gallery-warning-overlay" data-nav="${basePath}/design/${uuid}">
                     <div class="component-gallery-warning-content">
@@ -72,7 +95,6 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             `;
         }
 
-        const navAction = `data-nav="${basePath}/design/${uuid}"`;
         const linkClass = '';
 
         return `
@@ -87,7 +109,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
 
                 <div class="component-gallery-actions-wrapper component-dropdown-wrapper">
                     <div class="component-gallery-actions">
-                        ${window.activeUserId ? `
+                        ${(window.activeUserId && !isLocalSandbox) ? `
                         <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite ${isFavoriteClass}" data-action="toggleFavorite" data-id="${canvas.id}">
                             <span class="material-symbols-rounded component-icon--20">favorite</span>
                         </button>

@@ -134,20 +134,28 @@ export const DesignSetup = {
             const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
             const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
 
-            const settings = await DesignSandboxDb.getSettings();
+            const settings = await DesignSandboxDb.getSettings(this.sandboxUuid);
             if (settings) {
                 this.boardWidth = parseInt(settings.width, 10) || 64;
                 this.boardHeight = parseInt(settings.height, 10) || 64;
                 this.canvasPaletteId = settings.paletteId || 'default';
                 this.cooldownMax = parseInt(settings.cooldownBatch, 10) || 100;
                 this.cooldownBalance = this.cooldownMax;
+                
+                // Actualizar el título de la página/lienzo
+                const titleElements = document.querySelectorAll('.component-top-title');
+                if (titleElements.length > 1 && settings.name) {
+                    titleElements[1].textContent = settings.name;
+                } else if (titleElements.length > 0 && settings.name) {
+                    titleElements[0].textContent = settings.name;
+                }
             } else {
                 await DesignSandboxDb.saveSettings({
                     width: this.boardWidth,
                     height: this.boardHeight,
                     paletteId: this.canvasPaletteId,
                     cooldownBatch: this.cooldownMax
-                });
+                }, this.sandboxUuid);
             }
 
             this.isProgressive = true;
@@ -415,7 +423,7 @@ export const DesignSetup = {
             validKeys.forEach(async (key) => {
                 const [cx, cy] = key.split(',').map(Number);
                 try {
-                    let base64 = await DesignSandboxDb.getChunk(key);
+                    let base64 = await DesignSandboxDb.getChunk(key, this.sandboxUuid);
                     if (!base64) {
                         const actualW = Math.min(chunkSize, this.boardWidth - cx * chunkSize);
                         const actualH = Math.min(chunkSize, this.boardHeight - cy * chunkSize);

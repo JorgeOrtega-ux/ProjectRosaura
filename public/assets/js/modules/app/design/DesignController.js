@@ -183,8 +183,11 @@ class DesignController {
             this.cooldownBalance = this.cooldownMax;
             
             const uuid = wrapper.getAttribute('data-canvas-uuid');
-            if (uuid === 'sandbox') {
+            if (uuid === 'sandbox' || (uuid && uuid.startsWith('sandbox_'))) {
                 this.isSandbox = true;
+                this.sandboxUuid = uuid === 'sandbox' ? 'current' : uuid.replace('sandbox_', '');
+            } else {
+                this.sandboxUuid = 'current';
             }
         }
 
@@ -221,7 +224,7 @@ class DesignController {
                         for (const key of validKeys) {
                             const [cx, cy] = key.split(',').map(Number);
                             try {
-                                let base64 = await DesignSandboxDb.getChunk(key);
+                                let base64 = await DesignSandboxDb.getChunk(key, this.sandboxUuid);
                                 if (!base64) {
                                     const actualW = Math.min(chunkSize, this.boardWidth - cx * chunkSize);
                                     const actualH = Math.min(chunkSize, this.boardHeight - cy * chunkSize);
@@ -412,7 +415,7 @@ class DesignController {
                             const actualW = Math.min(chunkSize, this.boardWidth - cx * chunkSize);
                             const actualH = Math.min(chunkSize, this.boardHeight - cy * chunkSize);
 
-                            let base64 = await DesignSandboxDb.getChunk(key);
+                            let base64 = await DesignSandboxDb.getChunk(key, this.sandboxUuid);
                             let bytes;
                             if (base64) {
                                 bytes = await DesignSandboxDb.decompress(base64);
@@ -440,7 +443,7 @@ class DesignController {
                             });
 
                             const newBase64 = await DesignSandboxDb.compressAndEncode(bytes);
-                            await DesignSandboxDb.saveChunk(key, newBase64);
+                            await DesignSandboxDb.saveChunk(key, newBase64, this.sandboxUuid);
                         }
                     } catch (e) {
                         console.error('[Sandbox] Error saving pixels to IndexedDB:', e);

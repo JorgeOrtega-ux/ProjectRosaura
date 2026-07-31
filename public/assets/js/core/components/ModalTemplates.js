@@ -1753,5 +1753,87 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+
+    createSandboxModal: {
+        build: () => {
+            const titleStr = 'Crear Lienzo Sandbox';
+            const descStr = 'Crea un lienzo local offline. Se guardará de forma local en tu navegador (máximo 10 lienzos).';
+            const btnCancel = 'Cancelar';
+            const btnCreate = 'Crear Lienzo';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${titleStr}</h2>
+                    <p class="component-modal-desc">${descStr}</p>
+                </div>
+                
+                <div class="component-card--grouped component-card--flush" style="margin: 0 20px 15px 20px;">
+                    <!-- Nombre del Sandbox -->
+                    <div class="component-group-item component-group-item--wrap">
+                        <div class="component-input-group">
+                            <input type="text" id="sandbox_name" class="component-input-field" placeholder=" " maxlength="50" autocomplete="off" required>
+                            <label class="component-input-label">Nombre del Lienzo</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
+                    <button class="component-button component-button--h40 component-button--brand" data-modal-action="confirm">${btnCreate}</button>
+                </div>
+            `;
+        }
+    },
+
+    renameSandboxModal: {
+        build: (data) => {
+            const titleStr = 'Renombrar Lienzo Sandbox';
+            const btnCancel = 'Cancelar';
+            const btnSave = 'Guardar';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${titleStr}</h2>
+                </div>
+                
+                <div class="component-card--grouped component-card--flush" style="margin: 0 20px 15px 20px;">
+                    <div class="component-group-item component-group-item--wrap">
+                        <div class="component-input-group">
+                            <input type="text" id="sandbox_name" class="component-input-field" placeholder=" " value="${data.nameValue || ''}" maxlength="50" autocomplete="off" required>
+                            <label class="component-input-label">Nuevo Nombre del Lienzo</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
+                    <button class="component-button component-button--h40 component-button--brand" data-modal-action="confirm">${btnSave}</button>
+                </div>
+            `;
+        }
+    },
+
+    confirmDeleteSandboxModal: {
+        build: () => {
+            const titleStr = 'Eliminar Lienzo Sandbox';
+            const descStr = '¿Estás seguro de que deseas eliminar este lienzo sandbox? Todos tus píxeles y configuraciones de este lienzo se perderán permanentemente de forma local.';
+            const btnCancel = 'Cancelar';
+            const btnDelete = 'Eliminar permanentemente';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title component-text-danger">${titleStr}</h2>
+                    <p class="component-modal-desc">${descStr}</p>
+                </div>
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
+                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${btnDelete}</button>
+                </div>
+            `;
+        }
     }
 };

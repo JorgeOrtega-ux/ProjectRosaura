@@ -18,9 +18,17 @@ $tagsList = $viewService->getHomeTags();
                     </button>
 
                     <div class="component-tags-carousel" data-ref="home-tags-carousel">
+                        <button class="component-badge component-badge--interactive" data-action="openCreateSandboxModal" style="background: var(--color-brand-primary, #6200ee); color: #fff;">
+                            <span class="material-symbols-rounded">science</span>
+                            <span>Crear Sandbox</span>
+                        </button>
                         <button class="component-badge component-badge--interactive active" data-action="filterHomeTag" data-tag="all">
                             <span class="material-symbols-rounded">explore</span>
                             <?php echo __('filter_all_canvases'); ?>
+                        </button>
+                        <button class="component-badge component-badge--interactive" data-action="filterHomeTag" data-tag="sandbox">
+                            <span class="material-symbols-rounded">science</span>
+                            <span>Sandbox</span>
                         </button>
                         <?php foreach($tagsList as $tag => $icon): ?>
                             <button class="component-badge component-badge--interactive" data-action="filterHomeTag" data-tag="<?php echo $tag; ?>">

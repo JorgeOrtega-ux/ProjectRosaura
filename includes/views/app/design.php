@@ -2,10 +2,13 @@
 use App\Api\Services\App\AppViewService;
 use App\Core\Helpers\Utils;
 
-if (isset($_GET['id']) && $_GET['id'] === 'sandbox') {
+$isSandboxMode = (isset($_GET['id']) && ($_GET['id'] === 'sandbox' || str_starts_with($_GET['id'], 'sandbox_')));
+
+if ($isSandboxMode) {
+    $canvasUuid = $_GET['id'];
     $designData = [
-        'canvasIntId' => 'sandbox',
-        'canvasUuid' => 'sandbox',
+        'canvasIntId' => $canvasUuid,
+        'canvasUuid' => $canvasUuid,
         'canvasName' => 'Modo Sandbox Local',
         'canvasSize' => '64',
         'canvasPalette' => 'default',
@@ -139,14 +142,14 @@ extract($designData);
                 </div>
 
                 <div class="component-actions <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="design-tools-actions">
-                    <?php if (isset($_GET['id']) && $_GET['id'] === 'sandbox'): ?>
+                    <?php if ($isSandboxMode): ?>
                     <button class="component-button component-button--icon component-button--h40 component-button--warning" data-action="openSandboxSettingsModal" data-tooltip="Ajustes de Sandbox" data-position="bottom">
                         <span class="material-symbols-rounded">tune</span>
                     </button>
                     <div class="component-divider-vertical" data-ref="sandbox-actions-divider"></div>
                     <?php endif; ?>
 
-                    <?php if (($_GET['id'] ?? '') !== 'sandbox'): ?>
+                    <?php if (!$isSandboxMode): ?>
                     <button class="component-button component-button--icon component-button--h40" data-action="openJoinLiveModal" data-tooltip="<?php echo __('tooltip_join_live'); ?> [J]" data-position="bottom">
                         <span class="material-symbols-rounded">sensors</span>
                     </button>
@@ -161,7 +164,7 @@ extract($designData);
                     <button class="component-button component-button--icon component-button--h40 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?> [C]" data-position="bottom">
                         <span class="material-symbols-rounded">palette</span>
                     </button>
-                    <?php if (($_GET['id'] ?? '') !== 'sandbox'): ?>
+                    <?php if (!$isSandboxMode): ?>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?> [T]" data-position="bottom">
                         <span class="material-symbols-rounded">photo_library</span>
                     </button>
@@ -178,14 +181,14 @@ extract($designData);
                     </button>
                     <?php endif; ?>
 
-                    <?php if (isset($isOwner) && $isOwner && ($_GET['id'] ?? '') !== 'sandbox'): ?>
+                    <?php if (isset($isOwner) && $isOwner && !$isSandboxMode): ?>
                     <div class="component-divider-vertical" data-ref="owner-tools-actions-divider"></div>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
                         <span class="material-symbols-rounded">construction</span>
                     </button>
                     <?php endif; ?>
                     
-                    <?php if ($canvasAllowChat == '1' && ($_GET['id'] ?? '') !== 'sandbox'): ?>
+                    <?php if ($canvasAllowChat == '1' && !$isSandboxMode): ?>
                     <div class="component-divider-vertical" data-ref="chat-actions-divider"></div>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom">
                         <span class="material-symbols-rounded">chat</span>

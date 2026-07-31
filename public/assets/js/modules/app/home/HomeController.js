@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { renderSkeleton } from '../../../core/utils/uiUtils.js';
+import { renderSkeleton, showMessage } from '../../../core/utils/uiUtils.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 import { VirtualGridObserver } from '../../../core/utils/VirtualGridObserver.js';
@@ -186,6 +186,12 @@ class HomeController {
             return;
         }
 
+        if (action === 'openCreateSandboxModal') {
+            e.preventDefault();
+            this.openCreateSandboxModal();
+            return;
+        }
+
         if (this.cardInteractions && this.cardInteractions.handleAction(action, actionBtn)) {
             return;
         }
@@ -221,45 +227,97 @@ class HomeController {
         let res = null;
         const limit = 20;
 
-        if (window.initialHomeCanvases && currentTag === 'all' && !isLoadMore) {
-            newCanvases = window.initialHomeCanvases;
-            window.initialHomeCanvases = null; 
-        } else {
-            res = await this.api.post(ApiRoutes.Canvases.GetHomeFeed, { limit: limit, offset: this.currentOffset, tag: currentTag }, this.abortController.signal).catch(() => null);
-            
-            if (this.abortController.signal.aborted) {
-                this.isLoadingMore = false;
-                return;
-            }
-            
-            if (res && res.success) {
-                newCanvases = res.data || [];
-            } else {
-                isError = true;
+        let localSandboxes = [];
+        if (!isLoadMore && (currentTag === 'all' || currentTag === 'sandbox')) {
+            try {
+                const listJson = localStorage.getItem('rosaura_sandboxes_list');
+                if (listJson) {
+                    const list = JSON.parse(listJson);
+                    localSandboxes = list.map(sb => ({
+                        id: 'sandbox_' + sb.uuid,
+                        uuid: 'sandbox_' + sb.uuid,
+                        name: sb.name,
+                        thumbnail_url: null,
+                        online_players: 0,
+                        members_count: 1,
+                        favorites_count: 0,
+                        is_official: false,
+                        is_favorite: false,
+                        is_owner: true,
+                        is_member: true,
+                        is_sandbox: true
+                    }));
+                }
+            } catch (e) {
+                console.error('Error loading local sandboxes:', e);
             }
         }
 
-        if (newCanvases.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
-            this.allCanvases = this.allCanvases.concat(newCanvases);
+        // If tag is 'sandbox', bypass API calls completely since sandboxes are strictly client-side
+        if (currentTag === 'sandbox') {
+            newCanvases = [];
+            this.hasMore = false;
+        } else {
+            if (window.initialHomeCanvases && currentTag === 'all' && !isLoadMore) {
+                newCanvases = window.initialHomeCanvases;
+                window.initialHomeCanvases = null; 
+            } else {
+                res = await this.api.post(ApiRoutes.Canvases.GetHomeFeed, { limit: limit, offset: this.currentOffset, tag: currentTag }, this.abortController.signal).catch(() => null);
+                
+                if (this.abortController.signal.aborted) {
+                    this.isLoadingMore = false;
+                    return;
+                }
+                
+                if (res && res.success) {
+                    newCanvases = res.data || [];
+                } else {
+                    isError = true;
+                }
+            }
+        }
+
+        if (newCanvases.length > 0 || localSandboxes.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
+            if (!isLoadMore) {
+                this.allCanvases = localSandboxes.concat(newCanvases);
+            } else {
+                this.allCanvases = this.allCanvases.concat(newCanvases);
+            }
             this.renderCanvases(this.contentArea, this.allCanvases, isLoadMore);
         } else if (isError && !isLoadMore) {
             this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
         } else if (!isLoadMore) {
-            const msgEmpty = window.__ ? window.__('msg_home_empty') : 'No hay lienzos disponibles por el momento.';
-            const btnLabel = window.__ ? window.__('btn_create_experience') : 'Crear Nuevo Lienzo';
-            const emptyHtml = `
-                <div class="component-empty-state" data-ref="empty-state-rendered">
-                    <span class="material-symbols-rounded component-empty-state-icon">dashboard_customize</span>
-                    <p class="component-empty-state-text">${msgEmpty}</p>
-                    <div class="component-empty-state-actions">
-                        <div class="component-button component-button--h36 component-button--rounded-pill" data-nav="${this.basePath}/canvases/create">
-                            <span class="material-symbols-rounded">add_box</span>
-                            <span>${btnLabel}</span>
+            if (currentTag === 'sandbox') {
+                const emptyHtml = `
+                    <div class="component-empty-state" data-ref="empty-state-rendered">
+                        <span class="material-symbols-rounded component-empty-state-icon">science</span>
+                        <p class="component-empty-state-text">No tienes lienzos sandbox creados. ¡Crea uno nuevo para empezar a diseñar sin conexión!</p>
+                        <div class="component-empty-state-actions">
+                            <button class="component-button component-button--h36 component-button--brand component-button--rounded-pill" data-action="openCreateSandboxModal">
+                                <span class="material-symbols-rounded">add_box</span>
+                                <span>Crear Primer Sandbox</span>
+                            </button>
                         </div>
                     </div>
-                </div>
-            `;
-            this.contentArea.innerHTML = emptyHtml;
+                `;
+                this.contentArea.innerHTML = emptyHtml;
+            } else {
+                const msgEmpty = window.__ ? window.__('msg_home_empty') : 'No hay lienzos disponibles por el momento.';
+                const btnLabel = window.__ ? window.__('btn_create_experience') : 'Crear Nuevo Lienzo';
+                const emptyHtml = `
+                    <div class="component-empty-state" data-ref="empty-state-rendered">
+                        <span class="material-symbols-rounded component-empty-state-icon">dashboard_customize</span>
+                        <p class="component-empty-state-text">${msgEmpty}</p>
+                        <div class="component-empty-state-actions">
+                            <div class="component-button component-button--h36 component-button--rounded-pill" data-nav="${this.basePath}/canvases/create">
+                                <span class="material-symbols-rounded">add_box</span>
+                                <span>${btnLabel}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                this.contentArea.innerHTML = emptyHtml;
+            }
         }
         
         if (this.contentArea) {
@@ -369,6 +427,75 @@ class HomeController {
                 await new Promise(resolve => setTimeout(resolve, 2000));
             }
         }
+    }
+
+    async openCreateSandboxModal() {
+        if (!window.modalSystem) return;
+
+        // Comprobar límite de 10 sandboxes
+        let currentList = [];
+        try {
+            const listJson = localStorage.getItem('rosaura_sandboxes_list');
+            if (listJson) currentList = JSON.parse(listJson);
+        } catch (e) {}
+
+        if (currentList.length >= 10) {
+            showMessage('Has alcanzado el límite máximo de 10 lienzos sandbox locales.', 'error');
+            return;
+        }
+
+        const res = await window.modalSystem.show('createSandboxModal');
+        if (res && res.confirmed && res.data) {
+            const name = res.data.sandbox_name ? res.data.sandbox_name.trim() : '';
+            const size = 64;
+            const palette = 'default';
+
+            if (!name) {
+                showMessage('El nombre del lienzo es obligatorio', 'error');
+                return;
+            }
+
+            // Generar UUID único
+            const uuid = this.generateUuid();
+
+            // Guardar en la lista en localStorage
+            const newSandbox = {
+                uuid: uuid,
+                name: name,
+                size: size,
+                palette: palette,
+                createdAt: Date.now()
+            };
+            currentList.push(newSandbox);
+            localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(currentList));
+
+            // Guardar configuración inicial en IndexedDB
+            try {
+                const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
+                const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+                await DesignSandboxDb.saveSettings({
+                    name: name,
+                    width: size,
+                    height: size,
+                    paletteId: palette,
+                    cooldownBatch: 100
+                }, uuid);
+            } catch (e) {
+                console.error('Error saving sandbox settings to IndexedDB:', e);
+            }
+
+            showMessage('Lienzo Sandbox creado con éxito', 'success');
+
+            // Recargar feed para mostrar el nuevo canvas
+            this.loadCanvases();
+        }
+    }
+
+    generateUuid() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
     }
 }
 

@@ -40,6 +40,12 @@ export class CanvasCardInteractions {
         } else if (action === 'downgradeCanvas') {
             this.downgradeCanvas(btn);
             return true;
+        } else if (action === 'renameSandbox') {
+            this.renameSandbox(btn);
+            return true;
+        } else if (action === 'deleteSandbox') {
+            this.deleteSandbox(btn);
+            return true;
         }
         return false;
     }
@@ -64,14 +70,12 @@ export class CanvasCardInteractions {
         btn.classList.remove('disabled-interaction');
 
         if (res && res.success) {
-            
             if (res.data.action === 'added') {
                 btn.classList.add('is-favorite');
             } else {
                 btn.classList.remove('is-favorite');
             }
         } else {
-            
             if (wasFavorite) {
                 btn.classList.add('is-favorite');
             } else {
@@ -96,14 +100,23 @@ export class CanvasCardInteractions {
     openCanvasNewTab(btn) {
         const uuid = btn.getAttribute('data-uuid');
         if (uuid) {
-            window.open(`${this.basePath}/design/${uuid}`, '_blank');
+            if (uuid.startsWith('sandbox_')) {
+                const realUuid = uuid.replace('sandbox_', '');
+                window.open(`${this.basePath}/design/sandbox/${realUuid}`, '_blank');
+            } else {
+                window.open(`${this.basePath}/design/${uuid}`, '_blank');
+            }
         }
     }
 
     async copyCanvasLink(btn) {
         const uuid = btn.getAttribute('data-uuid');
         if (uuid) {
-            const url = `${window.location.origin}${this.basePath}/design/${uuid}`;
+            const isSandbox = uuid.startsWith('sandbox_');
+            const realUuid = isSandbox ? uuid.replace('sandbox_', '') : uuid;
+            const url = isSandbox 
+                ? `${window.location.origin}${this.basePath}/design/sandbox/${realUuid}`
+                : `${window.location.origin}${this.basePath}/design/${uuid}`;
             try {
                 await navigator.clipboard.writeText(url);
                 showMessage(window.__('msg_link_copied'), 'success');
@@ -270,7 +283,48 @@ export class CanvasCardInteractions {
         }
 
         const id = btn.getAttribute('data-id');
-        const uuid = btn.getAttribute('data-uuid');
+        const uuid = btn.getAttribute('data-uuid') || '';
+        
+        if (uuid.startsWith('sandbox_')) {
+            const html = `
+                <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed active" data-module="snapshot-menu-${id}">
+                    <div class="component-menu component-menu--w265">
+                        <div class="pill-container"><div class="drag-handle"></div></div>
+                        
+                        <div class="component-menu-list">
+                            <button type="button" class="component-menu-link" data-action="openCanvasNewTab" data-uuid="${uuid}">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">open_in_new</span></div>
+                                <div class="component-menu-link-text"><span>Abrir en nueva pestaña</span></div>
+                            </button>
+
+                            <button type="button" class="component-menu-link" data-action="copyCanvasLink" data-uuid="${uuid}">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">content_copy</span></div>
+                                <div class="component-menu-link-text"><span>Copiar enlace</span></div>
+                            </button>
+
+                            <button type="button" class="component-menu-link component-menu-link--bordered" data-action="renameSandbox" data-id="${id}" data-uuid="${uuid}">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">edit</span></div>
+                                <div class="component-menu-link-text"><span>Cambiar Nombre</span></div>
+                            </button>
+
+                            <button type="button" class="component-menu-link component-menu-link--bordered component-text-danger" data-action="deleteSandbox" data-id="${id}" data-uuid="${uuid}">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
+                                <div class="component-menu-link-text"><span>Eliminar Sandbox</span></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            this.closeDropdowns();
+            wrapper.insertAdjacentHTML('beforeend', html);
+            if (window.app && typeof window.app.initModules === 'function') {
+                window.app.initModules(wrapper);
+            } else if (window.uiUtils && typeof window.uiUtils.initDropdowns === 'function') {
+                window.uiUtils.initDropdowns(wrapper);
+            }
+            return;
+        }
+
         const isOwner = btn.getAttribute('data-owner') === '1';
         const isLocked = btn.getAttribute('data-locked') === '1';
         const isMember = btn.getAttribute('data-member') === '1';
@@ -541,6 +595,105 @@ export class CanvasCardInteractions {
                 contentEl.classList.remove('disabled');
                 contentEl.classList.add('active');
             }
+        }
+    }
+
+    async renameSandbox(btn) {
+        const uuid = btn.getAttribute('data-uuid');
+        const id = btn.getAttribute('data-id');
+        if (!uuid) return;
+
+        this.closeDropdowns();
+
+        const realUuid = uuid.replace('sandbox_', '');
+
+        // Obtener el nombre actual
+        let currentList = [];
+        try {
+            const listJson = localStorage.getItem('rosaura_sandboxes_list');
+            if (listJson) currentList = JSON.parse(listJson);
+        } catch (e) {}
+
+        const sandboxIndex = currentList.findIndex(sb => sb.uuid === realUuid);
+        if (sandboxIndex === -1) return;
+
+        const currentName = currentList[sandboxIndex].name;
+
+        if (window.modalSystem) {
+            const confirm = await window.modalSystem.show('renameSandboxModal', { nameValue: currentName });
+            if (!confirm.confirmed || !confirm.data) return;
+
+            const newName = confirm.data.sandbox_name ? confirm.data.sandbox_name.trim() : '';
+            if (!newName) {
+                showMessage('El nombre del lienzo es obligatorio', 'error');
+                return;
+            }
+
+            // Actualizar en localStorage
+            currentList[sandboxIndex].name = newName;
+            localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(currentList));
+
+            // Actualizar en IndexedDB
+            try {
+                const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
+                const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+                const settings = await DesignSandboxDb.getSettings(realUuid);
+                if (settings) {
+                    settings.name = newName;
+                    await DesignSandboxDb.saveSettings(settings, realUuid);
+                }
+            } catch (e) {
+                console.error('Error updating sandbox settings in IndexedDB:', e);
+            }
+
+            // Actualizar en el DOM
+            const card = document.querySelector(`.component-gallery-card[data-card-id="${id}"]`);
+            if (card) {
+                const titleEl = card.querySelector('.component-gallery-title');
+                if (titleEl) titleEl.textContent = newName;
+            }
+
+            showMessage('Lienzo Sandbox renombrado con éxito', 'success');
+        }
+    }
+
+    async deleteSandbox(btn) {
+        const uuid = btn.getAttribute('data-uuid');
+        const id = btn.getAttribute('data-id');
+        if (!uuid) return;
+
+        this.closeDropdowns();
+
+        const realUuid = uuid.replace('sandbox_', '');
+
+        if (window.modalSystem) {
+            const confirm = await window.modalSystem.show('confirmDeleteSandboxModal');
+            if (!confirm.confirmed) return;
+
+            // Eliminar de localStorage
+            let currentList = [];
+            try {
+                const listJson = localStorage.getItem('rosaura_sandboxes_list');
+                if (listJson) currentList = JSON.parse(listJson);
+            } catch (e) {}
+
+            const filteredList = currentList.filter(sb => sb.uuid !== realUuid);
+            localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(filteredList));
+
+            // Eliminar de IndexedDB
+            try {
+                const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
+                const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+                await DesignSandboxDb.deleteSandboxData(realUuid);
+            } catch (e) {
+                console.error('Error deleting sandbox from IndexedDB:', e);
+            }
+
+            // Remover tarjeta del DOM
+            const card = document.querySelector(`.component-gallery-card[data-card-id="${id}"]`);
+            if (card) card.remove();
+
+            showMessage('Lienzo Sandbox eliminado con éxito', 'success');
         }
     }
 }
