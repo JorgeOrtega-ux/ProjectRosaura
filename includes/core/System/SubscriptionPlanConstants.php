@@ -33,6 +33,11 @@ class SubscriptionPlanConstants {
             'key' => 'feat_live_share',
             'name' => 'Transmisión de Plantillas',
             'desc' => 'Permite transmitir y sincronizar lienzos en vivo'
+        ],
+        'feat_custom_colors' => [
+            'key' => 'feat_custom_colors',
+            'name' => 'Colores Personalizados',
+            'desc' => 'Permite habilitar colores personalizados y selector en lienzos'
         ]
     ];
 
@@ -64,12 +69,14 @@ class SubscriptionPlanConstants {
                     'feat_advanced_roles' => (bool)$row['feat_advanced_roles'],
                     'feat_chat_restriction' => (bool)$row['feat_chat_restriction'],
                     'feat_custom_palettes' => (bool)$row['feat_custom_palettes'],
+                    'feat_custom_colors' => (bool)($row['feat_custom_colors'] ?? false),
                     'feat_unlimited_exports' => (bool)$row['feat_unlimited_exports'],
                     'feat_inject_templates' => (bool)($row['feat_inject_templates'] ?? false),
                     'feat_live_share' => (bool)($row['feat_live_share'] ?? false),
                     'max_template_tokens' => (int)($row['max_template_tokens'] ?? 0),
                     'allow_live_chat' => (bool)$row['feat_chat_restriction'],
-                    'custom_palettes' => (bool)$row['feat_custom_palettes']
+                    'custom_palettes' => (bool)$row['feat_custom_palettes'],
+                    'custom_colors' => (bool)($row['feat_custom_colors'] ?? false)
                 ];
                 
                 self::$tierLimitsCache[$tier] = $limits;
@@ -89,12 +96,14 @@ class SubscriptionPlanConstants {
             'feat_advanced_roles' => false,
             'feat_chat_restriction' => false,
             'feat_custom_palettes' => false,
+            'feat_custom_colors' => false,
             'feat_unlimited_exports' => false,
             'feat_inject_templates' => false,
             'feat_live_share' => false,
             'max_template_tokens' => 0,
             'allow_live_chat' => false,
-            'custom_palettes' => false
+            'custom_palettes' => false,
+            'custom_colors' => false
         ];
         self::$tierLimitsCache[$tier] = $default;
         return $default;

@@ -39,6 +39,7 @@ class DatabaseConstants {
     public const TBL_CANVAS_RESIZE_SETTINGS     = 'canvas_resize_settings';
     public const TBL_CANVAS_CHAT_MESSAGES       = 'canvas_chat_messages';
     public const TBL_CANVAS_CHAT_REPORTS        = 'canvas_chat_reports';
+    public const TBL_CANVAS_RECENT_COLORS       = 'canvas_recent_colors';
     public const TBL_SUBSCRIPTIONS              = 'subscriptions';
     public const TBL_PAYMENT_HISTORY            = 'payment_history';
     public const SUSPENSION_TEMP = 'temporary';

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `requires_approval` tinyint(1) NOT NULL DEFAULT 0,
   `allow_purchases` tinyint(1) NOT NULL DEFAULT 1,
   `allow_chat` tinyint(1) NOT NULL DEFAULT 0,
+  `allow_custom_colors` tinyint(1) NOT NULL DEFAULT 0,
   `is_subscription_locked` tinyint(1) NOT NULL DEFAULT 0,
   `locked_reasons` json DEFAULT NULL,
   `size` varchar(20) NOT NULL DEFAULT '64',
@@ -290,4 +291,15 @@ CREATE TABLE IF NOT EXISTS `canvas_chat_reports` (
   INDEX (`reporter_user_id`),
   INDEX (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS `canvas_recent_colors` (
+  `user_id` int(11) NOT NULL,
+  `canvas_id` int(11) NOT NULL,
+  `colors` json NOT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`user_id`, `canvas_id`),
+  CONSTRAINT `fk_crc_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 

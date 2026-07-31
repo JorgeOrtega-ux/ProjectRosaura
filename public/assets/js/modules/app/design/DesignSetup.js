@@ -101,6 +101,7 @@ export const DesignSetup = {
             this.initialZoomConfig = initialZoomAttr ? parseFloat(initialZoomAttr) : 0.5;
             
             this.canvasPaletteId = wrapper.getAttribute('data-palette') || 'default';
+            this.allowCustomColors = wrapper.getAttribute('data-allow-custom-colors') === '1';
             
             this.setupCanvas();
             this.centerBoard();

@@ -171,6 +171,12 @@ class CanvasesCreateController {
             this.formState.allow_chat = allowChatEl.checked ? 1 : 0;
         }
 
+        // Allow Custom Colors
+        const allowCustomColorsEl = document.querySelector('[data-ref="val_allow_custom_colors"]');
+        if (allowCustomColorsEl) {
+            this.formState.allow_custom_colors = allowCustomColorsEl.checked ? 1 : 0;
+        }
+
         // Is Official
         const isOfficialEl = document.querySelector('[data-ref="val_is_official"]');
         if (isOfficialEl) {

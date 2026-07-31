@@ -50,6 +50,12 @@ class SubscriptionFeatureConfig {
                 'title_key'       => 'plan_feat_live_share_title',
                 'title_short_key' => 'plan_feat_live_share_short',
                 'desc_key'        => 'plan_feat_live_share_desc'
+            ],
+            'feat_custom_colors' => [
+                'icon'            => 'color_lens',
+                'title_key'       => 'plan_feat_custom_colors_title',
+                'title_short_key' => 'plan_feat_custom_colors_short',
+                'desc_key'        => 'plan_feat_custom_colors_desc'
             ]
         ];
     }

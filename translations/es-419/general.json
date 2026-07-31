@@ -1495,5 +1495,11 @@
     "welcome_adv_tools_desc": "Acceso a herramientas avanzadas de diseño, paletas personalizadas y más.",
     "welcome_adv_tools_title": "Herramientas premium",
     "canvas_template_title": "Plantilla de Lienzo",
-    "canvas_template_desc": "Elige una plantilla para iniciar tu lienzo con un diseño de base, o selecciona vacío para empezar desde cero."
+    "canvas_template_desc": "Elige una plantilla para iniciar tu lienzo con un diseño de base, o selecciona vacío para empezar desde cero.",
+    "lbl_allow_custom_colors": "Permitir Colores Personalizados",
+    "desc_allow_custom_colors": "Habilitar el selector de color y la lista de colores recientes para pintar.",
+    "dt_recent_colors": "Colores Recientes",
+    "plan_feat_custom_colors_title": "Colores Personalizados",
+    "plan_feat_custom_colors_short": "Colores Pro",
+    "plan_feat_custom_colors_desc": "Habilita a tus usuarios a pintar con cualquier color personalizado mediante el selector."
 }

@@ -32,6 +32,7 @@ extract($designData);
          data-is-spectator="<?php echo isset($isSpectatorInit) && $isSpectatorInit ? '1' : '0'; ?>"
          data-approval="<?php echo htmlspecialchars($canvasApproval); ?>"
          data-allow-chat="<?php echo htmlspecialchars($canvasAllowChat); ?>"
+         data-allow-custom-colors="<?php echo htmlspecialchars($canvasAllowCustomColors); ?>"
          data-cooldown-batch="<?php echo htmlspecialchars($canvasCooldownBatch); ?>"
          data-cooldown-seconds="<?php echo htmlspecialchars($canvasCooldownSeconds); ?>"
          data-reset-active="<?php echo htmlspecialchars($resetActive); ?>"

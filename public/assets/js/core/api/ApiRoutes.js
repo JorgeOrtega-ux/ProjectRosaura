@@ -136,7 +136,9 @@ export const ApiRoutes = {
 
         GetCustomPalettes: 'canvases.get_custom_palettes',
         CreateCustomPalette: 'canvases.create_custom_palette',
-        DeleteCustomPalette: 'canvases.delete_custom_palette'
+        DeleteCustomPalette: 'canvases.delete_custom_palette',
+        GetRecentColors: 'canvases.get_recent_colors',
+        AddRecentColor: 'canvases.add_recent_color'
     },
     Search: {
         Query: 'search.query'

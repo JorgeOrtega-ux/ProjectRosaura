@@ -411,6 +411,11 @@ class CanvasEditController {
             this.state.allow_chat = allowChatInput.checked ? 1 : 0;
         }
 
+        const allowCustomColorsInput = this.container.querySelector('[data-ref="val_allow_custom_colors"]');
+        if (allowCustomColorsInput) {
+            this.state.allow_custom_colors = allowCustomColorsInput.checked ? 1 : 0;
+        }
+
         const inputOfficial = this.container.querySelector('[data-ref="val_is_official"]');
         if (inputOfficial) {
             this.state.is_official = inputOfficial.checked ? 1 : 0;
@@ -433,6 +438,7 @@ class CanvasEditController {
             cooldown_seconds: this.state.cooldown_seconds,
             allow_purchases: this.state.allow_purchases,
             allow_chat: this.state.allow_chat,
+            allow_custom_colors: this.state.allow_custom_colors,
             is_official: this.state.is_official,
             tags: activeTags
         };

@@ -125,6 +125,7 @@ class CanvasCoreController extends BaseController {
 
             $allowPurchases = isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : 1;
             $allowChat = isset($input['allow_chat']) ? (int)$input['allow_chat'] : 0;
+            $allowCustomColors = isset($input['allow_custom_colors']) ? (int)$input['allow_custom_colors'] : 0;
             $tags = isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : [];
             $templateId = $input['template_id'] ?? null;
             if ($templateId === '') {
@@ -139,7 +140,8 @@ class CanvasCoreController extends BaseController {
                 $userId, $name, $privacy, $requiresApproval, 
                 $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds,
                 $isOfficial, $this->canCreateOfficial(),
-                $allowPurchases, $allowChat, $tags, $templateId
+                $allowPurchases, $allowChat, $tags, $templateId,
+                $allowCustomColors
             );
 
 
@@ -183,6 +185,7 @@ class CanvasCoreController extends BaseController {
                 'cooldown_seconds' => $input['cooldown_seconds'] ?? null,
                 'allow_purchases' => isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : null,
                 'allow_chat' => isset($input['allow_chat']) ? (int)$input['allow_chat'] : null,
+                'allow_custom_colors' => isset($input['allow_custom_colors']) ? (int)$input['allow_custom_colors'] : null,
                 'tags' => isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : [],
                 'is_official' => isset($input['is_official']) ? filter_var($input['is_official'], FILTER_VALIDATE_BOOLEAN) : null
             ];
@@ -386,6 +389,43 @@ class CanvasCoreController extends BaseController {
             
             return $this->respond($result);
 
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function get_recent_colors($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['canvas_id'] ?? null;
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id')]);
+            }
+
+            $result = $this->canvasServices->getRecentColors((int)$userId, (int)$canvasId);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function add_recent_color($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['canvas_id'] ?? null;
+            $color = $input['color'] ?? '';
+            if (!$canvasId || empty($color)) {
+                return $this->respond(['success' => false, 'message' => __('err_invalid_params')]);
+            }
+
+            $result = $this->canvasServices->addRecentColor((int)$userId, (int)$canvasId, $color);
+            return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }

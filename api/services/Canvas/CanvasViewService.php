@@ -592,6 +592,7 @@ class CanvasViewService {
         $cLimit = 10;
         $cAllowPurchases = 1;
         $cAllowChat = 0;
+        $cAllowCustomColors = 0;
         $canCreateOfficial = false;
         $cOfficial = false;
         $cTags = [];
@@ -628,6 +629,7 @@ class CanvasViewService {
                     $cLimit = (int)($canvasData['max_participants'] ?? 10);
                     $cAllowPurchases = (int)($canvasData['allow_purchases'] ?? 1);
                     $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
+                    $cAllowCustomColors = (int)($canvasData['allow_custom_colors'] ?? 0);
                     
                     $cOfficial = (bool)($canvasData['is_official'] ?? 0);
 
@@ -658,6 +660,7 @@ class CanvasViewService {
             'cLimit' => $cLimit,
             'cAllowPurchases' => $cAllowPurchases,
             'cAllowChat' => $cAllowChat,
+            'cAllowCustomColors' => $cAllowCustomColors,
             'canCreateOfficial' => $canCreateOfficial,
             'cOfficial' => $cOfficial,
             'cTags' => $cTags

@@ -227,6 +227,38 @@ return [
             ],
         ],
     ],
+    'canvases.get_recent_colors' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
+        'action' => 'get_recent_colors',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_get_recent_colors',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'canvases.add_recent_color' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
+        'action' => 'add_recent_color',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_add_recent_color',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'canvases.get_chunks' => [
         'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
         'action' => 'get_chunks',

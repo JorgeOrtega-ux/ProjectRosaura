@@ -1,6 +1,7 @@
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 import { PerksRegistry } from './PerksRegistry.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 
 export const DesignInteractions = {
     bindEvents() {
@@ -48,6 +49,27 @@ export const DesignInteractions = {
         
         if (typeof this.handleTemplateModals === 'function' && this.handleTemplateModals(e)) {
             return; 
+        }
+
+        const btnTogglePicker = e.target.closest('[data-action="toggleRecentColorPicker"]');
+        if (btnTogglePicker) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggleRecentColorPicker();
+            return;
+        }
+
+        const btnSaveRecent = e.target.closest('[data-action="saveRecentColorBtn"]');
+        if (btnSaveRecent) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.saveRecentColor();
+            return;
+        }
+
+        const dropdownPickerInside = e.target.closest('[data-ref="recent-color-picker-dropdown"]');
+        if (dropdownPickerInside) {
+            e.stopPropagation();
         }
 
         const btnPerks = e.target.closest('[data-action="togglePerksInventory"]');
@@ -238,6 +260,8 @@ export const DesignInteractions = {
                 this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
             }
             
+            this.updateActiveColorPreview();
+            this.recordRecentColor(this.currentColor);
             this.requestRender();
             return;
         }
@@ -252,7 +276,6 @@ export const DesignInteractions = {
         // Skip shortcuts if user is typing in inputs or textareas
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable) return;
         
-        // Skip shortcuts if a modifier key is pressed (e.g. Ctrl+C)
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         
         if (e.key === 'Escape') {
@@ -368,6 +391,16 @@ export const DesignInteractions = {
     },
 
     handleMouseDown(e) {
+        const svArea = e.target.closest('[data-action="dragRecentSV"]');
+        const hueArea = e.target.closest('[data-action="dragRecentHue"]');
+        if (svArea || hueArea) {
+            this.recentDragMode = svArea ? 'sv' : 'hue';
+            this.recentDragArea = svArea || hueArea;
+            this.updateRecentColorFromEvent(e);
+            e.preventDefault();
+            return;
+        }
+
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target) return;
 
@@ -502,6 +535,11 @@ export const DesignInteractions = {
     },
 
     handleMouseMove(e) {
+        if (this.recentDragMode && this.recentDragArea) {
+            this.updateRecentColorFromEvent(e);
+            e.preventDefault();
+            return;
+        }
 
         if ((this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting' || this.interactionMode === 'user_protecting') && this.ownerEraserStep === 1 && this.ownerEraserStart) {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
@@ -795,6 +833,11 @@ export const DesignInteractions = {
     },
 
     handleMouseUp(e) {
+        if (this.recentDragMode) {
+            this.recentDragMode = null;
+            this.recentDragArea = null;
+            return;
+        }
 
         if (this.templateInteraction) {
             this.templateInteraction = null;
@@ -823,6 +866,16 @@ export const DesignInteractions = {
     },
 
     handleTouchStart(e) {
+        const svArea = e.target.closest('[data-action="dragRecentSV"]');
+        const hueArea = e.target.closest('[data-action="dragRecentHue"]');
+        if (svArea || hueArea) {
+            this.recentDragMode = svArea ? 'sv' : 'hue';
+            this.recentDragArea = svArea || hueArea;
+            this.updateRecentColorFromEvent(e.touches[0]);
+            e.preventDefault();
+            return;
+        }
+
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target) return;
 
@@ -881,6 +934,11 @@ export const DesignInteractions = {
     },
 
     handleTouchMove(e) {
+        if (this.recentDragMode && this.recentDragArea) {
+            this.updateRecentColorFromEvent(e.touches[0]);
+            e.preventDefault();
+            return;
+        }
 
         if (this.isPinching && e.touches.length === 2) {
             e.preventDefault(); 
@@ -1026,6 +1084,11 @@ export const DesignInteractions = {
     },
 
     handleTouchEnd(e) {
+        if (this.recentDragMode) {
+            this.recentDragMode = null;
+            this.recentDragArea = null;
+            return;
+        }
         if (this.isPinching) {
             if (e.touches.length < 2) {
                 this.isPinching = false;
@@ -2095,5 +2158,233 @@ export const DesignInteractions = {
         if (this.myProtectionsTimerLabel) {
             this.myProtectionsTimerLabel.textContent = timeStr;
         }
+    },
+
+    toggleRecentColorPicker() {
+        const pickerDropdown = document.querySelector('[data-ref="recent-color-picker-dropdown"]');
+        const pickerInner = document.querySelector('[data-ref="recent-color-picker"]');
+        if (pickerDropdown) {
+            const isHidden = pickerDropdown.classList.contains('disabled');
+            if (isHidden) {
+                pickerDropdown.classList.remove('disabled');
+                pickerDropdown.classList.add('active');
+                if (pickerInner) pickerInner.classList.remove('disabled');
+                this.initRecentColorPicker();
+            } else {
+                pickerDropdown.classList.add('disabled');
+                pickerDropdown.classList.remove('active');
+            }
+        }
+    },
+
+    initRecentColorPicker() {
+        const picker = document.querySelector('[data-ref="recent-color-picker"]');
+        if (!picker) return;
+        picker.classList.remove('disabled');
+
+        let activeColor = this.currentColor || '#FFFFFF';
+        if (!activeColor.startsWith('#')) activeColor = '#' + activeColor;
+
+        const hsv = this.hexToHsvRecent(activeColor);
+        picker.dataset.h = hsv.h;
+        picker.dataset.s = hsv.s;
+        picker.dataset.v = hsv.v;
+
+        const hexInput = picker.querySelector('[data-ref="recentHexInput"]');
+        if (hexInput && !hexInput.dataset.bound) {
+            hexInput.dataset.bound = '1';
+            hexInput.addEventListener('input', (e) => {
+                let val = e.target.value.trim();
+                if (!val.startsWith('#')) val = '#' + val;
+                if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                    const hsvVal = this.hexToHsvRecent(val);
+                    picker.dataset.h = hsvVal.h;
+                    picker.dataset.s = hsvVal.s;
+                    picker.dataset.v = hsvVal.v;
+                    this.updateRecentPickerUI(false);
+                }
+            });
+        }
+
+        this.updateRecentPickerUI();
+    },
+
+    updateRecentPickerUI(updateInput = true) {
+        const picker = document.querySelector('[data-ref="recent-color-picker"]');
+        if (!picker) return;
+
+        let h = Math.max(0, Math.min(360, parseFloat(picker.dataset.h) || 0));
+        let s = Math.max(0, Math.min(100, parseFloat(picker.dataset.s) || 0));
+        let v = Math.max(0, Math.min(100, parseFloat(picker.dataset.v) || 0));
+
+        const hex = this.hsvToHexRecent(h, s, v);
+        this.recentColorHex = hex;
+
+        const svArea = picker.querySelector('[data-action="dragRecentSV"]');
+        if (svArea) svArea.style.backgroundColor = `hsl(${h}, 100%, 50%)`;
+
+        const svThumb = picker.querySelector('[data-ref="recentSvThumb"]');
+        if (svThumb) {
+            svThumb.style.left = `${s}%`;
+            svThumb.style.top = `${100 - v}%`;
+        }
+
+        const hueThumb = picker.querySelector('[data-ref="recentHueThumb"]');
+        if (hueThumb) {
+            hueThumb.style.left = `${(h / 360) * 100}%`;
+        }
+
+        const hexPreview = picker.querySelector('[data-ref="recentHexPreview"]');
+        if (hexPreview) hexPreview.style.backgroundColor = hex;
+
+        if (updateInput) {
+            const hexInput = picker.querySelector('[data-ref="recentHexInput"]');
+            if (hexInput) hexInput.value = hex;
+        }
+    },
+
+    saveRecentColor() {
+        try {
+            const picker = document.querySelector('[data-ref="recent-color-picker"]');
+            const hexInput = picker ? picker.querySelector('[data-ref="recentHexInput"]') : null;
+            let colorToSave = (hexInput && hexInput.value) ? hexInput.value.trim() : this.recentColorHex;
+
+            if (!colorToSave) return;
+            if (!colorToSave.startsWith('#')) colorToSave = '#' + colorToSave;
+            if (colorToSave.length === 4) {
+                colorToSave = '#' + colorToSave[1] + colorToSave[1] + colorToSave[2] + colorToSave[2] + colorToSave[3] + colorToSave[3];
+            }
+            colorToSave = colorToSave.toUpperCase();
+
+            // 1. Instantly set current color & active preview
+            this.currentColor = colorToSave;
+            if (this.btnColorPalette) {
+                this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
+            }
+            this.updateActiveColorPreview();
+
+            // 2. Instantly update local list and UI
+            this.updateRecentColorsLocally(colorToSave);
+
+            // 3. Instantly close picker dropdown
+            this.toggleRecentColorPicker();
+            this.requestRender();
+
+            // 4. Fire and forget async post to API
+            this.recordRecentColor(colorToSave);
+        } catch (e) {
+            console.error('Error saving recent color:', e);
+        }
+    },
+
+    updateRecentColorsLocally(hex) {
+        if (!Array.isArray(this.recentColorsList)) {
+            this.recentColorsList = [];
+        }
+        const formattedHex = hex.toUpperCase();
+        this.recentColorsList = [
+            formattedHex,
+            ...this.recentColorsList.filter(c => c.toUpperCase() !== formattedHex)
+        ].slice(0, 12);
+
+        this.renderRecentColors(this.recentColorsList);
+    },
+
+    recordRecentColor(hex) {
+        if (!this.canvasIntId || !hex) return;
+        if (!hex.startsWith('#')) hex = '#' + hex;
+        if (hex.length === 4) {
+            hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+        }
+        hex = hex.toUpperCase();
+
+        this.updateRecentColorsLocally(hex);
+
+        this.api.post(ApiRoutes.Canvases.AddRecentColor, {
+            canvas_id: this.canvasIntId,
+            color: hex
+        }).then(response => {
+            if (response && response.success && Array.isArray(response.colors)) {
+                this.recentColorsList = response.colors;
+                this.renderRecentColors(response.colors);
+            }
+        }).catch(e => {
+            console.error('Error recording recent color:', e);
+        });
+    },
+
+    getEventCoordsRecent(e) {
+        if (e.touches && e.touches.length > 0) {
+            return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+        }
+        return { clientX: e.clientX, clientY: e.clientY };
+    },
+
+    updateRecentColorFromEvent(e) {
+        if (!this.recentDragArea) return;
+        const rect = this.recentDragArea.getBoundingClientRect();
+        const coords = this.getEventCoordsRecent(e);
+
+        let x = Math.max(0, Math.min(coords.clientX - rect.left, rect.width));
+        let y = Math.max(0, Math.min(coords.clientY - rect.top, rect.height));
+
+        const picker = document.querySelector('[data-ref="recent-color-picker"]');
+        if (!picker) return;
+
+        if (this.recentDragMode === 'sv') {
+            picker.dataset.s = (x / rect.width) * 100;
+            picker.dataset.v = 100 - ((y / rect.height) * 100);
+        } else if (this.recentDragMode === 'hue') {
+            picker.dataset.h = (x / rect.width) * 360;
+        }
+
+        this.updateRecentPickerUI();
+    },
+
+    hexToHsvRecent(hex) {
+        hex = hex.replace(/^#/, '');
+        if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+        let r = parseInt(hex.substring(0, 2), 16) / 255 || 0;
+        let g = parseInt(hex.substring(2, 4), 16) / 255 || 0;
+        let b = parseInt(hex.substring(4, 6), 16) / 255 || 0;
+
+        let max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0, s = 0, v = max, d = max - min;
+        s = max === 0 ? 0 : d / max;
+
+        if (max !== min) {
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return { h: Math.round(h * 360), s: Math.round(s * 100), v: Math.round(v * 100) };
+    },
+
+    hsvToHexRecent(h, s, v) {
+        h /= 360; s /= 100; v /= 100;
+        let r, g, b;
+        let i = Math.floor(h * 6);
+        let f = h * 6 - i;
+        let p = v * (1 - s);
+        let q = v * (1 - f * s);
+        let t = v * (1 - (1 - f) * s);
+
+        switch (i % 6) {
+            case 0: r = v, g = t, b = p; break;
+            case 1: r = q, g = v, b = p; break;
+            case 2: r = p, g = v, b = t; break;
+            case 3: r = p, g = q, b = v; break;
+            case 4: r = t, g = p, b = v; break;
+            case 5: r = v, g = p, b = q; break;
+        }
+
+        const toHex = x => {
+            const hex = Math.round(x * 255).toString(16);
+            return hex.length === 1 ? '0' + hex : hex;
+        };
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
     }
-};
+}

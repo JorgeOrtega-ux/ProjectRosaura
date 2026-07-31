@@ -1,5 +1,6 @@
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { PerksRegistry } from './PerksRegistry.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 
 export const DesignRender = {
     renderColorPalette(paletteId) {
@@ -45,7 +46,75 @@ export const DesignRender = {
             container.appendChild(btn);
         });
 
+        const recentPickerWrapper = document.querySelector('[data-ref="recent-picker-dropdown-wrapper"]');
+        if (recentPickerWrapper) {
+            if (this.allowCustomColors) {
+                recentPickerWrapper.classList.remove('picker-wrapper-disabled');
+            } else {
+                recentPickerWrapper.classList.add('picker-wrapper-disabled');
+            }
+        }
+
+        this.loadRecentColors();
+        this.updateActiveColorPreview();
         this.requestRender();
+    },
+
+    updateActiveColorPreview() {
+        const preview = document.querySelector('[data-ref="active-color-preview"]');
+        if (preview) {
+            preview.style.backgroundColor = this.currentColor;
+            preview.style.setProperty('--color-val', this.currentColor);
+        }
+    },
+
+    async loadRecentColors() {
+        try {
+            if (!this.canvasIntId) return;
+            const response = await this.api.post(ApiRoutes.Canvases.GetRecentColors, { canvas_id: this.canvasIntId });
+            if (response && Array.isArray(response)) {
+                this.renderRecentColors(response);
+            } else if (response && response.colors) {
+                this.renderRecentColors(response.colors);
+            }
+        } catch (e) {
+            console.error('Error loading recent colors:', e);
+        }
+    },
+
+    renderRecentColors(colors) {
+        if (Array.isArray(colors)) {
+            this.recentColorsList = colors;
+        }
+        const grid = document.querySelector('[data-ref="recent-colors-grid"]');
+        const recentSection = document.querySelector('[data-ref="recent-colors-section"]');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        if (Array.isArray(colors) && colors.length > 0) {
+            if (recentSection) {
+                recentSection.classList.remove('disabled');
+                recentSection.style.display = 'block';
+            }
+            colors.forEach(hex => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `component-color-btn ${this.currentColor === hex ? 'active' : ''}`;
+                btn.setAttribute('data-action', 'selectColor');
+                btn.setAttribute('data-color', hex);
+                btn.setAttribute('data-tooltip', hex.toUpperCase());
+                
+                btn.style.backgroundColor = hex;
+                btn.style.setProperty('--color-val', hex);
+                
+                grid.appendChild(btn);
+            });
+        } else {
+            if (recentSection) {
+                recentSection.classList.add('disabled');
+                recentSection.style.display = 'none';
+            }
+        }
     },
 
     isDarkMode() {
