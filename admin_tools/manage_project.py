@@ -118,15 +118,23 @@ def generate_svg_icons(target_path):
 
         svg_content = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {COLS * 960} {ROWS * 960}">']
         css_content = [
-            ".msr {",
+            ".material-symbols-rounded, .msr {",
             "  display: inline-block;",
+            "  font-size: 24px;",
+            "  line-height: 1;",
             "  width: 1em;",
             "  height: 1em;",
             "  background-color: currentColor;",
-            "  -webkit-mask-image: url('/assets/icons/sprite.svg');",
-            "  mask-image: url('/assets/icons/sprite.svg');",
+            "  -webkit-mask-image: url('../icons/sprite.svg');",
+            "  mask-image: url('../icons/sprite.svg');",
             f"  -webkit-mask-size: {COLS * 100}% {ROWS * 100}%;",
             f"  mask-size: {COLS * 100}% {ROWS * 100}%;",
+            "  -webkit-mask-repeat: no-repeat;",
+            "  mask-repeat: no-repeat;",
+            "  vertical-align: -0.125em;",
+            "  overflow: hidden;",
+            "  white-space: nowrap;",
+            "  text-indent: 100%;",
             "}"
         ]
 

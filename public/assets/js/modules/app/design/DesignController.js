@@ -818,6 +818,7 @@ class DesignController {
 
     async syncSandboxCloud() {
         if (!this.isSandbox) return;
+        if (this.syncInProgress) return;
         const btnSync = document.querySelector('[data-ref="btn-sandbox-sync"]');
         if (!btnSync) return;
 
@@ -827,14 +828,14 @@ class DesignController {
             return;
         }
 
+        this.syncInProgress = true;
         const icon = btnSync.querySelector('.material-symbols-rounded');
         if (icon) {
             icon.classList.add('icon-spin-slow');
             icon.textContent = 'autorenew';
             icon.style.color = '';
         }
-        btnSync.setAttribute('data-tooltip', 'Sincronizando con la nube...');
-        btnSync.classList.add('disabled-interaction');
+        btnSync.setAttribute('data-tooltip', 'Sincronizando: 0%');
 
         try {
             const DesignSandboxDbModule = await import('./DesignSandboxDb.js');
@@ -883,7 +884,8 @@ class DesignController {
                 }
             }
 
-            const response = await this.api.post('sandbox.sync_state', {
+            // 1. Sync settings first (with empty chunks)
+            const settingsRes = await this.api.post('sandbox.sync_state', {
                 uuid: this.sandboxUuid,
                 settings: {
                     name: settings.name || 'Sandbox',
@@ -892,22 +894,63 @@ class DesignController {
                     paletteId: settings.paletteId || 'default',
                     cooldownBatch: settings.cooldownBatch || 100
                 },
-                chunks: chunksToSend
+                chunks: {}
             });
 
-            if (response && response.success) {
-                if (icon) {
-                    icon.textContent = 'cloud_done';
-                    icon.style.color = 'var(--color-success, #4caf50)';
-                }
-                btnSync.setAttribute('data-tooltip', 'Sincronizado con la nube');
-                if (this.dirtyChunks) {
-                    this.dirtyChunks.clear();
-                }
-                showMessage('Sincronizado con la nube con éxito', 'success');
-            } else {
-                throw new Error(response?.message || 'Error en respuesta del servidor');
+            if (!settingsRes || !settingsRes.success) {
+                throw new Error(settingsRes?.message || 'Error al sincronizar ajustes iniciales');
             }
+
+            // 2. Sync chunks one by one sequentially, calculating and showing percentage
+            const chunkKeys = Object.keys(chunksToSend);
+            let chunkIdx = 0;
+            for (const key of chunkKeys) {
+                chunkIdx++;
+                const percent = Math.round((chunkIdx / chunkKeys.length) * 100);
+                const tooltipText = `Sincronizando: ${percent}%`;
+                btnSync.setAttribute('data-tooltip', tooltipText);
+                
+                // Live update tooltip if hovered
+                if (window.tooltipSystem && window.tooltipSystem.activeTarget === btnSync && window.tooltipSystem.activeTooltip) {
+                    const span = window.tooltipSystem.activeTooltip.querySelector('span');
+                    if (span) span.textContent = tooltipText;
+                    if (window.tooltipSystem.activePopper) {
+                        window.tooltipSystem.activePopper.update();
+                    }
+                }
+
+                const chunkRes = await this.api.post('sandbox.sync_state', {
+                    uuid: this.sandboxUuid,
+                    settings: null,
+                    chunks: {
+                        [key]: chunksToSend[key]
+                    }
+                });
+                if (!chunkRes || !chunkRes.success) {
+                    throw new Error(chunkRes?.message || `Error al sincronizar fragmento ${key}`);
+                }
+            }
+
+            if (icon) {
+                icon.textContent = 'cloud_done';
+                icon.style.color = '';
+            }
+            let localList = [];
+            try {
+                const listJson = localStorage.getItem('rosaura_sandboxes_list');
+                if (listJson) localList = JSON.parse(listJson);
+            } catch (e) {}
+            const currentSb = localList.find(s => s.uuid === this.sandboxUuid);
+            if (currentSb) {
+                currentSb.syncedAt = Date.now();
+                localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(localList));
+            }
+
+            btnSync.setAttribute('data-tooltip', this.getSyncTooltipText());
+            if (this.dirtyChunks) {
+                this.dirtyChunks.clear();
+            }
+            showMessage('Sincronizado con la nube con éxito', 'success');
         } catch (e) {
             console.error('[Sandbox Sync] Cloud sync failed:', e);
             if (icon) {
@@ -920,8 +963,38 @@ class DesignController {
             if (icon) {
                 icon.classList.remove('icon-spin-slow');
             }
-            btnSync.classList.remove('disabled-interaction');
+            this.syncInProgress = false;
         }
+    }
+
+    getSyncTooltipText() {
+        let localList = [];
+        try {
+            const listJson = localStorage.getItem('rosaura_sandboxes_list');
+            if (listJson) localList = JSON.parse(listJson);
+        } catch (e) {}
+
+        const currentSb = localList.find(s => s.uuid === this.sandboxUuid);
+        if (!currentSb || !currentSb.syncedAt) {
+            return 'Sincronizar con la nube (Última sincronización: nunca)';
+        }
+
+        const diffMs = Date.now() - currentSb.syncedAt;
+        const diffMins = Math.floor(diffMs / 60000);
+        if (diffMins < 1) {
+            return 'Sincronizar con la nube (Última sincronización: hace unos instantes)';
+        }
+        if (diffMins < 60) {
+            return `Sincronizar con la nube (Última sincronización: hace ${diffMins} ${diffMins === 1 ? 'minuto' : 'minutos'})`;
+        }
+
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24) {
+            return `Sincronizar con la nube (Última sincronización: hace ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'})`;
+        }
+
+        const diffDays = Math.floor(diffHours / 24);
+        return `Sincronizar con la nube (Última sincronización: hace ${diffDays} ${diffDays === 1 ? 'día' : 'días'})`;
     }
 
     async autosaveSandbox() {
@@ -971,9 +1044,20 @@ class DesignController {
                 this.dirtyChunks.clear();
                 if (icon) {
                     icon.textContent = 'cloud_done';
-                    icon.style.color = 'var(--color-success, #4caf50)';
+                    icon.style.color = '';
                 }
-                if (btnSync) btnSync.setAttribute('data-tooltip', 'Autoguardado completado');
+                let localList = [];
+                try {
+                    const listJson = localStorage.getItem('rosaura_sandboxes_list');
+                    if (listJson) localList = JSON.parse(listJson);
+                } catch (e) {}
+                const currentSb = localList.find(s => s.uuid === this.sandboxUuid);
+                if (currentSb) {
+                    currentSb.syncedAt = Date.now();
+                    localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(localList));
+                }
+
+                if (btnSync) btnSync.setAttribute('data-tooltip', this.getSyncTooltipText());
             } else {
                 throw new Error(response?.message || 'Error en respuesta');
             }

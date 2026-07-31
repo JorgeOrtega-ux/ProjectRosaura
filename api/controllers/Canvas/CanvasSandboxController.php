@@ -258,4 +258,63 @@ class CanvasSandboxController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
+
+    public function delete($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => __('err_auth_required'),
+                    'http_code' => 401
+                ]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $uuid = $input['uuid'] ?? null;
+
+            if (!$uuid) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => __('err_uuid_missing')
+                ]);
+            }
+
+            $pdo = $this->dbManager->getConnection(DB::CONN_CANVASES);
+
+            // Verify owner
+            $chkStmt = $pdo->prepare("SELECT user_id FROM user_sandboxes WHERE uuid = ?");
+            $chkStmt->execute([$uuid]);
+            $existingUserId = $chkStmt->fetchColumn();
+
+            if ($existingUserId !== false && (int)$existingUserId !== (int)$userId) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => __('err_unauthorized'),
+                    'http_code' => 403
+                ]);
+            }
+
+            $pdo->beginTransaction();
+
+            // Delete settings
+            $delSettings = $pdo->prepare("DELETE FROM user_sandboxes WHERE uuid = ? AND user_id = ?");
+            $delSettings->execute([$uuid, $userId]);
+
+            // Delete chunks
+            $delChunks = $pdo->prepare("DELETE FROM user_sandbox_chunks WHERE sandbox_uuid = ?");
+            $delChunks->execute([$uuid]);
+
+            $pdo->commit();
+
+            return $this->respond([
+                'success' => true
+            ]);
+
+        } catch (\Throwable $e) {
+            if (isset($pdo) && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
 }

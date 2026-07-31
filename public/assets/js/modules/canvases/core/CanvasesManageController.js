@@ -76,6 +76,11 @@ class CanvasesManageController {
             this.handleCanvasSelection(selectTargetRow);
         }
 
+        const syncBtn = e.target.closest('[data-action="syncOfflineSandboxes"]');
+        if (syncBtn && !syncBtn.classList.contains('disabled-interaction')) {
+            this.syncOfflineSandboxes(syncBtn);
+        }
+
         if (deselectBtn) this.deselectCanvas();
         if (deleteCanvasesBtn && !deleteCanvasesBtn.classList.contains('disabled-interaction')) this.deleteSelectedCanvases(deleteCanvasesBtn);
         if (createCanvasBtn && !createCanvasBtn.classList.contains('disabled-interaction')) this.createCanvas(createCanvasBtn);
@@ -166,6 +171,7 @@ class CanvasesManageController {
             searchToolbar.classList.add('disabled');
         }
 
+        this.insertSandboxRows();
         this.applyLocalSearch();
         this.deselectCanvas(); 
     }
@@ -225,6 +231,58 @@ class CanvasesManageController {
 
     async deleteSelectedCanvases(btn) {
         if (this.selectedCanvasIds.size === 0) return;
+
+        const activeUuid = this.selectedCanvasUuid;
+        const isSandbox = activeUuid && activeUuid.startsWith('sandbox_');
+
+        if (isSandbox) {
+            const resultDialog = await window.modalSystem.show('confirmDeleteSandbox');
+            if (!resultDialog.confirmed) return;
+
+            setButtonLoading(btn);
+
+            const realUuid = activeUuid.replace('sandbox_', '');
+
+            // 1. Delete from localStorage list
+            let localList = [];
+            try {
+                const listJson = localStorage.getItem('rosaura_sandboxes_list');
+                if (listJson) localList = JSON.parse(listJson);
+            } catch (e) {}
+
+            const filteredList = localList.filter(s => s.uuid !== realUuid);
+            localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(filteredList));
+
+            // 2. Delete from IndexedDB
+            try {
+                const DesignSandboxDbModule = await import('../../app/design/DesignSandboxDb.js');
+                const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+                await DesignSandboxDb.deleteSandboxData(realUuid);
+            } catch (e) {
+                console.error('[Sandbox Delete] Failed to delete from IndexedDB:', e);
+            }
+
+            // 3. Optional: Delete from server if logged in
+            const activeUserId = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+            if (activeUserId) {
+                try {
+                    await this.api.post('sandbox.delete', { uuid: realUuid });
+                } catch (e) {}
+            }
+
+            restoreButton(btn);
+            showMessage('Lienzo Sandbox eliminado con éxito', 'success');
+            
+            this.selectedCanvasIds.clear();
+            this.selectedCanvasUuid = null;
+            this.currentCanvasSize = null;
+
+            setTimeout(() => {
+                if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
+                else window.location.reload();
+            }, 1000);
+            return;
+        }
 
         const resultDialog = await window.modalSystem.show('verifyPasswordDeleteCanvases', { count: this.selectedCanvasIds.size });
 
@@ -330,12 +388,21 @@ class CanvasesManageController {
         const btnDelete = document.querySelector('[data-ref="btn-action-delete"]');
 
         const navButtons = [btnEdit, btnMembers, btnSanctions, btnRoles, btnInvites, btnResets, btnSnapshots, btnResize];
+        const cloudOnlyButtons = [btnMembers, btnSanctions, btnRoles, btnInvites, btnResets, btnSnapshots, btnResize, btnCreateSnapshot];
 
         if (this.selectedCanvasIds.size > 0) {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
             if (this.selectedCanvasIds.size > 1) {
+                // If multiple selected, check if any is a sandbox
+                let hasSandbox = false;
+                document.querySelectorAll('[data-action="selectCanvas"].selected').forEach(row => {
+                    if (row.getAttribute('data-is-sandbox') === 'true') {
+                        hasSandbox = true;
+                    }
+                });
+
                 navButtons.forEach(btn => {
                     if (btn) {
                         btn.classList.add('disabled-interaction');
@@ -343,85 +410,123 @@ class CanvasesManageController {
                     }
                 });
                 if (btnCreateSnapshot) btnCreateSnapshot.classList.add('disabled-interaction');
-                if (btnDelete) btnDelete.classList.add('disabled-interaction');
-            } else {
-                navButtons.forEach(btn => {
-                    if (btn) btn.classList.remove('disabled-interaction');
-                });
-                if (btnCreateSnapshot) btnCreateSnapshot.classList.remove('disabled-interaction');
-                if (btnDelete) btnDelete.classList.remove('disabled-interaction');
-
-                let activeUuid = this.selectedCanvasUuid;
-                let activeSize = this.currentCanvasSize;
-                let isOwner = false;
-                let perms = [];
-
-                const activeRow = document.querySelector('[data-action="selectCanvas"].selected');
-                if (activeRow) {
-                    if (!activeUuid && this.selectedCanvasIds.size === 1) {
-                        activeUuid = activeRow.getAttribute('data-uuid');
-                        activeSize = activeRow.getAttribute('data-size');
-                        this.selectedCanvasUuid = activeUuid;
-                        this.currentCanvasSize = activeSize;
-                    }
-                    isOwner = activeRow.getAttribute('data-is-owner') === '1';
-                    try { perms = JSON.parse(activeRow.getAttribute('data-user-permissions') || '[]'); } catch(e){}
-                }
-
-                if (btnEdit) {
-                    if (!isOwner && !perms.includes(2)) btnEdit.classList.add('disabled-interaction');
-                    else btnEdit.setAttribute('data-nav', `${this.basePath}/canvases/edit/${activeUuid}`);
-                }
-                if (btnMembers) {
-                    if (!isOwner && !perms.includes(3)) btnMembers.classList.add('disabled-interaction');
-                    else btnMembers.setAttribute('data-nav', `${this.basePath}/canvases/members/${activeUuid}`);
-                }
-                if (btnSanctions) {
-                    if (!isOwner && !perms.includes(8)) btnSanctions.classList.add('disabled-interaction');
-                    else btnSanctions.setAttribute('data-nav', `${this.basePath}/canvases/manage/sanctions/${activeUuid}`);
-                }
-                if (btnRoles) {
-                    if (!isOwner && !perms.includes(4)) btnRoles.classList.add('disabled-interaction');
-                    else btnRoles.setAttribute('data-nav', `${this.basePath}/canvases/manage/roles/${activeUuid}`);
-                }
-                if (btnInvites) {
-                    if (!isOwner && !perms.includes(9)) btnInvites.classList.add('disabled-interaction');
-                    else btnInvites.setAttribute('data-nav', `${this.basePath}/canvases/manage/invites/${activeUuid}`);
-                }
-                
-                if (btnResets) {
-                    if (!isOwner && !perms.includes(7)) {
-                        btnResets.classList.add('disabled-interaction');
-                    } else {
-                        btnResets.classList.remove('disabled-interaction');
-                        btnResets.setAttribute('data-nav', `${this.basePath}/canvases/manage/resets/${activeUuid}`);
-                    }
-                }
-                if (btnSnapshots) {
-                    if (!isOwner && !perms.includes(6)) {
-                        btnSnapshots.classList.add('disabled-interaction');
-                    } else {
-                        btnSnapshots.classList.remove('disabled-interaction');
-                        btnSnapshots.setAttribute('data-nav', `${this.basePath}/design/s/${activeUuid}`);
-                    }
-                }
-                if (btnCreateSnapshot) {
-                    if (!isOwner && !perms.includes(10)) btnCreateSnapshot.classList.add('disabled-interaction');
-                }
-                
                 if (btnDelete) {
-                    if (!isOwner) btnDelete.classList.add('disabled-interaction');
+                    if (hasSandbox) {
+                        btnDelete.classList.add('disabled-interaction');
+                    } else {
+                        btnDelete.classList.remove('disabled-interaction');
+                    }
                 }
-                
-                if (btnResize) {
-                    if (!isOwner && !perms.includes(2)) btnResize.classList.add('disabled-interaction');
-                    else btnResize.setAttribute('data-nav', `${this.basePath}/canvases/manage/resize/${activeUuid}`);
+            } else {
+                const activeRow = document.querySelector('[data-action="selectCanvas"].selected');
+                const isSandbox = activeRow && activeRow.getAttribute('data-is-sandbox') === 'true';
+
+                if (isSandbox) {
+                    // Hide all cloud-only buttons by adding .disabled class
+                    cloudOnlyButtons.forEach(btn => {
+                        if (btn) btn.classList.add('disabled');
+                    });
+
+                    // Ensure edit and delete are NOT hidden and are active
+                    if (btnEdit) {
+                        btnEdit.classList.remove('disabled');
+                        btnEdit.classList.remove('disabled-interaction');
+                        btnEdit.setAttribute('data-nav', `${this.basePath}/canvases/edit/${this.selectedCanvasUuid}`);
+                    }
+                    if (btnDelete) {
+                        btnDelete.classList.remove('disabled');
+                        btnDelete.classList.remove('disabled-interaction');
+                    }
+                } else {
+                    // Ensure cloud buttons are visible (remove .disabled)
+                    cloudOnlyButtons.forEach(btn => {
+                        if (btn) btn.classList.remove('disabled');
+                    });
+                    if (btnEdit) btnEdit.classList.remove('disabled');
+
+                    navButtons.forEach(btn => {
+                        if (btn) btn.classList.remove('disabled-interaction');
+                    });
+                    if (btnCreateSnapshot) btnCreateSnapshot.classList.remove('disabled-interaction');
+                    if (btnDelete) btnDelete.classList.remove('disabled-interaction');
+
+                    let activeUuid = this.selectedCanvasUuid;
+                    let activeSize = this.currentCanvasSize;
+                    let isOwner = false;
+                    let perms = [];
+
+                    if (activeRow) {
+                        if (!activeUuid && this.selectedCanvasIds.size === 1) {
+                            activeUuid = activeRow.getAttribute('data-uuid');
+                            activeSize = activeRow.getAttribute('data-size');
+                            this.selectedCanvasUuid = activeUuid;
+                            this.currentCanvasSize = activeSize;
+                        }
+                        isOwner = activeRow.getAttribute('data-is-owner') === '1';
+                        try { perms = JSON.parse(activeRow.getAttribute('data-user-permissions') || '[]'); } catch(e){}
+                    }
+
+                    if (btnEdit) {
+                        if (!isOwner && !perms.includes(2)) btnEdit.classList.add('disabled-interaction');
+                        else btnEdit.setAttribute('data-nav', `${this.basePath}/canvases/edit/${activeUuid}`);
+                    }
+                    if (btnMembers) {
+                        if (!isOwner && !perms.includes(3)) btnMembers.classList.add('disabled-interaction');
+                        else btnMembers.setAttribute('data-nav', `${this.basePath}/canvases/members/${activeUuid}`);
+                    }
+                    if (btnSanctions) {
+                        if (!isOwner && !perms.includes(8)) btnSanctions.classList.add('disabled-interaction');
+                        else btnSanctions.setAttribute('data-nav', `${this.basePath}/canvases/manage/sanctions/${activeUuid}`);
+                    }
+                    if (btnRoles) {
+                        if (!isOwner && !perms.includes(4)) btnRoles.classList.add('disabled-interaction');
+                        else btnRoles.setAttribute('data-nav', `${this.basePath}/canvases/manage/roles/${activeUuid}`);
+                    }
+                    if (btnInvites) {
+                        if (!isOwner && !perms.includes(9)) btnInvites.classList.add('disabled-interaction');
+                        else btnInvites.setAttribute('data-nav', `${this.basePath}/canvases/manage/invites/${activeUuid}`);
+                    }
+                    
+                    if (btnResets) {
+                        if (!isOwner && !perms.includes(7)) {
+                            btnResets.classList.add('disabled-interaction');
+                        } else {
+                            btnResets.classList.remove('disabled-interaction');
+                            btnResets.setAttribute('data-nav', `${this.basePath}/canvases/manage/resets/${activeUuid}`);
+                        }
+                    }
+                    if (btnSnapshots) {
+                        if (!isOwner && !perms.includes(6)) {
+                            btnSnapshots.classList.add('disabled-interaction');
+                        } else {
+                            btnSnapshots.classList.remove('disabled-interaction');
+                            btnSnapshots.setAttribute('data-nav', `${this.basePath}/design/s/${activeUuid}`);
+                        }
+                    }
+                    if (btnCreateSnapshot) {
+                        if (!isOwner && !perms.includes(10)) btnCreateSnapshot.classList.add('disabled-interaction');
+                    }
+                    
+                    if (btnDelete) {
+                        if (!isOwner) btnDelete.classList.add('disabled-interaction');
+                    }
+                    
+                    if (btnResize) {
+                        if (!isOwner && !perms.includes(2)) btnResize.classList.add('disabled-interaction');
+                        else btnResize.setAttribute('data-nav', `${this.basePath}/canvases/manage/resize/${activeUuid}`);
+                    }
                 }
             }
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');
             if (defaultMode) defaultMode.classList.replace('disabled', 'active');
             
+            // Remove all .disabled overrides so the default state looks clean
+            cloudOnlyButtons.forEach(btn => {
+                if (btn) btn.classList.remove('disabled');
+            });
+            if (btnEdit) btnEdit.classList.remove('disabled');
+
             navButtons.forEach(btn => {
                 if (btn) btn.setAttribute('data-nav', '');
             });
@@ -488,6 +593,229 @@ class CanvasesManageController {
             if (visibleCount === 0 && items.length > 0) emptyElement.classList.remove('disabled');
             else emptyElement.classList.add('disabled');
         }
+    }
+
+    insertSandboxRows() {
+        const tbody = document.querySelector('[data-ref="view-table"] tbody');
+        if (!tbody) return;
+
+        // Remove any existing sandbox rows to avoid duplication
+        tbody.querySelectorAll('[data-is-sandbox="true"]').forEach(row => row.remove());
+
+        let localList = [];
+        try {
+            const listJson = localStorage.getItem('rosaura_sandboxes_list');
+            if (listJson) localList = JSON.parse(listJson);
+        } catch (e) {}
+
+        if (localList.length === 0) return;
+
+        const activeUserId = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+
+        // Insert at the beginning of the table body
+        localList.forEach(sb => {
+            const row = document.createElement('tr');
+            row.className = 'component-table-row';
+            row.setAttribute('data-action', 'selectCanvas');
+            row.setAttribute('data-canvas-id', `sandbox_${sb.uuid}`);
+            row.setAttribute('data-uuid', `sandbox_${sb.uuid}`);
+            row.setAttribute('data-size', `${sb.width || sb.size || 64}x${sb.height || sb.size || 64}`);
+            row.setAttribute('data-is-owner', '1');
+            row.setAttribute('data-is-sandbox', 'true');
+            row.setAttribute('data-user-permissions', '[]');
+
+            // Format date
+            let dateStr = '-';
+            if (sb.createdAt) {
+                const date = new Date(sb.createdAt);
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                dateStr = `${day}/${month}/${year}`;
+            }
+
+            // Sync status and tooltip
+            let syncStatusHtml = '';
+            let syncTooltip = 'No sincronizado con la nube';
+            const isSynced = activeUserId && sb.syncedAt;
+            if (isSynced) {
+                const syncDate = new Date(sb.syncedAt);
+                const day = String(syncDate.getDate()).padStart(2, '0');
+                const month = String(syncDate.getMonth() + 1).padStart(2, '0');
+                const year = syncDate.getFullYear();
+                const hours = String(syncDate.getHours()).padStart(2, '0');
+                const minutes = String(syncDate.getMinutes()).padStart(2, '0');
+                syncTooltip = `Sincronizado: ${day}/${month}/${year} ${hours}:${minutes}`;
+                
+                syncStatusHtml = `
+                    <div class="component-badge component-badge--sm" data-tooltip="${syncTooltip}" data-position="top">
+                        <span class="material-symbols-rounded" style="color: #4caf50; font-weight: bold;">cloud_done</span>
+                        <span class="search-target">Sincronizado</span>
+                    </div>
+                `;
+            } else {
+                syncStatusHtml = `
+                    <div class="component-badge component-badge--sm" data-tooltip="${syncTooltip}" data-position="top">
+                        <span class="material-symbols-rounded" style="color: #ff9800; font-weight: bold;">cloud_off</span>
+                        <span class="search-target">Local</span>
+                    </div>
+                `;
+            }
+
+            row.innerHTML = `
+                <td>
+                    <div class="td-user-info">
+                        <div class="component-badge component-badge--sm component-badge--warning">
+                            <span class="material-symbols-rounded">science</span>
+                            <span class="search-target">${this.escapeHtml(sb.name || 'Sandbox')}</span>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="component-badge component-badge--sm component-badge--primary">
+                        <span>Propietario</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="component-badge component-badge--sm component-badge--warning">
+                        <span class="material-symbols-rounded">science</span>
+                        <span class="search-target">Sandbox</span>
+                    </div>
+                </td>
+                <td>
+                    ${syncStatusHtml}
+                </td>
+                <td>
+                    <div class="component-badge component-badge--sm">
+                        <span class="material-symbols-rounded">aspect_ratio</span>
+                        <span class="search-target">${sb.width || sb.size || 64}x${sb.height || sb.size || 64}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="component-badge component-badge--sm">
+                        <span class="material-symbols-rounded">groups</span>
+                        <span class="search-target">-</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="component-badge component-badge--sm">
+                        <span class="material-symbols-rounded">favorite</span>
+                        <span class="search-target">-</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="component-badge component-badge--sm">
+                        <span class="material-symbols-rounded">calendar_month</span>
+                        <span>${dateStr}</span>
+                    </div>
+                </td>
+            `;
+            // Insert at top of tbody
+            tbody.insertBefore(row, tbody.firstChild);
+        });
+
+        // Initialize tooltips on dynamically added elements
+        if (window.TooltipSystem && typeof window.TooltipSystem.initialize === 'function') {
+            window.TooltipSystem.initialize();
+        }
+    }
+
+    syncOfflineSandboxes(btn) {
+        const activeUserId = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+        if (!activeUserId) {
+            showMessage('Inicia sesión para sincronizar tus sandboxes en la nube.', 'warning');
+            return;
+        }
+
+        setButtonLoading(btn);
+
+        this.api.post('sandbox.sync_list', { sandboxes: [] })
+            .then(async response => {
+                if (response && response.success && response.sandboxes) {
+                    let localList = [];
+                    try {
+                        const listJson = localStorage.getItem('rosaura_sandboxes_list');
+                        if (listJson) localList = JSON.parse(listJson);
+                    } catch (e) {}
+
+                    const sandboxesToSync = localList.map(sb => ({
+                        uuid: sb.uuid,
+                        name: sb.name || 'Sandbox',
+                        width: parseInt(sb.size || sb.width || 64, 10),
+                        height: parseInt(sb.size || sb.height || 64, 10),
+                        palette: sb.palette || 'default',
+                        cooldownBatch: parseInt(sb.cooldownBatch || sb.cooldown_batch || 100, 10)
+                    }));
+
+                    const syncRes = await this.api.post('sandbox.sync_list', { sandboxes: sandboxesToSync });
+
+                    if (syncRes && syncRes.success && syncRes.sandboxes) {
+                        const cloudList = syncRes.sandboxes;
+                        const DesignSandboxDbModule = await import('../../app/design/DesignSandboxDb.js');
+                        const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
+
+                        const updatedLocalList = [];
+
+                        for (const cloudSb of cloudList) {
+                            const localMatch = localList.find(s => s.uuid === cloudSb.uuid);
+                            
+                            if (!localMatch) {
+                                try {
+                                    const stateRes = await this.api.post('sandbox.get_state', { uuid: cloudSb.uuid });
+                                    if (stateRes && stateRes.success && stateRes.settings) {
+                                        await DesignSandboxDb.saveSettings(stateRes.settings, cloudSb.uuid);
+                                        if (stateRes.chunks) {
+                                            for (const [key, base64Data] of Object.entries(stateRes.chunks)) {
+                                                await DesignSandboxDb.saveChunk(key, base64Data, cloudSb.uuid);
+                                            }
+                                        }
+                                    }
+                                } catch (err) {
+                                    console.warn('[Lobby Sync] Failed to download state for sandbox:', cloudSb.uuid, err);
+                                }
+                            }
+
+                            updatedLocalList.push({
+                                uuid: cloudSb.uuid,
+                                name: cloudSb.name,
+                                size: cloudSb.width,
+                                width: cloudSb.width,
+                                height: cloudSb.height,
+                                palette: cloudSb.palette,
+                                cooldownBatch: cloudSb.cooldownBatch,
+                                createdAt: localMatch ? (localMatch.createdAt || Date.now()) : Date.now(),
+                                syncedAt: Date.now()
+                            });
+                        }
+
+                        localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(updatedLocalList));
+                        
+                        this.insertSandboxRows();
+                        showMessage('Sincronización de sandboxes completada con éxito', 'success');
+                    } else {
+                        showMessage('Error al sincronizar con la nube', 'error');
+                    }
+                } else {
+                    showMessage('Error al sincronizar con la nube', 'error');
+                }
+            })
+            .catch(e => {
+                console.error('[Sync] Error synchronizing sandboxes:', e);
+                showMessage('Error al sincronizar con la nube', 'error');
+            })
+            .finally(() => {
+                restoreButton(btn);
+            });
+    }
+
+    escapeHtml(str) {
+        if (!str) return '';
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 }
 

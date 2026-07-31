@@ -595,49 +595,79 @@ class CanvasViewService {
         $canCreateOfficial = false;
         $cOfficial = false;
         $cTags = [];
+        $isSandbox = false;
 
         if ($canvasUuid) {
-            try {
-                $db = new DatabaseManager();
-                $pdo = $db->getConnection(defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
-                $stmt = $pdo->prepare("SELECT * FROM canvases WHERE uuid = :uuid LIMIT 1");
-                $stmt->execute(['uuid' => $canvasUuid]);
-                $canvasData = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (str_starts_with($canvasUuid, 'sandbox_')) {
+                $isSandbox = true;
+                $realUuid = substr($canvasUuid, 8);
+                $canvasId = 'sandbox_' . $realUuid;
+                $cName = 'Sandbox';
+                $cSize = '64x64';
+                $cBatch = 100;
+                $cLimit = 1;
+                $cAllowPurchases = 0;
+                $cAllowChat = 0;
 
-                if ($canvasData) {
-                    $userPerms = $_SESSION['user_permissions'] ?? [];
-                    $canManageOfficial = in_array(PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPerms);
-                    $canCreateOfficial = in_array(PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
+                try {
+                    $db = new DatabaseManager();
+                    $pdo = $db->getConnection(defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
+                    $stmt = $pdo->prepare("SELECT * FROM user_sandboxes WHERE uuid = :uuid LIMIT 1");
+                    $stmt->execute(['uuid' => $realUuid]);
+                    $sbData = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-                    $isOwner = ((int)$canvasData['owner_id'] === (int)$userId)
-                               || ($canvasData['owner_id'] === null && $canManageOfficial);
-                    
-                    $hasPerm = false;
-                    if (!$isOwner) {
-                        $hasPerm = $this->hasCanvasPermission($pdo, (int)$canvasData['id'], (int)$userId, 2);
+                    if ($sbData) {
+                        $cName = htmlspecialchars($sbData['name'] ?? 'Sandbox');
+                        $cSize = htmlspecialchars(($sbData['width'] ?? 64) . 'x' . ($sbData['height'] ?? 64));
+                        $cPalette = htmlspecialchars($sbData['palette_id'] ?? 'default');
+                        $cBatch = (int)($sbData['cooldown_batch'] ?? 100);
                     }
-                    if ($isOwner || $hasPerm) {
-                        $canvasId = (int)$canvasData['id'];
-                    $cName = htmlspecialchars($canvasData['name'] ?? '');
-                    $cSize = htmlspecialchars($canvasData['size'] ?? '64');
-                    $cPrivacy = $canvasData['privacy'] ?? 'private';
-                    $cApproval = (int)($canvasData['requires_approval'] ?? 0);
-                    $cPalette = htmlspecialchars($canvasData['palette_id'] ?? 'default');
-                    $cBatch = (int)($canvasData['cooldown_pixels_batch'] ?? 5);
-                    $cCooldown = (int)($canvasData['cooldown_seconds'] ?? 10);
-                    $cLimit = (int)($canvasData['max_participants'] ?? 10);
-                    $cAllowPurchases = (int)($canvasData['allow_purchases'] ?? 1);
-                    $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
-                    
-                    $cOfficial = (bool)($canvasData['is_official'] ?? 0);
+                } catch (\Throwable $e) {
+                    // Ignore DB errors, fallback to default/local values
+                }
+            } else {
+                try {
+                    $db = new DatabaseManager();
+                    $pdo = $db->getConnection(defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
+                    $stmt = $pdo->prepare("SELECT * FROM canvases WHERE uuid = :uuid LIMIT 1");
+                    $stmt->execute(['uuid' => $canvasUuid]);
+                    $canvasData = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-                    if (!empty($canvasData['tags'])) {
-                        $cTags = json_decode($canvasData['tags'], true) ?? [];
+                    if ($canvasData) {
+                        $userPerms = $_SESSION['user_permissions'] ?? [];
+                        $canManageOfficial = in_array(PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $userPerms);
+                        $canCreateOfficial = in_array(PermissionsConstants::CANVASES_CREATE_OFFICIAL, $userPerms);
+
+                        $isOwner = ((int)$canvasData['owner_id'] === (int)$userId)
+                                   || ($canvasData['owner_id'] === null && $canManageOfficial);
+                        
+                        $hasPerm = false;
+                        if (!$isOwner) {
+                            $hasPerm = $this->hasCanvasPermission($pdo, (int)$canvasData['id'], (int)$userId, 2);
+                        }
+                        if ($isOwner || $hasPerm) {
+                            $canvasId = (int)$canvasData['id'];
+                            $cName = htmlspecialchars($canvasData['name'] ?? '');
+                            $cSize = htmlspecialchars($canvasData['size'] ?? '64');
+                            $cPrivacy = $canvasData['privacy'] ?? 'private';
+                            $cApproval = (int)($canvasData['requires_approval'] ?? 0);
+                            $cPalette = htmlspecialchars($canvasData['palette_id'] ?? 'default');
+                            $cBatch = (int)($canvasData['cooldown_pixels_batch'] ?? 5);
+                            $cCooldown = (int)($canvasData['cooldown_seconds'] ?? 10);
+                            $cLimit = (int)($canvasData['max_participants'] ?? 10);
+                            $cAllowPurchases = (int)($canvasData['allow_purchases'] ?? 1);
+                            $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
+                            
+                            $cOfficial = (bool)($canvasData['is_official'] ?? 0);
+
+                            if (!empty($canvasData['tags'])) {
+                                $cTags = json_decode($canvasData['tags'], true) ?? [];
+                            }
+                        }
                     }
+                } catch (\Throwable $e) {
+                    Logger::error("getWorkspaceEditData canvas query error: " . $e->getMessage(), ['exception' => $e]);
                 }
-                }
-            } catch (\Throwable $e) {
-                Logger::error("getWorkspaceEditData canvas query error: " . $e->getMessage(), ['exception' => $e]);
             }
         }
 
@@ -660,7 +690,8 @@ class CanvasViewService {
             'cAllowChat' => $cAllowChat,
             'canCreateOfficial' => $canCreateOfficial,
             'cOfficial' => $cOfficial,
-            'cTags' => $cTags
+            'cTags' => $cTags,
+            'isSandbox' => $isSandbox
         ];
     }
 

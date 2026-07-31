@@ -292,17 +292,7 @@ export class CanvasCardInteractions {
                         <div class="pill-container"><div class="drag-handle"></div></div>
                         
                         <div class="component-menu-list">
-                            <button type="button" class="component-menu-link" data-action="openCanvasNewTab" data-uuid="${uuid}">
-                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">open_in_new</span></div>
-                                <div class="component-menu-link-text"><span>Abrir en nueva pestaña</span></div>
-                            </button>
-
-                            <button type="button" class="component-menu-link" data-action="copyCanvasLink" data-uuid="${uuid}">
-                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">content_copy</span></div>
-                                <div class="component-menu-link-text"><span>Copiar enlace</span></div>
-                            </button>
-
-                            <button type="button" class="component-menu-link component-menu-link--bordered" data-action="renameSandbox" data-id="${id}" data-uuid="${uuid}">
+                            <button type="button" class="component-menu-link" data-action="renameSandbox" data-id="${id}" data-uuid="${uuid}">
                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">edit</span></div>
                                 <div class="component-menu-link-text"><span>Cambiar Nombre</span></div>
                             </button>
@@ -635,7 +625,7 @@ export class CanvasCardInteractions {
 
             // Actualizar en IndexedDB
             try {
-                const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
+                const DesignSandboxDbModule = await import('../../modules/app/design/DesignSandboxDb.js');
                 const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
                 const settings = await DesignSandboxDb.getSettings(realUuid);
                 if (settings) {
@@ -682,7 +672,7 @@ export class CanvasCardInteractions {
 
             // Eliminar de IndexedDB
             try {
-                const DesignSandboxDbModule = await import('../design/DesignSandboxDb.js');
+                const DesignSandboxDbModule = await import('../../modules/app/design/DesignSandboxDb.js');
                 const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
                 await DesignSandboxDb.deleteSandboxData(realUuid);
             } catch (e) {

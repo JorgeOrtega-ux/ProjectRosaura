@@ -78,6 +78,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
+                    <?php if (isset($_SESSION['active_account_id']) || isset($_SESSION['user_id'])): ?>
+                    <button class="component-button component-button--icon component-button--h40" data-action="syncOfflineSandboxes" data-ref="btn-manage-sync" data-tooltip="Sincronizar Sandboxes con la nube" data-position="bottom">
+                        <span class="material-symbols-rounded">sync</span>
+                    </button>
+                    <?php endif; ?>
                     
                     <button class="component-button component-button--icon component-button--h40" data-action="searchCanvas" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_canvas_placeholder'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">search</span>

@@ -494,6 +494,15 @@ export const ModalTemplates = {
         })
     },
 
+    confirmDeleteSandbox: {
+        build: () => ModalTemplates.confirmAction.build({
+            titleKey: 'Eliminar lienzo Sandbox',
+            descHtml: 'Al eliminar este lienzo Sandbox, se borrarán todos sus datos locales de forma permanente. Si el lienzo ha sido sincronizado con la nube, también se eliminará de tu cuenta en el servidor. ¿Deseas continuar?',
+            confirmClass: 'component-button--danger',
+            confirmKey: 'Eliminar'
+        })
+    },
+
     verifyPasswordDeleteCanvas: {
         build: () => ModalTemplates.verifyPasswordDialog.build({
             titleKey: 'title_confirm_delete_canvas',

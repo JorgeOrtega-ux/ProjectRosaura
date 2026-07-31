@@ -52,6 +52,11 @@ const DesignInteractionsBase = {
         }
 
         if (this.isSandbox) {
+            // Evitar conflictos con los controles dentro de modales gestionados por ModalSystem
+            if (e.target.closest('.component-modal-box, .component-modal, #modal_overlay')) {
+                return;
+            }
+
             const btnToggleDropdown = e.target.closest('[data-action="toggleDropdown"]');
             if (btnToggleDropdown) {
                 e.preventDefault();

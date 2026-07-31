@@ -160,8 +160,8 @@ extract($createData);
 
                             <!-- 3. Lienzo Oficial -->
                             <?php if ($canCreateOfficial): ?>
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap">
+                            <hr class="component-divider" data-compatible="cloud">
+                            <div data-compatible="cloud" class="component-group-item component-group-item--wrap">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('canvas_is_official_title'); ?></h2>
@@ -398,8 +398,8 @@ extract($createData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider" data-compatible="cloud">
+                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_cooldown_seconds_title'); ?></h2>
@@ -428,8 +428,8 @@ extract($createData);
                             </div>
                         </div>
                     </div>
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--stacked">
+                            <hr class="component-divider" data-compatible="cloud">
+                            <div data-compatible="cloud" class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_limit_title'); ?></h2>

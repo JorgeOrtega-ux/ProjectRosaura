@@ -963,5 +963,21 @@ return [
             ],
         ],
     ],
+    'sandbox.delete' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasSandboxController',
+        'action' => 'delete',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'sandbox_delete',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
 ];
 

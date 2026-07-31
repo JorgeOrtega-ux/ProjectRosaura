@@ -12,34 +12,16 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             ? `data-nav="${basePath}/design/sandbox/${realUuid}"` 
             : `data-nav="${basePath}/design/${uuid}"`;
 
-        let imgHtml = '';
-        if (isLocalSandbox) {
-            if (canvas.thumbnail_url) {
-                imgHtml = `
-                    <img src="${canvas.thumbnail_url}" 
-                         alt="${name}" 
-                         class="component-gallery-card__image image-lazy-fade image-loaded" 
-                         loading="lazy" 
-                         decoding="async">`;
-            } else {
-                imgHtml = `
-                    <div ${navAction} class="component-gallery-card__image-placeholder" style="background: linear-gradient(135deg, #FF9800, #F44336); display: flex; align-items: center; justify-content: center; height: 100%; min-height: 150px; color: white; cursor: pointer;">
-                        <span class="material-symbols-rounded" style="font-size: 52px; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">architecture</span>
-                    </div>
-                `;
-            }
-        } else {
-            const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
-            const srcUrl = canvas.thumbnail_url ? escapeHTML(canvas.thumbnail_url) : fallbackImg;
-            imgHtml = `
-                <img src="${srcUrl}" 
-                     alt="${name}" 
-                     class="component-gallery-card__image image-lazy-fade" 
-                     loading="lazy" 
-                     decoding="async" 
-                     onload="this.classList.add('image-loaded')"
-                     onerror="this.onerror=null; this.src='${fallbackImg}'; this.classList.add('image-loaded');">`;
-        }
+        const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
+        const srcUrl = canvas.thumbnail_url ? escapeHTML(canvas.thumbnail_url) : fallbackImg;
+        const imgHtml = `
+            <img src="${srcUrl}" 
+                 alt="${name}" 
+                 class="component-gallery-card__image image-lazy-fade" 
+                 loading="lazy" 
+                 decoding="async" 
+                 onload="this.classList.add('image-loaded')"
+                 onerror="this.onerror=null; this.src='${fallbackImg}'; this.classList.add('image-loaded');">`;
 
         const onlinePlayers = parseInt(canvas.online_players || 0, 10);
         const membersCount = parseInt(canvas.members_count || 0, 10);
@@ -53,9 +35,6 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                     <div class="component-badge component-badge--warning">
                         <span class="material-symbols-rounded">science</span>
                         <span>Sandbox</span>
-                        <span class="component-badge-divider">|</span>
-                        <span class="material-symbols-rounded" style="font-size: 14px; margin-right: 4px;">signal_wifi_off</span>
-                        <span>Sin conexión</span>
                     </div>
                 </div>
             `;
@@ -109,6 +88,8 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
 
         const linkClass = '';
 
+        const cardUuid = isLocalSandbox && !uuid.startsWith('sandbox_') ? `sandbox_${uuid}` : uuid;
+
         return `
             <div class="component-gallery-card" data-card-id="${canvas.id}">
                 ${warningOverlay}
@@ -126,7 +107,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                             <span class="material-symbols-rounded component-icon--20">favorite</span>
                         </button>
                         ` : ''}
-                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleDynamicMenu" data-id="${canvas.id}" data-uuid="${uuid}" data-owner="${canvas.is_owner ? '1' : '0'}" data-locked="${canvas.locked_requires_downgrade ? '1' : '0'}" data-member="${canvas.is_member ? '1' : '0'}">
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleDynamicMenu" data-id="${canvas.id}" data-uuid="${cardUuid}" data-owner="${canvas.is_owner ? '1' : '0'}" data-locked="${canvas.locked_requires_downgrade ? '1' : '0'}" data-member="${canvas.is_member ? '1' : '0'}">
                             <span class="material-symbols-rounded">more_vert</span>
                         </button>
                     </div>

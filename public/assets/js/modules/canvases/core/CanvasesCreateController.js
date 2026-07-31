@@ -53,7 +53,7 @@ class CanvasesCreateController {
 
         // Check if mode is sandbox in URL or user is guest
         const urlParams = new URLSearchParams(window.location.search);
-        const isGuest = typeof window.appUser === "undefined" || !window.appUser;
+        const isGuest = !window.activeUserId;
         if (urlParams.get("mode") === "sandbox" || isGuest) {
             const sandboxBtn = document.querySelector('[data-action="setCanvasType"][data-type="sandbox"]');
             if (sandboxBtn) {
@@ -281,6 +281,15 @@ class CanvasesCreateController {
         const type = btn.getAttribute("data-type");
         const label = btn.getAttribute("data-label");
         
+        // Update active class in dropdown menu links
+        const menuList = btn.closest('.component-menu-list');
+        if (menuList) {
+            menuList.querySelectorAll('.component-menu-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            btn.classList.add('active');
+        }
+
         // Update dropdown text
         const triggerText = document.getElementById("text-canvastype");
         if (triggerText && label) {
@@ -297,17 +306,30 @@ class CanvasesCreateController {
         // Save state
         this.formState.canvas_type = type;
         const trigger = document.getElementById("canvastype_dropdown_trigger");
-        if (trigger) trigger.setAttribute("data-val", type);
+        if (trigger) {
+            trigger.setAttribute("data-val", type);
+            const iconSpan = trigger.querySelector('.material-symbols-rounded:first-child');
+            if (iconSpan) {
+                iconSpan.textContent = type === "sandbox" ? "science" : "cloud";
+                if (type === "sandbox") {
+                    iconSpan.classList.remove("msr-cloud");
+                    iconSpan.classList.add("msr-science");
+                } else {
+                    iconSpan.classList.remove("msr-science");
+                    iconSpan.classList.add("msr-cloud");
+                }
+            }
+        }
         
-        // Show/hide compatible blocks using a CSS class
+        // Show/hide compatible blocks using the standard disabled class
         const cloudBlocks = document.querySelectorAll('[data-compatible="cloud"]');
         if (type === "sandbox") {
             cloudBlocks.forEach(el => {
-                el.classList.add("component-hidden");
+                el.classList.add("disabled");
             });
         } else {
             cloudBlocks.forEach(el => {
-                el.classList.remove("component-hidden");
+                el.classList.remove("disabled");
             });
         }
     }
@@ -571,8 +593,8 @@ class CanvasesCreateController {
     }
 
     async submitCanvas(btn) {
-        const typeInput = document.querySelector('[data-ref="input-canvastype"]');
-        const isSandbox = typeInput && typeInput.value === "sandbox";
+        const trigger = document.getElementById("canvastype_dropdown_trigger");
+        const isSandbox = (trigger && trigger.getAttribute("data-val") === "sandbox") || this.formState.canvas_type === "sandbox";
 
         const inputName = document.querySelector('[data-ref="input-canvasname"]');
         if (inputName) {
@@ -641,7 +663,7 @@ class CanvasesCreateController {
     }
 
     async prepaintSandboxWithTemplate(uuid, relativeImgPath, width, height) {
-        const DesignSandboxDbModule = await import('../../design/DesignSandboxDb.js');
+        const DesignSandboxDbModule = await import('../../app/design/DesignSandboxDb.js');
         const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
 
         return new Promise((resolve, reject) => {
@@ -734,7 +756,7 @@ class CanvasesCreateController {
         localStorage.setItem('rosaura_sandboxes_list', JSON.stringify(currentList));
 
         try {
-            const DesignSandboxDbModule = await import('../../design/DesignSandboxDb.js');
+            const DesignSandboxDbModule = await import('../../app/design/DesignSandboxDb.js');
             const DesignSandboxDb = DesignSandboxDbModule.DesignSandboxDb;
             await DesignSandboxDb.saveSettings({
                 name: name,

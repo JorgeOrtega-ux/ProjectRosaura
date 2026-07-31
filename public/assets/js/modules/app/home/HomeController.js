@@ -189,7 +189,11 @@ class HomeController {
 
         if (action === 'openCreateSandboxModal') {
             e.preventDefault();
-            this.openCreateSandboxModal();
+            if (window.spaRouter) {
+                window.spaRouter.navigate(`${this.basePath}/canvases/create?mode=sandbox`);
+            } else {
+                window.location.href = `${this.basePath}/canvases/create?mode=sandbox`;
+            }
             return;
         }
 
@@ -333,7 +337,7 @@ class HomeController {
                         <span class="material-symbols-rounded component-empty-state-icon">science</span>
                         <p class="component-empty-state-text">No tienes lienzos sandbox creados. ¡Crea uno nuevo para empezar a diseñar sin conexión!</p>
                         <div class="component-empty-state-actions">
-                            <button class="component-button component-button--h36 component-button--brand component-button--rounded-pill" data-nav="${this.basePath}/canvases/create">
+                            <button class="component-button component-button--h36 component-button--brand component-button--rounded-pill" data-nav="${this.basePath}/canvases/create?mode=sandbox">
                                 <span class="material-symbols-rounded">add_box</span>
                                 <span>Crear Primer Sandbox</span>
                             </button>
@@ -588,7 +592,8 @@ class HomeController {
                         height: cloudSb.height,
                         palette: cloudSb.palette,
                         cooldownBatch: cloudSb.cooldownBatch,
-                        createdAt: localMatch ? (localMatch.createdAt || Date.now()) : Date.now()
+                        createdAt: localMatch ? (localMatch.createdAt || Date.now()) : Date.now(),
+                        syncedAt: Date.now()
                     });
                 }
 

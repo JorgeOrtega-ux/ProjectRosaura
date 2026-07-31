@@ -417,10 +417,21 @@ export class ModalSystem {
                 if (sizeTrigger) {
                     sizeTrigger.setAttribute('data-val', value);
                 }
+                const widthInput = this.activeBox.querySelector('#sandbox_width');
+                const heightInput = this.activeBox.querySelector('#sandbox_height');
+                if (widthInput && heightInput && value) {
+                    const parts = value.split('x');
+                    widthInput.value = parts[0];
+                    heightInput.value = parts[1];
+                }
             } else if (type === 'palette') {
                 const paletteTrigger = this.activeBox.querySelector('[data-ref="sandbox_palette"]');
                 if (paletteTrigger) {
                     paletteTrigger.setAttribute('data-val', value);
+                }
+                const paletteInput = this.activeBox.querySelector('#sandbox_palette');
+                if (paletteInput) {
+                    paletteInput.value = value;
                 }
             } else if (type === 'template') {
                 const templateTrigger = this.activeBox.querySelector('[data-ref="sandbox_template_id"]');
@@ -462,7 +473,8 @@ export class ModalSystem {
             const min = parseInt(btnAdjustSandboxCooldown.getAttribute('data-min') || '1', 10);
             const max = parseInt(btnAdjustSandboxCooldown.getAttribute('data-max') || '1000', 10);
             
-            const valEl = this.activeBox.querySelector('[data-ref="sandbox_cooldown_batch"]');
+            const valEl = this.activeBox.querySelector('#sandbox_cooldown_batch_val') || this.activeBox.querySelector('[data-ref="sandbox_cooldown_batch"]');
+            const inputEl = this.activeBox.querySelector('#sandbox_cooldown_batch');
             if (valEl) {
                 let curVal = parseInt(valEl.getAttribute('data-val') || '100', 10);
                 let newVal = curVal + step;
@@ -471,6 +483,10 @@ export class ModalSystem {
                 
                 valEl.setAttribute('data-val', newVal);
                 valEl.textContent = newVal;
+                
+                if (inputEl) {
+                    inputEl.value = newVal;
+                }
             }
             return;
         }

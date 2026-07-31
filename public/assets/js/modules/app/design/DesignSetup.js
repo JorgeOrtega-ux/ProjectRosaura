@@ -151,7 +151,7 @@ export const DesignSetup = {
                         const icon = btnSync ? btnSync.querySelector('.material-symbols-rounded') : null;
                         if (icon) {
                             icon.textContent = 'cloud_done';
-                            icon.style.color = 'var(--color-success, #4caf50)';
+                            icon.style.color = '';
                         }
                     }
                 } catch (err) {
@@ -226,6 +226,14 @@ export const DesignSetup = {
             this.loadedChunks = new Set();
             this.loadingChunks = new Set();
             this.updateVisibleChunks();
+
+            const btnSync = document.querySelector('[data-ref="btn-sandbox-sync"]');
+            if (btnSync && typeof this.getSyncTooltipText === 'function') {
+                btnSync.setAttribute('data-tooltip', this.getSyncTooltipText());
+                btnSync.addEventListener('mouseenter', () => {
+                    btnSync.setAttribute('data-tooltip', this.getSyncTooltipText());
+                });
+            }
         } catch (e) {
             console.error('[Sandbox] Failed to initialize Sandbox mode:', e);
         }

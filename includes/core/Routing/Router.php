@@ -105,7 +105,7 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-        if (preg_match('#^/canvases/edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+        if (preg_match('#^/canvases/edit/([a-zA-Z0-9\-_]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/edit/:uuid'] ?? [
                 'view' => 'canvases/workspace/edit.php',
