@@ -19,6 +19,8 @@ const PERK_DISPLAY_ORDER = [
     'bomba_atomica_1',
     'bomba_racimo_1',
     'lluvia_meteoritos_1',
+    'canon_orbital_1',
+    'agujero_negro_1',
     'proteccion_pixeles_1'
 ];
 
@@ -185,7 +187,9 @@ const PerksRegistry = {
         }
         
         const maxDim = Math.min(boardWidth || 64, boardHeight || 64);
-        if (perkId === 'bomba_atomica_1') {
+        if (perkId === 'canon_orbital_1' || perkId === 'agujero_negro_1') {
+            return Math.max(10, Math.floor(maxDim * 0.5));
+        } else if (perkId === 'bomba_atomica_1') {
             return Math.max(6, Math.floor(maxDim * 0.38));
         } else if (perkId === 'bomba_racimo_1') {
             return Math.max(4, Math.floor(maxDim * 0.22));

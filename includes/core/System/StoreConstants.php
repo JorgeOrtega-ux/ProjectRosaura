@@ -16,4 +16,6 @@ class StoreConstants {
     public const PERK_CLUSTER_BOMB = 'bomba_racimo_1';
     public const PERK_ATOMIC_BOMB = 'bomba_atomica_1';
     public const PERK_METEOR_SHOWER = 'lluvia_meteoritos_1';
+    public const PERK_ORBITAL_CANNON = 'canon_orbital_1';
+    public const PERK_BLACK_HOLE = 'agujero_negro_1';
 }

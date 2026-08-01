@@ -72,6 +72,8 @@ let templatesList = [];
 
 let nuclearWarnings = [];
 let explosions = [];
+let topBarCenterX = 0;
+let topBarBottomY = 0;
 let eraserAnimations = [];
 
 let resetAnimation = null;
@@ -100,7 +102,9 @@ const EXPLOSION_STYLES = {
     'bomba_nuclear_1': 'nuclear',
     'bomba_nuclear_2': 'nuclear',
     'bomba_nuclear_3': 'nuclear',
-    'lluvia_meteoritos_1': 'medium'
+    'lluvia_meteoritos_1': 'medium',
+    'canon_orbital_1': 'nuclear',
+    'agujero_negro_1': 'blackhole'
 };
 
 function requestRender() {
@@ -871,35 +875,227 @@ function render() {
             const crossLength = outerR + (4 / scale);
 
             ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(wx - crossLength, wy);
-            ctx.lineTo(wx + crossLength, wy);
-            ctx.moveTo(wx, wy - crossLength);
-            ctx.lineTo(wx, wy + crossLength);
-            ctx.lineWidth = lineW;
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
-            ctx.stroke();
+            
+            if (warning.perkId === 'canon_orbital_1') {
+                const elapsed = now - warning.startTime;
+                const duration = warning.endTime - warning.startTime;
+                const progress = Math.min(1, Math.max(0, elapsed / duration));
+                
+                const sourceY = (topBarBottomY - transform.y) / transform.scale;
+                const sourceX = wx; // alignment
 
-            ctx.beginPath();
-            ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
-            ctx.fill();
-            ctx.lineWidth = lineW;
-            ctx.strokeStyle = '#ef4444';
-            ctx.stroke();
-
-            const duration = warning.endTime - warning.startTime;
-            const timeRatio = duration > 0 ? Math.min(1, Math.max(0, (now - warning.startTime) / duration)) : 1;
-            const innerR = outerR * (1 - timeRatio);
-
-            if (innerR > 0.1) {
+                // 1. Línea de rastreo parpadeante durante toda la carga
                 ctx.beginPath();
-                ctx.arc(wx, wy, innerR, 0, 2 * Math.PI);
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.35)';
+                ctx.moveTo(sourceX, sourceY);
+                ctx.lineTo(wx, wy);
+                ctx.lineWidth = 1 / scale;
+                ctx.strokeStyle = `rgba(239, 68, 68, ${0.15 + 0.25 * Math.sin(now / 80)})`;
+                ctx.stroke();
+
+                // Círculo exterior y cruz fija en el suelo
+                ctx.beginPath();
+                ctx.moveTo(wx - crossLength, wy);
+                ctx.lineTo(wx + crossLength, wy);
+                ctx.moveTo(wx, wy - crossLength);
+                ctx.lineTo(wx, wy + crossLength);
+                ctx.lineWidth = lineW;
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.08)';
+                ctx.fill();
+                ctx.strokeStyle = '#ef4444';
+                ctx.stroke();
+
+                // Anillo cerrándose progresivamente
+                const innerR = outerR * (1 - progress);
+                if (innerR > 0.1) {
+                    ctx.beginPath();
+                    ctx.arc(wx, wy, innerR, 0, 2 * Math.PI);
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+                    ctx.fill();
+                    ctx.strokeStyle = '#dc2626';
+                    ctx.stroke();
+                }
+            } else if (warning.perkId === 'agujero_negro_1') {
+                const elapsed = now - warning.startTime;
+                const duration = warning.endTime - warning.startTime;
+                const progress = Math.min(1, Math.max(0, elapsed / duration));
+
+                const cx = warning.x;
+                const cy = warning.y;
+
+                if (!warning.detachedPixels) {
+                    warning.detachedPixels = [];
+                }
+
+                // Check all pixels in the warning radius
+                const rInt = Math.ceil(outerR);
+                let needsFlush = false;
+
+                for (let dy = -rInt; dy <= rInt; dy++) {
+                    for (let dx = -rInt; dx <= rInt; dx++) {
+                        const px = cx + dx;
+                        const py = cy + dy;
+                        if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist <= outerR) {
+                                const hash = ((px * 17 + py * 23) % 100) / 100;
+                                const distRatio = dist / outerR;
+                                // We pull pixels in from the outside to the inside
+                                const threshold = 0.05 + distRatio * 0.75 + hash * 0.15;
+
+                                if (progress > threshold) {
+                                    const idx = py * boardWidth + px;
+                                    const colorVal = pixelBuffer ? pixelBuffer[idx] : 0;
+                                    if (colorVal !== 0) {
+                                        warning.detachedPixels.push({
+                                            x: px,
+                                            y: py,
+                                            color: colorVal,
+                                            progressStart: progress,
+                                            baseAngle: Math.atan2(dy, dx),
+                                            radius: dist
+                                        });
+                                        if (pixelBuffer) {
+                                            pixelBuffer[idx] = 0;
+                                            markDirty(px, py);
+                                            needsFlush = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (needsFlush && typeof flushDirtyRect === 'function') {
+                    flushDirtyRect();
+                }
+
+                // 1. Accretion Disk (glowing radial gradient)
+                const diskRadius = outerR * 0.45 * (1.0 + 0.05 * Math.sin(now / 250));
+                if (diskRadius > 0.1) {
+                    const grad = ctx.createRadialGradient(wx, wy, 0, wx, wy, diskRadius);
+                    grad.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)'); // Singularity
+                    grad.addColorStop(0.25, 'rgba(10, 10, 12, 1.0)'); // Dark void
+                    grad.addColorStop(0.5, 'rgba(40, 25, 60, 0.9)'); // Dark violet haze
+                    grad.addColorStop(0.75, 'rgba(100, 100, 110, 0.7)'); // Mysterious gray dust
+                    grad.addColorStop(0.9, 'rgba(230, 230, 240, 0.35)'); // Silver accretion edge
+                    grad.addColorStop(1.0, 'rgba(230, 230, 240, 0.0)');
+                    
+                    ctx.beginPath();
+                    ctx.arc(wx, wy, diskRadius, 0, 2 * Math.PI);
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                }
+
+                // 2. 3 Swirling Galaxy Spiral Arms (slower, mysterious rotation)
+                const arms = 3;
+                for (let i = 0; i < arms; i++) {
+                    const armAngleOffset = (i * 2 * Math.PI) / arms;
+                    ctx.beginPath();
+                    for (let step = 0; step <= 50; step++) {
+                        const t = step / 50;
+                        const r = t * outerR;
+                        const angle = armAngleOffset + (now / 400) - (3.5 * Math.PI * (1 - t));
+                        const px = wx + r * Math.cos(angle);
+                        const py = wy + r * Math.sin(angle);
+                        if (step === 0) {
+                            ctx.moveTo(px, py);
+                        } else {
+                            ctx.lineTo(px, py);
+                        }
+                    }
+                    ctx.strokeStyle = `rgba(130, 130, 140, ${0.25 + 0.15 * Math.sin(now / 150 + i)})`; // Gray/silver
+                    ctx.lineWidth = 1.5 / scale;
+                    ctx.stroke();
+                }
+
+                // 3. Draw detached pixels spiraling into the black hole (using their original colors!)
+                warning.detachedPixels.forEach(p => {
+                    const t = (progress - p.progressStart) / (1.0001 - p.progressStart);
+                    if (t >= 1.0) return;
+
+                    const currentR = p.radius * (1 - t);
+                    const currentAngle = p.baseAngle + (t * 3.5 * Math.PI) + (now / 300);
+                    const px = wx + currentR * Math.cos(currentAngle);
+                    const py = wy + currentR * Math.sin(currentAngle);
+
+                    const pSize = Math.max(0.3, (1.2 * (1 - t))) / scale;
+
+                    const val = p.color;
+                    const r_val = val & 0xFF;
+                    const g_val = (val >> 8) & 0xFF;
+                    const b_val = (val >> 16) & 0xFF;
+                    const a_val = ((val >> 24) & 0xFF) / 255;
+                    ctx.fillStyle = `rgba(${r_val}, ${g_val}, ${b_val}, ${a_val})`;
+                    ctx.fillRect(px - pSize/2, py - pSize/2, pSize, pSize);
+                });
+
+                // 4. Flowing cosmic dust particles (mysterious violet/gray/white)
+                const dustCount = 20;
+                for (let k = 0; k < dustCount; k++) {
+                    const baseAngle = (k * 2 * Math.PI) / dustCount;
+                    const offset = (k * 500) % 5000;
+                    const pProgress = ((now + offset) % 5000) / 5000;
+                    
+                    const pr = outerR * (1 - pProgress);
+                    const pAngle = baseAngle + (now / 350) + (4 * Math.PI * pProgress);
+                    const px = wx + pr * Math.cos(pAngle);
+                    const py = wy + pr * Math.sin(pAngle);
+                    
+                    const pSize = (1.5 * (1 - pProgress)) / scale;
+                    if (pSize > 0.05) {
+                        ctx.fillStyle = k % 3 === 0 ? 'rgba(240, 240, 245, 0.65)' : (k % 3 === 1 ? 'rgba(100, 100, 110, 0.5)' : 'rgba(76, 29, 149, 0.45)');
+                        ctx.fillRect(px - pSize / 2, py - pSize / 2, pSize, pSize);
+                    }
+                }
+
+                // 5. Crosshair indicators
+                ctx.beginPath();
+                ctx.moveTo(wx - crossLength, wy);
+                ctx.lineTo(wx + crossLength, wy);
+                ctx.moveTo(wx, wy - crossLength);
+                ctx.lineTo(wx, wy + crossLength);
+                ctx.lineWidth = 0.8 / scale;
+                ctx.strokeStyle = 'rgba(120, 120, 130, 0.35)';
+                ctx.stroke();
+            } else {
+                // 1. Mira telescópica fina cruzada en el centro
+                ctx.beginPath();
+                ctx.moveTo(wx - crossLength, wy);
+                ctx.lineTo(wx + crossLength, wy);
+                ctx.moveTo(wx, wy - crossLength);
+                ctx.lineTo(wx, wy + crossLength);
+                ctx.lineWidth = lineW;
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
                 ctx.fill();
                 ctx.lineWidth = lineW;
-                ctx.strokeStyle = '#dc2626';
+                ctx.strokeStyle = '#ef4444';
                 ctx.stroke();
+
+                // 3. Círculo rojo cerrándose progresivamente hacia el centro
+                const duration = warning.endTime - warning.startTime;
+                const timeRatio = duration > 0 ? Math.min(1, Math.max(0, (now - warning.startTime) / duration)) : 1;
+                const innerR = outerR * (1 - timeRatio);
+
+                if (innerR > 0.1) {
+                    ctx.beginPath();
+                    ctx.arc(wx, wy, innerR, 0, 2 * Math.PI);
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.35)';
+                    ctx.fill();
+                    ctx.lineWidth = lineW;
+                    ctx.strokeStyle = '#dc2626';
+                    ctx.stroke();
+                }
             }
             ctx.restore();
         });
@@ -917,6 +1113,94 @@ function render() {
             const elapsed = now - exp.startTime;
             const progress = Math.min(1, elapsed / exp.duration);
             const opacity = 1 - progress;
+
+            // Si es cañón orbital, dibujar el rayo de energía residual de la bola al suelo
+            if (exp.perkId === 'canon_orbital_1') {
+                const ex = exp.x + 0.5;
+                const ey = exp.y + 0.5;
+                const sourceY = (topBarBottomY - transform.y) / transform.scale;
+                const sourceX = ex; // Alineación vertical perfecta
+
+                const maxBeamWidth = 16;
+                const currentBeamWidth = (maxBeamWidth * (1 - progress)) / transform.scale;
+
+                if (currentBeamWidth > 0.05) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(sourceX, sourceY);
+                    ctx.lineTo(ex, ey);
+                    ctx.strokeStyle = `rgba(239, 68, 68, ${0.9 * opacity})`;
+                    ctx.lineWidth = currentBeamWidth;
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+                    ctx.lineWidth = currentBeamWidth * 0.35;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            if (exp.perkId === 'agujero_negro_1') {
+                if (progress < 0.4) {
+                    const phaseProgress = progress / 0.4;
+                    const r = exp.maxRadius * 0.8 * Math.sin(phaseProgress * Math.PI / 2);
+                    
+                    ctx.beginPath();
+                    ctx.arc(exp.x + 0.5, exp.y + 0.5, r, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#000000';
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = `rgba(90, 80, 110, ${0.9 * opacity})`; // Mysterious dark violet/gray
+                    ctx.lineWidth = Math.max(3, 6 / transform.scale);
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.arc(exp.x + 0.5, exp.y + 0.5, r * 1.4, 0, 2 * Math.PI);
+                    ctx.strokeStyle = `rgba(64, 64, 72, ${0.6 * opacity})`; // Dark slate gray ripple
+                    ctx.lineWidth = Math.max(1, 3 / transform.scale);
+                    ctx.stroke();
+                } else if (progress < 0.7) {
+                    const phaseProgress = (progress - 0.4) / 0.3;
+                    const r = exp.maxRadius * 0.8 * (1 - phaseProgress);
+                    
+                    if (r > 0.1) {
+                        ctx.beginPath();
+                        ctx.arc(exp.x + 0.5, exp.y + 0.5, r, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#000000';
+                        ctx.fill();
+                        
+                        ctx.strokeStyle = `rgba(45, 20, 80, ${0.9 * opacity})`; // Deep violet collapse border
+                        ctx.lineWidth = Math.max(3, 8 * (1 - phaseProgress) / transform.scale);
+                        ctx.stroke();
+                    }
+                    
+                    const collapseRadius = exp.maxRadius * 2.0 * (1 - phaseProgress);
+                    ctx.beginPath();
+                    ctx.arc(exp.x + 0.5, exp.y + 0.5, collapseRadius, 0, 2 * Math.PI);
+                    ctx.strokeStyle = `rgba(200, 200, 210, ${0.75 * opacity})`; // Silver collapsing ring
+                    ctx.lineWidth = Math.max(1, 2 / transform.scale);
+                    ctx.stroke();
+                } else {
+                    const phaseProgress = (progress - 0.7) / 0.3;
+                    const r = exp.maxRadius * 2.5 * phaseProgress;
+                    
+                    const grad = ctx.createRadialGradient(
+                        exp.x + 0.5, exp.y + 0.5, 0,
+                        exp.x + 0.5, exp.y + 0.5, r
+                    );
+                    grad.addColorStop(0, `rgba(255, 255, 255, ${1.0 - phaseProgress})`); // White center
+                    grad.addColorStop(0.35, `rgba(60, 40, 90, ${(1.0 - phaseProgress) * 0.85})`); // Deep cosmic violet
+                    grad.addColorStop(0.7, `rgba(30, 30, 40, ${(1.0 - phaseProgress) * 0.5})`); // Dark gray
+                    grad.addColorStop(1.0, `rgba(0, 0, 0, 0.0)`);
+                    
+                    ctx.beginPath();
+                    ctx.arc(exp.x + 0.5, exp.y + 0.5, r, 0, 2 * Math.PI);
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                }
+                return;
+            }
 
             const radiusOuter = exp.maxRadius * (1 + 1.5 * progress);
             const radiusInner = exp.maxRadius * (0.5 + 1 * progress);
@@ -1051,6 +1335,8 @@ self.onmessage = function (e) {
             }
             hoveredPixelKey = payload.hoveredPixelKey !== undefined ? payload.hoveredPixelKey : -1;
             ownerEraserBox = payload.ownerEraserBox || null;
+            topBarCenterX = payload.topBarCenterX || 0;
+            topBarBottomY = payload.topBarBottomY || 0;
             requestRender();
             break;
 
@@ -1196,6 +1482,7 @@ self.onmessage = function (e) {
                 const r = parseInt(payload.radius || 10, 10);
                 const durationMs = parseInt(payload.durationMs || 3000, 10);
                 const key = payload.key || `${cx}_${cy}`;
+                const perkId = payload.perkId || 'pixel_misil_1';
                 const now = Date.now();
 
                 const existing = nuclearWarnings.find(w => w.key === key && now < w.endTime);
@@ -1209,7 +1496,8 @@ self.onmessage = function (e) {
                     y: cy,
                     radius: r,
                     startTime: now,
-                    endTime: now + durationMs
+                    endTime: now + durationMs,
+                    perkId: perkId
                 });
                 requestRender();
             }
@@ -1227,12 +1515,21 @@ self.onmessage = function (e) {
 
                 clearBombPixels(cX, cY, r);
 
+                let duration = 800;
+                if (perkId === 'canon_orbital_1') {
+                    duration = 3000;
+                } else if (perkId === 'bomba_atomica_1') {
+                    duration = 1500;
+                } else if (perkId === 'agujero_negro_1') {
+                    duration = 2500;
+                }
+
                 explosions.push({
                     x: cX,
                     y: cY,
                     maxRadius: r,
                     startTime: now,
-                    duration: 800,
+                    duration: duration,
                     perkId: perkId
                 });
                 requestRender();

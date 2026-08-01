@@ -1464,7 +1464,7 @@ export const DesignNetwork = {
         if (this.renderWorker) {
             this.renderWorker.postMessage({
                 type: 'BOMB_WARNING',
-                payload: { key: targetKey, x: cx, y: cy, radius: r, durationMs: durationMs }
+                payload: { key: targetKey, x: cx, y: cy, radius: r, durationMs: durationMs, perkId: perkId }
             });
         }
 
@@ -1478,6 +1478,23 @@ export const DesignNetwork = {
             }
         };
         requestAnimationFrame(animateWarning);
+
+        if (perkId === 'canon_orbital_1') {
+            const topBar = document.querySelector('.component-top');
+            if (topBar) {
+                // Ensure only one ball is active at a time to prevent duplicates
+                let energyBall = topBar.querySelector('.orbital-cannon-charge-ball');
+                if (!energyBall) {
+                    energyBall = document.createElement('div');
+                    energyBall.className = 'orbital-cannon-charge-ball';
+                    energyBall.style.animationDuration = `${durationMs + 3000}ms`;
+                    topBar.appendChild(energyBall);
+                    setTimeout(() => {
+                        energyBall.remove();
+                    }, durationMs + 3000);
+                }
+            }
+        }
 
         // UI Badge flotante en la izquierda
         let container = document.querySelector('[data-ref="badges-left"]');

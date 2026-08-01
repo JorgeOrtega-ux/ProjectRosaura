@@ -137,6 +137,29 @@ export const DesignRender = {
                body.getAttribute('data-theme') === 'dark';
     },
 
+    updateOrbitalCannonBallPosition() {
+        const energyBall = document.querySelector('.orbital-cannon-charge-ball');
+        if (!energyBall) return;
+
+        const topBar = document.querySelector('.component-top');
+        const canvasEl = this.canvas;
+        if (topBar && canvasEl) {
+            const activeWarning = this.nuclearWarnings ? this.nuclearWarnings.find(w => w.perkId === 'canon_orbital_1') : null;
+            const activeExplosion = this.explosions ? this.explosions.find(e => e.perkId === 'canon_orbital_1') : null;
+            const activeObj = activeWarning || activeExplosion;
+            if (activeObj) {
+                const topBarRect = topBar.getBoundingClientRect();
+                const canvasRect = canvasEl.getBoundingClientRect();
+                const scale = this.transform.scale || 1;
+                const tx = this.transform.x || 0;
+                const wx = activeObj.x + 0.5;
+                const targetScreenX = wx * scale + tx;
+                const leftOffset = canvasRect.left + targetScreenX - topBarRect.left;
+                energyBall.style.left = `${leftOffset}px`;
+            }
+        }
+    },
+
     requestRender() {
         if (this.renderWorker) {
             if (this._workerRenderPending) return;
@@ -147,12 +170,24 @@ export const DesignRender = {
                 if (typeof this.positionTemplateToolbar === 'function') {
                     this.positionTemplateToolbar();
                 }
+                this.updateOrbitalCannonBallPosition();
                 if (!this.renderWorker) return;
 
                 const selArray = this.selectedPixels ? Array.from(this.selectedPixels) : [];
                 const hoverKey = this.hoveredPixel ? ((this.hoveredPixel.y << 16) | this.hoveredPixel.x) : -1;
                 const isOwnerProtecting = (this.interactionMode === 'owner_protecting' || this.interactionMode === 'user_protecting');
                 
+                const topBar = document.querySelector('.general-content-top');
+                const canvasEl = this.canvas;
+                let topBarCenterX = 0;
+                let topBarBottomY = 0;
+                if (topBar && canvasEl) {
+                    const topBarRect = topBar.getBoundingClientRect();
+                    const canvasRect = canvasEl.getBoundingClientRect();
+                    topBarCenterX = topBarRect.left + topBarRect.width / 2 - canvasRect.left;
+                    topBarBottomY = topBarRect.bottom - canvasRect.top;
+                }
+
                 this.renderWorker.postMessage({
                     type: 'UPDATE_RENDER_STATE',
                     payload: {
@@ -166,7 +201,9 @@ export const DesignRender = {
                         isOwnerProtecting: isOwnerProtecting,
                         selectedPixels: selArray,
                         hoveredPixelKey: hoverKey,
-                        ownerEraserBox: this.ownerEraserBox || null
+                        ownerEraserBox: this.ownerEraserBox || null,
+                        topBarCenterX: topBarCenterX,
+                        topBarBottomY: topBarBottomY
                     }
                 });
 
@@ -468,7 +505,6 @@ export const DesignRender = {
             }
             this.ctx.stroke();
         }
-
         if (this.nuclearWarnings && this.nuclearWarnings.length > 0) {
             const now = Date.now();
             this.nuclearWarnings = this.nuclearWarnings.filter(w => !isNaN(w.endTime) && now < w.endTime);
@@ -479,6 +515,20 @@ export const DesignRender = {
             const scale = this.transform.scale || 1;
             const lineW = 1.2 / scale;
 
+            // Sincronizar dinámicamente la posición horizontal de la bola de energía orbital en el DOM
+            this.updateOrbitalCannonBallPosition();
+
+            const topBar = document.querySelector('.component-top');
+            const canvasEl = this.canvas;
+            let tbCenterX = 0;
+            let tbBottomY = 0;
+            if (topBar && canvasEl) {
+                const topBarRect = topBar.getBoundingClientRect();
+                const canvasRect = canvasEl.getBoundingClientRect();
+                tbCenterX = topBarRect.left + topBarRect.width / 2 - canvasRect.left;
+                tbBottomY = topBarRect.bottom - canvasRect.top;
+            }
+
             this.nuclearWarnings.forEach(warning => {
                 const wx = warning.x + 0.5;
                 const wy = warning.y + 0.5;
@@ -486,44 +536,233 @@ export const DesignRender = {
                 const crossLength = outerR + (4 / scale);
 
                 this.ctx.save();
-                // 1. Mira telescópica fina cruzada en el centro
-                this.ctx.beginPath();
-                this.ctx.moveTo(wx - crossLength, wy);
-                this.ctx.lineTo(wx + crossLength, wy);
-                this.ctx.moveTo(wx, wy - crossLength);
-                this.ctx.lineTo(wx, wy + crossLength);
-                this.ctx.lineWidth = lineW;
-                this.ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
-                this.ctx.stroke();
-
                 
+                if (warning.perkId === 'canon_orbital_1') {
+                    const elapsed = now - warning.startTime;
+                    const duration = warning.endTime - warning.startTime;
+                    const progress = Math.min(1, Math.max(0, elapsed / duration));
+                    
+                    const sourceY = (tbBottomY - this.transform.y) / this.transform.scale;
+                    const sourceX = wx; // Alineación vertical perfecta
 
-                this.ctx.beginPath();
-                this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
-                this.ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
-                this.ctx.fill();
-                this.ctx.lineWidth = lineW;
-                this.ctx.strokeStyle = '#ef4444';
-                this.ctx.stroke();
-
-                // 3. Círculo rojo cerrándose progresivamente hacia el centro
-                const duration = warning.endTime - warning.startTime;
-                const timeRatio = duration > 0 ? Math.min(1, Math.max(0, (now - warning.startTime) / duration)) : 1;
-                const innerR = outerR * (1 - timeRatio);
-
-                if (innerR > 0.1) {
+                    // 1. Línea de rastreo parpadeante durante toda la carga
                     this.ctx.beginPath();
-                    this.ctx.arc(wx, wy, innerR, 0, 2 * Math.PI);
-                    this.ctx.fillStyle = 'rgba(239, 68, 68, 0.35)';
+                    this.ctx.moveTo(sourceX, sourceY);
+                    this.ctx.lineTo(wx, wy);
+                    this.ctx.lineWidth = 1 / scale;
+                    this.ctx.strokeStyle = `rgba(239, 68, 68, ${0.15 + 0.25 * Math.sin(now / 80)})`;
+                    this.ctx.stroke();
+
+                    // Círculo exterior y cruz fija en el suelo
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(wx - crossLength, wy);
+                    this.ctx.lineTo(wx + crossLength, wy);
+                    this.ctx.moveTo(wx, wy - crossLength);
+                    this.ctx.lineTo(wx, wy + crossLength);
+                    this.ctx.lineWidth = lineW;
+                    this.ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
+                    this.ctx.stroke();
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = 'rgba(239, 68, 68, 0.08)';
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = '#ef4444';
+                    this.ctx.stroke();
+
+                    // Anillo cerrándose progresivamente
+                    const innerR = outerR * (1 - progress);
+                    if (innerR > 0.1) {
+                        this.ctx.beginPath();
+                        this.ctx.arc(wx, wy, innerR, 0, 2 * Math.PI);
+                        this.ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+                        this.ctx.fill();
+                        this.ctx.strokeStyle = '#dc2626';
+                        this.ctx.stroke();
+                    }
+                } else if (warning.perkId === 'agujero_negro_1') {
+                    const elapsed = now - warning.startTime;
+                    const duration = warning.endTime - warning.startTime;
+                    const progress = Math.min(1, Math.max(0, elapsed / duration));
+
+                    const cx = warning.x;
+                    const cy = warning.y;
+
+                    if (!warning.pixelCache && this.offscreenCtx && this.boardWidth > 0 && this.boardHeight > 0) {
+                        try {
+                            const imgData = this.offscreenCtx.getImageData(0, 0, this.boardWidth, this.boardHeight);
+                            warning.pixelCache = new Uint32Array(imgData.data.buffer);
+                        } catch (e) {
+                            warning.pixelCache = null;
+                        }
+                    }
+
+                    if (!warning.detachedPixels) {
+                        warning.detachedPixels = [];
+                    }
+
+                    // Check all pixels in the warning radius
+                    const rInt = Math.ceil(outerR);
+                    for (let dy = -rInt; dy <= rInt; dy++) {
+                        for (let dx = -rInt; dx <= rInt; dx++) {
+                            const px = cx + dx;
+                            const py = cy + dy;
+                            if (px >= 0 && px < this.boardWidth && py >= 0 && py < this.boardHeight) {
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist <= outerR) {
+                                    const hash = ((px * 17 + py * 23) % 100) / 100;
+                                    const distRatio = dist / outerR;
+                                    // Pull pixels outside-in
+                                    const threshold = 0.05 + distRatio * 0.75 + hash * 0.15;
+
+                                    if (progress > threshold) {
+                                        const idx = py * this.boardWidth + px;
+                                        const colorVal = warning.pixelCache ? warning.pixelCache[idx] : 0;
+                                        if (colorVal !== 0) {
+                                            warning.detachedPixels.push({
+                                                x: px,
+                                                y: py,
+                                                color: colorVal,
+                                                progressStart: progress,
+                                                baseAngle: Math.atan2(dy, dx),
+                                                radius: dist
+                                            });
+                                            if (warning.pixelCache) warning.pixelCache[idx] = 0;
+                                            if (this.offscreenCtx) {
+                                                this.offscreenCtx.clearRect(px, py, 1, 1);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 1. Accretion Disk (glowing radial gradient)
+                    const diskRadius = outerR * 0.45 * (1.0 + 0.05 * Math.sin(now / 250));
+                    if (diskRadius > 0.1) {
+                        const grad = this.ctx.createRadialGradient(wx, wy, 0, wx, wy, diskRadius);
+                        grad.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)'); // Singularity
+                        grad.addColorStop(0.25, 'rgba(10, 10, 12, 1.0)'); // Dark void
+                        grad.addColorStop(0.5, 'rgba(40, 25, 60, 0.9)'); // Dark violet haze
+                        grad.addColorStop(0.75, 'rgba(100, 100, 110, 0.7)'); // Mysterious gray dust
+                        grad.addColorStop(0.9, 'rgba(230, 230, 240, 0.35)'); // Silver accretion edge
+                        grad.addColorStop(1.0, 'rgba(230, 230, 240, 0.0)');
+                        
+                        this.ctx.beginPath();
+                        this.ctx.arc(wx, wy, diskRadius, 0, 2 * Math.PI);
+                        this.ctx.fillStyle = grad;
+                        this.ctx.fill();
+                    }
+
+                    // 2. 3 Swirling Galaxy Spiral Arms (slower, mysterious rotation)
+                    const arms = 3;
+                    for (let i = 0; i < arms; i++) {
+                        const armAngleOffset = (i * 2 * Math.PI) / arms;
+                        this.ctx.beginPath();
+                        for (let step = 0; step <= 50; step++) {
+                            const t = step / 50;
+                            const r = t * outerR;
+                            const angle = armAngleOffset + (now / 400) - (3.5 * Math.PI * (1 - t));
+                            const px = wx + r * Math.cos(angle);
+                            const py = wy + r * Math.sin(angle);
+                            if (step === 0) {
+                                this.ctx.moveTo(px, py);
+                            } else {
+                                this.ctx.lineTo(px, py);
+                            }
+                        }
+                        this.ctx.strokeStyle = `rgba(130, 130, 140, ${0.25 + 0.15 * Math.sin(now / 150 + i)})`; // Gray/silver
+                        this.ctx.lineWidth = 1.5 / scale;
+                        this.ctx.stroke();
+                    }
+
+                    // 3. Draw detached pixels spiraling into the black hole
+                    warning.detachedPixels.forEach(p => {
+                        const t = (progress - p.progressStart) / (1.0001 - p.progressStart);
+                        if (t >= 1.0) return;
+
+                        const currentR = p.radius * (1 - t);
+                        const currentAngle = p.baseAngle + (t * 3.5 * Math.PI) + (now / 300);
+                        const px = wx + currentR * Math.cos(currentAngle);
+                        const py = wy + currentR * Math.sin(currentAngle);
+
+                        const pSize = Math.max(0.3, (1.2 * (1 - t))) / scale;
+
+                        const val = p.color;
+                        const r_val = val & 0xFF;
+                        const g_val = (val >> 8) & 0xFF;
+                        const b_val = (val >> 16) & 0xFF;
+                        const a_val = ((val >> 24) & 0xFF) / 255;
+                        this.ctx.fillStyle = `rgba(${r_val}, ${g_val}, ${b_val}, ${a_val})`;
+                        this.ctx.fillRect(px - pSize/2, py - pSize/2, pSize, pSize);
+                    });
+
+                    // 4. Flowing cosmic dust particles (mysterious violet/gray/white)
+                    const dustCount = 20;
+                    for (let k = 0; k < dustCount; k++) {
+                        const baseAngle = (k * 2 * Math.PI) / dustCount;
+                        const offset = (k * 500) % 5000;
+                        const pProgress = ((now + offset) % 5000) / 5000;
+                        
+                        const pr = outerR * (1 - pProgress);
+                        const pAngle = baseAngle + (now / 350) + (4 * Math.PI * pProgress);
+                        const px = wx + pr * Math.cos(pAngle);
+                        const py = wy + pr * Math.sin(pAngle);
+                        
+                        const pSize = (1.5 * (1 - pProgress)) / scale;
+                        if (pSize > 0.05) {
+                            this.ctx.fillStyle = k % 3 === 0 ? 'rgba(240, 240, 245, 0.65)' : (k % 3 === 1 ? 'rgba(100, 100, 110, 0.5)' : 'rgba(76, 29, 149, 0.45)');
+                            this.ctx.fillRect(px - pSize / 2, py - pSize / 2, pSize, pSize);
+                        }
+                    }
+
+                    // 5. Crosshair indicators
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(wx - crossLength, wy);
+                    this.ctx.lineTo(wx + crossLength, wy);
+                    this.ctx.moveTo(wx, wy - crossLength);
+                    this.ctx.lineTo(wx, wy + crossLength);
+                    this.ctx.lineWidth = 0.8 / scale;
+                    this.ctx.strokeStyle = 'rgba(120, 120, 130, 0.35)';
+                    this.ctx.stroke();
+                } else {
+                    // 1. Mira telescópica fina cruzada en el centro
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(wx - crossLength, wy);
+                    this.ctx.lineTo(wx + crossLength, wy);
+                    this.ctx.moveTo(wx, wy - crossLength);
+                    this.ctx.lineTo(wx, wy + crossLength);
+                    this.ctx.lineWidth = lineW;
+                    this.ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
+                    this.ctx.stroke();
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
                     this.ctx.fill();
                     this.ctx.lineWidth = lineW;
-                    this.ctx.strokeStyle = '#dc2626';
+                    this.ctx.strokeStyle = '#ef4444';
                     this.ctx.stroke();
+
+                    // 3. Círculo rojo cerrándose progresivamente hacia el centro
+                    const duration = warning.endTime - warning.startTime;
+                    const timeRatio = duration > 0 ? Math.min(1, Math.max(0, (now - warning.startTime) / duration)) : 1;
+                    const innerR = outerR * (1 - timeRatio);
+
+                    if (innerR > 0.1) {
+                        this.ctx.beginPath();
+                        this.ctx.arc(wx, wy, innerR, 0, 2 * Math.PI);
+                        this.ctx.fillStyle = 'rgba(239, 68, 68, 0.35)';
+                        this.ctx.fill();
+                        this.ctx.lineWidth = lineW;
+                        this.ctx.strokeStyle = '#dc2626';
+                        this.ctx.stroke();
+                    }
                 }
                 this.ctx.restore();
             });
         }
-        
         if (this.explosions && this.explosions.length > 0) {
             const now = Date.now();
             this.explosions = this.explosions.filter(exp => (now - exp.startTime) < exp.duration);
@@ -536,6 +775,102 @@ export const DesignRender = {
                 const progress = Math.min(1, elapsed / exp.duration);
                 const opacity = 1 - progress;
                 
+                // Si es cañón orbital, dibujar el rayo de energía residual de la bola al suelo
+                if (exp.perkId === 'canon_orbital_1') {
+                    const topBar = document.querySelector('.component-top');
+                    const canvasEl = this.canvas;
+                    let tbBottomY = 0;
+                    if (topBar && canvasEl) {
+                        const topBarRect = topBar.getBoundingClientRect();
+                        const canvasRect = canvasEl.getBoundingClientRect();
+                        tbBottomY = topBarRect.bottom - canvasRect.top;
+                    }
+                    const ex = exp.x + 0.5;
+                    const ey = exp.y + 0.5;
+                    const sourceY = (tbBottomY - this.transform.y) / this.transform.scale;
+                    const sourceX = ex; // Alineación vertical perfecta
+
+                    const maxBeamWidth = 16;
+                    const currentBeamWidth = (maxBeamWidth * (1 - progress)) / this.transform.scale;
+
+                    if (currentBeamWidth > 0.05) {
+                        this.ctx.save();
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(sourceX, sourceY);
+                        this.ctx.lineTo(ex, ey);
+                        this.ctx.strokeStyle = `rgba(239, 68, 68, ${0.9 * opacity})`;
+                        this.ctx.lineWidth = currentBeamWidth;
+                        this.ctx.lineCap = 'round';
+                        this.ctx.stroke();
+
+                        this.ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+                        this.ctx.lineWidth = currentBeamWidth * 0.35;
+                        this.ctx.stroke();
+                        this.ctx.restore();
+                    }
+                }
+
+                if (exp.perkId === 'agujero_negro_1') {
+                    if (progress < 0.4) {
+                        const phaseProgress = progress / 0.4;
+                        const r = exp.maxRadius * 0.8 * Math.sin(phaseProgress * Math.PI / 2);
+                        
+                        this.ctx.beginPath();
+                        this.ctx.arc(exp.x + 0.5, exp.y + 0.5, r, 0, 2 * Math.PI);
+                        this.ctx.fillStyle = '#000000';
+                        this.ctx.fill();
+                        
+                        this.ctx.strokeStyle = `rgba(90, 80, 110, ${0.9 * opacity})`; // Mysterious dark violet/gray
+                        this.ctx.lineWidth = Math.max(3, 6 / this.transform.scale);
+                        this.ctx.stroke();
+                        
+                        this.ctx.beginPath();
+                        this.ctx.arc(exp.x + 0.5, exp.y + 0.5, r * 1.4, 0, 2 * Math.PI);
+                        this.ctx.strokeStyle = `rgba(64, 64, 72, ${0.6 * opacity})`; // Dark slate gray ripple
+                        this.ctx.lineWidth = Math.max(1, 3 / this.transform.scale);
+                        this.ctx.stroke();
+                    } else if (progress < 0.7) {
+                        const phaseProgress = (progress - 0.4) / 0.3;
+                        const r = exp.maxRadius * 0.8 * (1 - phaseProgress);
+                        
+                        if (r > 0.1) {
+                            this.ctx.beginPath();
+                            this.ctx.arc(exp.x + 0.5, exp.y + 0.5, r, 0, 2 * Math.PI);
+                            this.ctx.fillStyle = '#000000';
+                            this.ctx.fill();
+                            
+                            this.ctx.strokeStyle = `rgba(45, 20, 80, ${0.9 * opacity})`; // Deep violet collapse border
+                            this.ctx.lineWidth = Math.max(3, 8 * (1 - phaseProgress) / this.transform.scale);
+                            this.ctx.stroke();
+                        }
+                        
+                        const collapseRadius = exp.maxRadius * 2.0 * (1 - phaseProgress);
+                        this.ctx.beginPath();
+                        this.ctx.arc(exp.x + 0.5, exp.y + 0.5, collapseRadius, 0, 2 * Math.PI);
+                        this.ctx.strokeStyle = `rgba(200, 200, 210, ${0.75 * opacity})`; // Silver collapsing ring
+                        this.ctx.lineWidth = Math.max(1, 2 / this.transform.scale);
+                        this.ctx.stroke();
+                    } else {
+                        const phaseProgress = (progress - 0.7) / 0.3;
+                        const r = exp.maxRadius * 2.5 * phaseProgress;
+                        
+                        const grad = this.ctx.createRadialGradient(
+                            exp.x + 0.5, exp.y + 0.5, 0,
+                            exp.x + 0.5, exp.y + 0.5, r
+                        );
+                        grad.addColorStop(0, `rgba(255, 255, 255, ${1.0 - phaseProgress})`); // White center
+                        grad.addColorStop(0.35, `rgba(60, 40, 90, ${(1.0 - phaseProgress) * 0.85})`); // Deep cosmic violet
+                        grad.addColorStop(0.7, `rgba(30, 30, 40, ${(1.0 - phaseProgress) * 0.5})`); // Dark gray
+                        grad.addColorStop(1.0, `rgba(0, 0, 0, 0.0)`);
+                        
+                        this.ctx.beginPath();
+                        this.ctx.arc(exp.x + 0.5, exp.y + 0.5, r, 0, 2 * Math.PI);
+                        this.ctx.fillStyle = grad;
+                        this.ctx.fill();
+                    }
+                    return;
+                }
+
                 // Animación unificada de onda expansiva circular (escalada proporcionalmente al radio)
                 const radiusOuter = exp.maxRadius * (1 + 1.5 * progress);
                 const radiusInner = exp.maxRadius * (0.5 + 1 * progress);

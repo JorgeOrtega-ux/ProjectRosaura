@@ -116,6 +116,22 @@ class StorePackagesConfig {
                 'price_coins' => 10000,
                 'icon' => 'storm',
                 'is_single_use' => true,
+            ],
+            StoreConstants::PERK_ORBITAL_CANNON => [
+                'id' => StoreConstants::PERK_ORBITAL_CANNON,
+                'name' => __('store_content_canon_orbital_1_name'),
+                'description' => __('store_content_canon_orbital_1_desc'),
+                'price_coins' => 15000,
+                'icon' => 'satellite_alt',
+                'is_single_use' => true,
+            ],
+            StoreConstants::PERK_BLACK_HOLE => [
+                'id' => StoreConstants::PERK_BLACK_HOLE,
+                'name' => __('store_content_agujero_negro_1_name'),
+                'description' => __('store_content_agujero_negro_1_desc'),
+                'price_coins' => 20000,
+                'icon' => 'cyclone',
+                'is_single_use' => true,
             ]
         ];
     }

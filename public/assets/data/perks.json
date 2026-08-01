@@ -199,6 +199,86 @@
       "screen_flash": false
     }
   },
+  "canon_orbital_1": {
+    "id": "canon_orbital_1",
+    "duration_seconds": 86400,
+    "type": "bomb",
+    "amount": 1,
+    "icon": "satellite_alt",
+    "label_key": "perk_orbital_cannon",
+    "short_label_key": "perk_orbital_cannon_short",
+    "button_label_key": "btn_launch_orbital_cannon",
+    "warning_icon": "satellite_alt",
+    "warning_label_key": "msg_orbital_cannon_incoming",
+    "warning_seconds": 10,
+    "category": "bomb",
+    "targets": 1,
+    "radii": {
+      "32": 15,
+      "64": 21,
+      "128": 36,
+      "256": 60,
+      "512": 96,
+      "1024": 180,
+      "2048": 330,
+      "4096": 600,
+      "0": 150
+    },
+    "spawning": {
+      "mode": "direct",
+      "count": 1,
+      "spread_radius": 0,
+      "jitter_delay": 0
+    },
+    "explosion": {
+      "style": "nuclear",
+      "duration": 3000,
+      "shake_duration": 1200,
+      "flash_duration": 1500,
+      "screen_shake": true,
+      "screen_flash": true
+    }
+  },
+  "agujero_negro_1": {
+    "id": "agujero_negro_1",
+    "duration_seconds": 86400,
+    "type": "bomb",
+    "amount": 1,
+    "icon": "cyclone",
+    "label_key": "perk_black_hole",
+    "short_label_key": "perk_black_hole_short",
+    "button_label_key": "btn_launch_black_hole",
+    "warning_icon": "cyclone",
+    "warning_label_key": "msg_black_hole_incoming",
+    "warning_seconds": 6,
+    "category": "bomb",
+    "targets": 1,
+    "radii": {
+      "32": 12,
+      "64": 18,
+      "128": 30,
+      "256": 50,
+      "512": 80,
+      "1024": 150,
+      "2048": 280,
+      "4096": 500,
+      "0": 120
+    },
+    "spawning": {
+      "mode": "direct",
+      "count": 1,
+      "spread_radius": 0,
+      "jitter_delay": 0
+    },
+    "explosion": {
+      "style": "blackhole",
+      "duration": 2500,
+      "shake_duration": 2000,
+      "flash_duration": 1000,
+      "screen_shake": true,
+      "screen_flash": true
+    }
+  },
   "proteccion_pixeles_1": {
     "id": "proteccion_pixeles_1",
     "type": "buff",

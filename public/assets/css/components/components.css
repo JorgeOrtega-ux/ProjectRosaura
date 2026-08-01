@@ -8133,4 +8133,115 @@ html.dark-theme .component-skeleton-design-bottom {
     background-color: rgba(34, 197, 94, 0.1) !important;
 }
 
+/* Orbital Cannon Energy Charge Animation */
+.orbital-cannon-charge-ball {
+    position: absolute;
+    bottom: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(239, 68, 68, 1) 30%, rgba(220, 38, 38, 0.8) 60%, rgba(220, 38, 38, 0) 80%);
+    box-shadow: 0 0 25px #ef4444, 0 0 50px #ef4444;
+    z-index: 101;
+    animation: orbital-charge 13s linear forwards;
+    pointer-events: none;
+}
+
+/* Wobbly rotating dashed ring for lightning/plasma sparks effect */
+.orbital-cannon-charge-ball::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    border-radius: 43% 57% 50% 50% / 40% 45% 55% 60%;
+    background: radial-gradient(circle, rgba(239, 68, 68, 0.4) 0%, rgba(220, 38, 38, 0.1) 60%, transparent 80%);
+    border: 2px dashed rgba(255, 255, 255, 0.6);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+    animation: orbital-sparks 1.5s linear infinite;
+    pointer-events: none;
+}
+
+/* Pulsating outer dotted aura for energy expansion */
+.orbital-cannon-charge-ball::after {
+    content: '';
+    position: absolute;
+    top: -16px;
+    left: -16px;
+    right: -16px;
+    bottom: -16px;
+    border-radius: 50%;
+    border: 2px dotted rgba(239, 68, 68, 0.9);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+    animation: orbital-pulse-glow 0.8s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+
+@keyframes orbital-charge {
+    0% {
+        transform: translateX(-50%) scale(0.1);
+        opacity: 0.3;
+        box-shadow: 0 0 5px #ef4444;
+    }
+    38.5% {
+        transform: translateX(-50%) scale(0.8);
+        opacity: 0.8;
+        box-shadow: 0 0 20px #ef4444, 0 0 35px #ef4444;
+    }
+    65.4% {
+        transform: translateX(-50%) scale(1.2);
+        opacity: 0.9;
+        box-shadow: 0 0 30px #ef4444, 0 0 50px #ef4444;
+    }
+    77% {
+        /* Firing moment: maximum energy expansion at 10s */
+        transform: translateX(-50%) scale(2.2);
+        opacity: 1;
+        box-shadow: 0 0 50px #dc2626, 0 0 80px #ffffff, 0 0 150px #ffffff;
+    }
+    88% {
+        /* Post-firing shrinkage during the early part of the beam */
+        transform: translateX(-50%) scale(1.0);
+        opacity: 0.8;
+        box-shadow: 0 0 30px #dc2626, 0 0 60px #dc2626;
+    }
+    100% {
+        transform: translateX(-50%) scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes orbital-sparks {
+    0% {
+        transform: rotate(0deg) scale(0.95);
+        border-radius: 43% 57% 50% 50% / 40% 45% 55% 60%;
+        opacity: 0.7;
+    }
+    50% {
+        transform: rotate(180deg) scale(1.05);
+        border-radius: 50% 40% 60% 45% / 55% 60% 40% 50%;
+        opacity: 1;
+        border-color: rgba(255, 255, 255, 0.9);
+    }
+    100% {
+        transform: rotate(360deg) scale(0.95);
+        border-radius: 43% 57% 50% 50% / 40% 45% 55% 60%;
+        opacity: 0.7;
+    }
+}
+
+@keyframes orbital-pulse-glow {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.6;
+    }
+    100% {
+        transform: scale(1.15);
+        opacity: 1;
+    }
+}
+
 
