@@ -289,5 +289,45 @@
     "label_key": "perk_pixel_prot",
     "short_label_key": "perk_pixel_prot",
     "button_label_key": "btn_protect"
+  },
+  "minas_1": {
+    "id": "minas_1",
+    "duration_seconds": 86400,
+    "type": "bomb",
+    "amount": 10,
+    "icon": "radar",
+    "label_key": "perk_minas",
+    "short_label_key": "perk_minas_short",
+    "button_label_key": "btn_place_mines",
+    "warning_icon": "crisis_alert",
+    "warning_label_key": "msg_mine_incoming",
+    "warning_seconds": 0,
+    "category": "bomb",
+    "targets": 1,
+    "radii": {
+      "32": 2,
+      "64": 3,
+      "128": 5,
+      "256": 8,
+      "512": 12,
+      "1024": 20,
+      "2048": 35,
+      "4096": 60,
+      "0": 10
+    },
+    "spawning": {
+      "mode": "direct",
+      "count": 1,
+      "spread_radius": 0,
+      "jitter_delay": 0
+    },
+    "explosion": {
+      "style": "medium",
+      "duration": 800,
+      "shake_duration": 400,
+      "flash_duration": 0,
+      "screen_shake": true,
+      "screen_flash": false
+    }
   }
 }

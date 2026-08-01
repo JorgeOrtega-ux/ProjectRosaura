@@ -294,6 +294,13 @@ class DesignController {
                             <span class="material-symbols-rounded">${icon}</span>
                             <span>${currentSel}/${targetMax}</span>
                         `;
+                    } else if (this.interactionMode === 'placing_mines') {
+                        const icon = PerksRegistry.getIcon('minas_1') || 'radar';
+                        const currentSel = this.selectedPixels ? this.selectedPixels.size : 0;
+                        newHtml = `
+                            <span class="material-symbols-rounded">${icon}</span>
+                            <span>${currentSel}/10</span>
+                        `;
                     } else if (this.isCooldownSynced) {
                         const rText = remaining > 0 ? `${Math.ceil(remaining)}s` : '0s';
                         newHtml = `

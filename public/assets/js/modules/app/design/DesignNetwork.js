@@ -220,6 +220,30 @@ export const DesignNetwork = {
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                     if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
                 }
+                else if (data.type === 'init_my_mines') {
+                    this.myMines = new Set(data.offsets);
+                    if (typeof this.syncMinesToWorker === 'function') this.syncMinesToWorker();
+                }
+                else if (data.type === 'mines_placed_success') {
+                    if (typeof showMessage === 'function') showMessage('¡Minas colocadas con éxito!', 'success');
+                    if (!this.myMines) this.myMines = new Set();
+                    if (Array.isArray(data.offsets)) {
+                        data.offsets.forEach(off => this.myMines.add(off));
+                    }
+                    if (typeof this.loadUserPerks === 'function') this.loadUserPerks();
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    if (typeof this.syncMinesToWorker === 'function') this.syncMinesToWorker();
+                }
+                else if (data.type === 'mines_placed_error') {
+                    if (typeof showMessage === 'function') showMessage(data.message || 'Error al colocar minas', 'error');
+                }
+                else if (data.type === 'mine_detonated') {
+                    if (this.myMines) {
+                        this.myMines.delete(data.offset);
+                    }
+                    if (typeof this.syncMinesToWorker === 'function') this.syncMinesToWorker();
+                    if (typeof showMessage === 'function') showMessage('¡Una de tus minas terrestres ha detonado!', 'info');
+                }
                 else if (data.type === 'pixel_protected_error') {
                     
                     if (!this.lastProtectedToastTime || (Date.now() - this.lastProtectedToastTime > 2000)) {

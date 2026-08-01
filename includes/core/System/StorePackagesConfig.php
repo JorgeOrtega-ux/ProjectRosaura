@@ -132,6 +132,14 @@ class StorePackagesConfig {
                 'price_coins' => 20000,
                 'icon' => 'cyclone',
                 'is_single_use' => true,
+            ],
+            StoreConstants::PERK_MINAS => [
+                'id' => StoreConstants::PERK_MINAS,
+                'name' => __('store_content_minas_1_name'),
+                'description' => __('store_content_minas_1_desc'),
+                'price_coins' => 1500,
+                'icon' => 'radar',
+                'is_single_use' => true,
             ]
         ];
     }

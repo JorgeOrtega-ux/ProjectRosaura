@@ -21,7 +21,8 @@ const PERK_DISPLAY_ORDER = [
     'lluvia_meteoritos_1',
     'canon_orbital_1',
     'agujero_negro_1',
-    'proteccion_pixeles_1'
+    'proteccion_pixeles_1',
+    'minas_1'
 ];
 
 const PerksRegistry = {

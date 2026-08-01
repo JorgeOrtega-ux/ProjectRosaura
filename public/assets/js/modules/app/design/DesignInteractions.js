@@ -39,6 +39,7 @@ export const DesignInteractions = {
         if (this.perkNoCooldown) return Infinity;
         if (this.interactionMode === 'protecting') return this.perkProtectionLeft || 0;
         if (this.interactionMode === 'erasing') return this.perkEraserLeft || 0;
+        if (this.interactionMode === 'placing_mines') return 10;
         if (this.interactionMode === 'bombing') {
             return typeof PerksRegistry !== 'undefined' ? PerksRegistry.getTargetCount(this.activeBomb) : 1;
         }
@@ -1242,6 +1243,24 @@ export const DesignInteractions = {
             return;
         }
 
+        if (this.interactionMode === 'placing_mines') {
+            this.btnPlacePixels.classList.replace('component-button--primary', 'component-button--success');
+            this.btnPlacePixels.classList.replace('component-button--danger', 'component-button--success');
+
+            const count = this.selectedPixels.size;
+            if (count > 0 && count <= 10) {
+                this.btnPlacePixels.classList.remove('disabled-interaction');
+                this.txtPlacePixels.textContent = `Colocar minas (${count}/10)`;
+            } else if (count > 10) {
+                this.btnPlacePixels.classList.add('disabled-interaction');
+                this.txtPlacePixels.textContent = `Máx 10 minas`;
+            } else {
+                this.btnPlacePixels.classList.add('disabled-interaction');
+                this.txtPlacePixels.textContent = 'Selecciona píxeles';
+            }
+            return;
+        }
+
         let maxBalance = this.getMaxBalance();
         
         if (this.interactionMode === 'protecting') {
@@ -1282,6 +1301,15 @@ export const DesignInteractions = {
 
     placePixels() {
         if ((this.selectedPixels.size === 0 && this.interactionMode !== 'owner_erasing' && this.interactionMode !== 'owner_protecting' && this.interactionMode !== 'user_protecting') || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        if (this.interactionMode === 'placing_mines') {
+            if (this.selectedPixels.size === 0 || this.selectedPixels.size > 10) return;
+            const pixels = Array.from(this.selectedPixels).map(key => {
+                return { x: key & 0xffff, y: key >> 16 };
+            });
+            this.executePlaceMines(pixels);
+            return;
+        }
         
         if (this.interactionMode === 'user_protecting') {
             if (!this.ownerEraserBox) return;
@@ -1618,6 +1646,32 @@ export const DesignInteractions = {
     async activatePerk(perkId, btn) {
         if (!perkId) return;
 
+        if (perkId === 'minas_1') {
+            const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
+            const count = owned ? parseInt(owned.count, 10) : 0;
+            if (count <= 0) {
+                if (typeof showMessage === 'function') showMessage(window.__('err_perk_not_owned'), 'warning');
+                return;
+            }
+
+            if (this.interactionMode === 'placing_mines') {
+                this.interactionMode = 'normal';
+                this.selectedPixels.clear();
+                if (typeof showMessage === 'function') showMessage('Modo Colocación de Minas desactivado', 'info');
+            } else {
+                this.interactionMode = 'placing_mines';
+                this.activeBomb = null;
+                this.selectedPixels.clear();
+                if (typeof showMessage === 'function') showMessage('Modo Colocación de Minas activado. Selecciona hasta 10 píxeles en el lienzo.', 'info');
+            }
+
+            if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+            this.updateSelectionUI();
+            this.syncMinesToWorker();
+            this.requestRender();
+            return;
+        }
+
         if (perkId === 'proteccion_pixeles_1') {
             const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
             const count = owned ? parseInt(owned.count, 10) : 0;
@@ -1711,7 +1765,7 @@ export const DesignInteractions = {
             let icon = PerksRegistry.getIcon(perkId);
             let clickHandler = null;
 
-            if (PerksRegistry.isBomb(perkId)) {
+            if (PerksRegistry.isBomb(perkId) && perkId !== 'minas_1') {
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 const totalAmount = owned ? parseInt(owned.count, 10) : 0;
                 
@@ -1731,6 +1785,35 @@ export const DesignInteractions = {
                     if (this.showInventoryPerks) renderedInventoryCount++;
                 } else if (totalAmount > 0 && this.showInventoryPerks) {
                     isActive = true; 
+                    isToggledOn = false;
+                    const titleText = PerksRegistry.getLabel(perkId);
+                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    clickHandler = () => {
+                        this.activatePerk(perkId);
+                    };
+                    renderedInventoryCount++;
+                }
+            } else if (perkId === 'minas_1') {
+                const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
+                const totalAmount = owned ? parseInt(owned.count, 10) : 0;
+                
+                isActive = (this.interactionMode === 'placing_mines');
+                
+                if (isActive) {
+                    isToggledOn = true;
+                    const titleText = PerksRegistry.getLabel(perkId);
+                    activeHtml = `<span class="material-symbols-rounded component-text-success">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    clickHandler = () => {
+                        this.interactionMode = 'normal';
+                        this.selectedPixels.clear();
+                        this.updateSelectionUI();
+                        this.updatePerkBadges();
+                        this.syncMinesToWorker();
+                        this.requestRender();
+                    };
+                    if (this.showInventoryPerks) renderedInventoryCount++;
+                } else if (totalAmount > 0 && this.showInventoryPerks) {
+                    isActive = true;
                     isToggledOn = false;
                     const titleText = PerksRegistry.getLabel(perkId);
                     activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})</span>`;
@@ -2047,6 +2130,23 @@ export const DesignInteractions = {
 
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
+    },
+
+    executePlaceMines(pixels) {
+        if (this.wsManager && pixels.length > 0) {
+            this.wsManager.send({
+                type: "place_mines",
+                perk: "minas_1",
+                pixels: pixels
+            });
+        }
+
+        this.interactionMode = 'normal';
+        this.selectedPixels.clear();
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.syncMinesToWorker();
         this.requestRender();
     },
 

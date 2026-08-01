@@ -201,6 +201,25 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                     });
                     helpers::send_to_client(state, connection_id, &my_prot_msg.to_string()).await;
                 }
+
+                // Load user's mines
+                let mines_key = format!("canvas:{}:mines", canvas_id);
+                let all_mines: std::collections::HashMap<String, String> = redis_conn.hgetall(&mines_key).await.unwrap_or_default();
+                let mut my_mines_offsets = Vec::new();
+                for (off_str, owner) in all_mines {
+                    if owner == uid_str {
+                        if let Ok(off) = off_str.parse::<i32>() {
+                            my_mines_offsets.push(off);
+                        }
+                    }
+                }
+                if !my_mines_offsets.is_empty() {
+                    let mines_msg = serde_json::json!({
+                        "type": "init_my_mines",
+                        "offsets": my_mines_offsets
+                    }).to_string();
+                    helpers::send_to_client(state, connection_id, &mines_msg).await;
+                }
             }
         }
         "join_live_share" => {
@@ -594,6 +613,56 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             }).to_string();
             helpers::send_to_client(state, connection_id, &success_confirm).await;
         }
+        "place_mines" => {
+            if uid_str.is_empty() || uid_str == "guest" { return; }
+            let perk_id = msg.perk_id.clone().unwrap_or_else(|| "minas_1".to_string());
+
+            // Consume perk
+            let has_perk = db::consume_user_perk(&state.db_pool, &uid_str, &perk_id).await;
+            if !has_perk {
+                let err = serde_json::json!({
+                    "type": "mines_placed_error",
+                    "message": "err_perk_not_owned"
+                }).to_string();
+                helpers::send_to_client(state, connection_id, &err).await;
+                return;
+            }
+
+            let pixels = match &msg.pixels {
+                Some(p) => p.clone(),
+                None => return,
+            };
+
+            if pixels.is_empty() || pixels.len() > 10 {
+                return; // Max 10 mines
+            }
+
+            // Securely load canvas dimensions from DB instead of trusting client input
+            let (_, _, _, db_width, db_height) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
+
+            let mut placed_offsets = Vec::new();
+            if let Ok(mut c) = state.redis_pool.get().await {
+                let mut pipe = deadpool_redis::redis::pipe();
+                let mines_key = format!("canvas:{}:mines", canvas_id);
+                for px in &pixels {
+                    if px.x >= 0 && px.x < db_width && px.y >= 0 && px.y < db_height {
+                        let offset = px.y * db_width + px.x;
+                        placed_offsets.push(offset);
+                        pipe.cmd("HSET").arg(&mines_key).arg(offset.to_string()).arg(&uid_str);
+                    }
+                }
+                if !placed_offsets.is_empty() {
+                    let _: () = pipe.query_async(&mut c).await.unwrap_or(());
+                }
+            }
+
+            // Confirm success to the user
+            let success_confirm = serde_json::json!({
+                "type": "mines_placed_success",
+                "offsets": placed_offsets
+            }).to_string();
+            helpers::send_to_client(state, connection_id, &success_confirm).await;
+        }
         "clear_area" => {
             let x1 = msg.x1.unwrap_or(0);
             let y1 = msg.y1.unwrap_or(0);
@@ -712,7 +781,8 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 }
             }
 
-            let (config_batch, config_sec, is_premium_locked, board_w, _) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
+            let (config_batch, config_sec, is_premium_locked, board_w, board_h) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
+            let height = board_h;
             if is_premium_locked {
                 let err = serde_json::json!({"type": "canvas_locked_error"}).to_string();
                 helpers::send_to_client(state, connection_id, &err).await;
@@ -820,6 +890,143 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                             }
                         }
                     }
+                }
+            }
+
+            // Check for triggered mines
+            let mut triggered_mines = Vec::new();
+            for (idx, px) in pixels_to_process.iter().enumerate() {
+                if let Some(r) = results.get(idx) {
+                    if !r.is_empty() && r[0] == "OK" {
+                        let offset = px.y * width + px.x;
+                        let mines_key = format!("canvas:{}:mines", canvas_id);
+                        if let Ok(Some(owner_id)) = redis_conn.hget::<_, _, Option<String>>(&mines_key, offset.to_string()).await {
+                            if owner_id != uid_str {
+                                triggered_mines.push((px.x, px.y, offset, owner_id));
+                            }
+                        }
+                    }
+                }
+            }
+
+            if !triggered_mines.is_empty() {
+                let mut pipe = deadpool_redis::redis::pipe();
+                let mines_key = format!("canvas:{}:mines", canvas_id);
+                for &(_, _, offset, _) in &triggered_mines {
+                    pipe.cmd("HDEL").arg(&mines_key).arg(offset.to_string());
+                }
+                let _: () = pipe.query_async(&mut redis_conn).await.unwrap_or(());
+
+                let perks_cfg = helpers::get_perks_config(state).await;
+                let mut base_radius = 4;
+                if let Some(cfg) = perks_cfg {
+                    if let Some(perk_data) = cfg.perks.get("minas_1") {
+                        if let Some(radii) = &perk_data.radii {
+                            if let Some(r) = radii.get(&width.to_string()) {
+                                base_radius = *r;
+                            } else if let Some(r0) = radii.get("0") {
+                                base_radius = *r0;
+                            }
+                        }
+                    }
+                }
+
+                for (tx, ty, offset, owner_id) in triggered_mines {
+                    // Mine detonation broadcast to clean user's frontend myMines
+                    let det_msg = serde_json::json!({
+                        "type": "mine_detonated",
+                        "offset": offset,
+                        "owner_id": owner_id
+                    }).to_string();
+                    helpers::broadcast_to_room(state, canvas_id, &det_msg).await;
+                    let sync_payload = serde_json::json!({"source_node": &state.node_id, "target_type": "canvas", "canvas_id": canvas_id, "payload": det_msg});
+                    let _: () = redis_conn.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
+
+                    // Execute immediate explosion!
+                    let radius = base_radius;
+                    let areas_key = format!("canvas:{}:protected_areas", canvas_id);
+                    let areas_json: String = redis_conn.get(&areas_key).await.unwrap_or_else(|_| "[]".to_string());
+                    let mut areas: Vec<serde_json::Value> = serde_json::from_str(&areas_json).unwrap_or_default();
+                    
+                    let original_len = areas.len();
+                    areas.retain(|a| {
+                        let ax1 = a["x1"].as_i64().unwrap_or(0) as i32;
+                        let ay1 = a["y1"].as_i64().unwrap_or(0) as i32;
+                        let ax2 = a["x2"].as_i64().unwrap_or(0) as i32;
+                        let ay2 = a["y2"].as_i64().unwrap_or(0) as i32;
+                        let intersect = !(ax2 < (tx - radius) || ax1 > (tx + radius) || ay2 < (ty - radius) || ay1 > (ty + radius));
+                        !intersect
+                    });
+                    
+                    if areas.len() != original_len {
+                        let new_json = serde_json::to_string(&areas).unwrap_or_else(|_| "[]".to_string());
+                        let _: () = redis_conn.set(&areas_key, new_json).await.unwrap_or(());
+                    }
+                    
+                    let mut pipe_exp = deadpool_redis::redis::pipe();
+                    let mut affected_offsets = Vec::new();
+                    
+                    for iy in (ty - radius)..=(ty + radius) {
+                        let dy = iy - ty;
+                        if dy.abs() > radius { continue; }
+                        let dx = ((radius.pow(2) - dy.pow(2)) as f32).sqrt() as i32;
+                        let mut x_start = tx - dx;
+                        let mut x_end = tx + dx;
+                        
+                        if height > 0 && (iy < 0 || iy >= height) { continue; }
+                        x_start = x_start.max(0);
+                        if width > 0 { x_end = x_end.min(width - 1); }
+                        if x_start > x_end { continue; }
+                        
+                        let length = x_end - x_start + 1;
+                        let redis_state_key = format!("canvas:{}:state", canvas_id);
+                        let byte_offset = (iy * width + x_start) * 4;
+                        let transparent_bytes = vec![0u8; (length * 4) as usize];
+                        
+                        pipe_exp.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
+                        
+                        for ix in x_start..=x_end {
+                            affected_offsets.push(iy * width + ix);
+                        }
+                    }
+                    
+                    // Eliminar protecciones de Redis
+                    let zset_key = format!("canvas:{}:protected_zset", canvas_id);
+                    for &offset in &affected_offsets {
+                        let pk = format!("canvas:{}:protected_pixels:{}", canvas_id, offset);
+                        pipe_exp.cmd("DEL").arg(&pk);
+                        pipe_exp.cmd("ZREM").arg(&zset_key).arg(offset.to_string());
+                    }
+                    
+                    let _: () = pipe_exp.query_async(&mut redis_conn).await.unwrap_or(());
+                    
+                    // Eliminar protecciones de MySQL
+                    if !affected_offsets.is_empty() {
+                        db::save_canvas_protections_db_with_expiry(&state.db_pool, canvas_id, &affected_offsets, false, None, None).await;
+                    }
+                    
+                    // Broadcast de desprotección para actualizar el frontend
+                    let unprotect_msg = serde_json::json!({
+                        "type": "pixel_unprotected_broadcast",
+                        "offsets": affected_offsets
+                    }).to_string();
+                    helpers::broadcast_to_room(state, canvas_id, &unprotect_msg).await;
+                    let sync_payload_unprot = serde_json::json!({"source_node": &state.node_id, "target_type": "canvas", "canvas_id": canvas_id, "payload": unprotect_msg});
+                    let _: () = redis_conn.publish("canvas:sync_events", sync_payload_unprot.to_string()).await.unwrap_or(());
+                    
+                    let b_msg = serde_json::json!({
+                        "type": "bomb_pixel",
+                        "x": tx, "y": ty, "r": radius, "perk": "minas_1"
+                    }).to_string();
+                    helpers::broadcast_to_room(state, canvas_id, &b_msg).await;
+                    
+                    let sync_payload_bomb = serde_json::json!({"source_node": &state.node_id, "target_type": "canvas", "canvas_id": canvas_id, "payload": b_msg});
+                    let _: () = redis_conn.publish("canvas:sync_events", sync_payload_bomb.to_string()).await.unwrap_or(());
+                    
+                    let _: () = redis_conn.xadd(format!("canvas:{}:stream", canvas_id), "*", &[
+                        ("type", "bomb_pixel"), ("x", &tx.to_string()), ("y", &ty.to_string()),
+                        ("r", &radius.to_string()), ("perk", "minas_1")
+                    ]).await.unwrap_or(());
                 }
             }
 

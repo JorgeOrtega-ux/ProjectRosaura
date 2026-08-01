@@ -29,6 +29,8 @@ let protectedPixelsDirty = true;
 let isOwnerProtecting = false;
 let hoveredPixelKey = -1;
 let ownerEraserBox = null;
+let myMinesArray = new Uint32Array(0);
+let isPlacingMines = false;
 
 function updateProtectedOffscreen() {
     if (typeof OffscreenCanvas === 'undefined') return;
@@ -814,6 +816,22 @@ function render() {
         }
     }
 
+    if (isPlacingMines && myMinesArray && myMinesArray.length > 0) {
+        ctx.strokeStyle = '#22c55e'; // Green highlight
+        ctx.lineWidth = 1 / transform.scale;
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.15)'; // Transparent green fill
+        ctx.beginPath();
+        for (let i = 0; i < myMinesArray.length; i++) {
+            const off = myMinesArray[i];
+            const x = off % boardWidth;
+            const y = (off / boardWidth) | 0;
+            if (x < 0 || x >= boardWidth || y < 0 || y >= boardHeight) continue;
+            ctx.fillRect(x, y, 1, 1);
+            ctx.rect(x, y, 1, 1);
+        }
+        ctx.stroke();
+    }
+
     if (ownerEraserBox) {
         ctx.strokeStyle = '#ef4444';
         ctx.lineWidth = 1 / transform.scale;
@@ -1316,6 +1334,18 @@ self.onmessage = function (e) {
             requestRender();
             break;
 
+        case 'UPDATE_MY_MINES':
+            if (payload.myMines) {
+                myMinesArray = new Uint32Array(payload.myMines);
+            } else {
+                myMinesArray = new Uint32Array(0);
+            }
+            if (payload.isPlacingMines !== undefined) {
+                isPlacingMines = !!payload.isPlacingMines;
+            }
+            requestRender();
+            break;
+
         case 'UPDATE_RENDER_STATE':
             transform = payload.transform;
             isDarkMode = !!payload.isDarkMode;
@@ -1327,6 +1357,9 @@ self.onmessage = function (e) {
             if (isOwnerProtecting !== !!payload.isOwnerProtecting) {
                 isOwnerProtecting = !!payload.isOwnerProtecting;
                 protectedPixelsDirty = true;
+            }
+            if (payload.isPlacingMines !== undefined) {
+                isPlacingMines = !!payload.isPlacingMines;
             }
             if (payload.selectedPixels) {
                 selectedPixelsArray = new Uint32Array(payload.selectedPixels);

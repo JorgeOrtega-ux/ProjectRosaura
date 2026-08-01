@@ -18,4 +18,5 @@ class StoreConstants {
     public const PERK_METEOR_SHOWER = 'lluvia_meteoritos_1';
     public const PERK_ORBITAL_CANNON = 'canon_orbital_1';
     public const PERK_BLACK_HOLE = 'agujero_negro_1';
+    public const PERK_MINAS = 'minas_1';
 }

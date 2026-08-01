@@ -188,6 +188,8 @@ export const DesignRender = {
                     topBarBottomY = topBarRect.bottom - canvasRect.top;
                 }
 
+                const isPlacingMines = (this.interactionMode === 'placing_mines');
+                
                 this.renderWorker.postMessage({
                     type: 'UPDATE_RENDER_STATE',
                     payload: {
@@ -199,6 +201,7 @@ export const DesignRender = {
                         isFrozen: this.isFrozen,
                         isOwner: this.isOwner,
                         isOwnerProtecting: isOwnerProtecting,
+                        isPlacingMines: isPlacingMines,
                         selectedPixels: selArray,
                         hoveredPixelKey: hoverKey,
                         ownerEraserBox: this.ownerEraserBox || null,
@@ -294,6 +297,19 @@ export const DesignRender = {
                 ownerProtectedPixels: ownerProtArray,
                 myProtectedPixels: myProtArray,
                 showMyProtectionsHighlight: !!this.showMyProtectionsHighlight
+            }
+        });
+    },
+
+    syncMinesToWorker() {
+        if (!this.renderWorker) return;
+        const minesArray = this.myMines ? Array.from(this.myMines) : [];
+        const isPlacingMines = (this.interactionMode === 'placing_mines');
+        this.renderWorker.postMessage({
+            type: 'UPDATE_MY_MINES',
+            payload: {
+                myMines: minesArray,
+                isPlacingMines: isPlacingMines
             }
         });
     },
