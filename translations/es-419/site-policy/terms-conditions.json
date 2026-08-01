@@ -61,5 +61,21 @@
     "terms_conditions_section_14_p2": "El presente Contrato, junto con la Política de Privacidad, Política de Cookies y Política de Reembolsos, constituye el acuerdo completo y exclusivo entre el Usuario y {appName} respecto del uso de la Plataforma, sustituyendo cualquier propuesta, acuerdo o entendimiento previo verbal o escrito. La omisión o demora por parte de la Plataforma en exigir el cumplimiento estricto de cualquier derecho no constituirá una renuncia al mismo. La Plataforma podrá ceder o transferir este Contrato sin restricción en casos de fusión, adquisición o reorganización corporativa.",
     "terms_conditions_section_15_title": "15. INFORMACIÓN DE CONTACTO Y ATENCIÓN LEGAL",
     "terms_conditions_section_15_p1": "Para el envío de notificaciones legales formales, requerimientos de información o consultas referentes a los presentes Términos de Uso, el Usuario puede ponerse en contacto con nuestro Departamento Legal a través del correo electrónico oficial <strong>legal@projectrosaura.com</strong> o mediante el módulo de soporte integrado en la interfaz privada de la Cuenta.",
-    "terms_conditions_section_15_p2": "En caso de existir cualquier discrepancia, divergencia o conflicto de interpretación entre la versión oficial en idioma español de estos Términos de Uso y cualquiera de sus traducciones a otros idiomas, prevalecerá en todo momento a todos los efectos legales la versión en español publicada en el sitio web de la Plataforma."
+    "terms_conditions_section_15_p2": "En caso de existir cualquier discrepancia, divergencia o conflicto de interpretación entre la versión oficial en idioma español de estos Términos de Uso y cualquiera de sus traducciones a otros idiomas, prevalecerá en todo momento a todos los efectos legales la versión en español publicada en el sitio web de la Plataforma.",
+    "terms_conditions_section_0_summary": "Este documento es un contrato legal. Al usar el sitio web aceptas estas normas.",
+    "terms_conditions_section_1_summary": "Definimos términos clave como Plataforma, Lienzo, Timelapse y Cuentas para evitar malentendidos legales.",
+    "terms_conditions_section_2_summary": "Debes ser mayor de 18 años para registrarte. Eres responsable de proteger tu contraseña y activar la autenticación 2FA si lo deseas.",
+    "terms_conditions_section_3_summary": "Tú eres el dueño absoluto de todo lo que dibujas o creas en tus lienzos. Nosotros somos los dueños del software y del código de la plataforma.",
+    "terms_conditions_section_4_summary": "Ofrecemos suscripciones mensuales/anuales que se renuevan solas. Las compras en la tienda virtual no tienen valor fuera de la app.",
+    "terms_conditions_section_5_summary": "Las compras y suscripciones son definitivas y no reembolsables. Podemos suspender cuentas que cometan fraude o incumplan las reglas.",
+    "terms_conditions_section_6_summary": "La app sincroniza tus trazos y chat en tiempo real. Si compartes contenido inapropiado o molestas a otros, cerraremos tu cuenta.",
+    "terms_conditions_section_7_summary": "No nos responsabilizamos de lo que ocurra al salir del sitio a través de enlaces externos, como pasarelas de pago.",
+    "terms_conditions_section_8_summary": "Podemos pausar temporalmente el servicio por mantenimiento. Aunque buscamos estabilidad al 100%, la app se ofrece sin garantías.",
+    "terms_conditions_section_9_summary": "Prohibimos usar scrapers, inyectar virus o sobrecargar nuestros servidores. Cualquier ataque será denunciado.",
+    "terms_conditions_section_10_summary": "Nuestra responsabilidad legal máxima frente a cualquier daño se limita al dinero que nos hayas pagado en los últimos 6 meses.",
+    "terms_conditions_section_11_summary": "Si tu uso indebido de la app nos causa problemas legales o daños económicos, deberás compensarnos por los gastos.",
+    "terms_conditions_section_12_summary": "Este contrato dura mientras uses el servicio. Puedes cerrarlo borrando tu cuenta. Nosotros podemos cerrarla si incumples las normas.",
+    "terms_conditions_section_13_summary": "Las disputas se resolverán individualmente (renuncias a demandas colectivas) bajo las leyes de nuestra sede legal.",
+    "terms_conditions_section_14_summary": "Si un juez anula una regla, las demás siguen activas. Este documento es el contrato oficial definitivo.",
+    "terms_conditions_section_15_summary": "Para dudas legales o notificaciones oficiales, escríbenos a legal@projectrosaura.com."
 }

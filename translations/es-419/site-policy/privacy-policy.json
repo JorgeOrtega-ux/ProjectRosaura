@@ -52,5 +52,18 @@
     "privacy_policy_section_12_li1": "<strong>Correo Electrónico de Privacidad:</strong> privacy@projectrosaura.com",
     "privacy_policy_section_12_li2": "<strong>Centro de Políticas del Sitio:</strong> Sección de Políticas en la Plataforma (`/site-policy/privacy-policy`)",
     "privacy_policy_section_12_li3": "<strong>Módulo de Soporte de Usuario:</strong> Disponible en la interfaz privada tras iniciar sesión en la Cuenta.",
-    "privacy_policy_section_12_p2": "En caso de cualquier discrepancia o conflicto de interpretación entre la versión oficial redactada en idioma español de esta Política y cualquiera de sus traducciones a otros idiomas, prevalecerá a todos los efectos legales la versión en español publicada en el sitio web de {appName}."
+    "privacy_policy_section_12_p2": "En caso de cualquier discrepancia o conflicto de interpretación entre la versión oficial redactada en idioma español de esta Política y cualquiera de sus traducciones a otros idiomas, prevalecerá a todos los efectos legales la versión en español publicada en el sitio web de {appName}.",
+    "privacy_policy_section_0_summary": "Al usar la aplicación aceptas esta política. Si no estás de acuerdo, no debes usar la plataforma.",
+    "privacy_policy_section_1_summary": "Esta web es operada por la empresa. Para dudas de privacidad contacta a privacy@projectrosaura.com.",
+    "privacy_policy_section_2_summary": "Solo recopilamos los datos necesarios para que el lienzo y la cuenta funcionen (como tu correo, contraseñas cifradas y geolocalización básica). No guardamos datos bancarios.",
+    "privacy_policy_section_3_summary": "Usamos tus datos para ejecutar el contrato de servicio (trazos, chat, Timelapse) y proteger el sitio contra hackeos o fraudes.",
+    "privacy_policy_section_4_summary": "Prohibimos vender tus datos. Solo los compartimos con proveedores técnicos indispensables (como la nube o pasarelas de pago) o si una orden judicial lo exige.",
+    "privacy_policy_section_5_summary": "Podemos transferir y almacenar tus datos fuera de tu país, pero siempre bajo estrictos contratos y salvaguardas de seguridad.",
+    "privacy_policy_section_6_summary": "Conservamos tus datos mientras uses tu cuenta. Si cancelas, los borramos o anonimizamos, salvo obligación legal.",
+    "privacy_policy_section_7_summary": "Puedes acceder, rectificar o eliminar tus datos enviando un correo verificado a privacy@projectrosaura.com.",
+    "privacy_policy_section_8_summary": "No tomamos decisiones automatizadas que te afecten legalmente sin intervención humana.",
+    "privacy_policy_section_9_summary": "Implementamos cifrado industrial, Firewalls y accesos controlados para evitar filtraciones de tus datos.",
+    "privacy_policy_section_10_summary": "Usamos cookies técnicas esenciales para que la sesión funcione. Para más detalles lee nuestra Política de Cookies.",
+    "privacy_policy_section_11_summary": "Podemos cambiar esta política. Te avisaremos 15 días antes por correo o con alertas en el sitio.",
+    "privacy_policy_section_12_summary": "En caso de duda o disputa sobre privacidad, prevalecerá siempre la versión en español de esta política."
 }

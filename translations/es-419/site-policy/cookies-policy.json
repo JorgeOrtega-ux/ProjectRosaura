@@ -33,5 +33,14 @@
     "cookies_policy_section_7_p2": "Cualquier modificación sustancial será comunicada formalmente a los Usuarios a través del sitio web o vía correo electrónico con al menos quince (15) días de antelación a su entrada en vigor. El uso continuado de la Plataforma tras la entrada en vigor de los cambios constituirá la aceptación completa de la Política de Cookies actualizada.",
     "cookies_policy_section_8_title": "8. CANALES OFICIALES DE ATENCIÓN Y CONSULTAS DE PRIVACIDAD",
     "cookies_policy_section_8_p1": "Si el Usuario tiene dudas, consultas o comentarios respecto al uso de cookies en nuestra Plataforma, puede ponerse en contacto con nuestro Departamento de Privacidad a través de la dirección de correo electrónico **privacy@projectrosaura.com** o mediante la sección de soporte del sitio (`/site-policy/cookies-policy`).",
-    "cookies_policy_section_8_p2": "En caso de cualquier discrepancia entre la versión oficial redactada en idioma español de esta Política y cualquiera de sus traducciones, prevalecerá a todos los efectos legales la versión en español publicada en el sitio web de {appName}."
+    "cookies_policy_section_8_p2": "En caso de cualquier discrepancia entre la versión oficial redactada en idioma español de esta Política y cualquiera de sus traducciones, prevalecerá a todos los efectos legales la versión en español publicada en el sitio web de {appName}.",
+    "cookies_policy_section_0_summary": "Al usar la web aceptas las cookies esenciales. Puedes elegir desactivar las opcionales.",
+    "cookies_policy_section_1_summary": "Las cookies son archivos que ayudan a recordar tu sesión y preferencias de forma segura.",
+    "cookies_policy_section_2_summary": "Usamos cookies de seguridad, de sesión, de rendimiento de red y para guardar tus preferencias básicas.",
+    "cookies_policy_section_3_summary": "No usamos cookies publicitarias ni vendemos tu información. La app es un entorno libre de anuncios de terceros.",
+    "cookies_policy_section_4_summary": "Las cookies pueden ser de sesión (se borran al cerrar el navegador) o persistentes (quedan guardadas temporalmente).",
+    "cookies_policy_section_5_summary": "Puedes bloquear cookies en tu navegador, pero desactivar las esenciales impedirá iniciar sesión o usar los lienzos.",
+    "cookies_policy_section_6_summary": "Las herramientas de pago o inicio de sesión SSO externas usan sus propias cookies bajo sus políticas.",
+    "cookies_policy_section_7_summary": "Nos reservamos el derecho de modificar esta política para adaptarnos a leyes o cambios técnicos.",
+    "cookies_policy_section_8_summary": "Para dudas sobre cookies, contáctanos en privacy@projectrosaura.com."
 }

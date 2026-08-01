@@ -226,14 +226,16 @@ export const SkeletonTemplates = {
 
         return `
         <div class="view-content">
-            <div class="component-wrapper component-wrapper--full no-padding">
-                <div class="component-top">
-                    <div class="component-top-left">
-                        <div class="component-skeleton component-skeleton--control"></div>
-                    </div>
+            <div class="component-top">
+                <div class="component-top-left">
+                    <div class="component-skeleton component-skeleton--control"></div>
                 </div>
-                <div class="component-bottom policy-container">
-                    ${sections}
+            </div>
+            <div class="component-viewport">
+                <div class="component-wrapper">
+                    <div class="component-bottom">
+                        ${sections}
+                    </div>
                 </div>
             </div>
         </div>`;

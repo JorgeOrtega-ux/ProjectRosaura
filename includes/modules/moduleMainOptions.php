@@ -115,7 +115,7 @@ $parseRoleColor = function($roleColorRaw) {
             </div>
             <?php endif; ?>
 
-            <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/site-policy">
+            <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/site-policy/terms-conditions">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">help</span>
                 </div>

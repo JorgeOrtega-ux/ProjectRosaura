@@ -35,5 +35,16 @@
     "legal_notice_section_9_p2": "Para la resolución de cualquier controversia o conflicto legal derivado del uso de la Plataforma o de la interpretación de este documento, las partes se someten voluntariamente a la jurisdicción de los tribunales ordinarios competentes de la sede legal de la Empresa, renunciando expresamente el Usuario a cualquier otro fuero o domicilio que pudiera corresponderle.",
     "legal_notice_section_10_title": "10. INFORMACIÓN DE CONTACTO Y ATENCIÓN LEGAL",
     "legal_notice_section_10_p1": "Para enviar notificaciones formales, solicitudes de aclaración o requerimientos legales referentes a este Aviso Legal, el Usuario puede ponerse en contacto con nuestro Departamento Legal a través del correo electrónico oficial **legal@projectrosaura.com**.",
-    "legal_notice_section_10_p2": "En caso de existir cualquier discrepancia o conflicto de interpretación entre la versión oficial redactada en idioma español de este Aviso Legal y cualquiera de sus traducciones a otros idiomas, prevalecerá a todos los efectos legales la versión en español publicada en la Plataforma."
+    "legal_notice_section_10_p2": "En caso de existir cualquier discrepancia o conflicto de interpretación entre la versión oficial redactada en idioma español de este Aviso Legal y cualquiera de sus traducciones a otros idiomas, prevalecerá a todos los efectos legales la versión en español publicada en la Plataforma.",
+    "legal_notice_section_0_summary": "Al navegar por el sitio aceptas este Aviso Legal. Léelo con atención ya que puede actualizarse.",
+    "legal_notice_section_1_summary": "Este sitio web es operado por la empresa. Para consultas legales escribe a legal@projectrosaura.com.",
+    "legal_notice_section_2_summary": "La app es un servicio SaaS de edición gráfica y colaboración. Podemos modificar las funciones en cualquier momento.",
+    "legal_notice_section_3_summary": "Debes usar la plataforma de forma legal y ética. No permitimos insultos, acoso, ni ataques informáticos como bots o sobrecarga de peticiones.",
+    "legal_notice_section_4_summary": "Nosotros somos dueños del código y diseño de la app. Queda prohibida su copia o ingeniería inversa.",
+    "legal_notice_section_5_summary": "Ofrecemos el software tal como está. Aunque trabajamos para que todo funcione al 100%, no nos hacemos responsables por pérdidas de datos si falla la red o tu conexión.",
+    "legal_notice_section_6_summary": "Los enlaces a sitios de terceros (como pasarelas de pago) se rigen por sus propias políticas. No controlamos sus contenidos.",
+    "legal_notice_section_7_summary": "Prohibimos cualquier tipo de hackeo o inyecciones de código. Infringir la seguridad causará el bloqueo inmediato.",
+    "legal_notice_section_8_summary": "Podemos modificar estas normas cuando sea necesario. Al seguir usando el sitio aceptas los cambios.",
+    "legal_notice_section_9_summary": "Cualquier conflicto legal se resolverá bajo las leyes de nuestra sede y en los tribunales designados.",
+    "legal_notice_section_10_summary": "Para avisos formales o dudas de este Aviso Legal, contáctanos en legal@projectrosaura.com."
 }

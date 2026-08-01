@@ -106,6 +106,9 @@ if ($isMaintenanceActive && !$isPrivileged) {
         } elseif ($currentView === 'settings/index.php') {
             $currentView = $isLoggedIn ? 'settings/profile/your-account.php' : 'settings/guest.php';
             $redirectUrl = $isLoggedIn ? APP_URL . '/settings/your-account' : APP_URL . '/settings/guest';
+        } elseif ($currentView === 'site-policy/site-policy.php') {
+            $currentView = 'site-policy/terms-conditions.php';
+            $redirectUrl = APP_URL . '/site-policy/terms-conditions';
         }
     }
 }

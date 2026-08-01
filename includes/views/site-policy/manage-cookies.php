@@ -3,13 +3,6 @@
         <div class="component-top-left">
             <h1 class="component-top-title">Administrar cookies</h1>
         </div>
-        <div class="component-top-right">
-            <div>
-                <button class="component-button component-button--h40 component-button--outline" data-action="reject_all">Rechazar todo</button>
-                <button class="component-button component-button--h40 component-button--dark" data-action="accept_all">Aceptar todo</button>
-                <button class="component-button component-button--h40" data-action="save_prefs">Guardar preferencias</button>
-            </div>
-        </div>
     </div>
 
     <div class="component-viewport">
@@ -33,7 +26,6 @@
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <span>Siempre activas</span>
                             <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
                         </div>
                     </div>
@@ -204,6 +196,8 @@
                         </div>
                     </div>
                 </div>
+
+
 
             </div>
         </div>

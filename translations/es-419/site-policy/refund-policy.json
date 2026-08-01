@@ -29,5 +29,14 @@
     "refund_policy_section_8_li1": "<strong>Correo Electrónico de Facturación:</strong> billing@projectrosaura.com",
     "refund_policy_section_8_li2": "<strong>Correo Electrónico Legal:</strong> legal@projectrosaura.com",
     "refund_policy_section_8_li3": "<strong>Centro de Políticas del Sitio:</strong> Sección de Políticas en la Plataforma (`/site-policy/refund-policy`)",
-    "refund_policy_section_8_p2": "En caso de cualquier conflicto de interpretación entre la versión oficial redactada en idioma español de esta Política y cualquiera de sus traducciones a otros idiomas, prevalecerá a todos los efectos legales la versión en español publicada en el sitio web de {appName}."
+    "refund_policy_section_8_p2": "En caso de cualquier conflicto de interpretación entre la versión oficial redactada en idioma español de esta Política y cualquiera de sus traducciones a otros idiomas, prevalecerá a todos los efectos legales la versión en español publicada en el sitio web de {appName}.",
+    "refund_policy_section_0_summary": "Esta política regula cómo procesamos los cobros, cancelaciones y devoluciones de la plataforma.",
+    "refund_policy_section_1_summary": "Los servicios digitales se consumen de inmediato al pagar. Por eso, todas las compras son definitivas y no hay reembolsos, excepto por fallos de cobro de nuestro lado o leyes locales obligatorias.",
+    "refund_policy_section_2_summary": "Puedes cancelar la renovación cuando quieras, pero no se reembolsará el periodo activo ya pagado.",
+    "refund_policy_section_3_summary": "Los créditos y compras digitales en la tienda son finales y no se pueden canjear por dinero real.",
+    "refund_policy_section_4_summary": "Si inicias sesión o usas el software tras la compra, pierdes el derecho de desistimiento de 14 días.",
+    "refund_policy_section_5_summary": "Si detectas un cobro duplicado o incorrecto, avísanos en un plazo de 30 días para corregirlo.",
+    "refund_policy_section_6_summary": "Si inicias un contracargo o disputa bancaria injustificada, suspenderemos tu cuenta y tus lienzos de forma definitiva de inmediato.",
+    "refund_policy_section_7_summary": "Esta política de reembolso puede cambiar, aplicando la nueva versión a las futuras compras.",
+    "refund_policy_section_8_summary": "Para cualquier problema con pagos, contáctanos en billing@projectrosaura.com."
 }

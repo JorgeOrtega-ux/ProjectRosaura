@@ -64,14 +64,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
 
                 <div class="component-menu-divider"></div>
                 
-                <div class="component-menu-link nav-item" data-nav="/site-policy">
-                    <div class="component-menu-link-icon">
-                        <span class="material-symbols-rounded">hub</span>
-                    </div>
-                    <div class="component-menu-link-text">
-                        <span><?php echo __('menu_policy_hub'); ?></span>
-                    </div>
-                </div>
+
                 <div class="component-menu-link nav-item" data-nav="/site-policy/terms-conditions">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">description</span>
@@ -96,14 +89,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                         <span><?php echo __('menu_policy_cookies'); ?></span>
                     </div>
                 </div>
-                                <div class="component-menu-link nav-item" data-nav="/site-policy/manage-cookies">
-                    <div class="component-menu-link-icon">
-                        <span class="material-symbols-rounded">tune</span>
-                    </div>
-                    <div class="component-menu-link-text">
-                        <span><?php echo __('menu_policy_cookies_prefs'); ?></span>
-                    </div>
-                </div>
+                
                 <div class="component-menu-link nav-item" data-nav="/site-policy/legal-notice">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">gavel</span>
