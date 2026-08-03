@@ -1,0 +1,31 @@
+1-Hace poco hice una restucturacion y un "layouts_guide.md" para anotar todas las layouts de mi web disponibles
+esto para que si en un futuro hago otra seccion, solo le diga a la IA que me haga una seccion con el layour numero "1"
+por ejemplo, el problema es que la vista de design.php y no se si alguna otra sufireron un problema y es que se genero un scroll vertical,
+no se si puedas revisarlo y solucionarlo.
+
+2-Recientemente implemente la ventaja de cañon orbital y funciona bien en un 99%, el problema que he notado a veces es que
+por alguna razon al ejecutarse ya vez que hay una animacion de bola cargandose en el bottom del component top, el problema es que esta desalineado
+el rayo de la bola de carga, osea es como si de la bola saliera el rayo, entonces siempre debe estar alineado aunque se haga zoom, mueva el lienzo etc
+y es raro ya que si recargo la pagina y lanzo el primer cañon orbital, si estara alineado el rayo con la bola y todo funciona bien,
+pero ya los demas que lanze estaran desincronizados, como que se quedan en el estado anterior o algo asi, no lo se, y tambien note que la bola de carga desaparece
+mientras el rayo se esta lanzando deben tener la misma duracion.
+
+3-Mira he notado que muchas de las ventajas tienen retraso o asi dependiendo que tan grande sea el lienzo, si es pequeño se ejecutan de inmediato 
+y explotan y actualizan de inmediato, pero en lienzos grandes como 4096x4096 o asi, tienen como retraso/lag, y eso es inaceptable, debe haber alguna tecnica para que no haya nada de lag y todo fuera 100% sincronizado, tal vez podrias encontrar algo en mi arquitectura para eso.
+
+4-Quiero que me crees un archivo ".md" donde hagas una tabla comparativa de todas las ventajas que tenemos y una lista de sonidos
+para en un futuro cuando las ventajas tengan sonidos pues saber cuales deben llevar el mismo, cuales, otros, y asi
+por ejemplo en la bombas atomicas y asi, al lanzarla y esperar el cooldown deben haber un sonido de una alerta tal tal tal. luego al explotar hacer un sonido,
+y asi. no todas llevaran sonidos como proteccion de pixeles o minas terrestres.
+
+5-Volviendo al tema del punto "1" quisiera que tanto el component top como el general content top, sean como transparentes o semitransparentes o con un blur muy ligero, esto
+para que si el usuario en algun lienzo hace mucho zoom y el lienzo pues como decirlo "queda por debajo" de esos divs, como que se vea por debajo de ellos,
+no se como explocarlo es como si el contenido "canvas" se viera por debajo de esos divs, aunnado a eso, no se si permitir eso en todas las secciones
+ya que bueno mi distribuccion tiene el scroll limitado en general content top y bottom, entonces ahi abra problemas. entonces analiza a fondo, y dime que opinas y cual seria tu opinion.
+
+.view-content:has(.component-wrapper[data-ref="design-wrapper"]),
+.view-content:has(.component-wrapper[data-ref="snapshot-wrapper"]) {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}

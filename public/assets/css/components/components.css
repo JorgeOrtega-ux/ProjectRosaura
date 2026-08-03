@@ -8245,3 +8245,9 @@ html.dark-theme .component-skeleton-design-bottom {
 }
 
 
+.view-content:has(.component-wrapper[data-ref="design-wrapper"]),
+.view-content:has(.component-wrapper[data-ref="snapshot-wrapper"]) {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
