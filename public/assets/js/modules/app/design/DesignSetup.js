@@ -70,6 +70,7 @@ export const DesignSetup = {
             };
         });
         img.src = url;
+        return loadPromise;
     },
 
     loadCanvasConfig() {
@@ -329,7 +330,7 @@ export const DesignSetup = {
 
         if (this.isProgressive) {
             if (canvasData.thumbnail_url && !forceReload) {
-                this.drawImageOnCanvas(canvasData.thumbnail_url);
+                await this.drawImageOnCanvas(canvasData.thumbnail_url);
             }
             this.updateVisibleChunks();
         } else if (canvasData.state_base64) {
@@ -441,7 +442,7 @@ export const DesignSetup = {
                                 offset += 4;
 
                                 if (offset + gzipSize > buffer.byteLength) break;
-                                const gzipBytes = new Uint8Array(buffer, offset, gzipSize);
+                                const gzipBytes = new Uint8Array(buffer, offset, gzipSize).slice();
                                 offset += gzipSize;
 
                                 const [cx, cy] = key.split(',').map(Number);
@@ -626,15 +627,28 @@ export const DesignSetup = {
     centerBoard() {
         if (!this.canvas) return;
         const rect = this.canvas.getBoundingClientRect();
-        const scaleX = rect.width / this.boardWidth;
-        const scaleY = rect.height / this.boardHeight;
-        
-        
+        let rectW = rect.width;
+        let rectH = rect.height;
+
+        if (rectW <= 0 || rectH <= 0) {
+            const parent = this.canvas.parentElement;
+            if (parent) {
+                const pRect = parent.getBoundingClientRect();
+                rectW = pRect.width > 0 ? pRect.width : (window.innerWidth || 800);
+                rectH = pRect.height > 0 ? pRect.height : (window.innerHeight - 120 || 600);
+            } else {
+                rectW = window.innerWidth || 800;
+                rectH = window.innerHeight - 120 || 600;
+            }
+        }
+
+        const scaleX = rectW / this.boardWidth;
+        const scaleY = rectH / this.boardHeight;
 
         this.transform.scale = Math.min(scaleX, scaleY) * 0.9;
         
-        this.transform.x = (rect.width - (this.boardWidth * this.transform.scale)) / 2;
-        this.transform.y = (rect.height - (this.boardHeight * this.transform.scale)) / 2;
+        this.transform.x = (rectW - (this.boardWidth * this.transform.scale)) / 2;
+        this.transform.y = (rectH - (this.boardHeight * this.transform.scale)) / 2;
     },
 
     limitBounds() {

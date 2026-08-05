@@ -1,13 +1,13 @@
-{
-    "menu_policy_terms": "Términos y Condiciones",
-    "menu_policy_privacy": "Política de Privacidad",
-    "menu_policy_cookies": "Política de Cookies",
+﻿{
+    "menu_policy_terms": "TÃ©rminos y Condiciones",
+    "menu_policy_privacy": "PolÃ­tica de Privacidad",
+    "menu_policy_cookies": "PolÃ­tica de Cookies",
     "menu_policy_legal": "Aviso Legal",
-    "menu_policy_refunds": "Política de Reembolsos",
-    "policy_hub_title": "Centro de Ayuda y Políticas",
-    "policy_terms_title": "Términos y Condiciones",
-    "policy_privacy_title": "Política de Privacidad",
-    "policy_cookies_title": "Política de Cookies",
+    "menu_policy_refunds": "PolÃ­tica de Reembolsos",
+    "policy_hub_title": "Centro de Ayuda y PolÃ­ticas",
+    "policy_terms_title": "TÃ©rminos y Condiciones",
+    "policy_privacy_title": "PolÃ­tica de Privacidad",
+    "policy_cookies_title": "PolÃ­tica de Cookies",
     "policy_legal_title": "Aviso Legal",
-    "policy_refunds_title": "Política de Reembolsos"
+    "policy_refunds_title": "PolÃ­tica de Reembolsos"
 }

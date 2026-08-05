@@ -4408,6 +4408,13 @@ input:checked+.component-toggle-slider:before {
     outline: none;
 }
 
+.component-pixelated {
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
 .component-canvas-surface.cursor-grabbing {
     cursor: grabbing;
 }

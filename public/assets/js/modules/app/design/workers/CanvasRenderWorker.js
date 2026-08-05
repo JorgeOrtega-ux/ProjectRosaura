@@ -1482,12 +1482,14 @@ self.onmessage = function (e) {
                 } else {
                     let tempCanvas = new OffscreenCanvas(boardWidth, boardHeight);
                     let tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.imageSmoothingEnabled = false;
                     tempCtx.drawImage(payload.imageBitmap, 0, 0, boardWidth, boardHeight);
                     mainImageData = tempCtx.getImageData(0, 0, boardWidth, boardHeight);
                     pixelBuffer = new Uint32Array(mainImageData.data.buffer);
                     
                     if (offscreenCtx) {
                         offscreenCtx.clearRect(0, 0, boardWidth, boardHeight);
+                        offscreenCtx.imageSmoothingEnabled = false;
                         offscreenCtx.drawImage(payload.imageBitmap, 0, 0, boardWidth, boardHeight);
                     }
                     requestRender();

@@ -140,15 +140,7 @@
                     
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Sentry</h2>
-                                        <p class="component-card__description">Monitoreo de errores y rendimiento de la aplicación.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <hr class="component-divider">
+
                             <div class="component-group-item component-group-item--wrap">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
@@ -161,41 +153,7 @@
                     </div>
                 </div>
 
-                <div class="component-card--grouped component-accordion component-mb-3">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header">
-                        <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">target</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Cookies de segmentación</h2>
-                                <p class="component-card__description">Muestran anuncios pertinentes en otros sitios.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <div>
-                                <label class="component-toggle-switch">
-                                    <input type="checkbox" name="cookie_target" id="cookie_target" checked>
-                                    <span class="component-toggle-slider"></span>
-                                </label>
-                            </div>
-                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
-                        </div>
-                    </div>
-                    
-                    <div class="component-accordion-body">
-                        <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Google Ads</h2>
-                                        <p class="component-card__description">Rastreo de conversiones y personalización de anuncios.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
 
 
