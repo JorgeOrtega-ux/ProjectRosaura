@@ -250,13 +250,22 @@ export const DesignSetup = {
         this.resizeTimerInterval = setInterval(updateTimer, 1000);
     },
 
-    async decompressIfNeeded(base64String) {
-        if (!base64String) return null;
+    async decompressIfNeeded(input) {
+        if (!input) return null;
+        let bytes;
         try {
-            const binaryString = atob(base64String);
-            let bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
+            if (typeof input === 'string') {
+                const binaryString = atob(input);
+                bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+            } else if (input instanceof Uint8Array) {
+                bytes = input;
+            } else if (input instanceof ArrayBuffer) {
+                bytes = new Uint8Array(input);
+            } else {
+                return null;
             }
 
             // Check for Gzip magic bytes (0x1F, 0x8B)
@@ -377,8 +386,7 @@ export const DesignSetup = {
         
         validKeys.forEach(k => this.loadingChunks.add(k));
 
-
-        // Batch chunk requests to prevent massive 48MB JSON payloads and blocking
+        // Batch chunk requests to prevent massive payloads and blocking
         const BATCH_SIZE = 4;
         const fetchPromises = [];
 
@@ -387,36 +395,89 @@ export const DesignSetup = {
             
             fetchPromises.push((async () => {
                 try {
-                    // Fetch directly from Nginx -> Go, bypassing PHP completely
-                    const result = await api.postCustom('/api/go/canvases/get_chunks', {
-                        canvas_id: parseInt(this.canvasIntId, 10),
-                        board_w: this.boardWidth,
-                        board_h: this.boardHeight,
-                        chunks: batch
+                    const response = await fetch('/api/go/canvases/get_chunks', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/octet-stream',
+                            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        },
+                        body: JSON.stringify({
+                            canvas_id: parseInt(this.canvasIntId, 10),
+                            board_w: this.boardWidth,
+                            board_h: this.boardHeight,
+                            chunks: batch
+                        })
                     });
-                    
-                    if (!result || !result.success) {
+
+                    if (!response.ok) {
                         batch.forEach(k => this.loadingChunks.delete(k));
                         return;
                     }
-                    
-                    if (result && result.success && result.data?.chunks) {
-                        const receivedKeys = Object.keys(result.data.chunks);
 
-                        Object.entries(result.data.chunks).forEach(([key, base64]) => {
-                            const [cx, cy] = key.split(',').map(Number);
-                            this.loadedChunks.add(key);
-                            this.loadingChunks.delete(key);
-                            this.hydrateChunk(cx, cy, base64);
-                        });
+                    const contentType = response.headers.get('Content-Type');
+                    if (contentType && contentType.includes('application/octet-stream')) {
+                        const buffer = await response.arrayBuffer();
+                        const dataView = new DataView(buffer);
+                        let offset = 0;
 
+                        if (buffer.byteLength >= 2) {
+                            const totalChunks = dataView.getUint16(offset, false);
+                            offset += 2;
+
+                            for (let idx = 0; idx < totalChunks; idx++) {
+                                if (offset >= buffer.byteLength) break;
+                                
+                                const keyLen = dataView.getUint8(offset);
+                                offset += 1;
+                                
+                                if (offset + keyLen > buffer.byteLength) break;
+                                const keyBytes = new Uint8Array(buffer, offset, keyLen);
+                                const key = new TextDecoder().decode(keyBytes);
+                                offset += keyLen;
+
+                                if (offset + 4 > buffer.byteLength) break;
+                                const gzipSize = dataView.getUint32(offset, false);
+                                offset += 4;
+
+                                if (offset + gzipSize > buffer.byteLength) break;
+                                const gzipBytes = new Uint8Array(buffer, offset, gzipSize);
+                                offset += gzipSize;
+
+                                const [cx, cy] = key.split(',').map(Number);
+                                this.loadedChunks.add(key);
+                                this.loadingChunks.delete(key);
+                                
+                                // Hydrate this chunk
+                                this.hydrateChunk(cx, cy, gzipBytes);
+                            }
+                        }
+
+                        // Clean up any batch items that weren't returned
                         batch.forEach(k => {
-                            if (!result.data.chunks[k]) {
+                            if (!this.loadedChunks.has(k)) {
                                 this.loadingChunks.delete(k);
                             }
                         });
                     } else {
-                        batch.forEach(k => this.loadingChunks.delete(k));
+                        // Fallback to JSON if backend returned JSON
+                        const result = await response.json();
+                        if (result && result.success && result.data?.chunks) {
+                            Object.entries(result.data.chunks).forEach(([key, base64]) => {
+                                const [cx, cy] = key.split(',').map(Number);
+                                this.loadedChunks.add(key);
+                                this.loadingChunks.delete(key);
+                                this.hydrateChunk(cx, cy, base64);
+                            });
+
+                            batch.forEach(k => {
+                                if (!result.data.chunks[k]) {
+                                    this.loadingChunks.delete(k);
+                                }
+                            });
+                        } else {
+                            batch.forEach(k => this.loadingChunks.delete(k));
+                        }
                     }
                 } catch (e) {
                     batch.forEach(k => this.loadingChunks.delete(k));
@@ -427,18 +488,27 @@ export const DesignSetup = {
         await Promise.all(fetchPromises);
     },
 
-    async hydrateChunk(chunkX, chunkY, base64String) {
-        if (!base64String) return;
+    async hydrateChunk(chunkX, chunkY, chunkData) {
+        if (!chunkData) return;
         if (this.renderWorker) {
+            const isBinary = chunkData instanceof Uint8Array || chunkData instanceof ArrayBuffer;
+            const transfer = isBinary ? [chunkData instanceof ArrayBuffer ? chunkData : chunkData.buffer] : [];
+            
             this.renderWorker.postMessage({
                 type: 'HYDRATE_CHUNK',
-                payload: { chunkX, chunkY, chunkSize: 512, base64String }
-            });
+                payload: { 
+                    chunkX, 
+                    chunkY, 
+                    chunkSize: 512, 
+                    base64String: isBinary ? null : chunkData,
+                    chunkData: isBinary ? chunkData : null
+                }
+            }, transfer);
             return;
         }
 
         try {
-            const bytes = await this.decompressIfNeeded(base64String);
+            const bytes = await this.decompressIfNeeded(chunkData);
             if (!bytes || !this.offscreenCtx) return;
 
             const chunkSize = 512;
@@ -539,6 +609,8 @@ export const DesignSetup = {
 
     handleResize() {
         if (!this.canvas) return;
+        this._cachedTopBarRect = null;
+        this._cachedCanvasRect = null;
         this.updateCanvasDimensions();
         if (typeof this.limitBounds === 'function') {
             this.limitBounds();

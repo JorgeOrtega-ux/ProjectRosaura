@@ -11,7 +11,7 @@ use tokio::sync::mpsc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
 
-use crate::state::{AppState, ClientMeta};
+use crate::state::{AppState, ClientMeta, OutboundMessage};
 use crate::models::WsMessage;
 use crate::actions;
 use crate::helpers;
@@ -112,7 +112,7 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
                 if let Some(evict_id) = guest_to_evict {
                     warn!("[QoS] Evicting guest connection to prioritize registered user.");
                     if let Some(tx) = state.tx_channels.get(&evict_id) {
-                        let _ = tx.send("###CLOSE###".to_string()).await;
+                        let _ = tx.send(OutboundMessage::Close).await;
                     }
                 } else {
                     warn!("[QoS] Server full with only registered users. Connection blocked.");
@@ -138,7 +138,7 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
     state.rooms.entry(canvas_id.clone()).or_default().insert(connection_id.clone());
 
     let (mut sender, mut receiver) = socket.split();
-    let (tx, mut rx) = mpsc::channel::<String>(100);
+    let (tx, mut rx) = mpsc::channel::<OutboundMessage>(100);
     state.tx_channels.insert(connection_id.clone(), tx);
 
     let mut bcast_rx = {
@@ -157,16 +157,23 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
             tokio::select! {
                 msg_opt = rx.recv() => {
                     match msg_opt {
-                        Some(msg) => {
-                            if msg == "###CLOSE###" {
+                        Some(msg) => match msg {
+                            OutboundMessage::Close => {
                                 let _ = sender.send(Message::Close(Some(axum::extract::ws::CloseFrame {
                                     code: 4001,
                                     reason: std::borrow::Cow::Borrowed("Evicted for QoS")
                                 }))).await;
                                 break;
                             }
-                            if sender.send(Message::Text(msg)).await.is_err() {
-                                break;
+                            OutboundMessage::Text { payload, .. } => {
+                                if sender.send(Message::Text(payload)).await.is_err() {
+                                    break;
+                                }
+                            }
+                            OutboundMessage::Binary { payload, .. } => {
+                                if sender.send(Message::Binary(payload)).await.is_err() {
+                                    break;
+                                }
                             }
                         }
                         None => break,
@@ -174,24 +181,30 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
                 }
                 bcast_res = bcast_rx.recv() => {
                     match bcast_res {
-                        Ok(msg) => {
-                            let mut final_msg = msg;
-                            if final_msg.starts_with("!EXC:") {
-                                if let Some(pipe_idx) = final_msg.find('|') {
-                                    let exc_id = &final_msg[5..pipe_idx];
+                        Ok(msg) => match msg {
+                            OutboundMessage::Close => break,
+                            OutboundMessage::Text { payload, exclude_connection } => {
+                                if let Some(exc_id) = exclude_connection {
                                     if exc_id == connection_id_for_send {
                                         continue;
                                     }
-                                    final_msg = final_msg[pipe_idx + 1..].to_string();
+                                }
+                                if sender.send(Message::Text(payload)).await.is_err() {
+                                    break;
                                 }
                             }
-                            if sender.send(Message::Text(final_msg)).await.is_err() {
-                                break;
+                            OutboundMessage::Binary { payload, exclude_connection } => {
+                                if let Some(exc_id) = exclude_connection {
+                                    if exc_id == connection_id_for_send {
+                                        continue;
+                                    }
+                                }
+                                if sender.send(Message::Binary(payload)).await.is_err() {
+                                    break;
+                                }
                             }
                         }
                         Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
-                            // If this client lags too much behind the broadcast, it skipped messages.
-                            // We just continue to the next available message.
                             continue;
                         }
                         Err(tokio::sync::broadcast::error::RecvError::Closed) => {
@@ -211,7 +224,7 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
         let mut last_message_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f64();
         let mut message_count = 0;
 
-        while let Some(Ok(Message::Text(text))) = receiver.next().await {
+        while let Some(Ok(msg)) = receiver.next().await {
             // Anti-Spam check
             let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f64();
             if now - last_message_time > 1.0 {
@@ -238,10 +251,18 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
                 break;
             }
 
-            if let Ok(ws_msg) = serde_json::from_str::<WsMessage>(&text) {
-                actions::handle_action(ws_msg, &canvas_id_clone, &connection_id_clone, &state_clone).await;
-            } else {
-                warn!("Failed to parse WS JSON: {}", text);
+            match msg {
+                Message::Text(text) => {
+                    if let Ok(ws_msg) = serde_json::from_str::<WsMessage>(&text) {
+                        actions::handle_action(ws_msg, &canvas_id_clone, &connection_id_clone, &state_clone).await;
+                    } else {
+                        warn!("Failed to parse WS JSON: {}", text);
+                    }
+                }
+                Message::Binary(bin) => {
+                    actions::handle_binary_action(bin, &canvas_id_clone, &connection_id_clone, &state_clone).await;
+                }
+                _ => {}
             }
         }
     });

@@ -7,6 +7,19 @@ use tokio::task::JoinHandle;
 use crate::models::PerksConfig;
 
 #[derive(Clone, Debug)]
+pub enum OutboundMessage {
+    Text {
+        payload: String,
+        exclude_connection: Option<String>,
+    },
+    Binary {
+        payload: Vec<u8>,
+        exclude_connection: Option<String>,
+    },
+    Close,
+}
+
+#[derive(Clone, Debug)]
 pub struct ClientMeta {
     pub canvas_id: String,
     pub user_type: String,
@@ -16,10 +29,10 @@ pub struct ClientMeta {
 #[derive(Clone)]
 pub struct AppState {
     pub rooms: Arc<DashMap<String, DashSet<String>>>, // canvas_id -> set of connection_ids
-    pub room_broadcasts: Arc<DashMap<String, broadcast::Sender<String>>>, // canvas_id -> broadcast sender
+    pub room_broadcasts: Arc<DashMap<String, broadcast::Sender<OutboundMessage>>>, // canvas_id -> broadcast sender
     pub live_rooms: Arc<DashMap<String, DashSet<String>>>, // code -> set of connection_ids
     pub ws_meta: Arc<DashMap<String, ClientMeta>>, // connection_id -> ClientMeta
-    pub tx_channels: Arc<DashMap<String, mpsc::Sender<String>>>, // connection_id -> Sender (direct msgs)
+    pub tx_channels: Arc<DashMap<String, mpsc::Sender<OutboundMessage>>>, // connection_id -> Sender (direct msgs)
     pub user_locks: Arc<DashMap<String, Arc<Mutex<()>>>>, // user_id -> Mutex lock
     pub owner_conns: Arc<DashMap<String, String>>, // connection_id -> code
     pub grace_sessions: Arc<DashMap<String, JoinHandle<()>>>, // code -> JoinHandle

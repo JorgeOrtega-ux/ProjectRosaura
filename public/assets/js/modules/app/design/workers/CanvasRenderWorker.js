@@ -4,6 +4,7 @@ let ctx = null;
 let offscreenCanvas = null;
 let offscreenCtx = null;
 
+
 // Motor de Memoria Unificado
 let mainImageData = null;
 let pixelBuffer = null; // Uint32Array map
@@ -128,10 +129,12 @@ function initMemoryEngine(w, h) {
     if (mainImageData && mainImageData.width === w && mainImageData.height === h) return;
     mainImageData = new ImageData(w, h);
     pixelBuffer = new Uint32Array(mainImageData.data.buffer);
-    if (offscreenCtx) {
+    if (offscreenCanvas) {
         offscreenCanvas.width = w;
         offscreenCanvas.height = h;
-        offscreenCtx.putImageData(mainImageData, 0, 0);
+        if (offscreenCtx) {
+            offscreenCtx.putImageData(mainImageData, 0, 0);
+        }
     }
 }
 
@@ -151,7 +154,7 @@ function resetDirtyRect() {
 
 function flushDirtyRect() {
     if (dirtyRect.minX > dirtyRect.maxX) return;
-    if (!offscreenCtx || !mainImageData) return;
+    if (!pixelBuffer) return;
     
     const dx = Math.max(0, dirtyRect.minX);
     const dy = Math.max(0, dirtyRect.minY);
@@ -159,9 +162,9 @@ function flushDirtyRect() {
     const dh = Math.min(boardHeight - 1, dirtyRect.maxY) - dy + 1;
     
     if (dw > 0 && dh > 0) {
-        
-
-        offscreenCtx.putImageData(mainImageData, 0, 0, dx, dy, dw, dh);
+        if (offscreenCtx && mainImageData) {
+            offscreenCtx.putImageData(mainImageData, 0, 0, dx, dy, dw, dh);
+        }
     }
     
     resetDirtyRect();
@@ -216,13 +219,22 @@ function colorToAbgr(color) {
 // FUNCIONES DE DESCOMPRESIÓN E HIDRATACIÓN
 // ---------------------------------------------------------
 
-async function decompressIfNeeded(base64String) {
-    if (!base64String) return null;
+async function decompressIfNeeded(input) {
+    if (!input) return null;
+    let bytes;
     try {
-        const binaryString = atob(base64String);
-        let bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
+        if (typeof input === 'string') {
+            const binaryString = atob(input);
+            bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+        } else if (input instanceof Uint8Array) {
+            bytes = input;
+        } else if (input instanceof ArrayBuffer) {
+            bytes = new Uint8Array(input);
+        } else {
+            return null;
         }
 
         if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
@@ -246,14 +258,15 @@ async function hydrateState(base64String) {
         initMemoryEngine(boardWidth, boardHeight);
         const totalBytes = Math.min(bytes.length, mainImageData.data.length);
         mainImageData.data.set(bytes.subarray(0, totalBytes));
+        
         offscreenCtx.putImageData(mainImageData, 0, 0);
         requestRender();
     } catch (e) {
     }
 }
 
-async function hydrateChunkWorker(chunkX, chunkY, chunkSize, base64String) {
-    const bytes = await decompressIfNeeded(base64String);
+async function hydrateChunkWorker(chunkX, chunkY, chunkSize, chunkData) {
+    const bytes = await decompressIfNeeded(chunkData);
     if (!bytes || !offscreenCtx) return;
 
     try {
@@ -513,7 +526,7 @@ function render() {
             }
             if (pendingChunks.length > 0) {
                 pendingChunks.forEach(chk => {
-                    hydrateChunkWorker(chk.chunkX, chk.chunkY, chk.chunkSize, chk.base64String);
+                    hydrateChunkWorker(chk.chunkX, chk.chunkY, chk.chunkSize, chk.chunkData || chk.base64String);
                 });
                 pendingChunks = [];
             }
@@ -689,12 +702,20 @@ function render() {
                 offscreenCanvas.width = boardWidth;
                 offscreenCanvas.height = boardHeight;
                 if (pendingImageBitmap) {
-                    offscreenCtx.drawImage(pendingImageBitmap, 0, 0, boardWidth, boardHeight);
-                    mainImageData = offscreenCtx.getImageData(0, 0, boardWidth, boardHeight);
+                    let tempCanvas = new OffscreenCanvas(boardWidth, boardHeight);
+                    let tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(pendingImageBitmap, 0, 0, boardWidth, boardHeight);
+                    mainImageData = tempCtx.getImageData(0, 0, boardWidth, boardHeight);
                     pixelBuffer = new Uint32Array(mainImageData.data.buffer);
                     pendingImageBitmap = null;
+                    
+                    if (offscreenCtx) {
+                        offscreenCtx.drawImage(pendingImageBitmap, 0, 0, boardWidth, boardHeight);
+                    }
                 } else {
-                    offscreenCtx.putImageData(mainImageData, 0, 0);
+                    if (offscreenCtx) {
+                        offscreenCtx.putImageData(mainImageData, 0, 0);
+                    }
                 }
             }
             
@@ -739,8 +760,6 @@ function render() {
     ctx.beginPath();
     ctx.rect(0, 0, drawW, drawH);
     ctx.clip();
-
-    
 
     if (offscreenCanvas && offscreenCanvas.width > 0 && offscreenCanvas.height > 0) {
         ctx.drawImage(offscreenCanvas, 0, 0);
@@ -1214,6 +1233,11 @@ self.onmessage = function (e) {
         case 'INIT_CANVAS':
             canvas = payload.canvas;
             ctx = canvas.getContext('2d', { alpha: false });
+            ctx.imageSmoothingEnabled = false;
+            ctx.mozImageSmoothingEnabled = false;
+            ctx.webkitImageSmoothingEnabled = false;
+            ctx.msImageSmoothingEnabled = false;
+            
             boardWidth = payload.boardWidth || 64;
             boardHeight = payload.boardHeight || 64;
             dpr = payload.dpr || 1;
@@ -1223,6 +1247,7 @@ self.onmessage = function (e) {
             offscreenCtx = offscreenCanvas.getContext('2d', { alpha: true });
             
             initMemoryEngine(boardWidth, boardHeight);
+            
             selectionBitmaskDirty = true;
             requestRender();
             break;
@@ -1442,25 +1467,32 @@ self.onmessage = function (e) {
                     chunkX: payload.chunkX,
                     chunkY: payload.chunkY,
                     chunkSize: payload.chunkSize || 512,
-                    base64String: payload.base64String
+                    base64String: payload.base64String,
+                    chunkData: payload.chunkData
                 });
             } else {
-                hydrateChunkWorker(payload.chunkX, payload.chunkY, payload.chunkSize || 512, payload.base64String);
+                hydrateChunkWorker(payload.chunkX, payload.chunkY, payload.chunkSize || 512, payload.chunkData || payload.base64String);
             }
             break;
 
         case 'DRAW_IMAGE_BUFFER':
-            if (payload.imageBitmap && offscreenCtx) {
+            if (payload.imageBitmap) {
                 if (resetAnimation || resizeAnimation) {
                     pendingImageBitmap = payload.imageBitmap;
                 } else {
-                    offscreenCtx.clearRect(0, 0, boardWidth, boardHeight);
-                    offscreenCtx.drawImage(payload.imageBitmap, 0, 0, boardWidth, boardHeight);
-                    mainImageData = offscreenCtx.getImageData(0, 0, boardWidth, boardHeight);
+                    let tempCanvas = new OffscreenCanvas(boardWidth, boardHeight);
+                    let tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(payload.imageBitmap, 0, 0, boardWidth, boardHeight);
+                    mainImageData = tempCtx.getImageData(0, 0, boardWidth, boardHeight);
                     pixelBuffer = new Uint32Array(mainImageData.data.buffer);
+                    
+                    if (offscreenCtx) {
+                        offscreenCtx.clearRect(0, 0, boardWidth, boardHeight);
+                        offscreenCtx.drawImage(payload.imageBitmap, 0, 0, boardWidth, boardHeight);
+                    }
                     requestRender();
                 }
-            } else if (!payload.imageBitmap && offscreenCtx) {
+            } else if (!payload.imageBitmap) {
                 if (!resetAnimation) {
                     resetAnimation = {
                         startTime: Date.now(),

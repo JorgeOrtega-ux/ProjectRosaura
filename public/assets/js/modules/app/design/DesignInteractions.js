@@ -1512,32 +1512,97 @@ export const DesignInteractions = {
         }
         
         if (this.wsManager && validPixels.length > 0) {
+            const parseColorToRgba = (color) => {
+                if (!color || color === 'transparent') {
+                    return { r: 0, g: 0, b: 0, a: 0 };
+                }
+                let hex = color.replace('#', '');
+                let r = 0, g = 0, b = 0, a = 255;
+                if (hex.length === 3) {
+                    r = parseInt(hex[0] + hex[0], 16);
+                    g = parseInt(hex[1] + hex[1], 16);
+                    b = parseInt(hex[2] + hex[2], 16);
+                } else if (hex.length === 6) {
+                    r = parseInt(hex.substring(0, 2), 16);
+                    g = parseInt(hex.substring(2, 4), 16);
+                    b = parseInt(hex.substring(4, 6), 16);
+                } else if (hex.length === 8) {
+                    r = parseInt(hex.substring(0, 2), 16);
+                    g = parseInt(hex.substring(2, 4), 16);
+                    b = parseInt(hex.substring(4, 6), 16);
+                    a = parseInt(hex.substring(6, 8), 16);
+                }
+                return { r, g, b, a };
+            };
+
             if (validPixels.length === 1) {
                 const p = validPixels[0];
                 let msgType = 'pixel';
                 if (this.interactionMode === 'protecting') msgType = 'protect_pixel';
                 if (this.interactionMode === 'erasing') msgType = 'erase_pixel';
 
-                this.wsManager.send({
-                    type: msgType,
-                    x: p.x,
-                    y: p.y,
-                    color: colorHex,
-                    width: this.boardWidth,
-                    userId: window.activeUserId || null 
-                });
+                if (msgType === 'pixel' || msgType === 'erase_pixel') {
+                    const opCode = msgType === 'pixel' ? 1 : 2;
+                    const buffer = new ArrayBuffer(9);
+                    const view = new DataView(buffer);
+                    view.setUint8(0, opCode);
+                    view.setUint16(1, p.x, false);
+                    view.setUint16(3, p.y, false);
+                    
+                    const color = msgType === 'pixel' ? colorHex : 'transparent';
+                    const rgba = parseColorToRgba(color);
+                    view.setUint8(5, rgba.r);
+                    view.setUint8(6, rgba.g);
+                    view.setUint8(7, rgba.b);
+                    view.setUint8(8, rgba.a);
+
+                    this.wsManager.send(buffer);
+                } else {
+                    this.wsManager.send({
+                        type: msgType,
+                        x: p.x,
+                        y: p.y,
+                        color: colorHex,
+                        width: this.boardWidth,
+                        userId: window.activeUserId || null 
+                    });
+                }
             } else {
                 let msgType = 'batch_pixels';
                 if (this.interactionMode === 'protecting') msgType = 'batch_protect_pixels';
                 if (this.interactionMode === 'erasing') msgType = 'batch_erase_pixels';
 
-                this.wsManager.send({
-                    type: msgType,
-                    pixels: validPixels.map(p => ({ x: p.x, y: p.y })),
-                    color: colorHex,
-                    width: this.boardWidth,
-                    userId: window.activeUserId || null
-                });
+                if (msgType === 'batch_pixels' || msgType === 'batch_erase_pixels') {
+                    const opCode = msgType === 'batch_pixels' ? 3 : 4;
+                    const buffer = new ArrayBuffer(7 + 4 * validPixels.length);
+                    const view = new DataView(buffer);
+                    
+                    view.setUint8(0, opCode);
+                    view.setUint16(1, validPixels.length, false);
+                    
+                    const color = msgType === 'batch_pixels' ? colorHex : 'transparent';
+                    const rgba = parseColorToRgba(color);
+                    view.setUint8(3, rgba.r);
+                    view.setUint8(4, rgba.g);
+                    view.setUint8(5, rgba.b);
+                    view.setUint8(6, rgba.a);
+                    
+                    let offset = 7;
+                    for (let idx = 0; idx < validPixels.length; idx++) {
+                        view.setUint16(offset, validPixels[idx].x, false);
+                        view.setUint16(offset + 2, validPixels[idx].y, false);
+                        offset += 4;
+                    }
+                    this.wsManager.send(buffer);
+                } else {
+                    this.wsManager.send({
+                        type: msgType,
+                        pixels: validPixels.map(p => ({ x: p.x, y: p.y })),
+                        color: colorHex,
+                        width: this.boardWidth,
+                        userId: window.activeUserId || null
+                    });
+                }
             }
         }
 

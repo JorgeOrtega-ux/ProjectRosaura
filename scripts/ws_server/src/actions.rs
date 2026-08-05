@@ -1043,10 +1043,52 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 serde_json::json!({"type": msg.msg_type, "x": msg.x, "y": msg.y, "color": raw_color}).to_string()
             };
             
-            helpers::broadcast_to_room_excluding(state, canvas_id, &broadcast_msg, connection_id).await;
-            let _: () = redis_conn.sadd("canvases:dirty_states", canvas_id).await.unwrap_or(());
             let sync_payload = serde_json::json!({"source_node": &state.node_id, "target_type": "canvas", "canvas_id": canvas_id, "payload": broadcast_msg});
             let _: () = redis_conn.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
+            let _: () = redis_conn.sadd("canvases:dirty_states", canvas_id).await.unwrap_or(());
+
+            // Build binary broadcast payload
+            let bin_payload = if is_batch {
+                let is_erase = msg.msg_type == "batch_erase_pixels";
+                let op_code = if is_erase { 4u8 } else { 3u8 };
+                let mut bin = Vec::with_capacity(7 + pixels_to_process.len() * 4);
+                bin.push(op_code);
+                bin.extend_from_slice(&(pixels_to_process.len() as u16).to_be_bytes());
+                
+                let (r, g, b, a) = if is_erase {
+                    (0, 0, 0, 0)
+                } else {
+                    let c_bytes = &color_bytes;
+                    (c_bytes[0], c_bytes[1], c_bytes[2], c_bytes[3])
+                };
+                bin.push(r); bin.push(g); bin.push(b); bin.push(a);
+                
+                for px in &pixels_to_process {
+                    bin.extend_from_slice(&(px.x as u16).to_be_bytes());
+                    bin.extend_from_slice(&(px.y as u16).to_be_bytes());
+                }
+                bin
+            } else {
+                let is_erase = msg.msg_type == "erase_pixel";
+                let op_code = if is_erase { 2u8 } else { 1u8 };
+                let mut bin = Vec::with_capacity(9);
+                bin.push(op_code);
+                
+                let px_x = msg.x.unwrap_or(0) as u16;
+                let px_y = msg.y.unwrap_or(0) as u16;
+                bin.extend_from_slice(&px_x.to_be_bytes());
+                bin.extend_from_slice(&px_y.to_be_bytes());
+                
+                let (r, g, b, a) = if is_erase {
+                    (0, 0, 0, 0)
+                } else {
+                    let c_bytes = &color_bytes;
+                    (c_bytes[0], c_bytes[1], c_bytes[2], c_bytes[3])
+                };
+                bin.push(r); bin.push(g); bin.push(b); bin.push(a);
+                bin
+            };
+            helpers::broadcast_binary_to_room_excluding(state, canvas_id, bin_payload, connection_id).await;
         }
         "chat_typing" => {
             if uid_str.is_empty() { return; }
@@ -1314,5 +1356,91 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         _ => {
             warn!("Unhandled action: {}", msg.msg_type);
         }
+    }
+}
+
+pub async fn handle_binary_action(bin: Vec<u8>, canvas_id: &str, connection_id: &str, state: &AppState) {
+    if bin.len() < 1 { return; }
+    let op_code = bin[0];
+    match op_code {
+        1 | 2 => {
+            // Single pixel (1 = paint, 2 = erase)
+            if bin.len() < 9 { return; }
+            let x = u16::from_be_bytes([bin[1], bin[2]]) as i32;
+            let y = u16::from_be_bytes([bin[3], bin[4]]) as i32;
+            let r = bin[5];
+            let g = bin[6];
+            let b = bin[7];
+            let a = bin[8];
+            
+            let color = if op_code == 2 || a == 0 {
+                "transparent".to_string()
+            } else {
+                format!("#{:02x}{:02x}{:02x}", r, g, b)
+            };
+            
+            let msg = WsMessage {
+                msg_type: if op_code == 2 { "erase_pixel".to_string() } else { "pixel".to_string() },
+                canvas_id: None,
+                user_id: None,
+                username: None,
+                is_typing: None,
+                x: Some(x),
+                y: Some(y),
+                x1: None, y1: None, x2: None, y2: None, width: None, height: None,
+                color: Some(color),
+                pixels: None,
+                protect: None,
+                offsets: None,
+                balance: None, max_batch: None, cooldown_sec: None, next_replenish_in: None,
+                code: None, count: None, empty: None, img_url: None, w: None, h: None, opacity: None, angle: None,
+                frozen: None, message: None, perk_id: None, r: None, radius: None, duration: None, targets: None,
+            };
+            handle_action(msg, canvas_id, connection_id, state).await;
+        }
+        3 | 4 => {
+            // Batch pixels (3 = paint, 4 = erase)
+            if bin.len() < 7 { return; }
+            let count = u16::from_be_bytes([bin[1], bin[2]]) as usize;
+            let r = bin[3];
+            let g = bin[4];
+            let b = bin[5];
+            let a = bin[6];
+            
+            if bin.len() < 7 + count * 4 { return; }
+            
+            let color = if op_code == 4 || a == 0 {
+                "transparent".to_string()
+            } else {
+                format!("#{:02x}{:02x}{:02x}", r, g, b)
+            };
+            
+            let mut pixels = Vec::with_capacity(count);
+            let mut offset = 7;
+            for _ in 0..count {
+                let px = u16::from_be_bytes([bin[offset], bin[offset+1]]) as i32;
+                let py = u16::from_be_bytes([bin[offset+2], bin[offset+3]]) as i32;
+                pixels.push(crate::models::PixelData { x: px, y: py });
+                offset += 4;
+            }
+            
+            let msg = WsMessage {
+                msg_type: if op_code == 4 { "batch_erase_pixels".to_string() } else { "batch_pixels".to_string() },
+                canvas_id: None,
+                user_id: None,
+                username: None,
+                is_typing: None,
+                x: None, y: None, x1: None, y1: None, x2: None, y2: None, width: None, height: None,
+                color: Some(color),
+                pixels: Some(pixels),
+                protect: None,
+                offsets: None,
+                balance: None, max_batch: None, cooldown_sec: None, next_replenish_in: None,
+                code: None, count: None, empty: None, img_url: None, w: None, h: None, opacity: None, angle: None,
+                frozen: None, message: None, perk_id: None, r: None, radius: None, duration: None, targets: None,
+            };
+            handle_action(msg, canvas_id, connection_id, state).await;
+        }
+        _ => {}
     }
 }

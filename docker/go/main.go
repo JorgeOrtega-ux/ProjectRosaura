@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -216,9 +217,11 @@ func getChunksHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Concurrently compress and base64 encode
+	// Concurrently compress
 	var wg sync.WaitGroup
 	var mu sync.Mutex
+
+	chunkCompressed := make(map[string][]byte)
 
 	for key, buffer := range chunkBuffers {
 		wg.Add(1)
@@ -230,17 +233,48 @@ func getChunksHandler(w http.ResponseWriter, r *http.Request) {
 			gw.Write(buf)
 			gw.Close()
 
-			encoded := base64.StdEncoding.EncodeToString(b.Bytes())
-
 			mu.Lock()
-			response.Data.Chunks[k] = encoded
+			chunkCompressed[k] = b.Bytes()
 			mu.Unlock()
 		}(key, buffer)
 	}
 
 	wg.Wait()
 	t2 := time.Now()
-	log.Printf("Compression took %v", t2.Sub(t0)) // using t0 to match total operation timing reference
+	log.Printf("Compression took %v", t2.Sub(t0))
+
+	if r.Header.Get("Accept") == "application/octet-stream" {
+		w.Header().Set("Content-Type", "application/octet-stream")
+
+		// Binary format:
+		// [Total Chunks: 2 bytes (uint16)]
+		// For each chunk:
+		//   [Key Len: 1 byte (uint8)]
+		//   [Key Name: string bytes]
+		//   [Compressed Size: 4 bytes (uint32)]
+		//   [Compressed Bytes: N bytes]
+		numChunks := uint16(len(chunkCompressed))
+		binary.Write(w, binary.BigEndian, numChunks)
+
+		for k, compBuf := range chunkCompressed {
+			keyBytes := []byte(k)
+			w.Write([]byte{uint8(len(keyBytes))})
+			w.Write(keyBytes)
+
+			binary.Write(w, binary.BigEndian, uint32(len(compBuf)))
+			w.Write(compBuf)
+		}
+
+		t3 := time.Now()
+		log.Printf("Binary response generation took %v", t3.Sub(t2))
+		return
+	}
+
+	// Fallback to JSON and Base64 (original format)
+	for k, compBuf := range chunkCompressed {
+		encoded := base64.StdEncoding.EncodeToString(compBuf)
+		response.Data.Chunks[k] = encoded
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)

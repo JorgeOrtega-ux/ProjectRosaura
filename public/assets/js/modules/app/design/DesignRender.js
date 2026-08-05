@@ -190,8 +190,14 @@ export const DesignRender = {
         const now = Date.now();
         // La bola de carga solo existe durante la fase de carga previa a la explosión (now < w.endTime)
         const orbitalWarnings = this.nuclearWarnings ? this.nuclearWarnings.filter(w => w.perkId === 'canon_orbital_1' && now < w.endTime) : [];
-        const topBarRect = topBar.getBoundingClientRect();
-        const canvasRect = canvasEl.getBoundingClientRect();
+        
+        if (!this._cachedTopBarRect || !this._cachedCanvasRect) {
+            this._cachedTopBarRect = topBar.getBoundingClientRect();
+            this._cachedCanvasRect = canvasEl.getBoundingClientRect();
+        }
+        const topBarRect = this._cachedTopBarRect;
+        const canvasRect = this._cachedCanvasRect;
+        
         const scale = this.transform.scale || 1;
         const tx = this.transform.x || 0;
 
