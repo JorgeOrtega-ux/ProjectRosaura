@@ -440,5 +440,6 @@
     "admin_tier_stripe_monthly": "ID Stripe Mensual",
     "admin_tier_stripe_yearly": "ID Stripe Anual",
     "admin_tiers_title": "Niveles de Suscripción",
-    "table_status": "Estado"
+    "table_status": "Estado",
+    "admin_message_search_placeholder": "Buscar mensaje..."
 }

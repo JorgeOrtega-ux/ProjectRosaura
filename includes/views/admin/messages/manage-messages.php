@@ -39,7 +39,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                 </div>
                 <div class="component-actions active" data-ref="header-default-actions">
                     
-                    <button class="component-button component-button--icon component-button--h40 <?php echo !empty($_GET['q']) ? 'has-active-filter' : ''; ?>" data-action="searchMessages" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_placeholder'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 <?php echo !empty($_GET['q']) ? 'has-active-filter' : ''; ?>" data-action="searchMessages" data-ref="btn-toggle-search" data-tooltip="<?php echo __('admin_message_search_placeholder'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">search</span>
                     </button>
 
@@ -141,7 +141,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="message-search-input" placeholder="<?php echo __('search_placeholder'); ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
+                        <input type="text" data-ref="message-search-input" placeholder="<?php echo __('admin_message_search_placeholder'); ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
                     </div>
                 </div>
             </div>
