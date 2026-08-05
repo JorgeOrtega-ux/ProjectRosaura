@@ -26,6 +26,8 @@ export class DesignChat {
         this.currentUserId = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.userId || null;
         this.currentUsername = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.username || window.__('user');
         this.canModerateChat = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.canModerate === '1';
+        this.currentUserAvatar = document.querySelector('.header .component-button--profile img')?.getAttribute('src') || null;
+        this.currentUserSubColor = document.querySelector('.header .component-button--profile.role-dynamic')?.dataset.roleBg || null;
 
         const moduleChat = document.querySelector('[data-module="moduleLiveChat"]');
         this.maxFilesLimit = moduleChat ? parseInt(moduleChat.dataset.maxImages, 10) || 6 : 6;
@@ -600,7 +602,8 @@ export class DesignChat {
             is_optimistic: true,
             reply_to: replyToId,
             reply_to_username: replyToUsername,
-            reply_to_message: replyToMessage
+            reply_to_message: replyToMessage,
+            subscription_color: this.currentUserSubColor || null
         };
         
         this.appendMessage(optimisticMsg);
@@ -904,7 +907,7 @@ export class DesignChat {
         }
 
         const avatarStr = `
-            <div class="component-button--profile role-dynamic component-avatar--static-sm">
+            <div class="component-button--profile role-dynamic component-avatar--static-sm" data-role-bg="${subColorCSS}" style="--active-role-bg: ${subColorCSS};">
                 <img src="${avatarUrl}" class="chat-message-avatar-img image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('image-loaded');">
             </div>
         `;
