@@ -1325,6 +1325,24 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function saveRecentColors(int $userId, int $canvasId, array $colors): bool {
+        $colorsJson = json_encode($colors);
+        
+        // Write-Behind: Save only to Redis and mark as dirty
+        if ($this->redisClient) {
+            try {
+                $this->redisClient->setex("canvas:{$canvasId}:recent_colors:{$userId}", 3600, $colorsJson);
+                $this->redisClient->sadd("canvas:recent_colors:dirty", "{$canvasId}:{$userId}");
+                return true;
+            } catch (\Exception $e) {
+                // If Redis operation fails, fall back to synchronous MySQL write below
+            }
+        }
+
+        // Fallback: Synchronous write to MySQL
+        return $this->saveRecentColorsDirectly($userId, $canvasId, $colors);
+    }
+
+    public function saveRecentColorsDirectly(int $userId, int $canvasId, array $colors): bool {
         $sql = "INSERT INTO " . DB::TBL_CANVAS_RECENT_COLORS . " (user_id, canvas_id, colors) 
                 VALUES (:user_id, :canvas_id, :colors)
                 ON DUPLICATE KEY UPDATE colors = :colors_update";

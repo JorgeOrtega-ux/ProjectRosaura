@@ -50,6 +50,7 @@ class DesignController {
         this.templateInteraction = null;
 
         this.currentColor = '#000000';
+        this.customPickedColors = [];
 
         this.offscreenCanvas = null;
         this.offscreenCtx = null;

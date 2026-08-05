@@ -65,6 +65,7 @@ export const DesignRender = {
         }
 
         this.loadRecentColors();
+        this.renderCustomPickedColors();
         this.updateActiveColorPreview();
         this.requestRender();
     },
@@ -108,7 +109,7 @@ export const DesignRender = {
             colors.forEach(hex => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = `component-color-btn ${this.currentColor === hex ? 'active' : ''}`;
+                btn.className = 'component-color-btn';
                 btn.setAttribute('data-action', 'selectColor');
                 btn.setAttribute('data-color', hex);
                 btn.setAttribute('data-tooltip', hex.toUpperCase());
@@ -124,6 +125,50 @@ export const DesignRender = {
                 recentSection.style.display = 'none';
             }
         }
+
+        this.syncActiveColorHighlight();
+    },
+
+    syncActiveColorHighlight() {
+        const currentUpper = this.currentColor ? this.currentColor.toUpperCase() : '';
+        document.querySelectorAll('.component-color-btn:not(.component-color-btn--rainbow)').forEach(btn => {
+            let btnColor = btn.getAttribute('data-color') || '';
+            if (btnColor && !btnColor.startsWith('#')) btnColor = '#' + btnColor;
+            btnColor = btnColor.toUpperCase();
+            
+            if (currentUpper && btnColor === currentUpper) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    },
+
+    renderCustomPickedColors() {
+        const container = document.querySelector('[data-ref="custom-colors-container"]');
+        if (!container) return;
+
+        // Remove any previously rendered custom swatches in this container
+        container.querySelectorAll('.component-color-btn--custom-picked').forEach(el => el.remove());
+
+        // Append buttons for each color in customPickedColors
+        if (Array.isArray(this.customPickedColors)) {
+            this.customPickedColors.forEach(hex => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'component-color-btn component-color-btn--custom-picked';
+                btn.setAttribute('data-action', 'selectColor');
+                btn.setAttribute('data-color', hex);
+                btn.setAttribute('data-tooltip', hex.toUpperCase());
+                
+                btn.style.backgroundColor = hex;
+                btn.style.setProperty('--color-val', hex);
+
+                container.appendChild(btn);
+            });
+        }
+
+        this.syncActiveColorHighlight();
     },
 
     isDarkMode() {

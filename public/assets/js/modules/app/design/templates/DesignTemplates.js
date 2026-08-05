@@ -391,6 +391,21 @@ export const DesignTemplates = {
         const file = e.target.files[0];
         if (!file) return;
 
+        const tier = window.appUserTier ?? 0;
+        let maxMB = 10;
+        if (tier === 1) maxMB = 25;
+        else if (tier === 2) maxMB = 50;
+        else if (tier >= 3) maxMB = 100;
+
+        if (file.size > maxMB * 1024 * 1024) {
+            showMessage(
+                window.__ ? window.__('err_max_size_mb')?.replace('{mb}', maxMB) : `El archivo original supera el límite permitido de ${maxMB} MB para tu plan.`, 
+                'warning'
+            );
+            this.fileInput.value = '';
+            return;
+        }
+
         const btnUpload = document.querySelector('[data-action="triggerTemplateUpload"]');
         if (btnUpload) {
             setButtonLoading(btnUpload);
@@ -490,13 +505,27 @@ export const DesignTemplates = {
         img.src = url;
     },
 
-    async deleteServerTemplate(id) {
-        const btn = document.querySelector(`[data-action="deleteServerTemplate"][data-id="${id}"]`);
-        if (btn) btn.classList.add('disabled-interaction');
+    async deleteServerTemplate(id, modalConfirmBtn) {
+        const gridBtn = document.querySelector(`[data-ref="user-templates-grid"] [data-action="deleteServerTemplate"][data-id="${id}"]`);
+        if (gridBtn) gridBtn.classList.add('disabled-interaction');
+
+        let cancelBtn = null;
+        let originalText = '';
+        if (modalConfirmBtn) {
+            modalConfirmBtn.classList.add('disabled-interaction');
+            cancelBtn = modalConfirmBtn.parentElement ? modalConfirmBtn.parentElement.querySelector('[data-modal-action="cancel"]') : null;
+            if (cancelBtn) cancelBtn.classList.add('disabled-interaction');
+            
+            const textSpan = modalConfirmBtn.querySelector('span');
+            if (textSpan) {
+                originalText = textSpan.textContent;
+                textSpan.textContent = typeof window.__ === 'function' ? window.__('lbl_deleting', [], 'Eliminando...') : 'Eliminando...';
+            }
+        }
 
         let templateFilePath = null;
-        if (btn && btn.parentElement) {
-            const img = btn.parentElement.querySelector('img');
+        if (gridBtn && gridBtn.parentElement) {
+            const img = gridBtn.parentElement.querySelector('img');
             if (img) templateFilePath = img.getAttribute('data-url');
         }
 
@@ -506,6 +535,10 @@ export const DesignTemplates = {
             
             if (response.success) {
                 showMessage(response.message, 'success');
+
+                if (window.modalSystem) {
+                    window.modalSystem.closeCurrent(true);
+                }
 
                 if (templateFilePath) {
                     if (this.liveShareStatus === 'owner' && this.liveTemplateId === templateFilePath) {
@@ -527,11 +560,23 @@ export const DesignTemplates = {
                 await this.loadUserLibrary();
             } else {
                 showMessage(response.message, 'error');
-                if (btn) btn.classList.remove('disabled-interaction');
+                if (gridBtn) gridBtn.classList.remove('disabled-interaction');
+                if (modalConfirmBtn) {
+                    modalConfirmBtn.classList.remove('disabled-interaction');
+                    const textSpan = modalConfirmBtn.querySelector('span');
+                    if (textSpan) textSpan.textContent = originalText;
+                }
+                if (cancelBtn) cancelBtn.classList.remove('disabled-interaction');
             }
         } catch (error) {
             showMessage(__('err_connection'), 'error');
-            if (btn) btn.classList.remove('disabled-interaction');
+            if (gridBtn) gridBtn.classList.remove('disabled-interaction');
+            if (modalConfirmBtn) {
+                modalConfirmBtn.classList.remove('disabled-interaction');
+                const textSpan = modalConfirmBtn.querySelector('span');
+                if (textSpan) textSpan.textContent = originalText;
+            }
+            if (cancelBtn) cancelBtn.classList.remove('disabled-interaction');
         }
     },
 

@@ -38,7 +38,13 @@ class CanvasAssetService {
                 return ['success' => false, 'message' => __('err_file_upload')];
             }
             
-            $maxSize = 5 * 1024 * 1024;
+            $user = $this->userRepository->findById($userId);
+            $tier = $user['subscription_tier'] ?? 0;
+
+            $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+            $maxUploadMB = $planLimits['max_upload_mb'] ?? 10;
+
+            $maxSize = $maxUploadMB * 1024 * 1024;
             if ($fileInfo['size'] > $maxSize) {
                 return ['success' => false, 'message' => __('err_file_too_large')];
             }
@@ -56,8 +62,6 @@ class CanvasAssetService {
                 return ['success' => false, 'message' => __('err_invalid_image_format')];
             }
 
-            $user = $this->userRepository->findById($userId);
-            $tier = $user['subscription_tier'] ?? 0;
             $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
             
             if ($planLimits['max_storage_mb'] !== -1) {

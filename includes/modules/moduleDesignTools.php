@@ -26,7 +26,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             </div>
             
             <div class="component-menu-bottom">
-               <div class="component-items-grid">
+               <div class="component-items-grid" data-ref="custom-colors-container">
                     <!-- Botón selector de color arcoíris -->
                     <div class="component-dropdown-wrapper picker-wrapper-disabled" data-ref="recent-picker-dropdown-wrapper">
                         <button type="button" class="component-color-btn component-color-btn--rainbow" data-action="toggleRecentColorPicker" data-tooltip="<?php echo __('dt_color_picker') ?: 'Selector de Color'; ?>">
@@ -46,13 +46,10 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                                     <div class="component-color-picker__hue-thumb" data-ref="recentHueThumb"></div>
                                 </div>
                                 <div class="component-color-picker__controls">
-                                    <div class="component-input-group component-input-group--h34 component-input-group--color">
+                                    <div class="component-input-group component-input-group--h34 component-input-group--color" style="flex: 1;">
                                         <div class="component-color-swatch component-color-swatch--sm" data-ref="recentHexPreview"></div>
                                         <input type="text" class="component-input-field component-input-field--mono" data-ref="recentHexInput" value="#FFFFFF">
                                     </div>
-                                    <button type="button" class="component-button component-button--h34 component-button--icon" data-action="saveRecentColorBtn">
-                                        <span class="material-symbols-rounded">check</span>
-                                    </button>
                                 </div>
                             </div>
                         </div>

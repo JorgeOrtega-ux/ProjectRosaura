@@ -28,6 +28,7 @@ class AdminSubscriptionBuilderController {
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.handleGlobalTouchstartBound = this.handleGlobalTouchstart.bind(this);
         this.handleGlobalTouchmoveBound = this.handleGlobalTouchmove.bind(this);
+        this.handleGlobalChangeBound = this.handleGlobalChange.bind(this);
     }
     init() {
         if (this.isInitialized) return;
@@ -47,6 +48,7 @@ class AdminSubscriptionBuilderController {
         document.removeEventListener('touchstart', this.handleGlobalTouchstartBound);
         document.removeEventListener('touchmove', this.handleGlobalTouchmoveBound);
         document.removeEventListener('touchend', this.handleGlobalMouseupBound);
+        document.removeEventListener('change', this.handleGlobalChangeBound);
         this.isInitialized = false;
         this.currentUserWeight = 0;
         this.isSystemTier = false;
@@ -60,6 +62,7 @@ class AdminSubscriptionBuilderController {
         document.addEventListener('touchstart', this.handleGlobalTouchstartBound, {passive: false});
         document.addEventListener('touchmove', this.handleGlobalTouchmoveBound, {passive: false});
         document.addEventListener('touchend', this.handleGlobalMouseupBound);
+        document.addEventListener('change', this.handleGlobalChangeBound);
     }
     handleViewLoaded(e) {
         if (e.detail.url.includes('/admin/subscription-create') || e.detail.url.includes('/admin/subscription-edit')) {
@@ -466,6 +469,47 @@ class AdminSubscriptionBuilderController {
         this.initBenefitsLists();
         this.updateLivePreview();
         this.checkMaxColorsLimit();
+        this.updateLimitsVisibility();
+    }
+    handleGlobalChange(e) {
+        const checkbox = e.target.closest('input[type="checkbox"][data-ref="feature-toggle"]');
+        if (checkbox) {
+            this.updateLimitsVisibility();
+        }
+    }
+    updateLimitsVisibility() {
+        const customPalettesActive = document.querySelector('input[data-key="feat_custom_palettes"]')?.checked;
+        const injectTemplatesActive = document.querySelector('input[data-key="feat_inject_templates"]')?.checked;
+
+        document.querySelectorAll('.component-group-item[data-requires-feature="feat_custom_palettes"]').forEach(el => {
+            if (customPalettesActive) {
+                el.classList.remove('disabled', 'disabled-interaction');
+                el.style.opacity = '';
+            } else {
+                el.classList.add('disabled', 'disabled-interaction');
+                el.style.opacity = '0.5';
+                const inputVal = el.querySelector('[data-ref="val_featMaxCustomPalettes"]');
+                if (inputVal) {
+                    inputVal.dataset.value = 0;
+                    inputVal.textContent = 0;
+                }
+            }
+        });
+
+        document.querySelectorAll('.component-group-item[data-requires-feature="feat_inject_templates"]').forEach(el => {
+            if (injectTemplatesActive) {
+                el.classList.remove('disabled', 'disabled-interaction');
+                el.style.opacity = '';
+            } else {
+                el.classList.add('disabled', 'disabled-interaction');
+                el.style.opacity = '0.5';
+                const inputVal = el.querySelector('[data-ref="val_featMaxTemplateTokens"]');
+                if (inputVal) {
+                    inputVal.dataset.value = 0;
+                    inputVal.textContent = 0;
+                }
+            }
+        });
     }
     
     initBenefitsLists() {
@@ -643,6 +687,7 @@ class AdminSubscriptionBuilderController {
             limits: {
                 max_canvases: parseInt(document.querySelector('[data-ref="val_featMaxCanvases"]')?.dataset.value || 0, 10),
                 max_storage_mb: parseInt(document.querySelector('[data-ref="val_featMaxStorage"]')?.dataset.value || 0, 10),
+                max_upload_mb: parseInt(document.querySelector('[data-ref="val_featMaxUpload"]')?.dataset.value || 10, 10),
                 max_snapshots_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxSnapshots"]')?.dataset.value || 0, 10),
                 max_members_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxMembers"]')?.dataset.value || 0, 10),
                 max_custom_palettes: parseInt(document.querySelector('[data-ref="val_featMaxCustomPalettes"]')?.dataset.value || 0, 10),

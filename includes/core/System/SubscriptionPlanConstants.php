@@ -74,6 +74,7 @@ class SubscriptionPlanConstants {
                     'feat_inject_templates' => (bool)($row['feat_inject_templates'] ?? false),
                     'feat_live_share' => (bool)($row['feat_live_share'] ?? false),
                     'max_template_tokens' => (int)($row['max_template_tokens'] ?? 0),
+                    'max_upload_mb' => (int)($row['max_upload_mb'] ?? 10),
                     'allow_live_chat' => (bool)$row['feat_chat_restriction'],
                     'custom_palettes' => (bool)$row['feat_custom_palettes'],
                     'custom_colors' => (bool)($row['feat_custom_colors'] ?? false)
@@ -91,6 +92,7 @@ class SubscriptionPlanConstants {
             'max_canvases' => 1,
             'max_snapshots_per_canvas' => 10,
             'max_storage_mb' => 20,
+            'max_upload_mb' => 10,
             'max_members_per_canvas' => 10,
             'max_custom_palettes' => 0,
             'feat_advanced_roles' => false,

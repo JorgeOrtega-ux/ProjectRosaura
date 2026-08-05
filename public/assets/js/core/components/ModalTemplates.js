@@ -1035,6 +1035,31 @@ export const ModalTemplates = {
         }
     },
 
+    confirmDeleteTemplateModal: {
+        build: (data = {}) => {
+            const templateId = data.templateId || '';
+            const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
+            const titleStr = __('title_confirm_delete_template', [], '¿Eliminar plantilla?');
+            const descStr = __('desc_confirm_delete_template', [], 'Esta acción eliminará de forma permanente tu plantilla de la biblioteca del servidor. No se puede deshacer.');
+            const btnCancel = __('btn_cancel', []);
+            const btnConfirm = __('btn_delete_confirm', [], 'Eliminar permanentemente');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${titleStr}</h2>
+                    <p class="component-modal-desc">${descStr}</p>
+                </div>
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--danger" data-action="confirmDeleteTemplate" data-id="${templateId}">
+                        <span>${btnConfirm}</span>
+                    </button>
+                </div>
+            `;
+        }
+    },
+
     confirmUnprotectAreaModal: {
         build: (data = {}) => {
             const count = data.count || 0;

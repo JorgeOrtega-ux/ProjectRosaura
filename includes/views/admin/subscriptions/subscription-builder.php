@@ -159,6 +159,7 @@ $featuresData = [
     'limits' => [
         'max_canvases' => $tierData['max_canvases'] ?? 1,
         'max_storage_mb' => $tierData['max_storage_mb'] ?? 20,
+        'max_upload_mb' => $tierData['max_upload_mb'] ?? 10,
         'max_snapshots_per_canvas' => $tierData['max_snapshots_per_canvas'] ?? 10,
         'max_members_per_canvas' => $tierData['max_members_per_canvas'] ?? 10,
         'max_custom_palettes' => $tierData['max_custom_palettes'] ?? 0,
@@ -171,6 +172,8 @@ $featuresData = [
     'feat_priority_rendering' => $tierData['feat_priority_rendering'] ?? 0,
     'feat_unlimited_exports' => $tierData['feat_unlimited_exports'] ?? 0,
     'feat_beta_access' => $tierData['feat_beta_access'] ?? 0,
+    'feat_inject_templates' => $tierData['feat_inject_templates'] ?? 0,
+    'feat_live_share' => $tierData['feat_live_share'] ?? 0,
 ];
 
 ?>
@@ -382,8 +385,55 @@ $featuresData = [
                     </div>
                 </div>
 
-                <!-- Límites Accordion -->
+                <!-- Características Accordion -->
                 <div class="component-card--grouped component-accordion">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">stars</span>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('admin_tier_features_title') ?: 'Características'; ?></h2>
+                                <p class="component-card__description"><?php echo __('admin_tier_features_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
+                    </div>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <?php 
+                            $availableFeatures = \App\Core\System\SubscriptionFeatureConfig::getAvailableFeatures();
+                            $featCount = count($availableFeatures);
+                            $fIndex = 0;
+                            foreach ($availableFeatures as $fKey => $fData): 
+                                $isChecked = !empty($featuresData[$fKey]) ? 'checked' : '';
+                            ?>
+                                <div class="component-group-item component-group-item--wrap">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title"><?php echo __($fData['title_key']) ?: $fKey; ?></h2>
+                                            <p class="component-card__description"><?php echo __($fData['desc_key']); ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--end">
+                                        <label class="component-toggle-switch">
+                                            <input type="checkbox" data-ref="feature-toggle" data-key="<?php echo $fKey; ?>" <?php echo $isChecked; ?>>
+                                            <span class="component-toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <?php if (++$fIndex < $featCount): ?>
+                                    <hr class="component-divider">
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Límites Accordion -->
+                <div class="component-card--grouped component-accordion" data-ref="limits-accordion">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
@@ -447,6 +497,30 @@ $featuresData = [
                             </div>
         
                             <hr class="component-divider">
+
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_upload') ?: 'Límite de Subida por Archivo (MB)'; ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_upload_desc') ?: 'Peso máximo permitido por cada archivo original subido en chats y plantillas.'; ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxUpload" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxUpload" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxUpload" data-value="<?php echo (int)($featuresData['limits']['max_upload_mb'] ?? 10); ?>"><?php echo (int)($featuresData['limits']['max_upload_mb'] ?? 10); ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxUpload" data-step="1" data-max="500"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxUpload" data-step="10" data-max="500"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+        
+                            <hr class="component-divider">
         
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
@@ -494,9 +568,9 @@ $featuresData = [
                                 </div>
                             </div>
         
-                            <hr class="component-divider">
+                            <hr class="component-divider" data-requires-feature="feat_custom_palettes">
         
-                            <div class="component-group-item component-group-item--stacked">
+                            <div class="component-group-item component-group-item--stacked" data-requires-feature="feat_custom_palettes">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('admin_tier_limit_palettes') ?: 'Paletas Personalizadas'; ?></h2>
@@ -518,9 +592,9 @@ $featuresData = [
                                 </div>
                             </div>
 
-                            <hr class="component-divider">
+                            <hr class="component-divider" data-requires-feature="feat_inject_templates">
         
-                            <div class="component-group-item component-group-item--stacked">
+                            <div class="component-group-item component-group-item--stacked" data-requires-feature="feat_inject_templates">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('admin_tier_limit_template_tokens') ?: 'Tokens de Plantilla'; ?></h2>
@@ -541,53 +615,6 @@ $featuresData = [
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Características Accordion -->
-                <div class="component-card--grouped component-accordion">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
-                        <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">stars</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('admin_tier_features_title') ?: 'Características'; ?></h2>
-                                <p class="component-card__description"><?php echo __('admin_tier_features_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
-                        </div>
-                    </div>
-                    <div class="component-accordion-body">
-                        <div class="component-accordion-content">
-                            <?php 
-                            $availableFeatures = \App\Core\System\SubscriptionFeatureConfig::getAvailableFeatures();
-                            $featCount = count($availableFeatures);
-                            $fIndex = 0;
-                            foreach ($availableFeatures as $fKey => $fData): 
-                                $isChecked = !empty($featuresData[$fKey]) ? 'checked' : '';
-                            ?>
-                                <div class="component-group-item component-group-item--wrap">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __($fData['title_key']) ?: $fKey; ?></h2>
-                                            <p class="component-card__description"><?php echo __($fData['desc_key']); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--end">
-                                        <label class="component-toggle-switch">
-                                            <input type="checkbox" data-ref="feature-toggle" data-key="<?php echo $fKey; ?>" <?php echo $isChecked; ?>>
-                                            <span class="component-toggle-slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <?php if (++$fIndex < $featCount): ?>
-                                    <hr class="component-divider">
-                                <?php endif; ?>
-                            <?php endforeach; ?>
                         </div>
                     </div>
                 </div>

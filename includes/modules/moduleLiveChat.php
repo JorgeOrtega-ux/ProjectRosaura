@@ -12,7 +12,22 @@ if (isset($userId) && isset($_SESSION['accounts'][$userId]['user_name'])) {
 $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id']) ? $canvas['owner_id'] : ($canvas['user_id'] ?? null)) == $userId) ? '1' : '0';
 
 $maxImages = \App\Core\System\ChatConstants::CHAT_MAX_IMAGES;
-$maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
+$userTier = 0;
+if (isset($userId)) {
+    if (isset($_SESSION['accounts'][$userId]['subscription_tier'])) {
+        $userTier = (int)$_SESSION['accounts'][$userId]['subscription_tier'];
+    } else {
+        try {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmt = $pdo->prepare("SELECT subscription_tier FROM users WHERE id = ? LIMIT 1");
+            $stmt->execute([$userId]);
+            $userTier = (int)($stmt->fetchColumn() ?: 0);
+        } catch (\Exception $e) {}
+    }
+}
+$planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($userTier);
+$maxUploadMB = $planLimits['max_upload_mb'] ?? 10;
 ?>
 <div class="component-module component-module--sidebar component-module--sidebar-responsive component-module--sidebar-right disabled" data-module="moduleLiveChat" data-user-id="<?php echo htmlspecialchars((string)($userId ?? '')); ?>" data-username="<?php echo htmlspecialchars($chatUsername); ?>" data-can-moderate="<?php echo $canModerateChat; ?>" data-max-images="<?php echo $maxImages; ?>" data-max-size-mb="<?php echo $maxUploadMB; ?>">
     

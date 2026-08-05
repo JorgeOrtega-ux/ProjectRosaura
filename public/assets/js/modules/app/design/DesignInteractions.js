@@ -61,17 +61,21 @@ export const DesignInteractions = {
             return;
         }
 
-        const btnSaveRecent = e.target.closest('[data-action="saveRecentColorBtn"]');
-        if (btnSaveRecent) {
-            e.preventDefault();
-            e.stopPropagation();
-            this.saveRecentColor();
-            return;
-        }
-
         const dropdownPickerInside = e.target.closest('[data-ref="recent-color-picker-dropdown"]');
         if (dropdownPickerInside) {
             e.stopPropagation();
+        } else {
+            // Close color picker dropdown if open and clicked outside
+            const pickerDropdown = document.querySelector('[data-ref="recent-color-picker-dropdown"]');
+            if (pickerDropdown && !pickerDropdown.classList.contains('disabled')) {
+                const isClickingOtherColor = e.target.closest('.component-color-btn:not(.component-color-btn--rainbow)');
+                if (isClickingOtherColor) {
+                    pickerDropdown.classList.add('disabled');
+                    pickerDropdown.classList.remove('active');
+                } else {
+                    this.saveRecentColor(true);
+                }
+            }
         }
 
         const btnPerks = e.target.closest('[data-action="togglePerksInventory"]');
@@ -170,8 +174,18 @@ export const DesignInteractions = {
             e.preventDefault();
             e.stopPropagation(); 
             const id = btnDelServer.getAttribute('data-id');
+            if (window.modalSystem) {
+                window.modalSystem.show('confirmDeleteTemplateModal', { templateId: id });
+            }
+            return;
+        }
+
+        const btnConfirmDel = e.target.closest('[data-action="confirmDeleteTemplate"]');
+        if (btnConfirmDel) {
+            e.preventDefault();
+            const id = btnConfirmDel.getAttribute('data-id');
             if (typeof this.deleteServerTemplate === 'function') {
-                this.deleteServerTemplate(id);
+                this.deleteServerTemplate(id, btnConfirmDel);
             }
             return;
         }
@@ -258,9 +272,6 @@ export const DesignInteractions = {
         const btnColor = e.target.closest('[data-action="selectColor"]');
         if (btnColor) {
             e.preventDefault();
-            document.querySelectorAll('.component-color-btn').forEach(btn => btn.classList.remove('active'));
-            btnColor.classList.add('active');
-            
             this.currentColor = btnColor.getAttribute('data-color') || '#000000';
             
             if (this.btnColorPalette) {
@@ -268,6 +279,7 @@ export const DesignInteractions = {
             }
             
             this.updateActiveColorPreview();
+            this.syncActiveColorHighlight();
             this.recordRecentColor(this.currentColor);
             this.requestRender();
             return;
@@ -833,6 +845,7 @@ export const DesignInteractions = {
 
     handleMouseUp(e) {
         if (this.recentDragMode) {
+            this.saveRecentColor(false);
             this.recentDragMode = null;
             this.recentDragArea = null;
             return;
@@ -1084,6 +1097,7 @@ export const DesignInteractions = {
 
     handleTouchEnd(e) {
         if (this.recentDragMode) {
+            this.saveRecentColor(false);
             this.recentDragMode = null;
             this.recentDragArea = null;
             return;
@@ -1425,6 +1439,11 @@ export const DesignInteractions = {
 
         // Se envía el color hexadecimal directamente
         let colorHex = this.currentColor;
+
+        // If the color is a custom picked color, save it to recent colors on first use
+        if (this.customPickedColors && this.customPickedColors.includes(colorHex)) {
+            this.recordRecentColor(colorHex);
+        }
 
         let validPixels = [];
         let hitProtected = false;
@@ -2330,6 +2349,12 @@ export const DesignInteractions = {
                     this.updateRecentPickerUI(false);
                 }
             });
+            hexInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.saveRecentColor(true);
+                }
+            });
         }
 
         this.updateRecentPickerUI();
@@ -2369,7 +2394,7 @@ export const DesignInteractions = {
         }
     },
 
-    saveRecentColor() {
+    saveRecentColor(closeDropdown = true) {
         try {
             const picker = document.querySelector('[data-ref="recent-color-picker"]');
             const hexInput = picker ? picker.querySelector('[data-ref="recentHexInput"]') : null;
@@ -2388,16 +2413,21 @@ export const DesignInteractions = {
                 this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
             }
             this.updateActiveColorPreview();
+            this.syncActiveColorHighlight();
 
-            // 2. Instantly update local list and UI
-            this.updateRecentColorsLocally(colorToSave);
-
-            // 3. Instantly close picker dropdown
-            this.toggleRecentColorPicker();
+            // 2. Instantly close picker dropdown if requested
+            if (closeDropdown) {
+                const pickerDropdown = document.querySelector('[data-ref="recent-color-picker-dropdown"]');
+                if (pickerDropdown) {
+                    pickerDropdown.classList.add('disabled');
+                    pickerDropdown.classList.remove('active');
+                }
+            }
             this.requestRender();
 
-            // 4. Fire and forget async post to API
-            this.recordRecentColor(colorToSave);
+            // 3. Add to custom picked colors in Section 1 (instead of adding directly to Recent colors)
+            this.customPickedColors = [colorToSave];
+            this.renderCustomPickedColors();
         } catch (e) {
             console.error('Error saving recent color:', e);
         }
@@ -2422,20 +2452,45 @@ export const DesignInteractions = {
         if (hex.length === 4) {
             hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
         }
-        hex = hex.toUpperCase();
+        const formattedHex = hex.toUpperCase();
 
-        this.updateRecentColorsLocally(hex);
+        // Check if it's already the first item in the local list to avoid duplicates/unnecessary API calls
+        if (this.recentColorsList && this.recentColorsList[0] === formattedHex) {
+            return;
+        }
 
-        this.api.post(ApiRoutes.Canvases.AddRecentColor, {
-            canvas_id: this.canvasIntId,
-            color: hex
-        }).then(response => {
-            if (response && response.success && Array.isArray(response.colors)) {
-                this.recentColorsList = response.colors;
-                this.renderRecentColors(response.colors);
-            }
-        }).catch(e => {
-            console.error('Error recording recent color:', e);
+        // Update local UI immediately for responsiveness
+        this.updateRecentColorsLocally(formattedHex);
+
+        // Queue requests sequentially to avoid race conditions when switching colors rapidly
+        if (!this.recentColorPromiseQueue) {
+            this.recentColorPromiseQueue = Promise.resolve();
+        }
+
+        this.recentColorPromiseQueue = this.recentColorPromiseQueue.then(() => {
+            return this.api.post(ApiRoutes.Canvases.AddRecentColor, {
+                canvas_id: this.canvasIntId,
+                color: formattedHex
+            }).then(response => {
+                if (response && response.success && Array.isArray(response.colors)) {
+                    // Only update and re-render if the response corresponds to our current active color
+                    let currentUpper = this.currentColor ? this.currentColor.toUpperCase() : '';
+                    if (currentUpper && !currentUpper.startsWith('#')) currentUpper = '#' + currentUpper;
+                    if (currentUpper === formattedHex) {
+                        const listsIdentical = Array.isArray(response.colors) && 
+                                               this.recentColorsList && 
+                                               response.colors.length === this.recentColorsList.length && 
+                                               response.colors.every((val, index) => val === this.recentColorsList[index]);
+                        
+                        if (!listsIdentical) {
+                            this.recentColorsList = response.colors;
+                            this.renderRecentColors(response.colors);
+                        }
+                    }
+                }
+            }).catch(e => {
+                console.error('Error recording recent color:', e);
+            });
         });
     },
 

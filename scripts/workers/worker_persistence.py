@@ -412,14 +412,75 @@ def chat_persistence_thread():
 
         time.sleep(CHAT_SYNC_INTERVAL)
 
+def recent_colors_persistence_thread():
+    print("[*] Starting Recent Colors Persistence Thread (MySQL)...")
+    r = get_redis_client()
+    if not r:
+        print("[!] Recent colors thread could not connect to Redis.")
+        return
+
+    sync_interval = 15  # seconds
+
+    while True:
+        try:
+            # Pop or get dirty user/canvas IDs from Redis set
+            dirty_keys = r.smembers("canvas:recent_colors:dirty")
+            if dirty_keys:
+                r.delete("canvas:recent_colors:dirty")
+                
+                db_conn = get_db_connection()
+                if db_conn:
+                    cursor = db_conn.cursor()
+                    try:
+                        for key_b in dirty_keys:
+                            key_str = key_b.decode('utf-8')
+                            parts = key_str.split(':')
+                            if len(parts) == 2:
+                                canvas_id = parts[0]
+                                user_id = parts[1]
+                                
+                                redis_key = f"canvas:{canvas_id}:recent_colors:{user_id}"
+                                colors_raw = r.get(redis_key)
+                                if colors_raw:
+                                    colors_str = colors_raw.decode('utf-8')
+                                    # Insert/Update in MySQL
+                                    query = """
+                                        INSERT INTO canvas_recent_colors (user_id, canvas_id, colors)
+                                        VALUES (%s, %s, %s)
+                                        ON DUPLICATE KEY UPDATE colors = VALUES(colors)
+                                    """
+                                    cursor.execute(query, (user_id, canvas_id, colors_str))
+                        db_conn.commit()
+                        print(f"[+] Persisted {len(dirty_keys)} recent colors modifications to MySQL.")
+                    except Exception as sql_err:
+                        print(f"[!] Error syncing recent colors to MySQL: {sql_err}")
+                        db_conn.rollback()
+                        # Re-add keys to set so they get retried next iteration
+                        for key_b in dirty_keys:
+                            r.sadd("canvas:recent_colors:dirty", key_b)
+                    finally:
+                        cursor.close()
+                        db_conn.close()
+                else:
+                    print("[!] MySQL inaccessible for recent colors, keeping in Redis set.")
+                    # Re-add keys to set
+                    for key_b in dirty_keys:
+                        r.sadd("canvas:recent_colors:dirty", key_b)
+        except Exception as e:
+            print(f"[!] Error processing recent colors: {e}")
+
+        time.sleep(sync_interval)
+
 def main():
-    print("[*] Starting Unified Persistence Worker (Canvas + Chat)...")
+    print("[*] Starting Unified Persistence Worker (Canvas + Chat + Recent Colors)...")
     
     t1 = threading.Thread(target=canvas_persistence_thread, daemon=True, name="CanvasPersistence")
     t2 = threading.Thread(target=chat_persistence_thread, daemon=True, name="ChatPersistence")
+    t3 = threading.Thread(target=recent_colors_persistence_thread, daemon=True, name="RecentColorsPersistence")
     
     t1.start()
     t2.start()
+    t3.start()
     
     while True:
         time.sleep(1)

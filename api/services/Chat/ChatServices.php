@@ -250,7 +250,13 @@ class ChatServices
         $totalSize = 0;
         
         if ($files && is_array($files['name']) && count($files['name']) > 0 && !empty($files['name'][0])) {
-            $maxUploadMB = \App\Core\System\ChatConstants::CHAT_MAX_UPLOAD_MB;
+            $stmtUser = $this->identityPdo->prepare("SELECT subscription_tier FROM users WHERE id = ? LIMIT 1");
+            $stmtUser->execute([$userId]);
+            $userTier = (int)($stmtUser->fetchColumn() ?: 0);
+
+            $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($userTier);
+            $maxUploadMB = $planLimits['max_upload_mb'] ?? 10;
+
             $maxImages = \App\Core\System\ChatConstants::CHAT_MAX_IMAGES;
             
             $totalSize = array_sum($files['size']);
