@@ -26,6 +26,7 @@ pub struct AppState {
     pub redis_pool: RedisPool,
     pub db_pool: MySqlPool,
     pub perks_config: Arc<Mutex<Option<PerksConfig>>>,
+    pub user_perk_cooldowns: Arc<DashMap<String, std::time::Instant>>,
     pub node_id: String,
 }
 
@@ -43,6 +44,7 @@ impl AppState {
             redis_pool,
             db_pool,
             perks_config: Arc::new(Mutex::new(None)),
+            user_perk_cooldowns: Arc::new(DashMap::new()),
             node_id: uuid::Uuid::new_v4().to_string(),
         }
     }

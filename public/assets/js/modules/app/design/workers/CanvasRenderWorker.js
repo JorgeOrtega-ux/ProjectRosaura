@@ -878,7 +878,7 @@ function render() {
     // Nuclear Warnings (Mira telescópica + Círculo rojo cerrándose)
     if (nuclearWarnings.length > 0) {
         const now = Date.now();
-        nuclearWarnings = nuclearWarnings.filter(w => !isNaN(w.endTime) && now < w.endTime);
+        nuclearWarnings = nuclearWarnings.filter(w => !isNaN(w.endTime) && now < w.endTime + 5000);
         if (nuclearWarnings.length > 0) {
             requestRender();
         }
@@ -949,17 +949,19 @@ function render() {
                     warning.detachedPixels = [];
                 }
 
-                // Check all pixels in the warning radius
+                // Check all pixels in the warning radius using adaptive step sampling for large radii
                 const rInt = Math.ceil(outerR);
+                const step = rInt > 120 ? Math.ceil(rInt / 60) : (rInt > 60 ? 2 : 1);
                 let needsFlush = false;
 
-                for (let dy = -rInt; dy <= rInt; dy++) {
-                    for (let dx = -rInt; dx <= rInt; dx++) {
+                for (let dy = -rInt; dy <= rInt; dy += step) {
+                    for (let dx = -rInt; dx <= rInt; dx += step) {
                         const px = cx + dx;
                         const py = cy + dy;
                         if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
-                            const dist = Math.sqrt(dx * dx + dy * dy);
-                            if (dist <= outerR) {
+                            const distSq = dx * dx + dy * dy;
+                            if (distSq <= outerR * outerR) {
+                                const dist = Math.sqrt(distSq);
                                 const hash = ((px * 17 + py * 23) % 100) / 100;
                                 const distRatio = dist / outerR;
                                 // We pull pixels in from the outside to the inside
@@ -978,8 +980,17 @@ function render() {
                                             radius: dist
                                         });
                                         if (pixelBuffer) {
-                                            pixelBuffer[idx] = 0;
-                                            markDirty(px, py);
+                                            for (let sy = 0; sy < step; sy++) {
+                                                for (let sx = 0; sx < step; sx++) {
+                                                    const spx = px + sx;
+                                                    const spy = py + sy;
+                                                    if (spx < boardWidth && spy < boardHeight) {
+                                                        const sidx = spy * boardWidth + spx;
+                                                        pixelBuffer[sidx] = 0;
+                                                        markDirty(spx, spy);
+                                                    }
+                                                }
+                                            }
                                             needsFlush = true;
                                         }
                                     }

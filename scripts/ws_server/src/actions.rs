@@ -488,7 +488,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 "type": "area_protection_changed",
                 "canvas_id": canvas_id,
                 "x1": min_x, "y1": min_y, "x2": max_x, "y2": max_y,
-                "protect": protect, "width": db_width
+                "protect": protect, "width": db_width, "is_owner": true
             }).to_string();
             helpers::broadcast_to_room(state, canvas_id, &b_msg).await;
             
@@ -591,7 +591,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 "type": "area_protection_changed",
                 "canvas_id": canvas_id,
                 "x1": min_x, "y1": min_y, "x2": max_x, "y2": max_y,
-                "protect": true, "width": db_width
+                "protect": true, "width": db_width, "is_owner": false, "by_perk": true
             }).to_string();
             helpers::broadcast_to_room(state, canvas_id, &b_msg).await;
 
@@ -1005,11 +1005,18 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                         db::save_canvas_protections_db_with_expiry(&state.db_pool, canvas_id, &affected_offsets, false, None, None).await;
                     }
                     
-                    // Broadcast de desprotección para actualizar el frontend
-                    let unprotect_msg = serde_json::json!({
-                        "type": "pixel_unprotected_broadcast",
-                        "offsets": affected_offsets
-                    }).to_string();
+                    // Broadcast de desprotección optimizado para actualizar el frontend
+                    let unprotect_msg = if affected_offsets.len() > 100 {
+                        serde_json::json!({
+                            "type": "pixel_unprotected_circle",
+                            "x": tx, "y": ty, "r": radius
+                        }).to_string()
+                    } else {
+                        serde_json::json!({
+                            "type": "pixel_unprotected_broadcast",
+                            "offsets": affected_offsets
+                        }).to_string()
+                    };
                     helpers::broadcast_to_room(state, canvas_id, &unprotect_msg).await;
                     let sync_payload_unprot = serde_json::json!({"source_node": &state.node_id, "target_type": "canvas", "canvas_id": canvas_id, "payload": unprotect_msg});
                     let _: () = redis_conn.publish("canvas:sync_events", sync_payload_unprot.to_string()).await.unwrap_or(());
@@ -1066,6 +1073,16 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             let perk_id = msg.perk_id.clone().unwrap_or_default();
             
             if perk_id.is_empty() { return; }
+
+            let user_cooldown_key = if !uid_str.is_empty() { uid_str.clone() } else { connection_id.to_string() };
+            let now_inst = std::time::Instant::now();
+            if let Some(cooldown_until) = state.user_perk_cooldowns.get(&user_cooldown_key) {
+                if now_inst < *cooldown_until {
+                    let err = serde_json::json!({"type": "perk_error", "message": "Debes esperar a que finalice tu ventaja activa antes de lanzar otra."}).to_string();
+                    helpers::send_to_client(state, connection_id, &err).await;
+                    return;
+                }
+            }
             
             let has_perk = if uid_str != "guest" && !uid_str.is_empty() {
                 db::consume_user_perk(&state.db_pool, &uid_str, &perk_id).await
@@ -1127,16 +1144,23 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             
             let confirm_msg = serde_json::json!({"type": "pixel_confirm"}).to_string();
             helpers::send_to_client(state, connection_id, &confirm_msg).await;
+
+            let cooldown_secs = (warning_duration as u64).max(4);
+            state.user_perk_cooldowns.insert(user_cooldown_key, now_inst + std::time::Duration::from_secs(cooldown_secs));
             
             let mut spawned_targets = Vec::new();
             if spawn_mode == "random_around" {
-                // Simplified random around
-                let max_dist = if width == 0 { spread_radius } else { width / 2 };
+                // Clustered random around target point (cx, cy) using spread_radius
+                let effective_spread = if spread_radius > 0 { spread_radius } else { 30 };
                 for _ in 0..spawn_count {
-                    let rx = cx + (rand::random::<f32>() * max_dist as f32 * 2.0) as i32 - max_dist;
-                    let ry = cy + (rand::random::<f32>() * max_dist as f32 * 2.0) as i32 - max_dist;
-                    let rx = rx.clamp(0, if width > 0 { width - 1 } else { std::i32::MAX });
-                    let ry = ry.clamp(0, if width > 0 { width - 1 } else { std::i32::MAX });
+                    let angle = rand::random::<f32>() * 2.0 * std::f32::consts::PI;
+                    let dist = rand::random::<f32>().sqrt() * effective_spread as f32;
+                    let rx = (cx as f32 + dist * angle.cos()) as i32;
+                    let ry = (cy as f32 + dist * angle.sin()) as i32;
+                    let max_w = if width > 0 { width - 1 } else { std::i32::MAX };
+                    let max_h = if height > 0 { height - 1 } else { std::i32::MAX };
+                    let rx = rx.clamp(0, max_w);
+                    let ry = ry.clamp(0, max_h);
                     let delay = warning_duration as f32 + (rand::random::<f32>() * jitter_delay);
                     spawned_targets.push((rx, ry, delay));
                 }
@@ -1162,22 +1186,41 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                         "x": tx, "y": ty, "duration": dur, "perk": perk_id, "radius": radius
                     }).to_string();
                     helpers::broadcast_to_room(&state_clone, &canvas_id_clone, &warning_msg).await;
-                    if let Ok(mut c) = state_clone.redis_pool.get().await {
-                        let sync_payload = serde_json::json!({"source_node": &state.node_id, "target_type": "canvas", "canvas_id": canvas_id_clone, "payload": warning_msg});
-                        let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
-                    }
+                    let s_redis = state_clone.clone();
+                    let c_redis = canvas_id_clone.clone();
+                    let w_msg = warning_msg.clone();
+                    tokio::spawn(async move {
+                        if let Ok(mut c) = s_redis.redis_pool.get().await {
+                            let sync_payload = serde_json::json!({"source_node": &s_redis.node_id, "target_type": "canvas", "canvas_id": c_redis, "payload": w_msg});
+                            let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
+                        }
+                    });
                 }
                 
                 let s_clone2 = state_clone.clone();
                 let c_id_clone2 = canvas_id_clone.clone();
                 let perk_id_clone = perk_id.clone();
-                
                 tokio::spawn(async move {
                     if delay > 0.0 {
                         sleep(Duration::from_secs_f32(delay)).await;
                     }
                     
+                    // Immediately broadcast bomb_pixel when warning completes for zero-lag explosion triggering
+                    let b_msg = serde_json::json!({
+                        "type": "bomb_pixel",
+                        "x": tx, "y": ty, "r": radius, "perk": perk_id_clone
+                    }).to_string();
+                    helpers::broadcast_to_room(&s_clone2, &c_id_clone2, &b_msg).await;
+                    
                     if let Ok(mut c) = s_clone2.redis_pool.get().await {
+                        let sync_payload = serde_json::json!({"source_node": &s_clone2.node_id, "target_type": "canvas", "canvas_id": c_id_clone2, "payload": b_msg});
+                        let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
+                        
+                        let _: () = c.xadd(format!("canvas:{}:stream", c_id_clone2), "*", &[
+                            ("type", "bomb_pixel"), ("x", &tx.to_string()), ("y", &ty.to_string()),
+                            ("r", &radius.to_string()), ("perk", &perk_id_clone)
+                        ]).await.unwrap_or(());
+
                         let areas_key = format!("canvas:{}:protected_areas", c_id_clone2);
                         let areas_json: String = c.get(&areas_key).await.unwrap_or_else(|_| "[]".to_string());
                         let mut areas: Vec<serde_json::Value> = serde_json::from_str(&areas_json).unwrap_or_default();
@@ -1236,36 +1279,34 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                         
                         let _: () = pipe.query_async(&mut c).await.unwrap_or(());
                         
-                        // Eliminar protecciones de MySQL
+                        // Offload heavy MySQL persistence to non-blocking subtask
                         if !affected_offsets.is_empty() {
-                            db::save_canvas_protections_db_with_expiry(&s_clone2.db_pool, &c_id_clone2, &affected_offsets, false, None, None).await;
+                            let db_pool = s_clone2.db_pool.clone();
+                            let cid = c_id_clone2.clone();
+                            let offsets = affected_offsets.clone();
+                            tokio::spawn(async move {
+                                db::save_canvas_protections_db_with_expiry(&db_pool, &cid, &offsets, false, None, None).await;
+                            });
                         }
                         
-                        // Broadcast de desprotección para actualizar el frontend
-                        let unprotect_msg = serde_json::json!({
-                            "type": "pixel_unprotected_broadcast",
-                            "offsets": affected_offsets
-                        }).to_string();
+                        // Broadcast de desprotección optimizado para actualizar el frontend
+                        let unprotect_msg = if affected_offsets.len() > 100 {
+                            serde_json::json!({
+                                "type": "pixel_unprotected_circle",
+                                "x": tx, "y": ty, "r": radius
+                            }).to_string()
+                        } else {
+                            serde_json::json!({
+                                "type": "pixel_unprotected_broadcast",
+                                "offsets": affected_offsets
+                            }).to_string()
+                        };
                         helpers::broadcast_to_room(&s_clone2, &c_id_clone2, &unprotect_msg).await;
                         
                         if let Ok(mut c2) = s_clone2.redis_pool.get().await {
                             let sync_payload = serde_json::json!({"source_node": &s_clone2.node_id, "target_type": "canvas", "canvas_id": c_id_clone2, "payload": unprotect_msg});
                             let _: () = c2.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
                         }
-                        
-                        let b_msg = serde_json::json!({
-                            "type": "bomb_pixel",
-                            "x": tx, "y": ty, "r": radius, "perk": perk_id_clone
-                        }).to_string();
-                        helpers::broadcast_to_room(&s_clone2, &c_id_clone2, &b_msg).await;
-                        
-                        let sync_payload = serde_json::json!({"source_node": &s_clone2.node_id, "target_type": "canvas", "canvas_id": c_id_clone2, "payload": b_msg});
-                        let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
-                        
-                        let _: () = c.xadd(format!("canvas:{}:stream", c_id_clone2), "*", &[
-                            ("type", "bomb_pixel"), ("x", &tx.to_string()), ("y", &ty.to_string()),
-                            ("r", &radius.to_string()), ("perk", &perk_id_clone)
-                        ]).await.unwrap_or(());
                     }
                 });
             }

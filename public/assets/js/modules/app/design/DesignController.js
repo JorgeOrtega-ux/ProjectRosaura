@@ -7,9 +7,11 @@ import { DesignInteractions } from './DesignInteractions.js';
 import { DesignRender } from './DesignRender.js';
 import { PerksRegistry } from './PerksRegistry.js';
 import { DesignChat } from './DesignChat.js';
+import { soundManager } from './SoundManager.js';
 
 class DesignController {
     constructor() {
+        this.soundManager = soundManager;
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.abortController = null;

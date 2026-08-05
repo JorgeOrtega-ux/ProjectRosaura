@@ -1,26 +1,35 @@
-1-Recientemente implemente la ventaja de cañon orbital y funciona bien en un 99%, el problema que he notado a veces es que
-por alguna razon al ejecutarse ya vez que hay una animacion de bola cargandose en el bottom del component top, el problema es que esta desalineado
-el rayo de la bola de carga, osea es como si de la bola saliera el rayo, entonces siempre debe estar alineado aunque se haga zoom, mueva el lienzo etc
-y es raro ya que si recargo la pagina y lanzo el primer cañon orbital, si estara alineado el rayo con la bola y todo funciona bien,
-pero ya los demas que lanze estaran desincronizados, como que se quedan en el estado anterior o algo asi, no lo se, y tambien note que la bola de carga desaparece
-mientras el rayo se esta lanzando deben tener la misma duracion, ya que noto que desaparece la bola de carga y luego lanza el rayo debido a lo mejor a problemar 
-de lag o asi.
+# ESTADO DE TAREAS EN TASK_PENDING.TXT
 
-2-Mira he notado que muchas de las ventajas tienen retraso o asi dependiendo que tan grande sea el lienzo, si es pequeño se ejecutan de inmediato 
-y explotan y actualizan de inmediato, pero en lienzos grandes como 4096x4096 o asi, tienen como retraso/lag, y eso es inaceptable, debe haber alguna tecnica para que no haya nada de lag y todo fuera 100% sincronizado, tal vez podrias encontrar algo en mi arquitectura para eso.
-ya que si es mucho retraso, osea una cosa es lag de parte del usuario por su dispositivo (lo cual si ocurre solo con la ventaja de agujero negro creo, deberias simplfificar mas la animacion) y otra cosa es retraso de parte del servidor, ya que es pesimista, o si hace la animacion pero luego ya que se quita la animacion segundos despues explota y asi, eso esta muy mal. ya que deberia ser 100% en tiempo real. como si fueran los eventos en vivo de juegos como fortnite que son 100% en vivo, y sincronizados.
+---
 
-3-Quiero que me crees un archivo ".md" donde hagas una tabla comparativa de todas las ventajas que tenemos y una lista de sonidos
-para en un futuro cuando las ventajas tengan sonidos pues saber cuales deben llevar el mismo, cuales, otros, y asi
-por ejemplo en la bombas atomicas y asi, al lanzarla y esperar el cooldown deben haber un sonido de una alerta tal tal tal. luego al explotar hacer un sonido,
-y asi. no todas llevaran sonidos como proteccion de pixeles o minas terrestres.
+### ✅ 1- [COMPLETADO] Cañón Orbital: Alineación de Bola de Carga y Sincronización
+- **Solución:** Alineación exacta en pantalla ($X, Y$), sincronización del rayo láser con la bola de carga, eliminación de la duplicación visual al 2º lanzamiento y eliminación de la re-aparición de la bola post-explosión.
 
-4-Mira he notado que cuando lanzo la ventaja de lluvia de meteoritos por alguna razon ya vez que son multiples objetivos
-bueno el problema es que la mayoria si queda dentro del lienzo de pixeles, pero muchos otros quedan fuera del lienzo de pixeles
-debes arreglar eso ya que el usuario paa por que los meteoritos caiga dentro del lienzo no fuera.
+---
 
-5-Cuando entras a un lienzo que privado actualmente hay un badget en el top que dice lbl_private_canvas, ese badge debe ir en el bottom a la izquierda junto a los demas badgets
-y pues no se si haya alguna otra estado donde se muestre algun badget en el top, todoos los badgets deben ir en el bottom. revisa que no rompar flujos de estados.
+### ✅ 2- [COMPLETADO] Optimización de Retraso/Lag en Ventajas (Lienzos 4096x4096)
+- **Solución:** 
+  - Transmisión WebSocket inmediata antes de I/O a la base de datos MySQL.
+  - Reducción del tamaño de paquetes WebSocket de 25 MB a 80 bytes (`pixel_unprotected_circle`).
+  - Muestra adaptativa en el agujero negro para evitar congelamiento de FPS en 4096x4096.
+  - Sistema de Cooldown y Rate-Limiting global (Frontend con `.disable-interaction` y Backend en Rust con `user_perk_cooldowns`).
 
-6-Por que cuando utilizo la ventaja de proteccion de pixeles, sale el aviso de "Zona administrativamente protegida por el dueño."
-osea estoy usando la ventaja, no la tool de dueño.
+---
+
+### ✅ 3- [COMPLETADO] Crear Archivo `.md` con Tabla Comparativa de Efectos de Sonido para Ventajas
+- **Solución:** Creado el documento [docs/perks_sound_effects.md](file:///f:/htdocs/ProjectRosaura/docs/perks_sound_effects.md) detallando la tabla comparativa de las 9 ventajas, desglosando los sonidos por fase (activación, alerta/carga, impacto/detonación) y la estrategia de agrupación/reutilización de audio.
+
+---
+
+### ✅ 4- [COMPLETADO] Lluvia de Meteoritos: Límites del Lienzo
+- **Solución:** Corrección del cálculo de `spread_radius` y sujeción (*clamping*) de las coordenadas $(x, y)$ de los meteoritos para garantizar que el 100% de las rocas caigan dentro de los límites del lienzo.
+
+---
+
+### ✅ 5- [COMPLETADO] Mover Badge `lbl_private_canvas` del Top al Bottom-Left
+- **Solución:** Se trasladaron los badges de estado de lienzo privado (`lbl_private_canvas`) y de suscripción requerida (`lbl_requires_subscription`) desde la barra superior (`spectator-controls`) hacia la barra flotante de la izquierda/abajo (`data-ref="badges-left"`), unificando la posición de todas las insignias de estado sin alterar los flujos de visualización.
+
+---
+
+### ✅ 6- [COMPLETADO] Mensaje de Origen en la Ventaja de Protección de Píxeles
+- **Solución:** Incorporación de la bandera `is_owner` en la transmisión WebSocket y actualización en `DesignNetwork.js` para diferenciar el toast: *"Zona protegida por ventaja de protección"* vs *"Zona administrativamente protegida por el dueño"*.

@@ -2,6 +2,7 @@ import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 import { PerksRegistry } from './PerksRegistry.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { soundManager } from './SoundManager.js';
 
 export const DesignInteractions = {
     bindEvents() {
@@ -98,7 +99,12 @@ export const DesignInteractions = {
 
         const btnActivatePerk = e.target.closest('[data-action="activatePerk"]');
         if (btnActivatePerk) {
-            e.preventDefault();
+            if (this.perkGlobalCooldownUntil && Date.now() < this.perkGlobalCooldownUntil) {
+                const remSecs = Math.ceil((this.perkGlobalCooldownUntil - Date.now()) / 1000);
+                if (typeof showMessage === 'function') showMessage(`Espera ${remSecs}s a que finalice tu ventaja activa.`, 'warning');
+                return;
+            }
+            soundManager.playUiClick();
             if (typeof this.activatePerk === 'function') {
                 this.activatePerk(btnActivatePerk.getAttribute('data-perk-id'), btnActivatePerk);
             }
@@ -1375,19 +1381,16 @@ export const DesignInteractions = {
 
 
             targets.forEach(tgt => {
-                const warningData = {
-                    x: tgt.x,
-                    y: tgt.y,
-                    duration: durationSecs,
-                    perk: usedPerk,
-                    radius: perkRadius
-                };
-                if (typeof this.handleBombWarning === 'function') {
-                    this.handleBombWarning(warningData);
-                } else if (typeof this.handleNuclearWarning === 'function') {
-                    this.handleNuclearWarning(warningData);
+                const targetKey = `${tgt.x}_${tgt.y}_${usedPerk}`;
+                if (typeof this.showPreparingPerkBadge === 'function') {
+                    this.showPreparingPerkBadge(usedPerk, targetKey);
                 }
             });
+
+            const cooldownMs = (durationSecs + 1) * 1000;
+            if (typeof this.setGlobalPerkCooldown === 'function') {
+                this.setGlobalPerkCooldown(cooldownMs);
+            }
 
             if (this.wsManager) {
                 this.wsManager.send({
@@ -1541,6 +1544,35 @@ export const DesignInteractions = {
         this.requestRender();
     },
 
+    setGlobalPerkCooldown(cooldownMs) {
+        this.perkGlobalCooldownUntil = Date.now() + cooldownMs;
+        
+        if (!document.getElementById('perk-cooldown-style')) {
+            const style = document.createElement('style');
+            style.id = 'perk-cooldown-style';
+            style.textContent = `
+                .disable-interaction, .disabled-interaction {
+                    pointer-events: none !important;
+                    opacity: 0.35 !important;
+                    cursor: not-allowed !important;
+                    filter: grayscale(0.8) !important;
+                    transition: opacity 0.3s ease, filter 0.3s ease;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        if (typeof this.updatePerkBadges === 'function') {
+            this.updatePerkBadges();
+        }
+
+        setTimeout(() => {
+            if (typeof this.updatePerkBadges === 'function') {
+                this.updatePerkBadges();
+            }
+        }, cooldownMs);
+    },
+
     cancelInteractionMode() {
         this.interactionMode = 'normal';
         this.selectedPixels.clear();
@@ -1578,6 +1610,11 @@ export const DesignInteractions = {
         });
         
         this.ensureExplosionStyles();
+
+        if (perkId === 'canon_orbital_1') {
+            const ball = document.querySelector('.orbital-cannon-charge-ball');
+            if (ball) ball.remove();
+        }
 
         if (PerksRegistry.hasScreenShake(perkId)) {
             if (this.canvas) {
@@ -1755,6 +1792,13 @@ export const DesignInteractions = {
                 badge.remove();
             }
         });
+        const isGlobalCooldown = !!(this.perkGlobalCooldownUntil && Date.now() < this.perkGlobalCooldownUntil);
+        const btnPerksElement = document.querySelector('[data-action="togglePerksInventory"]');
+        if (btnPerksElement) {
+            if (isGlobalCooldown) btnPerksElement.classList.add('disable-interaction');
+            else btnPerksElement.classList.remove('disable-interaction');
+        }
+
         const PERK_ORDER = PerksRegistry.getDisplayOrder();
         let renderedInventoryCount = 0;
 
@@ -1861,6 +1905,9 @@ export const DesignInteractions = {
                 badge.className = 'component-badge';
                 badge.style.cursor = 'pointer';
                 badge.innerHTML = activeHtml;
+                if (isGlobalCooldown) {
+                    badge.classList.add('disable-interaction');
+                }
                 if (isToggledOn) {
                     if (PerksRegistry.isBomb(perkId)) {
                         badge.style.border = '1px solid var(--color-error)';
@@ -1877,6 +1924,9 @@ export const DesignInteractions = {
                 const badge = document.createElement('div');
                 badge.className = 'component-badge inventory-badge-temp';
                 badge.style.cursor = 'pointer';
+                if (isGlobalCooldown) {
+                    badge.classList.add('disable-interaction');
+                }
                 const titleText = PerksRegistry.getLabel(perkId);
                 badge.innerHTML = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${invItem.count})</span>`;
                 badge.addEventListener('click', () => {

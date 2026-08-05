@@ -138,26 +138,44 @@ export const DesignRender = {
     },
 
     updateOrbitalCannonBallPosition() {
-        const energyBall = document.querySelector('.orbital-cannon-charge-ball');
-        if (!energyBall) return;
-
-        const topBar = document.querySelector('.component-top');
+        const topBar = document.querySelector('.component-top') || document.querySelector('.general-content-top');
         const canvasEl = this.canvas;
-        if (topBar && canvasEl) {
-            const activeWarning = this.nuclearWarnings ? this.nuclearWarnings.find(w => w.perkId === 'canon_orbital_1') : null;
-            const activeExplosion = this.explosions ? this.explosions.find(e => e.perkId === 'canon_orbital_1') : null;
-            const activeObj = activeWarning || activeExplosion;
-            if (activeObj) {
-                const topBarRect = topBar.getBoundingClientRect();
-                const canvasRect = canvasEl.getBoundingClientRect();
-                const scale = this.transform.scale || 1;
-                const tx = this.transform.x || 0;
-                const wx = activeObj.x + 0.5;
-                const targetScreenX = wx * scale + tx;
-                const leftOffset = canvasRect.left + targetScreenX - topBarRect.left;
-                energyBall.style.left = `${leftOffset}px`;
+        if (!topBar || !canvasEl) return;
+
+        const now = Date.now();
+        // La bola de carga solo existe durante la fase de carga previa a la explosión (now < w.endTime)
+        const orbitalWarnings = this.nuclearWarnings ? this.nuclearWarnings.filter(w => w.perkId === 'canon_orbital_1' && now < w.endTime) : [];
+        const topBarRect = topBar.getBoundingClientRect();
+        const canvasRect = canvasEl.getBoundingClientRect();
+        const scale = this.transform.scale || 1;
+        const tx = this.transform.x || 0;
+
+        const activeKeys = new Set();
+
+        orbitalWarnings.forEach(w => {
+            activeKeys.add(w.key);
+            let energyBall = topBar.querySelector(`[data-warning-key="${w.key}"]`);
+            if (!energyBall) {
+                energyBall = document.createElement('div');
+                energyBall.className = 'orbital-cannon-charge-ball';
+                energyBall.setAttribute('data-warning-key', w.key);
+                const duration = Math.max(1000, w.endTime - w.startTime);
+                energyBall.style.animationDuration = `${duration}ms`;
+                topBar.appendChild(energyBall);
             }
-        }
+            const wx = w.x + 0.5;
+            const targetScreenX = wx * scale + tx;
+            const leftOffset = canvasRect.left + targetScreenX - topBarRect.left;
+            energyBall.style.left = `${leftOffset}px`;
+        });
+
+        // Eliminar cualquier bola de carga cuyo tiempo de carga haya concluido o cuya advertencia ya no esté activa
+        topBar.querySelectorAll('.orbital-cannon-charge-ball').forEach(ball => {
+            const k = ball.getAttribute('data-warning-key');
+            if (!activeKeys.has(k)) {
+                ball.remove();
+            }
+        });
     },
 
     requestRender() {
@@ -523,7 +541,7 @@ export const DesignRender = {
         }
         if (this.nuclearWarnings && this.nuclearWarnings.length > 0) {
             const now = Date.now();
-            this.nuclearWarnings = this.nuclearWarnings.filter(w => !isNaN(w.endTime) && now < w.endTime);
+            this.nuclearWarnings = this.nuclearWarnings.filter(w => !isNaN(w.endTime) && now < w.endTime + 5000);
             if (this.nuclearWarnings.length > 0) {
                 this.requestRender();
             }
@@ -604,7 +622,7 @@ export const DesignRender = {
                     const cx = warning.x;
                     const cy = warning.y;
 
-                    if (!warning.pixelCache && this.offscreenCtx && this.boardWidth > 0 && this.boardHeight > 0) {
+                    if (!warning.pixelCache && this.offscreenCtx && this.boardWidth > 0 && this.boardWidth <= 1024 && this.boardHeight > 0 && this.boardHeight <= 1024) {
                         try {
                             const imgData = this.offscreenCtx.getImageData(0, 0, this.boardWidth, this.boardHeight);
                             warning.pixelCache = new Uint32Array(imgData.data.buffer);

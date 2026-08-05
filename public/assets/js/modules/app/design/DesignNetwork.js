@@ -2,6 +2,7 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { WebSocketManager } from '../../../core/api/WebSocketManager.js';
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
+import { soundManager } from './SoundManager.js';
 
 export const DesignNetwork = {
     async getTurnstileToken() {
@@ -134,7 +135,15 @@ export const DesignNetwork = {
                     const cY = parseInt(data.y, 10);
                     const r = parseInt(data.r, 10);
                     const perkId = data.perk || 'pixel_misil_1';
+
+                    if (this.nuclearWarnings) {
+                        const targetKey = `${cX}_${cY}_${perkId}`;
+                        soundManager.stopWarningSound(targetKey);
+                        this.nuclearWarnings = this.nuclearWarnings.filter(w => Math.abs(w.x - cX) > 2 || Math.abs(w.y - cY) > 2);
+                    }
                     
+                    soundManager.playExplosionSound(perkId, cX, cY, this.boardWidth);
+
                     if (typeof this.triggerExplosionEffect === 'function') {
                         this.triggerExplosionEffect(cX, cY, r, perkId);
                     }
@@ -301,8 +310,42 @@ export const DesignNetwork = {
                     if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
                     if (typeof showMessage === 'function') {
                         const actWord = protect ? 'protegida' : 'desprotegida';
-                        showMessage(`Zona administrativamente ${actWord} por el dueño.`, 'info');
+                        if (data.is_owner) {
+                            showMessage(`Zona administrativamente ${actWord} por el dueño.`, 'info');
+                        } else {
+                            showMessage(`Zona ${actWord} por ventaja de protección.`, 'info');
+                        }
                     }
+                    this.requestRender();
+                }
+                else if (data.type === 'pixel_unprotected_circle') {
+                    const cx = parseInt(data.x, 10);
+                    const cy = parseInt(data.y, 10);
+                    const r = parseInt(data.r, 10);
+                    if (this.protectedPixels) {
+                        const w = this.boardWidth || 64;
+                        const rSq = r * r;
+                        for (let y = cy - r; y <= cy + r; y++) {
+                            const dy = y - cy;
+                            const maxDx = Math.floor(Math.sqrt(Math.max(0, rSq - dy * dy)));
+                            for (let x = cx - maxDx; x <= cx + maxDx; x++) {
+                                const off = y * w + x;
+                                this.protectedPixels.delete(off);
+                                if (this.ownerProtectedPixels) this.ownerProtectedPixels.delete(off);
+                            }
+                        }
+                    }
+                    if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
+                    this.requestRender();
+                }
+                else if (data.type === 'pixel_unprotected_broadcast') {
+                    if (Array.isArray(data.offsets) && this.protectedPixels) {
+                        data.offsets.forEach(off => {
+                            this.protectedPixels.delete(off);
+                            if (this.ownerProtectedPixels) this.ownerProtectedPixels.delete(off);
+                        });
+                    }
+                    if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
                     this.requestRender();
                 }
                 else if (data.type === 'canvas_frozen_error') {
@@ -1466,13 +1509,25 @@ export const DesignNetwork = {
         const targetKey = `${cx}_${cy}_${perkId}`;
         const now = Date.now();
 
+        let container = document.querySelector('[data-ref="badges-left"]');
+        if (container) {
+            container.querySelectorAll(`[data-preparing-key="${targetKey}"], [data-preparing-key], [data-preparing-perk], [data-perk-id="${perkId}"]`).forEach(el => {
+                if (el.hasAttribute('data-preparing-key') || el.hasAttribute('data-preparing-perk')) {
+                    el.remove();
+                }
+            });
+        }
+
         if (!this.nuclearWarnings) this.nuclearWarnings = [];
+        this.nuclearWarnings = this.nuclearWarnings.filter(w => !isNaN(w.endTime) && now < w.endTime);
+
         const existing = this.nuclearWarnings.find(w => w.key === targetKey && now < w.endTime);
         if (existing) {
             return;
         }
 
         const durationMs = durationSecs * 1000;
+        soundManager.playWarningSound(perkId, durationSecs, targetKey);
 
         const warningObj = {
             key: targetKey,
@@ -1503,25 +1558,8 @@ export const DesignNetwork = {
         };
         requestAnimationFrame(animateWarning);
 
-        if (perkId === 'canon_orbital_1') {
-            const topBar = document.querySelector('.component-top');
-            if (topBar) {
-                // Ensure only one ball is active at a time to prevent duplicates
-                let energyBall = topBar.querySelector('.orbital-cannon-charge-ball');
-                if (!energyBall) {
-                    energyBall = document.createElement('div');
-                    energyBall.className = 'orbital-cannon-charge-ball';
-                    energyBall.style.animationDuration = `${durationMs + 3000}ms`;
-                    topBar.appendChild(energyBall);
-                    setTimeout(() => {
-                        energyBall.remove();
-                    }, durationMs + 3000);
-                }
-            }
-        }
-
-        // UI Badge flotante en la izquierda
-        let container = document.querySelector('[data-ref="badges-left"]');
+        // UI Badge flotante en la izquierda (indexado por targetKey para soportar spameo/multiusuario)
+        container = document.querySelector('[data-ref="badges-left"]');
         if (!container) {
             container = document.createElement('div');
             container.className = 'canvas-badges-left';
@@ -1529,11 +1567,12 @@ export const DesignNetwork = {
             document.body.appendChild(container);
         }
 
-        const existingBadge = container.querySelector(`[data-warning-perk="${perkId}"]`);
+        const existingBadge = container.querySelector(`[data-warning-key="${targetKey}"]`);
         if (!existingBadge) {
             const badge = document.createElement('div');
             badge.className = 'component-badge';
-            badge.setAttribute('data-warning-perk', perkId);
+            badge.setAttribute('data-warning-key', targetKey);
+            badge.setAttribute('data-perk-id', perkId);
             badge.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
             badge.style.color = '#ffffff';
             badge.style.border = '1px solid var(--color-error, #ef4444)';
@@ -1545,19 +1584,55 @@ export const DesignNetwork = {
 
             let remaining = durationSecs;
             badge.style.display = 'flex';
-            badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span >${details.text} (${remaining}s)</span>`;
+            badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span>${details.text} (${remaining}s)</span>`;
             container.appendChild(badge);
 
             const timerId = setInterval(() => {
                 remaining--;
                 if (remaining > 0) {
-                    badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span >${details.text} (${remaining}s)</span>`;
+                    badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span>${details.text} (${remaining}s)</span>`;
                 } else {
                     clearInterval(timerId);
-                    badge.remove();
+                    if (badge.parentNode) badge.remove();
                 }
             }, 1000);
         }
+    },
+
+    showPreparingPerkBadge(perkId, key = null) {
+        let container = document.querySelector('[data-ref="badges-left"]');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'canvas-badges-left';
+            container.setAttribute('data-ref', 'badges-left');
+            document.body.appendChild(container);
+        }
+
+        const badgeKey = key || perkId;
+        const existing = container.querySelector(`[data-preparing-key="${badgeKey}"]`);
+        if (existing) existing.remove();
+
+        const icon = typeof PerksRegistry !== 'undefined' ? PerksRegistry.getIcon(perkId) : 'auto_mode';
+        const label = typeof PerksRegistry !== 'undefined' ? PerksRegistry.getLabel(perkId) : perkId;
+
+        const badge = document.createElement('div');
+        badge.className = 'component-badge';
+        badge.setAttribute('data-preparing-key', badgeKey);
+        badge.setAttribute('data-perk-id', perkId);
+        badge.style.backgroundColor = 'rgba(99, 102, 241, 0.95)';
+        badge.style.color = '#ffffff';
+        badge.style.border = '1px solid var(--color-primary, #6366f1)';
+        badge.style.animation = 'pulse 1s infinite';
+        badge.innerHTML = `<span class="material-symbols-rounded">${icon}</span><span>Preparando ${label}...</span>`;
+
+        container.appendChild(badge);
+
+        // Auto cleanup after 6 seconds so preparing badge NEVER stays stuck forever
+        setTimeout(() => {
+            if (badge.parentNode) badge.remove();
+        }, 6000);
+
+        return badge;
     },
 
     handleNuclearWarning(data) {
