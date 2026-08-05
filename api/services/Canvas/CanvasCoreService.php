@@ -1075,7 +1075,38 @@ class CanvasCoreService {
                     $redis = $redisInstance->getClient();
 
                     if ($redis && $redis->exists($redisKey)) {
-                        $luaScript = <<<LUA
+                        $totalSize = $boardW * $boardH * 4;
+                        if ($totalSize <= 16 * 1024 * 1024 || count($validChunkKeys) >= 2) {
+                            $stateRaw = $redis->get($redisKey);
+                            if ($stateRaw) {
+                                foreach ($validChunkKeys as $chunkKey) {
+                                    list($cx, $cy) = explode(',', $chunkKey);
+                                    $cx = (int)$cx;
+                                    $cy = (int)$cy;
+
+                                    $startX = $cx * $chunkSize;
+                                    $startY = $cy * $chunkSize;
+
+                                    if ($startX >= $boardW || $startY >= $boardH || $startX < 0 || $startY < 0) continue;
+
+                                    $actualW = min($chunkSize, $boardW - $startX);
+                                    $actualH = min($chunkSize, $boardH - $startY);
+
+                                    $chunkBuffer = '';
+                                    for ($y = 0; $y < $actualH; $y++) {
+                                        $offset = (($startY + $y) * $boardW + $startX) * 4;
+                                        $length = $actualW * 4;
+                                        $chunkBuffer .= substr($stateRaw, $offset, $length);
+                                    }
+
+                                    $responseChunks[$chunkKey] = base64_encode(gzencode($chunkBuffer, 1));
+                                }
+                                $extractedViaRedis = true;
+                            }
+                        }
+
+                        if (!$extractedViaRedis) {
+                            $luaScript = <<<LUA
 local redisKey = KEYS[1]
 local boardW = tonumber(ARGV[1])
 local boardH = tonumber(ARGV[2])
@@ -1109,28 +1140,29 @@ end
 return res
 LUA;
 
-                        $chunkBatches = array_chunk($validChunkKeys, 8);
-                        $extractedViaRedis = true;
-                        
-                        foreach ($chunkBatches as $batch) {
-                            $evalArgs = array_merge([$redisKey, $boardW, $boardH, $chunkSize], $batch);
-                            $luaResult = $redis->eval($luaScript, $evalArgs, 1);
+                            $chunkBatches = array_chunk($validChunkKeys, 8);
+                            $extractedViaRedis = true;
+                            
+                            foreach ($chunkBatches as $batch) {
+                                $evalArgs = array_merge([$redisKey, $boardW, $boardH, $chunkSize], $batch);
+                                $luaResult = $redis->eval($luaScript, $evalArgs, 1);
 
-                            if (is_array($luaResult)) {
-                                $count = count($luaResult);
-                                for ($i = 0; $i < $count; $i += 2) {
-                                    $cKey = $luaResult[$i];
-                                    $cBuffer = $luaResult[$i + 1] ?? '';
-                                    $responseChunks[$cKey] = base64_encode(gzencode($cBuffer, 1));
+                                if (is_array($luaResult)) {
+                                    $count = count($luaResult);
+                                    for ($i = 0; $i < $count; $i += 2) {
+                                        $cKey = $luaResult[$i];
+                                        $cBuffer = $luaResult[$i + 1] ?? '';
+                                        $responseChunks[$cKey] = base64_encode(gzencode($cBuffer, 1));
+                                    }
+                                } else {
+                                    $extractedViaRedis = false;
+                                    break;
                                 }
-                            } else {
-                                $extractedViaRedis = false;
-                                break;
                             }
                         }
                     }
                 } catch (Exception $e) {
-                    Logger::error('Error extracting chunks via Redis Lua script.', [
+                    Logger::error('Error extracting chunks via Redis Lua script or in-memory fetch.', [
                         'canvas_id' => $canvasId,
                         'error' => $e->getMessage()
                     ]);

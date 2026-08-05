@@ -466,186 +466,119 @@ def cleanup_old_telemetry():
     # In Cassandra, this is fully automatic due to TTL 7776000 (90 days) on write operations.
     Logger.info("Telemetry log clearance skipped. Cassandra handles TTL retention (90 days) automatically.")
 
+def get_email_template(template_name, lang, data):
+    try:
+        json_path = "/app/config/email_templates.json"
+        if not os.path.exists(json_path):
+            Logger.error(f"Email templates JSON not found at {json_path}")
+            return None, None
+            
+        with open(json_path, 'r', encoding='utf-8') as f:
+            templates = json.load(f)
+            
+        if template_name not in templates:
+            Logger.error(f"Template {template_name} not found in JSON")
+            return None, None
+            
+        template = templates[template_name]
+        
+        # Resolve subject
+        subj_dict = template.get("subject", {})
+        subject = subj_dict.get(lang) or subj_dict.get("es-419") or subj_dict.get("en") or list(subj_dict.values())[0]
+        
+        # Resolve body HTML
+        html_dict = template.get("html", {})
+        html_content = html_dict.get(lang) or html_dict.get("es-419") or html_dict.get("en") or list(html_dict.values())[0]
+        
+        # Interpolate variables in both subject and body HTML
+        for k, v in data.items():
+            html_content = html_content.replace(f"{{{{{k}}}}}", str(v))
+            subject = subject.replace(f"{{{{{k}}}}}", str(v))
+            
+        # Resolve layout wrapper
+        layout = templates.get("layout", "<html><body>{{content}}</body></html>")
+        layout = layout.replace("{{lang}}", lang)
+        layout = layout.replace("{{notificationTitle}}", subject)
+        layout = layout.replace("{{content}}", html_content)
+        
+        return subject, layout
+    except Exception as e:
+        Logger.error(f"Error loading/rendering email template {template_name}: {e}")
+        return None, None
+
 def process_email(payload):
     email_type = payload.get('type')
     user_id = payload.get('user_id')
     
-    if email_type == 'subscription_confirmation':
-        tier_name = payload.get('tierName', 'Premium')
-        billing_period = payload.get('billingPeriod', 'Mensual')
-        
-        conn = None
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT email, username FROM users WHERE id = %s", (user_id,))
-            user_data = cursor.fetchone()
-            
-            if user_data:
-                user_email = user_data['email']
-                username = user_data['username']
-                
-                if not SMTP_HOST or not SMTP_USER:
-                    Logger.error("SMTP configuration is missing. Cannot send email.")
-                    return
-
-                msg = MIMEMultipart('alternative')
-                msg['Subject'] = "Thank you for your subscription!"
-                msg['From'] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
-                msg['To'] = user_email
-                
-                html = f"""
-                <!DOCTYPE html>
-                <html>
-                <body style='margin: 0; padding: 0; background-color: #f5f5fa; font-family: Arial, sans-serif;'>
-                    <div style='padding: 20px; background-color: #f5f5fa; color: #111;'>
-                        <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #00000020;'>
-                            <h2 style='color: #111111; margin-top: 0;'>Thank you for your subscription!</h2>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hi {username}, we have successfully processed your payment and your {tier_name} ({billing_period}) subscription is active.</p>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>You can start enjoying your new perks right away.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """
-                msg.attach(MIMEText(html, 'html'))
-                
-                if SMTP_PORT == 465:
-                    server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT)
-                else:
-                    server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
-                    server.starttls()
-                server.login(SMTP_USER, SMTP_PASS)
-                server.sendmail(SMTP_FROM_EMAIL, user_email, msg.as_string())
-                server.quit()
-                Logger.info(f"Subscription confirmation email sent to {user_email}")
-            else:
-                Logger.error(f"User {user_id} not found for email dispatch")
-        except Exception as e:
-            Logger.error(f"Failed to process subscription email: {e}")
-        finally:
-            if conn and conn.is_connected():
-                cursor.close()
-                conn.close()
-                
-    elif email_type == 'upcoming_renewal':
-        tier_name = payload.get('tierName', 'Premium')
-        billing_period = payload.get('billingPeriod', 'monthly')
-        renewal_date = payload.get('renewalDate', '')
-        
-        billing_period_display = 'Yearly' if billing_period == 'yearly' else 'Monthly'
-        
-        conn = None
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT email, username FROM users WHERE id = %s", (user_id,))
-            user_data = cursor.fetchone()
-            
-            if user_data:
-                user_email = user_data['email']
-                username = user_data['username']
-                
-                if not SMTP_HOST or not SMTP_USER:
-                    Logger.error("SMTP configuration is missing. Cannot send renewal email.")
-                    return
-
-                msg = MIMEMultipart('alternative')
-                msg['Subject'] = "Reminder: Your subscription is about to renew"
-                msg['From'] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
-                msg['To'] = user_email
-                
-                html = f"""
-                <!DOCTYPE html>
-                <html>
-                <body style='margin: 0; padding: 0; background-color: #f5f5fa; font-family: Arial, sans-serif;'>
-                    <div style='padding: 20px; background-color: #f5f5fa; color: #111;'>
-                        <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #00000020;'>
-                            <h2 style='color: #111111; margin-top: 0;'>Renewal Reminder</h2>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hi {username},</p>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>This is a reminder that your <strong>{tier_name} ({billing_period_display})</strong> subscription will automatically renew on <strong>{renewal_date}</strong>.</p>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>If you wish to continue enjoying your benefits, you don't need to do anything. If you prefer to cancel, you can do so from your account settings before this date.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """
-                msg.attach(MIMEText(html, 'html'))
-                
-                if SMTP_PORT == 465:
-                    server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT)
-                else:
-                    server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
-                    server.starttls()
-                server.login(SMTP_USER, SMTP_PASS)
-                server.sendmail(SMTP_FROM_EMAIL, user_email, msg.as_string())
-                server.quit()
-                Logger.info(f"Renewal reminder email sent to {user_email}")
-            else:
-                Logger.error(f"User {user_id} not found for renewal email dispatch")
-        except Exception as e:
-            Logger.error(f"Failed to process renewal email: {e}")
-        finally:
-            if conn and conn.is_connected():
-                cursor.close()
-                conn.close()
-    elif email_type == 'welcome':
-        conn = None
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT email, username FROM users WHERE id = %s", (user_id,))
-            user_data = cursor.fetchone()
-            
-            if user_data:
-                user_email = user_data['email']
-                username = user_data['username']
-                
-                if not SMTP_HOST or not SMTP_USER:
-                    Logger.error("SMTP configuration is missing. Cannot send welcome email.")
-                    return
-
-                msg = MIMEMultipart('alternative')
-                msg['Subject'] = "Welcome to Project Rosaura!"
-                msg['From'] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
-                msg['To'] = user_email
-                
-                html = f"""
-                <!DOCTYPE html>
-                <html>
-                <body style='margin: 0; padding: 0; background-color: #f5f5fa; font-family: Arial, sans-serif;'>
-                    <div style='padding: 20px; background-color: #f5f5fa; color: #111;'>
-                        <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #00000020;'>
-                            <h2 style='color: #111111; margin-top: 0;'>Welcome to our platform!</h2>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hi {username}, we are thrilled to have you here.</p>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Your registration was successful, and you can now start exploring all our features.</p>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>If you have any questions, feel free to reach out to our support team.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """
-                msg.attach(MIMEText(html, 'html'))
-                
-                if SMTP_PORT == 465:
-                    server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT)
-                else:
-                    server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
-                    server.starttls()
-                server.login(SMTP_USER, SMTP_PASS)
-                server.sendmail(SMTP_FROM_EMAIL, user_email, msg.as_string())
-                server.quit()
-                Logger.info(f"Welcome email sent to {user_email}")
-            else:
-                Logger.error(f"User {user_id} not found for welcome email dispatch")
-        except Exception as e:
-            Logger.error(f"Failed to process welcome email: {e}")
-        finally:
-            if conn and conn.is_connected():
-                cursor.close()
-                conn.close()
+    # Normalize dynamic inputs
+    tier_name = payload.get('tierName', 'Premium')
+    billing_period = payload.get('billingPeriod', 'Mensual')
+    
+    if email_type == 'upcoming_renewal':
+        billing_period_display = 'Anual' if billing_period == 'yearly' else 'Mensual'
     else:
-        Logger.warning(f"Unknown email type: {email_type}")
+        billing_period_display = billing_period
+        
+    renewal_date = payload.get('renewalDate', '')
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT u.email, u.username, p.language 
+            FROM users u 
+            LEFT JOIN user_preferences p ON p.user_id = u.id 
+            WHERE u.id = %s
+        """, (user_id,))
+        user_data = cursor.fetchone()
+        
+        if user_data:
+            user_email = user_data['email']
+            username = user_data['username']
+            lang = user_data.get('language') or 'es-419'
+            
+            if not SMTP_HOST or not SMTP_USER:
+                Logger.error("SMTP configuration is missing. Cannot send email.")
+                return
+
+            # Prepare template data
+            template_data = {
+                'username': username,
+                'tierName': tier_name,
+                'billingPeriod': billing_period_display,
+                'renewalDate': renewal_date
+            }
+            
+            subject, html = get_email_template(email_type, lang, template_data)
+            
+            if not html:
+                Logger.error(f"Failed to generate template html for {email_type}")
+                return
+
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+            msg['To'] = user_email
+            msg.attach(MIMEText(html, 'html'))
+            
+            if SMTP_PORT == 465:
+                server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT)
+            else:
+                server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+                server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.sendmail(SMTP_FROM_EMAIL, user_email, msg.as_string())
+            server.quit()
+            Logger.info(f"Email {email_type} sent successfully to {user_email}")
+        else:
+            Logger.error(f"User {user_id} not found for email dispatch")
+    except Exception as e:
+        Logger.error(f"Failed to process email {email_type}: {e}")
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
 
 def future_maintenance_tasks():
     pass

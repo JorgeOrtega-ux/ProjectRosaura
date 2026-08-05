@@ -35,7 +35,7 @@ class DesignController {
         this.lastMouse = { x: 0, y: 0 };
         this.hoveredPixel = null;
         
-        this.selectedPixels = new Set();
+        this.initSelectedPixelsProxy();
         this.isSelecting = false;
         this.selectionMode = 'add';
         this.interactionMode = 'normal'; 
@@ -143,6 +143,30 @@ class DesignController {
         }
     }
 
+    initSelectedPixelsProxy() {
+        this._selectedPixelsRaw = new Set();
+        const self = this;
+        this.selectedPixels = new Proxy(this._selectedPixelsRaw, {
+            get(target, prop) {
+                const value = Reflect.get(target, prop);
+                if (typeof value === 'function') {
+                    return function(...args) {
+                        const beforeSize = target.size;
+                        const res = value.apply(target, args);
+                        if (prop === 'add' || prop === 'delete' || prop === 'clear') {
+                            if (target.size !== beforeSize || prop === 'clear') {
+                                self._selectionBitmaskDirty = true;
+                            }
+                        }
+                        return res;
+                    };
+                }
+                return value;
+            }
+        });
+        this._selectionBitmaskDirty = true;
+    }
+
     async init() {
         console.log('%c[Rosaura App] DesignController initializing...', 'color: #2196f3; font-weight: bold;');
         try {
@@ -152,7 +176,7 @@ class DesignController {
         }
         this.abortController = new AbortController();
         
-        this.selectedPixels = new Set();
+        this.initSelectedPixelsProxy();
         this.isSelecting = false;
         this.interactionMode = 'normal';
         this.showOwnerTools = false;

@@ -124,6 +124,22 @@ def canvas_persistence_thread():
 
     canvas_uuid_cache = {}
     canvas_size_cache = {}
+    
+    db_conn = None
+
+    def ensure_db_conn():
+        nonlocal db_conn
+        if db_conn:
+            try:
+                db_conn.ping(reconnect=True)
+                return db_conn
+            except Exception:
+                try:
+                    db_conn.close()
+                except:
+                    pass
+        db_conn = get_db_connection()
+        return db_conn
 
     while True:
         try:
@@ -148,9 +164,9 @@ def canvas_persistence_thread():
                     canvas_uuid = canvas_uuid_cache.get(canvas_id)
                     canvas_size = canvas_size_cache.get(canvas_id)
                     if not canvas_uuid or not canvas_size:
-                        db_conn = get_db_connection()
-                        if db_conn:
-                            cursor = db_conn.cursor()
+                        conn = ensure_db_conn()
+                        if conn:
+                            cursor = conn.cursor()
                             cursor.execute("SELECT uuid, size FROM canvases WHERE id = %s", (canvas_id,))
                             row = cursor.fetchone()
                             if row:
@@ -159,7 +175,6 @@ def canvas_persistence_thread():
                                 canvas_uuid_cache[canvas_id] = canvas_uuid
                                 canvas_size_cache[canvas_id] = canvas_size
                             cursor.close()
-                            db_conn.close()
                     
                     if not canvas_uuid:
                         print(f"[!] Could not resolve UUID for canvas {canvas_id}. Skipping.")
@@ -218,23 +233,22 @@ def canvas_persistence_thread():
                     print(f"[+] Processed {len(msgs)} stream events for canvas {canvas_id}.")
                     
                     # Increment total_pixels counter in canvases table
-                    db_conn = get_db_connection()
-                    if db_conn:
-                        cursor = db_conn.cursor()
+                    conn = ensure_db_conn()
+                    if conn:
+                        cursor = conn.cursor()
                         try:
                             cursor.execute("UPDATE canvases SET total_pixels = total_pixels + %s WHERE id = %s", (len(msgs), canvas_id))
-                            db_conn.commit()
+                            conn.commit()
                         except Exception as e:
                             print(f"[!] Error updating total_pixels for canvas {canvas_id}: {e}")
                         finally:
                             cursor.close()
-                            db_conn.close()
         except Exception as e:
             print(f"[!] Error processing Streams to disk: {e}")
 
-        db_conn = get_db_connection()
-        if db_conn:
-            cursor = db_conn.cursor()
+        conn = ensure_db_conn()
+        if conn:
+            cursor = conn.cursor()
             try:
                 dirty_canvases_bytes = r.smembers("canvases:dirty_states")
                 if dirty_canvases_bytes:
@@ -259,13 +273,12 @@ def canvas_persistence_thread():
                                 print(f"[+] Active snapshot uploaded to S3 and DB updated for canvas {canvas_id_str}")
                             except Exception as s3_err:
                                 print(f"[!] Error uploading snapshot to S3 for canvas {canvas_id_str}: {s3_err}")
-                db_conn.commit()
+                conn.commit()
             except Exception as e:
                 print(f"[!] Error saving Snapshots to DB/S3: {e}")
-                db_conn.rollback()
+                conn.rollback()
             finally:
                 cursor.close()
-                db_conn.close()
         else:
             print("[!] MySQL inaccessible for canvas snapshots.")
 

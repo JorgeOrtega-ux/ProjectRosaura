@@ -822,6 +822,7 @@ export const DesignInteractions = {
                 
                 if (this.hoveredPixel !== null) {
                     this.hoveredPixel = null;
+                    this._selectionBitmaskDirty = true;
                     this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
                     this.requestRender();
                 }
@@ -838,6 +839,7 @@ export const DesignInteractions = {
             this.calculateHoverPixel(e.clientX, e.clientY);
         } else if (this.hoveredPixel !== null) {
             this.hoveredPixel = null;
+            this._selectionBitmaskDirty = true;
             this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
             this.requestRender();
         }
@@ -1146,6 +1148,7 @@ export const DesignInteractions = {
                         this.updateSelectionUI();
 
                         this.hoveredPixel = coords;
+                        this._selectionBitmaskDirty = true;
                         this.setCanvasBadge('coords', 'my_location', `${coords.x} , ${coords.y}`, 'left');
                         
                         this.requestRender();
@@ -1183,18 +1186,27 @@ export const DesignInteractions = {
 
     calculateHoverPixel(clientX, clientY) {
         const newHover = this.getBoardCoords(clientX, clientY);
-        const currentHoverStr = this.hoveredPixel ? `${this.hoveredPixel.x},${this.hoveredPixel.y}` : 'null';
-        const newHoverStr = newHover ? `${newHover.x},${newHover.y}` : 'null';
-
-        if (currentHoverStr !== newHoverStr) {
-            this.hoveredPixel = newHover;
-            this.requestRender();
+        const hasHoveredPixel = !!this.hoveredPixel;
+        const hasNewHover = !!newHover;
+        
+        let changed = false;
+        if (hasHoveredPixel !== hasNewHover) {
+            changed = true;
+        } else if (hasHoveredPixel && hasNewHover) {
+            if (this.hoveredPixel.x !== newHover.x || this.hoveredPixel.y !== newHover.y) {
+                changed = true;
+            }
         }
 
-        if (newHover) {
-            this.setCanvasBadge('coords', 'my_location', `${newHover.x} , ${newHover.y}`, 'left');
-        } else {
-            this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
+        if (changed) {
+            this.hoveredPixel = newHover;
+            this._selectionBitmaskDirty = true;
+            this.requestRender();
+            if (newHover) {
+                this.setCanvasBadge('coords', 'my_location', `${newHover.x} , ${newHover.y}`, 'left');
+            } else {
+                this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
+            }
         }
     },
 

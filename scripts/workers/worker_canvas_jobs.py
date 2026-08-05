@@ -473,6 +473,35 @@ def get_db_connection_thumbnails():
         print(f"[!] Error connecting to MySQL in Snapshots Worker: {e}")
         return None
 
+_cassandra_cluster = None
+_cassandra_session = None
+
+def get_cassandra_session():
+    global _cassandra_cluster, _cassandra_session
+    if _cassandra_session is not None:
+        try:
+            return _cassandra_session
+        except Exception:
+            _cassandra_session = None
+            _cassandra_cluster = None
+            
+    try:
+        from cassandra.cluster import Cluster
+        CASSANDRA_HOST = os.getenv("CASSANDRA_HOST") or "cassandra"
+        CASSANDRA_PORT = int(os.getenv("CASSANDRA_PORT") or 9042)
+        CASSANDRA_KEYSPACE = os.getenv("CASSANDRA_KEYSPACE") or "db_canvases_nosql"
+        logging.info(f"Connecting to Cassandra at {CASSANDRA_HOST}:{CASSANDRA_PORT}...")
+        _cassandra_cluster = Cluster([CASSANDRA_HOST], port=CASSANDRA_PORT, connect_timeout=10)
+        _cassandra_session = _cassandra_cluster.connect()
+        _cassandra_session.set_keyspace(CASSANDRA_KEYSPACE)
+        logging.info("Cassandra session cached successfully.")
+        return _cassandra_session
+    except Exception as e:
+        logging.error(f"Failed to connect to Cassandra in Canvas Jobs worker: {e}")
+        _cassandra_cluster = None
+        _cassandra_session = None
+        return None
+
 def parse_size(size_str):
     try:
         if 'x' in size_str.lower():
@@ -502,18 +531,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         if len(raw_bytes) < expected_size:
             raw_bytes += b'\x00\x00\x00\x00' * ((expected_size - len(raw_bytes)) // 4)
             
-        img = Image.new('RGBA', (width, height), color=(0, 0, 0, 0))
-        pixels = img.load()
-        
-        for y in range(height):
-            for x in range(width):
-                idx = (y * width + x) * 4
-                if idx + 3 < len(raw_bytes):
-                    r_c = raw_bytes[idx]
-                    g_c = raw_bytes[idx+1]
-                    b_c = raw_bytes[idx+2]
-                    a_c = raw_bytes[idx+3]
-                    pixels[x, y] = (r_c, g_c, b_c, a_c)
+        img = Image.frombytes('RGBA', (width, height), raw_bytes)
             
         scale_w = THUMBNAIL_MAX_SIZE / width
         scale_h = THUMBNAIL_MAX_SIZE / height
@@ -801,43 +819,40 @@ def execute_canvas_draw_image(r, canvas_id, image_path, start_x, start_y, target
 
     if pixels_to_persist and user_id is not None:
         try:
-            from cassandra.cluster import Cluster
-            from cassandra.query import BatchStatement
-            
-            CASSANDRA_HOST = os.getenv("CASSANDRA_HOST") or "cassandra"
-            CASSANDRA_PORT = int(os.getenv("CASSANDRA_PORT") or 9042)
-            CASSANDRA_KEYSPACE = os.getenv("CASSANDRA_KEYSPACE") or "db_canvases_nosql"
-            
-            logging.info(f"Connecting to Cassandra to persist {len(pixels_to_persist)} injected template pixels...")
-            cluster = Cluster([CASSANDRA_HOST], port=CASSANDRA_PORT, connect_timeout=10)
-            session = cluster.connect()
-            session.set_keyspace(CASSANDRA_KEYSPACE)
-            
-            insert_stmt = session.prepare("""
-                INSERT INTO canvas_pixel_history (canvas_id, x, y, placed_at, user_id, color_hex)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """)
-            
-            batch_size = 500
-            placed_at = datetime.now()
-            
-            for i in range(0, len(pixels_to_persist), batch_size):
-                chunk = pixels_to_persist[i:i + batch_size]
-                batch = BatchStatement()
-                for cx, cy, c_hex in chunk:
-                    batch.add(insert_stmt, (
-                        int(canvas_id),
-                        cx,
-                        cy,
-                        placed_at,
-                        int(user_id),
-                        c_hex
-                    ))
-                session.execute(batch)
-            logging.info(f"Successfully persisted {len(pixels_to_persist)} template pixels to Cassandra.")
-            cluster.shutdown()
+            session = get_cassandra_session()
+            if session:
+                from cassandra.query import BatchStatement
+                logging.info(f"Persisting {len(pixels_to_persist)} template pixels using cached Cassandra session...")
+                insert_stmt = session.prepare("""
+                    INSERT INTO canvas_pixel_history (canvas_id, x, y, placed_at, user_id, color_hex)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """)
+                
+                batch_size = 500
+                placed_at = datetime.now()
+                
+                for i in range(0, len(pixels_to_persist), batch_size):
+                    chunk = pixels_to_persist[i:i + batch_size]
+                    batch = BatchStatement()
+                    for cx, cy, c_hex in chunk:
+                        batch.add(insert_stmt, (
+                            int(canvas_id),
+                            cx,
+                            cy,
+                            placed_at,
+                            int(user_id),
+                            c_hex
+                        ))
+                    session.execute(batch)
+                logging.info(f"Successfully persisted {len(pixels_to_persist)} template pixels to Cassandra.")
+            else:
+                logging.error("Unable to persist to Cassandra: no cached session available.")
         except Exception as cass_err:
             logging.error(f"Error persisting template pixels to Cassandra: {cass_err}")
+            # Reset connection state on error so it reconnects on next task
+            global _cassandra_cluster, _cassandra_session
+            _cassandra_cluster = None
+            _cassandra_session = None
 
         # Increment total_pixels counter in MySQL canvases table
         db_conn = get_db_connection()

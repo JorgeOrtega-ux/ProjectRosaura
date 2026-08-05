@@ -534,28 +534,31 @@ export const DesignRender = {
             this.ctx.beginPath();
             
             const totalPixels = this.boardWidth * this.boardHeight;
-            if (!this._selectedBitmask || this._selectedBitmask.length !== totalPixels) {
-                this._selectedBitmask = new Uint8Array(totalPixels);
-            } else {
-                this._selectedBitmask.fill(0);
-            }
-
-            if (selCount > 0) {
-                this.selectedPixels.forEach(key => {
-                    const x = key & 0xFFFF;
-                    const y = key >> 16;
-                    if (x >= 0 && x < this.boardWidth && y >= 0 && y < this.boardHeight) {
-                        this._selectedBitmask[y * this.boardWidth + x] = 1;
-                    }
-                });
-            }
-
-            if (hasHover) {
-                const hx = this.hoveredPixel.x;
-                const hy = this.hoveredPixel.y;
-                if (hx >= 0 && hx < this.boardWidth && hy >= 0 && hy < this.boardHeight) {
-                    this._selectedBitmask[hy * this.boardWidth + hx] = 1;
+            if (this._selectionBitmaskDirty || !this._selectedBitmask || this._selectedBitmask.length !== totalPixels) {
+                if (!this._selectedBitmask || this._selectedBitmask.length !== totalPixels) {
+                    this._selectedBitmask = new Uint8Array(totalPixels);
+                } else {
+                    this._selectedBitmask.fill(0);
                 }
+
+                if (selCount > 0) {
+                    this.selectedPixels.forEach(key => {
+                        const x = key & 0xFFFF;
+                        const y = key >> 16;
+                        if (x >= 0 && x < this.boardWidth && y >= 0 && y < this.boardHeight) {
+                            this._selectedBitmask[y * this.boardWidth + x] = 1;
+                        }
+                    });
+                }
+
+                if (hasHover) {
+                    const hx = this.hoveredPixel.x;
+                    const hy = this.hoveredPixel.y;
+                    if (hx >= 0 && hx < this.boardWidth && hy >= 0 && hy < this.boardHeight) {
+                        this._selectedBitmask[hy * this.boardWidth + hx] = 1;
+                    }
+                }
+                this._selectionBitmaskDirty = false;
             }
 
             const drawContour = (key) => {
@@ -667,53 +670,18 @@ export const DesignRender = {
                     const cx = warning.x;
                     const cy = warning.y;
 
-                    if (!warning.pixelCache && this.offscreenCtx && this.boardWidth > 0 && this.boardWidth <= 1024 && this.boardHeight > 0 && this.boardHeight <= 1024) {
-                        try {
-                            const imgData = this.offscreenCtx.getImageData(0, 0, this.boardWidth, this.boardHeight);
-                            warning.pixelCache = new Uint32Array(imgData.data.buffer);
-                        } catch (e) {
-                            warning.pixelCache = null;
-                        }
-                    }
-
-                    if (!warning.detachedPixels) {
-                        warning.detachedPixels = [];
-                    }
-
-                    // Check all pixels in the warning radius
-                    const rInt = Math.ceil(outerR);
-                    for (let dy = -rInt; dy <= rInt; dy++) {
-                        for (let dx = -rInt; dx <= rInt; dx++) {
-                            const px = cx + dx;
-                            const py = cy + dy;
-                            if (px >= 0 && px < this.boardWidth && py >= 0 && py < this.boardHeight) {
-                                const dist = Math.sqrt(dx * dx + dy * dy);
-                                if (dist <= outerR) {
-                                    const hash = ((px * 17 + py * 23) % 100) / 100;
-                                    const distRatio = dist / outerR;
-                                    // Pull pixels outside-in
-                                    const threshold = 0.05 + distRatio * 0.75 + hash * 0.15;
-
-                                    if (progress > threshold) {
-                                        const idx = py * this.boardWidth + px;
-                                        const colorVal = warning.pixelCache ? warning.pixelCache[idx] : 0;
-                                        if (colorVal !== 0) {
-                                            warning.detachedPixels.push({
-                                                x: px,
-                                                y: py,
-                                                color: colorVal,
-                                                progressStart: progress,
-                                                baseAngle: Math.atan2(dy, dx),
-                                                radius: dist
-                                            });
-                                            if (warning.pixelCache) warning.pixelCache[idx] = 0;
-                                            if (this.offscreenCtx) {
-                                                this.offscreenCtx.clearRect(px, py, 1, 1);
-                                            }
-                                        }
-                                    }
-                                }
+                    if (warning.candidates) {
+                        while (warning.candidateIndex < warning.candidates.length) {
+                            const cand = warning.candidates[warning.candidateIndex];
+                            if (progress < cand.threshold) {
+                                break;
                             }
+                            const px = cand.x;
+                            const py = cand.y;
+                            if (this.offscreenCtx) {
+                                this.offscreenCtx.clearRect(px, py, 1, 1);
+                            }
+                            warning.candidateIndex++;
                         }
                     }
 
@@ -734,7 +702,7 @@ export const DesignRender = {
                         this.ctx.fill();
                     }
 
-                    // 2. 3 Swirling Galaxy Spiral Arms (slower, mysterious rotation)
+                    // 2. 3 Swrolling Galaxy Spiral Arms (slower, mysterious rotation)
                     const arms = 3;
                     for (let i = 0; i < arms; i++) {
                         const armAngleOffset = (i * 2 * Math.PI) / arms;
@@ -755,27 +723,6 @@ export const DesignRender = {
                         this.ctx.lineWidth = 1.5 / scale;
                         this.ctx.stroke();
                     }
-
-                    // 3. Draw detached pixels spiraling into the black hole
-                    warning.detachedPixels.forEach(p => {
-                        const t = (progress - p.progressStart) / (1.0001 - p.progressStart);
-                        if (t >= 1.0) return;
-
-                        const currentR = p.radius * (1 - t);
-                        const currentAngle = p.baseAngle + (t * 3.5 * Math.PI) + (now / 300);
-                        const px = wx + currentR * Math.cos(currentAngle);
-                        const py = wy + currentR * Math.sin(currentAngle);
-
-                        const pSize = Math.max(0.3, (1.2 * (1 - t))) / scale;
-
-                        const val = p.color;
-                        const r_val = val & 0xFF;
-                        const g_val = (val >> 8) & 0xFF;
-                        const b_val = (val >> 16) & 0xFF;
-                        const a_val = ((val >> 24) & 0xFF) / 255;
-                        this.ctx.fillStyle = `rgba(${r_val}, ${g_val}, ${b_val}, ${a_val})`;
-                        this.ctx.fillRect(px - pSize/2, py - pSize/2, pSize, pSize);
-                    });
 
                     // 4. Flowing cosmic dust particles (mysterious violet/gray/white)
                     const dustCount = 20;

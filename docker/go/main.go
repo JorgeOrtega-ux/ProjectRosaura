@@ -89,77 +89,131 @@ func getChunksHandler(w http.ResponseWriter, r *http.Request) {
 		rdb.Set(ctx, redisKey, make([]byte, expectedLen), 0)
 	}
 
-	// Build Redis pipeline to fetch all required rows for all chunks
-	pipe := rdb.Pipeline()
+	totalSize := req.BoardW * req.BoardH * 4
+	useFullFetch := totalSize <= 16*1024*1024 || len(req.Chunks) >= 2
 
-	type RowFetch struct {
-		ChunkKey string
-		Y        int
-		Cmd      *redis.StringCmd
-	}
-
-	var fetches []RowFetch
-
-	for _, chunkKey := range req.Chunks {
-		parts := strings.Split(chunkKey, ",")
-		if len(parts) != 2 {
-			continue
-		}
-		cx, err1 := strconv.Atoi(parts[0])
-		cy, err2 := strconv.Atoi(parts[1])
-		if err1 != nil || err2 != nil {
-			continue
-		}
-
-		startX := cx * chunkSize
-		startY := cy * chunkSize
-
-		if startX >= req.BoardW || startY >= req.BoardH || startX < 0 || startY < 0 {
-			continue
-		}
-
-		actualW := min(chunkSize, req.BoardW-startX)
-		actualH := min(chunkSize, req.BoardH-startY)
-		rowLen := int64(actualW * 4)
-
-		for y := 0; y < actualH; y++ {
-			offset := int64(((startY+y)*req.BoardW + startX) * 4)
-			cmd := pipe.GetRange(ctx, redisKey, offset, offset+rowLen-1)
-			fetches = append(fetches, RowFetch{
-				ChunkKey: chunkKey,
-				Y:        y,
-				Cmd:      cmd,
-			})
-		}
-	}
-
-	if len(fetches) == 0 {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
-		return
-	}
-
-	t0 := time.Now()
-	// Execute pipeline
-	_, err := pipe.Exec(ctx)
-	if err != nil && err != redis.Nil {
-		http.Error(w, "Redis error", http.StatusInternalServerError)
-		return
-	}
-	t1 := time.Now()
-	log.Printf("Redis pipeline took %v", t1.Sub(t0))
-
-	// Group rows by chunk
 	chunkBuffers := make(map[string][]byte)
-	for _, f := range fetches {
-		val, _ := f.Cmd.Bytes()
-		expectedLen := int(min(chunkSize, req.BoardW-(func() int { cx, _ := strconv.Atoi(strings.Split(f.ChunkKey, ",")[0]); return cx * chunkSize })()) * 4)
-		if len(val) < expectedLen {
-			padded := make([]byte, expectedLen)
-			copy(padded, val)
-			val = padded
+	t0 := time.Now()
+
+	if useFullFetch {
+		canvasBytes, err := rdb.Get(ctx, redisKey).Bytes()
+		if err != nil && err != redis.Nil {
+			http.Error(w, "Redis error", http.StatusInternalServerError)
+			return
 		}
-		chunkBuffers[f.ChunkKey] = append(chunkBuffers[f.ChunkKey], val...)
+		if err == redis.Nil || len(canvasBytes) == 0 {
+			canvasBytes = make([]byte, totalSize)
+			rdb.Set(ctx, redisKey, canvasBytes, 0)
+		}
+		if len(canvasBytes) < totalSize {
+			padded := make([]byte, totalSize)
+			copy(padded, canvasBytes)
+			canvasBytes = padded
+		}
+
+		for _, chunkKey := range req.Chunks {
+			parts := strings.Split(chunkKey, ",")
+			if len(parts) != 2 {
+				continue
+			}
+			cx, err1 := strconv.Atoi(parts[0])
+			cy, err2 := strconv.Atoi(parts[1])
+			if err1 != nil || err2 != nil {
+				continue
+			}
+
+			startX := cx * chunkSize
+			startY := cy * chunkSize
+
+			if startX >= req.BoardW || startY >= req.BoardH || startX < 0 || startY < 0 {
+				continue
+			}
+
+			actualW := min(chunkSize, req.BoardW-startX)
+			actualH := min(chunkSize, req.BoardH-startY)
+
+			buf := make([]byte, actualW*actualH*4)
+			destOffset := 0
+			rowLen := actualW * 4
+
+			for y := 0; y < actualH; y++ {
+				srcOffset := ((startY+y)*req.BoardW + startX) * 4
+				copy(buf[destOffset:destOffset+rowLen], canvasBytes[srcOffset:srcOffset+rowLen])
+				destOffset += rowLen
+			}
+			chunkBuffers[chunkKey] = buf
+		}
+		log.Printf("In-memory fetch & extraction took %v", time.Since(t0))
+	} else {
+		// Fallback to Redis pipeline if the canvas is huge and only 1 chunk is requested
+		pipe := rdb.Pipeline()
+
+		type RowFetch struct {
+			ChunkKey string
+			Y        int
+			Cmd      *redis.StringCmd
+		}
+
+		var fetches []RowFetch
+
+		for _, chunkKey := range req.Chunks {
+			parts := strings.Split(chunkKey, ",")
+			if len(parts) != 2 {
+				continue
+			}
+			cx, err1 := strconv.Atoi(parts[0])
+			cy, err2 := strconv.Atoi(parts[1])
+			if err1 != nil || err2 != nil {
+				continue
+			}
+
+			startX := cx * chunkSize
+			startY := cy * chunkSize
+
+			if startX >= req.BoardW || startY >= req.BoardH || startX < 0 || startY < 0 {
+				continue
+			}
+
+			actualW := min(chunkSize, req.BoardW-startX)
+			actualH := min(chunkSize, req.BoardH-startY)
+			rowLen := int64(actualW * 4)
+
+			for y := 0; y < actualH; y++ {
+				offset := int64(((startY+y)*req.BoardW + startX) * 4)
+				cmd := pipe.GetRange(ctx, redisKey, offset, offset+rowLen-1)
+				fetches = append(fetches, RowFetch{
+					ChunkKey: chunkKey,
+					Y:        y,
+					Cmd:      cmd,
+				})
+			}
+		}
+
+		if len(fetches) == 0 {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+
+		// Execute pipeline
+		_, err := pipe.Exec(ctx)
+		if err != nil && err != redis.Nil {
+			http.Error(w, "Redis error", http.StatusInternalServerError)
+			return
+		}
+		log.Printf("Redis pipeline took %v", time.Since(t0))
+
+		// Group rows by chunk
+		for _, f := range fetches {
+			val, _ := f.Cmd.Bytes()
+			expectedLen := int(min(chunkSize, req.BoardW-(func() int { cx, _ := strconv.Atoi(strings.Split(f.ChunkKey, ",")[0]); return cx * chunkSize })()) * 4)
+			if len(val) < expectedLen {
+				padded := make([]byte, expectedLen)
+				copy(padded, val)
+				val = padded
+			}
+			chunkBuffers[f.ChunkKey] = append(chunkBuffers[f.ChunkKey], val...)
+		}
 	}
 
 	// Concurrently compress and base64 encode
@@ -186,7 +240,7 @@ func getChunksHandler(w http.ResponseWriter, r *http.Request) {
 
 	wg.Wait()
 	t2 := time.Now()
-	log.Printf("Compression took %v", t2.Sub(t1))
+	log.Printf("Compression took %v", t2.Sub(t0)) // using t0 to match total operation timing reference
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)

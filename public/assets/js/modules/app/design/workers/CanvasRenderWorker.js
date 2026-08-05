@@ -38,7 +38,6 @@ function updateProtectedOffscreen() {
         protectedOffscreenCanvas = new OffscreenCanvas(boardWidth, boardHeight);
         protectedOffscreenCtx = protectedOffscreenCanvas.getContext('2d', { alpha: true });
     }
-    protectedOffscreenCtx.clearRect(0, 0, boardWidth, boardHeight);
 
     const totalLen = boardWidth * boardHeight;
     if (!protectedBitmask || protectedBitmask.length !== totalLen) {
@@ -50,16 +49,21 @@ function updateProtectedOffscreen() {
     const activeArray = isOwnerProtecting ? ownerProtectedPixelsArray : (showMyProtectionsHighlight ? myProtectedPixelsArray : new Uint32Array(0));
 
     if (activeArray && activeArray.length > 0) {
-        protectedOffscreenCtx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+        const imgData = protectedOffscreenCtx.createImageData(boardWidth, boardHeight);
+        const data32 = new Uint32Array(imgData.data.buffer);
+        // RGBA little-endian: 0xAA_BB_GG_RR
+        // A=51 (0x33), B=68 (0x44), G=68 (0x44), R=239 (0xEF) => 0x334444EF
+        const protColor = 0x334444EF; 
         for (let i = 0; i < activeArray.length; i++) {
             const off = activeArray[i];
             if (off >= 0 && off < totalLen) {
                 protectedBitmask[off] = 1;
-                const px = off % boardWidth;
-                const py = (off / boardWidth) | 0;
-                protectedOffscreenCtx.fillRect(px, py, 1, 1);
+                data32[off] = protColor;
             }
         }
+        protectedOffscreenCtx.putImageData(imgData, 0, 0);
+    } else {
+        protectedOffscreenCtx.clearRect(0, 0, boardWidth, boardHeight);
     }
     protectedPixelsDirty = false;
 }
@@ -298,8 +302,12 @@ async function hydrateChunkWorker(chunkX, chunkY, chunkSize, base64String) {
 // ---------------------------------------------------------
 
 let selectedBitmask = new Uint8Array(0);
+let selectionBitmaskDirty = true;
 
 function updateSelectionBitmask() {
+    if (!selectionBitmaskDirty && selectedBitmask && selectedBitmask.length === boardWidth * boardHeight) {
+        return;
+    }
     const totalPixels = boardWidth * boardHeight;
     if (selectedBitmask.length !== totalPixels) {
         selectedBitmask = new Uint8Array(totalPixels);
@@ -324,6 +332,7 @@ function updateSelectionBitmask() {
             selectedBitmask[hy * boardWidth + hx] = 1;
         }
     }
+    selectionBitmaskDirty = false;
 }
 
 function processPixelQueue() {
@@ -942,61 +951,25 @@ function render() {
                 const duration = warning.endTime - warning.startTime;
                 const progress = Math.min(1, Math.max(0, elapsed / duration));
 
-                const cx = warning.x;
-                const cy = warning.y;
-
-                if (!warning.detachedPixels) {
-                    warning.detachedPixels = [];
-                }
-
-                // Check all pixels in the warning radius using adaptive step sampling for large radii
-                const rInt = Math.ceil(outerR);
-                const step = rInt > 120 ? Math.ceil(rInt / 60) : (rInt > 60 ? 2 : 1);
                 let needsFlush = false;
-
-                for (let dy = -rInt; dy <= rInt; dy += step) {
-                    for (let dx = -rInt; dx <= rInt; dx += step) {
-                        const px = cx + dx;
-                        const py = cy + dy;
-                        if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
-                            const distSq = dx * dx + dy * dy;
-                            if (distSq <= outerR * outerR) {
-                                const dist = Math.sqrt(distSq);
-                                const hash = ((px * 17 + py * 23) % 100) / 100;
-                                const distRatio = dist / outerR;
-                                // We pull pixels in from the outside to the inside
-                                const threshold = 0.05 + distRatio * 0.75 + hash * 0.15;
-
-                                if (progress > threshold) {
-                                    const idx = py * boardWidth + px;
-                                    const colorVal = pixelBuffer ? pixelBuffer[idx] : 0;
-                                    if (colorVal !== 0) {
-                                        warning.detachedPixels.push({
-                                            x: px,
-                                            y: py,
-                                            color: colorVal,
-                                            progressStart: progress,
-                                            baseAngle: Math.atan2(dy, dx),
-                                            radius: dist
-                                        });
-                                        if (pixelBuffer) {
-                                            for (let sy = 0; sy < step; sy++) {
-                                                for (let sx = 0; sx < step; sx++) {
-                                                    const spx = px + sx;
-                                                    const spy = py + sy;
-                                                    if (spx < boardWidth && spy < boardHeight) {
-                                                        const sidx = spy * boardWidth + spx;
-                                                        pixelBuffer[sidx] = 0;
-                                                        markDirty(spx, spy);
-                                                    }
-                                                }
-                                            }
-                                            needsFlush = true;
-                                        }
-                                    }
-                                }
+                if (warning.candidates) {
+                    while (warning.candidateIndex < warning.candidates.length) {
+                        const cand = warning.candidates[warning.candidateIndex];
+                        if (progress < cand.threshold) {
+                            break;
+                        }
+                        const px = cand.x;
+                        const py = cand.y;
+                        const idx = py * boardWidth + px;
+                        const colorVal = pixelBuffer ? pixelBuffer[idx] : 0;
+                        if (colorVal !== 0) {
+                            if (pixelBuffer) {
+                                pixelBuffer[idx] = 0;
+                                markDirty(px, py);
+                                needsFlush = true;
                             }
                         }
+                        warning.candidateIndex++;
                     }
                 }
 
@@ -1042,27 +1015,6 @@ function render() {
                     ctx.lineWidth = 1.5 / scale;
                     ctx.stroke();
                 }
-
-                // 3. Draw detached pixels spiraling into the black hole (using their original colors!)
-                warning.detachedPixels.forEach(p => {
-                    const t = (progress - p.progressStart) / (1.0001 - p.progressStart);
-                    if (t >= 1.0) return;
-
-                    const currentR = p.radius * (1 - t);
-                    const currentAngle = p.baseAngle + (t * 3.5 * Math.PI) + (now / 300);
-                    const px = wx + currentR * Math.cos(currentAngle);
-                    const py = wy + currentR * Math.sin(currentAngle);
-
-                    const pSize = Math.max(0.3, (1.2 * (1 - t))) / scale;
-
-                    const val = p.color;
-                    const r_val = val & 0xFF;
-                    const g_val = (val >> 8) & 0xFF;
-                    const b_val = (val >> 16) & 0xFF;
-                    const a_val = ((val >> 24) & 0xFF) / 255;
-                    ctx.fillStyle = `rgba(${r_val}, ${g_val}, ${b_val}, ${a_val})`;
-                    ctx.fillRect(px - pSize/2, py - pSize/2, pSize, pSize);
-                });
 
                 // 4. Flowing cosmic dust particles (mysterious violet/gray/white)
                 const dustCount = 20;
@@ -1271,6 +1223,7 @@ self.onmessage = function (e) {
             offscreenCtx = offscreenCanvas.getContext('2d', { alpha: true });
             
             initMemoryEngine(boardWidth, boardHeight);
+            selectionBitmaskDirty = true;
             requestRender();
             break;
 
@@ -1291,6 +1244,7 @@ self.onmessage = function (e) {
                     clearedCount: 0
                 };
             }
+            selectionBitmaskDirty = true;
             requestRender();
             break;
         }
@@ -1321,6 +1275,7 @@ self.onmessage = function (e) {
             }
             hoveredPixelKey = payload.hoveredPixelKey !== undefined ? payload.hoveredPixelKey : -1;
             ownerEraserBox = payload.ownerEraserBox || null;
+            selectionBitmaskDirty = true;
             requestRender();
             break;
 
@@ -1381,6 +1336,7 @@ self.onmessage = function (e) {
             ownerEraserBox = payload.ownerEraserBox || null;
             topBarCenterX = payload.topBarCenterX || 0;
             topBarBottomY = payload.topBarBottomY || 0;
+            selectionBitmaskDirty = true;
             requestRender();
             break;
 
@@ -1472,6 +1428,7 @@ self.onmessage = function (e) {
                     offscreenCanvas.height = boardHeight;
                 }
             }
+            selectionBitmaskDirty = true;
             if (injectAnimation) {
                 pendingHydrateStateBase64 = payload.base64String;
             } else {
@@ -1534,7 +1491,7 @@ self.onmessage = function (e) {
                     break;
                 }
 
-                nuclearWarnings.push({
+                const warningObj = {
                     key: key,
                     x: cx,
                     y: cy,
@@ -1542,7 +1499,39 @@ self.onmessage = function (e) {
                     startTime: now,
                     endTime: now + durationMs,
                     perkId: perkId
-                });
+                };
+
+                if (perkId === 'agujero_negro_1') {
+                    const candidates = [];
+                    const rInt = Math.ceil(r);
+                    for (let dy = -rInt; dy <= rInt; dy++) {
+                        for (let dx = -rInt; dx <= rInt; dx++) {
+                            const px = cx + dx;
+                            const py = cy + dy;
+                            if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
+                                const distSq = dx * dx + dy * dy;
+                                if (distSq <= r * r) {
+                                    const dist = Math.sqrt(distSq);
+                                    const hash = ((px * 17 + py * 23) % 100) / 100;
+                                    const threshold = 0.05 + (dist / r) * 0.75 + hash * 0.15;
+                                    candidates.push({
+                                        x: px,
+                                        y: py,
+                                        dx: dx,
+                                        dy: dy,
+                                        dist: dist,
+                                        threshold: threshold
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    candidates.sort((a, b) => a.threshold - b.threshold);
+                    warningObj.candidates = candidates;
+                    warningObj.candidateIndex = 0;
+                }
+
+                nuclearWarnings.push(warningObj);
                 requestRender();
             }
             break;

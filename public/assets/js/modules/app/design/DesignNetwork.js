@@ -1538,6 +1538,37 @@ export const DesignNetwork = {
             endTime: now + durationMs,
             perkId: perkId
         };
+
+        if (perkId === 'agujero_negro_1') {
+            const candidates = [];
+            const rInt = Math.ceil(r);
+            for (let dy = -rInt; dy <= rInt; dy++) {
+                for (let dx = -rInt; dx <= rInt; dx++) {
+                    const px = cx + dx;
+                    const py = cy + dy;
+                    if (px >= 0 && px < this.boardWidth && py >= 0 && py < this.boardHeight) {
+                        const distSq = dx * dx + dy * dy;
+                        if (distSq <= r * r) {
+                            const dist = Math.sqrt(distSq);
+                            const hash = ((px * 17 + py * 23) % 100) / 100;
+                            const threshold = 0.05 + (dist / r) * 0.75 + hash * 0.15;
+                            candidates.push({
+                                x: px,
+                                y: py,
+                                dx: dx,
+                                dy: dy,
+                                dist: dist,
+                                threshold: threshold
+                            });
+                        }
+                    }
+                }
+            }
+            candidates.sort((a, b) => a.threshold - b.threshold);
+            warningObj.candidates = candidates;
+            warningObj.candidateIndex = 0;
+        }
+
         this.nuclearWarnings.push(warningObj);
 
         if (this.renderWorker) {
