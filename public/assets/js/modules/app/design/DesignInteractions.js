@@ -1406,12 +1406,9 @@ export const DesignInteractions = {
                 : 10;
 
 
-            targets.forEach(tgt => {
-                const targetKey = `${tgt.x}_${tgt.y}_${usedPerk}`;
-                if (typeof this.showPreparingPerkBadge === 'function') {
-                    this.showPreparingPerkBadge(usedPerk, targetKey);
-                }
-            });
+            if (typeof this.showPreparingPerkBadge === 'function' && usedPerk) {
+                this.showPreparingPerkBadge(usedPerk, usedPerk);
+            }
 
             const cooldownMs = (durationSecs + 1) * 1000;
             if (typeof this.setGlobalPerkCooldown === 'function') {

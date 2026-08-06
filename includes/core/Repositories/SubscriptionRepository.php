@@ -91,6 +91,24 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
 
     public function createPaymentRecord(array $data): int {
         $pdo = $this->db->getConnection(DB::CONN_IDENTITY);
+
+        // Prevent duplicate records for the same Invoice or Payment Intent
+        if (!empty($data['stripe_invoice_id'])) {
+            $check = $pdo->prepare("SELECT id FROM payment_history WHERE stripe_invoice_id = ? LIMIT 1");
+            $check->execute([$data['stripe_invoice_id']]);
+            if ($check->fetchColumn()) {
+                return 0; // Already processed
+            }
+        }
+
+        if (!empty($data['stripe_payment_intent_id'])) {
+            $check = $pdo->prepare("SELECT id FROM payment_history WHERE stripe_payment_intent_id = ? LIMIT 1");
+            $check->execute([$data['stripe_payment_intent_id']]);
+            if ($check->fetchColumn()) {
+                return 0; // Already processed
+            }
+        }
+
         $stmt = $pdo->prepare(
             "INSERT INTO payment_history (user_id, stripe_payment_intent_id, stripe_invoice_id, amount_cents, currency, description, status)
              VALUES (:user_id, :stripe_payment_intent_id, :stripe_invoice_id, :amount_cents, :currency, :description, :status)"

@@ -185,9 +185,9 @@
       "0": 10
     },
     "spawning": {
-      "mode": "random_around",
+      "mode": "entire_canvas",
       "count": 15,
-      "spread_radius": 150,
+      "spread_radius": 0,
       "jitter_delay": 5.0
     },
     "explosion": {

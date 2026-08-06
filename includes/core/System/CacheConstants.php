@@ -38,6 +38,7 @@ class CacheConstants {
     public const PREFIX_CHAT_CANVAS_RECENT = 'chat:canvas:recent:';
     public const PREFIX_CANVAS_PUBLIC_PAGE = 'canvases:public:page:';
     public const PREFIX_CANVAS_OFFICIAL_PAGE = 'canvases:official:page:';
+    public const PREFIX_CANVAS_HOME_FEED = 'canvases:home:feed:';
     public const PREFIX_CANVAS_DETAIL = 'canvas:id:';
     public const PREFIX_USER_PROFILE = 'user:profile:';
     public const PREFIX_STORE_COINS = 'store:user:coins:';

@@ -102,6 +102,13 @@ class StripeWebhookController {
     private function handleCheckoutSessionCompleted($session): void {
         $metadata = $session->metadata;
 
+        // Prevent duplicate processing of the same checkout session
+        $localSub = $this->subRepo->findByCheckoutSessionId($session->id);
+        if ($localSub && $localSub['status'] === 'active') {
+            Logger::info("Stripe webhook: checkout.session.completed already processed for session", ['session_id' => $session->id]);
+            return;
+        }
+
         if (isset($metadata->type) && $metadata->type === 'coins') {
             $userId = isset($metadata->user_id) ? (int) $metadata->user_id : 0;
             $amountCoins = isset($metadata->amount) ? (int) $metadata->amount : 0;

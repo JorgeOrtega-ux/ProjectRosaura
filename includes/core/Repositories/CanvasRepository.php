@@ -188,68 +188,92 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getHomeFeed(?int $userId, string $tagFilter = 'all', int $limit = 20, int $offset = 0): array {
-        $params = [];
-        $whereConditions = [];
-        
-        if ($tagFilter !== 'all') {
-            $whereConditions[] = "JSON_CONTAINS(c.tags, :tag)";
-            $params[':tag'] = json_encode($tagFilter);
-        }
-        
-        $userIdParam = $userId ?? 0;
-        
-        $joinMemberSql = "";
-        if ($userId) {
-            $whereConditions[] = "((c.is_subscription_locked = 0 AND (c.privacy = 'public' OR cm_feed.canvas_id IS NOT NULL)) OR c.owner_id = :current_user_id_w1)";
-            $params[':current_user_id_w1'] = $userIdParam;
-            $joinMemberSql = "LEFT JOIN " . DB::TBL_CANVAS_MEMBERS . " cm_feed ON c.id = cm_feed.canvas_id AND cm_feed.user_id = :current_user_id_member";
-            $params[':current_user_id_member'] = $userIdParam;
-        } else {
-            $whereConditions[] = "c.is_subscription_locked = 0 AND (c.privacy = 'public' OR c.is_official = 1)";
-        }
-        
-        $whereSql = implode(' AND ', $whereConditions);
-
-        $isMemberSelect = $userId ? "CASE WHEN cm_feed.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_member" : "0 as is_member";
-
-        $orderSql = "ORDER BY c.is_official DESC, c.created_at DESC, c.id DESC";
-        
-        $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.is_official, c.favorites_count, c.tags, c.is_subscription_locked, c.locked_reasons,
-                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                       c.members_count,
-                       $isMemberSelect
-                FROM " . DB::TBL_CANVASES . " c
-                LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id_fav
-                $joinMemberSql
-                WHERE $whereSql
-                $orderSql
-                LIMIT :limit OFFSET :offset";
-                
-        $params[':current_user_id_fav'] = $userIdParam;
-        $params[':limit'] = $limit;
-        $params[':offset'] = $offset;
-        
-        $stmt = $this->db->prepare($sql);
-        
-        foreach ($params as $key => $val) {
-            $type = is_int($val) ? PDO::PARAM_INT : PDO::PARAM_STR;
-            $stmt->bindValue($key, $val, $type);
-        }
-        
-        $stmt->execute();
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
-        $results = array_map(function($canvas) {
-            $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
-            if (!empty($canvas['tags'])) {
-                $canvas['tags'] = json_decode($canvas['tags'], true);
-            } else {
-                $canvas['tags'] = [];
+        $cacheKey = null;
+        if ($this->redisClient && $userId === null) {
+            $cacheKey = CacheConstants::PREFIX_CANVAS_HOME_FEED . "{$tagFilter}:{$limit}:{$offset}";
+            $cached = $this->redisClient->get($cacheKey);
+            if ($cached) {
+                return json_decode($cached, true);
             }
-            return $canvas;
-        }, $results);
+        }
 
-        return array_map([$this, 'appendSnapshotUrl'], $results);
+        $fetchClosure = function() use ($userId, $tagFilter, $limit, $offset) {
+            $params = [];
+            $whereConditions = [];
+            
+            if ($tagFilter !== 'all') {
+                $whereConditions[] = "JSON_CONTAINS(c.tags, :tag)";
+                $params[':tag'] = json_encode($tagFilter);
+            }
+            
+            $userIdParam = $userId ?? 0;
+            
+            if ($userId) {
+                $whereConditions[] = "((c.is_subscription_locked = 0 AND (c.privacy = 'public' OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm_feed WHERE cm_feed.canvas_id = c.id AND cm_feed.user_id = :current_user_id_member_where))) OR c.owner_id = :current_user_id_w1)";
+                $params[':current_user_id_w1'] = $userIdParam;
+                $params[':current_user_id_member_where'] = $userIdParam;
+            } else {
+                $whereConditions[] = "c.is_subscription_locked = 0 AND (c.privacy = 'public' OR c.is_official = 1)";
+            }
+            
+            $whereSql = implode(' AND ', $whereConditions);
+
+            $isMemberSelect = $userId ? "CASE WHEN EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm_feed WHERE cm_feed.canvas_id = c.id AND cm_feed.user_id = :current_user_id_member_sel) THEN 1 ELSE 0 END as is_member" : "0 as is_member";
+
+            $orderSql = "ORDER BY c.is_official DESC, c.created_at DESC, c.id DESC";
+            
+            $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.is_official, c.favorites_count, c.tags, c.is_subscription_locked, c.locked_reasons,
+                           CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
+                           c.members_count,
+                           $isMemberSelect
+                    FROM " . DB::TBL_CANVASES . " c
+                    LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id_fav
+                    WHERE $whereSql
+                    $orderSql
+                    LIMIT :limit OFFSET :offset";
+                    
+            $params[':current_user_id_fav'] = $userIdParam;
+            if ($userId) {
+                $params[':current_user_id_member_sel'] = $userIdParam;
+            }
+            $params[':limit'] = $limit;
+            $params[':offset'] = $offset;
+            
+            $stmt = $this->db->prepare($sql);
+            
+            foreach ($params as $key => $val) {
+                $type = is_int($val) ? PDO::PARAM_INT : PDO::PARAM_STR;
+                $stmt->bindValue($key, $val, $type);
+            }
+            
+            $stmt->execute();
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            
+            $results = array_map(function($canvas) {
+                $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
+                if (!empty($canvas['tags'])) {
+                    $canvas['tags'] = json_decode($canvas['tags'], true);
+                } else {
+                    $canvas['tags'] = [];
+                }
+                return $canvas;
+            }, $results);
+
+            return array_map([$this, 'appendSnapshotUrl'], $results);
+        };
+
+        if ($cacheKey && $this->redisCache) {
+            return $this->redisCache->executeWithLock("lock_home_feed_{$tagFilter}_{$limit}_{$offset}", 5, function() use ($cacheKey, $fetchClosure) {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached) return json_decode($cached, true);
+                
+                $results = $fetchClosure();
+                $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($results));
+                return $results;
+            });
+        }
+
+        return $fetchClosure();
     }
 
     public function getOfficialCanvases(?int $currentUserId = null, string $sort = 'newest', int $limit = 50, int $offset = 0): array {

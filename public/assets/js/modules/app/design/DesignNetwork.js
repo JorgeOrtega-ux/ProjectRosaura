@@ -1598,7 +1598,7 @@ export const DesignNetwork = {
             document.body.appendChild(container);
         }
 
-        const existingBadge = container.querySelector(`[data-warning-key="${targetKey}"]`);
+        const existingBadge = container.querySelector(`[data-perk-id="${perkId}"]:not([data-preparing-key])`);
         if (!existingBadge) {
             const badge = document.createElement('div');
             badge.className = 'component-badge';

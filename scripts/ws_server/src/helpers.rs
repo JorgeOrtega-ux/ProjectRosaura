@@ -322,3 +322,7 @@ pub async fn sync_online_counts(state: AppState) {
         let _: () = pipe.query_async(&mut conn).await.unwrap_or(());
     }
 }
+
+pub fn is_guest(uid_str: &str) -> bool {
+    uid_str.is_empty() || uid_str == "guest"
+}

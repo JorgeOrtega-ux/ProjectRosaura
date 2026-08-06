@@ -23,6 +23,7 @@ class HomeController {
         this.virtualObserver = null;
         
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
+        this.updateCarouselButtonsBound = this.updateCarouselButtons.bind(this);
     }
 
     init() {
@@ -61,6 +62,11 @@ class HomeController {
     destroy() {
         if (this.abortController) this.abortController.abort();
         document.removeEventListener('click', this.handleGlobalClickBound);
+        const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
+        if (carousel) {
+            carousel.removeEventListener('scroll', this.updateCarouselButtonsBound);
+        }
+        window.removeEventListener('resize', this.updateCarouselButtonsBound);
         if (this.observer) this.observer.disconnect();
         if (this.virtualObserver) this.virtualObserver.disconnect();
     }
@@ -70,10 +76,10 @@ class HomeController {
         
         const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
         if (carousel) {
-            carousel.addEventListener('scroll', () => this.updateCarouselButtons());
-            window.addEventListener('resize', () => this.updateCarouselButtons());
+            carousel.addEventListener('scroll', this.updateCarouselButtonsBound);
+            window.addEventListener('resize', this.updateCarouselButtonsBound);
             
-            setTimeout(() => this.updateCarouselButtons(), 100);
+            setTimeout(() => this.updateCarouselButtonsBound(), 100);
         }
     }
 

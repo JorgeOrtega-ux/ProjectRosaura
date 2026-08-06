@@ -61,11 +61,12 @@ export class UpgradeController {
     }
 
     _setBilling(type) {
-        if (type === 'yearly') {
-            window.isYearlyPremium = true;
-        } else {
-            window.isYearlyPremium = false;
+        const isYearly = type === 'yearly';
+        if (isYearly === window.isYearlyPremium) {
+            return;
         }
+
+        window.isYearlyPremium = isYearly;
         this._updateUIBilling();
 
         if (window.appInstance && typeof window.appInstance.closeAllModules === 'function') {

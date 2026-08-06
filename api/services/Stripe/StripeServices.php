@@ -631,8 +631,8 @@ class StripeServices {
         $tier = isset($input['tier']) ? (int) $input['tier'] : 0;
         $billingPeriod = $input['billing_period'] ?? 'monthly';
 
-        // Verify if the requested tier is a paid tier (greater than 0)
-        if ($tier <= 0) {
+        // Verify if the requested tier is a valid tier
+        if ($tier < 0) {
             return ['success' => false, 'message_key' => 'stripe.invalid_tier'];
         }
 

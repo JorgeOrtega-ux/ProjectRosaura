@@ -500,7 +500,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             }
         }
         "use_pixel_protection" => {
-            if uid_str.is_empty() || uid_str == "guest" { return; }
+            if helpers::is_guest(&uid_str) { return; }
             let perk_id = msg.perk_id.clone().unwrap_or_default();
             if perk_id.is_empty() { return; }
 
@@ -614,7 +614,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             helpers::send_to_client(state, connection_id, &success_confirm).await;
         }
         "place_mines" => {
-            if uid_str.is_empty() || uid_str == "guest" { return; }
+            if helpers::is_guest(&uid_str) { return; }
             let perk_id = msg.perk_id.clone().unwrap_or_else(|| "mines_1".to_string());
 
             // Consume perk
@@ -1113,8 +1113,10 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             let width = db_width;
             let height = db_height;
             let perk_id = msg.perk_id.clone().unwrap_or_default();
-            
             if perk_id.is_empty() { return; }
+
+            // Secure check: guests cannot use premium nuke/bomb perks
+            if helpers::is_guest(&uid_str) { return; }
 
             let user_cooldown_key = if !uid_str.is_empty() { uid_str.clone() } else { connection_id.to_string() };
             let now_inst = std::time::Instant::now();
@@ -1126,11 +1128,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 }
             }
             
-            let has_perk = if uid_str != "guest" && !uid_str.is_empty() {
-                db::consume_user_perk(&state.db_pool, &uid_str, &perk_id).await
-            } else {
-                true // Guests or unknown have perk by default (e.g. infinite test bots) or maybe reject. Python had `has_perk = True` for guests.
-            };
+            let has_perk = db::consume_user_perk(&state.db_pool, &uid_str, &perk_id).await;
             
             if !has_perk {
                 let err = serde_json::json!({"type": "pixel_protected_error", "message": "err_perk_not_owned"}).to_string();
@@ -1191,7 +1189,14 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             state.user_perk_cooldowns.insert(user_cooldown_key, now_inst + std::time::Duration::from_secs(cooldown_secs));
             
             let mut spawned_targets = Vec::new();
-            if spawn_mode == "random_around" {
+            if spawn_mode == "entire_canvas" {
+                for _ in 0..spawn_count {
+                    let rx = if width > 0 { (rand::random::<u32>() % width as u32) as i32 } else { 0 };
+                    let ry = if height > 0 { (rand::random::<u32>() % height as u32) as i32 } else { 0 };
+                    let delay = warning_duration as f32 + (rand::random::<f32>() * jitter_delay);
+                    spawned_targets.push((rx, ry, delay));
+                }
+            } else if spawn_mode == "random_around" {
                 // Clustered random around target point (cx, cy) using spread_radius
                 let effective_spread = if spread_radius > 0 { spread_radius } else { 30 };
                 for _ in 0..spawn_count {

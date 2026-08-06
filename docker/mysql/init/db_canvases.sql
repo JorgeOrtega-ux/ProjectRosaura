@@ -33,7 +33,9 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   UNIQUE KEY `uuid` (`uuid`),
   INDEX `idx_owner_canvases` (`owner_id`),
   INDEX `idx_canvases_privacy_official` (`privacy`, `is_official`),
-  INDEX `idx_canvases_official_owner` (`is_official`, `owner_id`)
+  INDEX `idx_canvases_official_owner` (`is_official`, `owner_id`),
+  INDEX `idx_canvases_feed_opt` (`is_subscription_locked`, `privacy`, `is_official`, `created_at`),
+  INDEX `idx_canvases_tags` ((CAST(tags AS CHAR(32) ARRAY)))
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `canvas_protections` (
