@@ -952,6 +952,72 @@ class AdminServices {
         }
     }
 
+    public function saveStorePerk($data) {
+        $uuid = $data['uuid'] ?? '';
+        $perkId = $data['perk_id'] ?? '';
+        $name = $data['name'] ?? '';
+        $priceCoins = (int)($data['price_coins'] ?? 0);
+        $description = $data['description'] ?? '';
+        $icon = $data['icon'] ?? 'shield';
+        $isActive = isset($data['is_active']) ? (int)$data['is_active'] : 1;
+
+        if (empty($perkId) || empty($name) || $priceCoins < 0) {
+            return ['success' => false, 'message' => 'Datos inválidos. El ID de la ventaja y el nombre son obligatorios.'];
+        }
+
+        try {
+            $dbManager = new DatabaseManager();
+            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
+            
+            if ($uuid) {
+                // Update
+                $stmt = $pdo->prepare("UPDATE store_perk_packages SET perk_id = ?, name = ?, description = ?, price_coins = ?, icon = ?, is_active = ? WHERE uuid = ?");
+                $stmt->execute([$perkId, $name, $description, $priceCoins, $icon, $isActive, $uuid]);
+                $msg = 'Ventaja actualizada correctamente';
+            } else {
+                // Insert
+                $uuid = Utils::generateUUID();
+                $stmt = $pdo->prepare("INSERT INTO store_perk_packages (uuid, perk_id, name, description, price_coins, icon, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$uuid, $perkId, $name, $description, $priceCoins, $icon, $isActive]);
+                $msg = 'Ventaja creada correctamente';
+            }
+
+            return ['success' => true, 'message' => $msg, 'uuid' => $uuid];
+        } catch (\PDOException $e) {
+            Logger::error("saveStorePerk Error", ['exception' => $e]);
+            return ['success' => false, 'message' => 'Error al guardar la ventaja (¿ID de ventaja ya existe?)'];
+        }
+    }
+
+    public function toggleStorePerkVisibility($data) {
+        $uuid = $data['uuid'] ?? '';
+        if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
+        try {
+            $dbManager = new DatabaseManager();
+            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
+            $stmt = $pdo->prepare("UPDATE store_perk_packages SET is_active = 1 - is_active WHERE uuid = ?");
+            $stmt->execute([$uuid]);
+            return ['success' => true, 'message' => 'Visibilidad de ventaja actualizada'];
+        } catch (\PDOException $e) {
+            return ['success' => false, 'message' => 'Error de BD'];
+        }
+    }
+
+    public function deleteStorePerk($data) {
+        $uuid = $data['uuid'] ?? '';
+        if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
+        try {
+            $dbManager = new DatabaseManager();
+            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
+            $stmt = $pdo->prepare("DELETE FROM store_perk_packages WHERE uuid = ?");
+            $stmt->execute([$uuid]);
+            return ['success' => true, 'message' => 'Ventaja eliminada permanentemente'];
+        } catch (\PDOException $e) {
+            Logger::error("deleteStorePerk Error", ['exception' => $e]);
+            return ['success' => false, 'message' => 'Error al eliminar la ventaja'];
+        }
+    }
+
 
     public function getRoles() {
         if (!$this->hasPermission(PermissionsConstants::VIEW_ROLES)) return ['success' => false, 'message' => __('error.unauthorized')];

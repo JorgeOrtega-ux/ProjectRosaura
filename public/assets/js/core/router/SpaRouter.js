@@ -43,6 +43,7 @@ export class SpaRouter {
         if (url.startsWith('/admin/backup-restore/')) return '/admin/backup-restore/:uuid';
         if (url.startsWith('/admin/subscription-edit/')) return '/admin/subscription-edit/:uuid';
         if (url.startsWith('/admin/store-package-edit/')) return '/admin/store-package-edit/:uuid';
+        if (url.startsWith('/admin/store-perk-edit/')) return '/admin/store-perk-edit/:uuid';
         
         return url;
     }

@@ -403,6 +403,30 @@ return [
             ['type' => 'RateLimit', 'key' => 'adm_del_pkg', 'max' => 10, 'time' => 1, 'identifier' => 'user_id'],
         ],
     ],
+    'admin.store_perk.save' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'save_store_perk',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_save_perk', 'max' => 15, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.store_perk.toggle_visibility' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'toggle_store_perk_visibility',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_toggle_perk', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.store_perk.delete' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'delete_store_perk',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_del_perk', 'max' => 10, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
     'admin.get_permissions' => [
         'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
         'action' => 'get_permissions',

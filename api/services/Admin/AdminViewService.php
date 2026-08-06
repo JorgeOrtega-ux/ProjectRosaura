@@ -633,6 +633,96 @@ class AdminViewService {
         ];
     }
 
+    public function getManageStorePerksData(?string $searchQuery, int $page): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $db = new DatabaseManager();
+        $pdo = $db->getConnection(DB::CONN_IDENTITY);
+
+        $tbl = 'store_perk_packages';
+        $searchQuery = trim($searchQuery ?? '');
+        $limit = 25;
+        if ($page < 1) $page = 1;
+
+        $searchCondition = "";
+        $searchParams = [];
+        if ($searchQuery !== '') {
+            $searchCondition = "WHERE name LIKE :search OR perk_id LIKE :search OR description LIKE :search";
+            $searchParams[':search'] = '%' . $searchQuery . '%';
+        }
+
+        $totalPerks = 0;
+        try {
+            $stmtCount = $pdo->prepare("SELECT COUNT(id) FROM {$tbl} {$searchCondition}");
+            foreach ($searchParams as $key => $val) {
+                $stmtCount->bindValue($key, $val);
+            }
+            $stmtCount->execute();
+            $totalPerks = (int)$stmtCount->fetchColumn();
+        } catch (\Throwable $e) {
+            Logger::error("getManageStorePerksData error counting: " . $e->getMessage());
+        }
+
+        $totalPages = ceil($totalPerks / $limit);
+        if ($totalPages < 1) $totalPages = 1;
+        if ($page > $totalPages) $page = $totalPages;
+
+        $offset = ($page - 1) * $limit;
+        $perks = [];
+
+        try {
+            $sql = "SELECT * FROM {$tbl} {$searchCondition} ORDER BY price_coins ASC LIMIT :limit OFFSET :offset";
+            $stmt = $pdo->prepare($sql);
+            foreach ($searchParams as $key => $val) {
+                $stmt->bindValue($key, $val);
+            }
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+            $stmt->execute();
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $perks[] = $row;
+            }
+        } catch (\Throwable $e) {
+            Logger::error("getManageStorePerksData error fetching: " . $e->getMessage());
+        }
+
+        return [
+            'appUrl' => defined('APP_URL') ? APP_URL : 'http://localhost',
+            'searchQuery' => $searchQuery,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'totalPerks' => $totalPerks,
+            'perks' => $perks
+        ];
+    }
+
+    public function getStorePerkBuilderData(?string $targetUuid = null): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $db = new DatabaseManager();
+        $pdo = $db->getConnection(DB::CONN_IDENTITY);
+
+        $isEdit = false;
+        $perk = null;
+
+        if (!empty($targetUuid)) {
+            try {
+                $stmt = $pdo->prepare("SELECT * FROM store_perk_packages WHERE uuid = :uuid LIMIT 1");
+                $stmt->execute(['uuid' => $targetUuid]);
+                $perk = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if ($perk) {
+                    $isEdit = true;
+                }
+            } catch (\Throwable $e) {
+                Logger::error("getStorePerkBuilderData error: " . $e->getMessage(), ['exception' => $e]);
+            }
+        }
+
+        return [
+            'error' => null,
+            'isEdit' => $isEdit,
+            'perk' => $perk
+        ];
+    }
+
     /**
 
      */

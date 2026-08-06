@@ -96,6 +96,10 @@ export const ApiRoutes = {
         ToggleStorePackage: 'admin.store_package.toggle_visibility',
         SetStorePackagePopular: 'admin.store_package.set_popular',
         SaveStorePackage: 'admin.store_package.save',
+
+        DeleteStorePerk: 'admin.store_perk.delete',
+        ToggleStorePerk: 'admin.store_perk.toggle_visibility',
+        SaveStorePerk: 'admin.store_perk.save',
         GetTranslations: 'admin.get_translations',
         GetBackupSchema: 'admin.get_backup_schema',
         CreateCustomBackup: 'admin.create_custom_backup',

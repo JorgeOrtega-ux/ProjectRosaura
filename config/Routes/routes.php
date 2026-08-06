@@ -70,6 +70,11 @@ return [
     '/admin/store-packages' => ['view' => 'admin/store/manage-packages.php', 'auth' => true, 'permissions' => [PC::ACCESS_ADMIN_PANEL], 'requires_2fa' => false],
     '/admin/store-package-create' => ['view' => 'admin/store/package-builder.php', 'auth' => true, 'permissions' => [PC::ACCESS_ADMIN_PANEL], 'requires_2fa' => false],
     '/admin/store-package-edit/:uuid' => ['view' => 'admin/store/package-builder.php', 'auth' => true, 'permissions' => [PC::ACCESS_ADMIN_PANEL], 'requires_2fa' => false],
+
+    // Store Content Perks
+    '/admin/store-perks' => ['view' => 'admin/store/manage-perks.php', 'auth' => true, 'permissions' => [PC::ACCESS_ADMIN_PANEL], 'requires_2fa' => false],
+    '/admin/store-perk-create' => ['view' => 'admin/store/perk-builder.php', 'auth' => true, 'permissions' => [PC::ACCESS_ADMIN_PANEL], 'requires_2fa' => false],
+    '/admin/store-perk-edit/:uuid' => ['view' => 'admin/store/perk-builder.php', 'auth' => true, 'permissions' => [PC::ACCESS_ADMIN_PANEL], 'requires_2fa' => false],
     '/admin/messages' => ['view' => 'admin/messages/manage-messages.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false],
     '/admin/messages/visibility/:uuid' => ['view' => 'admin/messages/edit-visibility.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false],
     '/admin/messages/reports/:uuid' => ['view' => 'admin/messages/reports.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false],

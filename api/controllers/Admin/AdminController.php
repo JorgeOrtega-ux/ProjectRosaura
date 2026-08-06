@@ -277,6 +277,38 @@ class AdminController extends BaseController {
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
+    public function save_store_perk($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $safeInput = [
+                'uuid' => $input['uuid'] ?? null,
+                'perk_id' => $input['perk_id'] ?? null,
+                'name' => $input['name'] ?? null,
+                'price_coins' => $input['price_coins'] ?? null,
+                'description' => $input['description'] ?? null,
+                'icon' => $input['icon'] ?? null,
+                'is_active' => $input['is_active'] ?? null
+            ];
+            return $this->respond($this->adminServices->saveStorePerk($safeInput));
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function toggle_store_perk_visibility($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $safeInput = ['uuid' => $input['uuid'] ?? null];
+            return $this->respond($this->adminServices->toggleStorePerkVisibility($safeInput));
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function delete_store_perk($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $safeInput = ['uuid' => $input['uuid'] ?? null];
+            return $this->respond($this->adminServices->deleteStorePerk($safeInput));
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
     public function get_permissions() {
         try { 
             $this->requirePermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE);

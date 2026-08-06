@@ -432,3 +432,30 @@ CREATE TABLE IF NOT EXISTS `user_perk_balances` (
   PRIMARY KEY (`user_id`, `perk_id`),
   CONSTRAINT fk_user_perk_balances_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `store_perk_packages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `uuid` CHAR(36) UNIQUE DEFAULT NULL,
+  `perk_id` VARCHAR(100) UNIQUE NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `price_coins` INT NOT NULL DEFAULT 0,
+  `icon` varchar(50) DEFAULT 'shield',
+  `is_single_use` tinyint(1) NOT NULL DEFAULT 1,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+INSERT IGNORE INTO `store_perk_packages` (uuid, perk_id, name, description, price_coins, icon, is_single_use, is_active) VALUES
+('e0000000-0000-0000-0000-000000000001', 'proteccion_pixeles_1', 'store_content_proteccion_pixeles_1_name', 'store_content_proteccion_pixeles_1_desc', 2000, 'shield', 1, 1),
+('e0000000-0000-0000-0000-000000000002', 'pixel_misil_1', 'store_content_pixel_misil_1_name', 'store_content_pixel_misil_1_desc', 500, 'rocket_launch', 1, 1),
+('e0000000-0000-0000-0000-000000000003', 'bomba_pixel_1', 'store_content_bomba_pixel_1_name', 'store_content_bomba_pixel_1_desc', 1000, 'bomb', 1, 1),
+('e0000000-0000-0000-0000-000000000004', 'bomba_racimo_1', 'store_content_bomba_racimo_1_name', 'store_content_bomba_racimo_1_desc', 2500, 'scatter_plot', 1, 1),
+('e0000000-0000-0000-0000-000000000005', 'bomba_atomica_1', 'store_content_bomba_atomica_1_name', 'store_content_bomba_atomica_1_desc', 5000, 'crisis_alert', 1, 1),
+('e0000000-0000-0000-0000-000000000006', 'lluvia_meteoritos_1', 'store_content_lluvia_meteoritos_1_name', 'store_content_lluvia_meteoritos_1_desc', 10000, 'storm', 1, 1),
+('e0000000-0000-0000-0000-000000000007', 'canon_orbital_1', 'store_content_canon_orbital_1_name', 'store_content_canon_orbital_1_desc', 15000, 'satellite_alt', 1, 1),
+('e0000000-0000-0000-0000-000000000008', 'agujero_negro_1', 'store_content_agujero_negro_1_name', 'store_content_agujero_negro_1_desc', 20000, 'cyclone', 1, 1),
+('e0000000-0000-0000-0000-000000000009', 'minas_1', 'store_content_minas_1_name', 'store_content_minas_1_desc', 1500, 'radar', 1, 1);
+

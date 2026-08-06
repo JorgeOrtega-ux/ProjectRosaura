@@ -63,7 +63,10 @@ $routeTitles = [
     '/admin/system-settings' => __('route_admin_server'),
     '/admin/protocols' => __('route_admin_protocols'),
     '/admin/logs' => __('route_admin_logs'),
-    '/admin/logs/viewer' => __('route_admin_logs_viewer')
+    '/admin/logs/viewer' => __('route_admin_logs_viewer'),
+    '/admin/store-perks' => 'Administrar Ventajas',
+    '/admin/store-perk-create' => 'Crear Ventaja',
+    '/admin/store-perk-edit' => 'Editar Ventaja'
 ];
 
 $initialTitle = APP_NAME;
