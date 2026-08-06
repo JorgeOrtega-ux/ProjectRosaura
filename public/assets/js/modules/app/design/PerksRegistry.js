@@ -14,15 +14,15 @@ let _perksConfig = null;
 let _loadPromise = null;
 
 const PERK_DISPLAY_ORDER = [
-    'pixel_misil_1',
-    'bomba_pixel_1',
-    'bomba_atomica_1',
-    'bomba_racimo_1',
-    'lluvia_meteoritos_1',
-    'canon_orbital_1',
-    'agujero_negro_1',
-    'proteccion_pixeles_1',
-    'minas_1'
+    'pixel_missile_1',
+    'pixel_bomb_1',
+    'atomic_bomb_1',
+    'cluster_bomb_1',
+    'meteor_shower_1',
+    'orbital_cannon_1',
+    'black_hole_1',
+    'pixel_shield_1',
+    'mines_1'
 ];
 
 const PerksRegistry = {
@@ -188,15 +188,15 @@ const PerksRegistry = {
         }
         
         const maxDim = Math.min(boardWidth || 64, boardHeight || 64);
-        if (perkId === 'canon_orbital_1' || perkId === 'agujero_negro_1') {
+        if (perkId === 'orbital_cannon_1' || perkId === 'black_hole_1') {
             return Math.max(10, Math.floor(maxDim * 0.5));
-        } else if (perkId === 'bomba_atomica_1') {
+        } else if (perkId === 'atomic_bomb_1') {
             return Math.max(6, Math.floor(maxDim * 0.38));
-        } else if (perkId === 'bomba_racimo_1') {
+        } else if (perkId === 'cluster_bomb_1') {
             return Math.max(4, Math.floor(maxDim * 0.22));
-        } else if (perkId === 'bomba_pixel_1') {
+        } else if (perkId === 'pixel_bomb_1') {
             return Math.max(3, Math.floor(maxDim * 0.14));
-        } else if (perkId === 'lluvia_meteoritos_1') {
+        } else if (perkId === 'meteor_shower_1') {
             return Math.max(3, Math.floor(maxDim * 0.12));
         } else {
             return Math.max(2, Math.floor(maxDim * 0.06));

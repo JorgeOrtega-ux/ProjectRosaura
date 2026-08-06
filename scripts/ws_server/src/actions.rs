@@ -615,7 +615,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         }
         "place_mines" => {
             if uid_str.is_empty() || uid_str == "guest" { return; }
-            let perk_id = msg.perk_id.clone().unwrap_or_else(|| "minas_1".to_string());
+            let perk_id = msg.perk_id.clone().unwrap_or_else(|| "mines_1".to_string());
 
             // Consume perk
             let has_perk = db::consume_user_perk(&state.db_pool, &uid_str, &perk_id).await;
@@ -920,7 +920,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 let perks_cfg = helpers::get_perks_config(state).await;
                 let mut base_radius = 4;
                 if let Some(cfg) = perks_cfg {
-                    if let Some(perk_data) = cfg.perks.get("minas_1") {
+                    if let Some(perk_data) = cfg.perks.get("mines_1") {
                         if let Some(radii) = &perk_data.radii {
                             if let Some(r) = radii.get(&width.to_string()) {
                                 base_radius = *r;
@@ -1023,7 +1023,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                     
                     let b_msg = serde_json::json!({
                         "type": "bomb_pixel",
-                        "x": tx, "y": ty, "r": radius, "perk": "minas_1"
+                        "x": tx, "y": ty, "r": radius, "perk": "mines_1"
                     }).to_string();
                     helpers::broadcast_to_room(state, canvas_id, &b_msg).await;
                     
@@ -1032,7 +1032,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                     
                     let _: () = redis_conn.xadd(format!("canvas:{}:stream", canvas_id), "*", &[
                         ("type", "bomb_pixel"), ("x", &tx.to_string()), ("y", &ty.to_string()),
-                        ("r", &radius.to_string()), ("perk", "minas_1")
+                        ("r", &radius.to_string()), ("perk", "mines_1")
                     ]).await.unwrap_or(());
                 }
             }
@@ -1161,10 +1161,10 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                         } else {
                             if width == 0 {
                                 radius = match perk_id.as_str() {
-                                    "pixel_misil_1" => 5,
-                                    "bomba_pixel_1" => 15,
-                                    "bomba_racimo_1" => 20,
-                                    "lluvia_meteoritos_1" => 10,
+                                    "pixel_missile_1" => 5,
+                                    "pixel_bomb_1" => 15,
+                                    "cluster_bomb_1" => 20,
+                                    "meteor_shower_1" => 10,
                                     _ => 50
                                 };
                             } else {
@@ -1173,9 +1173,9 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                                 let base_bomb = std::cmp::max(4, (width as f32 * 0.08) as i32);
                                 let base_misil = std::cmp::max(2, (width as f32 * 0.03) as i32);
                                 radius = match perk_id.as_str() {
-                                    "pixel_misil_1" | "lluvia_meteoritos_1" => base_misil,
-                                    "bomba_pixel_1" => base_bomb,
-                                    "bomba_racimo_1" => base_racimo,
+                                    "pixel_missile_1" | "meteor_shower_1" => base_misil,
+                                    "pixel_bomb_1" => base_bomb,
+                                    "cluster_bomb_1" => base_racimo,
                                     _ => base_nuke
                                 };
                             }

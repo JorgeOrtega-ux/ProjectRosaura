@@ -134,7 +134,7 @@ export const DesignNetwork = {
                     const cX = parseInt(data.x, 10);
                     const cY = parseInt(data.y, 10);
                     const r = parseInt(data.r, 10);
-                    const perkId = data.perk || 'pixel_misil_1';
+                    const perkId = data.perk || 'pixel_missile_1';
 
                     if (this.nuclearWarnings) {
                         const targetKey = `${cX}_${cY}_${perkId}`;
@@ -1493,7 +1493,7 @@ export const DesignNetwork = {
     handleBombWarning(data) {
         const cx = parseInt(data.x || 0, 10);
         const cy = parseInt(data.y || 0, 10);
-        const perkId = data.perk || 'bomba_atomica_1';
+        const perkId = data.perk || 'atomic_bomb_1';
         
         const perkConfig = typeof PerksRegistry !== 'undefined' ? PerksRegistry.get(perkId) : null;
         let durationSecs = parseInt(data.duration || perkConfig?.warning_seconds || 3, 10);
@@ -1539,7 +1539,7 @@ export const DesignNetwork = {
             perkId: perkId
         };
 
-        if (perkId === 'agujero_negro_1') {
+        if (perkId === 'black_hole_1') {
             const candidates = [];
             const rInt = Math.ceil(r);
             for (let dy = -rInt; dy <= rInt; dy++) {

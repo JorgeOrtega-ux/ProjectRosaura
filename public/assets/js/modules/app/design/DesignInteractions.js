@@ -1707,7 +1707,7 @@ export const DesignInteractions = {
         
         this.ensureExplosionStyles();
 
-        if (perkId === 'canon_orbital_1') {
+        if (perkId === 'orbital_cannon_1') {
             const ball = document.querySelector('.orbital-cannon-charge-ball');
             if (ball) ball.remove();
         }
@@ -1779,7 +1779,7 @@ export const DesignInteractions = {
     async activatePerk(perkId, btn) {
         if (!perkId) return;
 
-        if (perkId === 'minas_1') {
+        if (perkId === 'mines_1') {
             const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
             const count = owned ? parseInt(owned.count, 10) : 0;
             if (count <= 0) {
@@ -1805,7 +1805,7 @@ export const DesignInteractions = {
             return;
         }
 
-        if (perkId === 'proteccion_pixeles_1') {
+        if (perkId === 'pixel_shield_1') {
             const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
             const count = owned ? parseInt(owned.count, 10) : 0;
             if (count <= 0) {
@@ -1905,7 +1905,7 @@ export const DesignInteractions = {
             let icon = PerksRegistry.getIcon(perkId);
             let clickHandler = null;
 
-            if (PerksRegistry.isBomb(perkId) && perkId !== 'minas_1') {
+            if (PerksRegistry.isBomb(perkId) && perkId !== 'mines_1') {
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 const totalAmount = owned ? parseInt(owned.count, 10) : 0;
                 
@@ -1933,7 +1933,7 @@ export const DesignInteractions = {
                     };
                     renderedInventoryCount++;
                 }
-            } else if (perkId === 'minas_1') {
+            } else if (perkId === 'mines_1') {
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 const totalAmount = owned ? parseInt(owned.count, 10) : 0;
                 
@@ -1962,7 +1962,7 @@ export const DesignInteractions = {
                     };
                     renderedInventoryCount++;
                 }
-            } else if (perkId === 'proteccion_pixeles_1') {
+            } else if (perkId === 'pixel_shield_1') {
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 const totalAmount = owned ? parseInt(owned.count, 10) : 0;
                 
@@ -2283,7 +2283,7 @@ export const DesignInteractions = {
         if (this.wsManager && pixels.length > 0) {
             this.wsManager.send({
                 type: "place_mines",
-                perk: "minas_1",
+                perk: "mines_1",
                 pixels: pixels
             });
         }
@@ -2304,7 +2304,7 @@ export const DesignInteractions = {
         if (this.wsManager) {
             this.wsManager.send({
                 type: "use_pixel_protection",
-                perk: "proteccion_pixeles_1",
+                perk: "pixel_shield_1",
                 x1: minX,
                 y1: minY,
                 x2: maxX,

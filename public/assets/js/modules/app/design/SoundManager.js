@@ -18,16 +18,15 @@ export class SoundManager {
         this.activeLoops = new Map(); // key -> audio nodes
         this.sampleCache = new Map(); // URL -> AudioBuffer
         
-        // Mapeo opcional de archivos de audio reales HD
         this.soundUrls = {
-            'canon_orbital_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/canon_orbital.mp3` : '/assets/sounds/canon_orbital.mp3',
-            'bomba_atomica_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/bomba_atomica.mp3` : '/assets/sounds/bomba_atomica.mp3',
-            'agujero_negro_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/agujero_negro.mp3` : '/assets/sounds/agujero_negro.mp3',
-            'lluvia_meteoritos_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/lluvia_meteoritos.mp3` : '/assets/sounds/lluvia_meteoritos.mp3',
-            'bomba_racimo_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/bomba_racimo.mp3` : '/assets/sounds/bomba_racimo.mp3',
-            'pixel_misil_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/pixel_misil.mp3` : '/assets/sounds/pixel_misil.mp3',
-            'proteccion_pixeles_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/proteccion.mp3` : '/assets/sounds/proteccion.mp3',
-            'minas_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/minas.mp3` : '/assets/sounds/minas.mp3'
+            'orbital_cannon_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/orbital_cannon.mp3` : '/assets/sounds/orbital_cannon.mp3',
+            'atomic_bomb_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/atomic_bomb.mp3` : '/assets/sounds/atomic_bomb.mp3',
+            'black_hole_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/black_hole.mp3` : '/assets/sounds/black_hole.mp3',
+            'meteor_shower_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/meteor_shower.mp3` : '/assets/sounds/meteor_shower.mp3',
+            'cluster_bomb_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/cluster_bomb.mp3` : '/assets/sounds/cluster_bomb.mp3',
+            'pixel_missile_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/pixel_missile.mp3` : '/assets/sounds/pixel_missile.mp3',
+            'pixel_shield_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/pixel_shield.mp3` : '/assets/sounds/pixel_shield.mp3',
+            'mines_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/mines.mp3` : '/assets/sounds/mines.mp3'
         };
 
         this.initOnUserGesture();
@@ -207,7 +206,7 @@ export class SoundManager {
 
         const now = this.ctx.currentTime;
 
-        if (perkId === 'canon_orbital_1') {
+        if (perkId === 'orbital_cannon_1') {
             // Zumbido electromagnético espacial sci-fi con trémolo inquietante
             const carrier = this.ctx.createOscillator();
             const modulator = this.ctx.createOscillator();
@@ -248,7 +247,7 @@ export class SoundManager {
 
             if (key) this.activeLoops.set(key, { osc: carrier, gain: masterG });
 
-        } else if (perkId === 'bomba_atomica_1') {
+        } else if (perkId === 'atomic_bomb_1') {
             // Sirena inquietante de pánico nuclear
             const osc1 = this.ctx.createOscillator();
             const osc2 = this.ctx.createOscillator();
@@ -330,7 +329,7 @@ export class SoundManager {
         const panner = this.createPanner(x, boardWidth);
         const destination = panner || this.distortionNode || this.compressor;
 
-        if (perkId === 'canon_orbital_1') {
+        if (perkId === 'orbital_cannon_1') {
             // === CAÑÓN ORBITAL (IMPACTO CAÓTICO Y PROFUNDO DE LÁSER ESPACIAL) ===
 
             // 1. Supersonic Energy Crack (Impacto de plasma inicial con distorsión)
@@ -382,7 +381,7 @@ export class SoundManager {
             subOsc.start(now);
             subOsc.stop(now + 5.5);
 
-        } else if (perkId === 'bomba_atomica_1') {
+        } else if (perkId === 'atomic_bomb_1') {
             // === BOMBA ATÓMICA (EXPLOSIÓN DE TERROR RETUMBANTE DE 4 CAPAS) ===
 
             // 1. Shockwave Blast Snap
@@ -445,7 +444,7 @@ export class SoundManager {
             sub1.stop(now + 3.8);
             sub2.stop(now + 3.8);
 
-        } else if (perkId === 'agujero_negro_1') {
+        } else if (perkId === 'black_hole_1') {
             // === AGUJERO NEGRO (IMPLOSIÓN DE TERROR CÓSMICO Y DESTORSIÓN) ===
 
             // 1. Succión Inversa de Vacío Oscuro
@@ -488,9 +487,9 @@ export class SoundManager {
             sub.start(now);
             sub.stop(now + 2.2);
 
-        } else if (perkId === 'bomba_racimo_1' || perkId === 'lluvia_meteoritos_1') {
+        } else if (perkId === 'cluster_bomb_1' || perkId === 'meteor_shower_1') {
             // === METEORITOS & RACIMO (IMPACTOS CAÓTICOS PESADOS Y ESCALONADOS) ===
-            const count = perkId === 'bomba_racimo_1' ? 5 : 7;
+            const count = perkId === 'cluster_bomb_1' ? 5 : 7;
             for (let i = 0; i < count; i++) {
                 const delay = i * 0.09;
                 const nowD = now + delay;
@@ -531,7 +530,7 @@ export class SoundManager {
                 osc.stop(nowD + 0.35);
             }
 
-        } else if (perkId === 'proteccion_pixeles_1') {
+        } else if (perkId === 'pixel_shield_1') {
             // === PROTECCIÓN DE PÍXELES (ESCUDO DE ENERGÍA PESADO) ===
             const freqs = [440, 554.37, 659.25, 880];
             freqs.forEach((freq, idx) => {
@@ -550,7 +549,7 @@ export class SoundManager {
                 osc.stop(now + idx * 0.03 + 0.9);
             });
 
-        } else if (perkId === 'minas_1') {
+        } else if (perkId === 'mines_1') {
             // === MINAS TERRESTRES (DETONACIÓN METÁLICA PESADA) ===
             const darkBuf = this.createDarkNoiseBuffer(0.45);
             if (darkBuf) {

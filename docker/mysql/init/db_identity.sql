@@ -449,13 +449,13 @@ CREATE TABLE IF NOT EXISTS `store_perk_packages` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 INSERT IGNORE INTO `store_perk_packages` (uuid, perk_id, name, description, price_coins, icon, is_single_use, is_active) VALUES
-('e0000000-0000-0000-0000-000000000001', 'proteccion_pixeles_1', 'store_content_proteccion_pixeles_1_name', 'store_content_proteccion_pixeles_1_desc', 2000, 'shield', 1, 1),
-('e0000000-0000-0000-0000-000000000002', 'pixel_misil_1', 'store_content_pixel_misil_1_name', 'store_content_pixel_misil_1_desc', 500, 'rocket_launch', 1, 1),
-('e0000000-0000-0000-0000-000000000003', 'bomba_pixel_1', 'store_content_bomba_pixel_1_name', 'store_content_bomba_pixel_1_desc', 1000, 'bomb', 1, 1),
-('e0000000-0000-0000-0000-000000000004', 'bomba_racimo_1', 'store_content_bomba_racimo_1_name', 'store_content_bomba_racimo_1_desc', 2500, 'scatter_plot', 1, 1),
-('e0000000-0000-0000-0000-000000000005', 'bomba_atomica_1', 'store_content_bomba_atomica_1_name', 'store_content_bomba_atomica_1_desc', 5000, 'crisis_alert', 1, 1),
-('e0000000-0000-0000-0000-000000000006', 'lluvia_meteoritos_1', 'store_content_lluvia_meteoritos_1_name', 'store_content_lluvia_meteoritos_1_desc', 10000, 'storm', 1, 1),
-('e0000000-0000-0000-0000-000000000007', 'canon_orbital_1', 'store_content_canon_orbital_1_name', 'store_content_canon_orbital_1_desc', 15000, 'satellite_alt', 1, 1),
-('e0000000-0000-0000-0000-000000000008', 'agujero_negro_1', 'store_content_agujero_negro_1_name', 'store_content_agujero_negro_1_desc', 20000, 'cyclone', 1, 1),
-('e0000000-0000-0000-0000-000000000009', 'minas_1', 'store_content_minas_1_name', 'store_content_minas_1_desc', 1500, 'radar', 1, 1);
+('e0000000-0000-0000-0000-000000000001', 'pixel_shield_1', 'store_content_pixel_shield_1_name', 'store_content_pixel_shield_1_desc', 2000, 'shield', 1, 1),
+('e0000000-0000-0000-0000-000000000002', 'pixel_missile_1', 'store_content_pixel_missile_1_name', 'store_content_pixel_missile_1_desc', 500, 'rocket_launch', 1, 1),
+('e0000000-0000-0000-0000-000000000003', 'pixel_bomb_1', 'store_content_pixel_bomb_1_name', 'store_content_pixel_bomb_1_desc', 1000, 'bomb', 1, 1),
+('e0000000-0000-0000-0000-000000000004', 'cluster_bomb_1', 'store_content_cluster_bomb_1_name', 'store_content_cluster_bomb_1_desc', 2500, 'scatter_plot', 1, 1),
+('e0000000-0000-0000-0000-000000000005', 'atomic_bomb_1', 'store_content_atomic_bomb_1_name', 'store_content_atomic_bomb_1_desc', 5000, 'crisis_alert', 1, 1),
+('e0000000-0000-0000-0000-000000000006', 'meteor_shower_1', 'store_content_meteor_shower_1_name', 'store_content_meteor_shower_1_desc', 10000, 'storm', 1, 1),
+('e0000000-0000-0000-0000-000000000007', 'orbital_cannon_1', 'store_content_orbital_cannon_1_name', 'store_content_orbital_cannon_1_desc', 15000, 'satellite_alt', 1, 1),
+('e0000000-0000-0000-0000-000000000008', 'black_hole_1', 'store_content_black_hole_1_name', 'store_content_black_hole_1_desc', 20000, 'cyclone', 1, 1),
+('e0000000-0000-0000-0000-000000000009', 'mines_1', 'store_content_mines_1_name', 'store_content_mines_1_desc', 1500, 'radar', 1, 1);
 

@@ -1,6 +1,6 @@
 {
-  "pixel_misil_1": {
-    "id": "pixel_misil_1",
+  "pixel_missile_1": {
+    "id": "pixel_missile_1",
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
@@ -39,8 +39,8 @@
       "screen_flash": false
     }
   },
-  "bomba_pixel_1": {
-    "id": "bomba_pixel_1",
+  "pixel_bomb_1": {
+    "id": "pixel_bomb_1",
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
@@ -79,8 +79,8 @@
       "screen_flash": false
     }
   },
-  "bomba_racimo_1": {
-    "id": "bomba_racimo_1",
+  "cluster_bomb_1": {
+    "id": "cluster_bomb_1",
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
@@ -119,8 +119,8 @@
       "screen_flash": true
     }
   },
-  "bomba_atomica_1": {
-    "id": "bomba_atomica_1",
+  "atomic_bomb_1": {
+    "id": "atomic_bomb_1",
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
@@ -159,8 +159,8 @@
       "screen_flash": true
     }
   },
-  "lluvia_meteoritos_1": {
-    "id": "lluvia_meteoritos_1",
+  "meteor_shower_1": {
+    "id": "meteor_shower_1",
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
@@ -199,8 +199,8 @@
       "screen_flash": false
     }
   },
-  "canon_orbital_1": {
-    "id": "canon_orbital_1",
+  "orbital_cannon_1": {
+    "id": "orbital_cannon_1",
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
@@ -239,8 +239,8 @@
       "screen_flash": true
     }
   },
-  "agujero_negro_1": {
-    "id": "agujero_negro_1",
+  "black_hole_1": {
+    "id": "black_hole_1",
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 1,
@@ -279,25 +279,25 @@
       "screen_flash": true
     }
   },
-  "proteccion_pixeles_1": {
-    "id": "proteccion_pixeles_1",
+  "pixel_shield_1": {
+    "id": "pixel_shield_1",
     "type": "buff",
     "category": "buff",
     "duration_seconds": 86400,
     "amount": 1,
     "icon": "shield",
-    "label_key": "perk_pixel_prot",
-    "short_label_key": "perk_pixel_prot",
+    "label_key": "perk_pixel_shield",
+    "short_label_key": "perk_pixel_shield",
     "button_label_key": "btn_protect"
   },
-  "minas_1": {
-    "id": "minas_1",
+  "mines_1": {
+    "id": "mines_1",
     "duration_seconds": 86400,
     "type": "bomb",
     "amount": 10,
     "icon": "radar",
-    "label_key": "perk_minas",
-    "short_label_key": "perk_minas_short",
+    "label_key": "perk_mines",
+    "short_label_key": "perk_mines_short",
     "button_label_key": "btn_place_mines",
     "warning_icon": "crisis_alert",
     "warning_label_key": "msg_mine_incoming",

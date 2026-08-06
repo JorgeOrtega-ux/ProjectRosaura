@@ -189,7 +189,7 @@ export const DesignRender = {
 
         const now = Date.now();
         // La bola de carga solo existe durante la fase de carga previa a la explosión (now < w.endTime)
-        const orbitalWarnings = this.nuclearWarnings ? this.nuclearWarnings.filter(w => w.perkId === 'canon_orbital_1' && now < w.endTime) : [];
+        const orbitalWarnings = this.nuclearWarnings ? this.nuclearWarnings.filter(w => w.perkId === 'orbital_cannon_1' && now < w.endTime) : [];
         
         if (!this._cachedTopBarRect || !this._cachedCanvasRect) {
             this._cachedTopBarRect = topBar.getBoundingClientRect();
@@ -625,7 +625,7 @@ export const DesignRender = {
 
                 this.ctx.save();
                 
-                if (warning.perkId === 'canon_orbital_1') {
+                if (warning.perkId === 'orbital_cannon_1') {
                     const elapsed = now - warning.startTime;
                     const duration = warning.endTime - warning.startTime;
                     const progress = Math.min(1, Math.max(0, elapsed / duration));
@@ -668,7 +668,7 @@ export const DesignRender = {
                         this.ctx.strokeStyle = '#dc2626';
                         this.ctx.stroke();
                     }
-                } else if (warning.perkId === 'agujero_negro_1') {
+                } else if (warning.perkId === 'black_hole_1') {
                     const elapsed = now - warning.startTime;
                     const duration = warning.endTime - warning.startTime;
                     const progress = Math.min(1, Math.max(0, elapsed / duration));
@@ -808,7 +808,7 @@ export const DesignRender = {
                 const opacity = 1 - progress;
                 
                 // Si es cañón orbital, dibujar el rayo de energía residual de la bola al suelo
-                if (exp.perkId === 'canon_orbital_1') {
+                if (exp.perkId === 'orbital_cannon_1') {
                     const topBar = document.querySelector('.component-top');
                     const canvasEl = this.canvas;
                     let tbBottomY = 0;
@@ -842,7 +842,7 @@ export const DesignRender = {
                     }
                 }
 
-                if (exp.perkId === 'agujero_negro_1') {
+                if (exp.perkId === 'black_hole_1') {
                     if (progress < 0.4) {
                         const phaseProgress = progress / 0.4;
                         const r = exp.maxRadius * 0.8 * Math.sin(phaseProgress * Math.PI / 2);

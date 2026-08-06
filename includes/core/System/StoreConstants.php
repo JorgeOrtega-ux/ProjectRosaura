@@ -10,13 +10,13 @@ class StoreConstants {
     public const COINS_13250 = 'coins_13250';
 
     // Ventajas / Perks de la Tienda
-    public const PERK_PIXEL_SHIELD = 'proteccion_pixeles_1';
-    public const PERK_PIXEL_MISSILE = 'pixel_misil_1';
-    public const PERK_PIXEL_BOMB = 'bomba_pixel_1';
-    public const PERK_CLUSTER_BOMB = 'bomba_racimo_1';
-    public const PERK_ATOMIC_BOMB = 'bomba_atomica_1';
-    public const PERK_METEOR_SHOWER = 'lluvia_meteoritos_1';
-    public const PERK_ORBITAL_CANNON = 'canon_orbital_1';
-    public const PERK_BLACK_HOLE = 'agujero_negro_1';
-    public const PERK_MINAS = 'minas_1';
+    public const PERK_PIXEL_SHIELD = 'pixel_shield_1';
+    public const PERK_PIXEL_MISSILE = 'pixel_missile_1';
+    public const PERK_PIXEL_BOMB = 'pixel_bomb_1';
+    public const PERK_CLUSTER_BOMB = 'cluster_bomb_1';
+    public const PERK_ATOMIC_BOMB = 'atomic_bomb_1';
+    public const PERK_METEOR_SHOWER = 'meteor_shower_1';
+    public const PERK_ORBITAL_CANNON = 'orbital_cannon_1';
+    public const PERK_BLACK_HOLE = 'black_hole_1';
+    public const PERK_MINES = 'mines_1';
 }

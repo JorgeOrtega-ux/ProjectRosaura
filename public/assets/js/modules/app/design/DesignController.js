@@ -322,7 +322,7 @@ class DesignController {
                             <span>${currentSel}/${targetMax}</span>
                         `;
                     } else if (this.interactionMode === 'placing_mines') {
-                        const icon = PerksRegistry.getIcon('minas_1') || 'radar';
+                        const icon = PerksRegistry.getIcon('mines_1') || 'radar';
                         const currentSel = this.selectedPixels ? this.selectedPixels.size : 0;
                         newHtml = `
                             <span class="material-symbols-rounded">${icon}</span>

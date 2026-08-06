@@ -98,20 +98,20 @@ let needsRender = false;
 let animFrameId = null;
 
 const EXPLOSION_STYLES = {
-    'pixel_misil_1': 'missile',
-    'pixel_misil_2': 'missile',
-    'pixel_misil_3': 'missile',
-    'bomba_pixel_1': 'medium',
-    'bomba_pixel_2': 'medium',
-    'bomba_pixel_3': 'medium',
-    'bomba_racimo_1': 'medium',
-    'bomba_atomica_1': 'nuclear',
-    'bomba_nuclear_1': 'nuclear',
-    'bomba_nuclear_2': 'nuclear',
-    'bomba_nuclear_3': 'nuclear',
-    'lluvia_meteoritos_1': 'medium',
-    'canon_orbital_1': 'nuclear',
-    'agujero_negro_1': 'blackhole'
+    'pixel_missile_1': 'missile',
+    'pixel_missile_2': 'missile',
+    'pixel_missile_3': 'missile',
+    'pixel_bomb_1': 'medium',
+    'pixel_bomb_2': 'medium',
+    'pixel_bomb_3': 'medium',
+    'cluster_bomb_1': 'medium',
+    'atomic_bomb_1': 'nuclear',
+    'nuclear_bomb_1': 'nuclear',
+    'nuclear_bomb_2': 'nuclear',
+    'nuclear_bomb_3': 'nuclear',
+    'meteor_shower_1': 'medium',
+    'orbital_cannon_1': 'nuclear',
+    'black_hole_1': 'blackhole'
 };
 
 function requestRender() {
@@ -922,7 +922,7 @@ function render() {
 
             ctx.save();
             
-            if (warning.perkId === 'canon_orbital_1') {
+            if (warning.perkId === 'orbital_cannon_1') {
                 const elapsed = now - warning.startTime;
                 const duration = warning.endTime - warning.startTime;
                 const progress = Math.min(1, Math.max(0, elapsed / duration));
@@ -965,7 +965,7 @@ function render() {
                     ctx.strokeStyle = '#dc2626';
                     ctx.stroke();
                 }
-            } else if (warning.perkId === 'agujero_negro_1') {
+            } else if (warning.perkId === 'black_hole_1') {
                 const elapsed = now - warning.startTime;
                 const duration = warning.endTime - warning.startTime;
                 const progress = Math.min(1, Math.max(0, elapsed / duration));
@@ -1115,7 +1115,7 @@ function render() {
             const opacity = 1 - progress;
 
             // Si es cañón orbital, dibujar el rayo de energía residual de la bola al suelo
-            if (exp.perkId === 'canon_orbital_1') {
+            if (exp.perkId === 'orbital_cannon_1') {
                 const ex = exp.x + 0.5;
                 const ey = exp.y + 0.5;
                 const sourceY = (topBarBottomY - transform.y) / transform.scale;
@@ -1141,7 +1141,7 @@ function render() {
                 }
             }
 
-            if (exp.perkId === 'agujero_negro_1') {
+            if (exp.perkId === 'black_hole_1') {
                 if (progress < 0.4) {
                     const phaseProgress = progress / 0.4;
                     const r = exp.maxRadius * 0.8 * Math.sin(phaseProgress * Math.PI / 2);
@@ -1517,7 +1517,7 @@ self.onmessage = function (e) {
                 const r = parseInt(payload.radius || 10, 10);
                 const durationMs = parseInt(payload.durationMs || 3000, 10);
                 const key = payload.key || `${cx}_${cy}`;
-                const perkId = payload.perkId || 'pixel_misil_1';
+                const perkId = payload.perkId || 'pixel_missile_1';
                 const now = Date.now();
 
                 const existing = nuclearWarnings.find(w => w.key === key && now < w.endTime);
@@ -1535,7 +1535,7 @@ self.onmessage = function (e) {
                     perkId: perkId
                 };
 
-                if (perkId === 'agujero_negro_1') {
+                if (perkId === 'black_hole_1') {
                     const candidates = [];
                     const rInt = Math.ceil(r);
                     for (let dy = -rInt; dy <= rInt; dy++) {
@@ -1575,7 +1575,7 @@ self.onmessage = function (e) {
                 const cX = parseInt(payload.cX ?? payload.x ?? 0, 10);
                 const cY = parseInt(payload.cY ?? payload.y ?? 0, 10);
                 const r = parseInt(payload.r ?? payload.radius ?? 10, 10);
-                const perkId = payload.perkId || payload.perk || 'pixel_misil_1';
+                const perkId = payload.perkId || payload.perk || 'pixel_missile_1';
                 const now = Date.now();
 
                 nuclearWarnings = nuclearWarnings.filter(w => Math.abs(w.x - cX) > 2 || Math.abs(w.y - cY) > 2);
@@ -1583,11 +1583,11 @@ self.onmessage = function (e) {
                 clearBombPixels(cX, cY, r);
 
                 let duration = 800;
-                if (perkId === 'canon_orbital_1') {
+                if (perkId === 'orbital_cannon_1') {
                     duration = 3000;
-                } else if (perkId === 'bomba_atomica_1') {
+                } else if (perkId === 'atomic_bomb_1') {
                     duration = 1500;
-                } else if (perkId === 'agujero_negro_1') {
+                } else if (perkId === 'black_hole_1') {
                     duration = 2500;
                 }
 

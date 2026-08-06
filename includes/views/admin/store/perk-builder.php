@@ -87,7 +87,7 @@ if ($isEdit && !empty($perk)) {
                                             <h2 class="component-card__title">Identificador de Backend (Perk ID)</h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
-                                                    <input type="text" data-ref="input-perk-id" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($perkData['perk_id']); ?>" data-original-value="<?php echo htmlspecialchars($perkData['perk_id']); ?>" placeholder="Ej. proteccion_pixeles_1">
+                                                    <input type="text" data-ref="input-perk-id" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($perkData['perk_id']); ?>" data-original-value="<?php echo htmlspecialchars($perkData['perk_id']); ?>" placeholder="e.g. pixel_shield_1">
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
                                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-id">Cancelar</button>
@@ -120,7 +120,7 @@ if ($isEdit && !empty($perk)) {
                                             <h2 class="component-card__title">Nombre o Clave de Traducción</h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
-                                                    <input type="text" data-ref="input-perk-name" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($perkData['name']); ?>" data-original-value="<?php echo htmlspecialchars($perkData['name']); ?>" placeholder="Ej. store_content_proteccion_pixeles_1_name">
+                                                    <input type="text" data-ref="input-perk-name" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($perkData['name']); ?>" data-original-value="<?php echo htmlspecialchars($perkData['name']); ?>" placeholder="e.g. store_content_pixel_shield_1_name">
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
                                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-name">Cancelar</button>
@@ -178,7 +178,7 @@ if ($isEdit && !empty($perk)) {
                                             <h2 class="component-card__title">Descripción o Clave de Traducción</h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
-                                                    <input type="text" data-ref="input-perk-desc" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($perkData['description']); ?>" data-original-value="<?php echo htmlspecialchars($perkData['description']); ?>" placeholder="Ej. store_content_proteccion_pixeles_1_desc">
+                                                    <input type="text" data-ref="input-perk-desc" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($perkData['description']); ?>" data-original-value="<?php echo htmlspecialchars($perkData['description']); ?>" placeholder="e.g. store_content_pixel_shield_1_desc">
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
                                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-desc">Cancelar</button>
