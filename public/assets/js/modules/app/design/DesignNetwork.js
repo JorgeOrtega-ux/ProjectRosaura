@@ -277,6 +277,15 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_locked_error') {
                     showMessage(__('err_canvas_resetting'), 'warning');
                 }
+                else if (data.type === 'lagged_desync') {
+                    console.warn('[DesignNetwork] WebSocket lagged and lost sync. Re-fetching chunks...');
+                    if (this.loadedChunks) {
+                        this.loadedChunks.clear();
+                    }
+                    if (typeof this.checkCanvasAccess === 'function') {
+                        this.checkCanvasAccess();
+                    }
+                }
                 else if (data.type === 'canvas_freeze_changed') {
                     this.isFrozen = data.frozen;
                     this.updateFreezeUI();

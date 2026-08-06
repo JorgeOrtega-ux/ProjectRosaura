@@ -61,6 +61,7 @@ class HomeController {
 
     destroy() {
         if (this.abortController) this.abortController.abort();
+        if (this.feedAbortController) this.feedAbortController.abort();
         document.removeEventListener('click', this.handleGlobalClickBound);
         const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
         if (carousel) {
@@ -199,9 +200,15 @@ class HomeController {
 
     async loadCanvases(isLoadMore = false) {
         if (!isLoadMore) {
+            if (this.feedAbortController) {
+                this.feedAbortController.abort();
+            }
+            this.feedAbortController = new AbortController();
+            
             this.currentOffset = 0;
             this.allCanvases = [];
             this.hasMore = true;
+            this.isLoadingMore = false;
         }
 
         if (!this.hasMore || this.isLoadingMore) return;
@@ -231,9 +238,10 @@ class HomeController {
             newCanvases = window.initialHomeCanvases;
             window.initialHomeCanvases = null; 
         } else {
-            res = await this.api.post(ApiRoutes.Canvases.GetHomeFeed, { limit: limit, offset: this.currentOffset, tag: currentTag }, this.abortController.signal).catch(() => null);
+            const signal = this.feedAbortController ? this.feedAbortController.signal : this.abortController.signal;
+            res = await this.api.post(ApiRoutes.Canvases.GetHomeFeed, { limit: limit, offset: this.currentOffset, tag: currentTag }, signal).catch(() => null);
             
-            if (this.abortController.signal.aborted) {
+            if (signal.aborted) {
                 this.isLoadingMore = false;
                 return;
             }

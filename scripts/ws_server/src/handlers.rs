@@ -205,6 +205,12 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
                             }
                         }
                         Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                            let lag_msg = serde_json::json!({
+                                "type": "lagged_desync"
+                            }).to_string();
+                            if sender.send(Message::Text(lag_msg)).await.is_err() {
+                                break;
+                            }
                             continue;
                         }
                         Err(tokio::sync::broadcast::error::RecvError::Closed) => {

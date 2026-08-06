@@ -41,6 +41,25 @@ pub async fn get_canvas_config_from_db(
     }
 }
 
+pub async fn get_canvas_config(
+    state: &crate::state::AppState,
+    canvas_id: &str,
+) -> (i32, i32, bool, i32, i32) {
+    if let Some(entry) = state.canvas_configs.get(canvas_id) {
+        let (config, timestamp) = entry.value();
+        if timestamp.elapsed() < std::time::Duration::from_secs(5) {
+            return *config;
+        }
+    }
+
+    let config = get_canvas_config_from_db(&state.db_pool, canvas_id)
+        .await
+        .unwrap_or((5, 10, false, 64, 64));
+
+    state.canvas_configs.insert(canvas_id.to_string(), (config, std::time::Instant::now()));
+    config
+}
+
 pub async fn check_is_canvas_owner(
     db: &MySqlPool,
     user_id: &str,

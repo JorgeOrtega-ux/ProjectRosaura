@@ -329,9 +329,6 @@ export const DesignSetup = {
         }
 
         if (this.isProgressive) {
-            if (canvasData.thumbnail_url && !forceReload) {
-                await this.drawImageOnCanvas(canvasData.thumbnail_url);
-            }
             this.updateVisibleChunks();
         } else if (canvasData.state_base64) {
             this.hydrateCanvasState(canvasData.state_base64);

@@ -76,7 +76,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         "init" => {
             helpers::ensure_canvas_state_loaded(state, canvas_id).await;
             
-            let (config_batch, config_sec, _, _, _) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
+            let (config_batch, config_sec, _, _, _) = db::get_canvas_config(state, canvas_id).await;
             
             let mut balance = config_batch as f64;
             let mut next_in = 0.0;
@@ -424,7 +424,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             let protect = msg.protect.unwrap_or(true);
             
             // Securely load canvas dimensions from DB instead of trusting client input
-            let (_, _, _, db_width, db_height) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
+            let (_, _, _, db_width, db_height) = db::get_canvas_config(state, canvas_id).await;
             
             let min_x = std::cmp::min(x1, x2).max(0);
             let max_x = std::cmp::max(x1, x2).min(db_width - 1);
@@ -521,7 +521,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             let y2 = msg.y2.unwrap_or(0);
 
             // Obtener dimensiones del lienzo
-            let (_, _, _, db_width, db_height) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
+            let (_, _, _, db_width, db_height) = db::get_canvas_config(state, canvas_id).await;
 
             let min_x = std::cmp::min(x1, x2).max(0);
             let max_x = std::cmp::max(x1, x2).min(db_width - 1);
@@ -638,7 +638,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             }
 
             // Securely load canvas dimensions from DB instead of trusting client input
-            let (_, _, _, db_width, db_height) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
+            let (_, _, _, db_width, db_height) = db::get_canvas_config(state, canvas_id).await;
 
             let mut placed_offsets = Vec::new();
             if let Ok(mut c) = state.redis_pool.get().await {
@@ -781,7 +781,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 }
             }
 
-            let (config_batch, config_sec, is_premium_locked, board_w, board_h) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
+            let (config_batch, config_sec, is_premium_locked, board_w, board_h) = db::get_canvas_config(state, canvas_id).await;
             let height = board_h;
             if is_premium_locked {
                 let err = serde_json::json!({"type": "canvas_locked_error"}).to_string();
@@ -1109,7 +1109,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             let cy = msg.y.unwrap_or(0);
             
             // Securely load canvas dimensions from DB instead of trusting client input
-            let (_, _, _, db_width, db_height) = db::get_canvas_config_from_db(&state.db_pool, canvas_id).await.unwrap_or((5, 10, false, 64, 64));
+            let (_, _, _, db_width, db_height) = db::get_canvas_config(state, canvas_id).await;
             let width = db_width;
             let height = db_height;
             let perk_id = msg.perk_id.clone().unwrap_or_default();

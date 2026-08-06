@@ -91,7 +91,12 @@ func getChunksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	totalSize := req.BoardW * req.BoardH * 4
-	useFullFetch := totalSize <= 16*1024*1024 || len(req.Chunks) >= 2
+	useFullFetch := false
+	if totalSize <= 2*1024*1024 {
+		useFullFetch = true
+	} else if totalSize <= 8*1024*1024 && len(req.Chunks) >= 2 {
+		useFullFetch = true
+	}
 
 	chunkBuffers := make(map[string][]byte)
 	t0 := time.Now()
