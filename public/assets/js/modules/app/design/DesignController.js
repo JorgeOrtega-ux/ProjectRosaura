@@ -236,6 +236,9 @@ class DesignController {
             }
             this.chat = new DesignChat(this);
         }
+        if (typeof this.updateTemplateUI === 'function') {
+            this.updateTemplateUI();
+        }
         console.log('%c[Rosaura App] DesignController ready!', 'color: #4caf50; font-weight: bold;');
     }
 
