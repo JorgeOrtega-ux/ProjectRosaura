@@ -12,10 +12,15 @@ use App\Core\System\CanvasPermissionsConstants;
 
 class CanvasChatRestrictionController {
     private $pdo;
+    private $db;
+    private $canvasRepository;
+    private $redisClient;
 
-    public function __construct() {
-        $db = new DatabaseManager();
+    public function __construct(DatabaseManager $db, \App\Core\Interfaces\CanvasRepositoryInterface $canvasRepository, \App\Config\Database\RedisCache $redisCache) {
+        $this->db = $db;
         $this->pdo = $db->getConnection(DatabaseConstants::CONN_CANVASES);
+        $this->canvasRepository = $canvasRepository;
+        $this->redisClient = $redisCache->getClient();
     }
 
     public function updateRestriction($data) {
@@ -43,8 +48,7 @@ class CanvasChatRestrictionController {
             return ['status' => 'error', 'message' => __('err_missing_parameters')];
         }
 
-        // Verify password
-        $identityDb = (new DatabaseManager())->getConnection(DatabaseConstants::CONN_IDENTITY);
+        $identityDb = $this->db->getConnection(DatabaseConstants::CONN_IDENTITY);
         $stmt = $identityDb->prepare("SELECT password FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         $hash = $stmt->fetchColumn();
@@ -107,10 +111,8 @@ class CanvasChatRestrictionController {
                     return ['status' => 'error', 'message' => __('validation.invalid_reason')];
                 }
 
-                // If it is a canvas ban, kick the member
                 if ($sanctionScope === 'canvas_ban') {
-                    $canvasRepo = new \App\Core\Repositories\CanvasRepository(new DatabaseManager(), new \App\Config\Search\TypesenseManager(), new \App\Config\Database\RedisCache());
-                    $canvasRepo->removeMember($canvasId, $targetUserId);
+                    $this->canvasRepository->removeMember($canvasId, $targetUserId);
                 }
 
                 // Insert or update restriction
@@ -136,7 +138,7 @@ class CanvasChatRestrictionController {
                 ]);
                 
                 // Add to Redis for websocket server
-                $redis = (new \App\Config\Database\RedisCache())->getClient();
+                $redis = $this->redisClient;
                 $ttl = 0;
                 if ($suspensionType === 'temporary' && $endDate) {
                     $ttl = strtotime($endDate) - time();
@@ -165,7 +167,7 @@ class CanvasChatRestrictionController {
                 $stmt = $this->pdo->prepare("DELETE FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ?");
                 $stmt->execute([$canvasId, $targetUserId]);
                 
-                $redis = (new \App\Config\Database\RedisCache())->getClient();
+                $redis = $this->redisClient;
                 $redis->del("canvas:{$canvasId}:chat_restricted:{$targetUserId}");
                 $redis->del("canvas:{$canvasId}:canvas_banned:{$targetUserId}");
                 

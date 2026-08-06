@@ -76,7 +76,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         "init" => {
             helpers::ensure_canvas_state_loaded(state, canvas_id).await;
             
-            let (config_batch, config_sec, _, _, _) = db::get_canvas_config(state, canvas_id).await;
+            let (config_batch, config_sec, _, _, _, _) = db::get_canvas_config(state, canvas_id).await;
             
             let mut balance = config_batch as f64;
             let mut next_in = 0.0;
@@ -383,7 +383,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         "toggle_freeze" => {
             if uid_str.is_empty() { return; }
             if !check_owner_ratelimit(state, canvas_id, &uid_str).await { return; }
-            if !db::check_is_canvas_owner(&state.db_pool, &uid_str, canvas_id).await { return; }
+            if !db::check_is_canvas_owner(state, &uid_str, canvas_id).await { return; }
             
             let frozen = msg.frozen.unwrap_or(false);
             let freeze_key = format!("canvas:{}:freeze_lock", canvas_id);
@@ -415,7 +415,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         "protect_area" => {
             if uid_str.is_empty() { return; }
             if !check_owner_ratelimit(state, canvas_id, &uid_str).await { return; }
-            if !db::check_is_canvas_owner(&state.db_pool, &uid_str, canvas_id).await { return; }
+            if !db::check_is_canvas_owner(state, &uid_str, canvas_id).await { return; }
             
             let x1 = msg.x1.unwrap_or(0);
             let y1 = msg.y1.unwrap_or(0);
@@ -424,7 +424,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             let protect = msg.protect.unwrap_or(true);
             
             // Securely load canvas dimensions from DB instead of trusting client input
-            let (_, _, _, db_width, db_height) = db::get_canvas_config(state, canvas_id).await;
+            let (_, _, _, db_width, db_height, _) = db::get_canvas_config(state, canvas_id).await;
             
             let min_x = std::cmp::min(x1, x2).max(0);
             let max_x = std::cmp::max(x1, x2).min(db_width - 1);
@@ -521,7 +521,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             let y2 = msg.y2.unwrap_or(0);
 
             // Obtener dimensiones del lienzo
-            let (_, _, _, db_width, db_height) = db::get_canvas_config(state, canvas_id).await;
+            let (_, _, _, db_width, db_height, _) = db::get_canvas_config(state, canvas_id).await;
 
             let min_x = std::cmp::min(x1, x2).max(0);
             let max_x = std::cmp::max(x1, x2).min(db_width - 1);
@@ -638,7 +638,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             }
 
             // Securely load canvas dimensions from DB instead of trusting client input
-            let (_, _, _, db_width, db_height) = db::get_canvas_config(state, canvas_id).await;
+            let (_, _, _, db_width, db_height, _) = db::get_canvas_config(state, canvas_id).await;
 
             let mut placed_offsets = Vec::new();
             if let Ok(mut c) = state.redis_pool.get().await {
@@ -672,7 +672,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
 
             if uid_str.is_empty() { return; }
             if !check_owner_ratelimit(state, canvas_id, &uid_str).await { return; }
-            if !db::check_is_canvas_owner(&state.db_pool, &uid_str, canvas_id).await { return; }
+            if !db::check_is_canvas_owner(state, &uid_str, canvas_id).await { return; }
 
             let min_x = std::cmp::min(x1, x2).max(0);
             let max_x = std::cmp::max(x1, x2).min(width - 1);
@@ -774,14 +774,14 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             }
             
             if is_frozen {
-                if !db::check_is_canvas_owner(&state.db_pool, &uid_str, canvas_id).await {
+                if !db::check_is_canvas_owner(state, &uid_str, canvas_id).await {
                     let err = serde_json::json!({"type": "canvas_frozen_error", "message": "El lienzo está congelado por el administrador"}).to_string();
                     helpers::send_to_client(state, connection_id, &err).await;
                     return;
                 }
             }
 
-            let (config_batch, config_sec, is_premium_locked, board_w, board_h) = db::get_canvas_config(state, canvas_id).await;
+            let (config_batch, config_sec, is_premium_locked, board_w, board_h, _) = db::get_canvas_config(state, canvas_id).await;
             let height = board_h;
             if is_premium_locked {
                 let err = serde_json::json!({"type": "canvas_locked_error"}).to_string();
@@ -877,7 +877,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                         }).to_string();
                         helpers::send_to_client(state, connection_id, &err).await;
                     } else if r[0] == "PROTECTED_ERROR" {
-                        let is_owner = db::check_is_canvas_owner(&state.db_pool, &uid_str, canvas_id).await;
+                        let is_owner = db::check_is_canvas_owner(state, &uid_str, canvas_id).await;
                         if !is_owner {
                             if !is_batch {
                                 let last_px = pixels_to_process.last().unwrap();
@@ -1109,7 +1109,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             let cy = msg.y.unwrap_or(0);
             
             // Securely load canvas dimensions from DB instead of trusting client input
-            let (_, _, _, db_width, db_height) = db::get_canvas_config(state, canvas_id).await;
+            let (_, _, _, db_width, db_height, _) = db::get_canvas_config(state, canvas_id).await;
             let width = db_width;
             let height = db_height;
             let perk_id = msg.perk_id.clone().unwrap_or_default();

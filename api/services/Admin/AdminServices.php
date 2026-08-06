@@ -37,6 +37,8 @@ class AdminServices {
     private $roleRepository;
     private $profileLogRepository;
     private $telemetryRepository;
+    private $dbManager;
+    private $cassandraManager;
 
     public function __construct(
         UserRepositoryInterface $userRepository,
@@ -48,7 +50,9 @@ class AdminServices {
         RateLimiterInterface $rateLimiter,
         RoleRepositoryInterface $roleRepository,
         ProfileLogRepositoryInterface $profileLogRepository,
-        TelemetryRepositoryInterface $telemetryRepository
+        TelemetryRepositoryInterface $telemetryRepository,
+        DatabaseManager $dbManager,
+        CassandraManager $cassandraManager
     ) {
         $this->userRepository = $userRepository;
         $this->moderationRepository = $moderationRepository;
@@ -61,6 +65,8 @@ class AdminServices {
         $this->roleRepository = $roleRepository;
         $this->profileLogRepository = $profileLogRepository;
         $this->telemetryRepository = $telemetryRepository;
+        $this->dbManager = $dbManager;
+        $this->cassandraManager = $cassandraManager;
     }
 
     private function hasPermission($permission) {
@@ -885,8 +891,7 @@ class AdminServices {
         }
 
         try {
-            $dbManager = new DatabaseManager();
-            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
+            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
             
             if ($uuid) {
                 // Update
@@ -912,8 +917,7 @@ class AdminServices {
         $uuid = $data['uuid'] ?? '';
         if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
         try {
-            $dbManager = new DatabaseManager();
-            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
+            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
             $stmt = $pdo->prepare("UPDATE store_coin_packages SET is_active = 1 - is_active WHERE uuid = ?");
             $stmt->execute([$uuid]);
             return ['success' => true, 'message' => 'Visibilidad actualizada'];
@@ -926,8 +930,7 @@ class AdminServices {
         $uuid = $data['uuid'] ?? '';
         if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
         try {
-            $dbManager = new DatabaseManager();
-            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
+            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
             // Primero limpiamos el popular de todos
             $pdo->query("UPDATE store_coin_packages SET is_popular = 0");
             $stmt = $pdo->prepare("UPDATE store_coin_packages SET is_popular = 1 WHERE uuid = ?");
@@ -942,8 +945,7 @@ class AdminServices {
         $uuid = $data['uuid'] ?? '';
         if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
         try {
-            $dbManager = new DatabaseManager();
-            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
+            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
             $stmt = $pdo->prepare("DELETE FROM store_coin_packages WHERE uuid = ?");
             $stmt->execute([$uuid]);
             return ['success' => true, 'message' => 'Paquete eliminado permanentemente'];
@@ -967,8 +969,7 @@ class AdminServices {
         }
 
         try {
-            $dbManager = new DatabaseManager();
-            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
+            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
             
             if ($uuid) {
                 // Update
@@ -994,8 +995,7 @@ class AdminServices {
         $uuid = $data['uuid'] ?? '';
         if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
         try {
-            $dbManager = new DatabaseManager();
-            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
+            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
             $stmt = $pdo->prepare("UPDATE store_perk_packages SET is_active = 1 - is_active WHERE uuid = ?");
             $stmt->execute([$uuid]);
             return ['success' => true, 'message' => 'Visibilidad de ventaja actualizada'];
@@ -1008,8 +1008,7 @@ class AdminServices {
         $uuid = $data['uuid'] ?? '';
         if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
         try {
-            $dbManager = new DatabaseManager();
-            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
+            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
             $stmt = $pdo->prepare("DELETE FROM store_perk_packages WHERE uuid = ?");
             $stmt->execute([$uuid]);
             return ['success' => true, 'message' => 'Ventaja eliminada permanentemente'];
@@ -1276,8 +1275,7 @@ class AdminServices {
             return ['success' => false, 'message' => __('error.unauthorized')];
         }
         try {
-            $dbManager = new DatabaseManager();
-            $pdo = $dbManager->getGlobalConnection();
+            $pdo = $this->dbManager->getGlobalConnection();
             $stmt = $pdo->query("SHOW DATABASES WHERE `Database` NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys')");
             $databases = $stmt->fetchAll(\PDO::FETCH_COLUMN);
             
@@ -1577,12 +1575,10 @@ class AdminServices {
 
         $offset = ($page - 1) * $limit;
         
-        $dbManager = new DatabaseManager();
-        $pdoCanvases = $dbManager->getConnection(DB::CONN_CANVASES);
-        $pdoIdentity = $dbManager->getConnection(DB::CONN_IDENTITY);
+        $pdoCanvases = $this->dbManager->getConnection(DB::CONN_CANVASES);
+        $pdoIdentity = $this->dbManager->getConnection(DB::CONN_IDENTITY);
         
-        $cassandra = new CassandraManager();
-        $session = $cassandra->getSession();
+        $session = $this->cassandraManager->getSession();
         $allMessages = [];
         $totalItems = 0;
         
@@ -1714,8 +1710,7 @@ class AdminServices {
             }
         }
         
-        $cassandra = new CassandraManager();
-        $session = $cassandra->getSession();
+        $session = $this->cassandraManager->getSession();
         if (!$session) {
             throw new \Exception("Servicio NoSQL no disponible.");
         }
@@ -1763,12 +1758,10 @@ class AdminServices {
             throw new \Exception("UUID de mensaje requerido.");
         }
 
-        $dbManager = new DatabaseManager();
-        $pdoCanvases = $dbManager->getConnection(DB::CONN_CANVASES);
-        $pdoIdentity = $dbManager->getConnection(DB::CONN_IDENTITY);
+        $pdoCanvases = $this->dbManager->getConnection(DB::CONN_CANVASES);
+        $pdoIdentity = $this->dbManager->getConnection(DB::CONN_IDENTITY);
 
-        $cassandra = new CassandraManager();
-        $session = $cassandra->getSession();
+        $session = $this->cassandraManager->getSession();
         $message = null;
 
         if ($session) {
@@ -1878,8 +1871,7 @@ class AdminServices {
             throw new \Exception("Estado de reporte invalido.");
         }
 
-        $dbManager = new DatabaseManager();
-        $pdoCanvases = $dbManager->getConnection(DB::CONN_CANVASES);
+        $pdoCanvases = $this->dbManager->getConnection(DB::CONN_CANVASES);
 
         $stmt = $pdoCanvases->prepare("UPDATE canvas_chat_reports SET status = :status WHERE id = :id");
         $stmt->execute([':status' => $status, ':id' => $reportId]);

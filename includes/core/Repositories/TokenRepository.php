@@ -9,11 +9,15 @@ use App\Core\System\DatabaseConstants as DB;
 use PDO;
 use PDOException;
 
+use App\Config\Database\RedisCache;
+
 class TokenRepository implements TokenRepositoryInterface {
     private $pdo;
+    private $redisClient;
 
-    public function __construct(DatabaseManager $db) {
+    public function __construct(DatabaseManager $db, RedisCache $redisCache = null) {
         $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
+        $this->redisClient = $redisCache ? $redisCache->getClient() : null;
     }
 
     public function createToken(int $userId, string $selector, string $hashedValidator, string $expiresAt, string $userAgent, string $ipAddress, ?string $location = null, ?string $asn = null): bool {
@@ -29,6 +33,14 @@ class TokenRepository implements TokenRepositoryInterface {
     }
 
     public function findValidTokenBySelectorAndUserId(string $selector, int $userId): ?array {
+        if ($this->redisClient) {
+            $cacheKey = "auth:token:" . md5($selector);
+            $cached = $this->redisClient->get($cacheKey);
+            if ($cached !== null) {
+                return $cached ? json_decode($cached, true) : null;
+            }
+        }
+
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
         $tblUsers = DB::TBL_USERS;
 
@@ -41,7 +53,13 @@ class TokenRepository implements TokenRepositoryInterface {
             ");
             $stmt->execute([$selector, $userId]);
             $token = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $token ?: null;
+            $result = $token ?: null;
+
+            if ($this->redisClient) {
+                $this->redisClient->setex("auth:token:" . md5($selector), 300, json_encode($result));
+            }
+
+            return $result;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
             return null;
@@ -49,13 +67,27 @@ class TokenRepository implements TokenRepositoryInterface {
     }
 
     public function findValidTokenBySelector(string $selector): ?array {
+        if ($this->redisClient) {
+            $cacheKey = "auth:token:" . md5($selector);
+            $cached = $this->redisClient->get($cacheKey);
+            if ($cached !== null) {
+                return $cached ? json_decode($cached, true) : null;
+            }
+        }
+
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
 
         try {
             $stmt = $this->pdo->prepare("SELECT * FROM {$tblAuthTokens} WHERE selector = ? AND expires_at > NOW()");
             $stmt->execute([$selector]);
             $token = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $token ?: null;
+            $result = $token ?: null;
+
+            if ($this->redisClient) {
+                $this->redisClient->setex("auth:token:" . md5($selector), 300, json_encode($result));
+            }
+
+            return $result;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['exception' => $e]);
             return null;
@@ -104,6 +136,9 @@ class TokenRepository implements TokenRepositoryInterface {
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
 
         try {
+            if ($this->redisClient) {
+                $this->redisClient->del("auth:token:" . md5($selector));
+            }
             $stmt = $this->pdo->prepare("DELETE FROM {$tblAuthTokens} WHERE selector = ?");
             return $stmt->execute([$selector]);
         } catch (PDOException $e) {
@@ -116,6 +151,14 @@ class TokenRepository implements TokenRepositoryInterface {
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
 
         try {
+            if ($this->redisClient) {
+                $stmt = $this->pdo->prepare("SELECT selector FROM {$tblAuthTokens} WHERE user_id = ?");
+                $stmt->execute([$userId]);
+                $selectors = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+                foreach ($selectors as $sel) {
+                    $this->redisClient->del("auth:token:" . md5($sel));
+                }
+            }
             $stmt = $this->pdo->prepare("DELETE FROM {$tblAuthTokens} WHERE user_id = ?");
             return $stmt->execute([$userId]);
         } catch (PDOException $e) {
@@ -128,6 +171,14 @@ class TokenRepository implements TokenRepositoryInterface {
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
 
         try {
+            if ($this->redisClient) {
+                $stmtSel = $this->pdo->prepare("SELECT selector FROM {$tblAuthTokens} WHERE id = ?");
+                $stmtSel->execute([$id]);
+                $sel = $stmtSel->fetchColumn();
+                if ($sel) {
+                    $this->redisClient->del("auth:token:" . md5($sel));
+                }
+            }
             $stmt = $this->pdo->prepare("DELETE FROM {$tblAuthTokens} WHERE id = ?");
             return $stmt->execute([$id]);
         } catch (PDOException $e) {
@@ -161,6 +212,14 @@ class TokenRepository implements TokenRepositoryInterface {
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
 
         try {
+            if ($this->redisClient) {
+                $stmtSel = $this->pdo->prepare("SELECT selector FROM {$tblAuthTokens} WHERE id = ? AND user_id = ?");
+                $stmtSel->execute([$tokenId, $userId]);
+                $sel = $stmtSel->fetchColumn();
+                if ($sel) {
+                    $this->redisClient->del("auth:token:" . md5($sel));
+                }
+            }
             $stmt = $this->pdo->prepare("DELETE FROM {$tblAuthTokens} WHERE id = ? AND user_id = ?");
             return $stmt->execute([$tokenId, $userId]);
         } catch (PDOException $e) {
@@ -173,6 +232,14 @@ class TokenRepository implements TokenRepositoryInterface {
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
 
         try {
+            if ($this->redisClient) {
+                $stmt = $this->pdo->prepare("SELECT selector FROM {$tblAuthTokens} WHERE user_id = ? AND selector != ?");
+                $stmt->execute([$userId, $currentSelector]);
+                $selectors = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+                foreach ($selectors as $sel) {
+                    $this->redisClient->del("auth:token:" . md5($sel));
+                }
+            }
             $stmt = $this->pdo->prepare("DELETE FROM {$tblAuthTokens} WHERE user_id = ? AND selector != ?");
             return $stmt->execute([$userId, $currentSelector]);
         } catch (PDOException $e) {

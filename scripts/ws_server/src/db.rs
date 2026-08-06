@@ -4,16 +4,17 @@ use std::env;
 pub async fn get_canvas_config_from_db(
     db: &MySqlPool,
     canvas_id: &str,
-) -> Result<(i32, i32, bool, i32, i32), Box<dyn std::error::Error>> {
+) -> Result<(i32, i32, bool, i32, i32, i32), Box<dyn std::error::Error>> {
     let db_name = env::var("DB_CANVASES_NAME").unwrap_or_else(|_| "db_canvases".to_string());
     let query = format!(
-        "SELECT cooldown_pixels_batch, cooldown_seconds, is_subscription_locked, size FROM `{}`.`canvases` WHERE id = ? LIMIT 1",
+        "SELECT owner_id, cooldown_pixels_batch, cooldown_seconds, is_subscription_locked, size FROM `{}`.`canvases` WHERE id = ? LIMIT 1",
         db_name
     );
 
     let row_opt = sqlx::query(&query).bind(canvas_id).fetch_optional(db).await?;
 
     if let Some(row) = row_opt {
+        let owner_id: i32 = row.try_get("owner_id").unwrap_or(0);
         let batch: i32 = row.try_get("cooldown_pixels_batch").unwrap_or(5);
         let sec: i32 = row.try_get("cooldown_seconds").unwrap_or(10);
         let is_locked: i32 = row.try_get("is_subscription_locked").unwrap_or(0);
@@ -35,16 +36,16 @@ pub async fn get_canvas_config_from_db(
             }
         }
         
-        Ok((batch, sec, is_locked == 1, width, height))
+        Ok((batch, sec, is_locked == 1, width, height, owner_id))
     } else {
-        Ok((5, 10, false, 64, 64))
+        Ok((5, 10, false, 64, 64, 0))
     }
 }
 
 pub async fn get_canvas_config(
     state: &crate::state::AppState,
     canvas_id: &str,
-) -> (i32, i32, bool, i32, i32) {
+) -> (i32, i32, bool, i32, i32, i32) {
     if let Some(entry) = state.canvas_configs.get(canvas_id) {
         let (config, timestamp) = entry.value();
         if timestamp.elapsed() < std::time::Duration::from_secs(5) {
@@ -54,38 +55,25 @@ pub async fn get_canvas_config(
 
     let config = get_canvas_config_from_db(&state.db_pool, canvas_id)
         .await
-        .unwrap_or((5, 10, false, 64, 64));
+        .unwrap_or((5, 10, false, 64, 64, 0));
 
     state.canvas_configs.insert(canvas_id.to_string(), (config, std::time::Instant::now()));
     config
 }
 
 pub async fn check_is_canvas_owner(
-    db: &MySqlPool,
+    state: &crate::state::AppState,
     user_id: &str,
     canvas_id: &str,
 ) -> bool {
     if user_id.is_empty() || canvas_id.is_empty() {
         return false;
     }
-    let db_name = env::var("DB_CANVASES_NAME").unwrap_or_else(|_| "db_canvases".to_string());
-    let query = format!(
-        "SELECT owner_id FROM `{}`.`canvases` WHERE id = ? LIMIT 1",
-        db_name
-    );
-
-    match sqlx::query(&query).bind(canvas_id).fetch_optional(db).await {
-        Ok(Some(row)) => {
-            let owner_id: Result<i32, _> = row.try_get("owner_id");
-            if let Ok(oid) = owner_id {
-                if let Ok(uid) = user_id.parse::<i32>() {
-                    return oid == uid;
-                }
-            }
-            false
-        }
-        _ => false,
+    if let Ok(uid) = user_id.parse::<i32>() {
+        let (_, _, _, _, _, owner_id) = get_canvas_config(state, canvas_id).await;
+        return owner_id == uid;
     }
+    false
 }
 
 pub async fn get_canvas_frozen_db(db: &MySqlPool, canvas_id: &str) -> bool {

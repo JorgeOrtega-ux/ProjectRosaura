@@ -685,14 +685,18 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->execute([':canvas_id' => $canvasId]);
         
         $roles = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        foreach ($roles as &$role) {
+        
+        if (!empty($roles)) {
             $sqlPerms = "SELECT p.name 
                          FROM " . DB::TBL_CANVAS_ROLE_PERMISSIONS . " crp
                          INNER JOIN " . DB::TBL_CANVAS_PERMISSIONS . " p ON crp.permission_id = p.id
                          WHERE crp.role_id = :role_id";
             $stmtPerms = $this->db->prepare($sqlPerms);
-            $stmtPerms->execute([':role_id' => $role['id']]);
-            $role['permissions'] = $stmtPerms->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            
+            foreach ($roles as &$role) {
+                $stmtPerms->execute([':role_id' => $role['id']]);
+                $role['permissions'] = $stmtPerms->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            }
         }
         
         return $roles;

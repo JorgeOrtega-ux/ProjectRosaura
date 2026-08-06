@@ -14,14 +14,9 @@ class ProfileLogRepository implements ProfileLogRepositoryInterface {
     private $pdo;
     private $cassandraSession = null;
 
-    public function __construct(DatabaseManager $db) {
+    public function __construct(DatabaseManager $db, CassandraManager $cassandra) {
         $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
-        try {
-            $cassandra = new CassandraManager();
-            $this->cassandraSession = $cassandra->getSession();
-        } catch (\Exception $e) {
-            Logger::error("Failed to initialize Cassandra in " . __METHOD__, ['exception' => $e]);
-        }
+        $this->cassandraSession = $cassandra->getSession();
     }
 
     public function countRecentChanges(int $userId, string $changeType, int $days): int {

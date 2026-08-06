@@ -6,10 +6,11 @@ use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 
+use App\Config\Database\CassandraManager;
+
 class TelemetryRepository implements TelemetryRepositoryInterface {
     private $session;
-    public function __construct() {
-        $cassandra = new \App\Config\Database\CassandraManager();
+    public function __construct(CassandraManager $cassandra) {
         $this->session = $cassandra->getSession();
     }
 

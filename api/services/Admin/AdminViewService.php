@@ -15,6 +15,13 @@ use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
 
 class AdminViewService {
+    private $dbManager;
+    private $cassandraManager;
+
+    public function __construct(DatabaseManager $dbManager, CassandraManager $cassandraManager) {
+        $this->dbManager = $dbManager;
+        $this->cassandraManager = $cassandraManager;
+    }
 
     /**
 
@@ -71,7 +78,7 @@ class AdminViewService {
     public function getServerConfigData(): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
         $tblServerConfig = DB::TBL_SERVER_CONFIG;
@@ -110,7 +117,7 @@ class AdminViewService {
         $limit = 25;
         if ($page < 1) $page = 1;
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
         $tblUsers = DB::TBL_USERS;
@@ -275,7 +282,7 @@ class AdminViewService {
             return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/users"];
         }
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $redis = new RedisCache();
         $roleRepo = new RoleRepository($db, $redis);
         $userRepo = new UserRepository($db, $roleRepo);
@@ -315,7 +322,7 @@ class AdminViewService {
             return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/users"];
         }
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $redis = new RedisCache();
         $roleRepo = new RoleRepository($db, $redis);
         $userRepo = new UserRepository($db, $roleRepo);
@@ -362,7 +369,7 @@ class AdminViewService {
             return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/users"];
         }
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
         $redis = new RedisCache();
@@ -420,7 +427,7 @@ class AdminViewService {
             return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/users"];
         }
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $redis = new RedisCache();
         $roleRepo = new RoleRepository($db, $redis);
         $userRepo = new UserRepository($db, $roleRepo);
@@ -484,7 +491,7 @@ class AdminViewService {
         $userPerms = $_SESSION['user_permissions'] ?? [];
         $canManageTiers = in_array(PermissionsConstants::MANAGE_ROLES_STRUCTURE, $userPerms) || in_array(PermissionsConstants::ACCESS_ADMIN_PANEL, $userPerms);
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
         $tblTiers = 'subscription_tiers';
@@ -545,7 +552,7 @@ class AdminViewService {
 
      */    public function getManageStorePackagesData(?string $searchQuery, int $page): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
         $tbl = 'store_coin_packages';
@@ -607,7 +614,7 @@ class AdminViewService {
 
     public function getStorePackageBuilderData(?string $targetUuid = null): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
         $isEdit = false;
@@ -635,7 +642,7 @@ class AdminViewService {
 
     public function getManageStorePerksData(?string $searchQuery, int $page): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
         $tbl = 'store_perk_packages';
@@ -697,7 +704,7 @@ class AdminViewService {
 
     public function getStorePerkBuilderData(?string $targetUuid = null): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
         $isEdit = false;
@@ -736,7 +743,7 @@ class AdminViewService {
             return ['error' => __('err_unauthorized')];
         }
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
         $isEdit = false;
@@ -776,7 +783,7 @@ class AdminViewService {
         $userPerms = $_SESSION['user_permissions'] ?? [];
         $canManageRoles = in_array(PermissionsConstants::MANAGE_ROLES_STRUCTURE, $userPerms);
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);
         $tblRoles = DB::TBL_ROLES;
 
@@ -846,7 +853,7 @@ class AdminViewService {
             return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/roles"];
         }
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
         $role = null;
@@ -896,15 +903,14 @@ class AdminViewService {
     public function getManageMessagesData(?string $searchQuery, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_CANVASES);
 
         $searchQuery = trim($searchQuery ?? '');
         $limit = 25;
         if ($page < 1) $page = 1;
 
-        $cassandra = new CassandraManager();
-        $session = $cassandra->getSession();
+        $session = $this->cassandraManager->getSession();
         $allMessages = [];
         $totalMessages = 0;
 
@@ -986,7 +992,7 @@ class AdminViewService {
     public function getReportsData(?string $searchQuery, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_CANVASES);
 
         $limit = 25;
@@ -1032,7 +1038,7 @@ class AdminViewService {
     public function getLogsData(?string $category = 'all', int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
-        $db = new DatabaseManager();
+        $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
         $limit = 50;

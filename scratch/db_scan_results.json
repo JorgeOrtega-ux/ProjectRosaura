@@ -1,0 +1,65 @@
+{
+    "api/services/Admin/AdminServices.php": [
+        {
+            "keyword": "foreach",
+            "line": 1285,
+            "end_line": 1288,
+            "db_calls": [
+                "->query"
+            ],
+            "snippet": "{\r\n                $stmtTables = $pdo->query(\"SHOW TABLES FROM `$dbName`\");\r\n                $schema[$dbName] = $stmtTables->fetchAll(\\PDO::FETCH_COLUMN);\r\n            }"
+        }
+    ],
+    "api/services/Canvas/CanvasLockManager.php": [
+        {
+            "keyword": "foreach",
+            "line": 60,
+            "end_line": 96,
+            "db_calls": [
+                "->execute"
+            ],
+            "snippet": "{\r\n                $isSubscriptionLocked = false;\r\n                $lockedReasons = [];\r\n\r\n                if ($toLockCount > 0) {\r\n                    $isSubscriptionLocked = true;\r\n                 ..."
+        }
+    ],
+    "includes/core/Repositories/CanvasRepository.php": [
+        {
+            "keyword": "foreach",
+            "line": 613,
+            "end_line": 615,
+            "db_calls": [
+                "->execute"
+            ],
+            "snippet": "{\r\n                    $stmtInsert->execute(['cid' => $canvasId, 'uid' => $userId, 'rid' => $roleId]);\r\n                }"
+        },
+        {
+            "keyword": "foreach",
+            "line": 688,
+            "end_line": 696,
+            "db_calls": [
+                "->prepare",
+                "->execute"
+            ],
+            "snippet": "{\r\n            $sqlPerms = \"SELECT p.name \r\n                         FROM \" . DB::TBL_CANVAS_ROLE_PERMISSIONS . \" crp\r\n                         INNER JOIN \" . DB::TBL_CANVAS_PERMISSIONS . \" p ON crp.p..."
+        },
+        {
+            "keyword": "foreach",
+            "line": 806,
+            "end_line": 808,
+            "db_calls": [
+                "->execute"
+            ],
+            "snippet": "{\r\n            $insertStmt->execute([$roleId, $pid]);\r\n        }"
+        }
+    ],
+    "includes/core/Repositories/StoreRepository.php": [
+        {
+            "keyword": "foreach",
+            "line": 205,
+            "end_line": 210,
+            "db_calls": [
+                "->execute"
+            ],
+            "snippet": "{\r\n                $perkId = $item['id'];\r\n                $price = (int)($item['price'] ?? 0);\r\n                $perkStmt->execute([$userId, $perkId, $price]);\r\n                $balanceStmt->execute(..."
+        }
+    ]
+}

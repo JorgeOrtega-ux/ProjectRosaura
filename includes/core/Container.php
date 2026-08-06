@@ -53,6 +53,9 @@ class Container implements ContainerInterface {
         $this->instances[Client::class] = $redis->getClient();
         $this->instances[RedisCache::class] = $redis;
         
+        $cassandra = new \App\Config\Database\CassandraManager();
+        $this->instances[\App\Config\Database\CassandraManager::class] = $cassandra;
+        
         $this->bindings[RateLimiterInterface::class] = RedisRateLimiter::class; 
         
         $this->bindings[UserPrefsManagerInterface::class] = UserPrefsManager::class;

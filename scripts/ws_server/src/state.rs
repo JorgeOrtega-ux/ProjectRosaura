@@ -40,7 +40,7 @@ pub struct AppState {
     pub db_pool: MySqlPool,
     pub perks_config: Arc<Mutex<Option<PerksConfig>>>,
     pub user_perk_cooldowns: Arc<DashMap<String, std::time::Instant>>,
-    pub canvas_configs: Arc<DashMap<String, ((i32, i32, bool, i32, i32), std::time::Instant)>>,
+    pub canvas_configs: Arc<DashMap<String, ((i32, i32, bool, i32, i32, i32), std::time::Instant)>>,
     pub node_id: String,
 }
 

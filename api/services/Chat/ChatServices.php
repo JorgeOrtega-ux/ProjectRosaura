@@ -15,12 +15,14 @@ class ChatServices
     private $pdo;
     private $identityPdo;
     private $redis;
+    private $cassandraManager;
 
-    public function __construct(DatabaseManager $dbManager, RedisCache $redisCache)
+    public function __construct(DatabaseManager $dbManager, RedisCache $redisCache, CassandraManager $cassandraManager)
     {
         $this->pdo = $dbManager->getConnection(DB::CONN_CANVASES);
         $this->identityPdo = $dbManager->getConnection(DB::CONN_IDENTITY);
         $this->redis = $redisCache->getClient();
+        $this->cassandraManager = $cassandraManager;
     }
 
     public function resolveCanvasIntId($uuid)
@@ -46,8 +48,7 @@ class ChatServices
             return ['success' => false, 'message' => __('err_chat_disabled'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
 }
 
-        $cassandra = new CassandraManager();
-        $session = $cassandra->getSession();
+        $session = $this->cassandraManager->getSession();
         $messages = [];
 
         if ($session) {
@@ -316,8 +317,7 @@ class ChatServices
         $replyToUsername = null;
         $replyToMessage = null;
         if (!empty($replyTo)) {
-            $cassandra = new CassandraManager();
-            $session = $cassandra->getSession();
+            $session = $this->cassandraManager->getSession();
             if ($session) {
                 try {
                     $stmt = $session->prepare("SELECT user_id, message FROM canvas_chat_messages WHERE uuid = ?");
@@ -388,8 +388,7 @@ class ChatServices
             
             $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
         } else {
-            $cassandra = new CassandraManager();
-            $session = $cassandra->getSession();
+            $session = $this->cassandraManager->getSession();
             if ($session) {
                 $stmtInsert = $session->prepare("
                     INSERT INTO canvas_chat_messages (canvas_id, created_at, uuid, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason, reply_to, reply_to_username, reply_to_message)
@@ -442,8 +441,7 @@ class ChatServices
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 
-        $cassandra = new CassandraManager();
-        $session = $cassandra->getSession();
+        $session = $this->cassandraManager->getSession();
         if (!$session) {
             return ['success' => false, 'message' => 'Servicio NoSQL no disponible', 'http_code' => 500];
         }
@@ -513,8 +511,7 @@ class ChatServices
             return ['success' => false, 'message' => __('validation.invalid_reason'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 
-        $cassandra = new CassandraManager();
-        $session = $cassandra->getSession();
+        $session = $this->cassandraManager->getSession();
         if (!$session) {
             return ['success' => false, 'message' => 'Servicio NoSQL no disponible', 'http_code' => 500];
         }
