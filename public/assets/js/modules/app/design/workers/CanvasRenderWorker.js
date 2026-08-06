@@ -903,7 +903,7 @@ function render() {
         ctx.stroke();
     }
 
-    // Nuclear Warnings (Mira telescópica + Círculo rojo cerrándose)
+    // Nuclear Warnings (Mira telescópica + Círculo cerrado progresivo de color)
     if (nuclearWarnings.length > 0) {
         const now = Date.now();
         nuclearWarnings = nuclearWarnings.filter(w => !isNaN(w.endTime) && now < w.endTime + 5000);
@@ -921,55 +921,40 @@ function render() {
             const crossLength = outerR + (4 / scale);
 
             ctx.save();
-            
+
+            // Configuración de colores por perk
+            let primaryColor = '#ef4444';
+            let secondaryColor = 'rgba(239, 68, 68, 0.35)';
+            let fillColor = 'rgba(239, 68, 68, 0.08)';
+
             if (warning.perkId === 'orbital_cannon_1') {
-                const elapsed = now - warning.startTime;
-                const duration = warning.endTime - warning.startTime;
-                const progress = Math.min(1, Math.max(0, elapsed / duration));
-                
-                const sourceY = (topBarBottomY - transform.y) / transform.scale;
-                const sourceX = wx; // alignment
-
-                // 1. Línea de rastreo parpadeante durante toda la carga
-                ctx.beginPath();
-                ctx.moveTo(sourceX, sourceY);
-                ctx.lineTo(wx, wy);
-                ctx.lineWidth = 1 / scale;
-                ctx.strokeStyle = `rgba(239, 68, 68, ${0.15 + 0.25 * Math.sin(now / 80)})`;
-                ctx.stroke();
-
-                // Círculo exterior y cruz fija en el suelo
-                ctx.beginPath();
-                ctx.moveTo(wx - crossLength, wy);
-                ctx.lineTo(wx + crossLength, wy);
-                ctx.moveTo(wx, wy - crossLength);
-                ctx.lineTo(wx, wy + crossLength);
-                ctx.lineWidth = lineW;
-                ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
-                ctx.stroke();
-
-                ctx.beginPath();
-                ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.08)';
-                ctx.fill();
-                ctx.strokeStyle = '#ef4444';
-                ctx.stroke();
-
-                // Anillo cerrándose progresivamente
-                const innerR = outerR * (1 - progress);
-                if (innerR > 0.1) {
-                    ctx.beginPath();
-                    ctx.arc(wx, wy, innerR, 0, 2 * Math.PI);
-                    ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
-                    ctx.fill();
-                    ctx.strokeStyle = '#dc2626';
-                    ctx.stroke();
-                }
+                primaryColor = '#00f0ff';
+                secondaryColor = 'rgba(0, 240, 255, 0.4)';
+                fillColor = 'rgba(0, 240, 255, 0.08)';
+            } else if (warning.perkId === 'atomic_bomb_1') {
+                primaryColor = '#fb923c';
+                secondaryColor = 'rgba(251, 146, 60, 0.5)';
+                fillColor = 'rgba(251, 146, 60, 0.08)';
+            } else if (warning.perkId === 'cluster_bomb_1') {
+                primaryColor = '#a3e635';
+                secondaryColor = 'rgba(163, 230, 53, 0.5)';
+                fillColor = 'rgba(163, 230, 53, 0.08)';
+            } else if (warning.perkId === 'meteor_shower_1') {
+                primaryColor = '#e879f9';
+                secondaryColor = 'rgba(232, 121, 249, 0.5)';
+                fillColor = 'rgba(232, 121, 249, 0.08)';
             } else if (warning.perkId === 'black_hole_1') {
-                const elapsed = now - warning.startTime;
-                const duration = warning.endTime - warning.startTime;
-                const progress = Math.min(1, Math.max(0, elapsed / duration));
+                primaryColor = '#a78bfa';
+                secondaryColor = 'rgba(167, 139, 250, 0.5)';
+                fillColor = 'rgba(167, 139, 250, 0.08)';
+            }
 
+            const elapsed = now - warning.startTime;
+            const duration = warning.endTime - warning.startTime;
+            const progress = duration > 0 ? Math.min(1, Math.max(0, elapsed / duration)) : 1;
+
+            if (warning.perkId === 'black_hole_1') {
+                // Lógica de succión de píxeles del agujero negro
                 let needsFlush = false;
                 if (warning.candidates) {
                     while (warning.candidateIndex < warning.candidates.length) {
@@ -991,20 +976,19 @@ function render() {
                         warning.candidateIndex++;
                     }
                 }
-
                 if (needsFlush && typeof flushDirtyRect === 'function') {
                     flushDirtyRect();
                 }
 
-                // 1. Accretion Disk (glowing radial gradient)
+                // Dibujar disco de acreción del agujero negro
                 const diskRadius = outerR * 0.45 * (1.0 + 0.05 * Math.sin(now / 250));
                 if (diskRadius > 0.1) {
                     const grad = ctx.createRadialGradient(wx, wy, 0, wx, wy, diskRadius);
-                    grad.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)'); // Singularity
-                    grad.addColorStop(0.25, 'rgba(10, 10, 12, 1.0)'); // Dark void
-                    grad.addColorStop(0.5, 'rgba(40, 25, 60, 0.9)'); // Dark violet haze
-                    grad.addColorStop(0.75, 'rgba(100, 100, 110, 0.7)'); // Mysterious gray dust
-                    grad.addColorStop(0.9, 'rgba(230, 230, 240, 0.35)'); // Silver accretion edge
+                    grad.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)');
+                    grad.addColorStop(0.25, 'rgba(10, 10, 12, 1.0)');
+                    grad.addColorStop(0.5, 'rgba(40, 25, 60, 0.9)');
+                    grad.addColorStop(0.75, 'rgba(100, 100, 110, 0.7)');
+                    grad.addColorStop(0.9, 'rgba(230, 230, 240, 0.35)');
                     grad.addColorStop(1.0, 'rgba(230, 230, 240, 0.0)');
                     
                     ctx.beginPath();
@@ -1013,7 +997,7 @@ function render() {
                     ctx.fill();
                 }
 
-                // 2. 3 Swirling Galaxy Spiral Arms (slower, mysterious rotation)
+                // Dibujar brazos espirales
                 const arms = 3;
                 for (let i = 0; i < arms; i++) {
                     const armAngleOffset = (i * 2 * Math.PI) / arms;
@@ -1030,73 +1014,152 @@ function render() {
                             ctx.lineTo(px, py);
                         }
                     }
-                    ctx.strokeStyle = `rgba(130, 130, 140, ${0.25 + 0.15 * Math.sin(now / 150 + i)})`; // Gray/silver
+                    ctx.strokeStyle = `rgba(167, 139, 250, ${0.25 + 0.15 * Math.sin(now / 150 + i)})`;
                     ctx.lineWidth = 1.5 / scale;
                     ctx.stroke();
                 }
 
-                // 4. Flowing cosmic dust particles (mysterious violet/gray/white)
+                // Dibujar polvo cósmico del agujero negro
                 const dustCount = 20;
                 for (let k = 0; k < dustCount; k++) {
                     const baseAngle = (k * 2 * Math.PI) / dustCount;
                     const offset = (k * 500) % 5000;
                     const pProgress = ((now + offset) % 5000) / 5000;
-                    
                     const pr = outerR * (1 - pProgress);
                     const pAngle = baseAngle + (now / 350) + (4 * Math.PI * pProgress);
                     const px = wx + pr * Math.cos(pAngle);
                     const py = wy + pr * Math.sin(pAngle);
-                    
                     const pSize = (1.5 * (1 - pProgress)) / scale;
                     if (pSize > 0.05) {
-                        ctx.fillStyle = k % 3 === 0 ? 'rgba(240, 240, 245, 0.65)' : (k % 3 === 1 ? 'rgba(100, 100, 110, 0.5)' : 'rgba(76, 29, 149, 0.45)');
+                        ctx.fillStyle = k % 3 === 0 ? 'rgba(240, 240, 245, 0.65)' : (k % 3 === 1 ? 'rgba(167, 139, 250, 0.5)' : 'rgba(76, 29, 149, 0.45)');
                         ctx.fillRect(px - pSize / 2, py - pSize / 2, pSize, pSize);
                     }
                 }
+            }
 
-                // 5. Crosshair indicators
-                ctx.beginPath();
-                ctx.moveTo(wx - crossLength, wy);
-                ctx.lineTo(wx + crossLength, wy);
-                ctx.moveTo(wx, wy - crossLength);
-                ctx.lineTo(wx, wy + crossLength);
-                ctx.lineWidth = 0.8 / scale;
-                ctx.strokeStyle = 'rgba(120, 120, 130, 0.35)';
-                ctx.stroke();
-            } else {
-                // 1. Mira telescópica fina cruzada en el centro
-                ctx.beginPath();
-                ctx.moveTo(wx - crossLength, wy);
-                ctx.lineTo(wx + crossLength, wy);
-                ctx.moveTo(wx, wy - crossLength);
-                ctx.lineTo(wx, wy + crossLength);
-                ctx.lineWidth = lineW;
-                ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
-                ctx.stroke();
+            // --- RENDERIZADO DEL CÍRCULO BASE Y LA MIRA ---
+            // 1. Mira telescópica cruzada en el centro
+            ctx.beginPath();
+            ctx.moveTo(wx - crossLength, wy);
+            ctx.lineTo(wx + crossLength, wy);
+            ctx.moveTo(wx, wy - crossLength);
+            ctx.lineTo(wx, wy + crossLength);
+            ctx.lineWidth = lineW;
+            ctx.strokeStyle = secondaryColor;
+            ctx.stroke();
 
+            // 2. Círculo exterior
+            ctx.beginPath();
+            ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+            ctx.lineWidth = lineW;
+            ctx.strokeStyle = primaryColor;
+            ctx.stroke();
+
+            // 3. Anillo cerrándose progresivamente
+            const innerR = outerR * (1 - progress);
+            if (innerR > 0.1) {
                 ctx.beginPath();
-                ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+                ctx.arc(wx, wy, innerR, 0, 2 * Math.PI);
+                ctx.fillStyle = secondaryColor;
                 ctx.fill();
                 ctx.lineWidth = lineW;
-                ctx.strokeStyle = '#ef4444';
+                ctx.strokeStyle = primaryColor;
                 ctx.stroke();
+            }
 
-                // 3. Círculo rojo cerrándose progresivamente hacia el centro
-                const duration = warning.endTime - warning.startTime;
-                const timeRatio = duration > 0 ? Math.min(1, Math.max(0, (now - warning.startTime) / duration)) : 1;
-                const innerR = outerR * (1 - timeRatio);
+            // --- ANIMACIONES EXTRAS ESPECÍFICAS DE ADVERTENCIA ---
+            if (warning.perkId === 'orbital_cannon_1') {
+                // Anillo de retícula exterior discontinua giratorio
+                ctx.beginPath();
+                ctx.arc(wx, wy, outerR + (2 / scale), 0, 2 * Math.PI);
+                ctx.setLineDash([4 / scale, 4 / scale]);
+                ctx.strokeStyle = primaryColor;
+                ctx.lineWidth = 1 / scale;
+                ctx.lineDashOffset = -now / 150;
+                ctx.stroke();
+                ctx.setLineDash([]); // Limpiar estilo dashed
 
-                if (innerR > 0.1) {
+                // Protones/Partículas electromagnéticas cargando en espiral circular hacia el centro
+                const particleCount = 10;
+                for (let i = 0; i < particleCount; i++) {
+                    const travelProgress = ((now + i * 150) % 1500) / 1500;
+                    const r = outerR * (1 - travelProgress);
+                    const angle = (i * 2 * Math.PI / particleCount) + (now / 200) + (travelProgress * Math.PI);
+                    const px = wx + r * Math.cos(angle);
+                    const py = wy + r * Math.sin(angle);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(px - (1 / scale), py - (1 / scale), 2 / scale, 2 / scale);
+                }
+            } else if (warning.perkId === 'atomic_bomb_1') {
+                // Múltiples aureolas concéntricas de pulso naranja expansivas continuas
+                for (let p = 0; p < 3; p++) {
+                    const pulseProgress = (((now / 1200) + p * 0.33) % 1.0);
+                    const pulseR = outerR * pulseProgress;
                     ctx.beginPath();
-                    ctx.arc(wx, wy, innerR, 0, 2 * Math.PI);
-                    ctx.fillStyle = 'rgba(239, 68, 68, 0.35)';
-                    ctx.fill();
-                    ctx.lineWidth = lineW;
-                    ctx.strokeStyle = '#dc2626';
+                    ctx.arc(wx, wy, pulseR, 0, 2 * Math.PI);
+                    ctx.strokeStyle = `rgba(251, 146, 60, ${0.45 * (1 - pulseProgress)})`;
+                    ctx.lineWidth = 1.2 / scale;
                     ctx.stroke();
                 }
+
+                // Protones orbitando circularmente alrededor del centro
+                const particleCount = 8;
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = (i * 2 * Math.PI / particleCount) + (now / 250);
+                    const r = outerR * 0.35 * (0.8 + 0.2 * Math.sin(now / 100 + i)); // Órbita vibrante
+                    const px = wx + r * Math.cos(angle);
+                    const py = wy + r * Math.sin(angle);
+                    ctx.fillStyle = '#fb923c';
+                    ctx.fillRect(px - (1 / scale), py - (1 / scale), 2 / scale, 2 / scale);
+                }
+            } else if (warning.perkId === 'cluster_bomb_1') {
+                // Cuadrícula táctica de puntos finos en lugar de líneas continuas
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
+                ctx.clip();
+                
+                ctx.fillStyle = 'rgba(163, 230, 53, 0.35)';
+                const spacing = Math.max(3, outerR / 3);
+                for (let xOffset = -outerR; xOffset <= outerR; xOffset += spacing) {
+                    for (let yOffset = -outerR; yOffset <= outerR; yOffset += spacing) {
+                        ctx.fillRect(wx + xOffset - 0.5 / scale, wy + yOffset - 0.5 / scale, 1 / scale, 1 / scale);
+                    }
+                }
+                ctx.restore();
+
+                // Barrido de radar verde lima circular
+                ctx.beginPath();
+                ctx.moveTo(wx, wy);
+                const sweepAngle = (now / 300) % (2 * Math.PI);
+                ctx.arc(wx, wy, outerR, sweepAngle, sweepAngle + 0.25);
+                ctx.lineTo(wx, wy);
+                ctx.fillStyle = 'rgba(163, 230, 53, 0.15)';
+                ctx.fill();
+            } else if (warning.perkId === 'meteor_shower_1') {
+                // Protones de meteoros cayendo de forma limpia
+                const particleCount = 6;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
+                ctx.clip();
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const offset = (i * 350) % 1000;
+                    const pProgress = ((now + offset) % 1000) / 1000;
+                    const px = wx - outerR + (2 * outerR * ((i * 17) % 10 / 10));
+                    const py = wy - outerR + (2 * outerR * pProgress);
+                    
+                    ctx.beginPath();
+                    ctx.arc(px, py, 0.8 / scale, 0, 2 * Math.PI);
+                    ctx.fillStyle = `rgba(232, 121, 249, ${0.75 * (1 - pProgress)})`;
+                    ctx.fill();
+                }
+                ctx.restore();
             }
+
             ctx.restore();
         });
     }
@@ -1114,33 +1177,47 @@ function render() {
             const progress = Math.min(1, elapsed / exp.duration);
             const opacity = 1 - progress;
 
-            // Si es cañón orbital, dibujar el rayo de energía residual de la bola al suelo
+            // 1. Explosión limpia de Cañón Orbital (cian/blanco, múltiples aureolas circulares y protones de alta energía)
             if (exp.perkId === 'orbital_cannon_1') {
-                const ex = exp.x + 0.5;
-                const ey = exp.y + 0.5;
-                const sourceY = (topBarBottomY - transform.y) / transform.scale;
-                const sourceX = ex; // Alineación vertical perfecta
-
-                const maxBeamWidth = 16;
-                const currentBeamWidth = (maxBeamWidth * (1 - progress)) / transform.scale;
-
-                if (currentBeamWidth > 0.05) {
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.moveTo(sourceX, sourceY);
-                    ctx.lineTo(ex, ey);
-                    ctx.strokeStyle = `rgba(239, 68, 68, ${0.9 * opacity})`;
-                    ctx.lineWidth = currentBeamWidth;
-                    ctx.lineCap = 'round';
-                    ctx.stroke();
-
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
-                    ctx.lineWidth = currentBeamWidth * 0.35;
-                    ctx.stroke();
-                    ctx.restore();
+                // Múltiples aureolas concéntricas en cian expansivas
+                for (let p = 0; p < 3; p++) {
+                    const ringProgress = Math.min(1, progress * 1.5 - p * 0.25);
+                    if (ringProgress > 0) {
+                        const r = exp.maxRadius * (0.1 + 1.9 * ringProgress);
+                        const op = (1 - ringProgress) * opacity;
+                        ctx.beginPath();
+                        ctx.arc(exp.x + 0.5, exp.y + 0.5, r, 0, 2 * Math.PI);
+                        ctx.strokeStyle = `rgba(0, 240, 255, ${op})`;
+                        ctx.lineWidth = Math.max(1.5, 3.5 * (1 - ringProgress) / transform.scale);
+                        ctx.stroke();
+                    }
                 }
+
+                // Campo electromagnético central (aureola interna brillante cian)
+                ctx.beginPath();
+                ctx.arc(exp.x + 0.5, exp.y + 0.5, exp.maxRadius * 0.65 * progress, 0, 2 * Math.PI);
+                ctx.fillStyle = `rgba(0, 240, 255, ${opacity * 0.15})`;
+                ctx.fill();
+
+                // Protones electromagnéticos de alta velocidad radial sin gravedad
+                const particleCount = 25;
+                for (let i = 0; i < particleCount; i++) {
+                    const hash = Math.sin(exp.startTime + i * 47.13) * 1000;
+                    const angle = (hash * 93.7) % (2 * Math.PI);
+                    const speed = exp.maxRadius * (0.8 + 1.6 * (Math.abs(hash * 11.2) % 1));
+                    const dist = speed * (1 - Math.pow(1 - progress, 3));
+                    
+                    const px = exp.x + 0.5 + dist * Math.cos(angle) + 0.4 * Math.sin(now / 10);
+                    const py = exp.y + 0.5 + dist * Math.sin(angle) + 0.4 * Math.cos(now / 10);
+                    
+                    const size = Math.max(1, (2.5 * (1 - progress)) / transform.scale);
+                    ctx.fillStyle = i % 2 === 0 ? '#ffffff' : '#00f0ff';
+                    ctx.fillRect(px - size/2, py - size/2, size, size);
+                }
+                return;
             }
 
+            // 2. Agujero Negro
             if (exp.perkId === 'black_hole_1') {
                 if (progress < 0.4) {
                     const phaseProgress = progress / 0.4;
@@ -1202,22 +1279,197 @@ function render() {
                 return;
             }
 
-            const radiusOuter = exp.maxRadius * (1 + 1.5 * progress);
-            const radiusInner = exp.maxRadius * (0.5 + 1 * progress);
+            // 3. Bomba Atómica (Fuego circular termo-nuclear suave, aureolas concéntricas y partículas)
+            if (exp.perkId === 'atomic_bomb_1') {
+                // Onda expansiva de fuego circular suave mediante gradiente radial
+                const r = exp.maxRadius * (0.1 + 2.4 * progress);
+                const grad = ctx.createRadialGradient(exp.x + 0.5, exp.y + 0.5, 0, exp.x + 0.5, exp.y + 0.5, r);
+                grad.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
+                grad.addColorStop(0.15, `rgba(254, 240, 138, ${opacity})`); // Amarillo neón
+                grad.addColorStop(0.45, `rgba(249, 115, 22, ${opacity * 0.8})`); // Naranja
+                grad.addColorStop(0.75, `rgba(239, 68, 68, ${opacity * 0.45})`); // Rojo
+                grad.addColorStop(1, `rgba(239, 68, 68, 0)`);
+                
+                ctx.beginPath();
+                ctx.arc(exp.x + 0.5, exp.y + 0.5, r, 0, 2 * Math.PI);
+                ctx.fillStyle = grad;
+                ctx.fill();
 
+                // Múltiples aureolas concéntricas de pulso expansivas (ondas de choque circulares)
+                for (let p = 0; p < 4; p++) {
+                    const ringProgress = Math.min(1, progress * 1.6 - p * 0.2);
+                    if (ringProgress > 0) {
+                        const ar = exp.maxRadius * (0.05 + 2.45 * ringProgress);
+                        const op = (1 - ringProgress) * opacity;
+                        ctx.beginPath();
+                        ctx.arc(exp.x + 0.5, exp.y + 0.5, ar, 0, 2 * Math.PI);
+                        ctx.strokeStyle = `rgba(251, 146, 60, ${op * 0.6})`;
+                        ctx.lineWidth = Math.max(1, 4 * (1 - ringProgress) / transform.scale);
+                        ctx.stroke();
+                    }
+                }
+
+                // Cúpula atómica de fuego ascendente circular
+                const riseDist = exp.maxRadius * 0.7 * progress;
+                const domeR = exp.maxRadius * (0.35 + 1.15 * progress);
+                const mx = exp.x + 0.5 + 0.6 * Math.sin(now / 10);
+                const my = exp.y + 0.5 - riseDist;
+                
+                ctx.beginPath();
+                ctx.arc(mx, my, domeR * 0.55, 0, 2 * Math.PI);
+                ctx.fillStyle = `rgba(251, 146, 60, ${opacity * 0.45})`;
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(mx - domeR * 0.25, my + domeR * 0.08, domeR * 0.38, 0, 2 * Math.PI);
+                ctx.arc(mx + domeR * 0.25, my + domeR * 0.08, domeR * 0.38, 0, 2 * Math.PI);
+                ctx.fillStyle = `rgba(239, 68, 68, ${opacity * 0.35})`;
+                ctx.fill();
+
+                // Protones/escombros del cataclismo volando
+                const particleCount = 45;
+                for (let i = 0; i < particleCount; i++) {
+                    const hash = Math.sin(exp.startTime + i * 31.81) * 10000;
+                    const angle = (hash * 13.9) % (2 * Math.PI);
+                    const speed = exp.maxRadius * 1.5 * (0.4 + 1.2 * (Math.abs(hash * 7.3) % 1));
+                    const dist = speed * (1 - Math.pow(1 - progress, 2));
+                    
+                    const px = exp.x + 0.5 + dist * Math.cos(angle);
+                    const py = exp.y + 0.5 + dist * Math.sin(angle) - (exp.maxRadius * 0.4 * progress);
+                    
+                    // Turbulencia circular
+                    const finalPx = px + 1.5 * Math.sin(now / 80 + i) * progress;
+                    const finalPy = py + 1.5 * Math.cos(now / 90 + i) * progress;
+                    
+                    const size = Math.max(1, (3 * (1 - progress)) / transform.scale);
+                    const colors = ['#facc15', '#f97316', '#ef4444', '#a3e635']; // Colores fuego/radioactivos
+                    ctx.fillStyle = colors[Math.abs(Math.floor(hash)) % colors.length];
+                    ctx.fillRect(finalPx - size/2, finalPy - size/2, size, size);
+                }
+                return;
+            }
+
+            // 4. Bomba de Racimo (Micro-detonaciones circulares encadenadas y chispas)
+            if (exp.perkId === 'cluster_bomb_1') {
+                const bombletCount = 6;
+                for (let i = 0; i < bombletCount; i++) {
+                    const delay = i * 0.12;
+                    if (progress > delay) {
+                        const localProgress = Math.min(1, (progress - delay) / (1 - delay));
+                        const localOpacity = 1 - localProgress;
+                        
+                        const angle = i * 2.37;
+                        const dist = exp.maxRadius * 0.65 * Math.sin(i * 1.83);
+                        const bx = exp.x + 0.5 + dist * Math.cos(angle);
+                        const by = exp.y + 0.5 + dist * Math.sin(angle);
+                        
+                        // Explosión circular limpia para cada bomblet
+                        const localR = (exp.maxRadius * 0.3) * (0.4 + 1.4 * localProgress);
+                        ctx.beginPath();
+                        ctx.arc(bx, by, localR, 0, 2 * Math.PI);
+                        ctx.strokeStyle = `rgba(163, 230, 53, ${localOpacity})`;
+                        ctx.fillStyle = `rgba(163, 230, 53, ${localOpacity * 0.25})`;
+                        ctx.fill();
+                        ctx.stroke();
+
+                        // Chispas verdes/amarillas de la submunición
+                        const sparkCount = 4;
+                        for (let s = 0; s < sparkCount; s++) {
+                            const hash = Math.sin(exp.startTime + i * 5 + s * 11) * 500;
+                            const sa = (hash * 7) % (2 * Math.PI);
+                            const sd = (exp.maxRadius * 0.4) * localProgress * (0.8 + 0.6 * (hash % 1));
+                            const spx = bx + sd * Math.cos(sa);
+                            const spy = by + sd * Math.sin(sa);
+                            const size = 1.5 / transform.scale;
+                            ctx.fillStyle = '#a3e635';
+                            ctx.fillRect(spx - size/2, spy - size/2, size, size);
+                        }
+                    }
+                }
+                return;
+            }
+
+            // 5. Lluvia de Meteoritos (Múltiples impactos circulares magenta)
+            if (exp.perkId === 'meteor_shower_1') {
+                const subImpacts = 5;
+                for (let i = 0; i < subImpacts; i++) {
+                    const delay = i * 0.15;
+                    if (progress > delay) {
+                        const localProgress = Math.min(1, (progress - delay) / (1 - delay));
+                        const localOpacity = 1 - localProgress;
+                        
+                        const angle = i * 2.1;
+                        const dist = exp.maxRadius * 0.5 * Math.sin(i * 1.5);
+                        const mx = exp.x + 0.5 + dist * Math.cos(angle);
+                        const my = exp.y + 0.5 + dist * Math.sin(angle);
+                        
+                        const localR = (exp.maxRadius * 0.45) * (0.2 + 1.8 * localProgress);
+                        ctx.beginPath();
+                        ctx.arc(mx, my, localR, 0, 2 * Math.PI);
+                        ctx.lineWidth = Math.max(1.5, 3 / transform.scale);
+                        ctx.strokeStyle = `rgba(232, 121, 249, ${localOpacity})`;
+                        ctx.fillStyle = `rgba(232, 121, 249, ${localOpacity * 0.2})`;
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                }
+
+                // Escombros magenta de los meteoritos volando
+                const debrisCount = 15;
+                for (let d = 0; d < debrisCount; d++) {
+                    const hash = Math.sin(exp.startTime + d * 19.3) * 1000;
+                    const angle = (hash * 11) % (2 * Math.PI);
+                    const speed = exp.maxRadius * 1.5 * (0.3 + 1.1 * (Math.abs(hash * 3.7) % 1));
+                    const dist = speed * (1 - Math.pow(1 - progress, 2));
+                    
+                    const px = exp.x + 0.5 + dist * Math.cos(angle);
+                    const py = exp.y + 0.5 + dist * Math.sin(angle) + (8 * progress * progress);
+                    
+                    const size = Math.max(1, (2.2 * (1 - progress)) / transform.scale);
+                    ctx.fillStyle = d % 2 === 0 ? '#e879f9' : '#db2777';
+                    ctx.fillRect(px - size/2, py - size/2, size, size);
+                }
+                return;
+            }
+
+            // Fallback genérico para misil, bomba e impactos estándar (Anillos circulares limpios y escombros)
+            const maxR = exp.maxRadius;
+            const radiusOuter = maxR * (0.8 + 1.7 * progress);
+            const radiusInner = maxR * (0.4 + 1.1 * progress);
+            const mainCol = exp.perkId === 'pixel_bomb_1' ? '249, 115, 22' : '239, 68, 68';
+            const fillCol = exp.perkId === 'pixel_bomb_1' ? '251, 146, 60' : '220, 38, 38';
+
+            // Anillo exterior circular
             ctx.beginPath();
             ctx.arc(exp.x + 0.5, exp.y + 0.5, radiusOuter, 0, 2 * Math.PI);
             ctx.lineWidth = Math.max(2, 4 / transform.scale);
-            ctx.strokeStyle = `rgba(249, 115, 22, ${opacity})`;
+            ctx.strokeStyle = `rgba(${mainCol}, ${opacity})`;
             ctx.stroke();
 
+            // Círculo interior circular
             ctx.beginPath();
             ctx.arc(exp.x + 0.5, exp.y + 0.5, radiusInner, 0, 2 * Math.PI);
             ctx.lineWidth = Math.max(3, 5 / transform.scale);
-            ctx.strokeStyle = `rgba(239, 68, 68, ${opacity})`;
-            ctx.fillStyle = `rgba(220, 38, 38, ${opacity * 0.5})`;
+            ctx.strokeStyle = `rgba(${fillCol}, ${opacity})`;
+            ctx.fillStyle = `rgba(${fillCol}, ${opacity * 0.18})`;
             ctx.fill();
             ctx.stroke();
+
+            // Píxeles esparcidos rotos volando con gravedad
+            const debrisCount = 12;
+            for (let i = 0; i < debrisCount; i++) {
+                const hash = Math.sin(exp.startTime + i * 29) * 1000;
+                const angle = (hash * 11) % (2 * Math.PI);
+                const speed = maxR * 1.3 * (0.3 + 0.9 * (Math.abs(hash * 5) % 1));
+                const dist = speed * (1 - Math.pow(1 - progress, 2));
+                
+                const px = exp.x + 0.5 + dist * Math.cos(angle);
+                const py = exp.y + 0.5 + dist * Math.sin(angle) + (14 * progress * progress);
+                
+                const size = Math.max(1, (2 / transform.scale));
+                ctx.fillStyle = i % 2 === 0 ? `rgb(${mainCol})` : `rgb(${fillCol})`;
+                ctx.fillRect(px - size/2, py - size/2, size, size);
+            }
         });
     }
 
@@ -1586,9 +1838,17 @@ self.onmessage = function (e) {
                 if (perkId === 'orbital_cannon_1') {
                     duration = 3000;
                 } else if (perkId === 'atomic_bomb_1') {
-                    duration = 1500;
+                    duration = 3000;
                 } else if (perkId === 'black_hole_1') {
-                    duration = 2500;
+                    duration = 4000;
+                } else if (perkId === 'cluster_bomb_1') {
+                    duration = 2000;
+                } else if (perkId === 'meteor_shower_1') {
+                    duration = 1500;
+                } else if (perkId === 'pixel_bomb_1') {
+                    duration = 1200;
+                } else if (perkId === 'pixel_missile_1') {
+                    duration = 1000;
                 }
 
                 explosions.push({
