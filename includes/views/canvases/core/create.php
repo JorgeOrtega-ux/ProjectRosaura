@@ -333,10 +333,19 @@ extract($createData);
                     </div>
                             <hr class="component-divider">
                             <div class="component-group-item component-group-item--stacked">
+                        <?php 
+                        $maxPixelsPerBatch = $planLimits['max_pixels_per_batch'] ?? 5; 
+                        $initialCooldownBatch = min(5, $maxPixelsPerBatch);
+                        ?>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_cooldown_batch_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_cooldown_batch_desc'); ?></p>
+                                <p class="component-card__description">
+                                    <?php echo __('canvas_cooldown_batch_desc'); ?> 
+                                    <span style="opacity: 0.7; font-size: 0.9em; display: block; margin-top: 4px;">
+                                        (Máximo de <?php echo $maxPixelsPerBatch; ?> píxeles por tu plan <?php echo htmlspecialchars($planLimits['name'] ?? 'Free'); ?>)
+                                    </span>
+                                </p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
@@ -349,12 +358,12 @@ extract($createData);
                                         <span class="material-symbols-rounded">chevron_left</span>
                                     </button>
                                 </div>
-                                <div class="component-inline-control__center" data-ref="val_cooldown_batch" data-value="5">5</div>
+                                <div class="component-inline-control__center" data-ref="val_cooldown_batch" data-value="<?php echo $initialCooldownBatch; ?>"><?php echo $initialCooldownBatch; ?></div>
                                 <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="1" data-max="100">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="1" data-max="<?php echo $maxPixelsPerBatch; ?>">
                                         <span class="material-symbols-rounded">chevron_right</span>
                                     </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="5" data-max="100">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="5" data-max="<?php echo $maxPixelsPerBatch; ?>">
                                         <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
                                     </button>
                                 </div>

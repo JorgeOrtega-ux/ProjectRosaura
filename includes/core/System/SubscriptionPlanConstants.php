@@ -70,11 +70,13 @@ class SubscriptionPlanConstants {
                     'feat_chat_restriction' => (bool)$row['feat_chat_restriction'],
                     'feat_custom_palettes' => (bool)$row['feat_custom_palettes'],
                     'feat_custom_colors' => (bool)($row['feat_custom_colors'] ?? false),
+                    'feat_priority_rendering' => (bool)($row['feat_priority_rendering'] ?? false),
                     'feat_unlimited_exports' => (bool)$row['feat_unlimited_exports'],
                     'feat_inject_templates' => (bool)($row['feat_inject_templates'] ?? false),
                     'feat_live_share' => (bool)($row['feat_live_share'] ?? false),
                     'max_template_tokens' => (int)($row['max_template_tokens'] ?? 0),
                     'max_upload_mb' => (int)($row['max_upload_mb'] ?? 10),
+                    'max_pixels_per_batch' => (int)($row['max_pixels_per_batch'] ?? 5),
                     'allow_live_chat' => (bool)$row['feat_chat_restriction'],
                     'custom_palettes' => (bool)$row['feat_custom_palettes'],
                     'custom_colors' => (bool)($row['feat_custom_colors'] ?? false)
@@ -103,6 +105,7 @@ class SubscriptionPlanConstants {
             'feat_inject_templates' => false,
             'feat_live_share' => false,
             'max_template_tokens' => 0,
+            'max_pixels_per_batch' => 5,
             'allow_live_chat' => false,
             'custom_palettes' => false,
             'custom_colors' => false

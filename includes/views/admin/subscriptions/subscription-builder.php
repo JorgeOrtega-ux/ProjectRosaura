@@ -164,6 +164,7 @@ $featuresData = [
         'max_members_per_canvas' => $tierData['max_members_per_canvas'] ?? 10,
         'max_custom_palettes' => $tierData['max_custom_palettes'] ?? 0,
         'max_template_tokens' => $tierData['max_template_tokens'] ?? 0,
+        'max_pixels_per_batch' => $tierData['max_pixels_per_batch'] ?? 5,
     ],
     'feat_advanced_roles' => $tierData['feat_advanced_roles'] ?? 0,
     'feat_chat_restriction' => $tierData['feat_chat_restriction'] ?? 0,
@@ -611,6 +612,30 @@ $featuresData = [
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxTemplateTokens" data-step="50" data-max="10000"><span class="material-symbols-rounded">chevron_right</span></button>
                                             <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxTemplateTokens" data-step="250" data-max="10000"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="component-divider">
+        
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_pixels_per_batch') ?: 'Píxeles por Lote Máximo'; ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_pixels_per_batch_desc') ?: 'Cantidad máxima de píxeles colocados por lote permitida en lienzos de este nivel.'; ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxPixelsPerBatch" data-step="-5" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxPixelsPerBatch" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="val_featMaxPixelsPerBatch" data-value="<?php echo (int)($featuresData['limits']['max_pixels_per_batch'] ?? 5); ?>"><?php echo (int)($featuresData['limits']['max_pixels_per_batch'] ?? 5); ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxPixelsPerBatch" data-step="1" data-max="100"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="featMaxPixelsPerBatch" data-step="5" data-max="100"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
                                         </div>
                                     </div>
                                 </div>

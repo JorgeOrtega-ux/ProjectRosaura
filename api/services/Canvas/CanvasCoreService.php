@@ -497,6 +497,11 @@ class CanvasCoreService {
                     $paletteId = 'default';
                 }
 
+                $maxPixelsPerBatch = $planLimits['max_pixels_per_batch'] ?? 5;
+                if ($cooldownBatch > $maxPixelsPerBatch) {
+                    $cooldownBatch = $maxPixelsPerBatch;
+                }
+
                 $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
                 if (!isset($allSizes[$size])) {
                     $size = '64x64';
@@ -718,7 +723,13 @@ class CanvasCoreService {
             }
 
             $data['requires_approval'] = isset($data['requires_approval']) && $data['requires_approval'] ? 1 : 0;
-            $data['cooldown_pixels_batch'] = isset($data['cooldown_pixels_batch']) ? max(1, (int)$data['cooldown_pixels_batch']) : ($canvas['cooldown_pixels_batch'] ?? 5);
+            
+            $owner = $canvas['owner_id'] !== null ? $this->userRepository->findById($canvas['owner_id']) : null;
+            $tier = $owner ? ($owner['subscription_tier'] ?? 0) : 3;
+            $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+            $maxPixelsPerBatch = $planLimits['max_pixels_per_batch'] ?? 5;
+
+            $data['cooldown_pixels_batch'] = isset($data['cooldown_pixels_batch']) ? min($maxPixelsPerBatch, max(1, (int)$data['cooldown_pixels_batch'])) : ($canvas['cooldown_pixels_batch'] ?? 5);
             $data['cooldown_seconds'] = isset($data['cooldown_seconds']) ? max(0, (int)$data['cooldown_seconds']) : ($canvas['cooldown_seconds'] ?? 10);
             
             if (isset($data['allow_purchases'])) {

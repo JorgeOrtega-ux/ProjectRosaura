@@ -691,7 +691,8 @@ class AdminSubscriptionBuilderController {
                 max_snapshots_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxSnapshots"]')?.dataset.value || 0, 10),
                 max_members_per_canvas: parseInt(document.querySelector('[data-ref="val_featMaxMembers"]')?.dataset.value || 0, 10),
                 max_custom_palettes: parseInt(document.querySelector('[data-ref="val_featMaxCustomPalettes"]')?.dataset.value || 0, 10),
-                max_template_tokens: parseInt(document.querySelector('[data-ref="val_featMaxTemplateTokens"]')?.dataset.value || 0, 10)
+                max_template_tokens: parseInt(document.querySelector('[data-ref="val_featMaxTemplateTokens"]')?.dataset.value || 0, 10),
+                max_pixels_per_batch: parseInt(document.querySelector('[data-ref="val_featMaxPixelsPerBatch"]')?.dataset.value || 5, 10)
             }
         };
         
