@@ -54,6 +54,33 @@ INSERT IGNORE INTO subscription_tiers (id, uuid, tier_level, is_active, is_popul
   (3, '1c9f2231-5f21-4d9a-b851-9f9f2f111222', 2, 1, 1, 'Pro', '{"type":"solid","colors":[{"hex":"#fd7e14","percentage":100}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 9.99, 99.99, 10, 1000, 100, 2500, 5, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 50),
   (4, '87cf9a91-4c12-4d2c-a222-7f8f9a92231c', 3, 1, 0, 'Ultra', '{"type":"gradient","angle":295,"colors":[{"hex":"#E92D18","percentage":28},{"hex":"#306EE2","percentage":29},{"hex":"#249A41","percentage":28},{"hex":"#CD9308","percentage":15}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 19.99, 199.99, 50, 5000, -1, 50000, 25, 1, 1, 1, 1, 1, 1, 1, 1, 1, 250, 100);
 
+CREATE TABLE IF NOT EXISTS `store_coin_packages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `uuid` CHAR(36) UNIQUE DEFAULT NULL,
+  `amount` INT NOT NULL DEFAULT 0,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `is_popular` tinyint(1) NOT NULL DEFAULT 0,
+  `name` varchar(100) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `price_usd` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `bonus_text` varchar(100) DEFAULT NULL,
+  `icon` varchar(50) DEFAULT 'monetization_on',
+  `icon_color` varchar(50) DEFAULT NULL,
+  `border_color` varchar(50) DEFAULT NULL,
+  `badge_color` varchar(50) DEFAULT NULL,
+  `stripe_price_id` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+INSERT IGNORE INTO `store_coin_packages` (`id`, `uuid`, `amount`, `is_active`, `is_popular`, `name`, `description`, `price_usd`, `bonus_text`, `icon`, `icon_color`, `border_color`, `badge_color`, `stripe_price_id`) VALUES
+(1, '10000000-0000-0000-0000-000000001000', 1000, 1, 0, 'store_coins_1000_name', 'store_coins_1000_desc', 2.99, NULL, 'monetization_on', NULL, NULL, NULL, 'price_1Tq2JyE4dfTcnyKKhgS3IK9l'),
+(2, '27500000-0000-0000-0000-000000002750', 2750, 1, 1, 'store_coins_2750_name', 'store_coins_2750_desc', 6.99, 'store_coins_2750_bonus', 'monetization_on', NULL, NULL, NULL, 'price_1Tq2KME4dfTcnyKK8LBoUUWT'),
+(3, '57500000-0000-0000-0000-000000005750', 5750, 1, 1, 'store_coins_5750_name', 'store_coins_5750_desc', 12.99, 'store_coins_5750_bonus', 'diamond', NULL, NULL, 'var(--color-success)', 'price_1Tq2KdE4dfTcnyKKY9DebxeP'),
+(4, '13250000-0000-0000-0000-000000013250', 13250, 1, 1, 'store_coins_13250_name', 'store_coins_13250_desc', 24.99, 'store_coins_13250_bonus', 'workspace_premium', '#8b5cf6', '#8b5cf6', '#8b5cf6', 'price_1Tq2L5E4dfTcnyKKa5FoxTj4');
+
+
 CREATE TABLE IF NOT EXISTS `permissions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,

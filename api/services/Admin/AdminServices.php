@@ -865,6 +865,94 @@ class AdminServices {
         }
     }
 
+    public function saveStorePackage($data) {
+        $uuid = $data['uuid'] ?? null;
+        $name = $data['name'] ?? '';
+        $amount = (int)($data['amount'] ?? 0);
+        $priceUsd = (float)($data['price_usd'] ?? 0);
+        $description = $data['description'] ?? '';
+        $bonusText = $data['bonus_text'] ?? null;
+        $icon = $data['icon'] ?? 'monetization_on';
+        $iconColor = $data['icon_color'] ?? null;
+        $borderColor = $data['border_color'] ?? null;
+        $badgeColor = $data['badge_color'] ?? null;
+        $stripePriceId = $data['stripe_price_id'] ?? null;
+        $isActive = isset($data['is_active']) ? (int)$data['is_active'] : 1;
+
+        if (empty($name) || $amount <= 0 || $priceUsd < 0) {
+            return ['success' => false, 'message' => 'Datos inválidos. El nombre y la cantidad son obligatorios.'];
+        }
+
+        try {
+            $dbManager = new DatabaseManager();
+            $pdo = $dbManager->getConnection(DatabaseConstants::CONN_IDENTITY);
+            
+            if ($uuid) {
+                // Update
+                $stmt = $pdo->prepare("UPDATE store_coin_packages SET name = ?, amount = ?, description = ?, price_usd = ?, bonus_text = ?, icon = ?, icon_color = ?, border_color = ?, badge_color = ?, stripe_price_id = ?, is_active = ? WHERE uuid = ?");
+                $stmt->execute([$name, $amount, $description, $priceUsd, $bonusText, $icon, $iconColor, $borderColor, $badgeColor, $stripePriceId, $isActive, $uuid]);
+                $msg = 'Paquete actualizado correctamente';
+            } else {
+                // Insert
+                $uuid = Utils::generateUUID();
+                $stmt = $pdo->prepare("INSERT INTO store_coin_packages (uuid, name, amount, description, price_usd, bonus_text, icon, icon_color, border_color, badge_color, stripe_price_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$uuid, $name, $amount, $description, $priceUsd, $bonusText, $icon, $iconColor, $borderColor, $badgeColor, $stripePriceId, $isActive]);
+                $msg = 'Paquete creado correctamente';
+            }
+
+            return ['success' => true, 'message' => $msg, 'uuid' => $uuid];
+        } catch (\PDOException $e) {
+            Logger::error("saveStorePackage Error", ['exception' => $e]);
+            return ['success' => false, 'message' => 'Error al guardar el paquete de monedas'];
+        }
+    }
+
+    public function toggleStorePackageVisibility($data) {
+        $uuid = $data['uuid'] ?? '';
+        if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
+        try {
+            $dbManager = new DatabaseManager();
+            $pdo = $dbManager->getConnection(DatabaseConstants::CONN_IDENTITY);
+            $stmt = $pdo->prepare("UPDATE store_coin_packages SET is_active = 1 - is_active WHERE uuid = ?");
+            $stmt->execute([$uuid]);
+            return ['success' => true, 'message' => 'Visibilidad actualizada'];
+        } catch (\PDOException $e) {
+            return ['success' => false, 'message' => 'Error de BD'];
+        }
+    }
+
+    public function setStorePackagePopular($data) {
+        $uuid = $data['uuid'] ?? '';
+        if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
+        try {
+            $dbManager = new DatabaseManager();
+            $pdo = $dbManager->getConnection(DatabaseConstants::CONN_IDENTITY);
+            // Primero limpiamos el popular de todos
+            $pdo->query("UPDATE store_coin_packages SET is_popular = 0");
+            $stmt = $pdo->prepare("UPDATE store_coin_packages SET is_popular = 1 WHERE uuid = ?");
+            $stmt->execute([$uuid]);
+            return ['success' => true, 'message' => 'Paquete marcado como popular'];
+        } catch (\PDOException $e) {
+            return ['success' => false, 'message' => 'Error de BD'];
+        }
+    }
+
+    public function deleteStorePackage($data) {
+        $uuid = $data['uuid'] ?? '';
+        if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
+        try {
+            $dbManager = new DatabaseManager();
+            $pdo = $dbManager->getConnection(DatabaseConstants::CONN_IDENTITY);
+            $stmt = $pdo->prepare("DELETE FROM store_coin_packages WHERE uuid = ?");
+            $stmt->execute([$uuid]);
+            return ['success' => true, 'message' => 'Paquete eliminado permanentemente'];
+        } catch (\PDOException $e) {
+            Logger::error("deleteStorePackage Error", ['exception' => $e]);
+            return ['success' => false, 'message' => 'Error al eliminar el paquete'];
+        }
+    }
+
+
     public function getRoles() {
         if (!$this->hasPermission(PermissionsConstants::VIEW_ROLES)) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);

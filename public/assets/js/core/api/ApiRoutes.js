@@ -92,7 +92,10 @@ export const ApiRoutes = {
         SetPopularTier: 'admin.subscriptions.set_popular',
         SaveTier: 'admin.subscriptions.save',
 
-
+        DeleteStorePackage: 'admin.store_package.delete',
+        ToggleStorePackage: 'admin.store_package.toggle_visibility',
+        SetStorePackagePopular: 'admin.store_package.set_popular',
+        SaveStorePackage: 'admin.store_package.save',
         GetTranslations: 'admin.get_translations',
         GetBackupSchema: 'admin.get_backup_schema',
         CreateCustomBackup: 'admin.create_custom_backup',

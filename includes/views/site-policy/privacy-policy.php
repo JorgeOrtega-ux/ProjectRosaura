@@ -1,5 +1,4 @@
 <?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -679,7 +678,6 @@ $policyVars = [
     <div class="component-top">
         <div class="component-top-left">
             <h1 class="component-top-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -1363,7 +1361,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -2040,7 +2037,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -2717,7 +2713,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -3394,7 +3389,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -4073,7 +4067,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -4754,7 +4747,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -5431,7 +5423,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -6108,7 +6099,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -6787,7 +6777,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -7468,7 +7457,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -8145,7 +8133,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -8822,7 +8809,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -9499,7 +9485,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -10176,7 +10161,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -10853,7 +10837,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -11532,7 +11515,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -12213,7 +12195,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -12890,7 +12871,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -13567,7 +13547,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -14244,7 +14223,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -14921,7 +14899,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -15600,7 +15577,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -16281,7 +16257,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -16958,7 +16933,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -17635,7 +17609,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -18312,7 +18285,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -18991,7 +18963,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -19672,7 +19643,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -20349,7 +20319,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -21028,7 +20997,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -21709,7 +21677,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -22386,7 +22353,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -23063,7 +23029,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -23742,7 +23707,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -24423,7 +24387,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -25100,7 +25063,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -25777,7 +25739,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -26454,7 +26415,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -27133,7 +27093,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -27814,7 +27773,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -28491,7 +28449,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -29170,7 +29127,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -29851,7 +29807,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -30528,7 +30483,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -31205,7 +31159,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -31884,7 +31837,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -32565,7 +32517,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -33242,7 +33193,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -33921,7 +33871,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -34602,7 +34551,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -35279,7 +35227,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -35956,7 +35903,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -36635,7 +36581,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -37316,7 +37261,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -37993,7 +37937,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -38671,7 +38614,6 @@ $policyVars = [
 ?></p>
                     <ul class="policy-list">
                         <li><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -39348,7 +39290,6 @@ $policyVars = [
 ];
 ?></li>
                         <li><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -40025,7 +39966,6 @@ $policyVars = [
 ];
 ?></li>
                         <li><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -40703,7 +40643,6 @@ $policyVars = [
 ?></li>
                     </ul>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);
@@ -41382,7 +41321,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 $privacyEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_PRIVACY']);
 $legalEmail = htmlspecialchars($_ENV['CONTACT_EMAIL_LEGAL']);

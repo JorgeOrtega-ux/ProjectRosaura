@@ -4,68 +4,54 @@ namespace App\Core\System;
 
 class StorePackagesConfig {
     public static function getCoinPackages(): array {
-        return [
-            1000 => [
-                'id' => StoreConstants::COINS_1000,
-                'name' => __('store_coins_1000_name'),
-                'amount' => 1000,
-                'description' => __('store_coins_1000_desc'),
-                'price_usd' => 2.99,
-                'bonus_text' => null,
-                'icon' => 'monetization_on',
-                'icon_color' => null,
-                'border_color' => null,
-                'badge_color' => null,
-                'is_featured' => false,
-                'stripe_env_key' => 'STRIPE_PRICE_COINS_1000',
-                'default_price_id' => 'price_1Tq2JyE4dfTcnyKKhgS3IK9l',
-            ],
-            2750 => [
-                'id' => StoreConstants::COINS_2750,
-                'name' => __('store_coins_2750_name'),
-                'amount' => 2750,
-                'description' => __('store_coins_2750_desc'),
-                'price_usd' => 6.99,
-                'bonus_text' => __('store_coins_2750_bonus'),
-                'icon' => 'monetization_on',
-                'icon_color' => null,
-                'border_color' => null,
-                'badge_color' => null,
-                'is_featured' => true,
-                'stripe_env_key' => 'STRIPE_PRICE_COINS_2750',
-                'default_price_id' => 'price_1Tq2KME4dfTcnyKK8LBoUUWT',
-            ],
-            5750 => [
-                'id' => StoreConstants::COINS_5750,
-                'name' => __('store_coins_5750_name'),
-                'amount' => 5750,
-                'description' => __('store_coins_5750_desc'),
-                'price_usd' => 12.99,
-                'bonus_text' => __('store_coins_5750_bonus'),
-                'icon' => 'diamond',
-                'icon_color' => null,
-                'border_color' => null,
-                'badge_color' => 'var(--color-success)',
-                'is_featured' => true,
-                'stripe_env_key' => 'STRIPE_PRICE_COINS_5750',
-                'default_price_id' => 'price_1Tq2KdE4dfTcnyKKY9DebxeP',
-            ],
-            13250 => [
-                'id' => StoreConstants::COINS_13250,
-                'name' => __('store_coins_13250_name'),
-                'amount' => 13250,
-                'description' => __('store_coins_13250_desc'),
-                'price_usd' => 24.99,
-                'bonus_text' => __('store_coins_13250_bonus'),
-                'icon' => 'workspace_premium',
-                'icon_color' => '#8b5cf6',
-                'border_color' => '#8b5cf6',
-                'badge_color' => '#8b5cf6',
-                'is_featured' => true,
-                'stripe_env_key' => 'STRIPE_PRICE_COINS_13250',
-                'default_price_id' => 'price_1Tq2L5E4dfTcnyKKa5FoxTj4',
-            ]
-        ];
+        $packages = [];
+        try {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmt = $pdo->query("SELECT * FROM store_coin_packages WHERE is_active = 1 ORDER BY amount ASC");
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $packages[(int)$row['amount']] = [
+                    'id' => $row['uuid'],
+                    'name' => __($row['name']) ?: $row['name'],
+                    'amount' => (int)$row['amount'],
+                    'description' => __($row['description']) ?: $row['description'],
+                    'price_usd' => (float)$row['price_usd'],
+                    'bonus_text' => $row['bonus_text'] ? (__($row['bonus_text']) ?: $row['bonus_text']) : null,
+                    'icon' => $row['icon'] ?: 'monetization_on',
+                    'icon_color' => $row['icon_color'],
+                    'border_color' => $row['border_color'],
+                    'badge_color' => $row['badge_color'],
+                    'is_featured' => (bool)$row['is_popular'],
+                    'stripe_env_key' => null,
+                    'default_price_id' => $row['stripe_price_id'],
+                ];
+            }
+        } catch (\Exception $e) {
+            \App\Core\System\Logger::error("Failed to load coin packages from DB: " . $e->getMessage());
+        }
+
+        if (empty($packages)) {
+            // Fallback en caso de error de BBDD
+            return [
+                1000 => [
+                    'id' => StoreConstants::COINS_1000,
+                    'name' => __('store_coins_1000_name'),
+                    'amount' => 1000,
+                    'description' => __('store_coins_1000_desc'),
+                    'price_usd' => 2.99,
+                    'bonus_text' => null,
+                    'icon' => 'monetization_on',
+                    'icon_color' => null,
+                    'border_color' => null,
+                    'badge_color' => null,
+                    'is_featured' => false,
+                    'stripe_env_key' => 'STRIPE_PRICE_COINS_1000',
+                    'default_price_id' => 'price_1Tq2JyE4dfTcnyKKhgS3IK9l',
+                ]
+            ];
+        }
+
+        return $packages;
     }
     public static function getContentPackages(): array {
         return [

@@ -371,6 +371,38 @@ return [
             ],
         ],
     ],
+    'admin.store_package.save' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'save_store_package',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_save_pkg', 'max' => 15, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.store_package.toggle_visibility' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'toggle_store_package_visibility',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_toggle_pkg', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.store_package.set_popular' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'set_store_package_popular',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_pop_pkg', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.store_package.delete' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'delete_store_package',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_del_pkg', 'max' => 10, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
     'admin.get_permissions' => [
         'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
         'action' => 'get_permissions',

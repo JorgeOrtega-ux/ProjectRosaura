@@ -21,6 +21,9 @@ extract($dashboardData);
                 <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/subscriptions" data-tooltip="<?php echo __('admin_manage_subscriptions', [], 'Administrar Suscripciones'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">workspace_premium</span>
                 </button>
+                <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/store-packages" data-tooltip="Administrar Tienda" data-position="bottom">
+                    <span class="material-symbols-rounded">storefront</span>
+                </button>
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageRoles ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/roles" data-tooltip="<?php echo __('btn_manage_roles'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">admin_panel_settings</span>
                 </button>

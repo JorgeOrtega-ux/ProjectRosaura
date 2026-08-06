@@ -543,6 +543,98 @@ class AdminViewService {
 
     /**
 
+     */    public function getManageStorePackagesData(?string $searchQuery, int $page): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $db = new DatabaseManager();
+        $pdo = $db->getConnection(DB::CONN_IDENTITY);
+
+        $tbl = 'store_coin_packages';
+        $searchQuery = trim($searchQuery ?? '');
+        $limit = 25;
+        if ($page < 1) $page = 1;
+
+        $searchCondition = "";
+        $searchParams = [];
+        if ($searchQuery !== '') {
+            $searchCondition = "WHERE name LIKE :search OR description LIKE :search";
+            $searchParams[':search'] = '%' . $searchQuery . '%';
+        }
+
+        $totalPackages = 0;
+        try {
+            $stmtCount = $pdo->prepare("SELECT COUNT(id) FROM {$tbl} {$searchCondition}");
+            foreach ($searchParams as $key => $val) {
+                $stmtCount->bindValue($key, $val);
+            }
+            $stmtCount->execute();
+            $totalPackages = (int)$stmtCount->fetchColumn();
+        } catch (\Throwable $e) {
+            Logger::error("getManageStorePackagesData error counting: " . $e->getMessage());
+        }
+
+        $totalPages = ceil($totalPackages / $limit);
+        if ($totalPages < 1) $totalPages = 1;
+        if ($page > $totalPages) $page = $totalPages;
+
+        $offset = ($page - 1) * $limit;
+        $packages = [];
+
+        try {
+            $sql = "SELECT * FROM {$tbl} {$searchCondition} ORDER BY amount ASC LIMIT :limit OFFSET :offset";
+            $stmt = $pdo->prepare($sql);
+            foreach ($searchParams as $key => $val) {
+                $stmt->bindValue($key, $val);
+            }
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+            $stmt->execute();
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $packages[] = $row;
+            }
+        } catch (\Throwable $e) {
+            Logger::error("getManageStorePackagesData error fetching: " . $e->getMessage());
+        }
+
+        return [
+            'appUrl' => defined('APP_URL') ? APP_URL : 'http://localhost',
+            'searchQuery' => $searchQuery,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'totalPackages' => $totalPackages,
+            'packages' => $packages
+        ];
+    }
+
+    public function getStorePackageBuilderData(?string $targetUuid = null): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $db = new DatabaseManager();
+        $pdo = $db->getConnection(DB::CONN_IDENTITY);
+
+        $isEdit = false;
+        $package = null;
+
+        if (!empty($targetUuid)) {
+            try {
+                $stmt = $pdo->prepare("SELECT * FROM store_coin_packages WHERE uuid = :uuid LIMIT 1");
+                $stmt->execute(['uuid' => $targetUuid]);
+                $package = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if ($package) {
+                    $isEdit = true;
+                }
+            } catch (\Throwable $e) {
+                Logger::error("getStorePackageBuilderData error: " . $e->getMessage(), ['exception' => $e]);
+            }
+        }
+
+        return [
+            'error' => null,
+            'isEdit' => $isEdit,
+            'package' => $package
+        ];
+    }
+
+    /**
+
      */
     public function getSubscriptionBuilderData(?string $targetUuid = null): array {
         if (session_status() === PHP_SESSION_NONE) session_start();

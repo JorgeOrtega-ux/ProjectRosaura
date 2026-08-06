@@ -232,6 +232,34 @@ class AdminController extends BaseController {
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
+    public function save_store_package($input) {
+        try {
+            $safeInput = $this->sanitizeInput($input);
+            return $this->respond($this->adminServices->saveStorePackage($safeInput));
+        } catch (\Exception $e) { return $this->error($e); }
+    }
+
+    public function toggle_store_package_visibility($input) {
+        try {
+            $safeInput = $this->sanitizeInput($input);
+            return $this->respond($this->adminServices->toggleStorePackageVisibility($safeInput));
+        } catch (\Exception $e) { return $this->error($e); }
+    }
+
+    public function set_store_package_popular($input) {
+        try {
+            $safeInput = $this->sanitizeInput($input);
+            return $this->respond($this->adminServices->setStorePackagePopular($safeInput));
+        } catch (\Exception $e) { return $this->error($e); }
+    }
+
+    public function delete_store_package($input) {
+        try {
+            $safeInput = $this->sanitizeInput($input);
+            return $this->respond($this->adminServices->deleteStorePackage($safeInput));
+        } catch (\Exception $e) { return $this->error($e); }
+    }
+
     public function get_permissions() {
         try { 
             $this->requirePermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE);

@@ -1,5 +1,4 @@
 <?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -499,7 +498,6 @@ $policyVars = [
     <div class="component-top">
         <div class="component-top-left">
             <h1 class="component-top-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -1011,7 +1009,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -1508,7 +1505,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -2005,7 +2001,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -2502,7 +2497,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -3001,7 +2995,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -3502,7 +3495,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -3999,7 +3991,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -4496,7 +4487,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -4993,7 +4983,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -5492,7 +5481,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -5993,7 +5981,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -6490,7 +6477,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -6987,7 +6973,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -7484,7 +7469,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -7981,7 +7965,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -8478,7 +8461,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -8975,7 +8957,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -9474,7 +9455,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -9975,7 +9955,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -10472,7 +10451,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -10969,7 +10947,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -11468,7 +11445,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -11969,7 +11945,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -12466,7 +12441,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -12963,7 +12937,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -13460,7 +13433,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -13959,7 +13931,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -14460,7 +14431,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -14957,7 +14927,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -15454,7 +15423,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -15953,7 +15921,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -16454,7 +16421,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -16951,7 +16917,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -17448,7 +17413,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -17947,7 +17911,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -18448,7 +18411,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -18945,7 +18907,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -19442,7 +19403,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -19941,7 +19901,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -20442,7 +20401,6 @@ $policyVars = [
 
                 <div class="policy-section">
                     <h2 class="policy-section-title"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -20939,7 +20897,6 @@ $policyVars = [
 ];
 ?></h2>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -21436,7 +21393,6 @@ $policyVars = [
 ];
 ?></p>
                     <p class="policy-text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">
@@ -21935,7 +21891,6 @@ $policyVars = [
                     <div class="policy-summary-box">
                         <span class="material-symbols-rounded policy-summary-box__icon">info</span>
                         <p class="policy-summary-box__text"><?php
-$appName = htmlspecialchars(<?php
 $appName = htmlspecialchars($_ENV['APP_NAME']);
 ?>
 <div class="view-content" data-ref="cookies-policy-wrapper">

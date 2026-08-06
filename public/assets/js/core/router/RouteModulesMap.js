@@ -53,10 +53,14 @@ export const RouteModulesMap = {
     '/admin/role-create': { path: './modules/admin/roles/AdminRoleBuilderController.js', className: 'AdminRoleBuilderController', requiresAdminLang: true, skeletonType: 'layout-list' }, 
     '/admin/role-edit': { path: './modules/admin/roles/AdminRoleBuilderController.js', className: 'AdminRoleBuilderController', requiresAdminLang: true, skeletonType: 'layout-list' }, 
     '/admin/role-permissions': { path: './modules/admin/roles/AdminRolePermissionsController.js', className: 'AdminRolePermissionsController', requiresAdminLang: true, skeletonType: 'layout-list' }, 
-    '/admin/subscriptions': { path: './modules/admin/subscriptions/AdminSubscriptionsController.js', className: 'AdminSubscriptionsController', requiresAdminLang: true, skeletonType: 'layout-table' }, 
-    '/admin/subscription-create': { path: './modules/admin/subscriptions/AdminSubscriptionBuilderController.js', className: 'AdminSubscriptionBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' }, 
-    '/admin/subscription-edit': { path: './modules/admin/subscriptions/AdminSubscriptionBuilderController.js', className: 'AdminSubscriptionBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+    '/admin/subscriptions': { path: './modules/admin/subscriptions/AdminSubscriptionsController.js', className: 'AdminSubscriptionsController', requiresAdminLang: true, skeletonType: 'layout-table' },
+    '/admin/subscription-create': { path: './modules/admin/subscriptions/AdminSubscriptionBuilderController.js', className: 'AdminSubscriptionBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/subscription-edit/:uuid': { path: './modules/admin/subscriptions/AdminSubscriptionBuilderController.js', className: 'AdminSubscriptionBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+
+    '/admin/store-packages': { path: './modules/admin/store/AdminPackagesController.js', className: 'AdminPackagesController', requiresAdminLang: true, skeletonType: 'layout-table' },
+    '/admin/store-package-create': { path: './modules/admin/store/AdminPackageBuilderController.js', className: 'AdminPackageBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+    '/admin/store-package-edit/:uuid': { path: './modules/admin/store/AdminPackageBuilderController.js', className: 'AdminPackageBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+
     '/admin/role-edit/:uuid': { path: './modules/admin/roles/AdminRoleBuilderController.js', className: 'AdminRoleBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/role-permissions/:uuid': { path: './modules/admin/roles/AdminRolePermissionsController.js', className: 'AdminRolePermissionsController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 
