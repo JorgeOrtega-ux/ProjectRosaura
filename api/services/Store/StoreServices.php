@@ -218,19 +218,22 @@ class StoreServices {
         $userId = $this->sessionManager->getActiveAccountId();
         $perkId = $input['perk_id'] ?? '';
         
-        $perkPrices = $this->getPerkPrices();
-        if (empty($perkId) || !isset($perkPrices[$perkId])) {
+        if (empty($perkId)) {
+            return ['success' => false, 'message_key' => 'store.invalid_perk'];
+        }
+
+        $perksConfigPath = __DIR__ . '/../../../public/assets/data/perks.json';
+        $perksConfig = [];
+        if (file_exists($perksConfigPath)) {
+            $perksConfig = json_decode(file_get_contents($perksConfigPath), true) ?: [];
+        }
+
+        if (!isset($perksConfig[$perkId])) {
             return ['success' => false, 'message_key' => 'store.invalid_perk'];
         }
 
         try {
             $redis = $this->redisCache->getClient();
-            
-            $perksConfigPath = __DIR__ . '/../../../public/assets/data/perks.json';
-            $perksConfig = [];
-            if (file_exists($perksConfigPath)) {
-                $perksConfig = json_decode(file_get_contents($perksConfigPath), true) ?: [];
-            }
             $perkType = $perksConfig[$perkId]['type'] ?? '';
 
             if ($perkType === 'bomb') {
