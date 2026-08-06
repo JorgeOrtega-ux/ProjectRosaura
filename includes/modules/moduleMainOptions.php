@@ -56,7 +56,7 @@ $parseRoleColor = function($roleColorRaw) {
                         <img src="<?php echo htmlspecialchars($activeAccPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                              class="image-lazy-fade"
                              onload="this.classList.add('image-loaded')"
-                             onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
+                             onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/avatar/Um9zYXVyYVVzZXI6VQ'; this.classList.add('image-loaded');">
                     </div>
                     <div class="component-account-info">
                         <?php 
@@ -151,7 +151,7 @@ $parseRoleColor = function($roleColorRaw) {
                         <img src="<?php echo htmlspecialchars($accPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                              class="image-lazy-fade"
                              onload="this.classList.add('image-loaded')"
-                             onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
+                             onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/avatar/Um9zYXVyYVVzZXI6VQ'; this.classList.add('image-loaded');">
                     </div>
                     <div class="component-account-info">
                         <?php 

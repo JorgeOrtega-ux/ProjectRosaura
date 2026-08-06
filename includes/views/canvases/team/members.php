@@ -90,7 +90,7 @@ extract($membersData);
                                 <?php 
                                     $uInfo = $userDetails[$member['user_id']] ?? [];
                                     $username = !empty($uInfo['username']) ? $uInfo['username'] : __('lbl_user') . ' #' . $member['user_id'];
-                                    $avatar = !empty($uInfo['profile_picture']) ? $uInfo['profile_picture'] : $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
+                                    $avatar = !empty($uInfo['profile_picture']) ? $uInfo['profile_picture'] : $appUrl . '/public/avatar/Um9zYXVyYVVzZXI6VQ';
                                     $userUuidStr = !empty($uInfo['uuid']) ? $uInfo['uuid'] : '';
                                     $roleColor = !empty($uInfo['role_bg']) ? $uInfo['role_bg'] : 'var(--text-muted)';
                                 ?>
@@ -101,7 +101,7 @@ extract($membersData);
                                                 <img src="<?php echo htmlspecialchars($avatar); ?>" alt="alt_avatar"
                                                      class="image-lazy-fade"
                                                      onload="this.classList.add('image-loaded')"
-                                                     onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/public/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
+                                                     onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/public/avatar/Um9zYXVyYVVzZXI6VQ'; this.classList.add('image-loaded');">
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">person</span>

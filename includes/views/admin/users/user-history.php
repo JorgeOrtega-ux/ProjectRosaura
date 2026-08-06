@@ -111,7 +111,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
                                 <?php foreach ($paginatedLogs as $log): 
                                     $adminPic = !empty($log['admin_profile_picture']) 
                                         ? $appUrl . '/' . ltrim($log['admin_profile_picture'], '/') 
-                                        : $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
+                                        : $appUrl . '/public/avatar/Um9zYXVyYVVzZXI6VQ';
                                     $adminName = !empty($log['admin_username']) 
                                         ? ($log['admin_username'] === 'user_action' ? __('lbl_user_action') : $log['admin_username']) 
                                         : __('lbl_system');
@@ -222,7 +222,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
                                                 <img src="<?php echo htmlspecialchars($adminPic); ?>" alt="<?php echo __('alt_avatar'); ?>"
                                                      class="image-lazy-fade"
                                                      onload="this.classList.add('image-loaded')"
-                                                     onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/public/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
+                                                     onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/public/avatar/Um9zYXVyYVVzZXI6VQ'; this.classList.add('image-loaded');">
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded"><?php echo $adminBadgeIcon; ?></span>

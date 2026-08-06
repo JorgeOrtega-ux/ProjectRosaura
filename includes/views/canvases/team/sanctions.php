@@ -130,7 +130,7 @@ $predefinedSuspension = [
                                                 <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="<?php echo __('alt_avatar'); ?>"
                                                      class="image-lazy-fade"
                                                      onload="this.classList.add('image-loaded')"
-                                                     onerror="this.onerror=null; this.src='<?php echo $appUrl; ?>/public/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
+                                                     onerror="this.onerror=null; this.src='<?php echo $appUrl; ?>/public/avatar/Um9zYXVyYVVzZXI6VQ'; this.classList.add('image-loaded');">
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">person</span>

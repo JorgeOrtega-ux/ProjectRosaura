@@ -136,7 +136,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                             <td>
                                 <div class="td-user-info">
                                     <div class="component-button--profile role-dynamic component-avatar--static-sm" data-role-bg="<?php echo htmlspecialchars($cssColorValue); ?>">
-                                        <img src="/public/assets/img/fallbacks/avatar-default.png" alt="Suscripción"
+                                        <img src="/public/avatar/Um9zYXVyYVVzZXI6VQ" alt="Suscripción"
                                              class="image-lazy-fade"
                                              onload="this.classList.add('image-loaded')">
                                     </div>

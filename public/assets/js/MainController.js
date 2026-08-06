@@ -191,12 +191,25 @@ export class MainController {
             else if (base === 'de') finalLang = 'de-DE';
             else if (base === 'it') finalLang = 'it-IT';
             
-            localStorage.setItem('pr_language', finalLang);
-            document.cookie = "pr_language=" + finalLang + "; path=/; max-age=31536000"; 
-            localStorage.setItem('pr_open_links_new_tab', '1');
-            localStorage.setItem('pr_theme', 'system');
-            localStorage.setItem('pr_extended_alerts', '0');
+            if (this.canUseFuncCookies()) {
+                localStorage.setItem('pr_language', finalLang);
+                document.cookie = "pr_language=" + finalLang + "; path=/; max-age=31536000"; 
+                localStorage.setItem('pr_open_links_new_tab', '1');
+                localStorage.setItem('pr_theme', 'system');
+                localStorage.setItem('pr_extended_alerts', '0');
+            }
         }
+    }
+
+    canUseFuncCookies() {
+        try {
+            const consent = localStorage.getItem('pr_cookie_consent');
+            if (consent) {
+                const prefs = JSON.parse(consent);
+                if (prefs && prefs.func !== undefined) return !!prefs.func;
+            }
+        } catch(e) {}
+        return true;
     }
 
     handleThemeMediaQuery(e) {
@@ -237,12 +250,15 @@ export class MainController {
         }
 
         if (key === 'theme') this.applyTheme(value);
-        if (key === 'language') document.cookie = "pr_language=" + value + "; path=/; max-age=31536000";
+        if (key === 'language' && this.canUseFuncCookies()) document.cookie = "pr_language=" + value + "; path=/; max-age=31536000";
 
         if (window.AppUserPrefs) {
             window.AppUserPrefs[key] = value;
         }
-        localStorage.setItem('pr_' + key, value);
+        
+        if (this.canUseFuncCookies()) {
+            localStorage.setItem('pr_' + key, value);
+        }
 
         this.syncUIPreferences();
 
@@ -273,7 +289,7 @@ export class MainController {
                     this.showToast(__('pref_saved_account'), 'success');
                 } else {
                     if (window.AppUserPrefs) window.AppUserPrefs[key] = previousValue;
-                    localStorage.setItem('pr_' + key, previousValue);
+                    if (this.canUseFuncCookies()) localStorage.setItem('pr_' + key, previousValue);
                     if (key === 'theme') this.applyTheme(previousValue);
                     this.syncUIPreferences();
                     this.showToast((response && response.message) ? response.message : __('pref_save_network_error'), 'error');
@@ -281,7 +297,7 @@ export class MainController {
             } catch (err) {
                 if (err.name === 'AbortError') return;
                 if (window.AppUserPrefs) window.AppUserPrefs[key] = previousValue;
-                localStorage.setItem('pr_' + key, previousValue);
+                if (this.canUseFuncCookies()) localStorage.setItem('pr_' + key, previousValue);
                 if (key === 'theme') this.applyTheme(previousValue);
                 this.syncUIPreferences();
                 this.showToast(__('general_save_network_error'), 'error');

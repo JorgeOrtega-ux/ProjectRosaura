@@ -157,7 +157,12 @@ class Utils {
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, 'data:')) return $path;
         
         if (str_starts_with($path, 'profilePictures/default/')) {
-            return '/storage/' . $path;
+            // Intentar extraer la letra de la ruta legada, por ejemplo 'profilePictures/default/letters/O/...'
+            if (preg_match('/letters\/([A-Z0-9])/i', $path, $matches)) {
+                $letter = $matches[1];
+                return self::generateProfilePicture($letter);
+            }
+            return self::generateProfilePicture('U');
         }
         
         $path = preg_replace('#^/?public/storage/#', '', ltrim($path, '/'));
@@ -177,82 +182,12 @@ class Utils {
 
 
     public static function generateProfilePicture($text) {
-        $colors = ['2563eb', '16a34a', '7c3aed', 'dc2626', 'ea580c', '374151'];
-        $cleanText = strtoupper(trim(preg_replace('/[^a-zA-Z0-9]/', '', $text)));
-        $initial = substr($cleanText, 0, 1);
-        
-        $category = 'letters';
-        $folderName = $initial;
-
-        if ($initial === '') {
-            $initial = 'U';
-            $folderName = '_symbol';
-        } else if (is_numeric($initial)) {
-            $category = 'numbers';
+        $cleanText = trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $text));
+        if (empty($cleanText)) {
+            $cleanText = 'U';
         }
-        
-        $colorIndex = abs(crc32($text)) % count($colors);
-        $color = $colors[$colorIndex];
-        
-        $relPath = "profilePictures/default/$category/$folderName/$color.png";
-        $localPath = defined('ROOT_PATH') ? ROOT_PATH . "/storage/public/$relPath" : '';
-
-        if (!empty($localPath) && file_exists($localPath)) {
-            return $relPath;
-        }
-
-        // --- FALLBACK ---
-        $uuid = self::generateUUID();
-        $backgroundColor = '#' . $color;
-        
-        $cleanBg = ltrim($backgroundColor, '#');
-        $initialUrl = urlencode($initial);
-        $apiUrl = "https://ui-avatars.com/api/?name={$initialUrl}&background={$cleanBg}&color=ffffff&size=256&font-size=0.5&format=png";
-        
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $apiUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        $imageContent = curl_exec($ch);
-        curl_close($ch);
-
-        if (!$imageContent) {
-            $image = imagecreatetruecolor(256, 256);
-            $bg = imagecolorallocate($image, hexdec(substr($color, 0, 2)), hexdec(substr($color, 2, 2)), hexdec(substr($color, 4, 2)));
-            imagefill($image, 0, 0, $bg);
-            $textColor = imagecolorallocate($image, 255, 255, 255);
-            $fontPath = defined('ROOT_PATH') ? ROOT_PATH . '/public/assets/fonts/Inter-Bold.ttf' : '';
-            
-            if (!empty($fontPath) && file_exists($fontPath)) {
-                imagettftext($image, 100, 0, 70, 170, $textColor, $fontPath, urldecode($initialUrl));
-            } else {
-                $tempImg = imagecreatetruecolor(20, 20);
-                imagefill($tempImg, 0, 0, $bg);
-                imagestring($tempImg, 5, 6, 2, urldecode($initialUrl), $textColor);
-                imagecopyresized($image, $tempImg, 0, 0, 0, 0, 256, 256, 20, 20);
-                imagedestroy($tempImg);
-            }
-            
-            ob_start();
-            imagepng($image);
-            $imageContent = ob_get_clean();
-            imagedestroy($image);
-        }
-        
-        if ($imageContent === false) {
-            return 'public/assets/img/fallbacks/avatar-default.png';
-        }
-        $fileName = $uuid . '.png';
-        $savePath = defined('ROOT_PATH') ? ROOT_PATH . "/storage/public/profilePictures/default/" . $fileName : '';
-        if (!empty($savePath)) {
-            $dir = dirname($savePath);
-            if (!is_dir($dir)) {
-                mkdir($dir, 0777, true);
-            }
-            file_put_contents($savePath, $imageContent);
-        }
-        return 'profilePictures/default/' . $fileName;
+        $token = rtrim(strtr(base64_encode("RosauraUser:" . $cleanText), '+/', '-_'), '=');
+        return '/avatar/' . $token;
     }
     public static function generateCSRFToken(SessionManagerInterface $sessionManager) {
         return $sessionManager->getCsrfToken();
@@ -400,7 +335,7 @@ class Utils {
 
 
     private static $fallbacks = [
-        'avatar' => 'public/assets/img/fallbacks/avatar-default.png',
+        'avatar' => '/avatar/Um9zYXVyYVVzZXI6VQ', // Token para "U"
         'canvas' => 'public/assets/img/fallbacks/canvas-default.png',
         'snapshot' => 'public/assets/img/fallbacks/canvas-default.png',
         'chat_attachment' => 'public/assets/img/fallbacks/canvas-default.png'
@@ -511,7 +446,7 @@ class Utils {
     }
     public static function deleteOldAvatar($oldPicPath) {
         if (!empty($oldPicPath)) {
-            if (strpos($oldPicPath, 'fallbacks/avatar-default.png') !== false) {
+            if (strpos($oldPicPath, 'fallbacks/avatar-default.png') !== false || strpos($oldPicPath, 'api/avatar.php') !== false) {
                 return false;
             }
             if (strpos($oldPicPath, 'uploaded/') !== false || strpos($oldPicPath, 'default/') !== false) {

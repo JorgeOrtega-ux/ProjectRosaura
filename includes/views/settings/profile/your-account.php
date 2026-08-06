@@ -30,7 +30,7 @@ extract($accountData);
                                  data-is-default="<?php echo $isDefaultAvatar ? 'true' : 'false'; ?>"
                                  class="image-lazy-fade"
                                  onload="this.classList.add('image-loaded')"
-                                 onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');"
+                                 onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/avatar/Um9zYXVyYVVzZXI6VQ'; this.classList.add('image-loaded');"
                                  id="profileAvatarPreview">
                             <div class="component-avatar__overlay" data-ref="profile-avatar-overlay">
                                 <span class="material-symbols-rounded">photo_camera</span>

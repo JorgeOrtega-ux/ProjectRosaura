@@ -72,9 +72,20 @@ document.addEventListener('DOMContentLoaded', () => {
         outlet: '[data-ref="app-router-outlet"]'
     });
 
-    const allowTelemetry = window.AppUserPrefs && window.AppUserPrefs.allow_telemetry !== undefined 
+    let allowTelemetry = window.AppUserPrefs && window.AppUserPrefs.allow_telemetry !== undefined 
                            ? parseInt(window.AppUserPrefs.allow_telemetry) === 1 
                            : true;
+
+    try {
+        const consent = localStorage.getItem('pr_cookie_consent');
+        if (consent) {
+            const prefs = JSON.parse(consent);
+            if (prefs && prefs.perf === false) {
+                allowTelemetry = false;
+            }
+        }
+    } catch(e) {}
+
     window.telemetryTracker = new TelemetryTracker({ allowTelemetry });
     
     window.telemetryTracker.init();
