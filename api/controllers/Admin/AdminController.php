@@ -234,30 +234,47 @@ class AdminController extends BaseController {
 
     public function save_store_package($input) {
         try {
-            $safeInput = $this->sanitizeInput($input);
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $safeInput = [
+                'uuid' => $input['uuid'] ?? null,
+                'name' => $input['name'] ?? null,
+                'amount' => $input['amount'] ?? null,
+                'price_usd' => $input['price_usd'] ?? null,
+                'description' => $input['description'] ?? null,
+                'bonus_text' => $input['bonus_text'] ?? null,
+                'icon' => $input['icon'] ?? null,
+                'icon_color' => $input['icon_color'] ?? null,
+                'border_color' => $input['border_color'] ?? null,
+                'badge_color' => $input['badge_color'] ?? null,
+                'stripe_price_id' => $input['stripe_price_id'] ?? null,
+                'is_active' => $input['is_active'] ?? null
+            ];
             return $this->respond($this->adminServices->saveStorePackage($safeInput));
-        } catch (\Exception $e) { return $this->error($e); }
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function toggle_store_package_visibility($input) {
         try {
-            $safeInput = $this->sanitizeInput($input);
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->toggleStorePackageVisibility($safeInput));
-        } catch (\Exception $e) { return $this->error($e); }
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function set_store_package_popular($input) {
         try {
-            $safeInput = $this->sanitizeInput($input);
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->setStorePackagePopular($safeInput));
-        } catch (\Exception $e) { return $this->error($e); }
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function delete_store_package($input) {
         try {
-            $safeInput = $this->sanitizeInput($input);
+            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->deleteStorePackage($safeInput));
-        } catch (\Exception $e) { return $this->error($e); }
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
     public function get_permissions() {

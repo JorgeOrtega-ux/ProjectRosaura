@@ -27,22 +27,6 @@ class AdminPackageBuilderController {
 
     bindEvents() {
         document.addEventListener('click', this.handleGlobalClickBound);
-        
-        // Color inputs listeners
-        const colorInputs = document.querySelectorAll('[data-ref^="input-pkg-"]');
-        colorInputs.forEach(input => {
-            if (input.getAttribute('data-ref').includes('-color')) {
-                input.addEventListener('input', (e) => this.syncColorSwatch(e.target));
-            }
-        });
-    }
-
-    syncColorSwatch(input) {
-        const refName = input.getAttribute('data-ref').replace('input-', 'swatch-');
-        const swatch = document.querySelector(`[data-ref="${refName}"]`);
-        if (swatch) {
-            swatch.style.backgroundColor = input.value;
-        }
     }
 
     handleGlobalClick(e) {
@@ -57,11 +41,6 @@ class AdminPackageBuilderController {
                 return;
             }
         }
-
-        const toggleBtn = target.closest('.component-toggle');
-        if (toggleBtn) {
-            toggleBtn.classList.toggle('active');
-        }
     }
 
     goBack() {
@@ -69,46 +48,6 @@ class AdminPackageBuilderController {
             window.spaRouter.navigate(`${this.basePath}/admin/store-packages`);
         } else {
             window.location.href = `${this.basePath}/admin/store-packages`;
-        }
-    }
-
-    toggleAccordion(btn) {
-        const header = btn.closest('.component-accordion-header');
-        if (!header) return;
-        const accordion = header.closest('.component-accordion');
-        if (accordion) {
-            accordion.classList.toggle('active');
-        }
-    }
-
-    toggleEditState(btn) {
-        const statefulGroup = btn.closest('.component-group-item--stateful');
-        if (!statefulGroup) return;
-
-        const viewState = statefulGroup.querySelector('.component-state-box[data-state$="-view"]');
-        const editState = statefulGroup.querySelector('.component-state-box[data-state$="-edit"]');
-
-        if (!viewState || !editState) return;
-
-        if (viewState.classList.contains('active')) {
-            viewState.classList.remove('active');
-            viewState.classList.add('disabled');
-            editState.classList.remove('disabled');
-            editState.classList.add('active');
-
-            const input = editState.querySelector('input');
-            if (input) input.focus();
-        } else {
-            const input = editState.querySelector('input');
-            if (input) {
-                const originalVal = input.getAttribute('data-original-value');
-                input.value = originalVal;
-            }
-
-            editState.classList.remove('active');
-            editState.classList.add('disabled');
-            viewState.classList.remove('disabled');
-            viewState.classList.add('active');
         }
     }
 
@@ -124,11 +63,7 @@ class AdminPackageBuilderController {
 
         if (input && display) {
             const newVal = input.value.trim();
-            if (newVal === '') {
-                showMessage("Este campo no puede estar vacío.", "warning");
-                return;
-            }
-            display.textContent = newVal;
+            display.textContent = newVal || 'Sin configurar';
             input.setAttribute('data-original-value', newVal);
         }
 
@@ -136,6 +71,32 @@ class AdminPackageBuilderController {
         editState.classList.add('disabled');
         viewState.classList.remove('disabled');
         viewState.classList.add('active');
+    }
+
+    adjustConfig(btn) {
+        const field = btn.dataset.field;
+        const isDecimal = btn.dataset.decimal === 'true';
+        const step = isDecimal ? parseFloat(btn.dataset.step) : parseInt(btn.dataset.step, 10);
+        const min = btn.dataset.min !== undefined ? parseFloat(btn.dataset.min) : -999999;
+        const max = btn.dataset.max !== undefined ? parseFloat(btn.dataset.max) : 999999;
+        
+        const center = document.querySelector(`[data-ref="val_${field}"]`);
+        if (!center) return;
+        
+        let currentVal = isDecimal ? parseFloat(center.dataset.value || 0) : parseInt(center.dataset.value || 0, 10);
+        let newVal = currentVal + step;
+        
+        if (newVal < min) newVal = min;
+        if (newVal > max) newVal = max;
+        
+        if (isDecimal) {
+            newVal = Math.round(newVal * 100) / 100;
+            center.dataset.value = newVal;
+            center.textContent = newVal.toFixed(2);
+        } else {
+            center.dataset.value = newVal;
+            center.textContent = newVal.toLocaleString();
+        }
     }
 
     async savePackage(btn) {
@@ -151,24 +112,24 @@ class AdminPackageBuilderController {
             return;
         }
 
+        const amountVal = document.querySelector('[data-ref="val_pkgAmount"]')?.dataset.value;
+        const priceVal = document.querySelector('[data-ref="val_pkgPrice"]')?.dataset.value;
+
         const data = {
             uuid: uuid,
             name: name,
-            amount: document.querySelector('[data-ref="input-pkg-amount"]')?.value || 0,
-            price_usd: document.querySelector('[data-ref="input-pkg-price"]')?.value || 0,
-            description: document.querySelector('[data-ref="input-pkg-description"]')?.value || '',
+            amount: amountVal !== undefined ? parseInt(amountVal, 10) : 1000,
+            price_usd: priceVal !== undefined ? parseFloat(priceVal) : 2.99,
+            description: document.querySelector('[data-ref="input-pkg-desc"]')?.value || '',
             bonus_text: document.querySelector('[data-ref="input-pkg-bonus"]')?.value || '',
             stripe_price_id: document.querySelector('[data-ref="input-pkg-stripe"]')?.value || '',
-            icon: document.querySelector('[data-ref="input-pkg-icon"]')?.value || '',
-            icon_color: document.querySelector('[data-ref="input-pkg-icon-color"]')?.value || '',
-            border_color: document.querySelector('[data-ref="input-pkg-border-color"]')?.value || '',
-            badge_color: document.querySelector('[data-ref="input-pkg-badge-color"]')?.value || '',
-            is_active: document.querySelector('[data-ref="toggle-active"]')?.classList.contains('active') ? 1 : 0
+            icon: document.querySelector('[data-ref="input-pkg-icon"]')?.value || 'monetization_on',
+            is_active: document.querySelector('[data-ref="toggle-active"]')?.checked ? 1 : 0
         };
 
         setButtonLoading(btn);
         try {
-            const response = await this.api.post(ApiRoutes.Admin.SaveStorePackage, data, { signal: this.abortController?.signal });
+            const response = await this.api.post(ApiRoutes.Admin.SaveStorePackage, data, this.abortController?.signal);
             if (response.success) {
                 showMessage(response.message, 'success');
                 setTimeout(() => {
@@ -179,7 +140,7 @@ class AdminPackageBuilderController {
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                showMessage('Error de conexión', 'error');
+                showMessage('Error de conexión: ' + error.message, 'error');
             }
         } finally {
             restoreButton(btn);

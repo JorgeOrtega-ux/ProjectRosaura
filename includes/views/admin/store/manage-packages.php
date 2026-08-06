@@ -37,9 +37,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
                     <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="toggleVisibilityPackage" data-tooltip="<?php echo __('btn_toggle_visibility'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
                     </button>
-                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="setPopularPackage" data-tooltip="<?php echo __('btn_set_popular'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">star</span>
-                    </button>
                     <button class="component-button component-button--danger component-button--icon component-button--h40" data-action="deletePackage" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
@@ -95,14 +92,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
                             <th data-width="120">Cantidad</th>
                             <th data-width="120">Precio (USD)</th>
                             <th data-width="140">Visibilidad</th>
-                            <th data-width="140">Popularidad</th>
                         </tr>
                     </thead>
                     <tbody data-ref="packages-table-body">
                         <?php foreach ($packages as $pkg): 
                             $rawName = __($pkg['name']) ?: $pkg['name'];
                             $icon = $pkg['icon'] ?: 'monetization_on';
-                            $iconColor = $pkg['icon_color'] ?: 'var(--color-primary)';
                         ?>
                         <tr class="component-table-row clickable" 
                             data-action="selectPackageRow" 
@@ -110,8 +105,8 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
                             data-package-name="<?php echo htmlspecialchars($rawName); ?>">
                             <td>
                                 <div class="td-user-info">
-                                    <div class="component-button--profile role-dynamic component-avatar--static-sm" style="background-color: <?php echo htmlspecialchars($iconColor); ?>">
-                                        <span class="material-symbols-rounded" style="color:white; font-size: 20px;"><?php echo htmlspecialchars($icon); ?></span>
+                                    <div class="component-card__icon-container component-card__icon-container--bordered component-card__icon-container--round">
+                                        <span class="material-symbols-rounded"><?php echo htmlspecialchars($icon); ?></span>
                                     </div>
                                     <div class="component-badge component-badge--sm">
                                         <span class="search-target"><?php echo htmlspecialchars($rawName); ?></span>
@@ -142,21 +137,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
                                     </div>
                                 <?php endif; ?>
                             </td>
-                            <td>
-                                <?php if ($pkg['is_popular']): ?>
-                                    <div class="component-badge component-badge--sm component-badge--warning">
-                                        <span class="material-symbols-rounded component-icon-sm">star</span>
-                                        <span><?php echo __('admin_tier_status_popular') ?: 'Popular'; ?></span>
-                                    </div>
-                                <?php else: ?>
-                                    <span class="td-muted">-</span>
-                                <?php endif; ?>
-                            </td>
                         </tr>
                         <?php endforeach; ?>
                         
                         <tr class="disabled" data-ref="empty-search-table">
-                            <td colspan="5" class="component-empty-table-cell">
+                            <td colspan="4" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
                                     <p class="component-empty-state-text">No se encontraron resultados</p>

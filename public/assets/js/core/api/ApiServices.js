@@ -171,6 +171,7 @@ export class ApiService {
                 }
             }
 
+            console.error("Non-JSON response from server! Status:", response.status, "Content:", text);
             const cleanSnippet = text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
             throw new SyntaxError(`Unexpected non-JSON response from server (HTTP ${response.status}): ${cleanSnippet}`);
         }
@@ -243,7 +244,7 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
-            return { success: false, message: window.__('api_connection_error') };
+            return { success: false, message: window.__('api_connection_error') + " (" + error.message + ")" };
         }
     }
 

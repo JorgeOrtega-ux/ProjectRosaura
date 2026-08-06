@@ -34,6 +34,7 @@ class AdminPackagesController {
     destroy() {
         if (!this.isInitialized) return;
         if (this.abortController) this.abortController.abort();
+        document.removeEventListener('click', this.handlePaginationClickBound, true);
         document.removeEventListener('click', this.handleGlobalClickBound);
         document.removeEventListener('input', this.handleGlobalInputBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
@@ -300,7 +301,7 @@ class AdminPackagesController {
         if (!this.selectedPackageId) return;
         setButtonLoading(btn);
         try {
-            const data = await this.api.post(ApiRoutes.Admin.ToggleStorePackage, { uuid: this.selectedPackageId }, { signal: this.abortController?.signal });
+            const data = await this.api.post(ApiRoutes.Admin.ToggleStorePackage, { uuid: this.selectedPackageId }, this.abortController?.signal);
             if (data.success) {
                 showMessage(data.message, 'success');
                 this.handlePagination(window.location.href);
@@ -309,27 +310,7 @@ class AdminPackagesController {
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                showMessage('Error de conexión', 'error');
-            }
-        } finally {
-            restoreButton(btn);
-        }
-    }
-
-    async setPopularPackage(btn) {
-        if (!this.selectedPackageId) return;
-        setButtonLoading(btn);
-        try {
-            const data = await this.api.post(ApiRoutes.Admin.SetStorePackagePopular, { uuid: this.selectedPackageId }, { signal: this.abortController?.signal });
-            if (data.success) {
-                showMessage(data.message, 'success');
-                this.handlePagination(window.location.href);
-            } else {
-                showMessage(data.message || 'Error al actualizar', 'error');
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                showMessage('Error de conexión', 'error');
+                showMessage('Error de conexión: ' + error.message, 'error');
             }
         } finally {
             restoreButton(btn);
@@ -342,7 +323,7 @@ class AdminPackagesController {
         
         setButtonLoading(btn);
         try {
-            const data = await this.api.post(ApiRoutes.Admin.DeleteStorePackage, { uuid: this.selectedPackageId }, { signal: this.abortController?.signal });
+            const data = await this.api.post(ApiRoutes.Admin.DeleteStorePackage, { uuid: this.selectedPackageId }, this.abortController?.signal);
             if (data.success) {
                 showMessage(data.message, 'success');
                 this.handlePagination(window.location.href);
@@ -351,7 +332,7 @@ class AdminPackagesController {
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                showMessage('Error de conexión', 'error');
+                showMessage('Error de conexión: ' + error.message, 'error');
             }
         } finally {
             restoreButton(btn);

@@ -14,14 +14,11 @@ extract($builderData);
 $pkgData = [
     'uuid' => '',
     'name' => '',
-    'amount' => 0,
-    'price_usd' => 0.00,
+    'amount' => 1000,
+    'price_usd' => 2.99,
     'description' => '',
     'bonus_text' => '',
     'icon' => 'monetization_on',
-    'icon_color' => '',
-    'border_color' => '',
-    'badge_color' => '',
     'stripe_price_id' => '',
     'is_active' => 1
 ];
@@ -49,7 +46,7 @@ if ($isEdit && !empty($package)) {
             <div class="component-bottom">
                 
                 <!-- Detalles Accordion -->
-                <div class="component-card--grouped component-accordion">
+                <div class="component-card--grouped component-accordion active">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
@@ -57,7 +54,7 @@ if ($isEdit && !empty($package)) {
                             </div>
                             <div class="component-card__text">
                                 <h2 class="component-card__title">Detalles del Paquete</h2>
-                                <p class="component-card__description">Configura los datos básicos e identificadores de este paquete.</p>
+                                <p class="component-card__description">Configura los datos básicos, precios, cantidades e identificadores de este paquete.</p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -67,7 +64,7 @@ if ($isEdit && !empty($package)) {
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
                             
-                            <!-- State Box Name -->
+                            <!-- Nombre -->
                             <div class="component-group-item component-group-item--stateful">
                                 <div class="active component-state-box" data-state="pkg-name-view">
                                     <div class="component-card__content">
@@ -97,122 +94,189 @@ if ($isEdit && !empty($package)) {
                                     </div>
                                 </div>
                             </div>
-                            <hr class="component-divider">
-                            
-                            <!-- Amount & Price (Simple grouped inputs without statebox for brevity, matching some other parts) -->
-                            <div class="component-group-item component-group-item--stacked">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Precios y Cantidad</h2>
-                                        <p class="component-card__description">Define la cantidad de monedas y el precio en USD.</p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--start mt-15">
-                                    <div class="component-form-row col-2">
-                                        <div class="component-input-group">
-                                            <label class="component-label">Monedas Obtenidas</label>
-                                            <input type="number" data-ref="input-pkg-amount" class="component-input-field" value="<?php echo (int)$pkgData['amount']; ?>" min="1">
-                                        </div>
-                                        <div class="component-input-group">
-                                            <label class="component-label">Precio (USD)</label>
-                                            <input type="number" step="0.01" data-ref="input-pkg-price" class="component-input-field" value="<?php echo (float)$pkgData['price_usd']; ?>" min="0">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <hr class="component-divider">
-
-                            <div class="component-group-item component-group-item--stacked">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Textos Descriptivos</h2>
-                                        <p class="component-card__description">Descripciones opcionales y texto para mostrar etiquetas extra (como '+25%').</p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--start mt-15">
-                                    <div class="component-form-row col-2">
-                                        <div class="component-input-group">
-                                            <label class="component-label">Descripción</label>
-                                            <input type="text" data-ref="input-pkg-description" class="component-input-field" value="<?php echo htmlspecialchars($pkgData['description']); ?>" placeholder="Ej. store_coins_1000_desc">
-                                        </div>
-                                        <div class="component-input-group">
-                                            <label class="component-label">Texto de Bonus</label>
-                                            <input type="text" data-ref="input-pkg-bonus" class="component-input-field" value="<?php echo htmlspecialchars($pkgData['bonus_text']); ?>" placeholder="Ej. +25% Gratis">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                             
                             <hr class="component-divider">
                             
+                            <!-- Cantidad (Amount) -->
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Integración con Pasarela de Pago</h2>
-                                        <p class="component-card__description">ID de Stripe asociado al paquete.</p>
+                                        <h2 class="component-card__title">Monedas Obtenidas</h2>
+                                        <p class="component-card__description">Define la cantidad de monedas que otorga el paquete.</p>
                                     </div>
                                 </div>
-                                <div class="component-card__actions component-card__actions--start mt-15">
-                                    <div class="component-input-group">
-                                        <label class="component-label">Stripe Price ID</label>
-                                        <input type="text" data-ref="input-pkg-stripe" class="component-input-field" value="<?php echo htmlspecialchars($pkgData['stripe_price_id']); ?>" placeholder="price_1...">
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="pkgAmount" data-step="-500" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="pkgAmount" data-step="-100" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="val_pkgAmount" data-value="<?php echo (int)$pkgData['amount']; ?>"><?php echo number_format((int)$pkgData['amount']); ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="pkgAmount" data-step="100" data-max="9999999"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="pkgAmount" data-step="500" data-max="9999999"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Estilo y Diseño Accordion -->
-                <div class="component-card--grouped component-accordion">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
-                        <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">palette</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Estilo y Diseño</h2>
-                                <p class="component-card__description">Modifica el aspecto visual del paquete en la tienda.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
-                        </div>
-                    </div>
-                    <div class="component-accordion-body">
-                        <div class="component-accordion-content">
+                            <hr class="component-divider">
+                            
+                            <!-- Precio (Price USD) -->
                             <div class="component-group-item component-group-item--stacked">
-                                <div class="component-card__actions component-card__actions--start mt-15">
-                                    <div class="component-form-row col-3">
-                                        <div class="component-input-group">
-                                            <label class="component-label">Ícono (Material Symbols)</label>
-                                            <input type="text" data-ref="input-pkg-icon" class="component-input-field" value="<?php echo htmlspecialchars($pkgData['icon']); ?>" placeholder="Ej. monetization_on">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Precio (USD)</h2>
+                                        <p class="component-card__description">El costo del paquete de monedas en USD.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-inline-control component-inline-control--fixed">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="pkgPrice" data-step="-5" data-min="0" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="pkgPrice" data-step="-1" data-min="0" data-decimal="true"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-input-group">
-                                            <label class="component-label">Color del Ícono (Hex)</label>
-                                            <div class="component-input-field-wrap">
-                                                <div class="component-color-swatch component-color-swatch--sm" style="background-color: <?php echo htmlspecialchars($pkgData['icon_color']); ?>" data-ref="swatch-pkg-icon"></div>
-                                                <input type="text" data-ref="input-pkg-icon-color" class="component-input-field component-input-field--mono" value="<?php echo htmlspecialchars($pkgData['icon_color']); ?>" placeholder="#000000">
-                                            </div>
+                                        <div class="component-inline-control__center" data-ref="val_pkgPrice" data-value="<?php echo (float)$pkgData['price_usd']; ?>"><?php echo number_format((float)$pkgData['price_usd'], 2); ?></div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="pkgPrice" data-step="1" data-max="9999" data-decimal="true"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="pkgPrice" data-step="5" data-max="9999" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
                                         </div>
-                                        <div class="component-input-group">
-                                            <label class="component-label">Color del Borde (Hex)</label>
-                                            <div class="component-input-field-wrap">
-                                                <div class="component-color-swatch component-color-swatch--sm" style="background-color: <?php echo htmlspecialchars($pkgData['border_color']); ?>" data-ref="swatch-pkg-border"></div>
-                                                <input type="text" data-ref="input-pkg-border-color" class="component-input-field component-input-field--mono" value="<?php echo htmlspecialchars($pkgData['border_color']); ?>" placeholder="#000000">
-                                            </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="component-divider">
+
+                            <!-- Descripción -->
+                            <div class="component-group-item component-group-item--stateful">
+                                <div class="active component-state-box" data-state="pkg-desc-view">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Descripción</h2>
+                                            <span class="component-display-value" data-ref="display-pkg-desc"><?php echo htmlspecialchars($pkgData['description']) ?: 'Sin configurar'; ?></span>
                                         </div>
-                                        <div class="component-input-group">
-                                            <label class="component-label">Color del Badge (Bonus) (Hex)</label>
-                                            <div class="component-input-field-wrap">
-                                                <div class="component-color-swatch component-color-swatch--sm" style="background-color: <?php echo htmlspecialchars($pkgData['badge_color']); ?>" data-ref="swatch-pkg-badge"></div>
-                                                <input type="text" data-ref="input-pkg-badge-color" class="component-input-field component-input-field--mono" value="<?php echo htmlspecialchars($pkgData['badge_color']); ?>" placeholder="#000000">
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--stretch">
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="pkg-desc">Editar</button>
+                                    </div>
+                                </div>
+                                <div class="disabled component-state-box" data-state="pkg-desc-edit">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Descripción</h2>
+                                            <div class="component-edit-row">
+                                                <div class="component-input-group component-input-group--h34">
+                                                    <input type="text" data-ref="input-pkg-desc" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($pkgData['description']); ?>" data-original-value="<?php echo htmlspecialchars($pkgData['description']); ?>" placeholder="Ej. store_coins_1000_desc">
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--stretch">
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="pkg-desc">Cancelar</button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="pkg-desc">Guardar</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <hr class="component-divider">
+
+                            <!-- Texto de Bonus -->
+                            <div class="component-group-item component-group-item--stateful">
+                                <div class="active component-state-box" data-state="pkg-bonus-view">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Texto de Bonus</h2>
+                                            <span class="component-display-value" data-ref="display-pkg-bonus"><?php echo htmlspecialchars($pkgData['bonus_text']) ?: 'Sin configurar'; ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--stretch">
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="pkg-bonus">Editar</button>
+                                    </div>
+                                </div>
+                                <div class="disabled component-state-box" data-state="pkg-bonus-edit">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Texto de Bonus</h2>
+                                            <div class="component-edit-row">
+                                                <div class="component-input-group component-input-group--h34">
+                                                    <input type="text" data-ref="input-pkg-bonus" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($pkgData['bonus_text']); ?>" data-original-value="<?php echo htmlspecialchars($pkgData['bonus_text']); ?>" placeholder="Ej. +25% Gratis">
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--stretch">
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="pkg-bonus">Cancelar</button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="pkg-bonus">Guardar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="component-divider">
+
+                            <!-- Stripe Price ID -->
+                            <div class="component-group-item component-group-item--stateful">
+                                <div class="active component-state-box" data-state="pkg-stripe-view">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Stripe Price ID</h2>
+                                            <span class="component-display-value" data-ref="display-pkg-stripe"><?php echo htmlspecialchars($pkgData['stripe_price_id']) ?: 'Sin configurar'; ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--stretch">
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="pkg-stripe">Editar</button>
+                                    </div>
+                                </div>
+                                <div class="disabled component-state-box" data-state="pkg-stripe-edit">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Stripe Price ID</h2>
+                                            <div class="component-edit-row">
+                                                <div class="component-input-group component-input-group--h34">
+                                                    <input type="text" data-ref="input-pkg-stripe" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($pkgData['stripe_price_id']); ?>" data-original-value="<?php echo htmlspecialchars($pkgData['stripe_price_id']); ?>" placeholder="Ej. price_1...">
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--stretch">
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="pkg-stripe">Cancelar</button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="pkg-stripe">Guardar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="component-divider">
+
+                            <!-- Ícono -->
+                            <div class="component-group-item component-group-item--stateful">
+                                <div class="active component-state-box" data-state="pkg-icon-view">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Ícono (Material Symbols)</h2>
+                                            <span class="component-display-value" data-ref="display-pkg-icon"><?php echo htmlspecialchars($pkgData['icon']) ?: 'Sin configurar'; ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--stretch">
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="pkg-icon">Editar</button>
+                                    </div>
+                                </div>
+                                <div class="disabled component-state-box" data-state="pkg-icon-edit">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Ícono (Material Symbols)</h2>
+                                            <div class="component-edit-row">
+                                                <div class="component-input-group component-input-group--h34">
+                                                    <input type="text" data-ref="input-pkg-icon" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($pkgData['icon']); ?>" data-original-value="<?php echo htmlspecialchars($pkgData['icon']); ?>" placeholder="Ej. monetization_on, diamond">
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--stretch">
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="pkg-icon">Cancelar</button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="pkg-icon">Guardar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -242,9 +306,10 @@ if ($isEdit && !empty($package)) {
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--end">
-                                    <div class="component-toggle <?php echo $pkgData['is_active'] ? 'active' : ''; ?>" data-ref="toggle-active">
-                                        <div class="component-toggle__knob"></div>
-                                    </div>
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" data-ref="toggle-active" <?php echo $pkgData['is_active'] ? 'checked' : ''; ?>>
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
                                 </div>
                             </div>
                         </div>

@@ -885,7 +885,7 @@ class AdminServices {
 
         try {
             $dbManager = new DatabaseManager();
-            $pdo = $dbManager->getConnection(DatabaseConstants::CONN_IDENTITY);
+            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
             
             if ($uuid) {
                 // Update
@@ -912,7 +912,7 @@ class AdminServices {
         if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
         try {
             $dbManager = new DatabaseManager();
-            $pdo = $dbManager->getConnection(DatabaseConstants::CONN_IDENTITY);
+            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
             $stmt = $pdo->prepare("UPDATE store_coin_packages SET is_active = 1 - is_active WHERE uuid = ?");
             $stmt->execute([$uuid]);
             return ['success' => true, 'message' => 'Visibilidad actualizada'];
@@ -926,7 +926,7 @@ class AdminServices {
         if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
         try {
             $dbManager = new DatabaseManager();
-            $pdo = $dbManager->getConnection(DatabaseConstants::CONN_IDENTITY);
+            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
             // Primero limpiamos el popular de todos
             $pdo->query("UPDATE store_coin_packages SET is_popular = 0");
             $stmt = $pdo->prepare("UPDATE store_coin_packages SET is_popular = 1 WHERE uuid = ?");
@@ -942,7 +942,7 @@ class AdminServices {
         if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
         try {
             $dbManager = new DatabaseManager();
-            $pdo = $dbManager->getConnection(DatabaseConstants::CONN_IDENTITY);
+            $pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
             $stmt = $pdo->prepare("DELETE FROM store_coin_packages WHERE uuid = ?");
             $stmt->execute([$uuid]);
             return ['success' => true, 'message' => 'Paquete eliminado permanentemente'];
