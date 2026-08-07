@@ -58,6 +58,7 @@ return [
     '/canvases/c/v/:canvas/:msg/:idx' => ['view' => 'canvases/chat/chat-viewer.php', 'auth' => true, 'requires_2fa' => false],
     '/canvases/join' => ['view' => 'canvases/core/join.php', 'auth' => true, 'permissions' => [PC::JOIN_CANVAS], 'requires_2fa' => false],
     '/canvases/palettes/create' => ['view' => 'canvases/palettes/custom-palette-create.php', 'auth' => true, 'requires_2fa' => false, 'subscription_feature' => 'custom_palettes'],
+    '/design/:id' => ['view' => 'app/design.php'],
     '/design/s/:uuid' => ['view' => 'canvases/snapshots/snapshots-gallery.php'],
     '/snapshot/view/:id' => ['view' => 'canvases/snapshots/snapshot-viewer.php'],
     '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => [PC::ACCESS_ADMIN_PANEL], 'requires_2fa' => false],

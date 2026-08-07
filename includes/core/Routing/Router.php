@@ -30,303 +30,74 @@ class Router {
         if ($relativePath === '' || $relativePath === false) {
             $relativePath = '/';
         }
+
+        // Special Redirects
         if ($relativePath === '/design') {
             header("Location: " . $this->basePath . "/");
             exit;
         }
 
-        if (preg_match('#^/design/s/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return ['view' => 'canvases/snapshots/snapshots-gallery.php'];
-        }
-
-        if (preg_match('#^/snapshot/view/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['id'] = $matches[1];
-            return ['view' => 'canvases/snapshots/snapshot-viewer.php'];
-        }
-
-        if (preg_match('#^/design/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['id'] = $matches[1];
-            return ['view' => 'app/design.php'];
-        }
-        if (preg_match('#^/canvases/manage/resets/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/canvases/manage/resets/:uuid'] ?? [
-                'view' => 'canvases/workspace/reset.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-        if (preg_match('#^/canvases/members/([a-zA-Z0-9\-]+)/role/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            $_GET['user_uuid'] = $matches[2];
-            return $this->routes['/canvases/members/:uuid/role/:user_uuid'] ?? [
-                'view' => 'canvases/team/change-role.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-        if (preg_match('#^/canvases/manage/sanctions/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/canvases/manage/sanctions/:uuid'] ?? [
-                'view' => 'canvases/team/sanctions.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-        if (preg_match('#^/canvases/members/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/canvases/members/:uuid'] ?? [
-                'view' => 'canvases/team/members.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-        if (preg_match('#^/canvases/manage/requests/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/canvases/manage/requests/:uuid'] ?? [
-                'view' => 'canvases/team/requests.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-        if (preg_match('#^/canvases/edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/canvases/edit/:uuid'] ?? [
-                'view' => 'canvases/workspace/edit.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-        if (preg_match('#^/canvases/manage/resize/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/canvases/manage/resize/:uuid'] ?? [
-                'view' => 'canvases/workspace/resize.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-        if (preg_match('#^/canvases/manage/invites/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/canvases/manage/invites/:uuid'] ?? [
-                'view' => 'canvases/team/invites.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-        if (preg_match('#^/canvases/manage/invites/generate/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/canvases/manage/invites/generate/:uuid'] ?? [
-                'view' => 'canvases/team/invites-generate.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-        if (preg_match('#^/canvases/manage/roles/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/canvases/manage/roles/:uuid'] ?? [
-                'view' => 'canvases/team/roles.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-        if (preg_match('#^/canvases/manage/role-builder/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            $_GET['role_uuid'] = $matches[2];
-            return $this->routes['/canvases/manage/role-builder/:uuid/:role_uuid'] ?? [
-                'view' => 'canvases/team/role-builder.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-        if (preg_match('#^/canvases/manage/role-builder/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/canvases/manage/role-builder/:uuid'] ?? [
-                'view' => 'canvases/team/role-builder.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-
-        if (preg_match('#^/canvases/manage/role-permissions/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            $_GET['role_uuid'] = $matches[2];
-            return $this->routes['/canvases/manage/role-permissions/:uuid/:role_uuid'] ?? [
-                'view' => 'canvases/team/role-permissions.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
-        if (preg_match('#^/canvases/manage/role-permissions/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/canvases/manage/role-permissions/:uuid'] ?? [
-                'view' => 'canvases/team/role-permissions.php',
-                'auth' => true,
-                'permissions' => ['manage_canvases'],
-                'requires_2fa' => false
-            ];
-        }
         if (preg_match('#^/canvases/resize/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             header('Location: ' . $this->basePath . '/canvases/manage/resize/' . $matches[1]);
             exit;
         }
 
-        if (preg_match('#^/admin/messages/visibility/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/messages/visibility/:uuid'] ?? [
-                'view' => 'admin/messages/edit-visibility.php',
-                'auth' => true,
-                'permissions' => ['view_logs'],
-                'requires_2fa' => false
-            ];
+        // 1. Check exact match first (static routes)
+        if (array_key_exists($relativePath, $this->routes)) {
+            return $this->routes[$relativePath];
         }
 
-        if (preg_match('#^/admin/messages/reports/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/messages/reports/:uuid'] ?? [
-                'view' => 'admin/messages/reports.php',
-                'auth' => true,
-                'permissions' => ['view_logs'],
-                'requires_2fa' => false
-            ];
-        }
-
-        if (preg_match('#^/admin/user-profile/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/user-profile/:uuid'] ?? [
-                'view' => 'admin/users/edit-user.php',
-                'auth' => true,
-                'permissions' => ['edit_users'],
-                'requires_2fa' => false
-            ];
-        }
-
-        if (preg_match('#^/admin/user-moderation/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/user-moderation/:uuid'] ?? [
-                'view' => 'admin/users/edit-status.php',
-                'auth' => true,
-                'permissions' => ['moderate_users'],
-                'requires_2fa' => false
-            ];
-        }
-
-        if (preg_match('#^/admin/user-activity/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/user-activity/:uuid'] ?? [
-                'view' => 'admin/users/user-history.php',
-                'auth' => true,
-                'permissions' => ['view_kardex'],
-                'requires_2fa' => false
-            ];
-        }
-
-        if (preg_match('#^/admin/user-roles/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/user-roles/:uuid'] ?? [
-                'view' => 'admin/users/edit-user-role.php',
-                'auth' => true,
-                'permissions' => [\App\Core\System\PermissionsConstants::ASSIGN_ROLES],
-                'requires_2fa' => false
-            ];
-        }
-
-        if (preg_match('#^/admin/subscription-edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/subscription-edit/:uuid'] ?? [
-                'view' => 'admin/subscriptions/subscription-builder.php',
-                'auth' => true,
-                'permissions' => [\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL],
-                'requires_2fa' => false
-            ];
-        }
-
-        if (preg_match('#^/admin/store-package-edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/store-package-edit/:uuid'] ?? [
-                'view' => 'admin/store/package-builder.php',
-                'auth' => true,
-                'permissions' => [\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL],
-                'requires_2fa' => false
-            ];
-        }
-
-        if (preg_match('#^/admin/store-perk-edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['uuid'] = $matches[1];
-            return $this->routes['/admin/store-perk-edit/:uuid'] ?? [
-                'view' => 'admin/store/perk-builder.php',
-                'auth' => true,
-                'permissions' => [\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL],
-                'requires_2fa' => false
-            ];
-        }
-
-        if (preg_match('#^/admin/role-edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['id'] = $matches[1];
-            return $this->routes['/admin/role-edit/:uuid'] ?? [
-                'view' => 'admin/roles/role-builder.php',
-                'auth' => true,
-                'permissions' => [\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE],
-                'requires_2fa' => false
-            ];
-        }
-
-        if (preg_match('#^/admin/role-permissions/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['id'] = $matches[1];
-            return $this->routes['/admin/role-permissions/:uuid'] ?? [
-                'view' => 'admin/roles/role-permissions.php',
-                'auth' => true,
-                'permissions' => [\App\Core\System\PermissionsConstants::MANAGE_ROLES_STRUCTURE],
-                'requires_2fa' => false
-            ];
-        }
-
-        if (preg_match('#^/admin/backup-restore/([^/]+)$#', $relativePath, $matches)) {
-            $_GET['id'] = urldecode($matches[1]);
-            return $this->routes['/admin/backup-restore/:uuid'] ?? [
-                'view' => 'admin/backups/backups-restore.php',
-                'auth' => true,
-                'permissions' => ['restore_backups'],
-                'requires_2fa' => false
-            ];
-        }
-
-        if (preg_match('#^/canvases/c/v/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)/([0-9]+)$#', $relativePath, $matches)) {
-            $_GET['canvas'] = $matches[1];
-            $_GET['msg'] = $matches[2];
-            $_GET['idx'] = (int)$matches[3];
-            return $this->routes['/canvases/c/v/:canvas/:msg/:idx'] ?? [
-                'view' => 'canvases/chat/chat-viewer.php',
-                'auth' => true,
-                'requires_2fa' => false
-            ];
-        }
-
-        if (!array_key_exists($relativePath, $this->routes)) {
-            if ($relativePath !== '/favicon.ico') {
-                Logger::warning("Route not found (404)", [
-                    'uri' => $requestUri, 
-                    'ip' => Utils::getIpAddress(),
-                    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
-                ]);
+        // 2. Check dynamic match (routes with parameters like :uuid, :id, etc.)
+        foreach ($this->routes as $routePattern => $routeConfig) {
+            if (strpos($routePattern, ':') !== false) {
+                // Convert route pattern to regex.
+                // E.g., "/canvases/members/:uuid/role/:user_uuid"
+                $patternParts = explode('/', $routePattern);
+                $regexParts = [];
+                $paramNames = [];
+                
+                foreach ($patternParts as $part) {
+                    if (strpos($part, ':') === 0) {
+                        $paramNames[] = substr($part, 1);
+                        $regexParts[] = '([^/]+)';
+                    } else {
+                        $regexParts[] = preg_quote($part, '#');
+                    }
+                }
+                
+                $regex = '#^' . implode('/', $regexParts) . '$#';
+                
+                if (preg_match($regex, $relativePath, $matches)) {
+                    // Map matches to $_GET
+                    for ($i = 0; $i < count($paramNames); $i++) {
+                        if (isset($matches[$i + 1])) {
+                            $paramName = $paramNames[$i];
+                            $val = urldecode($matches[$i + 1]);
+                            $_GET[$paramName] = $val;
+                            
+                            // Maintain backward compatibility for keys expecting 'id' instead of 'uuid' or vice versa
+                            if ($paramName === 'uuid' && !isset($_GET['id'])) {
+                                $_GET['id'] = $val;
+                            }
+                            if ($paramName === 'id' && !isset($_GET['uuid'])) {
+                                $_GET['uuid'] = $val;
+                            }
+                        }
+                    }
+                    return $routeConfig;
+                }
             }
-            return ['view' => 'system/404.php'];
         }
 
-        return $this->routes[$relativePath];
+        // 3. Fallback: Route not found (404)
+        if ($relativePath !== '/favicon.ico') {
+            Logger::warning("Route not found (404)", [
+                'uri' => $_SERVER['REQUEST_URI'], 
+                'ip' => Utils::getIpAddress(),
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+            ]);
+        }
+        return ['view' => 'system/404.php'];
     }
 }
 ?>

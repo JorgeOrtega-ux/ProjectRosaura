@@ -16,35 +16,53 @@ export class SpaRouter {
     }
 
     _getRoutePattern(url) {
-        if (url.startsWith('/design/s/')) return '/design/s/:uuid';
-        if (url.startsWith('/snapshot/view/')) return '/snapshot/view/:id';
-        if (url.startsWith('/design/')) return '/design';
-        if (url.startsWith('/canvases/manage/requests/')) return '/canvases/manage/requests/:uuid';
-        if (url.startsWith('/canvases/manage/resets/')) return '/canvases/manage/resets/:uuid';
-        if (url.startsWith('/canvases/manage/invites/generate/')) return '/canvases/manage/invites/generate/:uuid';
-        if (url.startsWith('/canvases/manage/invites/')) return '/canvases/manage/invites/:uuid';
-        if (url.startsWith('/canvases/manage/roles/')) return '/canvases/manage/roles/:uuid';
-        if (url.startsWith('/canvases/manage/role-builder/')) return '/canvases/manage/role-builder/:uuid';
-        if (url.startsWith('/canvases/manage/role-permissions/')) return '/canvases/manage/role-permissions/:uuid';
-        if (url.startsWith('/canvases/manage/sanctions/')) return '/canvases/manage/sanctions/:uuid';
-        if (url.startsWith('/canvases/manage/resize/') || url.startsWith('/canvases/resize/')) return '/canvases/manage/resize/:uuid';
-        if (url.startsWith('/canvases/c/v/')) return '/canvases/c/v/:canvas/:msg/:idx';
-        if (url.startsWith('/canvases/edit/')) return '/canvases/edit/:uuid';
-        if (url.startsWith('/canvases/members/') && url.includes('/role/')) return '/canvases/members/:uuid/role/:id';
-        if (url.startsWith('/canvases/members/')) return '/canvases/members/:uuid';
-        if (url.startsWith('/admin/messages/visibility/')) return '/admin/messages/visibility/:uuid';
-        if (url.startsWith('/admin/messages/reports/')) return '/admin/messages/reports/:uuid';
-        if (url.startsWith('/admin/role-edit/')) return '/admin/role-edit/:uuid';
-        if (url.startsWith('/admin/role-permissions/')) return '/admin/role-permissions/:uuid';
-        if (url.startsWith('/admin/user-profile/')) return '/admin/user-profile/:uuid';
-        if (url.startsWith('/admin/user-roles/')) return '/admin/user-roles/:uuid';
-        if (url.startsWith('/admin/user-moderation/')) return '/admin/user-moderation/:uuid';
-        if (url.startsWith('/admin/user-activity/')) return '/admin/user-activity/:uuid';
-        if (url.startsWith('/admin/backup-restore/')) return '/admin/backup-restore/:uuid';
-        if (url.startsWith('/admin/subscription-edit/')) return '/admin/subscription-edit/:uuid';
-        if (url.startsWith('/admin/store-package-edit/')) return '/admin/store-package-edit/:uuid';
-        if (url.startsWith('/admin/store-perk-edit/')) return '/admin/store-perk-edit/:uuid';
-        
+        // Remove query parameters and trailing slashes if present
+        let cleanUrl = url.split('?')[0].split('#')[0];
+        if (cleanUrl.endsWith('/') && cleanUrl.length > 1) {
+            cleanUrl = cleanUrl.slice(0, -1);
+        }
+        if (cleanUrl === '') {
+            cleanUrl = '/';
+        }
+
+        // Shortcut compatibility mapping for resize redirection
+        if (cleanUrl.startsWith('/canvases/resize/')) {
+            cleanUrl = '/canvases/manage/resize/' + cleanUrl.substring('/canvases/resize/'.length);
+        }
+
+        // Try exact match first
+        if (RouteModulesMap[cleanUrl]) {
+            return cleanUrl;
+        }
+
+        // Try dynamic matching against keys in RouteModulesMap
+        for (const pattern of Object.keys(RouteModulesMap)) {
+            if (pattern.includes(':')) {
+                const patternParts = pattern.split('/');
+                const urlParts = cleanUrl.split('/');
+                if (patternParts.length === urlParts.length) {
+                    let match = true;
+                    for (let i = 0; i < patternParts.length; i++) {
+                        const pPart = patternParts[i];
+                        const uPart = urlParts[i];
+                        if (pPart.startsWith(':')) {
+                            if (!uPart) {
+                                match = false;
+                                break;
+                            }
+                        } else {
+                            if (pPart !== uPart) {
+                                match = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (match) {
+                        return pattern;
+                    }
+                }
+            }
+        }
         return url;
     }
 
@@ -193,18 +211,20 @@ export class SpaRouter {
                 this.updateDocumentTitle(url);
 
                 const isAuthRoute = url.includes('/login') || url.includes('/register') || url.includes('/forgot-password') || url.includes('/reset-password') || url.includes('/account-suspended') || url.includes('/account-deleted');
-                const isMaintenanceRoute = response.status === 500 || html.includes('component-message-icon');
+                // The top bar and sidebar should only be disabled on auth routes or in maintenance mode.
+                // Since maintenance mode triggers a full reload via 503 status code, we only need to disable them for auth routes.
+                const disableLayout = isAuthRoute;
                 const topBar = document.querySelector('.general-content-top');
 
                 if (topBar) {
-                    if (isAuthRoute || isMaintenanceRoute) {
+                    if (disableLayout) {
                         topBar.classList.add('disabled');
                     } else {
                         topBar.classList.remove('disabled');
                     }
                 }
 
-                if (isAuthRoute || isMaintenanceRoute) {
+                if (disableLayout) {
                     const sidebar = document.querySelector('.component-module--sidebar');
                     if (sidebar && sidebar.classList.contains('active')) {
                         sidebar.classList.remove('active');
