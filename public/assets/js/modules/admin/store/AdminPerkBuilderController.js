@@ -129,8 +129,7 @@ class AdminPerkBuilderController {
             name: name,
             price_coins: priceVal !== undefined ? parseInt(priceVal, 10) : 1000,
             description: document.querySelector('[data-ref="input-perk-desc"]')?.value || '',
-            icon: document.querySelector('[data-ref="input-perk-icon"]')?.value || 'shield',
-            is_active: document.querySelector('[data-ref="toggle-active"]')?.checked ? 1 : 0
+            icon: document.querySelector('[data-ref="input-perk-icon"]')?.value || 'shield'
         };
 
         setButtonLoading(btn);

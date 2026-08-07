@@ -115,7 +115,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
                             <td>
                                 <div class="td-user-info">
                                     <div class="component-button--profile component-avatar--static-sm">
-                                        <img src="/public/avatar/Um9zYXVyYVVzZXI6VQ" alt="<?php echo __('alt_role_avatar'); ?>"
+                                        <img src="/public/assets/img/fallbacks/avatar-default.png" alt="<?php echo __('alt_role_avatar'); ?>"
                                              class="image-lazy-fade"
                                              onload="this.classList.add('image-loaded')">
                                     </div>

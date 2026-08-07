@@ -97,7 +97,7 @@ class AdminLogsController {
             }
         } finally {
             if (tableContainer) {
-                .classList.remove('disabled-interaction');
+                tableContainer.classList.remove('disabled-interaction');
             }
         }
     }

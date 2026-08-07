@@ -202,7 +202,9 @@ extract($dashboardData);
                 
                 <!-- Body del Chart Card -->
                 <div class="dashboard-chart-body">
-                    <canvas id="chartTabsMain"></canvas>
+                    <div class="dashboard-chart-inner">
+                        <canvas id="chartTabsMain"></canvas>
+                    </div>
                 </div>
             </div>
 

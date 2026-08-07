@@ -123,8 +123,7 @@ class AdminPackageBuilderController {
             description: document.querySelector('[data-ref="input-pkg-desc"]')?.value || '',
             bonus_text: document.querySelector('[data-ref="input-pkg-bonus"]')?.value || '',
             stripe_price_id: document.querySelector('[data-ref="input-pkg-stripe"]')?.value || '',
-            icon: document.querySelector('[data-ref="input-pkg-icon"]')?.value || 'monetization_on',
-            is_active: document.querySelector('[data-ref="toggle-active"]')?.checked ? 1 : 0
+            icon: document.querySelector('[data-ref="input-pkg-icon"]')?.value || 'monetization_on'
         };
 
         setButtonLoading(btn);

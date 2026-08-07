@@ -13,7 +13,7 @@
     RewriteRule ^stripe/webhook$ stripe/webhook.php [L]
 
     # 1.6. Enrutar avatares con token hasheado (estilo Google)
-    RewriteRule ^avatar/([a-zA-Z0-9_-]+)$ api/avatar.php?token=$1 [QSA,L]
+    RewriteRule ^(?:public/)?avatar/([a-zA-Z0-9_-]+)$ api/avatar.php?token=$1 [QSA,L]
 
     # 2. Enrutar peticiones de almacenamiento local a storage/public
     RewriteRule ^storage/(.*)$ storage/public/$1 [L]

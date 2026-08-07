@@ -273,9 +273,10 @@ class RoleRepository implements RoleRepositoryInterface {
     public function create(string $name, int $weight = 1): bool {
         $tblRoles = DB::TBL_ROLES;
         try {
+            $uuid = \App\Core\Helpers\Utils::generateUUID();
             $this->pdo->beginTransaction();
-            $stmt = $this->pdo->prepare("INSERT INTO {$tblRoles} (name, weight) VALUES (?, ?)");
-            $stmt->execute([$name, $weight]);
+            $stmt = $this->pdo->prepare("INSERT INTO {$tblRoles} (uuid, name, weight) VALUES (?, ?, ?)");
+            $stmt->execute([$uuid, $name, $weight]);
             $this->pdo->commit();
             $this->invalidateGlobalRolesCache();
 

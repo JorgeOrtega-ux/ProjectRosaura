@@ -884,7 +884,6 @@ class AdminServices {
         $borderColor = $data['border_color'] ?? null;
         $badgeColor = $data['badge_color'] ?? null;
         $stripePriceId = $data['stripe_price_id'] ?? null;
-        $isActive = isset($data['is_active']) ? (int)$data['is_active'] : 1;
 
         if (empty($name) || $amount <= 0 || $priceUsd < 0) {
             return ['success' => false, 'message' => 'Datos inválidos. El nombre y la cantidad son obligatorios.'];
@@ -895,14 +894,14 @@ class AdminServices {
             
             if ($uuid) {
                 // Update
-                $stmt = $pdo->prepare("UPDATE store_coin_packages SET name = ?, amount = ?, description = ?, price_usd = ?, bonus_text = ?, icon = ?, icon_color = ?, border_color = ?, badge_color = ?, stripe_price_id = ?, is_active = ? WHERE uuid = ?");
-                $stmt->execute([$name, $amount, $description, $priceUsd, $bonusText, $icon, $iconColor, $borderColor, $badgeColor, $stripePriceId, $isActive, $uuid]);
+                $stmt = $pdo->prepare("UPDATE store_coin_packages SET name = ?, amount = ?, description = ?, price_usd = ?, bonus_text = ?, icon = ?, icon_color = ?, border_color = ?, badge_color = ?, stripe_price_id = ? WHERE uuid = ?");
+                $stmt->execute([$name, $amount, $description, $priceUsd, $bonusText, $icon, $iconColor, $borderColor, $badgeColor, $stripePriceId, $uuid]);
                 $msg = 'Paquete actualizado correctamente';
             } else {
                 // Insert
                 $uuid = Utils::generateUUID();
-                $stmt = $pdo->prepare("INSERT INTO store_coin_packages (uuid, name, amount, description, price_usd, bonus_text, icon, icon_color, border_color, badge_color, stripe_price_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$uuid, $name, $amount, $description, $priceUsd, $bonusText, $icon, $iconColor, $borderColor, $badgeColor, $stripePriceId, $isActive]);
+                $stmt = $pdo->prepare("INSERT INTO store_coin_packages (uuid, name, amount, description, price_usd, bonus_text, icon, icon_color, border_color, badge_color, stripe_price_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
+                $stmt->execute([$uuid, $name, $amount, $description, $priceUsd, $bonusText, $icon, $iconColor, $borderColor, $badgeColor, $stripePriceId]);
                 $msg = 'Paquete creado correctamente';
             }
 
@@ -962,7 +961,6 @@ class AdminServices {
         $priceCoins = (int)($data['price_coins'] ?? 0);
         $description = $data['description'] ?? '';
         $icon = $data['icon'] ?? 'shield';
-        $isActive = isset($data['is_active']) ? (int)$data['is_active'] : 1;
 
         if (empty($perkId) || empty($name) || $priceCoins < 0) {
             return ['success' => false, 'message' => 'Datos inválidos. El ID de la ventaja y el nombre son obligatorios.'];
@@ -973,14 +971,14 @@ class AdminServices {
             
             if ($uuid) {
                 // Update
-                $stmt = $pdo->prepare("UPDATE store_perk_packages SET perk_id = ?, name = ?, description = ?, price_coins = ?, icon = ?, is_active = ? WHERE uuid = ?");
-                $stmt->execute([$perkId, $name, $description, $priceCoins, $icon, $isActive, $uuid]);
+                $stmt = $pdo->prepare("UPDATE store_perk_packages SET perk_id = ?, name = ?, description = ?, price_coins = ?, icon = ? WHERE uuid = ?");
+                $stmt->execute([$perkId, $name, $description, $priceCoins, $icon, $uuid]);
                 $msg = 'Ventaja actualizada correctamente';
             } else {
                 // Insert
                 $uuid = Utils::generateUUID();
-                $stmt = $pdo->prepare("INSERT INTO store_perk_packages (uuid, perk_id, name, description, price_coins, icon, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$uuid, $perkId, $name, $description, $priceCoins, $icon, $isActive]);
+                $stmt = $pdo->prepare("INSERT INTO store_perk_packages (uuid, perk_id, name, description, price_coins, icon, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)");
+                $stmt->execute([$uuid, $perkId, $name, $description, $priceCoins, $icon]);
                 $msg = 'Ventaja creada correctamente';
             }
 

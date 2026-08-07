@@ -281,40 +281,6 @@ if ($isEdit && !empty($package)) {
                     </div>
                 </div>
 
-                <!-- Visibilidad Accordion -->
-                <div class="component-card--grouped component-accordion">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
-                        <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">visibility</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Visibilidad</h2>
-                                <p class="component-card__description">Controla si el paquete se mostrará en la tienda.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
-                        </div>
-                    </div>
-                    <div class="component-accordion-body">
-                        <div class="component-accordion-content">
-                            <div class="component-group-item">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Paquete Activo</h2>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" data-ref="toggle-active" <?php echo $pkgData['is_active'] ? 'checked' : ''; ?>>
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
             </div>
         </div>

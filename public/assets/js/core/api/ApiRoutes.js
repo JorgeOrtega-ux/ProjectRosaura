@@ -104,6 +104,7 @@ export const ApiRoutes = {
         GetBackupSchema: 'admin.get_backup_schema',
         CreateCustomBackup: 'admin.create_custom_backup',
         BackupStatus: 'admin.backup_status',
+        ReadLogs: 'admin.read_logs',
         CheckWorkerStatus: 'admin.backups.check_worker_status'
     },
     Canvases: {

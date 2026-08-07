@@ -18,9 +18,16 @@ class AdminViewService {
     private $dbManager;
     private $cassandraManager;
 
-    public function __construct(DatabaseManager $dbManager, CassandraManager $cassandraManager) {
-        $this->dbManager = $dbManager;
-        $this->cassandraManager = $cassandraManager;
+    public function __construct(?DatabaseManager $dbManager = null, ?CassandraManager $cassandraManager = null) {
+        if ($dbManager === null || $cassandraManager === null) {
+            global $container;
+            if (isset($container) && $container instanceof \App\Core\Container) {
+                $dbManager = $dbManager ?? $container->get(DatabaseManager::class);
+                $cassandraManager = $cassandraManager ?? $container->get(CassandraManager::class);
+            }
+        }
+        $this->dbManager = $dbManager ?? new DatabaseManager();
+        $this->cassandraManager = $cassandraManager ?? new CassandraManager();
     }
 
     /**
@@ -1038,43 +1045,81 @@ class AdminViewService {
     public function getLogsData(?string $category = 'all', int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
-        $db = $this->dbManager;
-        $pdo = $db->getConnection(DB::CONN_IDENTITY);
+        $searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
+        $searchQueryLower = strtolower($searchQuery);
 
-        $limit = 50;
-        if ($page < 1) $page = 1;
-
-        $logs = [];
-        $totalLogs = 0;
-
-        try {
-            $stmtCount = $pdo->query("SELECT COUNT(id) FROM user_security_history");
-            $totalLogs = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {
-            Logger::error("getLogsData totalLogs error: " . $e->getMessage(), ['exception' => $e]);
+        $categoryFilter = [];
+        if (isset($_GET['category']) && $_GET['category'] !== '') {
+            $categoryFilter = explode(',', $_GET['category']);
+        } elseif ($category !== 'all' && !empty($category)) {
+            $categoryFilter = explode(',', $category);
         }
 
+        $logFiles = [];
+        $logBaseDir = ROOT_PATH . '/storage/private/logs/';
+
+        if (is_dir($logBaseDir)) {
+            $categories = array_diff(scandir($logBaseDir), ['.', '..', '.htaccess', '.gitkeep']);
+            
+            foreach ($categories as $cat) {
+                $catDir = $logBaseDir . $cat;
+                if (is_dir($catDir)) {
+                    $files = array_diff(scandir($catDir), ['.', '..', '.htaccess', '.gitkeep']);
+                    foreach ($files as $file) {
+                        if (pathinfo($file, PATHINFO_EXTENSION) === 'log') {
+                            $filepath = $catDir . '/' . $file;
+                            $sizeBytes = @filesize($filepath) ?: 0;
+                            
+                            $sizeFormatted = $sizeBytes >= 1048576 
+                                            ? round($sizeBytes / 1048576, 2) . ' MB' 
+                                            : round($sizeBytes / 1024, 2) . ' KB';
+                                            
+                            $logFiles[] = [
+                                'id' => base64_encode($cat . '/' . $file),
+                                'filename' => $file,
+                                'category' => $cat,
+                                'size' => $sizeFormatted,
+                                'modified_at' => date('Y-m-d H:i:s', @filemtime($filepath) ?: time())
+                            ];
+                        }
+                    }
+                }
+            }
+            
+            usort($logFiles, function($a, $b) {
+                return strtotime($b['modified_at']) - strtotime($a['modified_at']);
+            });
+        }
+
+        // Apply filters
+        $filteredLogs = array_filter($logFiles, function($log) use ($searchQueryLower, $categoryFilter) {
+            if ($searchQueryLower !== '' && strpos(strtolower($log['filename']), $searchQueryLower) === false) {
+                return false;
+            }
+            if (!empty($categoryFilter) && !in_array($log['category'], $categoryFilter)) {
+                return false;
+            }
+            return true;
+        });
+
+        // Pagination
+        $limit = 25; 
+        $totalLogs = count($filteredLogs);
         $totalPages = ceil($totalLogs / $limit);
         if ($totalPages < 1) $totalPages = 1;
+        if ($page < 1) $page = 1;
         if ($page > $totalPages) $page = $totalPages;
-        $offset = ($page - 1) * $limit;
 
-        try {
-            $stmt = $pdo->prepare("SELECT * FROM user_security_history ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
-            $stmt->bindValue(':limit', (int)$limit, \PDO::PARAM_INT);
-            $stmt->bindValue(':offset', (int)$offset, \PDO::PARAM_INT);
-            $stmt->execute();
-            $logs = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {
-            Logger::error("getLogsData select logs error: " . $e->getMessage(), ['exception' => $e]);
-        }
+        $offset = ($page - 1) * $limit;
+        $pagedLogs = array_slice($filteredLogs, $offset, $limit);
 
         return [
-            'logs' => $logs,
+            'logs' => $pagedLogs,
             'totalLogs' => $totalLogs,
             'totalPages' => $totalPages,
             'page' => $page,
-            'category' => $category,
+            'categoryFilter' => $categoryFilter,
+            'searchQuery' => $searchQuery,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
     }
