@@ -165,15 +165,6 @@ class StorePackagesConfig {
                     'price_coins' => 8000,
                     'icon' => 'change_history',
                     'is_single_use' => true,
-                ],
-                StoreConstants::PERK_TECTONIC_RIFT => [
-                    'id' => StoreConstants::PERK_TECTONIC_RIFT,
-                    'uuid' => 'e0000000-0000-0000-0000-000000000012',
-                    'name' => __('store_content_tectonic_rift_name'),
-                    'description' => __('store_content_tectonic_rift_desc'),
-                    'price_coins' => 6000,
-                    'icon' => 'volcano',
-                    'is_single_use' => true,
                 ]
             ];
         }

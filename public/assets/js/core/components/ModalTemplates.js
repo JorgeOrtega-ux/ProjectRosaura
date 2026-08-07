@@ -6,7 +6,7 @@ export const ModalTemplates = {
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 
                 <!-- STEP 1: Current Password -->
-                <div class="component-card--grouped component-card--flush active" data-ref="step-1-current-password">
+                <div class="component-card--grouped component-card--flush active component-modal-step" data-ref="step-1-current-password">
                     <div class="component-modal-header component-modal-header--with-icon">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">lock</span>
@@ -32,7 +32,7 @@ export const ModalTemplates = {
                 </div>
 
                 <!-- STEP 2: New Password -->
-                <div class="component-card--grouped component-card--flush disabled" data-ref="step-2-new-password">
+                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="step-2-new-password">
                     <div class="component-modal-header component-modal-header--with-icon">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">lock_reset</span>
@@ -69,6 +69,34 @@ export const ModalTemplates = {
     welcomePremiumModal: {
         fullScreen: true,
         build: (data = {}) => ModalTemplates.purchaseSuccessModal.build({ ...data, item_type: 'subscription' })
+    },
+
+    joinCanvasModal: {
+        build: () => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <span class="material-symbols-rounded">group_add</span>
+                    <div class="component-modal-header-text">
+                        <h3 class="component-modal-title">${__('lbl_join_canvas')}</h3>
+                        <p class="component-modal-desc">${__('desc_invite_code')}</p>
+                    </div>
+                </div>
+                <div class="component-modal-body">
+                    <div class="component-form-box component-form-box--full">
+                        <div class="component-input-group">
+                            <input type="text" id="canvas-join-code-modal" data-ref="canvas-join-code-modal" class="component-input-field" placeholder="${__('ph_invite_code') || 'AAAA-1111'}" maxlength="9" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/(.{4})(.+)/, '$1-$2').slice(0, 9);" required autocomplete="off">
+                            <label class="component-input-label">${__('lbl_invite_code')}</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--dark component-button--h40" data-modal-action="confirm">${__('btn_accept')}</button>
+                </div>
+            `;
+        }
     },
 
     purchaseSuccessModal: {

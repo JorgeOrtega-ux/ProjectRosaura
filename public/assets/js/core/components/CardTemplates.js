@@ -315,9 +315,6 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                     <div class="component-storage-usage__title-area">
                         <span class="component-storage-subtitle">${subtitleStorage}</span>
                     </div>
-                    <div class="component-storage-usage__percentage">
-                        <span>${percentageText}</span>
-                    </div>
                 </div>
 
                 <div class="component-progress-track">

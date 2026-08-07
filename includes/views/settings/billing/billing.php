@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 
@@ -90,9 +90,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                             <p class="component-card__description" data-ref="sub-storage-subtitle">Tu capacidad de almacenamiento · -- MB de -- MB utilizados (Quedan -- MB)</p>
                                         </div>
                                     </div>
-                                    <div class="component-storage-usage__percentage">
-                                        <span data-ref="sub-storage-percentage">0%</span>
-                                    </div>
                                 </div>
 
                                 <div class="component-progress-track">
@@ -110,9 +107,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                             <h2 class="component-card__title">Inyección de Plantillas (Tokens de 5 horas)</h2>
                                             <p class="component-card__description" data-ref="sub-tokens-subtitle">Uso de tokens · -- / -- Tokens consumidos</p>
                                         </div>
-                                    </div>
-                                    <div class="component-storage-usage__percentage">
-                                        <span data-ref="sub-tokens-percentage">0%</span>
                                     </div>
                                 </div>
 

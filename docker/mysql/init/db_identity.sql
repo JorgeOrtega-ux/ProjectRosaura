@@ -450,7 +450,6 @@ CREATE TABLE IF NOT EXISTS `store_perk_packages` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 INSERT IGNORE INTO `store_perk_packages` (uuid, perk_id, name, description, price_coins, icon, is_single_use, is_active) VALUES
-('e0000000-0000-0000-0000-000000000001', 'pixel_shield_1', 'store_content_pixel_shield_1_name', 'store_content_pixel_shield_1_desc', 2000, 'shield', 1, 0),
 ('e0000000-0000-0000-0000-000000000002', 'pixel_missile_1', 'store_content_pixel_missile_1_name', 'store_content_pixel_missile_1_desc', 500, 'rocket_launch', 1, 1),
 ('e0000000-0000-0000-0000-000000000003', 'pixel_bomb_1', 'store_content_pixel_bomb_1_name', 'store_content_pixel_bomb_1_desc', 1000, 'bomb', 1, 1),
 ('e0000000-0000-0000-0000-000000000004', 'cluster_bomb_1', 'store_content_cluster_bomb_1_name', 'store_content_cluster_bomb_1_desc', 2500, 'scatter_plot', 1, 1),
@@ -460,6 +459,5 @@ INSERT IGNORE INTO `store_perk_packages` (uuid, perk_id, name, description, pric
 ('e0000000-0000-0000-0000-000000000008', 'black_hole_1', 'store_content_black_hole_1_name', 'store_content_black_hole_1_desc', 20000, 'cyclone', 1, 1),
 ('e0000000-0000-0000-0000-000000000009', 'mines_1', 'store_content_mines_1_name', 'store_content_mines_1_desc', 1500, 'radar', 1, 1),
 ('e0000000-0000-0000-0000-000000000010', 'supernova_blast', 'store_content_supernova_blast_name', 'store_content_supernova_blast_desc', 12000, 'wb_sunny', 1, 1),
-('e0000000-0000-0000-0000-000000000011', 'ion_strike', 'store_content_ion_strike_name', 'store_content_ion_strike_desc', 8000, 'change_history', 1, 1),
-('e0000000-0000-0000-0000-000000000012', 'tectonic_rift', 'store_content_tectonic_rift_name', 'store_content_tectonic_rift_desc', 6000, 'volcano', 1, 1);
+('e0000000-0000-0000-0000-000000000011', 'ion_strike', 'store_content_ion_strike_name', 'store_content_ion_strike_desc', 8000, 'change_history', 1, 1);
 

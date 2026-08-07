@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Api\Services\Admin\AdminViewService;
 use App\Core\System\SubscriptionFeatureConfig;
 use App\Core\System\SubscriptionPlanConstants;
@@ -185,8 +185,9 @@ $featuresData = [
             <h1 class="component-top-title"><?php echo $isEdit ? (__('admin_tier_edit_title')) : (__('admin_tier_new_title')); ?></h1>
         </div>
         <div class="component-top-right">
-            <button type="button" class="component-button component-button--dark component-button--h40" data-action="saveSubscription">
-                <?php echo __('btn_save'); ?>
+            <button type="button" class="component-button component-button--h40" data-action="saveSubscription" data-tooltip="<?php echo __('btn_save'); ?>" data-position="bottom">
+                <span class="material-symbols-rounded">save</span>
+                <span><?php echo __('btn_save'); ?></span>
             </button>
         </div>
     </div>

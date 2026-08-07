@@ -23,7 +23,7 @@ $canJoinCanvas = in_array('join_canvas', $userPermissions);
             <?php endif; ?>
 
             <?php if ($canJoinCanvas): ?>
-            <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/canvases/join">
+            <div class="component-menu-link nav-item" data-action="openJoinCanvasModal">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">group_add</span>
                 </div>

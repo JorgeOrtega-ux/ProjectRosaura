@@ -279,17 +279,6 @@
       "screen_flash": true
     }
   },
-  "pixel_shield_1": {
-    "id": "pixel_shield_1",
-    "type": "buff",
-    "category": "buff",
-    "duration_seconds": 86400,
-    "amount": 1,
-    "icon": "shield",
-    "label_key": "perk_pixel_shield",
-    "short_label_key": "perk_pixel_shield",
-    "button_label_key": "btn_protect"
-  },
   "mines_1": {
     "id": "mines_1",
     "duration_seconds": 86400,
@@ -405,46 +394,6 @@
       "style": "ion",
       "duration": 2500,
       "shake_duration": 1500,
-      "flash_duration": 0,
-      "screen_shake": true,
-      "screen_flash": false
-    }
-  },
-  "tectonic_rift": {
-    "id": "tectonic_rift",
-    "duration_seconds": 86400,
-    "type": "bomb",
-    "amount": 1,
-    "icon": "volcano",
-    "label_key": "perk_tectonic_rift",
-    "short_label_key": "perk_tectonic_rift_short",
-    "button_label_key": "btn_launch_tectonic_rift",
-    "warning_icon": "volcano",
-    "warning_label_key": "msg_tectonic_rift_incoming",
-    "warning_seconds": 2,
-    "category": "bomb",
-    "targets": 1,
-    "radii": {
-      "32": 6,
-      "64": 10,
-      "128": 18,
-      "256": 28,
-      "512": 45,
-      "1024": 80,
-      "2048": 150,
-      "4096": 260,
-      "0": 20
-    },
-    "spawning": {
-      "mode": "direct",
-      "count": 1,
-      "spread_radius": 0,
-      "jitter_delay": 0
-    },
-    "explosion": {
-      "style": "tectonic",
-      "duration": 3000,
-      "shake_duration": 3000,
       "flash_duration": 0,
       "screen_shake": true,
       "screen_flash": false

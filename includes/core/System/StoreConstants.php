@@ -10,7 +10,6 @@ class StoreConstants {
     public const COINS_13250 = 'coins_13250';
 
     // Ventajas / Perks de la Tienda
-    public const PERK_PIXEL_SHIELD = 'pixel_shield_1';
     public const PERK_PIXEL_MISSILE = 'pixel_missile_1';
     public const PERK_PIXEL_BOMB = 'pixel_bomb_1';
     public const PERK_CLUSTER_BOMB = 'cluster_bomb_1';
@@ -21,5 +20,4 @@ class StoreConstants {
     public const PERK_MINES = 'mines_1';
     public const PERK_SUPERNOVA_BLAST = 'supernova_blast';
     public const PERK_ION_STRIKE = 'ion_strike';
-    public const PERK_TECTONIC_RIFT = 'tectonic_rift';
 }

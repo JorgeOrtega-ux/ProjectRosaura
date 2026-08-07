@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Api\Services\Admin\AdminViewService;
 
 $adminService = new AdminViewService();
@@ -35,8 +35,9 @@ if ($isEdit && !empty($package)) {
             <h1 class="component-top-title"><?php echo $isEdit ? 'Editar Paquete' : 'Crear Paquete'; ?></h1>
         </div>
         <div class="component-top-right">
-            <button type="button" class="component-button component-button--dark component-button--h40" data-action="savePackage">
-                <?php echo __('btn_save') ?: 'Guardar'; ?>
+            <button type="button" class="component-button component-button--h40" data-action="savePackage" data-tooltip="<?php echo __('btn_save') ?: 'Guardar'; ?>" data-position="bottom">
+                <span class="material-symbols-rounded">save</span>
+                <span><?php echo __('btn_save') ?: 'Guardar'; ?></span>
             </button>
         </div>
     </div>

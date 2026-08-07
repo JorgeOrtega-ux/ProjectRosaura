@@ -448,6 +448,7 @@ export class MainController {
             else if (action === 'submitLogout') { e.preventDefault(); this.handleLogout(btn); }
             else if (action === 'switchAccount') { e.preventDefault(); this.handleSwitchAccount(btn.getAttribute('data-id'), btn); }
             else if (action === 'logoutAll') { e.preventDefault(); this.handleLogoutAll(btn); }
+            else if (action === 'openJoinCanvasModal') { e.preventDefault(); this.handleOpenJoinCanvasModal(btn); }
             
             else if (action === 'showSubMenu') {
                 e.preventDefault();
@@ -816,6 +817,39 @@ export class MainController {
         } else {
             spinnerDiv.remove();
             logoutBtn.dataset.loading = 'false';
+        }
+    }
+
+    async handleOpenJoinCanvasModal(btn) {
+        if (btn.classList.contains('disabled-interaction')) return;
+
+        const dialog = await window.modalSystem.show('joinCanvasModal');
+        if (dialog.confirmed) {
+            const code = dialog.data['canvas-join-code-modal'];
+            if (!code || code.trim().length < 5) {
+                showMessage(__('err_invalid_code') || 'Código no válido', 'error');
+                return;
+            }
+            
+            setButtonLoading(btn);
+
+            try {
+                const response = await this.api.post(ApiRoutes.Canvases.JoinViaInvite, { code: code.trim(), terms_accepted: true });
+                if (response && response.success) {
+                    showMessage(response.message || __('msg_joined_successfully') || 'Te has unido con éxito.', 'success');
+                    const uuid = response.data?.uuid;
+                    setTimeout(() => {
+                        const basePath = window.AppBasePath || '';
+                        window.location.href = `${basePath}/canvases/edit/${uuid}`;
+                    }, 1000);
+                } else {
+                    restoreButton(btn);
+                    showMessage(response?.message || __('err_validate_code') || 'Código de invitación no válido.', 'error');
+                }
+            } catch (error) {
+                restoreButton(btn);
+                showMessage(__('err_connection') || 'Error de conexión', 'error');
+            }
         }
     }
 }

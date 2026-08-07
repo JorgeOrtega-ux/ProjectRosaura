@@ -23,7 +23,6 @@ const PERK_DISPLAY_ORDER = [
     'black_hole_1',
     'supernova_blast',
     'ion_strike',
-    'tectonic_rift',
     'mines_1'
 ];
 
@@ -198,8 +197,6 @@ const PerksRegistry = {
             return Math.max(8, Math.floor(maxDim * 0.30));
         } else if (perkId === 'ion_strike') {
             return Math.max(8, Math.floor(maxDim * 0.25));
-        } else if (perkId === 'tectonic_rift') {
-            return Math.max(6, Math.floor(maxDim * 0.20));
         } else if (perkId === 'cluster_bomb_1') {
             return Math.max(4, Math.floor(maxDim * 0.22));
         } else if (perkId === 'pixel_bomb_1') {
