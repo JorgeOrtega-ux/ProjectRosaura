@@ -329,5 +329,125 @@
       "screen_shake": true,
       "screen_flash": false
     }
+  },
+  "supernova_blast": {
+    "id": "supernova_blast",
+    "duration_seconds": 86400,
+    "type": "bomb",
+    "amount": 1,
+    "icon": "wb_sunny",
+    "label_key": "perk_supernova_blast",
+    "short_label_key": "perk_supernova_blast_short",
+    "button_label_key": "btn_launch_supernova",
+    "warning_icon": "wb_sunny",
+    "warning_label_key": "msg_supernova_incoming",
+    "warning_seconds": 5,
+    "category": "bomb",
+    "targets": 1,
+    "radii": {
+      "32": 6,
+      "64": 12,
+      "128": 20,
+      "256": 32,
+      "512": 50,
+      "1024": 90,
+      "2048": 160,
+      "4096": 300,
+      "0": 20
+    },
+    "spawning": {
+      "mode": "direct",
+      "count": 1,
+      "spread_radius": 0,
+      "jitter_delay": 0
+    },
+    "explosion": {
+      "style": "nuclear",
+      "duration": 5000,
+      "shake_duration": 4000,
+      "flash_duration": 1500,
+      "screen_shake": true,
+      "screen_flash": true
+    }
+  },
+  "ion_strike": {
+    "id": "ion_strike",
+    "duration_seconds": 86400,
+    "type": "bomb",
+    "amount": 1,
+    "icon": "change_history",
+    "label_key": "perk_ion_strike",
+    "short_label_key": "perk_ion_strike_short",
+    "button_label_key": "btn_launch_ion_strike",
+    "warning_icon": "change_history",
+    "warning_label_key": "msg_ion_strike_incoming",
+    "warning_seconds": 2,
+    "category": "bomb",
+    "targets": 1,
+    "radii": {
+      "32": 8,
+      "64": 15,
+      "128": 25,
+      "256": 40,
+      "512": 65,
+      "1024": 110,
+      "2048": 200,
+      "4096": 350,
+      "0": 30
+    },
+    "spawning": {
+      "mode": "direct",
+      "count": 1,
+      "spread_radius": 0,
+      "jitter_delay": 0
+    },
+    "explosion": {
+      "style": "ion",
+      "duration": 2500,
+      "shake_duration": 1500,
+      "flash_duration": 0,
+      "screen_shake": true,
+      "screen_flash": false
+    }
+  },
+  "tectonic_rift": {
+    "id": "tectonic_rift",
+    "duration_seconds": 86400,
+    "type": "bomb",
+    "amount": 1,
+    "icon": "volcano",
+    "label_key": "perk_tectonic_rift",
+    "short_label_key": "perk_tectonic_rift_short",
+    "button_label_key": "btn_launch_tectonic_rift",
+    "warning_icon": "volcano",
+    "warning_label_key": "msg_tectonic_rift_incoming",
+    "warning_seconds": 2,
+    "category": "bomb",
+    "targets": 1,
+    "radii": {
+      "32": 6,
+      "64": 10,
+      "128": 18,
+      "256": 28,
+      "512": 45,
+      "1024": 80,
+      "2048": 150,
+      "4096": 260,
+      "0": 20
+    },
+    "spawning": {
+      "mode": "direct",
+      "count": 1,
+      "spread_radius": 0,
+      "jitter_delay": 0
+    },
+    "explosion": {
+      "style": "tectonic",
+      "duration": 3000,
+      "shake_duration": 3000,
+      "flash_duration": 0,
+      "screen_shake": true,
+      "screen_flash": false
+    }
   }
 }

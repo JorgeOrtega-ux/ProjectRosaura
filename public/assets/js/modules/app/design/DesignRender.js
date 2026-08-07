@@ -611,14 +611,24 @@ export const DesignRender = {
                     primaryColor = '#a78bfa';
                     secondaryColor = 'rgba(167, 139, 250, 0.5)';
                     fillColor = 'rgba(167, 139, 250, 0.08)';
+                } else if (warning.perkId === 'supernova_blast') {
+                    primaryColor = '#f59e0b';
+                    secondaryColor = 'rgba(245, 158, 11, 0.4)';
+                    fillColor = 'rgba(245, 158, 11, 0.08)';
+                } else if (warning.perkId === 'ion_strike') {
+                    primaryColor = '#06b6d4';
+                    secondaryColor = 'rgba(6, 182, 212, 0.4)';
+                    fillColor = 'rgba(6, 182, 212, 0.08)';
+                } else if (warning.perkId === 'tectonic_rift') {
+                    primaryColor = '#84cc16';
+                    secondaryColor = 'rgba(132, 204, 22, 0.4)';
+                    fillColor = 'rgba(132, 204, 22, 0.08)';
                 }
 
                 const elapsed = now - warning.startTime;
                 const duration = warning.endTime - warning.startTime;
-                const progress = duration > 0 ? Math.min(1, Math.max(0, elapsed / duration)) : 1;
-
-                if (warning.perkId === 'black_hole_1') {
-                    // Lógica de succión de píxeles del agujero negro (fallback)
+                const progress = duration > 0 ? Math.min(1, Math.max(0, elapsed / duration)) : 1;                if (warning.perkId === 'black_hole_1' || warning.perkId === 'supernova_blast') {
+                    // Lógica de succión de píxeles (fallback)
                     if (warning.candidates) {
                         while (warning.candidateIndex < warning.candidates.length) {
                             const cand = warning.candidates[warning.candidateIndex];
@@ -633,7 +643,9 @@ export const DesignRender = {
                             warning.candidateIndex++;
                         }
                     }
+                }    
 
+                if (warning.perkId === 'black_hole_1') {
                     // Dibujar disco de acreción del agujero negro
                     const diskRadius = outerR * 0.45 * (1.0 + 0.05 * Math.sin(now / 250));
                     if (diskRadius > 0.1) {
@@ -691,6 +703,78 @@ export const DesignRender = {
                     }
                 }
 
+                if (warning.perkId === 'supernova_blast') {
+                    const currentR = outerR * progress;
+                    this.ctx.beginPath();
+                    this.ctx.arc(wx, wy, currentR, 0, 2 * Math.PI);
+                    const grad = this.ctx.createRadialGradient(wx, wy, Math.max(0, currentR - 5 / scale), wx, wy, currentR);
+                    grad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+                    grad.addColorStop(0.3, 'rgba(254, 240, 138, 0.8)');
+                    grad.addColorStop(0.7, 'rgba(249, 115, 22, 0.6)');
+                    grad.addColorStop(1.0, 'rgba(239, 68, 68, 0.0)');
+                    this.ctx.fillStyle = grad;
+                    this.ctx.fill();
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(wx, wy, Math.min(outerR * 0.15, 3), 0, 2 * Math.PI);
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.fill();
+                }
+
+                if (warning.perkId === 'ion_strike') {
+                    const p1 = { x: wx, y: wy - outerR };
+                    const p2 = { x: wx - outerR * 0.866, y: wy + outerR * 0.5 };
+                    const p3 = { x: wx + outerR * 0.866, y: wy + outerR * 0.5 };
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(p1.x, p1.y);
+                    this.ctx.lineTo(p2.x, p2.y);
+                    this.ctx.lineTo(p3.x, p3.y);
+                    this.ctx.closePath();
+                    this.ctx.setLineDash([4 / scale, 4 / scale]);
+                    this.ctx.strokeStyle = primaryColor;
+                    this.ctx.lineWidth = 1.5 / scale;
+                    this.ctx.stroke();
+                    this.ctx.setLineDash([]);
+                    
+                    [p1, p2, p3].forEach(pt => {
+                        this.ctx.beginPath();
+                        this.ctx.arc(pt.x, pt.y, 3 / scale, 0, 2 * Math.PI);
+                        this.ctx.strokeStyle = primaryColor;
+                        this.ctx.stroke();
+                    });
+                }
+
+                if (warning.perkId === 'tectonic_rift') {
+                    this.ctx.beginPath();
+                    this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
+                    this.ctx.strokeStyle = primaryColor;
+                    this.ctx.lineWidth = 1.0 / scale;
+                    this.ctx.stroke();
+                    
+                    const seed = warning.startTime;
+                    this.ctx.beginPath();
+                    for (let k = 0; k < 5; k++) {
+                        const angle = ((seed + k * 1337) % 100) / 100 * 2 * Math.PI;
+                        const len = outerR * (0.3 + 0.7 * (((seed + k * 777) % 100) / 100));
+                        let curX = wx;
+                        let curY = wy;
+                        this.ctx.moveTo(curX, curY);
+                        const steps = 4;
+                        for (let s = 1; s <= steps; s++) {
+                            const t = s / steps;
+                            const targetX = wx + t * len * Math.cos(angle);
+                            const targetY = wy + t * len * Math.sin(angle);
+                            const jitterX = (Math.sin(seed + s * 10 + k) * 2) / scale;
+                            const jitterY = (Math.cos(seed + s * 10 + k) * 2) / scale;
+                            this.ctx.lineTo(targetX + jitterX, targetY + jitterY);
+                        }
+                    }
+                    this.ctx.strokeStyle = `rgba(132, 204, 22, ${0.4 + 0.3 * Math.sin(now / 100)})`;
+                    this.ctx.lineWidth = 2.0 / scale;
+                    this.ctx.stroke();
+                }
+
                 // --- RENDERIZADO DEL CÍRCULO BASE Y LA MIRA ---
                 // 1. Mira telescópica cruzada en el centro
                 this.ctx.beginPath();
@@ -703,24 +787,26 @@ export const DesignRender = {
                 this.ctx.stroke();
 
                 // 2. Círculo exterior
-                this.ctx.beginPath();
-                this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
-                this.ctx.fillStyle = fillColor;
-                this.ctx.fill();
-                this.ctx.lineWidth = lineW;
-                this.ctx.strokeStyle = primaryColor;
-                this.ctx.stroke();
-
-                // 3. Anillo cerrándose progresivamente
-                const innerR = outerR * (1 - progress);
-                if (innerR > 0.1) {
+                if (warning.perkId !== 'supernova_blast' && warning.perkId !== 'ion_strike' && warning.perkId !== 'tectonic_rift') {
                     this.ctx.beginPath();
-                    this.ctx.arc(wx, wy, innerR, 0, 2 * Math.PI);
-                    this.ctx.fillStyle = secondaryColor;
+                    this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = fillColor;
                     this.ctx.fill();
                     this.ctx.lineWidth = lineW;
                     this.ctx.strokeStyle = primaryColor;
                     this.ctx.stroke();
+
+                    // 3. Anillo cerrándose progresivamente
+                    const innerR = outerR * (1 - progress);
+                    if (innerR > 0.1) {
+                        this.ctx.beginPath();
+                        this.ctx.arc(wx, wy, innerR, 0, 2 * Math.PI);
+                        this.ctx.fillStyle = secondaryColor;
+                        this.ctx.fill();
+                        this.ctx.lineWidth = lineW;
+                        this.ctx.strokeStyle = primaryColor;
+                        this.ctx.stroke();
+                    }
                 }
 
                 // --- ANIMACIONES EXTRAS ESPECÍFICAS DE ADVERTENCIA ---
@@ -829,6 +915,125 @@ export const DesignRender = {
                 const progress = Math.min(1, elapsed / exp.duration);
                 const opacity = 1 - progress;
                 
+                if (exp.perkId === 'ion_strike') {
+                    const p1 = { x: exp.x + 0.5, y: exp.y + 0.5 - exp.maxRadius };
+                    const p2 = { x: exp.x + 0.5 - exp.maxRadius * 0.866, y: exp.y + 0.5 + exp.maxRadius * 0.5 };
+                    const p3 = { x: exp.x + 0.5 + exp.maxRadius * 0.866, y: exp.y + 0.5 + exp.maxRadius * 0.5 };
+                    const vertices = [p1, p2, p3];
+                    for (let i = 0; i < 3; i++) {
+                        const strikeProgress = Math.min(1, progress * 2.5 - i * 0.3);
+                        if (strikeProgress > 0 && strikeProgress < 1.0) {
+                            const pt = vertices[i];
+                            const op = 1.0 - strikeProgress;
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(pt.x + (Math.sin(now / 10) * 10) / this.transform.scale, pt.y - 150);
+                            let curY = pt.y - 150;
+                            let curX = pt.x;
+                            const steps = 6;
+                            const stepY = 150 / steps;
+                            for (let s = 1; s <= steps; s++) {
+                                curY += stepY;
+                                const jitterX = (Math.sin(now + s * 2.3) * (15 / steps)) / this.transform.scale;
+                                this.ctx.lineTo(curX + jitterX, curY);
+                            }
+                            this.ctx.strokeStyle = `rgba(0, 240, 255, ${op})`;
+                            this.ctx.lineWidth = Math.max(1.5, 4.0 * op / this.transform.scale);
+                            this.ctx.stroke();
+                        }
+                    }
+                    const triangleProgress = Math.min(1, progress * 1.5 - 0.5);
+                    if (triangleProgress > 0) {
+                        const op = (1 - triangleProgress) * opacity;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(p1.x, p1.y);
+                        const drawLightningSegment = (a, b) => {
+                            const dx = b.x - a.x;
+                            const dy = b.y - a.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            const steps = Math.max(5, Math.floor(dist / 5));
+                            for (let s = 1; s <= steps; s++) {
+                                const t = s / steps;
+                                const targetX = a.x + t * dx;
+                                const targetY = a.y + t * dy;
+                                const jitter = (Math.sin(now / 5 + s * 1.5) * 3) / this.transform.scale;
+                                const nx = -dy / dist;
+                                const ny = dx / dist;
+                                this.ctx.lineTo(targetX + nx * jitter, targetY + ny * jitter);
+                            }
+                        };
+                        this.ctx.moveTo(p1.x, p1.y);
+                        drawLightningSegment(p1, p2);
+                        drawLightningSegment(p2, p3);
+                        drawLightningSegment(p3, p1);
+                        this.ctx.closePath();
+                        this.ctx.strokeStyle = `rgba(0, 240, 255, ${op})`;
+                        this.ctx.lineWidth = Math.max(1.0, 3.0 * op / this.transform.scale);
+                        this.ctx.stroke();
+                        this.ctx.fillStyle = `rgba(0, 240, 255, ${op * 0.12})`;
+                        this.ctx.fill();
+                    }
+                    return;
+                }
+
+                if (exp.perkId === 'tectonic_rift') {
+                    const r = exp.maxRadius;
+                    const op = opacity;
+                    this.ctx.save();
+                    this.ctx.beginPath();
+                    
+                    // Draw 7 asymmetrical, long cracks
+                    for (let k = 0; k < 7; k++) {
+                        const angleSeed = Math.sin(exp.startTime + k * 12.3) * 1000;
+                        const angle = (k * 2 * Math.PI / 7) + (angleSeed % 0.6);
+                        const lenSeed = Math.cos(exp.startTime + k * 45.6) * 1000;
+                        const len = r * (1.2 + Math.abs(lenSeed % 1.6)) * progress;
+                        
+                        let curX = exp.x + 0.5;
+                        let curY = exp.y + 0.5;
+                        this.ctx.moveTo(curX, curY);
+                        
+                        const steps = 6;
+                        for (let s = 1; s <= steps; s++) {
+                            const t = s / steps;
+                            const targetX = exp.x + 0.5 + t * len * Math.cos(angle);
+                            const targetY = exp.y + 0.5 + t * len * Math.sin(angle);
+                            
+                            const jitterSeed = Math.sin(now * 0.05 + s * 7 + k) * 3.0;
+                            const jitter = jitterSeed / this.transform.scale;
+                            
+                            this.ctx.lineTo(targetX + jitter, targetY - jitter);
+                            
+                            // Draw visual sub-branch
+                            if (s === 3 && (Math.abs(angleSeed) % 10) < 3.5) {
+                                this.ctx.save();
+                                this.ctx.beginPath();
+                                this.ctx.moveTo(targetX + jitter, targetY - jitter);
+                                const branchAngle = angle + 0.6;
+                                const branchLen = len * 0.45;
+                                const bx = targetX + jitter + branchLen * Math.cos(branchAngle);
+                                const by = targetY - jitter + branchLen * Math.sin(branchAngle);
+                                this.ctx.lineTo(bx, by);
+                                this.ctx.strokeStyle = `rgba(132, 204, 22, ${op * 0.65})`;
+                                this.ctx.lineWidth = Math.max(0.7, 2.0 * op / this.transform.scale);
+                                this.ctx.stroke();
+                                this.ctx.restore();
+                            }
+                        }
+                    }
+                    this.ctx.strokeStyle = `rgba(132, 204, 22, ${op * 0.85})`;
+                    this.ctx.lineWidth = Math.max(1.0, 3.5 * op / this.transform.scale);
+                    this.ctx.stroke();
+                    
+                    // Outer shockwave
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, r * 1.6 * progress, 0, 2 * Math.PI);
+                    this.ctx.strokeStyle = `rgba(163, 230, 53, ${op * 0.35})`;
+                    this.ctx.lineWidth = Math.max(1.0, 4.0 * (1 - progress) / this.transform.scale);
+                    this.ctx.stroke();
+                    this.ctx.restore();
+                    return;
+                }
+
                 // 1. Explosión limpia de Cañón Orbital (cian/blanco, múltiples aureolas circulares y protones de alta energía)
                 if (exp.perkId === 'orbital_cannon_1') {
                     // Múltiples aureolas concéntricas en cian expansivas

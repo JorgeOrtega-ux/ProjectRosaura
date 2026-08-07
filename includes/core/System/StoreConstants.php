@@ -19,4 +19,7 @@ class StoreConstants {
     public const PERK_ORBITAL_CANNON = 'orbital_cannon_1';
     public const PERK_BLACK_HOLE = 'black_hole_1';
     public const PERK_MINES = 'mines_1';
+    public const PERK_SUPERNOVA_BLAST = 'supernova_blast';
+    public const PERK_ION_STRIKE = 'ion_strike';
+    public const PERK_TECTONIC_RIFT = 'tectonic_rift';
 }

@@ -1726,7 +1726,7 @@ export const DesignInteractions = {
             flash.style.left = '0';
             flash.style.width = '100vw';
             flash.style.height = '100vh';
-            flash.style.backgroundColor = 'white';
+            flash.style.backgroundColor = perkId === 'supernova_blast' ? '#fef08a' : 'white';
             flash.style.zIndex = '999999';
             flash.style.pointerEvents = 'none';
             flash.style.transition = `opacity ${flashMs / 1000}s ease-out`;

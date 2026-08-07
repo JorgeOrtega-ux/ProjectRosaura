@@ -231,6 +231,40 @@ class CanvasCoreService {
     public function getCanvas(?int $userId, int $canvasId, bool $canManageOfficial = false): array {
         $t0 = microtime(true);
         ini_set('memory_limit', '512M');
+        
+        $cacheKey = "canvas:{$canvasId}:meta:u:" . ($userId ?? 0);
+        $redis = null;
+        try {
+            if (class_exists(RedisCache::class)) {
+                $redisInstance = new RedisCache();
+                $redis = $redisInstance->getClient();
+                if ($redis) {
+                    error_log("[DEBUG getCanvas] Redis initialized successfully.");
+                    $cached = $redis->get($cacheKey);
+                    if ($cached) {
+                        error_log("[DEBUG getCanvas] Found cached metadata in Redis for key: $cacheKey");
+                        $cachedData = json_decode($cached, true);
+                        if ($cachedData) {
+                            $tEnd = microtime(true);
+                            $cachedData['debug_timing'] = [
+                                'total' => $tEnd - $t0,
+                                'cached' => true
+                            ];
+                            return $cachedData;
+                        }
+                    } else {
+                        error_log("[DEBUG getCanvas] No cache found for key: $cacheKey");
+                    }
+                } else {
+                    error_log("[DEBUG getCanvas] Redis client is null.");
+                }
+            } else {
+                error_log("[DEBUG getCanvas] RedisCache class does not exist.");
+            }
+        } catch (\Throwable $e) {
+            error_log("[DEBUG getCanvas] Caching exception: " . $e->getMessage());
+        }
+
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             
@@ -439,7 +473,16 @@ class CanvasCoreService {
             $canvas['is_compressed'] = true;
 
             $tEnd = microtime(true);
-            return ['success' => true, 'data' => $canvas, 'debug_timing' => ['total' => $tEnd - $t0, 'check_perms' => isset($t1) ? ($t1 - $t0) : null, 'redis_init' => isset($t2) ? ($t2 - $t1) : null]];
+            $result = ['success' => true, 'data' => $canvas, 'debug_timing' => ['total' => $tEnd - $t0, 'check_perms' => isset($t1) ? ($t1 - $t0) : null, 'redis_init' => isset($t2) ? ($t2 - $t1) : null]];
+            if ($redis) {
+                try {
+                    $redis->setex($cacheKey, 30, json_encode($result)); // Cacheamos por 30 segundos
+                    error_log("[DEBUG getCanvas] Saved metadata cache for key: $cacheKey");
+                } catch (\Throwable $e) {
+                    error_log("[DEBUG getCanvas] Exception saving cache: " . $e->getMessage());
+                }
+            }
+            return $result;
         } catch (Exception $e) {
             Logger::error('Error getting canvas.', [
                 'user_id' => $userId,

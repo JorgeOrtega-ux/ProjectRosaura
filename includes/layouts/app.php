@@ -81,6 +81,69 @@ if (file_exists($palettesPath)) {
     $palettesJson = file_get_contents($palettesPath);
 }
 
+// Pre-carga del estado inicial de los chunks para la carga instantánea del lienzo
+$isDesignRoute = (strpos($currentPath, '/design') === 0);
+$preloadedChunksJson = '{}';
+$initialCanvasDataJson = 'null';
+
+if ($isDesignRoute) {
+    try {
+        // Extraemos el UUID de la ruta, ej: /design/d115ed48-7b08-4815-8856-8886eb5e707a
+        $parts = explode('/', trim($currentPath, '/'));
+        $canvasUuid = $parts[1] ?? null;
+
+        // Comprobamos si es un UUID válido (36 caracteres)
+        if ($canvasUuid && strlen($canvasUuid) === 36) {
+            global $container;
+            if ($container) {
+                $canvasRepo = $container->get(\App\Core\Interfaces\CanvasRepositoryInterface::class);
+                $canvasService = $container->get(\App\Api\Services\Canvas\CanvasCoreService::class);
+            } else {
+                $canvasRepo = new \App\Core\Repositories\CanvasRepository();
+                $canvasService = new \App\Api\Services\Canvas\CanvasCoreService();
+            }
+
+            $canvasObjFromDb = $canvasRepo->getCanvasByUuid($canvasUuid);
+            if ($canvasObjFromDb) {
+                $canvasId = (int)$canvasObjFromDb['id'];
+                $activeAccountId = $_SESSION['active_account'] ?? null;
+                $canvasRes = $canvasService->getCanvas($activeAccountId ? (int)$activeAccountId : null, $canvasId);
+
+                if ($canvasRes && $canvasRes['success']) {
+                    $initialCanvasDataJson = json_encode($canvasRes);
+                    $canvasObj = $canvasRes['data'];
+                    $boardW = (int)$canvasObj['width'];
+                    $boardH = (int)$canvasObj['height'];
+
+                    // Calculamos el centro geométrico del lienzo
+                    $centerX = (int)($boardW / 2);
+                    $centerY = (int)($boardH / 2);
+                    $chunkSize = 512;
+                    $cx = (int)($centerX / $chunkSize);
+                    $cy = (int)($centerY / $chunkSize);
+
+                    // Chunks centrales iniciales (colchón de 3x3 chunks en el centro para cubrir la pantalla al entrar)
+                    $initialChunks = [];
+                    for ($x = max(0, $cx - 1); $x <= min(ceil($boardW / $chunkSize) - 1, $cx + 1); $x++) {
+                        for ($y = max(0, $cy - 1); $y <= min(ceil($boardH / $chunkSize) - 1, $cy + 1); $y++) {
+                            $initialChunks[] = "{$x},{$y}";
+                        }
+                    }
+
+                    if (!empty($initialChunks)) {
+                        $chunksResult = $canvasService->getCanvasChunks($canvasId, $initialChunks);
+                        if ($chunksResult && !empty($chunksResult['chunks'])) {
+                            $preloadedChunksJson = json_encode($chunksResult['chunks']);
+                        }
+                    }
+                }
+            }
+        }
+    } catch (\Throwable $e) {
+        // Silencioso para garantizar que no rompa la aplicación entera
+    }
+}
+
 
 $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts = $_SESSION['accounts'] ?? [];
@@ -187,6 +250,8 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
     <script>
+        window.__INITIAL_CANVAS_DATA__ = <?php echo $initialCanvasDataJson; ?>;
+        window.__PRELOADED_CHUNKS__ = <?php echo $preloadedChunksJson; ?>;
         window.AppBasePath = "<?php echo $appPath; ?>";
         window.AppName = "<?php echo APP_NAME; ?>";
         window.AppRouteTitles = <?php echo json_encode($routeTitles); ?>;

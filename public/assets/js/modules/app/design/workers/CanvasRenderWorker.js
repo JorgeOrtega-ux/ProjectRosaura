@@ -111,7 +111,10 @@ const EXPLOSION_STYLES = {
     'nuclear_bomb_3': 'nuclear',
     'meteor_shower_1': 'medium',
     'orbital_cannon_1': 'nuclear',
-    'black_hole_1': 'blackhole'
+    'black_hole_1': 'blackhole',
+    'supernova_blast': 'nuclear',
+    'ion_strike': 'ion',
+    'tectonic_rift': 'tectonic'
 };
 
 function requestRender() {
@@ -365,9 +368,120 @@ function processPixelQueue() {
     }
 }
 
-function clearBombPixels(cX, cY, r) {
+function clearBombPixels(cX, cY, r, perkId) {
     if (!pixelBuffer) return;
     const radius = Math.max(1, parseInt(r || 1, 10));
+
+    if (perkId === 'ion_strike') {
+        const p1 = { x: cX, y: cY - radius };
+        const p2 = { x: cX - radius * 0.866, y: cY + radius * 0.5 };
+        const p3 = { x: cX + radius * 0.866, y: cY + radius * 0.5 };
+
+        const xMin = Math.max(0, Math.floor(cX - radius - 5));
+        const xMax = Math.min(boardWidth - 1, Math.floor(cX + radius + 5));
+        const yMin = Math.max(0, Math.floor(cY - radius - 5));
+        const yMax = Math.min(boardHeight - 1, Math.floor(cY + radius + 5));
+
+        const distToSegment = (px, py, ax, ay, bx, by) => {
+            const dx = bx - ax;
+            const dy = by - ay;
+            const lenSq = dx * dx + dy * dy;
+            if (lenSq === 0) {
+                return Math.sqrt((px - ax) ** 2 + (py - ay) ** 2);
+            }
+            let t = ((px - ax) * dx + (py - ay) * dy) / lenSq;
+            t = Math.max(0, Math.min(1, t));
+            const projX = ax + t * dx;
+            const projY = ay + t * dy;
+            return Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
+        };
+
+        for (let y = yMin; y <= yMax; y++) {
+            for (let x = xMin; x <= xMax; x++) {
+                const isV1 = Math.sqrt((x - p1.x) ** 2 + (y - p1.y) ** 2) <= 4.0;
+                const isV2 = Math.sqrt((x - p2.x) ** 2 + (y - p2.y) ** 2) <= 4.0;
+                const isV3 = Math.sqrt((x - p3.x) ** 2 + (y - p3.y) ** 2) <= 4.0;
+
+                const isL1 = distToSegment(x, y, p1.x, p1.y, p2.x, p2.y) <= 1.5;
+                const isL2 = distToSegment(x, y, p2.x, p2.y, p3.x, p3.y) <= 1.5;
+                const isL3 = distToSegment(x, y, p3.x, p3.y, p1.x, p1.y) <= 1.5;
+
+                if (isV1 || isV2 || isV3 || isL1 || isL2 || isL3) {
+                    const idx = y * boardWidth + x;
+                    pixelBuffer[idx] = 0;
+                    markDirty(x, y);
+                }
+            }
+        }
+        flushDirtyRect();
+        return;
+    }
+
+    if (perkId === 'tectonic_rift') {
+        const affectedOffsets = new Set();
+        const crackStack = [];
+        
+        // 5 to 7 main cracks
+        const numCracks = 5 + Math.floor(Math.random() * 3);
+        
+        // Thickness based on board dimensions
+        const maxDim = Math.max(boardWidth, boardHeight);
+        const thickness = maxDim > 500 ? 3 : (maxDim > 200 ? 2 : 1);
+        const offsets = thickness === 1 ? [[0, 0]] : (thickness === 2 ? [[0, 0], [1, 0], [0, 1], [1, 1]] : [
+            [-1, -1], [0, -1], [1, -1],
+            [-1, 0], [0, 0], [1, 0],
+            [-1, 1], [0, 1], [1, 1]
+        ]);
+
+        for (let i = 0; i < numCracks; i++) {
+            const baseAngle = (i * 2 * Math.PI) / numCracks;
+            const angle = baseAngle + (Math.random() - 0.5) * (Math.PI / numCracks);
+            const len = radius * (1.0 + Math.random() * 1.5);
+            crackStack.push({ sx: cX, sy: cY, angle, len, depth: 2 });
+        }
+
+        while (crackStack.length > 0) {
+            const { sx, sy, angle, len, depth } = crackStack.pop();
+            const steps = Math.ceil(len);
+            for (let s = 0; s <= steps; s++) {
+                const t = steps > 0 ? s / steps : 0;
+                let px = Math.round(sx + t * len * Math.cos(angle));
+                let py = Math.round(sy + t * len * Math.sin(angle));
+
+                if (s > 0 && s < steps) {
+                    px += Math.floor(Math.random() * 3) - 1;
+                    py += Math.floor(Math.random() * 3) - 1;
+                }
+
+                offsets.forEach(([dx, dy]) => {
+                    const nx = px + dx;
+                    const ny = py + dy;
+                    if (nx >= 0 && nx < boardWidth && ny >= 0 && ny < boardHeight) {
+                        affectedOffsets.add(ny * boardWidth + nx);
+                    }
+                });
+
+                // 12% chance to branch
+                if (depth > 0 && s > 0 && s < steps && Math.random() < 0.12) {
+                    const branchAngle = angle + (Math.random() - 0.5) * 1.2;
+                    const branchLen = len * (1 - t) * (0.4 + Math.random() * 0.4);
+                    if (branchLen > 3) {
+                        crackStack.push({ sx: px, sy: py, angle: branchAngle, len: branchLen, depth: depth - 1 });
+                    }
+                }
+            }
+        }
+
+        for (const offset of affectedOffsets) {
+            pixelBuffer[offset] = 0;
+            const x = offset % boardWidth;
+            const y = Math.floor(offset / boardWidth);
+            markDirty(x, y);
+        }
+        flushDirtyRect();
+        return;
+    }
+
     const rSq = radius * radius;
     for (let y = cY - radius; y <= cY + radius; y++) {
         if (y < 0 || y >= boardHeight) continue;
@@ -947,6 +1061,18 @@ function render() {
                 primaryColor = '#a78bfa';
                 secondaryColor = 'rgba(167, 139, 250, 0.5)';
                 fillColor = 'rgba(167, 139, 250, 0.08)';
+            } else if (warning.perkId === 'supernova_blast') {
+                primaryColor = '#f59e0b';
+                secondaryColor = 'rgba(245, 158, 11, 0.4)';
+                fillColor = 'rgba(245, 158, 11, 0.08)';
+            } else if (warning.perkId === 'ion_strike') {
+                primaryColor = '#06b6d4';
+                secondaryColor = 'rgba(6, 182, 212, 0.4)';
+                fillColor = 'rgba(6, 182, 212, 0.08)';
+            } else if (warning.perkId === 'tectonic_rift') {
+                primaryColor = '#84cc16';
+                secondaryColor = 'rgba(132, 204, 22, 0.4)';
+                fillColor = 'rgba(132, 204, 22, 0.08)';
             }
 
             const elapsed = now - warning.startTime;
@@ -1037,6 +1163,103 @@ function render() {
                 }
             }
 
+            if (warning.perkId === 'supernova_blast') {
+                let needsFlush = false;
+                if (warning.candidates) {
+                    while (warning.candidateIndex < warning.candidates.length) {
+                        const cand = warning.candidates[warning.candidateIndex];
+                        if (progress < cand.threshold) {
+                            break;
+                        }
+                        const px = cand.x;
+                        const py = cand.y;
+                        const idx = py * boardWidth + px;
+                        const colorVal = pixelBuffer ? pixelBuffer[idx] : 0;
+                        if (colorVal !== 0) {
+                            if (pixelBuffer) {
+                                pixelBuffer[idx] = 0;
+                                markDirty(px, py);
+                                needsFlush = true;
+                            }
+                        }
+                        warning.candidateIndex++;
+                    }
+                }
+                if (needsFlush && typeof flushDirtyRect === 'function') {
+                    flushDirtyRect();
+                }
+
+                const currentR = outerR * progress;
+                ctx.beginPath();
+                ctx.arc(wx, wy, currentR, 0, 2 * Math.PI);
+                const grad = ctx.createRadialGradient(wx, wy, Math.max(0, currentR - 5 / scale), wx, wy, currentR);
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+                grad.addColorStop(0.3, 'rgba(254, 240, 138, 0.8)');
+                grad.addColorStop(0.7, 'rgba(249, 115, 22, 0.6)');
+                grad.addColorStop(1.0, 'rgba(239, 68, 68, 0.0)');
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(wx, wy, Math.min(outerR * 0.15, 3), 0, 2 * Math.PI);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+            }
+
+            if (warning.perkId === 'ion_strike') {
+                const p1 = { x: wx, y: wy - outerR };
+                const p2 = { x: wx - outerR * 0.866, y: wy + outerR * 0.5 };
+                const p3 = { x: wx + outerR * 0.866, y: wy + outerR * 0.5 };
+
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.lineTo(p3.x, p3.y);
+                ctx.closePath();
+                ctx.setLineDash([4 / scale, 4 / scale]);
+                ctx.strokeStyle = primaryColor;
+                ctx.lineWidth = 1.5 / scale;
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                [p1, p2, p3].forEach(pt => {
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, 3 / scale, 0, 2 * Math.PI);
+                    ctx.strokeStyle = primaryColor;
+                    ctx.stroke();
+                });
+            }
+
+            if (warning.perkId === 'tectonic_rift') {
+                ctx.beginPath();
+                ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
+                ctx.strokeStyle = primaryColor;
+                ctx.lineWidth = 1.0 / scale;
+                ctx.stroke();
+                
+                const seed = warning.startTime;
+                ctx.beginPath();
+                for (let k = 0; k < 5; k++) {
+                    const angle = ((seed + k * 1337) % 100) / 100 * 2 * Math.PI;
+                    const len = outerR * (0.3 + 0.7 * (((seed + k * 777) % 100) / 100));
+                    let curX = wx;
+                    let curY = wy;
+                    ctx.moveTo(curX, curY);
+                    const steps = 4;
+                    for (let s = 1; s <= steps; s++) {
+                        const t = s / steps;
+                        const targetX = wx + t * len * Math.cos(angle);
+                        const targetY = wy + t * len * Math.sin(angle);
+                        const jitterX = (Math.sin(seed + s * 10 + k) * 2) / scale;
+                        const jitterY = (Math.cos(seed + s * 10 + k) * 2) / scale;
+                        ctx.lineTo(targetX + jitterX, targetY + jitterY);
+                    }
+                }
+                ctx.strokeStyle = `rgba(132, 204, 22, ${0.4 + 0.3 * Math.sin(now / 100)})`;
+                ctx.lineWidth = 2.0 / scale;
+                ctx.stroke();
+            }
+
             // --- RENDERIZADO DEL CÍRCULO BASE Y LA MIRA ---
             // 1. Mira telescópica cruzada en el centro
             ctx.beginPath();
@@ -1049,10 +1272,12 @@ function render() {
             ctx.stroke();
 
             // 2. Círculo exterior
-            ctx.beginPath();
-            ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
-            ctx.fillStyle = fillColor;
-            ctx.fill();
+            if (warning.perkId !== 'supernova_blast' && warning.perkId !== 'ion_strike' && warning.perkId !== 'tectonic_rift') {
+                ctx.beginPath();
+                ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
+                ctx.fillStyle = fillColor;
+                ctx.fill();
+            }
             ctx.lineWidth = lineW;
             ctx.strokeStyle = primaryColor;
             ctx.stroke();
@@ -1176,6 +1401,125 @@ function render() {
             const elapsed = now - exp.startTime;
             const progress = Math.min(1, elapsed / exp.duration);
             const opacity = 1 - progress;
+
+            if (exp.perkId === 'ion_strike') {
+                const p1 = { x: exp.x + 0.5, y: exp.y + 0.5 - exp.maxRadius };
+                const p2 = { x: exp.x + 0.5 - exp.maxRadius * 0.866, y: exp.y + 0.5 + exp.maxRadius * 0.5 };
+                const p3 = { x: exp.x + 0.5 + exp.maxRadius * 0.866, y: exp.y + 0.5 + exp.maxRadius * 0.5 };
+                const vertices = [p1, p2, p3];
+                for (let i = 0; i < 3; i++) {
+                    const strikeProgress = Math.min(1, progress * 2.5 - i * 0.3);
+                    if (strikeProgress > 0 && strikeProgress < 1.0) {
+                        const pt = vertices[i];
+                        const op = 1.0 - strikeProgress;
+                        ctx.beginPath();
+                        ctx.moveTo(pt.x + (Math.sin(now / 10) * 10) / transform.scale, pt.y - 150);
+                        let curY = pt.y - 150;
+                        let curX = pt.x;
+                        const steps = 6;
+                        const stepY = 150 / steps;
+                        for (let s = 1; s <= steps; s++) {
+                            curY += stepY;
+                            const jitterX = (Math.sin(now + s * 2.3) * (15 / steps)) / transform.scale;
+                            ctx.lineTo(curX + jitterX, curY);
+                        }
+                        ctx.strokeStyle = `rgba(0, 240, 255, ${op})`;
+                        ctx.lineWidth = Math.max(1.5, 4.0 * op / transform.scale);
+                        ctx.stroke();
+                    }
+                }
+                const triangleProgress = Math.min(1, progress * 1.5 - 0.5);
+                if (triangleProgress > 0) {
+                    const op = (1 - triangleProgress) * opacity;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    const drawLightningSegment = (a, b) => {
+                        const dx = b.x - a.x;
+                        const dy = b.y - a.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const steps = Math.max(5, Math.floor(dist / 5));
+                        for (let s = 1; s <= steps; s++) {
+                            const t = s / steps;
+                            const targetX = a.x + t * dx;
+                            const targetY = a.y + t * dy;
+                            const jitter = (Math.sin(now / 5 + s * 1.5) * 3) / transform.scale;
+                            const nx = -dy / dist;
+                            const ny = dx / dist;
+                            ctx.lineTo(targetX + nx * jitter, targetY + ny * jitter);
+                        }
+                    };
+                    ctx.moveTo(p1.x, p1.y);
+                    drawLightningSegment(p1, p2);
+                    drawLightningSegment(p2, p3);
+                    drawLightningSegment(p3, p1);
+                    ctx.closePath();
+                    ctx.strokeStyle = `rgba(0, 240, 255, ${op})`;
+                    ctx.lineWidth = Math.max(1.0, 3.0 * op / transform.scale);
+                    ctx.stroke();
+                    ctx.fillStyle = `rgba(0, 240, 255, ${op * 0.12})`;
+                    ctx.fill();
+                }
+                return;
+            }
+
+            if (exp.perkId === 'tectonic_rift') {
+                const r = exp.maxRadius;
+                const op = opacity;
+                ctx.save();
+                ctx.beginPath();
+                
+                // Draw 7 asymmetrical, long cracks
+                for (let k = 0; k < 7; k++) {
+                    const angleSeed = Math.sin(exp.startTime + k * 12.3) * 1000;
+                    const angle = (k * 2 * Math.PI / 7) + (angleSeed % 0.6);
+                    const lenSeed = Math.cos(exp.startTime + k * 45.6) * 1000;
+                    const len = r * (1.2 + Math.abs(lenSeed % 1.6)) * progress;
+                    
+                    let curX = exp.x + 0.5;
+                    let curY = exp.y + 0.5;
+                    ctx.moveTo(curX, curY);
+                    
+                    const steps = 6;
+                    for (let s = 1; s <= steps; s++) {
+                        const t = s / steps;
+                        const targetX = exp.x + 0.5 + t * len * Math.cos(angle);
+                        const targetY = exp.y + 0.5 + t * len * Math.sin(angle);
+                        
+                        const jitterSeed = Math.sin(now * 0.05 + s * 7 + k) * 3.0;
+                        const jitter = jitterSeed / transform.scale;
+                        
+                        ctx.lineTo(targetX + jitter, targetY - jitter);
+                        
+                        // Draw visual sub-branch
+                        if (s === 3 && (Math.abs(angleSeed) % 10) < 3.5) {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.moveTo(targetX + jitter, targetY - jitter);
+                            const branchAngle = angle + 0.6;
+                            const branchLen = len * 0.45;
+                            const bx = targetX + jitter + branchLen * Math.cos(branchAngle);
+                            const by = targetY - jitter + branchLen * Math.sin(branchAngle);
+                            ctx.lineTo(bx, by);
+                            ctx.strokeStyle = `rgba(132, 204, 22, ${op * 0.65})`;
+                            ctx.lineWidth = Math.max(0.7, 2.0 * op / transform.scale);
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    }
+                }
+                ctx.strokeStyle = `rgba(132, 204, 22, ${op * 0.85})`;
+                ctx.lineWidth = Math.max(1.0, 3.5 * op / transform.scale);
+                ctx.stroke();
+                
+                // Outer shockwave
+                ctx.beginPath();
+                ctx.arc(exp.x + 0.5, exp.y + 0.5, r * 1.6 * progress, 0, 2 * Math.PI);
+                ctx.strokeStyle = `rgba(163, 230, 53, ${op * 0.35})`;
+                ctx.lineWidth = Math.max(1.0, 4.0 * (1 - progress) / transform.scale);
+                ctx.stroke();
+                ctx.restore();
+                return;
+            }
 
             // 1. Explosión limpia de Cañón Orbital (cian/blanco, múltiples aureolas circulares y protones de alta energía)
             if (exp.perkId === 'orbital_cannon_1') {
@@ -1787,7 +2131,7 @@ self.onmessage = function (e) {
                     perkId: perkId
                 };
 
-                if (perkId === 'black_hole_1') {
+                if (perkId === 'black_hole_1' || perkId === 'supernova_blast') {
                     const candidates = [];
                     const rInt = Math.ceil(r);
                     for (let dy = -rInt; dy <= rInt; dy++) {
@@ -1798,16 +2142,28 @@ self.onmessage = function (e) {
                                 const distSq = dx * dx + dy * dy;
                                 if (distSq <= r * r) {
                                     const dist = Math.sqrt(distSq);
-                                    const hash = ((px * 17 + py * 23) % 100) / 100;
-                                    const threshold = 0.05 + (dist / r) * 0.75 + hash * 0.15;
-                                    candidates.push({
-                                        x: px,
-                                        y: py,
-                                        dx: dx,
-                                        dy: dy,
-                                        dist: dist,
-                                        threshold: threshold
-                                    });
+                                    if (perkId === 'black_hole_1') {
+                                        const hash = ((px * 17 + py * 23) % 100) / 100;
+                                        const threshold = 0.05 + (dist / r) * 0.75 + hash * 0.15;
+                                        candidates.push({
+                                            x: px,
+                                            y: py,
+                                            dx: dx,
+                                            dy: dy,
+                                            dist: dist,
+                                            threshold: threshold
+                                        });
+                                    } else {
+                                        const threshold = dist / r;
+                                        candidates.push({
+                                            x: px,
+                                            y: py,
+                                            dx: dx,
+                                            dy: dy,
+                                            dist: dist,
+                                            threshold: threshold
+                                        });
+                                    }
                                 }
                             }
                         }
@@ -1832,7 +2188,7 @@ self.onmessage = function (e) {
 
                 nuclearWarnings = nuclearWarnings.filter(w => Math.abs(w.x - cX) > 2 || Math.abs(w.y - cY) > 2);
 
-                clearBombPixels(cX, cY, r);
+                clearBombPixels(cX, cY, r, perkId);
 
                 let duration = 800;
                 if (perkId === 'orbital_cannon_1') {
@@ -1849,6 +2205,12 @@ self.onmessage = function (e) {
                     duration = 1200;
                 } else if (perkId === 'pixel_missile_1') {
                     duration = 1000;
+                } else if (perkId === 'supernova_blast') {
+                    duration = 5000;
+                } else if (perkId === 'ion_strike') {
+                    duration = 2500;
+                } else if (perkId === 'tectonic_rift') {
+                    duration = 3000;
                 }
 
                 explosions.push({

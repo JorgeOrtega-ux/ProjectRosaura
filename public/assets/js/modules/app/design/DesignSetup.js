@@ -329,9 +329,25 @@ export const DesignSetup = {
         }
 
         if (this.isProgressive) {
+            // Hydrate server-side preloaded chunks immediately
+            const startTime = performance.now();
+            if (window.__PRELOADED_CHUNKS__ && Object.keys(window.__PRELOADED_CHUNKS__).length > 0) {
+                const count = Object.keys(window.__PRELOADED_CHUNKS__).length;
+                console.log(`%c[Rosaura App] initCanvasData -> Hydrating ${count} server-side preloaded chunks...`, 'color: #2196f3; font-weight: bold;');
+                Object.entries(window.__PRELOADED_CHUNKS__).forEach(([key, base64]) => {
+                    const [cx, cy] = key.split(',').map(Number);
+                    this.loadedChunks.add(key);
+                    this.hydrateChunk(cx, cy, base64);
+                });
+                console.log(`%c[Rosaura App] initCanvasData -> Successfully hydrated ${count} chunks. Latency: ${(performance.now() - startTime).toFixed(2)}ms`, 'color: #4caf50; font-weight: bold;');
+                window.__PRELOADED_CHUNKS__ = null; // Clean up memory
+            }
             this.updateVisibleChunks();
         } else if (canvasData.state_base64) {
+            const startTime = performance.now();
+            console.log('%c[Rosaura App] initCanvasData -> Hydrating full canvas state (non-progressive)...', 'color: #2196f3; font-weight: bold;');
             this.hydrateCanvasState(canvasData.state_base64);
+            console.log(`%c[Rosaura App] initCanvasData -> Full canvas hydration completed. Latency: ${(performance.now() - startTime).toFixed(2)}ms`, 'color: #4caf50; font-weight: bold;');
         }
     },
 
@@ -347,10 +363,11 @@ export const DesignSetup = {
         const endX = Math.min(this.boardWidth, Math.ceil((rect.width - this.transform.x) / this.transform.scale));
         const endY = Math.min(this.boardHeight, Math.ceil((rect.height - this.transform.y) / this.transform.scale));
 
-        const minChunkX = Math.floor(startX / chunkSize);
-        const minChunkY = Math.floor(startY / chunkSize);
-        const maxChunkX = Math.floor(Math.max(0, endX - 1) / chunkSize);
-        const maxChunkY = Math.floor(Math.max(0, endY - 1) / chunkSize);
+        const padding = 1;
+        const minChunkX = Math.max(0, Math.floor(startX / chunkSize) - padding);
+        const minChunkY = Math.max(0, Math.floor(startY / chunkSize) - padding);
+        const maxChunkX = Math.min(Math.floor((this.boardWidth - 1) / chunkSize), Math.floor(Math.max(0, endX - 1) / chunkSize) + padding);
+        const maxChunkY = Math.min(Math.floor((this.boardHeight - 1) / chunkSize), Math.floor(Math.max(0, endY - 1) / chunkSize) + padding);
 
         const chunksToFetch = [];
 
@@ -384,12 +401,15 @@ export const DesignSetup = {
         
         validKeys.forEach(k => this.loadingChunks.add(k));
 
+        console.log(`%c[Rosaura App] fetchChunks -> Requesting ${validKeys.length} chunks from Go backend...`, 'color: #9c27b0; font-weight: bold;', validKeys);
+
         // Batch chunk requests to prevent massive payloads and blocking
-        const BATCH_SIZE = 4;
+        const BATCH_SIZE = 8;
         const fetchPromises = [];
 
         for (let i = 0; i < validKeys.length; i += BATCH_SIZE) {
             const batch = validKeys.slice(i, i + BATCH_SIZE);
+            const batchStart = performance.now();
             
             fetchPromises.push((async () => {
                 try {
@@ -409,6 +429,7 @@ export const DesignSetup = {
                     });
 
                     if (!response.ok) {
+                        console.error(`[Rosaura App] fetchChunks -> Failed to fetch chunks batch:`, batch, `Status:`, response.status);
                         batch.forEach(k => this.loadingChunks.delete(k));
                         return;
                     }
@@ -416,6 +437,7 @@ export const DesignSetup = {
                     const contentType = response.headers.get('Content-Type');
                     if (contentType && contentType.includes('application/octet-stream')) {
                         const buffer = await response.arrayBuffer();
+                        console.log(`%c[Rosaura App] fetchChunks -> Received binary response for batch of ${batch.length} chunks. Size: ${(buffer.byteLength / 1024).toFixed(2)} KB. Latency: ${(performance.now() - batchStart).toFixed(2)}ms`, 'color: #009688; font-weight: bold;', batch);
                         const dataView = new DataView(buffer);
                         let offset = 0;
 
@@ -460,6 +482,7 @@ export const DesignSetup = {
                     } else {
                         // Fallback to JSON if backend returned JSON
                         const result = await response.json();
+                        console.log(`%c[Rosaura App] fetchChunks -> Received JSON response for batch of ${batch.length} chunks. Latency: ${(performance.now() - batchStart).toFixed(2)}ms`, 'color: #009688; font-weight: bold;', batch);
                         if (result && result.success && result.data?.chunks) {
                             Object.entries(result.data.chunks).forEach(([key, base64]) => {
                                 const [cx, cy] = key.split(',').map(Number);
@@ -531,7 +554,7 @@ export const DesignSetup = {
         if (this.canvas && typeof this.canvas.transferControlToOffscreen === 'function' && typeof Worker !== 'undefined') {
             try {
                 if (!this.renderWorker) {
-                    const workerPath = `${this.basePath}/assets/js/modules/app/design/workers/CanvasRenderWorker.js`;
+                    const workerPath = `${this.basePath}/assets/js/modules/app/design/workers/CanvasRenderWorker.js?v=2.0.2`;
                     this.renderWorker = new Worker(workerPath);
                     const offscreen = this.canvas.transferControlToOffscreen();
                     const dpr = window.devicePixelRatio || 1;

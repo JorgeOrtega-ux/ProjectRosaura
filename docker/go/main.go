@@ -59,6 +59,40 @@ type ChunkResponse struct {
 	} `json:"data"`
 }
 
+var extractChunksLua = redis.NewScript(`
+local redisKey = KEYS[1]
+local boardW = tonumber(ARGV[1])
+local boardH = tonumber(ARGV[2])
+local chunkSize = tonumber(ARGV[3])
+local res = {}
+
+for i = 4, #ARGV do
+    local chunkKey = ARGV[i]
+    local comma = string.find(chunkKey, ",")
+    if comma then
+        local cx = tonumber(string.sub(chunkKey, 1, comma - 1))
+        local cy = tonumber(string.sub(chunkKey, comma + 1))
+        local startX = cx * chunkSize
+        local startY = cy * chunkSize
+        
+        if startX < boardW and startY < boardH and startX >= 0 and startY >= 0 then
+            local actualW = math.min(chunkSize, boardW - startX)
+            local actualH = math.min(chunkSize, boardH - startY)
+            local rowLen = actualW * 4
+            local rows = {}
+            for y = 0, actualH - 1 do
+                local offset = ((startY + y) * boardW + startX) * 4
+                local line = redis.call('GETRANGE', redisKey, offset, offset + rowLen - 1)
+                rows[#rows + 1] = line
+            end
+            res[#res + 1] = chunkKey
+            res[#res + 1] = table.concat(rows)
+        end
+    end
+end
+return res
+`)
+
 func getChunksHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -151,74 +185,29 @@ func getChunksHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("In-memory fetch & extraction took %v", time.Since(t0))
 	} else {
-		// Fallback to Redis pipeline if the canvas is huge and only 1 chunk is requested
-		pipe := rdb.Pipeline()
-
-		type RowFetch struct {
-			ChunkKey string
-			Y        int
-			Cmd      *redis.StringCmd
-		}
-
-		var fetches []RowFetch
-
+		// Use native Redis Lua script to extract chunks efficiently
+		args := make([]interface{}, 0, 3+len(req.Chunks))
+		args = append(args, req.BoardW, req.BoardH, chunkSize)
 		for _, chunkKey := range req.Chunks {
-			parts := strings.Split(chunkKey, ",")
-			if len(parts) != 2 {
-				continue
-			}
-			cx, err1 := strconv.Atoi(parts[0])
-			cy, err2 := strconv.Atoi(parts[1])
-			if err1 != nil || err2 != nil {
-				continue
-			}
-
-			startX := cx * chunkSize
-			startY := cy * chunkSize
-
-			if startX >= req.BoardW || startY >= req.BoardH || startX < 0 || startY < 0 {
-				continue
-			}
-
-			actualW := min(chunkSize, req.BoardW-startX)
-			actualH := min(chunkSize, req.BoardH-startY)
-			rowLen := int64(actualW * 4)
-
-			for y := 0; y < actualH; y++ {
-				offset := int64(((startY+y)*req.BoardW + startX) * 4)
-				cmd := pipe.GetRange(ctx, redisKey, offset, offset+rowLen-1)
-				fetches = append(fetches, RowFetch{
-					ChunkKey: chunkKey,
-					Y:        y,
-					Cmd:      cmd,
-				})
-			}
+			args = append(args, chunkKey)
 		}
 
-		if len(fetches) == 0 {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
-			return
-		}
-
-		// Execute pipeline
-		_, err := pipe.Exec(ctx)
+		res, err := extractChunksLua.Run(ctx, rdb, []string{redisKey}, args...).Result()
 		if err != nil && err != redis.Nil {
-			http.Error(w, "Redis error", http.StatusInternalServerError)
+			http.Error(w, "Redis Lua error: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		log.Printf("Redis pipeline took %v", time.Since(t0))
+		log.Printf("Redis Lua execution took %v", time.Since(t0))
 
-		// Group rows by chunk
-		for _, f := range fetches {
-			val, _ := f.Cmd.Bytes()
-			expectedLen := int(min(chunkSize, req.BoardW-(func() int { cx, _ := strconv.Atoi(strings.Split(f.ChunkKey, ",")[0]); return cx * chunkSize })()) * 4)
-			if len(val) < expectedLen {
-				padded := make([]byte, expectedLen)
-				copy(padded, val)
-				val = padded
+		luaResult, ok := res.([]interface{})
+		if ok {
+			for i := 0; i < len(luaResult); i += 2 {
+				cKey, okKey := luaResult[i].(string)
+				cBufStr, okBuf := luaResult[i+1].(string)
+				if okKey && okBuf {
+					chunkBuffers[cKey] = []byte(cBufStr)
+				}
 			}
-			chunkBuffers[f.ChunkKey] = append(chunkBuffers[f.ChunkKey], val...)
 		}
 	}
 

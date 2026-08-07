@@ -1287,44 +1287,191 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                             let _: () = c.set(&areas_key, new_json).await.unwrap_or(());
                         }
                         
-                        let mut pipe = deadpool_redis::redis::pipe();
-                        pipe.cmd("SADD").arg("canvases:dirty_states").arg(&c_id_clone2);
-                        
+                        let redis_state_key = format!("canvas:{}:state", c_id_clone2);
                         let mut affected_offsets = Vec::new();
-                        
-                        for iy in (ty - radius)..=(ty + radius) {
-                            let dy = iy - ty;
-                            if dy.abs() > radius { continue; }
-                            let dx = ((radius.pow(2) - dy.pow(2)) as f32).sqrt() as i32;
-                            let mut x_start = tx - dx;
-                            let mut x_end = tx + dx;
-                            
-                            if height > 0 && (iy < 0 || iy >= height) { continue; }
-                            x_start = x_start.max(0);
-                            if width > 0 { x_end = x_end.min(width - 1); }
-                            if x_start > x_end { continue; }
-                            
-                            let length = x_end - x_start + 1;
-                            let redis_state_key = format!("canvas:{}:state", c_id_clone2);
-                            let byte_offset = (iy * width + x_start) * 4;
-                            let transparent_bytes = vec![0u8; (length * 4) as usize];
-                            
-                            pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
-                            
-                            for ix in x_start..=x_end {
-                                affected_offsets.push(iy * width + ix);
+
+                        if perk_id_clone == "ion_strike" {
+                            let mut pipe = deadpool_redis::redis::pipe();
+                            pipe.cmd("SADD").arg("canvases:dirty_states").arg(&c_id_clone2);
+
+                            // regular triangle vertices
+                            let p1_x = tx as f32;
+                            let p1_y = (ty - radius) as f32;
+                            let p2_x = tx as f32 - radius as f32 * 0.866;
+                            let p2_y = ty as f32 + radius as f32 * 0.5;
+                            let p3_x = tx as f32 + radius as f32 * 0.866;
+                            let p3_y = ty as f32 + radius as f32 * 0.5;
+
+                            let x_min = (tx - radius - 5).max(0);
+                            let x_max = if width > 0 { (tx + radius + 5).min(width - 1) } else { tx + radius + 5 };
+                            let y_min = (ty - radius - 5).max(0);
+                            let y_max = if height > 0 { (ty + radius + 5).min(height - 1) } else { ty + radius + 5 };
+
+                            fn dist_to_segment(px: f32, py: f32, ax: f32, ay: f32, bx: f32, by: f32) -> f32 {
+                                let dx = bx - ax;
+                                let dy = by - ay;
+                                let len_sq = dx * dx + dy * dy;
+                                if len_sq == 0.0 {
+                                    return ((px - ax).powi(2) + (py - ay).powi(2)).sqrt();
+                                }
+                                let mut t = ((px - ax) * dx + (py - ay) * dy) / len_sq;
+                                t = t.clamp(0.0, 1.0);
+                                let proj_x = ax + t * dx;
+                                let proj_y = ay + t * dy;
+                                ((px - proj_x).powi(2) + (py - proj_y).powi(2)).sqrt()
                             }
+
+                            for iy in y_min..=y_max {
+                                let mut start_x = -1;
+                                for ix in x_min..=x_max {
+                                    let px = ix as f32;
+                                    let py = iy as f32;
+
+                                    let is_v1 = ((px - p1_x).powi(2) + (py - p1_y).powi(2)).sqrt() <= 4.0;
+                                    let is_v2 = ((px - p2_x).powi(2) + (py - p2_y).powi(2)).sqrt() <= 4.0;
+                                    let is_v3 = ((px - p3_x).powi(2) + (py - p3_y).powi(2)).sqrt() <= 4.0;
+
+                                    let is_l1 = dist_to_segment(px, py, p1_x, p1_y, p2_x, p2_y) <= 1.5;
+                                    let is_l2 = dist_to_segment(px, py, p2_x, p2_y, p3_x, p3_y) <= 1.5;
+                                    let is_l3 = dist_to_segment(px, py, p3_x, p3_y, p1_x, p1_y) <= 1.5;
+
+                                    if is_v1 || is_v2 || is_v3 || is_l1 || is_l2 || is_l3 {
+                                        if start_x == -1 {
+                                            start_x = ix;
+                                        }
+                                    } else {
+                                        if start_x != -1 {
+                                            let length = ix - start_x;
+                                            let byte_offset = (iy * width + start_x) * 4;
+                                            let transparent_bytes = vec![0u8; (length * 4) as usize];
+                                            pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
+                                            for ax in start_x..ix {
+                                                affected_offsets.push(iy * width + ax);
+                                            }
+                                            start_x = -1;
+                                        }
+                                    }
+                                }
+                                if start_x != -1 {
+                                    let length = x_max - start_x + 1;
+                                    let byte_offset = (iy * width + start_x) * 4;
+                                    let transparent_bytes = vec![0u8; (length * 4) as usize];
+                                    pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
+                                    for ax in start_x..=x_max {
+                                        affected_offsets.push(iy * width + ax);
+                                    }
+                                }
+                            }
+                            let _: () = pipe.query_async(&mut c).await.unwrap_or(());
+                        } else if perk_id_clone == "tectonic_rift" {
+                            let mut affected_offsets_set = std::collections::HashSet::new();
+                            let mut crack_stack = Vec::new();
+                            
+                            // 5 to 7 main cracks starting from the center (tx, ty)
+                            let num_cracks = 5 + (rand::random::<u8>() % 3);
+                            
+                            // Thickness based on board dimensions
+                            let max_dim = width.max(height);
+                            let thickness = if max_dim > 500 { 3 } else if max_dim > 200 { 2 } else { 1 };
+                            let offsets = match thickness {
+                                1 => vec![(0, 0)],
+                                2 => vec![(0, 0), (1, 0), (0, 1), (1, 1)],
+                                _ => vec![
+                                    (-1, -1), (0, -1), (1, -1),
+                                    (-1,  0), (0,  0), (1,  0),
+                                    (-1,  1), (0,  1), (1,  1),
+                                ],
+                            };
+
+                            for i in 0..num_cracks {
+                                let base_angle = (i as f32 * 2.0 * std::f32::consts::PI) / num_cracks as f32;
+                                // Distribute them evenly with some jitter
+                                let angle = base_angle + (rand::random::<f32>() - 0.5) * (std::f32::consts::PI / num_cracks as f32);
+                                // cracks go very far out (1.0 to 2.5x the configured radius)
+                                let len = radius as f32 * (1.0 + rand::random::<f32>() * 1.5);
+                                crack_stack.push((tx as f32, ty as f32, angle, len, 2));
+                            }
+
+                            while let Some((sx, sy, angle, len, depth)) = crack_stack.pop() {
+                                let steps = len.ceil() as i32;
+                                for s in 0..=steps {
+                                    let t = if steps > 0 { s as f32 / steps as f32 } else { 0.0 };
+                                    let mut px = (sx + t * len * angle.cos()) as i32;
+                                    let mut py = (sy + t * len * angle.sin()) as i32;
+
+                                    if s > 0 && s < steps {
+                                        let jitter_x = ((rand::random::<u8>() % 3) as i32) - 1;
+                                        let jitter_y = ((rand::random::<u8>() % 3) as i32) - 1;
+                                        px += jitter_x;
+                                        py += jitter_y;
+                                    }
+
+                                    for &(dx, dy) in &offsets {
+                                        let nx = px + dx;
+                                        let ny = py + dy;
+                                        if nx >= 0 && (width <= 0 || nx < width) && ny >= 0 && (height <= 0 || ny < height) {
+                                            affected_offsets_set.insert(ny * width + nx);
+                                        }
+                                    }
+
+                                    // 12% chance to branch
+                                    if depth > 0 && s > 0 && s < steps && rand::random::<f32>() < 0.12 {
+                                        let branch_angle = angle + (rand::random::<f32>() - 0.5) * 1.2;
+                                        let branch_len = len * (1.0 - t) * (0.4 + rand::random::<f32>() * 0.4);
+                                        if branch_len > 3.0 {
+                                            crack_stack.push((px as f32, py as f32, branch_angle, branch_len, depth - 1));
+                                        }
+                                    }
+                                }
+                            }
+
+                            let mut write_pipe = deadpool_redis::redis::pipe();
+                            write_pipe.cmd("SADD").arg("canvases:dirty_states").arg(&c_id_clone2);
+
+                            for &offset in &affected_offsets_set {
+                                let byte_offset = offset * 4;
+                                write_pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(vec![0u8; 4]);
+                                affected_offsets.push(offset);
+                            }
+                            let _: () = write_pipe.query_async(&mut c).await.unwrap_or(());
+                        } else {
+                            let mut pipe = deadpool_redis::redis::pipe();
+                            pipe.cmd("SADD").arg("canvases:dirty_states").arg(&c_id_clone2);
+
+                            for iy in (ty - radius)..=(ty + radius) {
+                                let dy = iy - ty;
+                                if dy.abs() > radius { continue; }
+                                let dx = ((radius.pow(2) - dy.pow(2)) as f32).sqrt() as i32;
+                                let mut x_start = tx - dx;
+                                let mut x_end = tx + dx;
+                                
+                                if height > 0 && (iy < 0 || iy >= height) { continue; }
+                                x_start = x_start.max(0);
+                                if width > 0 { x_end = x_end.min(width - 1); }
+                                if x_start > x_end { continue; }
+                                
+                                let length = x_end - x_start + 1;
+                                let byte_offset = (iy * width + x_start) * 4;
+                                let transparent_bytes = vec![0u8; (length * 4) as usize];
+                                
+                                pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
+                                
+                                for ix in x_start..=x_end {
+                                    affected_offsets.push(iy * width + ix);
+                                }
+                            }
+                            let _: () = pipe.query_async(&mut c).await.unwrap_or(());
                         }
-                        
+
                         // Eliminar protecciones de Redis
                         let zset_key = format!("canvas:{}:protected_zset", c_id_clone2);
+                        let mut pipe_del = deadpool_redis::redis::pipe();
                         for &offset in &affected_offsets {
                             let pk = format!("canvas:{}:protected_pixels:{}", c_id_clone2, offset);
-                            pipe.cmd("DEL").arg(&pk);
-                            pipe.cmd("ZREM").arg(&zset_key).arg(offset.to_string());
+                            pipe_del.cmd("DEL").arg(&pk);
+                            pipe_del.cmd("ZREM").arg(&zset_key).arg(offset.to_string());
                         }
-                        
-                        let _: () = pipe.query_async(&mut c).await.unwrap_or(());
+                        let _: () = pipe_del.query_async(&mut c).await.unwrap_or(());
                         
                         // Offload heavy MySQL persistence to non-blocking subtask
                         if !affected_offsets.is_empty() {

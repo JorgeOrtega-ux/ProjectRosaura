@@ -1292,7 +1292,16 @@ export const DesignNetwork = {
         if (!this.canvasIntId || this.canvasIntId === '0') return;
 
         try {
-            const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
+            let response;
+            const startTime = performance.now();
+            if (window.__INITIAL_CANVAS_DATA__ && window.__INITIAL_CANVAS_DATA__.data && String(window.__INITIAL_CANVAS_DATA__.data.id) === String(this.canvasIntId)) {
+                response = window.__INITIAL_CANVAS_DATA__;
+                console.log(`%c[Rosaura App] checkCanvasAccess -> Bypassed network request! Using preloaded metadata. Latency: ${(performance.now() - startTime).toFixed(2)}ms`, 'color: #4caf50; font-weight: bold;');
+                window.__INITIAL_CANVAS_DATA__ = null; // Clean up memory
+            } else {
+                response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
+                console.log(`%c[Rosaura App] checkCanvasAccess -> Network request resolved. Latency: ${(performance.now() - startTime).toFixed(2)}ms`, 'color: #ff9800; font-weight: bold;');
+            }
             if (response.aborted) return;
             
             const isPremiumLocked = response.locked_requires_downgrade || (response.data && response.data.locked_requires_downgrade);
@@ -1548,7 +1557,7 @@ export const DesignNetwork = {
             perkId: perkId
         };
 
-        if (perkId === 'black_hole_1') {
+        if (perkId === 'black_hole_1' || perkId === 'supernova_blast') {
             const candidates = [];
             const rInt = Math.ceil(r);
             for (let dy = -rInt; dy <= rInt; dy++) {
@@ -1559,16 +1568,28 @@ export const DesignNetwork = {
                         const distSq = dx * dx + dy * dy;
                         if (distSq <= r * r) {
                             const dist = Math.sqrt(distSq);
-                            const hash = ((px * 17 + py * 23) % 100) / 100;
-                            const threshold = 0.05 + (dist / r) * 0.75 + hash * 0.15;
-                            candidates.push({
-                                x: px,
-                                y: py,
-                                dx: dx,
-                                dy: dy,
-                                dist: dist,
-                                threshold: threshold
-                            });
+                            if (perkId === 'black_hole_1') {
+                                const hash = ((px * 17 + py * 23) % 100) / 100;
+                                const threshold = 0.05 + (dist / r) * 0.75 + hash * 0.15;
+                                candidates.push({
+                                    x: px,
+                                    y: py,
+                                    dx: dx,
+                                    dy: dy,
+                                    dist: dist,
+                                    threshold: threshold
+                                });
+                            } else {
+                                const threshold = dist / r;
+                                candidates.push({
+                                    x: px,
+                                    y: py,
+                                    dx: dx,
+                                    dy: dy,
+                                    dist: dist,
+                                    threshold: threshold
+                                });
+                            }
                         }
                     }
                 }
@@ -1591,8 +1612,27 @@ export const DesignNetwork = {
             const currentNow = Date.now();
             if (this.nuclearWarnings && this.nuclearWarnings.some(w => w === warningObj)) {
                 this.requestRender();
+
+                if (warningObj.perkId === 'supernova_blast' && this.canvas) {
+                    const elapsed = currentNow - warningObj.startTime;
+                    const duration = warningObj.endTime - warningObj.startTime;
+                    const progress = duration > 0 ? Math.min(1, elapsed / duration) : 1;
+                    const maxOffset = progress * 6.5;
+                    const dx = (Math.random() - 0.5) * maxOffset;
+                    const dy = (Math.random() - 0.5) * maxOffset;
+                    this.canvas.style.transform = `translate(${dx}px, ${dy}px)`;
+                }
+
                 if (currentNow < warningObj.endTime) {
                     requestAnimationFrame(animateWarning);
+                } else {
+                    if (warningObj.perkId === 'supernova_blast' && this.canvas) {
+                        this.canvas.style.transform = '';
+                    }
+                }
+            } else {
+                if (warningObj.perkId === 'supernova_blast' && this.canvas) {
+                    this.canvas.style.transform = '';
                 }
             }
         };

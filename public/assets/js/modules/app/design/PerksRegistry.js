@@ -21,7 +21,9 @@ const PERK_DISPLAY_ORDER = [
     'meteor_shower_1',
     'orbital_cannon_1',
     'black_hole_1',
-    'pixel_shield_1',
+    'supernova_blast',
+    'ion_strike',
+    'tectonic_rift',
     'mines_1'
 ];
 
@@ -192,6 +194,12 @@ const PerksRegistry = {
             return Math.max(10, Math.floor(maxDim * 0.5));
         } else if (perkId === 'atomic_bomb_1') {
             return Math.max(6, Math.floor(maxDim * 0.38));
+        } else if (perkId === 'supernova_blast') {
+            return Math.max(8, Math.floor(maxDim * 0.30));
+        } else if (perkId === 'ion_strike') {
+            return Math.max(8, Math.floor(maxDim * 0.25));
+        } else if (perkId === 'tectonic_rift') {
+            return Math.max(6, Math.floor(maxDim * 0.20));
         } else if (perkId === 'cluster_bomb_1') {
             return Math.max(4, Math.floor(maxDim * 0.22));
         } else if (perkId === 'pixel_bomb_1') {

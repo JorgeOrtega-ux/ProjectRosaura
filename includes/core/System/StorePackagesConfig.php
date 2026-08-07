@@ -76,15 +76,6 @@ class StorePackagesConfig {
 
         if (empty($packages)) {
             return [
-                StoreConstants::PERK_PIXEL_SHIELD => [
-                    'id' => StoreConstants::PERK_PIXEL_SHIELD,
-                    'uuid' => 'e0000000-0000-0000-0000-000000000001',
-                    'name' => __('store_content_pixel_shield_1_name'),
-                    'description' => __('store_content_pixel_shield_1_desc'),
-                    'price_coins' => 2000,
-                    'icon' => 'shield',
-                    'is_single_use' => true,
-                ],
                 StoreConstants::PERK_PIXEL_MISSILE => [
                     'id' => StoreConstants::PERK_PIXEL_MISSILE,
                     'uuid' => 'e0000000-0000-0000-0000-000000000002',
@@ -155,6 +146,33 @@ class StorePackagesConfig {
                     'description' => __('store_content_mines_1_desc'),
                     'price_coins' => 1500,
                     'icon' => 'radar',
+                    'is_single_use' => true,
+                ],
+                StoreConstants::PERK_SUPERNOVA_BLAST => [
+                    'id' => StoreConstants::PERK_SUPERNOVA_BLAST,
+                    'uuid' => 'e0000000-0000-0000-0000-000000000010',
+                    'name' => __('store_content_supernova_blast_name'),
+                    'description' => __('store_content_supernova_blast_desc'),
+                    'price_coins' => 12000,
+                    'icon' => 'wb_sunny',
+                    'is_single_use' => true,
+                ],
+                StoreConstants::PERK_ION_STRIKE => [
+                    'id' => StoreConstants::PERK_ION_STRIKE,
+                    'uuid' => 'e0000000-0000-0000-0000-000000000011',
+                    'name' => __('store_content_ion_strike_name'),
+                    'description' => __('store_content_ion_strike_desc'),
+                    'price_coins' => 8000,
+                    'icon' => 'change_history',
+                    'is_single_use' => true,
+                ],
+                StoreConstants::PERK_TECTONIC_RIFT => [
+                    'id' => StoreConstants::PERK_TECTONIC_RIFT,
+                    'uuid' => 'e0000000-0000-0000-0000-000000000012',
+                    'name' => __('store_content_tectonic_rift_name'),
+                    'description' => __('store_content_tectonic_rift_desc'),
+                    'price_coins' => 6000,
+                    'icon' => 'volcano',
                     'is_single_use' => true,
                 ]
             ];
