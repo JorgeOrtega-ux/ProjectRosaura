@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Settings\SettingsViewService;
 
 $settingsService = new SettingsViewService();
@@ -21,7 +21,7 @@ $text2FA = $faData['text2FA'];
                 <div data-ref="2fa-setup-container" class="component-setup-container active">
 
                     <div class="component-card--grouped component-accordion active">
-                        <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                        <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                             <div class="component-card__content">
                                 <div class="component-card__icon-container component-card__icon-container--bordered">
                                     <span class="material-symbols-rounded">qr_code_scanner</span>
@@ -68,7 +68,7 @@ $text2FA = $faData['text2FA'];
                     </div>
 
                     <div class="component-card--grouped">
-                        <div class="component-group-item component-group-item--wrap">
+                        <div class="component-group-item">
                             <div class="component-card__content">
                                 <div class="component-card__icon-container component-card__icon-container--bordered">
                                     <span class="material-symbols-rounded">verified_user</span>
@@ -111,7 +111,7 @@ $text2FA = $faData['text2FA'];
             <?php else: ?>
 
                 <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--wrap">
+                    <div class="component-group-item">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">key</span>
@@ -128,7 +128,7 @@ $text2FA = $faData['text2FA'];
 
                     <hr class="component-divider">
 
-                    <div class="component-group-item component-group-item--wrap">
+                    <div class="component-group-item">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">verified_user</span>

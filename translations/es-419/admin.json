@@ -443,5 +443,12 @@
     "admin_tier_stripe_yearly": "ID Stripe Anual",
     "admin_tiers_title": "Niveles de Suscripción",
     "table_status": "Estado",
-    "admin_message_search_placeholder": "Buscar mensaje..."
+    "admin_message_search_placeholder": "Buscar mensaje...",
+    "perm_cat_users": "Gestión de Usuarios",
+    "perm_cat_roles": "Roles y Permisos",
+    "perm_cat_canvases": "Gestión de Lienzos (Canvases)",
+    "perm_cat_backups": "Copias de Seguridad (Backups)",
+    "perm_cat_logs": "Registros y Logs",
+    "perm_cat_system": "Administración del Sistema",
+    "perm_cat_other": "Otros Permisos"
 }

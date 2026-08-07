@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Settings\SettingsViewService;
 
 $settingsService = new SettingsViewService();
@@ -41,7 +41,7 @@ $currentThemeText = $accData['currentThemeText'];
             </div>
 
             <div class="component-card--grouped">
-                <div class="component-group-item component-group-item--wrap">
+                <div class="component-group-item">
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('pref_alerts_title'); ?></h2>

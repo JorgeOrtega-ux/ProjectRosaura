@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 <div class="view-content">
@@ -26,7 +26,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
                 <hr class="component-divider">
 
-                <div class="component-group-item component-group-item--wrap">
+                <div class="component-group-item">
                     <div class="component-card__content">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">fact_check</span>

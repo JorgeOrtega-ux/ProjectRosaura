@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Admin\AdminViewService;
 
 $adminService = new AdminViewService();
@@ -35,7 +35,7 @@ $isTargetSuperAdmin = in_array(4, $assignedRoleIds);
                 <div data-ref="admin-roles-form">
                     <div class="component-card--grouped component-accordion active">
                         
-                        <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                        <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                             <div class="component-card__content">
                                 <div class="component-card__icon-container component-card__icon-container--bordered">
                                     <span class="material-symbols-rounded">shield_person</span>
@@ -73,7 +73,7 @@ $isTargetSuperAdmin = in_array(4, $assignedRoleIds);
                                 <hr class="component-divider">
                                 <?php endif; ?>
 
-                                <div class="component-group-item component-group-item--wrap">
+                                <div class="component-group-item">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title">

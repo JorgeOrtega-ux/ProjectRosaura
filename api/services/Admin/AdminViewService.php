@@ -824,7 +824,7 @@ class AdminViewService {
 
         $roles = [];
         try {
-            $stmt = $pdo->prepare("SELECT id, name, weight, is_system, created_at FROM {$tblRoles} {$searchCondition} ORDER BY id ASC LIMIT :limit OFFSET :offset");
+            $stmt = $pdo->prepare("SELECT id, uuid, name, weight, is_system, created_at FROM {$tblRoles} {$searchCondition} ORDER BY id ASC LIMIT :limit OFFSET :offset");
             foreach ($searchParams as $key => $val) {
                 $stmt->bindValue($key, $val);
             }
@@ -887,7 +887,7 @@ class AdminViewService {
 
         $allPermissions = [];
         try {
-            $stmtAll = $pdo->query("SELECT * FROM permissions ORDER BY category, id ASC");
+            $stmtAll = $pdo->query("SELECT * FROM permissions ORDER BY id ASC");
             $allPermissions = $stmtAll->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\Throwable $e) {
             Logger::error("getRolePermissionsData allPermissions error: " . $e->getMessage(), ['exception' => $e]);

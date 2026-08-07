@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Settings\SettingsViewService;
 
 $settingsService = new SettingsViewService();
@@ -157,7 +157,7 @@ extract($accountData);
 
             <!-- Connected Google Account Section -->
             <div class="component-card--grouped">
-                <div class="component-group-item component-group-item--wrap">
+                <div class="component-group-item">
                     <div class="component-card__content">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -212,7 +212,7 @@ extract($accountData);
             </div>
 
             <div class="component-card--grouped">
-                <div class="component-group-item component-group-item--wrap">
+                <div class="component-group-item">
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('pref_links_title'); ?></h2>
@@ -229,7 +229,7 @@ extract($accountData);
             </div>
 
             <div class="component-card--grouped">
-                <div class="component-group-item component-group-item--wrap">
+                <div class="component-group-item">
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('settings.telemetry.title'); ?></h2>

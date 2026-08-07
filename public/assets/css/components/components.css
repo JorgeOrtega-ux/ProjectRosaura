@@ -1,4 +1,4 @@
-.component-layout-centered {
+﻿.component-layout-centered {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1328,10 +1328,6 @@ textarea.component-input-field::placeholder {
     justify-content: space-between;
     padding: 24px;
     gap: 16px;
-}
-
-.component-group-item--wrap {
-    flex-wrap: wrap;
 }
 
 .component-group-item--stacked {

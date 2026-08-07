@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Canvas\CanvasViewService;
 
 $canvasService = new CanvasViewService();
@@ -101,7 +101,7 @@ if (trim($rawName) !== '') {
                                 }
                             ?>
                             <div class="component-card--grouped">
-                                <div class="component-group-item component-group-item--wrap">
+                                <div class="component-group-item">
                                     <div class="component-card__content">
                                         <div class="component-card__text" data-perm-key="<?php echo htmlspecialchars($p['name']); ?>">
                                             <h2 class="component-card__title" data-ref="perm-name"><?php echo htmlspecialchars($permNameTranslated); ?></h2>

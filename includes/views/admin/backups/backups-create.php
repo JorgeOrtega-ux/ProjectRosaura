@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 
@@ -20,7 +20,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <div class="component-bottom">
                 
                 <div class="component-card--grouped component-accordion">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="modules_settings">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion" data-db="modules_settings">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">layers</span>
@@ -37,7 +37,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__icon-container component-card__icon-container--bordered">
                                         <span class="material-symbols-rounded">database</span>
@@ -59,7 +59,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                 </div>
 
                 <div class="component-card--grouped component-accordion mt-4 disabled-interaction" data-ref="custom-schema-accordion">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="backup_schema_root">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion" data-db="backup_schema_root">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">schema</span>

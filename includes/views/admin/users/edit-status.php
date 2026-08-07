@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Admin\AdminViewService;
 use App\Core\System\DatabaseConstants as DB;
 
@@ -97,7 +97,7 @@ if ($initialState['isSuspended'] === '1') {
                         
                         <div class="component-card--grouped component-accordion active">
                             
-                            <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                            <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                                 <div class="component-card__content">
                                     <div class="component-card__icon-container component-card__icon-container--bordered">
                                         <span class="material-symbols-rounded">shield</span>

@@ -35,6 +35,9 @@ class SecurityController {
     }
 
     handleClick(e) {
+        const btnPromptChangePassword = e.target.closest('[data-action="promptChangePassword"]');
+        if (btnPromptChangePassword) this.promptChangePassword(btnPromptChangePassword);
+
         const btnVerifyPass = e.target.closest('[data-action="submitVerifyCurrentPassword"]');
         if (btnVerifyPass) this.verifyCurrentPassword(btnVerifyPass);
 
@@ -46,6 +49,11 @@ class SecurityController {
 
         const btnLogoutAll = e.target.closest('[data-action="logoutAllDevices"]');
         if (btnLogoutAll) this.logoutAllDevices(btnLogoutAll);
+    }
+
+    async promptChangePassword(btn) {
+        if (!window.modalSystem) return;
+        await window.modalSystem.show('changePasswordModal');
     }
 
     handleChange(e) {
@@ -118,6 +126,9 @@ class SecurityController {
         
         if (result.success) {
             showMessage(result.message, 'success');
+            if (window.modalSystem) {
+                window.modalSystem.closeCurrent(true);
+            }
             setTimeout(() => {
                 if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/settings/security');
                 else window.location.href = this.basePath + '/settings/security';

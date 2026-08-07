@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Admin\AdminViewService;
 use App\Core\System\SubscriptionFeatureConfig;
 use App\Core\System\SubscriptionPlanConstants;
@@ -199,7 +199,7 @@ $featuresData = [
                 
                 <!-- Detalles Accordion -->
                 <div class="component-card--grouped component-accordion">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">diamond</span>
@@ -388,7 +388,7 @@ $featuresData = [
 
                 <!-- Características Accordion -->
                 <div class="component-card--grouped component-accordion">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">stars</span>
@@ -411,7 +411,7 @@ $featuresData = [
                             foreach ($availableFeatures as $fKey => $fData): 
                                 $isChecked = !empty($featuresData[$fKey]) ? 'checked' : '';
                             ?>
-                                <div class="component-group-item component-group-item--wrap">
+                                <div class="component-group-item">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title"><?php echo __($fData['title_key']) ?: $fKey; ?></h2>
@@ -435,7 +435,7 @@ $featuresData = [
 
                 <!-- Límites Accordion -->
                 <div class="component-card--grouped component-accordion" data-ref="limits-accordion">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">speed</span>
@@ -646,7 +646,7 @@ $featuresData = [
 
                 <!-- Estilo y Diseño Accordion -->
                 <div class="component-card--grouped component-accordion">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">palette</span>
@@ -744,7 +744,7 @@ $featuresData = [
 
                                 <hr class="component-divider">
 
-                                <div class="component-group-item component-group-item--wrap">
+                                <div class="component-group-item">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title"><?php echo __('admin_role_blocks_title'); ?></h2>

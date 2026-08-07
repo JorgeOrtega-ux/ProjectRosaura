@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $backupId = $_GET['id'] ?? '';
@@ -36,7 +36,7 @@ if (empty($filename)) {
                 
                 <div class="component-card--grouped component-accordion active">
                     
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">settings_backup_restore</span>
@@ -84,7 +84,7 @@ if (empty($filename)) {
 
                             <hr class="component-divider">
 
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__icon-container component-card__icon-container--bordered">
                                         <span class="material-symbols-rounded">lock_open</span>

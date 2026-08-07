@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Canvas\CanvasViewService;
 use App\Core\System\SubscriptionPlanConstants;
 
@@ -49,7 +49,7 @@ $isOfficial = ($canvas['owner_id'] === null);
 
             <!-- ACCORDION 1: INSTANT RESIZE -->
             <div class="component-card--grouped component-accordion active">
-                <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                     <div class="component-card__content">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">flash_on</span>
@@ -120,7 +120,7 @@ $isOfficial = ($canvas['owner_id'] === null);
 
                         <hr class="component-divider">
 
-                        <div class="component-group-item component-group-item--wrap">
+                        <div class="component-group-item">
                             <div class="component-card__content">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title"><?php echo __('canvas_resize_now_title'); ?></h2>
@@ -141,7 +141,7 @@ $isOfficial = ($canvas['owner_id'] === null);
 
             <!-- ACCORDION 2: PROGRAMMED RESIZE -->
             <div class="component-card--grouped component-accordion">
-                <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                     <div class="component-card__content">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">schedule</span>
@@ -158,7 +158,7 @@ $isOfficial = ($canvas['owner_id'] === null);
                 <div class="component-accordion-body">
                     <div class="component-accordion-content">
 
-                        <div class="component-group-item component-group-item--wrap">
+                        <div class="component-group-item">
                             <div class="component-card__content">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title"><?php echo __('canvas_resize_active_title'); ?></h2>

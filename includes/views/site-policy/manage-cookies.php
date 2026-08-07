@@ -1,4 +1,4 @@
-<div class="view-content" data-ref="manage-cookies-wrapper">
+﻿<div class="view-content" data-ref="manage-cookies-wrapper">
     <div class="component-top">
         <div class="component-top-left">
             <h1 class="component-top-title">Administrar cookies</h1>
@@ -15,7 +15,7 @@
                 </div>
 
                 <div class="component-card--grouped component-accordion component-mb-3">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header">
+                    <div class="component-group-item component-accordion-header">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">security</span>
@@ -32,7 +32,7 @@
                     
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title">Cloudflare</h2>
@@ -41,7 +41,7 @@
                                 </div>
                             </div>
                             <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title">Stripe</h2>
@@ -50,7 +50,7 @@
                                 </div>
                             </div>
                             <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title">Google Login</h2>
@@ -59,7 +59,7 @@
                                 </div>
                             </div>
                             <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title">Autenticación Propia</h2>
@@ -72,7 +72,7 @@
                 </div>
 
                 <div class="component-card--grouped component-accordion component-mb-3">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header">
+                    <div class="component-group-item component-accordion-header">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">palette</span>
@@ -95,7 +95,7 @@
                     
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title">Preferencias de Idioma</h2>
@@ -104,7 +104,7 @@
                                 </div>
                             </div>
                             <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title">Preferencias de Tema UI</h2>
@@ -117,7 +117,7 @@
                 </div>
 
                 <div class="component-card--grouped component-accordion component-mb-3">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header">
+                    <div class="component-group-item component-accordion-header">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">monitoring</span>
@@ -141,7 +141,7 @@
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
 
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title">Telemetría Interna</h2>

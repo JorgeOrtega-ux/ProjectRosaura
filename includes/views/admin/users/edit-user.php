@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Admin\AdminViewService;
 use App\Core\System\Translator;
 
@@ -263,7 +263,7 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                 </div>
                 
                 <div class="component-card--grouped admin-edit-group">
-                    <div class="component-group-item component-group-item--wrap">
+                    <div class="component-group-item">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('pref_links_title'); ?></h2>
@@ -280,7 +280,7 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                 </div>
 
                 <div class="component-card--grouped admin-edit-group">
-                    <div class="component-group-item component-group-item--wrap">
+                    <div class="component-group-item">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('pref_alerts_title'); ?></h2>

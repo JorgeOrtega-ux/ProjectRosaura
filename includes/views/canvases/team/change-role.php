@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Canvas\CanvasViewService;
 
 $canvasService = new CanvasViewService();
@@ -84,7 +84,7 @@ extract($changeRoleData);
                             
                             $isChecked = in_array((int)$role['id'], $targetCurrentRoles ?? []) ? 'checked' : '';
                         ?>
-                        <div class="component-group-item component-group-item--wrap">
+                        <div class="component-group-item">
                             <div class="component-card__content">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title">

@@ -34,7 +34,6 @@ return [
     '/settings/subscription' => ['view' => 'settings/billing/billing.php', 'auth' => true],
     '/settings/billing' => ['view' => 'settings/billing/billing.php', 'auth' => true],
     '/settings/purchase-history' => ['view' => 'settings/billing/purchase-history.php', 'auth' => true],
-    '/settings/change-password' => ['view' => 'settings/security/change-password.php', 'auth' => true],
     '/settings/2fa' => ['view' => 'settings/security/2fa.php', 'auth' => true],
     '/settings/2fa/recovery-codes' => ['view' => 'settings/security/2fa-recovery-codes.php', 'auth' => true],
     '/settings/2fa/deactivate' => ['view' => 'settings/security/2fa-deactivate.php', 'auth' => true],

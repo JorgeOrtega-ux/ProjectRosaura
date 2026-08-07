@@ -47,7 +47,6 @@ $routeTitles = [
     '/settings/security' => __('route_security'),
     '/settings/accessibility' => __('route_accessibility'),
     '/settings/guest' => __('route_guest'),
-    '/settings/change-password' => __('route_change_password'),
     '/settings/2fa' => __('route_2fa'),
     '/settings/delete-account' => __('route_delete_account'),
     '/account-suspended' => __('route_suspended'),

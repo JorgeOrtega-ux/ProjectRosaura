@@ -1,4 +1,71 @@
 export const ModalTemplates = {
+    changePasswordModal: {
+        build: () => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                
+                <!-- STEP 1: Current Password -->
+                <div class="component-card--grouped component-card--flush active" data-ref="step-1-current-password">
+                    <div class="component-modal-header component-modal-header--with-icon">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">lock</span>
+                        </div>
+                        <div class="component-modal-header-text">
+                            <h2 class="component-modal-title">${__('cp_title')}</h2>
+                            <p class="component-modal-desc">${__('cp_step1_desc')}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="component-modal-body">
+                        <div class="component-input-group">
+                            <input type="password" data-ref="cp_current_password" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="off">
+                            <label class="component-input-label">${__('lbl_current_password')}</label>
+                            <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
+                        </div>
+                    </div>
+                    
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                        <button class="component-button component-button--h40 component-button--dark" data-action="submitVerifyCurrentPassword">${__('btn_verify')}</button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: New Password -->
+                <div class="component-card--grouped component-card--flush disabled" data-ref="step-2-new-password">
+                    <div class="component-modal-header component-modal-header--with-icon">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">lock_reset</span>
+                        </div>
+                        <div class="component-modal-header-text">
+                            <h2 class="component-modal-title">${__('cp_title')}</h2>
+                            <p class="component-modal-desc">${__('cp_step2_desc')}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="component-modal-body">
+                        <div class="component-input-group">
+                            <input type="password" data-ref="cp_new_password" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="off">
+                            <label class="component-input-label">${__('lbl_new_password')}</label>
+                            <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
+                        </div>
+                        
+                        <div class="component-input-group" style="margin-top: 16px;">
+                            <input type="password" data-ref="cp_confirm_password" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="off">
+                            <label class="component-input-label">${__('lbl_confirm_password')}</label>
+                            <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
+                        </div>
+                    </div>
+                    
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                        <button class="component-button component-button--h40 component-button--dark" data-action="submitUpdatePassword">${__('btn_save_password')}</button>
+                    </div>
+                </div>
+            `;
+        }
+    },
+
     welcomePremiumModal: {
         fullScreen: true,
         build: (data = {}) => ModalTemplates.purchaseSuccessModal.build({ ...data, item_type: 'subscription' })

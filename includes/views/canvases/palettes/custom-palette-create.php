@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $userPermissions = $_SESSION['user_permissions'] ?? [];
@@ -27,7 +27,7 @@ $translatedName = __('canvas_palette_new');
 
                 <!-- Nombre Accordion -->
                 <div class="component-card--grouped component-accordion active">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">edit</span>
@@ -81,7 +81,7 @@ $translatedName = __('canvas_palette_new');
 
                 <!-- Colores Accordion -->
                 <div data-ref="colorsMasterContainer" class="component-card--grouped component-accordion active">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">palette</span>
@@ -97,7 +97,7 @@ $translatedName = __('canvas_palette_new');
                     </div>
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__actions component-card__actions--end" data-ref="btnAddColorWrapper">
                                     <button type="button" class="component-button component-button--h36" data-ref="btnAddColor" data-action="addColor">
                                         <?php echo __('btn_add_color'); ?>

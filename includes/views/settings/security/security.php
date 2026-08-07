@@ -17,7 +17,7 @@ $text2FA = $securityData['text2FA'];
             </div>
 
             <div class="component-card--grouped">
-                <div class="component-group-item component-group-item--wrap">
+                <div class="component-group-item">
                     <div class="component-card__content">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">lock</span>
@@ -28,13 +28,13 @@ $text2FA = $securityData['text2FA'];
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/change-password"><?php echo __('btn_change_password'); ?></button>
+                        <button type="button" class="component-button component-button--h36" data-action="promptChangePassword"><?php echo __('btn_change_password'); ?></button>
                     </div>
                 </div>
 
                 <hr class="component-divider">
 
-                <div class="component-group-item component-group-item--wrap">
+                <div class="component-group-item">
                     <div class="component-card__content">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">shield</span>
@@ -53,7 +53,7 @@ $text2FA = $securityData['text2FA'];
             </div>
 
             <div class="component-card--grouped">
-                <div class="component-group-item component-group-item--wrap">
+                <div class="component-group-item">
                     <div class="component-card__content">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">devices</span>
@@ -70,7 +70,7 @@ $text2FA = $securityData['text2FA'];
             </div>
 
             <div class="component-card--grouped">
-                <div class="component-group-item component-group-item--wrap">
+                <div class="component-group-item">
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('sec_delete_account_title'); ?></h2>

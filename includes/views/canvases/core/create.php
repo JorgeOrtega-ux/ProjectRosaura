@@ -1,4 +1,4 @@
-<?php 
+﻿<?php 
 use App\Api\Services\Canvas\CanvasViewService;
 use App\Core\System\SubscriptionPlanConstants;
 
@@ -26,7 +26,7 @@ extract($createData);
             <div class="component-bottom">
 
                 <div class="component-card--grouped component-accordion active">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">info</span>
@@ -124,7 +124,7 @@ extract($createData);
                             <!-- 3. Lienzo Oficial -->
                             <?php if ($canCreateOfficial): ?>
                             <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('canvas_is_official_title'); ?></h2>
@@ -146,7 +146,7 @@ extract($createData);
 
 
                 <div class="component-card--grouped component-accordion">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">settings</span>
@@ -436,7 +436,7 @@ extract($createData);
 
 
                 <div class="component-card--grouped component-accordion">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">extension</span>
@@ -485,7 +485,7 @@ extract($createData);
                         </div>
                     </div>
                             <hr class="component-divider">
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('lbl_allow_purchases'); ?></h2>
@@ -500,7 +500,7 @@ extract($createData);
                         </div>
                     </div>
                     <hr class="component-divider">
-                    <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
+                    <div class="component-group-item <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
@@ -521,7 +521,7 @@ extract($createData);
                     </div>
                     <?php $hasCustomColors = SubscriptionPlanConstants::hasFeature($tier, 'custom_colors'); ?>
                     <hr class="component-divider">
-                    <div class="component-group-item component-group-item--wrap <?php echo !$hasCustomColors ? 'disabled-interaction' : ''; ?>" <?php if(!$hasCustomColors) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
+                    <div class="component-group-item <?php echo !$hasCustomColors ? 'disabled-interaction' : ''; ?>" <?php if(!$hasCustomColors) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">

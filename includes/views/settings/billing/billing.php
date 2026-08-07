@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 
@@ -22,7 +22,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
                 <!-- 1. Acordeón de Suscripción y Almacenamiento -->
                 <div class="component-card--grouped component-accordion disabled-interaction" data-ref="subscription-storage-area">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">stars</span>
@@ -41,7 +41,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <div class="component-accordion-content">
                             
                             <!-- Plan Actual -->
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__icon-container component-card__icon-container--bordered">
                                         <span class="material-symbols-rounded">stars</span>
@@ -61,7 +61,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             <!-- Renovación Automática -->
                             <div data-ref="sub-renewal-container">
                                 <hr class="component-divider">
-                                <div class="component-group-item component-group-item--wrap">
+                                <div class="component-group-item">
                                     <div class="component-card__content">
                                         <div class="component-card__icon-container component-card__icon-container--bordered">
                                             <span class="material-symbols-rounded">event_repeat</span>
@@ -127,7 +127,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
                 <!-- 2. Acordeón Métodos de Pago -->
                 <div class="component-card--grouped component-accordion disabled-interaction" data-ref="payment-methods-accordion">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">credit_card</span>

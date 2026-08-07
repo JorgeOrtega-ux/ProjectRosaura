@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Admin\AdminViewService;
 
 $adminService = new AdminViewService();
@@ -24,7 +24,7 @@ extract($serverConfigData);
             <div class="component-bottom">
 
                 <div class="component-card--grouped" data-ref="admin-config-group">
-                    <div class="component-group-item component-group-item--wrap">
+                    <div class="component-group-item">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">construction</span>
@@ -44,7 +44,7 @@ extract($serverConfigData);
                 </div>
 
                 <div class="component-card--grouped component-accordion" data-ref="admin-config-group">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">public</span>
@@ -61,7 +61,7 @@ extract($serverConfigData);
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
                             
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('admin_config_allow_registrations_title'); ?></h2>
@@ -279,7 +279,7 @@ extract($serverConfigData);
                 </div>
 
                 <div class="component-card--grouped component-accordion" data-ref="admin-config-group">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">manage_accounts</span>
@@ -418,7 +418,7 @@ extract($serverConfigData);
                 </div>
 
                 <div class="component-card--grouped component-accordion" data-ref="admin-config-group">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">hourglass_top</span>
@@ -581,7 +581,7 @@ extract($serverConfigData);
                 </div>
 
                 <div class="component-card--grouped component-accordion" data-ref="admin-config-group">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">security</span>
@@ -696,7 +696,7 @@ extract($serverConfigData);
                 </div>
 
                 <div class="component-card--grouped component-accordion" data-ref="admin-config-group">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">admin_panel_settings</span>
@@ -924,7 +924,7 @@ extract($serverConfigData);
                 </div>
 
                 <div class="component-card--grouped component-accordion" data-ref="admin-config-group">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">storage</span>

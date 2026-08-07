@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Canvas\CanvasViewService;
 
 $canvasService = new CanvasViewService();
@@ -41,7 +41,7 @@ $isResetActive = $resetSettings['is_active'];
 
             <!-- ACCORDION 1: INSTANT RESET -->
             <div class="component-card--grouped component-accordion active">
-                <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                     <div class="component-card__content">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">delete_forever</span>
@@ -60,7 +60,7 @@ $isResetActive = $resetSettings['is_active'];
 
 
 
-                        <div class="component-group-item component-group-item--wrap">
+                        <div class="component-group-item">
                             <div class="component-card__content">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title"><?php echo __('canvas_reset_captura_title'); ?></h2>
@@ -80,7 +80,7 @@ $isResetActive = $resetSettings['is_active'];
 
                         <hr class="component-divider">
 
-                        <div class="component-group-item component-group-item--wrap">
+                        <div class="component-group-item">
                             <div class="component-card__content">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title"><?php echo __('canvas_reset_now_title'); ?></h2>
@@ -101,7 +101,7 @@ $isResetActive = $resetSettings['is_active'];
 
             <!-- ACCORDION 2: PROGRAMMED RESET -->
             <div class="component-card--grouped component-accordion">
-                <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                     <div class="component-card__content">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">schedule</span>
@@ -118,7 +118,7 @@ $isResetActive = $resetSettings['is_active'];
                 <div class="component-accordion-body">
                     <div class="component-accordion-content">
 
-                        <div class="component-group-item component-group-item--wrap">
+                        <div class="component-group-item">
                             <div class="component-card__content">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title"><?php echo __('canvas_reset_active_title'); ?></h2>
@@ -158,7 +158,7 @@ $isResetActive = $resetSettings['is_active'];
 
                             <hr class="component-divider">
 
-                            <div class="component-group-item component-group-item--wrap">
+                            <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('canvas_reset_captura_title'); ?></h2>

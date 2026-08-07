@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Api\Services\Admin\AdminViewService;
 
 $adminService = new AdminViewService();
@@ -70,7 +70,7 @@ $selectedModules = [
                 </div>
 
                 <div class="component-card--grouped component-accordion disabled-interaction <?php echo !$autoEnabled ? 'disabled' : ''; ?>" data-ref="wrapper-auto-options" data-form-group="admin-auto-form">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="auto_options_root">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion" data-db="auto_options_root">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">schedule</span>
@@ -154,7 +154,7 @@ $selectedModules = [
 
 
                 <div class="component-card--grouped component-accordion disabled-interaction <?php echo !$autoEnabled ? 'disabled' : ''; ?>" data-ref="wrapper-auto-schema" data-form-group="admin-auto-form">
-                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="auto_schema_root">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion" data-db="auto_schema_root">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">schema</span>
@@ -182,7 +182,7 @@ $selectedModules = [
                                         $totalTables = count($tables);
                                     ?>
                                     <div class="component-card--grouped component-accordion component-card--flush"> 
-                                        <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="<?php echo $dbName; ?>">
+                                        <div class="component-group-item component-accordion-header" data-action="toggleAccordion" data-db="<?php echo $dbName; ?>">
                                             <div class="component-card__content">
                                                 <div class="component-card__text">
                                                     <h2 class="component-card__title"><?php echo $dbName; ?></h2>
@@ -206,7 +206,7 @@ $selectedModules = [
                                             <div class="component-accordion-content">
                                                 <?php foreach($tables as $index => $table): ?>
                                                 <?php if($index > 0) echo '<hr class="component-divider">'; ?>
-                                                <div class="component-group-item component-group-item--wrap">
+                                                <div class="component-group-item">
                                                     <div class="component-card__content">
                                                         <div class="component-card__icon-container component-card__icon-container--bordered">
                                                             <span class="material-symbols-rounded">table_rows</span>
