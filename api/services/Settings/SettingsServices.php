@@ -114,7 +114,7 @@ class SettingsServices
 
         Utils::deleteOldAvatar($oldPic);
 
-        $newRelPath = Utils::generateProfilePicture($this->sessionManager->get('user_name'));
+        $newRelPath = Utils::generateProfilePicture($this->sessionManager->get('user_name'), $this->sessionManager->get('user_email'));
         if ($this->userRepository->updateAvatar($userId, $newRelPath)) {
             $this->logProfileChange($userId, DB::LOG_CHANGE_AVATAR, json_encode(['avatar' => $oldPic]), json_encode(['avatar' => $newRelPath]));
             $this->sessionManager->set('user_pic', $newRelPath);
@@ -165,9 +165,22 @@ class SettingsServices
             $this->logProfileChange($userId, DB::LOG_CHANGE_USERNAME, json_encode(['username' => $oldUsername]), json_encode(['username' => $username]));
             $this->sessionManager->set('user_name', $username);
 
+            // Regenerar avatar por defecto si tiene uno para que se actualice la inicial
+            $dbUser = $this->userRepository->findById($userId);
+            $newAvatar = null;
+            if ($dbUser && (empty($dbUser['profile_picture']) || strpos($dbUser['profile_picture'], '/avatar/') !== false)) {
+                $newAvatar = Utils::generateProfilePicture($username, $dbUser['email']);
+                if ($this->userRepository->updateAvatar($userId, $newAvatar)) {
+                    $this->sessionManager->set('user_pic', $newAvatar);
+                }
+            }
+
             $accounts = $this->sessionManager->getLinkedAccounts();
             if (isset($accounts[$userId])) {
                 $accounts[$userId]['user_name'] = $username;
+                if ($newAvatar !== null) {
+                    $accounts[$userId]['user_pic'] = $newAvatar;
+                }
                 $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
             }
 

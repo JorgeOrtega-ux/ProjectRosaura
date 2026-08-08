@@ -156,6 +156,10 @@ class Utils {
         if (empty($path)) return '';
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, 'data:')) return $path;
         
+        if (str_starts_with($path, '/avatar/') || str_starts_with($path, 'avatar/')) {
+            return (defined('APP_URL') ? APP_URL : '') . '/' . ltrim($path, '/');
+        }
+        
         if (str_starts_with($path, 'profilePictures/default/')) {
             // Intentar extraer la letra de la ruta legada, por ejemplo 'profilePictures/default/letters/O/...'
             if (preg_match('/letters\/([A-Z0-9])/i', $path, $matches)) {
@@ -181,12 +185,16 @@ class Utils {
     }
 
 
-    public static function generateProfilePicture($text) {
-        $cleanText = trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $text));
+    public static function generateProfilePicture($text, $seed = '') {
+        $cleanText = trim(preg_replace('/[^\p{L}\p{N}\s]/u', '', $text));
         if (empty($cleanText)) {
             $cleanText = 'U';
         }
-        $token = rtrim(strtr(base64_encode("RosauraUser:" . $cleanText), '+/', '-_'), '=');
+        $payload = $cleanText;
+        if ($seed !== '') {
+            $payload .= ':' . $seed;
+        }
+        $token = rtrim(strtr(base64_encode("RosauraUser:" . $payload), '+/', '-_'), '=');
         return '/avatar/' . $token;
     }
     public static function generateCSRFToken(SessionManagerInterface $sessionManager) {

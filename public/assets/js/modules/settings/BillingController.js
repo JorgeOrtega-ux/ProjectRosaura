@@ -178,7 +178,7 @@ export class BillingController {
         if (tokensContainer) {
             if (tokens.has_feature || tokens.max_tokens > 0) {
                 if (tokensDivider) tokensDivider.style.display = 'block';
-                tokensContainer.style.display = 'block';
+                tokensContainer.style.display = '';
 
                 const usedTok = tokens.used_tokens || 0;
                 const maxTok = tokens.max_tokens || 5000;

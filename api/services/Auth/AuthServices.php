@@ -491,7 +491,7 @@ class AuthServices {
         $this->rateLimiter->clear(RateLimitConstants::KEY_AUTH_REGISTER_VERIFY . "_{$identifier}"); 
         $payload = json_decode($verification['payload'], true);
         $uuid = Utils::generateUUID();
-        $profilePic = Utils::generateProfilePicture($payload['username']);
+        $profilePic = Utils::generateProfilePicture($payload['username'], $payload['email']);
         
         if (!$profilePic) return ['success' => false, 'message' => __('error.internal_server_error')];
 
@@ -672,7 +672,7 @@ class AuthServices {
                     $username .= rand(10, 99);
                 }
 
-                $profilePic = Utils::generateProfilePicture($username);
+                $profilePic = Utils::generateProfilePicture($username, $email);
                 $defaultRoleId = (int)($this->config['default_user_role_id'] ?? SecurityConstants::DEFAULT_USER_ROLE_ID);
                 $randomPassword = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
 

@@ -287,7 +287,7 @@ class AdminServices {
 
         Utils::deleteOldAvatar($oldPic);
 
-        $newRelPath = Utils::generateProfilePicture($user['username']);
+        $newRelPath = Utils::generateProfilePicture($user['username'], $user['email']);
         if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
             $currentUserId = $this->sessionManager->get('user_id');
             $logPayload = json_encode(['event' => 'admin_delete_avatar', 'target_user' => $targetId, 'admin_user' => $currentUserId]);
@@ -330,6 +330,13 @@ class AdminServices {
         if ($this->userRepository->updateUsername($targetId, $username)) {
             $logPayload = json_encode(['event' => 'admin_update_username', 'old_username' => $oldUsername, 'new_username' => $username, 'admin_user' => $currentUserId]);
             $this->moderationRepository->logAction($targetId, $currentUserId, ModerationConstants::ACTION_PROFILE_USERNAME, $logPayload, null);
+
+            // Regenerar avatar por defecto si tiene uno para que se actualice la inicial
+            if (empty($user['profile_picture']) || strpos($user['profile_picture'], '/avatar/') !== false) {
+                $newAvatar = Utils::generateProfilePicture($username, $user['email']);
+                $this->userRepository->updateAvatar($targetId, $newAvatar);
+            }
+
             return ['success' => true, 'message' => __('admin.username_updated'), 'new_username' => $username];
         }
         return ['success' => false, 'message' => __('error.update_failed')];

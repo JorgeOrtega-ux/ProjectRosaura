@@ -366,12 +366,11 @@ def main():
     print("2 - Identificar estilos inline (style=\"...\") en archivos PHP y JS")
     print("3 - Identificar código de depuración (console.log, var_dump, etc.)")
     print("4 - Generar Sprite de Iconos SVG")
-    print("5 - Verificar y Generar Avatares Predeterminados")
-    print("6 - Escanear claves de traducción (_t y __) y comprobar JSONs")
-    print("7 - Dibujar una imagen en un lienzo (Inyectar a Redis)")
-    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4, 5, 6 o 7: {Colors.ENDC}").strip()
+    print("5 - Escanear claves de traducción (_t y __) y comprobar JSONs")
+    print("6 - Dibujar una imagen en un lienzo (Inyectar a Redis)")
+    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4, 5 o 6: {Colors.ENDC}").strip()
 
-    if choice not in ('1', '2', '3', '4', '5', '6', '7'):
+    if choice not in ('1', '2', '3', '4', '5', '6'):
         print(f"{Colors.FAIL}Opción no válida. Saliendo.{Colors.ENDC}")
         return
 
@@ -382,18 +381,13 @@ def main():
     if choice == '4':
         generate_svg_icons(target_path)
         return
-        
-    if choice == '5':
-        import check_and_generate_avatars
-        check_and_generate_avatars.run_avatar_generator()
-        return
 
-    if choice == '6':
+    if choice == '5':
         from i18n import i18n_scanner
         i18n_scanner.run_scanner(target_path, script_dir)
         return
 
-    if choice == '7':
+    if choice == '6':
         handle_draw_image()
         return
 
