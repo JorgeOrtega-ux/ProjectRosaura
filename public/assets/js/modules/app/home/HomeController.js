@@ -176,7 +176,12 @@ class HomeController {
             this.contentArea.innerHTML = '<div class="component-grid" data-ref="home-all-canvases"></div>';
             renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
             
-            this.loadCanvases();
+            // Throttle: cancel any pending tag-change request before firing a new one
+            if (this._tagThrottle) clearTimeout(this._tagThrottle);
+            this._tagThrottle = setTimeout(() => {
+                this._tagThrottle = null;
+                this.loadCanvases();
+            }, 400);
             return;
         }
 

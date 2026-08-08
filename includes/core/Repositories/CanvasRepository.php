@@ -193,8 +193,16 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function getHomeFeed(?int $userId, string $tagFilter = 'all', int $limit = 20, int $offset = 0): array {
         $cacheKey = null;
-        if ($this->redisClient && $userId === null) {
-            $cacheKey = CacheConstants::PREFIX_CANVAS_HOME_FEED . "{$tagFilter}:{$limit}:{$offset}";
+        $cacheTtl = CacheConstants::TTL_FIVE_MINS;
+        if ($this->redisClient) {
+            if ($userId === null) {
+                // Guests: shared cache, 5 min TTL
+                $cacheKey = CacheConstants::PREFIX_CANVAS_HOME_FEED . "{$tagFilter}:{$limit}:{$offset}";
+            } else {
+                // Logged-in users: per-user cache, 2 min TTL (shorter to reflect membership changes faster)
+                $cacheTtl = 120;
+                $cacheKey = CacheConstants::PREFIX_CANVAS_HOME_FEED . "u{$userId}:{$tagFilter}:{$limit}:{$offset}";
+            }
             $cached = $this->redisClient->get($cacheKey);
             if ($cached) {
                 return json_decode($cached, true);
@@ -275,12 +283,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
         };
 
         if ($cacheKey && $this->redisCache) {
-            return $this->redisCache->executeWithLock("lock_home_feed_{$tagFilter}_{$limit}_{$offset}", 5, function() use ($cacheKey, $fetchClosure) {
+            $lockKey = "lock_home_feed_" . ($userId ?? 'guest') . "_{$tagFilter}_{$limit}_{$offset}";
+            return $this->redisCache->executeWithLock($lockKey, 5, function() use ($cacheKey, $cacheTtl, $fetchClosure) {
                 $cached = $this->redisClient->get($cacheKey);
                 if ($cached) return json_decode($cached, true);
                 
                 $results = $fetchClosure();
-                $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($results));
+                $this->redisClient->setex($cacheKey, $cacheTtl, json_encode($results));
                 return $results;
             });
         }
