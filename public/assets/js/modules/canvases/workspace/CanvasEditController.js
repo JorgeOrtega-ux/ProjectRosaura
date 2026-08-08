@@ -18,8 +18,7 @@ class CanvasEditController {
             max_members: 10,
             cooldown_pixels_batch: 5,
             cooldown_seconds: 10,
-            allow_purchases: 1,
-            is_official: 0
+            allow_purchases: 1
         };
 
         this.handleClickBound = this.handleClick.bind(this);
@@ -75,11 +74,6 @@ class CanvasEditController {
         const allowPurchasesInput = this.container.querySelector('[data-ref="val_allow_purchases"]');
         if (allowPurchasesInput) {
             this.state.allow_purchases = allowPurchasesInput.checked ? 1 : 0;
-        }
-
-        const officialToggle = this.container.querySelector('[data-ref="val_is_official"]');
-        if (officialToggle) {
-            this.state.is_official = officialToggle.checked ? 1 : 0;
         }
 
         this.renderPalettes();
@@ -395,13 +389,6 @@ class CanvasEditController {
             this.state.allow_chat = allowChatInput.checked ? 1 : 0;
         }
 
-
-
-        const inputOfficial = this.container.querySelector('[data-ref="val_is_official"]');
-        if (inputOfficial) {
-            this.state.is_official = inputOfficial.checked ? 1 : 0;
-        }
-
         if (!this.state.name) {
             showMessage(window.__('err_field_required'), 'warning');
             return;
@@ -419,7 +406,6 @@ class CanvasEditController {
             cooldown_seconds: this.state.cooldown_seconds,
             allow_purchases: this.state.allow_purchases,
             allow_chat: this.state.allow_chat,
-            is_official: this.state.is_official,
             tags: activeTags
         };
 

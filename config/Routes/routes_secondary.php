@@ -195,22 +195,6 @@ return [
             ],
         ],
     ],
-    'canvases.get_official' => [
-        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
-        'action' => 'get_official',
-        'middleware' => [
-            [
-                'type' => 'Telemetry',
-            ],
-            [
-                'type' => 'RateLimit',
-                'key' => 'canvas_get_official',
-                'max' => 30,
-                'time' => 1,
-                'identifier' => 'ip',
-            ],
-        ],
-    ],
     'canvases.get' => [
         'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
         'action' => 'get',

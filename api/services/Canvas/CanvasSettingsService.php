@@ -25,14 +25,14 @@ class CanvasSettingsService {
         $this->userRepository = $userRepository;
 }
 
-    public function resizeCanvas(int $userId, int $canvasId, string $newSize, bool $canManageOfficial = false): array {
+    public function resizeCanvas(int $userId, int $canvasId, string $newSize): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
 
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] === $userId);
             $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
             if (!isset($allSizes[$newSize])) {
                 return ['success' => false, 'message' => __('err_invalid_canvas_size')];
@@ -82,10 +82,10 @@ class CanvasSettingsService {
         }
     }
 
-    public function getResizeSettings(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+    public function getResizeSettings(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] === $userId);
             
             if (!$canvas || !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -109,10 +109,10 @@ class CanvasSettingsService {
         }
     }
 
-  public function updateResizeSettings(int $userId, int $canvasId, array $data, bool $canManageOfficial = false): array {
+  public function updateResizeSettings(int $userId, int $canvasId, array $data): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] === $userId);
 
             if (!$canvas || !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -196,10 +196,10 @@ class CanvasSettingsService {
         }
     }
 
-    public function getResetSettings(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+    public function getResetSettings(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] === $userId);
             
             if (!$canvas || !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -224,10 +224,10 @@ class CanvasSettingsService {
         }
     }
 
-    public function updateResetSettings(int $userId, int $canvasId, array $data, bool $canManageOfficial = false): array {
+    public function updateResetSettings(int $userId, int $canvasId, array $data): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] === $userId);
 
             if (!$canvas || !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -310,7 +310,7 @@ class CanvasSettingsService {
         }
     }
 
-    public function resetCanvasNow(int $userId, int $canvasId, bool $takeSnapshot = true, bool $canManageOfficial = false): array {
+    public function resetCanvasNow(int $userId, int $canvasId, bool $takeSnapshot = true): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
@@ -320,7 +320,7 @@ class CanvasSettingsService {
 
 
             $role = null;
-            $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId);
 
             if (!$isOwner) {
                 if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS)) {
@@ -329,7 +329,7 @@ class CanvasSettingsService {
             }
 
             if ($takeSnapshot) {
-                $this->createSnapshot($userId, $canvasId, $canManageOfficial);
+                $this->createSnapshot($userId, $canvasId);
             }
 
             try {
@@ -360,14 +360,14 @@ class CanvasSettingsService {
         }
     }
 
-    public function createSnapshot(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+    public function createSnapshot(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
 
-            $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId);
             if (!$isOwner) {
                 if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS)) {
                     return ['success' => false, 'message' => __('err_unauthorized')];
@@ -409,12 +409,12 @@ class CanvasSettingsService {
         }
     }
 
-    public function getCanvasRoles(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+    public function getCanvasRoles(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] === $userId);
             if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
@@ -427,12 +427,12 @@ class CanvasSettingsService {
         }
     }
 
-    public function getCanvasPermissions(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+    public function getCanvasPermissions(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] === $userId);
             if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
@@ -445,12 +445,12 @@ class CanvasSettingsService {
         }
     }
 
-    public function createCanvasRole(int $userId, int $canvasId, string $name, array $permissions, int $weight = 10, bool $canManageOfficial = false): array {
+    public function createCanvasRole(int $userId, int $canvasId, string $name, array $permissions, int $weight = 10): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] === $userId);
             if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
@@ -483,12 +483,12 @@ class CanvasSettingsService {
         }
     }
 
-    public function updateCanvasRole(int $userId, int $roleId, int $canvasId, string $name, ?array $permissions = null, int $weight = 10, bool $canManageOfficial = false): array {
+    public function updateCanvasRole(int $userId, int $roleId, int $canvasId, string $name, ?array $permissions = null, int $weight = 10): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] === $userId);
             if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
@@ -523,12 +523,12 @@ class CanvasSettingsService {
         }
     }
 
-    public function updateCanvasRolePermissions(int $userId, int $roleId, int $canvasId, array $permissions, bool $canManageOfficial = false): array {
+    public function updateCanvasRolePermissions(int $userId, int $roleId, int $canvasId, array $permissions): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] === $userId);
             if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
@@ -557,12 +557,12 @@ class CanvasSettingsService {
         }
     }
 
-    public function deleteCanvasRole(int $userId, int $roleId, int $canvasId, bool $canManageOfficial = false): array {
+    public function deleteCanvasRole(int $userId, int $roleId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] === $userId);
             if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }

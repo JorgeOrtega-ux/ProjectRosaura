@@ -19,30 +19,7 @@ class CanvasMediaController extends BaseController {
     }
 
 
-    /**
-     */
-    private function canManageOfficial(): bool {
-        $perms = [];
-        
 
-        if (method_exists($this->session, 'getPermissions')) {
-            $perms = $this->session->getPermissions();
-        }
-        
-
-        if (empty($perms) && isset($_SESSION['user_permissions'])) {
-            $perms = $_SESSION['user_permissions'];
-        } elseif (empty($perms) && isset($_SESSION['permissions'])) {
-            $perms = $_SESSION['permissions'];
-        }
-        
-        if (!is_array($perms)) {
-            $perms = [];
-        }
-
-
-        return in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms);
-    }
 
     public function get_snapshots_gallery($input) {
         try {
@@ -53,7 +30,7 @@ class CanvasMediaController extends BaseController {
             
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
 
-            $result = $this->canvasServices->getSnapshotsGallery($uuid, $userId, $this->canManageOfficial());
+            $result = $this->canvasServices->getSnapshotsGallery($uuid, $userId);
             return $this->respond($result);
 
         } catch (\Throwable $e) {
@@ -70,7 +47,7 @@ class CanvasMediaController extends BaseController {
             
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
 
-            $result = $this->canvasServices->getSnapshotDetail($id, $userId, $this->canManageOfficial());
+            $result = $this->canvasServices->getSnapshotDetail($id, $userId);
             return $this->respond($result);
 
         } catch (\Throwable $e) {
@@ -109,7 +86,7 @@ class CanvasMediaController extends BaseController {
             }
             
             $userId = $this->session->getActiveAccountId();
-            $result = $this->canvasServices->toggleSnapshotPrivacy($id, $userId, $this->canManageOfficial());
+            $result = $this->canvasServices->toggleSnapshotPrivacy($id, $userId);
             return $this->respond($result);
 
         } catch (\Throwable $e) {
@@ -129,7 +106,7 @@ class CanvasMediaController extends BaseController {
             }
             
             $userId = $this->session->getActiveAccountId();
-            $result = $this->canvasServices->deleteSnapshot($id, $userId, $this->canManageOfficial());
+            $result = $this->canvasServices->deleteSnapshot($id, $userId);
             return $this->respond($result);
 
         } catch (\Throwable $e) {

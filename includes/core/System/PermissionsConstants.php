@@ -24,8 +24,6 @@ class PermissionsConstants {
     public const CREATE_CANVAS = 'create_canvas';
     public const MANAGE_CANVASES = 'manage_canvases';
     public const JOIN_CANVAS = 'join_canvas';
-    public const CANVASES_CREATE_OFFICIAL = 'canvases.create_official';
-    public const CANVASES_MANAGE_OFFICIAL = 'canvases.manage_official';
     
     // Antiguos / Compatibilidad con lienzos (localizados en CanvasPermissionsConstants)
     public const MANAGE_SETTINGS = 'manage_settings';

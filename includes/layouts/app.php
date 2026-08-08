@@ -320,7 +320,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         </div>
     </div>
     
-    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="<?php echo $appPath; ?>/assets/js/vendor/ui-engine.min.js"></script>
     <script type="module" src="<?php echo $appPath; ?>/assets/js/AppInit.js"></script>
 </body>
 </html>

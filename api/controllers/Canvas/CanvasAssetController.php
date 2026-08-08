@@ -21,30 +21,6 @@ class CanvasAssetController extends BaseController {
     }
 
 
-    /**
-     */
-    private function canManageOfficial(): bool {
-        $perms = [];
-        
-
-        if (method_exists($this->session, 'getPermissions')) {
-            $perms = $this->session->getPermissions();
-        }
-        
-
-        if (empty($perms) && isset($_SESSION['user_permissions'])) {
-            $perms = $_SESSION['user_permissions'];
-        } elseif (empty($perms) && isset($_SESSION['permissions'])) {
-            $perms = $_SESSION['permissions'];
-        }
-        
-        if (!is_array($perms)) {
-            $perms = [];
-        }
-
-
-        return in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms);
-    }
 
     public function upload_template($input) {
         try {

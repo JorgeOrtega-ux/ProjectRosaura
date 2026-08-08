@@ -35,7 +35,7 @@ $categories = [
     'canvases' => [
         'title' => __('perm_cat_canvases'),
         'icon' => 'palette',
-        'perms' => ['create_canvas', 'manage_canvases', 'join_canvas', 'canvases.create_official', 'canvases.manage_official']
+        'perms' => ['create_canvas', 'manage_canvases', 'join_canvas']
     ],
     'backups' => [
         'title' => __('perm_cat_backups'),

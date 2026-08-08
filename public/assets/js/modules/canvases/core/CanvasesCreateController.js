@@ -19,8 +19,7 @@ class CanvasesCreateController {
             palette_id: 'default',
             limit: 10,
             cooldown_pixels_batch: 5,
-            cooldown_seconds: 10,
-            is_official: 0
+            cooldown_seconds: 10
         };
 
         this.countriesLoaded = false;
@@ -35,7 +34,7 @@ class CanvasesCreateController {
         this.setupDefaultValues();
         this.syncStateWithDOM();
         this.renderPalettes();
-        this.checkAdminPermissions();
+        this.updateSizesAvailability();
 
         fetch(`${this.basePath}/assets/config/canvas_templates.json`)
             .then(res => res.ok ? res.json() : [])
@@ -56,25 +55,6 @@ class CanvasesCreateController {
     bindEvents() {
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('input', this.handleInputBound);
-    }
-
-    checkAdminPermissions() {
-        let hasPerm = false;
-        if (window.APP_CONFIG && window.APP_CONFIG.permissions) {
-            const p = window.APP_CONFIG.permissions;
-            hasPerm = p.includes('canvases.create_official');
-        }
-
-        const officialToggle = document.querySelector('[data-ref="val_is_official"]');
-        if (officialToggle) {
-            if (hasPerm) {
-                officialToggle.disabled = false;
-            } else {
-                officialToggle.disabled = true;
-            }
-        }
-        
-        this.updateSizesAvailability(false);
     }
 
     setupDefaultValues() {
@@ -142,11 +122,6 @@ class CanvasesCreateController {
         const allowChatEl = document.querySelector('[data-ref="val_allow_chat"]');
         if (allowChatEl) {
             this.formState.allow_chat = allowChatEl.checked ? 1 : 0;
-        }
-
-        const isOfficialEl = document.querySelector('[data-ref="val_is_official"]');
-        if (isOfficialEl) {
-            this.formState.is_official = isOfficialEl.checked ? 1 : 0;
         }
 
         const templateEl = document.getElementById('canvas_template_id');
@@ -308,7 +283,7 @@ class CanvasesCreateController {
         }
     }
 
-    updateSizesAvailability(isOfficial) {
+    updateSizesAvailability() {
         const wrapper = document.querySelector('[data-ref="canvas-create-wrapper"]');
         if (!wrapper) return;
         
@@ -331,7 +306,7 @@ class CanvasesCreateController {
                 }
             }
             
-            const isAllowed = isOfficial || (userTier >= reqTier);
+            const isAllowed = userTier >= reqTier;
             
             if (isAllowed) {
                 link.classList.remove('disabled-interaction');

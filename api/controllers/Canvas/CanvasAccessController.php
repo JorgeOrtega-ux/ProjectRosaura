@@ -19,30 +19,7 @@ class CanvasAccessController extends BaseController {
     }
 
 
-    /**
-     */
-    private function canManageOfficial(): bool {
-        $perms = [];
-        
 
-        if (method_exists($this->session, 'getPermissions')) {
-            $perms = $this->session->getPermissions();
-        }
-        
-
-        if (empty($perms) && isset($_SESSION['user_permissions'])) {
-            $perms = $_SESSION['user_permissions'];
-        } elseif (empty($perms) && isset($_SESSION['permissions'])) {
-            $perms = $_SESSION['permissions'];
-        }
-        
-        if (!is_array($perms)) {
-            $perms = [];
-        }
-
-
-        return in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms);
-    }
 
     public function join_live_share($input) {
         try {
@@ -112,7 +89,7 @@ class CanvasAccessController extends BaseController {
             $requestId = $input['request_id'] ?? null;
             if (!$requestId) return $this->respond(['success' => false, 'message' => __('err_request_not_provided')]);
             
-            return $this->respond($this->canvasServices->approveRequest($userId, (int)$requestId, $this->canManageOfficial()));
+            return $this->respond($this->canvasServices->approveRequest($userId, (int)$requestId));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -125,7 +102,7 @@ class CanvasAccessController extends BaseController {
             $requestId = $input['request_id'] ?? null;
             if (!$requestId) return $this->respond(['success' => false, 'message' => __('err_request_not_provided')]);
             
-            return $this->respond($this->canvasServices->rejectRequest($userId, (int)$requestId, $this->canManageOfficial()));
+            return $this->respond($this->canvasServices->rejectRequest($userId, (int)$requestId));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -138,7 +115,7 @@ class CanvasAccessController extends BaseController {
             $canvasId = $input['canvas_id'] ?? null;
             if (!$canvasId) return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             
-            return $this->respond($this->canvasServices->getPendingRequests($userId, (int)$canvasId, $this->canManageOfficial()));
+            return $this->respond($this->canvasServices->getPendingRequests($userId, (int)$canvasId));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -160,7 +137,7 @@ class CanvasAccessController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_incomplete_role_data')]);
             }
 
-            $result = $this->canvasServices->assignMemberRoles($userId, (int)$canvasId, (int)$targetUserId, $roles, $this->canManageOfficial());
+            $result = $this->canvasServices->assignMemberRoles($userId, (int)$canvasId, (int)$targetUserId, $roles);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -179,7 +156,7 @@ class CanvasAccessController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_incomplete_kick_data')]);
             }
 
-            $result = $this->canvasServices->removeMember($userId, (int)$canvasId, (int)$targetUserId, $this->canManageOfficial());
+            $result = $this->canvasServices->removeMember($userId, (int)$canvasId, (int)$targetUserId);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -206,7 +183,7 @@ class CanvasAccessController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_missing_live_share_params')]);
             }
 
-            $result = $this->canvasServices->createLiveShare($userId, (int)$canvasId, $imgUrl, (float)$x, (float)$y, (float)$w, (float)$h, (float)$opacity, (float)$angle, $this->canManageOfficial());
+            $result = $this->canvasServices->createLiveShare($userId, (int)$canvasId, $imgUrl, (float)$x, (float)$y, (float)$w, (float)$h, (float)$opacity, (float)$angle);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -241,7 +218,7 @@ class CanvasAccessController extends BaseController {
                 $maxUses = null;
             }
 
-            $result = $this->canvasServices->generateInvite($userId, (int)$canvasId, $role, $maxUses, $expiresAt, $this->canManageOfficial());
+            $result = $this->canvasServices->generateInvite($userId, (int)$canvasId, $role, $maxUses, $expiresAt);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -260,7 +237,7 @@ class CanvasAccessController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             }
 
-            $result = $this->canvasServices->listInvites($userId, (int)$canvasId, $this->canManageOfficial());
+            $result = $this->canvasServices->listInvites($userId, (int)$canvasId);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -281,7 +258,7 @@ class CanvasAccessController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_incomplete_revoke_data')]);
             }
 
-            $result = $this->canvasServices->revokeInvite($userId, (int)$canvasId, (int)$inviteId, $this->canManageOfficial());
+            $result = $this->canvasServices->revokeInvite($userId, (int)$canvasId, (int)$inviteId);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

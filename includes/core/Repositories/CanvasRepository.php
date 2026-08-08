@@ -213,20 +213,28 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $userIdParam = $userId ?? 0;
             
             if ($userId) {
-                $whereConditions[] = "((c.is_subscription_locked = 0 AND (c.privacy = 'public' OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm_feed WHERE cm_feed.canvas_id = c.id AND cm_feed.user_id = :current_user_id_member_where))) OR c.owner_id = :current_user_id_w1)";
-                $params[':current_user_id_w1'] = $userIdParam;
+                // Feed shows all public canvases (like a YouTube-style feed).
+                // User's own private canvases are NOT force-included here;
+                // they appear only if they are public or the user is explicitly a member.
+                $whereConditions[] = "c.is_subscription_locked = 0 AND (c.privacy = 'public' OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm_feed WHERE cm_feed.canvas_id = c.id AND cm_feed.user_id = :current_user_id_member_where))";
                 $params[':current_user_id_member_where'] = $userIdParam;
             } else {
-                $whereConditions[] = "c.is_subscription_locked = 0 AND (c.privacy = 'public' OR c.is_official = 1)";
+                $whereConditions[] = "c.is_subscription_locked = 0 AND c.privacy = 'public'";
             }
             
             $whereSql = implode(' AND ', $whereConditions);
 
             $isMemberSelect = $userId ? "CASE WHEN EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm_feed WHERE cm_feed.canvas_id = c.id AND cm_feed.user_id = :current_user_id_member_sel) THEN 1 ELSE 0 END as is_member" : "0 as is_member";
 
-            $orderSql = "ORDER BY c.is_official DESC, c.created_at DESC, c.id DESC";
+            // YouTube-style ranking: scored by member count + favorites + recency decay.
+            $orderSql = "ORDER BY
+                (c.members_count * 3 + c.favorites_count * 2 + TIMESTAMPDIFF(HOUR, c.created_at, NOW()) * -1) DESC,
+                c.members_count DESC,
+                c.favorites_count DESC,
+                c.created_at DESC,
+                c.id DESC";
             
-            $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.is_official, c.favorites_count, c.tags, c.is_subscription_locked, c.locked_reasons,
+            $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.favorites_count, c.tags, c.is_subscription_locked, c.locked_reasons,
                            CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                            c.members_count,
                            $isMemberSelect

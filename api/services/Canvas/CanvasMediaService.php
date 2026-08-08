@@ -24,7 +24,7 @@ class CanvasMediaService {
         $this->userRepository = $userRepository;
     }
 
-    public function getSnapshotsGallery(string $uuid, ?int $userId = null, bool $canManageOfficial = false): array {
+    public function getSnapshotsGallery(string $uuid, ?int $userId = null): array {
         try {
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
@@ -42,7 +42,7 @@ class CanvasMediaService {
                 $hasRole = !empty($roles);
             }
 
-            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($canvas['owner_id'] === $userId);
 
             if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -76,7 +76,7 @@ class CanvasMediaService {
         }
     }
 
-    public function getSnapshotDetail(string $snapshotId, ?int $userId = null, bool $canManageOfficial = false): array {
+    public function getSnapshotDetail(string $snapshotId, ?int $userId = null): array {
         try {
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
@@ -101,7 +101,7 @@ class CanvasMediaService {
                 $hasRole = !empty($roles);
             }
 
-            $isOwner = ($data['owner_id'] === $userId) || ($data['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($data['owner_id'] === $userId);
 
             if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -172,7 +172,7 @@ class CanvasMediaService {
         }
     }
 
-    public function toggleSnapshotPrivacy(string $snapshotId, int $userId, bool $canManageOfficial = false): array {
+    public function toggleSnapshotPrivacy(string $snapshotId, int $userId): array {
         try {
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
@@ -191,7 +191,7 @@ class CanvasMediaService {
                 return ['success' => false, 'message' => __('err_captura_not_found')];
             }
 
-            $isOwner = ($data['owner_id'] === $userId) || ($data['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($data['owner_id'] === $userId);
 
             if (!$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -210,7 +210,7 @@ class CanvasMediaService {
         }
     }
 
-    public function deleteSnapshot(string $snapshotId, int $userId, bool $canManageOfficial = false): array {
+    public function deleteSnapshot(string $snapshotId, int $userId): array {
         try {
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
@@ -229,7 +229,7 @@ class CanvasMediaService {
                 return ['success' => false, 'message' => __('err_captura_not_found')];
             }
 
-            $isOwner = ($data['owner_id'] === $userId) || ($data['owner_id'] === null && $canManageOfficial);
+            $isOwner = ($data['owner_id'] === $userId);
 
             if (!$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];

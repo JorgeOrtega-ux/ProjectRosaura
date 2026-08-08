@@ -110,7 +110,6 @@ export const ApiRoutes = {
     Canvases: {
         GetHomeFeed: 'canvases.get_home_feed',
         GetPublic: 'canvases.get_public',
-        GetOfficial: 'canvases.get_official',
         GetMine: 'canvases.get_mine',
         Get: 'canvases.get',
         GetChunks: 'canvases.get_chunks',

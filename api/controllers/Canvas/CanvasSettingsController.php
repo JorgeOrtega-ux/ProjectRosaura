@@ -19,30 +19,7 @@ class CanvasSettingsController extends BaseController {
     }
 
 
-    /**
-     */
-    private function canManageOfficial(): bool {
-        $perms = [];
-        
 
-        if (method_exists($this->session, 'getPermissions')) {
-            $perms = $this->session->getPermissions();
-        }
-        
-
-        if (empty($perms) && isset($_SESSION['user_permissions'])) {
-            $perms = $_SESSION['user_permissions'];
-        } elseif (empty($perms) && isset($_SESSION['permissions'])) {
-            $perms = $_SESSION['permissions'];
-        }
-        
-        if (!is_array($perms)) {
-            $perms = [];
-        }
-
-
-        return in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms);
-    }
 
  public function resize($input) {
         try {
@@ -64,7 +41,7 @@ class CanvasSettingsController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_size')]);
             }
 
-            $result = $this->canvasServices->resizeCanvas($userId, (int)$canvasId, $newSize, $this->canManageOfficial());
+            $result = $this->canvasServices->resizeCanvas($userId, (int)$canvasId, $newSize);
             return $this->respond($result);
 
         } catch (\Throwable $e) {
@@ -84,7 +61,7 @@ class CanvasSettingsController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             }
             
-            return $this->respond($this->canvasServices->getResizeSettings($userId, (int)$canvasId, $this->canManageOfficial()));
+            return $this->respond($this->canvasServices->getResizeSettings($userId, (int)$canvasId));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -108,7 +85,7 @@ class CanvasSettingsController extends BaseController {
                 'target_size' => $input['target_size'] ?? '64x64'
             ];
             
-            return $this->respond($this->canvasServices->updateResizeSettings($userId, (int)$canvasId, $data, $this->canManageOfficial()));
+            return $this->respond($this->canvasServices->updateResizeSettings($userId, (int)$canvasId, $data));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -129,7 +106,7 @@ class CanvasSettingsController extends BaseController {
             
             $takeSnapshot = filter_var($input['take_snapshot'] ?? false, FILTER_VALIDATE_BOOLEAN);
             
-            return $this->respond($this->canvasServices->resetCanvasNow($userId, (int)$canvasId, $takeSnapshot, $this->canManageOfficial()));
+            return $this->respond($this->canvasServices->resetCanvasNow($userId, (int)$canvasId, $takeSnapshot));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -148,7 +125,7 @@ class CanvasSettingsController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             }
             
-            return $this->respond($this->canvasServices->createSnapshot($userId, (int)$canvasId, $this->canManageOfficial()));
+            return $this->respond($this->canvasServices->createSnapshot($userId, (int)$canvasId));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -166,7 +143,7 @@ class CanvasSettingsController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             }
             
-            return $this->respond($this->canvasServices->getResetSettings($userId, (int)$canvasId, $this->canManageOfficial()));
+            return $this->respond($this->canvasServices->getResetSettings($userId, (int)$canvasId));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -190,7 +167,7 @@ class CanvasSettingsController extends BaseController {
                 'take_snapshot' => filter_var($input['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN)
             ];
             
-            return $this->respond($this->canvasServices->updateResetSettings($userId, (int)$canvasId, $data, $this->canManageOfficial()));
+            return $this->respond($this->canvasServices->updateResetSettings($userId, (int)$canvasId, $data));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -202,7 +179,7 @@ class CanvasSettingsController extends BaseController {
         $canvasId = $request['canvas_id'] ?? null;
         if (!$canvasId) return ['success' => false, 'message' => __('err_canvas_not_specified')];
         
-        $result = $this->canvasServices->getCanvasRoles($userId, (int)$canvasId, $this->canManageOfficial());
+        $result = $this->canvasServices->getCanvasRoles($userId, (int)$canvasId);
         return $result;
     }
 
@@ -212,7 +189,7 @@ class CanvasSettingsController extends BaseController {
         $canvasId = $request['canvas_id'] ?? null;
         if (!$canvasId) return ['success' => false, 'message' => __('err_canvas_not_specified')];
         
-        $result = $this->canvasServices->getCanvasPermissions($userId, (int)$canvasId, $this->canManageOfficial());
+        $result = $this->canvasServices->getCanvasPermissions($userId, (int)$canvasId);
         return $result;
     }
 
@@ -227,7 +204,7 @@ class CanvasSettingsController extends BaseController {
         
         if (!$canvasId || !$name) return ['success' => false, 'message' => __('err_missing_required_params')];
         
-        $result = $this->canvasServices->createCanvasRole($userId, (int)$canvasId, $name, $permissions, $weight, $this->canManageOfficial());
+        $result = $this->canvasServices->createCanvasRole($userId, (int)$canvasId, $name, $permissions, $weight);
         return $result;
     }
 
@@ -243,7 +220,7 @@ class CanvasSettingsController extends BaseController {
         
         if (!$roleId || !$canvasId || !$name) return ['success' => false, 'message' => __('err_missing_required_params')];
         
-        $result = $this->canvasServices->updateCanvasRole($userId, (int)$roleId, (int)$canvasId, $name, $permissions, $weight, $this->canManageOfficial());
+        $result = $this->canvasServices->updateCanvasRole($userId, (int)$roleId, (int)$canvasId, $name, $permissions, $weight);
         return $result;
     }
 
@@ -258,7 +235,7 @@ class CanvasSettingsController extends BaseController {
         if (!$roleId || !$canvasId) return ['success' => false, 'message' => __('err_missing_required_params')];
         
 
-        $result = $this->canvasServices->updateCanvasRolePermissions($userId, (int)$roleId, (int)$canvasId, $permissions, $this->canManageOfficial());
+        $result = $this->canvasServices->updateCanvasRolePermissions($userId, (int)$roleId, (int)$canvasId, $permissions);
         return $result;
     }
 
@@ -271,7 +248,7 @@ class CanvasSettingsController extends BaseController {
         
         if (!$roleId || !$canvasId) return ['success' => false, 'message' => __('err_missing_required_params')];
         
-        $result = $this->canvasServices->deleteCanvasRole($userId, (int)$roleId, (int)$canvasId, $this->canManageOfficial());
+        $result = $this->canvasServices->deleteCanvasRole($userId, (int)$roleId, (int)$canvasId);
         return $result;
     }
 }

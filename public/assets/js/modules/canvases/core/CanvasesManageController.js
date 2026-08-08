@@ -91,7 +91,6 @@ class CanvasesManageController {
         const cooldownBatchVal = document.querySelector('[data-ref="val_cooldown_batch"]');
         const cooldownSecVal = document.querySelector('[data-ref="val_cooldown_seconds"]');
         const limitVal = document.querySelector('[data-ref="val_limit"]');
-        const inputOfficial = document.querySelector('[data-ref="val_is_official"]');
 
         const payload = {
             name: nameInput ? nameInput.value : __('default_canvas_name_new'),
@@ -101,8 +100,7 @@ class CanvasesManageController {
             limit: limitVal ? parseInt(limitVal.textContent) : 10,
             palette_id: 'default', 
             cooldown_pixels_batch: cooldownBatchVal ? parseInt(cooldownBatchVal.textContent) : 5,
-            cooldown_seconds: cooldownSecVal ? parseInt(cooldownSecVal.textContent) : 10,
-            is_official: inputOfficial ? (inputOfficial.checked ? 1 : 0) : 0
+            cooldown_seconds: cooldownSecVal ? parseInt(cooldownSecVal.textContent) : 10
         };
 
         setButtonLoading(btn);
@@ -249,6 +247,11 @@ class CanvasesManageController {
         const canvasId = Array.from(this.selectedCanvasIds)[0];
         setButtonLoading(btn);
 
+        document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
+            el.classList.remove('active');
+            el.classList.add('disabled');
+        });
+
         try {
             const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.CreateSnapshot) ? ApiRoutes.Canvases.CreateSnapshot : 'canvases.create_snapshot';
             const result = await this.api.post(route, { id: parseInt(canvasId, 10) }, this.abortController.signal);
@@ -293,6 +296,10 @@ class CanvasesManageController {
         this.selectedCanvasUuid = null;
         this.currentCanvasSize = null;
         document.querySelectorAll('[data-action="selectCanvas"]').forEach(el => el.classList.remove('selected'));
+        document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
+            el.classList.remove('active');
+            el.classList.add('disabled');
+        });
         this.updateSelectionUI();
     }
 
@@ -326,7 +333,8 @@ class CanvasesManageController {
                     }
                 });
                 if (btnCreateSnapshot) btnCreateSnapshot.classList.add('disabled-interaction');
-                if (btnDelete) btnDelete.classList.add('disabled-interaction');
+                // El botón eliminar SÍ soporta múltiple selección — no bloquearlo
+                if (btnDelete) btnDelete.classList.remove('disabled-interaction');
             } else {
                 navButtons.forEach(btn => {
                     if (btn) btn.classList.remove('disabled-interaction');

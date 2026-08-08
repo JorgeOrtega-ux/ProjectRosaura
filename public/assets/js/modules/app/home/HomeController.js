@@ -259,17 +259,10 @@ class HomeController {
             this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
         } else if (!isLoadMore) {
             const msgEmpty = window.__ ? window.__('msg_home_empty') : 'No hay lienzos disponibles por el momento.';
-            const btnLabel = window.__ ? window.__('btn_create_experience') : 'Crear Nuevo Lienzo';
             const emptyHtml = `
                 <div class="component-empty-state" data-ref="empty-state-rendered">
                     <span class="material-symbols-rounded component-empty-state-icon">dashboard_customize</span>
                     <p class="component-empty-state-text">${msgEmpty}</p>
-                    <div class="component-empty-state-actions">
-                        <div class="component-button component-button--h36 component-button--rounded-pill" data-nav="${this.basePath}/canvases/create">
-                            <span class="material-symbols-rounded">add_box</span>
-                            <span>${btnLabel}</span>
-                        </div>
-                    </div>
                 </div>
             `;
             this.contentArea.innerHTML = emptyHtml;

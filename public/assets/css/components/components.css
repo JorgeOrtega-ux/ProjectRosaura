@@ -1964,6 +1964,31 @@ html.dark-theme .component-menu-header.shadow {
     margin: 4px 0;
 }
 
+/* Menu page navigation system */
+.component-menu-page {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+}
+
+.component-menu-page.active {
+    display: flex;
+}
+
+.component-menu-link-arrow {
+    width: 32px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    color: var(--text-muted);
+}
+
+.component-menu-link-arrow .material-symbols-rounded {
+    font-size: 18px;
+}
+
 .component-menu-link-icon {
     width: 45px;
     height: 100%;

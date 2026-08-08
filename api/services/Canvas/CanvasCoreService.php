@@ -65,7 +65,7 @@ class CanvasCoreService {
         }
     }
 
-    public function getHomeFeed(?int $currentUserId, string $tagFilter = 'all', int $limit = 20, int $offset = 0, bool $canManageOfficial = false): array {
+    public function getHomeFeed(?int $currentUserId, string $tagFilter = 'all', int $limit = 20, int $offset = 0): array {
         try {
             $canvases = $this->canvasRepository->getHomeFeed($currentUserId, $tagFilter, $limit, $offset);
             
@@ -85,7 +85,7 @@ class CanvasCoreService {
                 }
             } catch (Exception $e) {}
             
-            $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts, $canManageOfficial) {
+            $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts) {
                 $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
                 $canvas['is_member'] = !empty($canvas['is_member']);
                 $canvas['is_subscription_locked'] = !empty($canvas['is_subscription_locked']);
@@ -105,7 +105,7 @@ class CanvasCoreService {
         }
     }
 
-    public function getPublicCanvases(?int $currentUserId, int $limit = 20, string $sort = 'newest', int $offset = 0, bool $canManageOfficial = false): array {
+    public function getPublicCanvases(?int $currentUserId, int $limit = 20, string $sort = 'newest', int $offset = 0): array {
         try {
             $canvases = $this->canvasRepository->getPublicCanvases($limit, $currentUserId, $sort, $offset);
             
@@ -125,7 +125,7 @@ class CanvasCoreService {
                 }
             } catch (Exception $e) {}
             
-            $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts, $canManageOfficial) {
+            $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts) {
                 $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
                 $canvas['is_member'] = !empty($canvas['is_member']);
                 
@@ -145,45 +145,8 @@ class CanvasCoreService {
         }
     }
 
-    public function getOfficialCanvases(?int $currentUserId = null, int $limit = 50, string $sort = 'newest', int $offset = 0, bool $canManageOfficial = false): array {
-        try {
-            $canvases = $this->canvasRepository->getOfficialCanvases($currentUserId, $sort, $limit, $offset);
-            
-            $onlineCounts = [];
-            try {
-                if (class_exists(RedisCache::class)) {
-                    $redis = (new RedisCache())->getClient();
-                    if ($redis && !empty($canvases)) {
-                        $canvasIds = array_column($canvases, 'id');
-                        $rawCounts = $redis->hmGet("canvas:online_counts", $canvasIds);
-                        foreach ($canvasIds as $idx => $cId) {
-                            if ($rawCounts[$idx] !== false) {
-                                $onlineCounts[$cId] = $rawCounts[$idx];
-                            }
-                        }
-                    }
-                }
-            } catch (Exception $e) {}
-            
-            $formattedCanvases = array_map(function($canvas) use ($onlineCounts, $canManageOfficial) {
-                $canvas['is_owner'] = false;
-                $canvas['is_member'] = !empty($canvas['is_member']);
-                $canvas['privacy'] = 'public'; 
-                
-                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
-                
-                $canvas['thumbnail_url'] = $thumbnailUrl;
-                $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
-                $canvas['members_count'] = isset($canvas['members_count']) ? (int)$canvas['members_count'] : 0;
-                
-                return $canvas;
-            }, $canvases);
-            
-            return ['success' => true, 'data' => $formattedCanvases];
-        } catch (Exception $e) {
-            Logger::error('Error getting official canvases.', ['error' => $e->getMessage()]);
-            return ['success' => false, 'message' => __('err_database')];
-        }
+    public function getOfficialCanvases(?int $currentUserId = null, int $limit = 50, string $sort = 'newest', int $offset = 0): array {
+        return ['success' => true, 'data' => []];
     }
 
     public function getMine(?int $userId, int $limit = 50, string $filter = 'all', int $offset = 0): array {
@@ -228,7 +191,7 @@ class CanvasCoreService {
         }
     }
 
-    public function getCanvas(?int $userId, int $canvasId, bool $canManageOfficial = false): array {
+    public function getCanvas(?int $userId, int $canvasId): array {
         $t0 = microtime(true);
         ini_set('memory_limit', '512M');
         
@@ -722,7 +685,7 @@ class CanvasCoreService {
         }
     }
 
-    public function updateCanvas(int $userId, int $canvasId, array $data, bool $canManageOfficial = false): array {
+    public function updateCanvas(int $userId, int $canvasId, array $data): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
@@ -787,12 +750,7 @@ class CanvasCoreService {
                 $data['tags'] = null;
             }
 
-            if (isset($data['is_official'])) {
-                if ($data['is_official'] && !$canManageOfficial) {
-                    return ['success' => false, 'message' => __('err_cannot_create_official_canvas')];
-                }
-                $data['is_official'] = $data['is_official'] ? 1 : 0;
-            }
+            // Campo is_official eliminado (lienzos oficiales removidos del sistema)
 
             $updated = $this->canvasRepository->updateCanvasData($canvasId, $data);
 
@@ -806,9 +764,7 @@ class CanvasCoreService {
                                 'cooldown_seconds' => $data['cooldown_seconds']
                             ]);
 
-                            if ($canvas['owner_id'] === null) {
-                                $redis->del(CacheConstants::KEY_OFFICIAL_CANVASES);
-                            }
+
                         }
                     }
                 } catch (Exception $e) { }
@@ -827,7 +783,7 @@ class CanvasCoreService {
         }
     }
 
-    public function downgradeCanvasToBasic(int $userId, string $uuid, string $password = '', bool $canManageOfficial = false): array {
+    public function downgradeCanvasToBasic(int $userId, string $uuid, string $password = ''): array {
         try {
             $user = $this->userRepository->findById($userId);
             if (!$user) {
@@ -958,7 +914,7 @@ class CanvasCoreService {
         }
     }
 
-    public function deleteCanvas(?int $userId, string $uuid, string $password = '', bool $canManageOfficial = false): array {
+    public function deleteCanvas(?int $userId, string $uuid, string $password = ''): array {
         try {
             if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
 

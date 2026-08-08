@@ -21,17 +21,6 @@ class CanvasCoreController extends BaseController {
 
 
 
-    private function canCreateOfficial(): bool {
-        $perms = [];
-        if (method_exists($this->session, 'getPermissions')) {
-            $perms = $this->session->getPermissions();
-        }
-        if (!is_array($perms)) {
-            $perms = [];
-        }
-        return in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $perms);
-    }
-
     public function get($input) {
         try {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
@@ -120,9 +109,6 @@ class CanvasCoreController extends BaseController {
             $cooldownBatch = $input['cooldown_pixels_batch'] ?? 5;
             $cooldownSeconds = $input['cooldown_seconds'] ?? 10;
 
-
-            $isOfficial = filter_var($input['is_official'] ?? false, FILTER_VALIDATE_BOOLEAN);
-
             $allowPurchases = isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : 1;
             $allowChat = isset($input['allow_chat']) ? (int)$input['allow_chat'] : 0;
             $tags = isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : [];
@@ -138,7 +124,6 @@ class CanvasCoreController extends BaseController {
             $result = $this->canvasServices->createCanvas(
                 $userId, $name, $privacy, $requiresApproval, 
                 $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds,
-                $isOfficial, $this->canCreateOfficial(),
                 $allowPurchases, $allowChat, $tags, $templateId
             );
 
@@ -183,11 +168,10 @@ class CanvasCoreController extends BaseController {
                 'cooldown_seconds' => $input['cooldown_seconds'] ?? null,
                 'allow_purchases' => isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : null,
                 'allow_chat' => isset($input['allow_chat']) ? (int)$input['allow_chat'] : null,
-                'tags' => isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : [],
-                'is_official' => isset($input['is_official']) ? filter_var($input['is_official'], FILTER_VALIDATE_BOOLEAN) : null
+                'tags' => isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : []
             ];
 
-            $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data, $this->canCreateOfficial());
+            $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data);
             return $this->respond($result);
 
         } catch (\Throwable $e) {
@@ -276,20 +260,6 @@ class CanvasCoreController extends BaseController {
             $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
             
             $result = $this->canvasServices->getMine($userId, $limit, $filter, $offset);
-            return $this->respond($result);
-        } catch (\Throwable $e) {
-            return $this->handleException($e, __FUNCTION__);
-        }
-    }
-
-    public function get_official($input) {
-        try {
-            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
-            $limit = isset($input['limit']) ? (int)$input['limit'] : 50;
-            $sort = $input['sort'] ?? 'newest';
-            $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
-            
-            $result = $this->canvasServices->getOfficialCanvases($userId, $limit, $sort, $offset);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

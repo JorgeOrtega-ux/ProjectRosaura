@@ -13,6 +13,12 @@ export class CanvasCardInteractions {
         if (action === 'toggleDynamicMenu') {
             this.toggleDynamicMenu(btn);
             return true;
+        } else if (action === 'menuGoToPage') {
+            this.menuGoToPage(btn);
+            return true;
+        } else if (action === 'menuGoBack') {
+            this.menuGoBack(btn);
+            return true;
         } else if (action === 'viewCanvasInfo') {
             this.viewCanvasInfo(btn);
             return true;
@@ -34,6 +40,9 @@ export class CanvasCardInteractions {
         } else if (action === 'viewCanvasSnapshots') {
             this.viewCanvasSnapshots(btn);
             return true;
+        } else if (action === 'createSnapshotSelected') {
+            this.createSnapshotSelected(btn);
+            return true;
         } else if (action === 'toggleFavorite') {
             this.toggleFavorite(btn);
             return true;
@@ -42,6 +51,23 @@ export class CanvasCardInteractions {
             return true;
         }
         return false;
+    }
+
+    menuGoToPage(btn) {
+        const targetPage = btn.getAttribute('data-target-page');
+        const menuModule = btn.closest('.component-module');
+        if (!menuModule || !targetPage) return;
+        menuModule.querySelectorAll('.component-menu-page').forEach(p => p.classList.remove('active'));
+        const target = menuModule.querySelector(`[data-menu-page="${targetPage}"]`);
+        if (target) target.classList.add('active');
+    }
+
+    menuGoBack(btn) {
+        const menuModule = btn.closest('.component-module');
+        if (!menuModule) return;
+        menuModule.querySelectorAll('.component-menu-page').forEach(p => p.classList.remove('active'));
+        const main = menuModule.querySelector('[data-menu-page="main"]');
+        if (main) main.classList.add('active');
     }
 
     async toggleFavorite(btn) {
@@ -90,6 +116,35 @@ export class CanvasCardInteractions {
             } else {
                 window.location.href = `${this.basePath}/design/s/${uuid}`;
             }
+        }
+    }
+
+    async createSnapshotSelected(btn) {
+        if (btn.classList.contains('disabled-interaction')) return;
+        const canvasId = btn.getAttribute('data-id');
+        if (!canvasId) return;
+
+        btn.classList.add('disabled-interaction');
+        if (typeof setButtonLoading === 'function') setButtonLoading(btn);
+
+        try {
+            const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.CreateSnapshot) ? ApiRoutes.Canvases.CreateSnapshot : 'canvases.create_snapshot';
+            const result = await this.api.post(route, { id: parseInt(canvasId, 10) }, this.abortController ? this.abortController.signal : null);
+
+            if (result.aborted) return;
+
+            if (result.success) {
+                showMessage(result.message, 'success');
+            } else {
+                showMessage(result.message, 'error');
+            }
+        } catch (error) {
+            if (error && error.name === 'AbortError') return;
+            showMessage(window.__('general_save_network_error'), 'error');
+        } finally {
+            btn.classList.remove('disabled-interaction');
+            if (typeof restoreButton === 'function') restoreButton(btn);
+            this.closeDropdowns();
         }
     }
 
@@ -305,39 +360,101 @@ export class CanvasCardInteractions {
             `;
         }
 
+        let manageSubmenuHtml = '';
+        if (isOwner) {
+            manageSubmenuHtml = `
+                <div class="component-menu-page" data-menu-page="manage">
+                    <div class="component-menu-list">
+                        <button type="button" class="component-menu-link" data-action="menuGoBack">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">arrow_back</span></div>
+                            <div class="component-menu-link-text"><span>Volver</span></div>
+                        </button>
+                        <div class="component-menu-divider"></div>
+                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/edit/${uuid}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">edit</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('tooltip_edit_canvas')}</span></div>
+                        </button>
+                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/manage/resize/${uuid}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">expand</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('tooltip_resize_canvas')}</span></div>
+                        </button>
+                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/manage/resets/${uuid}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">update</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('tooltip_manage_resets')}</span></div>
+                        </button>
+                        <button type="button" class="component-menu-link" data-action="createSnapshotSelected" data-id="${id}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">photo_camera</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('btn_create_captura')}</span></div>
+                        </button>
+                        <div class="component-menu-divider"></div>
+                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/members/${uuid}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">group</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('tooltip_manage_members')}</span></div>
+                        </button>
+                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/manage/roles/${uuid}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">shield_person</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('tooltip_manage_roles')}</span></div>
+                        </button>
+                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/manage/invites/${uuid}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('tooltip_manage_invites')}</span></div>
+                        </button>
+                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/manage/sanctions/${uuid}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('tooltip_manage_sanctions')}</span></div>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
         const html = `
             <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed active" data-module="snapshot-menu-${id}">
                 <div class="component-menu component-menu--w265">
                     <div class="pill-container"><div class="drag-handle"></div></div>
-                    
-                    <div class="component-menu-list">
-                        <button type="button" class="component-menu-link" data-action="openCanvasNewTab" data-uuid="${uuid}">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">open_in_new</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('open_in_new_tab')}</span></div>
-                        </button>
 
-                        <button type="button" class="component-menu-link" data-action="viewCanvasInfo" data-id="${id}" data-uuid="${uuid}">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">info</span></div>
-                            <div class="component-menu-link-text"><span>Ver información</span></div>
-                        </button>
+                    <div class="component-menu-page active" data-menu-page="main">
+                        <div class="component-menu-list">
+                            <button type="button" class="component-menu-link" data-action="openCanvasNewTab" data-uuid="${uuid}">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">open_in_new</span></div>
+                                <div class="component-menu-link-text"><span>${window.__('open_in_new_tab')}</span></div>
+                            </button>
 
-                        <button type="button" class="component-menu-link" data-action="copyCanvasLink" data-uuid="${uuid}">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">content_copy</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('copy_link')}</span></div>
-                        </button>
-                        
-                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/design/s/${uuid}">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('view_capturas_gallery')}</span></div>
-                        </button>
-                        
-                        ${warningMenuOption}
+                            <button type="button" class="component-menu-link" data-action="viewCanvasInfo" data-id="${id}" data-uuid="${uuid}">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">info</span></div>
+                                <div class="component-menu-link-text"><span>Ver información</span></div>
+                            </button>
 
-                        ${actionButtonHtml}
+                            <button type="button" class="component-menu-link" data-action="copyCanvasLink" data-uuid="${uuid}">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">content_copy</span></div>
+                                <div class="component-menu-link-text"><span>${window.__('copy_link')}</span></div>
+                            </button>
+
+                            <button type="button" class="component-menu-link" data-nav="${this.basePath}/design/s/${uuid}">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
+                                <div class="component-menu-link-text"><span>${window.__('view_capturas_gallery')}</span></div>
+                            </button>
+
+                            ${warningMenuOption}
+
+                            ${isOwner ? `
+                            <div class="component-menu-divider"></div>
+                            <button type="button" class="component-menu-link" data-action="menuGoToPage" data-target-page="manage">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">settings</span></div>
+                                <div class="component-menu-link-text"><span>Gestionar lienzo</span></div>
+                                <div class="component-menu-link-arrow"><span class="material-symbols-rounded">chevron_right</span></div>
+                            </button>
+                            ` : ''}
+
+                            ${actionButtonHtml}
+                        </div>
                     </div>
+
+                    ${manageSubmenuHtml}
                 </div>
             </div>
         `;
+
         
         this.closeDropdowns();
         wrapper.insertAdjacentHTML('beforeend', html);

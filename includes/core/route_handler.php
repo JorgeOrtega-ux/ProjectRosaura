@@ -132,10 +132,7 @@ if ($currentView === 'app/home.php' && class_exists('\App\Api\Services\Canvas\Ca
             if (empty($perms) && isset($_SESSION['user_permissions'])) {
                 $perms = $_SESSION['user_permissions'];
             }
-            $canManageOfficial = in_array(\App\Core\System\PermissionsConstants::CANVASES_MANAGE_OFFICIAL, $perms) || 
-                                 in_array(\App\Core\System\PermissionsConstants::CANVASES_CREATE_OFFICIAL, $perms);
-
-            $res = $canvasServices->getHomeFeed($userId, 'all', 20, 0, $canManageOfficial);
+            $res = $canvasServices->getHomeFeed($userId, 'all', 20, 0);
             if ($res && isset($res['success']) && $res['success'] && isset($res['data'])) {
                 $initialCanvasesJson = htmlspecialchars(json_encode($res['data']), ENT_QUOTES, 'UTF-8');
             }

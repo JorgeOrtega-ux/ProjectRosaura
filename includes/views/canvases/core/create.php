@@ -121,25 +121,6 @@ extract($createData);
                                 </div>
                             </div>
 
-                            <!-- 3. Lienzo Oficial -->
-                            <?php if ($canCreateOfficial): ?>
-                            <hr class="component-divider">
-                            <div class="component-group-item">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('canvas_is_official_title'); ?></h2>
-                                        <p class="component-card__description"><?php echo __('canvas_is_official_desc'); ?></p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" data-ref="val_is_official">
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                            <?php endif; ?>
-
                         </div>
                     </div>
                 </div>

@@ -36,45 +36,66 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                 
                 <div class="component-actions disabled" data-ref="header-selection-actions">
                     
-                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-resize" data-nav="" data-tooltip="<?php echo __('tooltip_resize_canvas'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">expand</span>
-                    </button>
-
-                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-resets" data-nav="" data-tooltip="<?php echo __('tooltip_manage_resets'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">update</span>
-                    </button>
-
-                    <button class="component-button component-button--icon component-button--h40 disabled-interaction" data-ref="btn-nav-snapshots" data-nav="" data-tooltip="<?php echo __('tooltip_view_capturas'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">collections</span>
-                    </button>
-
-                    <button class="component-button component-button--icon component-button--h40" data-action="createSnapshotSelected" data-ref="btn-action-create-snapshot" data-tooltip="<?php echo __('btn_create_captura'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">photo_camera</span>
-                    </button>
-
                     <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-edit" data-nav="" data-tooltip="<?php echo __('tooltip_edit_canvas'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">edit</span>
-                    </button>
-
-                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-members" data-nav="" data-tooltip="<?php echo __('tooltip_manage_members'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">group</span>
-                    </button>
-
-                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-sanctions" data-nav="" data-tooltip="<?php echo __('tooltip_manage_sanctions'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">gavel</span>
-                    </button>
-
-                    <button class="component-button component-button--icon component-button--h40 <?php echo !$hasAdvancedRoles ? 'component-button--premium premium-locked' : ''; ?>" data-ref="btn-nav-roles" data-nav="" data-tooltip="<?php echo __('tooltip_manage_roles'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">shield_person</span>
-                    </button>
-
-                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-invites" data-nav="" data-tooltip="<?php echo __('tooltip_manage_invites'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">link</span>
                     </button>
 
                     <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedCanvases" data-ref="btn-action-delete" data-tooltip="<?php echo __('tooltip_delete_canvas'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
+
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
+                        <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="manage-selection-more-menu" data-tooltip="<?php echo __('tooltip_options'); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded">more_vert</span>
+                        </button>
+                        
+                        <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed disabled" data-module="manage-selection-more-menu">
+                            <div class="component-menu component-menu--w265">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list">
+                                    <button type="button" class="component-menu-link" data-ref="btn-nav-resize" data-nav="">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">expand</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('tooltip_resize_canvas'); ?></span></div>
+                                    </button>
+
+                                    <button type="button" class="component-menu-link" data-ref="btn-nav-resets" data-nav="">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">update</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_resets'); ?></span></div>
+                                    </button>
+
+                                    <button type="button" class="component-menu-link disabled-interaction" data-ref="btn-nav-snapshots" data-nav="">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('tooltip_view_capturas'); ?></span></div>
+                                    </button>
+
+                                    <button type="button" class="component-menu-link" data-action="createSnapshotSelected" data-ref="btn-action-create-snapshot">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">photo_camera</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('btn_create_captura'); ?></span></div>
+                                    </button>
+
+                                    <button type="button" class="component-menu-link" data-ref="btn-nav-members" data-nav="">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">group</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_members'); ?></span></div>
+                                    </button>
+
+                                    <button type="button" class="component-menu-link" data-ref="btn-nav-sanctions" data-nav="">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_sanctions'); ?></span></div>
+                                    </button>
+
+                                    <button type="button" class="component-menu-link <?php echo !$hasAdvancedRoles ? 'premium-locked' : ''; ?>" data-ref="btn-nav-roles" data-nav="">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">shield_person</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_roles'); ?></span></div>
+                                    </button>
+
+                                    <button type="button" class="component-menu-link" data-ref="btn-nav-invites" data-nav="">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_invites'); ?></span></div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
