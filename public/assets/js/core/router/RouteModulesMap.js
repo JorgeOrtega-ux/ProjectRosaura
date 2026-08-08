@@ -68,7 +68,7 @@ export const RouteModulesMap = {
     '/admin/role-permissions/:uuid': { path: './modules/admin/roles/AdminRolePermissionsController.js', className: 'AdminRolePermissionsController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 
     '/admin/user-profile/:uuid': { path: './modules/admin/users/AdminUserEditController.js', className: 'AdminUserEditController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-    '/admin/user-roles/:uuid': { path: './modules/admin/users/AdminUserRoleEditController.js', className: 'AdminUserRoleEditController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+
     '/admin/user-moderation/:uuid': { path: './modules/admin/users/AdminStatusEditController.js', className: 'AdminStatusEditController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/user-activity/:uuid': { path: './modules/admin/users/AdminUserHistoryController.js', className: 'AdminUserHistoryController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 
@@ -77,7 +77,7 @@ export const RouteModulesMap = {
     '/admin/backups': { path: './modules/admin/backups/AdminBackupsController.js', className: 'AdminBackupsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/backup-schedule': { path: './modules/admin/backups/AdminBackupsAutomationController.js', className: 'AdminBackupsAutomationController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/backup-create': { path: './modules/admin/backups/AdminBackupsCreateController.js', className: 'AdminBackupsCreateController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-    '/admin/backup-restore/:uuid': { path: './modules/admin/backups/AdminBackupsRestoreController.js', className: 'AdminBackupsRestoreController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+
 
     '/admin/logs': { path: './modules/admin/logs/AdminLogsController.js', className: 'AdminLogsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/logs/viewer': { path: './modules/admin/logs/AdminLogsViewerController.js', className: 'AdminLogsViewerController', requiresAdminLang: true, skeletonType: 'layout-basic' },
@@ -85,7 +85,7 @@ export const RouteModulesMap = {
     '/canvases/create': { path: './modules/canvases/core/CanvasesCreateController.js', className: 'CanvasesCreateController', skeletonType: 'layout-basic' },
     '/canvases/manage': { path: './modules/canvases/core/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-table' },
 
-    '/canvases/members/:uuid/role/:id': { path: './modules/canvases/team/CanvasMemberRoleController.js', className: 'CanvasMemberRoleController', skeletonType: 'layout-basic' },
+
     
     '/canvases/manage/requests/:uuid': { path: './modules/canvases/team/CanvasRequestsController.js', className: 'CanvasRequestsController', skeletonType: 'layout-basic' },
     '/canvases/manage/resets/:uuid': { path: './modules/canvases/workspace/CanvasResetController.js', className: 'CanvasResetController', skeletonType: 'layout-basic' },

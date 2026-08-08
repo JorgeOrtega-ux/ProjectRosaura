@@ -27,13 +27,13 @@ services:
     volumes:
       - .:/var/www/html
     depends_on:
-      db:
+      db_mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
       typesense:
         condition: service_started
-      cassandra:
+      db_cassandra:
         condition: service_healthy
     env_file:
       - .env
@@ -50,13 +50,13 @@ services:
     volumes:
       - .:/var/www/html
     depends_on:
-      db:
+      db_mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
       typesense:
         condition: service_started
-      cassandra:
+      db_cassandra:
         condition: service_healthy
     env_file:
       - .env
@@ -81,9 +81,9 @@ services:
     networks:
       - rosaura_network
 
-  db:
+  db_mysql:
     image: mysql:8.0
-    container_name: rosaura_db
+    container_name: rosaura_db_mysql
     restart: always
     command: --max_allowed_packet=512M
     environment:
@@ -155,7 +155,7 @@ services:
     volumes:
       - .:/app
     depends_on:
-      db:
+      db_mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -176,7 +176,7 @@ services:
     volumes:
       - .:/app
     depends_on:
-      db:
+      db_mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -199,11 +199,11 @@ services:
     volumes:
       - .:/app
     depends_on:
-      db:
+      db_mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
-      cassandra:
+      db_cassandra:
         condition: service_healthy
     env_file:
       - .env
@@ -222,7 +222,7 @@ services:
     volumes:
       - .:/app
     depends_on:
-      db:
+      db_mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -266,9 +266,9 @@ services:
     networks:
       - rosaura_network
 
-  cassandra:
+  db_cassandra:
     image: cassandra:4.1
-    container_name: rosaura_cassandra
+    container_name: rosaura_db_cassandra
     restart: always
     ports:
       - "9042:9042"

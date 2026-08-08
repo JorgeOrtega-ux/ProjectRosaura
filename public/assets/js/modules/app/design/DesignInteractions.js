@@ -1,5 +1,5 @@
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
-import { showMessage } from '../../../core/utils/uiUtils.js';
+import { showMessage, hexToHsv, hsvToHex, getEventCoords } from '../../../core/utils/uiUtils.js';
 import { PerksRegistry } from './PerksRegistry.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { soundManager } from './SoundManager.js';
@@ -2404,7 +2404,7 @@ export const DesignInteractions = {
         let activeColor = this.currentColor || '#FFFFFF';
         if (!activeColor.startsWith('#')) activeColor = '#' + activeColor;
 
-        const hsv = this.hexToHsvRecent(activeColor);
+        const hsv = hexToHsv(activeColor);
         picker.dataset.h = hsv.h;
         picker.dataset.s = hsv.s;
         picker.dataset.v = hsv.v;
@@ -2416,7 +2416,7 @@ export const DesignInteractions = {
                 let val = e.target.value.trim();
                 if (!val.startsWith('#')) val = '#' + val;
                 if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-                    const hsvVal = this.hexToHsvRecent(val);
+                    const hsvVal = hexToHsv(val);
                     picker.dataset.h = hsvVal.h;
                     picker.dataset.s = hsvVal.s;
                     picker.dataset.v = hsvVal.v;
@@ -2442,7 +2442,7 @@ export const DesignInteractions = {
         let s = Math.max(0, Math.min(100, parseFloat(picker.dataset.s) || 0));
         let v = Math.max(0, Math.min(100, parseFloat(picker.dataset.v) || 0));
 
-        const hex = this.hsvToHexRecent(h, s, v);
+        const hex = hsvToHex(h, s, v);
         this.recentColorHex = hex;
 
         const svArea = picker.querySelector('[data-action="dragRecentSV"]');
@@ -2568,17 +2568,11 @@ export const DesignInteractions = {
         });
     },
 
-    getEventCoordsRecent(e) {
-        if (e.touches && e.touches.length > 0) {
-            return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
-        }
-        return { clientX: e.clientX, clientY: e.clientY };
-    },
 
     updateRecentColorFromEvent(e) {
         if (!this.recentDragArea) return;
         const rect = this.recentDragArea.getBoundingClientRect();
-        const coords = this.getEventCoordsRecent(e);
+        const coords = getEventCoords(e);
 
         let x = Math.max(0, Math.min(coords.clientX - rect.left, rect.width));
         let y = Math.max(0, Math.min(coords.clientY - rect.top, rect.height));
@@ -2596,50 +2590,4 @@ export const DesignInteractions = {
         this.updateRecentPickerUI();
     },
 
-    hexToHsvRecent(hex) {
-        hex = hex.replace(/^#/, '');
-        if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
-        let r = parseInt(hex.substring(0, 2), 16) / 255 || 0;
-        let g = parseInt(hex.substring(2, 4), 16) / 255 || 0;
-        let b = parseInt(hex.substring(4, 6), 16) / 255 || 0;
-
-        let max = Math.max(r, g, b), min = Math.min(r, g, b);
-        let h = 0, s = 0, v = max, d = max - min;
-        s = max === 0 ? 0 : d / max;
-
-        if (max !== min) {
-            switch (max) {
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
-            }
-            h /= 6;
-        }
-        return { h: Math.round(h * 360), s: Math.round(s * 100), v: Math.round(v * 100) };
-    },
-
-    hsvToHexRecent(h, s, v) {
-        h /= 360; s /= 100; v /= 100;
-        let r, g, b;
-        let i = Math.floor(h * 6);
-        let f = h * 6 - i;
-        let p = v * (1 - s);
-        let q = v * (1 - f * s);
-        let t = v * (1 - (1 - f) * s);
-
-        switch (i % 6) {
-            case 0: r = v, g = t, b = p; break;
-            case 1: r = q, g = v, b = p; break;
-            case 2: r = p, g = v, b = t; break;
-            case 3: r = p, g = q, b = v; break;
-            case 4: r = t, g = p, b = v; break;
-            case 5: r = v, g = p, b = q; break;
-        }
-
-        const toHex = x => {
-            const hex = Math.round(x * 255).toString(16);
-            return hex.length === 1 ? '0' + hex : hex;
-        };
-        return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
-    }
 }

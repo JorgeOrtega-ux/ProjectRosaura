@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
 class AdminLogsController {
     constructor() {
         this.selectedLogs = new Set();
@@ -13,6 +13,7 @@ class AdminLogsController {
         this.handleChangeBound = this.handleChange.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.filterTimeout = null;
+        this.applyAllFilters = debounce(this.executeServerFilters.bind(this), 400);
     }
     init() {
         this.bindEvents();
@@ -37,21 +38,7 @@ class AdminLogsController {
     }
     handlePaginationClick(e) {
         if (!window.location.pathname.includes('/admin/logs') || window.location.pathname.includes('viewer')) return;
-        const target = e.target.closest('a[href], button[data-nav]');
-        if (!target) return;
-        const url = target.getAttribute('href') || target.getAttribute('data-nav') || '';
-        const isPaginationLink = 
-            url.includes('page=') || 
-            target.closest('[class*="pagin"]') || 
-            target.closest('[data-ref="pagination-container"]') ||
-            target.hasAttribute('data-action', 'paginate');
-        if (isPaginationLink && url !== '#' && !url.includes('javascript:')) {
-
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            this.handlePagination(url);
-        }
+        catchPaginationClick(e, url => this.handlePagination(url));
     }
     async handlePagination(url) {
 
@@ -320,12 +307,6 @@ class AdminLogsController {
         }
     }
 
-    applyAllFilters() {
-        if (this.filterTimeout) clearTimeout(this.filterTimeout);
-        this.filterTimeout = setTimeout(() => {
-            this.executeServerFilters();
-        }, 400);
-    }
 
     executeServerFilters() {
         const queryInput = document.querySelector('[data-ref="log-search-input"]');

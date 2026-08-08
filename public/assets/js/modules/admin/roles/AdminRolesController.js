@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage } from '../../../core/utils/uiUtils.js';
+import { showMessage, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
 const _t = (key, fallback) => {
     if (typeof window.__ === 'function') {
         const trans = window.__(key);
@@ -21,6 +21,7 @@ class AdminRolesController {
         this.handleGlobalInputBound = this.handleGlobalInput.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.filterTimeout = null;
+        this.applyAllFilters = debounce(this.executeServerFilters.bind(this), 400);
     }
     init() {
         if (this.isInitialized) return;
@@ -64,17 +65,7 @@ class AdminRolesController {
         this.deselectAll();
     }
     handlePaginationClick(e) {
-        const target = e.target.closest('a[href], button[data-nav]');
-        if (!target) return;
-        const url = target.getAttribute('href') || target.getAttribute('data-nav') || '';
-        const isPaginationLink = url.includes('page=') || target.closest('[class*="pagin"]') || target.closest('[data-ref="pagination-container"]');
-        
-        if (isPaginationLink && url !== '#' && !url.includes('javascript:')) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            this.handlePagination(url);
-        }
+        catchPaginationClick(e, url => this.handlePagination(url));
     }
     async handlePagination(url) {
         const tableContainer = document.querySelector('[data-ref="roles-table-wrapper"]');
@@ -178,12 +169,6 @@ class AdminRolesController {
         }
     }
     
-    applyAllFilters() {
-        if (this.filterTimeout) clearTimeout(this.filterTimeout);
-        this.filterTimeout = setTimeout(() => {
-            this.executeServerFilters();
-        }, 400);
-    }
     
     executeServerFilters() {
         const queryInput = document.querySelector('[data-ref="role-search-input"]');

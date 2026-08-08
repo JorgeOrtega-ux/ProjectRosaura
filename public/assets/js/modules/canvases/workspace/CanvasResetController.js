@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, localInputFormatToUtcString } from '../../../core/utils/uiUtils.js';
 import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
 
 class CanvasResetController {
@@ -203,20 +203,6 @@ class CanvasResetController {
         }
     }
 
-    localInputFormatToUtcString(localString) {
-        if (!localString) return null;
-        const dateObj = new Date(localString);
-        if (isNaN(dateObj.getTime())) return null;
-
-        const yyyy = dateObj.getUTCFullYear();
-        const mm = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-        const dd = String(dateObj.getUTCDate()).padStart(2, '0');
-        const hh = String(dateObj.getUTCHours()).padStart(2, '0');
-        const min = String(dateObj.getUTCMinutes()).padStart(2, '0');
-        const ss = '00';
-
-        return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-    }
 
     async saveSettings(btnSave) {
         const canvasId = this.wrapper.getAttribute('data-canvas-id');
@@ -238,7 +224,7 @@ class CanvasResetController {
             }
         }
 
-        const utcNextReset = this.localInputFormatToUtcString(localTimeStr);
+        const utcNextReset = localInputFormatToUtcString(localTimeStr);
 
         const payload = {
             id: canvasId,

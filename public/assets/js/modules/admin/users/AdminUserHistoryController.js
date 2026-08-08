@@ -1,4 +1,5 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
+import { debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
 class AdminUserHistoryController {
     constructor() {
         this.api = new ApiService();
@@ -10,6 +11,7 @@ class AdminUserHistoryController {
         this.handleGlobalChangeBound = this.handleGlobalChange.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.filterTimeout = null;
+        this.applyAllFilters = debounce(this.executeServerFilters.bind(this), 400);
     }
     init() {
         if (this.isInitialized) return;
@@ -33,16 +35,7 @@ class AdminUserHistoryController {
         window.addEventListener('viewLoaded', this.handleViewLoadedBound);
     }
     handlePaginationClick(e) {
-        const target = e.target.closest('a[href], button[data-nav]');
-        if (!target) return;
-        const url = target.getAttribute('href') || target.getAttribute('data-nav') || '';
-        const isPaginationLink = url.includes('page=') || target.closest('[class*="pagin"]') || target.closest('[data-ref="pagination-container"]');
-        if (isPaginationLink && url !== '#' && !url.includes('javascript:')) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            this.handlePagination(url);
-        }
+        catchPaginationClick(e, url => this.handlePagination(url));
     }
     handleGlobalClick(e) {
 
@@ -122,12 +115,6 @@ class AdminUserHistoryController {
         }
     }
 
-    applyAllFilters() {
-        if (this.filterTimeout) clearTimeout(this.filterTimeout);
-        this.filterTimeout = setTimeout(() => {
-            this.executeServerFilters();
-        }, 400);
-    }
 
     executeServerFilters() {
         const categoryCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="category"]'));

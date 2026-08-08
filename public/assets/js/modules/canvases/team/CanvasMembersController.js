@@ -1,6 +1,6 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, catchPaginationClick } from '../../../core/utils/uiUtils.js';
 
 class CanvasMembersController {
     constructor() {
@@ -14,6 +14,7 @@ class CanvasMembersController {
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
         this.handlePaginationClickBound = this.handlePaginationClick.bind(this);
         this.handleGlobalInputBound = this.handleGlobalInput.bind(this);
+        this.handleGlobalChangeBound = this.handleGlobalChange.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
     }
 
@@ -30,6 +31,7 @@ class CanvasMembersController {
         document.removeEventListener('click', this.handlePaginationClickBound, true);
         document.removeEventListener('click', this.handleGlobalClickBound);
         document.removeEventListener('input', this.handleGlobalInputBound);
+        document.removeEventListener('change', this.handleGlobalChangeBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
         this.selectedMemberIds.clear();
         this.isInitialized = false;
@@ -39,24 +41,15 @@ class CanvasMembersController {
         document.addEventListener('click', this.handlePaginationClickBound, true);
         document.addEventListener('click', this.handleGlobalClickBound);
         document.addEventListener('input', this.handleGlobalInputBound);
+        document.addEventListener('change', this.handleGlobalChangeBound);
         window.addEventListener('viewLoaded', this.handleViewLoadedBound);
     }
 
     handlePaginationClick(e) {
-        const target = e.target.closest('a[href], button[data-nav]');
-        if (!target) return;
-
-        const url = target.getAttribute('href') || target.getAttribute('data-nav') || '';
-        const isPaginationLink = url.includes('page=') || target.closest('[class*="pagin"]') || target.closest('[data-ref="pagination-container"]') || target.hasAttribute('data-action', 'paginate');
-
-        if (isPaginationLink && url !== '#' && !url.includes('javascript:')) {
+        catchPaginationClick(e, url => {
             if(url.includes('/canvases/manage')) return;
-
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
             this.handlePagination(url);
-        }
+        });
     }
 
     handleGlobalClick(e) {
@@ -76,9 +69,14 @@ class CanvasMembersController {
 
         if (deselectBtn) this.deselectMember();
         
-        if (changeRoleBtn && !changeRoleBtn.classList.contains('disabled-interaction')) this.changeMemberRole();
+        if (changeRoleBtn && !changeRoleBtn.classList.contains('disabled-interaction')) this.changeMemberRole(changeRoleBtn);
         if (manageChatRestrictionBtn && !manageChatRestrictionBtn.classList.contains('disabled-interaction')) this.manageChatRestriction();
         if (removeMemberBtn && !removeMemberBtn.classList.contains('disabled-interaction')) this.removeMember();
+        const saveCanvasMemberRoleSubmitBtn = e.target.closest('[data-action="saveCanvasMemberRoleSubmit"]');
+        if (saveCanvasMemberRoleSubmitBtn) {
+            e.preventDefault();
+            this.submitCanvasMemberRoleUpdate(saveCanvasMemberRoleSubmitBtn);
+        }
 
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
@@ -162,7 +160,7 @@ class CanvasMembersController {
         }
     }
     
-    changeMemberRole() {
+    async changeMemberRole(btn) {
         if (this.selectedMemberIds.size !== 1) return;
         
         const targetUserId = Array.from(this.selectedMemberIds)[0];
@@ -186,11 +184,17 @@ class CanvasMembersController {
             return;
         }
 
-        const routeUrl = `${this.basePath}/canvases/members/${uuid}/role/${targetUserUuid}`;
-        if (window.spaRouter) {
-            window.spaRouter.navigate(routeUrl);
-        } else {
-            window.location.href = routeUrl;
+        if (btn) setButtonLoading(btn);
+        try {
+            const html = await this.api.fetchHtml(`${this.basePath}/canvases/members/${uuid}/role/${targetUserUuid}`, {
+                headers: { 'X-SPA-Request': 'true' }
+            });
+            if (btn) restoreButton(btn);
+            await window.modalSystem.show('dynamicHtmlModal', { html: html });
+            this.updateCanvasRolesDropdownText();
+        } catch (error) {
+            if (btn) restoreButton(btn);
+            showMessage(__('err_connection_role') || 'Error al cargar los roles', 'error');
         }
     }
 
@@ -342,6 +346,60 @@ class CanvasMembersController {
         if (emptyElement) {
             if (visibleCount === 0 && items.length > 0) emptyElement.classList.remove('disabled');
             else emptyElement.classList.add('disabled');
+        }
+    }
+    handleGlobalChange(e) {
+        if (e.target && e.target.classList.contains('admin-role-checkbox') && document.querySelector('[data-ref="change-role-wrapper"]')) {
+            this.updateCanvasRolesDropdownText();
+        }
+    }
+    updateCanvasRolesDropdownText() {
+        const dropdownText = document.querySelector('[data-module="dropdownCanvasRolesList"]').closest('.component-dropdown-wrapper').querySelector('.component-dropdown-text');
+        if (!dropdownText) return;
+        const checkedCheckboxes = document.querySelectorAll('input[name="new_member_roles[]"]:checked');
+        if (checkedCheckboxes.length === 0) {
+            dropdownText.textContent = window.__('lbl_select_roles') || 'Seleccionar Roles';
+        } else {
+            const names = Array.from(checkedCheckboxes).map(cb => {
+                const label = cb.closest('label');
+                const span = label ? label.querySelector('span') : null;
+                return span ? span.textContent.trim() : '';
+            }).filter(Boolean);
+            dropdownText.textContent = names.join(', ');
+        }
+    }
+    async submitCanvasMemberRoleUpdate(btn) {
+        const modalBody = document.querySelector('[data-ref="change-role-wrapper"]');
+        if (!modalBody) return;
+        const canvasId = modalBody.getAttribute('data-canvas-id');
+        const targetUserId = modalBody.getAttribute('data-target-user-id');
+        
+        const selectedRoleInputs = document.querySelectorAll('input[name="new_member_roles[]"]:checked');
+        if (selectedRoleInputs.length === 0) {
+            showMessage(__('err_select_role'), 'warning');
+            return;
+        }
+        const selectedRoles = Array.from(selectedRoleInputs).map(input => input.value);
+        
+        setButtonLoading(btn);
+        try {
+            const response = await this.api.post(ApiRoutes.Canvases.AssignMemberRole, {
+                canvas_id: canvasId,
+                target_user_id: targetUserId,
+                roles: selectedRoles
+            });
+            
+            if (response.success) {
+                showMessage(response.message, "success");
+                window.modalSystem.closeCurrent();
+                this.handlePagination(window.location.href);
+            } else {
+                showMessage(response.message, "error");
+                restoreButton(btn);
+            }
+        } catch (error) {
+            showMessage(__('err_connection_role'), "error");
+            restoreButton(btn);
         }
     }
 }

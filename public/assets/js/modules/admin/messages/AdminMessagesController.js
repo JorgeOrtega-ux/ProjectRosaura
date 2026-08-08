@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, debounce } from '../../../core/utils/uiUtils.js';
 
 class AdminMessagesController {
     constructor() {
@@ -11,6 +11,7 @@ class AdminMessagesController {
         this.handleGlobalInputBound = this.handleGlobalInput.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.filterTimeout = null;
+        this.applyAllFilters = debounce(this.executeServerFilters.bind(this), 400);
     }
     init() {
         if (this.isInitialized) return;
@@ -142,12 +143,6 @@ class AdminMessagesController {
         }
     }
 
-    applyAllFilters() {
-        if (this.filterTimeout) clearTimeout(this.filterTimeout);
-        this.filterTimeout = setTimeout(() => {
-            this.executeServerFilters();
-        }, 400);
-    }
 
     executeServerFilters() {
         const queryInput = document.querySelector('[data-ref="message-search-input"]');

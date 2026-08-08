@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
 class AdminBackupsController {
     constructor() {
         this.selectedBackupId = null; 
@@ -14,6 +14,9 @@ class AdminBackupsController {
         this.handleChangeBound = this.handleChange.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.filterTimeout = null;
+        this.isRestoring = false;
+        this.pollInterval = null;
+        this.applyAllFilters = debounce(this.executeServerFilters.bind(this), 400);
     }
     init() {
         if (this.isInitialized) return;
@@ -31,6 +34,10 @@ class AdminBackupsController {
         document.removeEventListener('input', this.handleInputBound);
         document.removeEventListener('change', this.handleChangeBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
+        if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+        }
         this.isInitialized = false;
     }
     bindEvents() {
@@ -45,20 +52,7 @@ class AdminBackupsController {
             window.location.pathname.includes('/admin/backup-schedule') || 
             window.location.pathname.includes('/admin/backup-create') ||
             window.location.pathname.includes('/admin/backup-restore')) return;
-        const target = e.target.closest('a[href], button[data-nav]');
-        if (!target) return;
-        const url = target.getAttribute('href') || target.getAttribute('data-nav') || '';
-        const isPaginationLink = 
-            url.includes('page=') || 
-            target.closest('[class*="pagin"]') || 
-            target.closest('[data-ref="pagination-container"]') ||
-            target.hasAttribute('data-action', 'paginate');
-        if (isPaginationLink && url !== '#' && !url.includes('javascript:')) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            this.handlePagination(url);
-        }
+        catchPaginationClick(e, url => this.handlePagination(url));
     }
     async handleClick(e) {
         if (!window.location.pathname.includes('/admin/backups') || 
@@ -85,6 +79,11 @@ class AdminBackupsController {
         }
         if (deselectBtn) this.deselectBackup();
         if (prepareRestoreBtn) this.prepareRestore(prepareRestoreBtn);
+        const confirmRestoreSubmit = e.target.closest('[data-action="confirmRestoreSubmit"]');
+        if (confirmRestoreSubmit) {
+            e.preventDefault();
+            this.handleConfirmRestore(confirmRestoreSubmit);
+        }
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
             if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
@@ -103,6 +102,17 @@ class AdminBackupsController {
         if (!window.location.pathname.includes('/admin/backups') || window.location.pathname.includes('/admin/backup-schedule') || window.location.pathname.includes('/admin/backup-create') || window.location.pathname.includes('/admin/backup-restore')) return;
         if (e.target && e.target.classList.contains('filter-checkbox')) {
             this.applyAllFilters();
+        }
+        const toggleLock = e.target.closest('[data-action="toggleRestoreLock"]');
+        if (toggleLock) {
+            const confirmBtn = document.querySelector('[data-action="confirmRestoreSubmit"]');
+            if (confirmBtn) {
+                if (toggleLock.checked) {
+                    confirmBtn.classList.remove('disabled-interaction');
+                } else {
+                    confirmBtn.classList.add('disabled-interaction');
+                }
+            }
         }
     }
     handleViewLoaded(e) {
@@ -285,13 +295,6 @@ class AdminBackupsController {
         }
     }
 
-    applyAllFilters() {
-        if (this.filterTimeout) clearTimeout(this.filterTimeout);
-        this.filterTimeout = setTimeout(() => {
-            this.executeServerFilters();
-        }, 400);
-    }
-
     executeServerFilters() {
         const queryInput = document.querySelector('[data-ref="backup-search-input"]');
         const query = (queryInput ? queryInput.value : '').trim();
@@ -318,12 +321,77 @@ class AdminBackupsController {
         const url = `${this.basePath}/admin/backups?${urlParams.toString()}`;
         this.handlePagination(url);
     }
-    prepareRestore(btn) {
+    async prepareRestore(btn) {
         if (!this.selectedBackupId) return;
-        if (window.spaRouter) {
-            window.spaRouter.navigate(this.basePath + '/admin/backup-restore/' + encodeURIComponent(this.selectedBackupId));
+        try {
+            const html = await this.api.fetchHtml(this.basePath + '/admin/backup-restore/' + encodeURIComponent(this.selectedBackupId), {
+                headers: { 'X-SPA-Request': 'true' }
+            });
+            window.modalSystem.show('dynamicHtmlModal', { html: html });
+        } catch (error) {
+            showMessage(window.__('err_start_restore') || 'Error al preparar la restauración', 'error');
+        }
+    }
+    async handleConfirmRestore(btn) {
+        let backupId = null;
+        const dataEl = document.querySelector('[data-backup-id]');
+        if (dataEl && dataEl.getAttribute('data-backup-id')) {
+            backupId = dataEl.getAttribute('data-backup-id');
+        }
+        if (!backupId && this.selectedBackupId) {
+            backupId = this.selectedBackupId;
+        }
+        if (!backupId) {
+            showMessage(window.__('err_backup_id_missing'), 'error');
+            return;
+        }
+        const resultDialog = await window.modalSystem.show('verifyPasswordRestoreBackup');
+        if (!resultDialog.confirmed) return;
+        const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
+        if (!password) {
+            showMessage(window.__('err_password_authorize_restore'), 'error');
+            return;
+        }
+        if (this.isRestoring) return;
+        this.isRestoring = true;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="material-symbols-rounded spin-icon">autorenew</span>';
+        btn.classList.add('disabled-interaction');
+        showMessage(window.__('msg_initiating_lockdown'), 'success');
+        const res = await this.api.post(ApiRoutes.Admin.RestoreBackup, { backup_id: backupId, password: password }, this.abortController.signal);
+        if (res.aborted) return;
+        if (res.success && res.job_id) {
+            this.pollRestoreStatus(res.job_id, btn, originalText);
         } else {
-            window.location.href = this.basePath + '/admin/backup-restore/' + encodeURIComponent(this.selectedBackupId);
+            this.resetRestoreUI(btn, originalText);
+            showMessage(res.message || window.__('err_start_restore'), 'error');
+        }
+    }
+    async pollRestoreStatus(jobId, btn, originalText) {
+        if (this.pollInterval) clearInterval(this.pollInterval);
+        this.pollInterval = setInterval(async () => {
+            const res = await this.api.post(ApiRoutes.Admin.CheckWorkerStatus, {}, this.abortController.signal);
+            if (res.aborted) return;
+            if (res.success) {
+                if (res.status === 'finished') {
+                    clearInterval(this.pollInterval);
+                    this.resetRestoreUI(btn, originalText);
+                    showMessage(window.__('success_db_restored'), 'success');
+                    window.location.href = this.basePath + '/login';
+                } else if (res.status === 'restoring') {
+                }
+            } else {
+                clearInterval(this.pollInterval);
+                this.resetRestoreUI(btn, originalText);
+                showMessage(res.message || window.__('err_connection'), 'error');
+            }
+        }, 2500);
+    }
+    resetRestoreUI(btn, originalText) {
+        this.isRestoring = false;
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.classList.remove('disabled-interaction');
         }
     }
 }

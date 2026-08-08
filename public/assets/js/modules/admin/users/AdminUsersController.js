@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
 class AdminUsersController {
     constructor() {
         this.api = new ApiService();
@@ -14,6 +14,7 @@ class AdminUsersController {
         this.handleGlobalChangeBound = this.handleGlobalChange.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.filterTimeout = null;
+        this.applyAllFilters = debounce(this.executeServerFilters.bind(this), 400);
     }
     init() {
         if (this.isInitialized) return;
@@ -55,16 +56,7 @@ class AdminUsersController {
         });
     }
     handlePaginationClick(e) {
-        const target = e.target.closest('a[href], button[data-nav]');
-        if (!target) return;
-        const url = target.getAttribute('href') || target.getAttribute('data-nav') || '';
-        const isPaginationLink = url.includes('page=') || target.closest('[class*="pagin"]') || target.closest('[data-ref="pagination-container"]') || target.hasAttribute('data-action', 'paginate');
-        if (isPaginationLink && url !== '#' && !url.includes('javascript:')) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            this.handlePagination(url);
-        }
+        catchPaginationClick(e, url => this.handlePagination(url));
     }
     handleGlobalClick(e) {
         const searchBtn = e.target.closest('[data-action="searchUser"]');
@@ -91,10 +83,15 @@ class AdminUsersController {
         }
         if (deselectBtn) this.deselectUser();
         if (editUserBtn && !editUserBtn.classList.contains('disabled-interaction')) this.editSelectedUser();
-        if (editRoleBtn && !editRoleBtn.classList.contains('disabled-interaction')) this.editSelectedUserRole();
+        if (editRoleBtn && !editRoleBtn.classList.contains('disabled-interaction')) this.editSelectedUserRole(editRoleBtn);
         if (editStatusBtn && !editStatusBtn.classList.contains('disabled-interaction')) this.editSelectedUserStatus();
         if (viewHistoryBtn && !viewHistoryBtn.classList.contains('disabled-interaction')) this.viewSelectedUserHistory();
         if (deleteUsersBtn && !deleteUsersBtn.classList.contains('disabled-interaction')) this.deleteSelectedUsers(deleteUsersBtn);
+        const submitMultipleRolesUpdateBtn = e.target.closest('[data-action="submitMultipleRolesUpdate"]');
+        if (submitMultipleRolesUpdateBtn) {
+            e.preventDefault();
+            this.submitRoleUpdate(submitMultipleRolesUpdateBtn);
+        }
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
             if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
@@ -111,6 +108,9 @@ class AdminUsersController {
     handleGlobalChange(e) {
         if (e.target && e.target.classList.contains('filter-checkbox')) {
             this.applyAllFilters();
+        }
+        if (e.target && e.target.classList.contains('admin-role-checkbox')) {
+            this.updateRolesDropdownText();
         }
     }
     handleViewLoaded(e) {
@@ -198,13 +198,23 @@ class AdminUsersController {
         if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/user-profile/${uuid}`);
         else window.location.href = `${this.basePath}/admin/user-profile/${uuid}`;
     }
-    editSelectedUserRole() {
+    async editSelectedUserRole(btn) {
         if (this.selectedUserIds.size !== 1) return;
         const id = Array.from(this.selectedUserIds)[0];
         const row = document.querySelector(`tr[data-user-id="${id}"]`);
         const uuid = row ? row.getAttribute('data-user-uuid') : id;
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/user-roles/${uuid}`);
-        else window.location.href = `${this.basePath}/admin/user-roles/${uuid}`;
+        if (btn) setButtonLoading(btn);
+        try {
+            const html = await this.api.fetchHtml(`${this.basePath}/admin/user-roles/${uuid}`, {
+                headers: { 'X-SPA-Request': 'true' }
+            });
+            if (btn) restoreButton(btn);
+            await window.modalSystem.show('dynamicHtmlModal', { html: html });
+            this.updateRolesDropdownText();
+        } catch (error) {
+            if (btn) restoreButton(btn);
+            showMessage(window.__('err_update_roles') || 'Error al cargar los roles', 'error');
+        }
     }
     editSelectedUserStatus() {
         if (this.selectedUserIds.size !== 1) return;
@@ -377,12 +387,6 @@ class AdminUsersController {
         }
     }
 
-    applyAllFilters() {
-        if (this.filterTimeout) clearTimeout(this.filterTimeout);
-        this.filterTimeout = setTimeout(() => {
-            this.executeServerFilters();
-        }, 400);
-    }
 
     executeServerFilters() {
         const queryInput = document.querySelector('[data-ref="user-search-input"]');
@@ -409,6 +413,67 @@ class AdminUsersController {
         
         const url = `${this.basePath}/admin/users?${urlParams.toString()}`;
         this.handlePagination(url);
+    }
+    updateRolesDropdownText() {
+        const dropdownText = document.querySelector('[data-ref="roles-dropdown-text"]');
+        if (!dropdownText) return;
+        const checkedCheckboxes = document.querySelectorAll('.admin-role-checkbox:checked');
+        if (checkedCheckboxes.length === 0) {
+            dropdownText.textContent = window.__('lbl_select_roles') || 'Seleccionar Roles';
+        } else {
+            const names = Array.from(checkedCheckboxes).map(cb => {
+                const label = cb.closest('label');
+                const span = label ? label.querySelector('span') : null;
+                return span ? span.textContent.trim() : '';
+            }).filter(Boolean);
+            dropdownText.textContent = names.join(', ');
+        }
+    }
+    async submitRoleUpdate(btn) {
+        const modalBody = document.querySelector('[data-ref="admin-roles-form"]');
+        if (!modalBody) return;
+        const targetUserId = modalBody.getAttribute('data-target-user-id');
+        
+        const checkboxes = document.querySelectorAll('.admin-role-checkbox:checked');
+        const selectedRoles = Array.from(checkboxes).map(cb => parseInt(cb.value, 10));
+        if (selectedRoles.length === 0) {
+            showMessage(window.__('err_select_role') || 'Debe seleccionar al menos un rol', 'warning');
+            return;
+        }
+        
+        const resultDialog = await window.modalSystem.show('verifyPasswordUpdateRole');
+        if (!resultDialog.confirmed) return;
+        const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
+        if (!password) {
+            showMessage(window.__('err_password_authorize_roles') || 'Contraseña requerida', 'error');
+            return;
+        }
+        
+        setButtonLoading(btn);
+        try {
+            const result = await this.api.post(ApiRoutes.Admin.UpdateRole, { 
+                target_user_id: targetUserId, 
+                roles: selectedRoles, 
+                password: password
+            }, this.abortController.signal);
+            
+            if (result.aborted) return;
+            restoreButton(btn);
+            
+            if (result.success) {
+                showMessage(result.message || window.__('success_roles_updated'), 'success');
+                window.modalSystem.closeCurrent();
+                this.applyAllFilters();
+            } else {
+                const errorMessage = window.Translations && window.Translations[result.message_key] 
+                                     ? window.Translations[result.message_key] 
+                                     : (result.message_key || result.message || window.__('err_update_roles'));
+                showMessage(errorMessage, 'error');
+            }
+        } catch (error) {
+            showMessage(window.__('err_connection_role') || 'Error de conexión', 'error');
+            restoreButton(btn);
+        }
     }
 }
 export { AdminUsersController };

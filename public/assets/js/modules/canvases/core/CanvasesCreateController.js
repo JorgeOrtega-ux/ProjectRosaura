@@ -1,24 +1,8 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, getDynamicTierName } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes } from '../../../core/utils/uiUtils.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 
-function getAllPalettes() {
-    let palettes = [];
-    if (window.APP_PALETTES) {
-        palettes = Object.values(window.APP_PALETTES);
-    }
-    if (window.APP_CUSTOM_PALETTES && Array.isArray(window.APP_CUSTOM_PALETTES)) {
-        window.APP_CUSTOM_PALETTES.forEach(cp => {
-            palettes.push({
-                id: cp.palette_key,
-                name_key: cp.name,
-                colors: cp.colors.map(c => ({ hex: c }))
-            });
-        });
-    }
-    return palettes;
-}
 
 class CanvasesCreateController {
     constructor() {

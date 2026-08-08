@@ -131,9 +131,7 @@ export const DesignTemplates = {
                     return true;
                 }
                 
-                const originalText = btnSubmitJoinLive.innerHTML;
-                btnSubmitJoinLive.innerHTML = '<span class="component-spinner component-spinner--small"></span> Uniendo...';
-                btnSubmitJoinLive.classList.add('disabled-interaction');
+                setButtonLoading(btnSubmitJoinLive, 'Uniendo...');
                 
                 const attemptJoin = async () => {
                     try {
@@ -154,13 +152,11 @@ export const DesignTemplates = {
                                 if (icon) icon.textContent = 'sensors_off';
                             }
                         } else {
-                            btnSubmitJoinLive.innerHTML = originalText;
-                            btnSubmitJoinLive.classList.remove('disabled-interaction');
+                            restoreButton(btnSubmitJoinLive);
                         }
                     } catch (error) {
                         showMessage(error.message || window.__('err_join'), 'error');
-                        btnSubmitJoinLive.innerHTML = originalText;
-                        btnSubmitJoinLive.classList.remove('disabled-interaction');
+                        restoreButton(btnSubmitJoinLive);
                     }
                 };
                 

@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { setButtonLoading, restoreButton, showMessage } from '../../../core/utils/uiUtils.js';
+import { setButtonLoading, restoreButton, showMessage, hexToHsv, hsvToHex, getEventCoords } from '../../../core/utils/uiUtils.js';
 
 const _t = (key, fallback) => {
     if (typeof window.__ === 'function') {
@@ -126,12 +126,6 @@ class CustomPaletteCreateController {
         `;
     }
 
-    getEventCoords(e) {
-        if (e.touches && e.touches.length > 0) {
-            return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
-        }
-        return { clientX: e.clientX, clientY: e.clientY };
-    }
 
     handleGlobalTouchstart(e) {
         const svArea = e.target.closest('[data-action="dragSV"]');
@@ -185,7 +179,7 @@ class CustomPaletteCreateController {
     updateColorFromEvent(e, container) {
         if (!container || !this.activePicker) return;
         const rect = container.getBoundingClientRect();
-        const coords = this.getEventCoords(e);
+        const coords = getEventCoords(e);
         
         let x = Math.max(0, Math.min(coords.clientX - rect.left, rect.width));
         let y = Math.max(0, Math.min(coords.clientY - rect.top, rect.height));
@@ -200,59 +194,12 @@ class CustomPaletteCreateController {
         this.updatePickerUI(this.activePicker);
     }
 
-    hexToHsv(hex) {
-        hex = hex.replace(/^#/, '');
-        if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
-        let r = parseInt(hex.substring(0, 2), 16) / 255 || 0;
-        let g = parseInt(hex.substring(2, 4), 16) / 255 || 0;
-        let b = parseInt(hex.substring(4, 6), 16) / 255 || 0;
-
-        let max = Math.max(r, g, b), min = Math.min(r, g, b);
-        let h = 0, s = 0, v = max, d = max - min;
-        s = max === 0 ? 0 : d / max;
-
-        if (max !== min) {
-            switch (max) {
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
-            }
-            h /= 6;
-        }
-        return { h: Math.round(h * 360), s: Math.round(s * 100), v: Math.round(v * 100) };
-    }
-
-    hsvToHex(h, s, v) {
-        h /= 360; s /= 100; v /= 100;
-        let r, g, b;
-        let i = Math.floor(h * 6);
-        let f = h * 6 - i;
-        let p = v * (1 - s);
-        let q = v * (1 - f * s);
-        let t = v * (1 - (1 - f) * s);
-
-        switch (i % 6) {
-            case 0: r = v, g = t, b = p; break;
-            case 1: r = q, g = v, b = p; break;
-            case 2: r = p, g = v, b = t; break;
-            case 3: r = p, g = q, b = v; break;
-            case 4: r = t, g = p, b = v; break;
-            case 5: r = v, g = p, b = q; break;
-        }
-
-        const toHex = x => {
-            const hex = Math.round(x * 255).toString(16);
-            return hex.length === 1 ? '0' + hex : hex;
-        };
-        return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
-    }
-
     updatePickerUI(pickerNode) {
         let h = Math.max(0, Math.min(360, parseFloat(pickerNode.dataset.h) || 0));
         let s = Math.max(0, Math.min(100, parseFloat(pickerNode.dataset.s) || 0));
         let v = Math.max(0, Math.min(100, parseFloat(pickerNode.dataset.v) || 0));
 
-        const hex = this.hsvToHex(h, s, v);
+        const hex = hsvToHex(h, s, v);
 
         const svArea = pickerNode.querySelector('[data-action="dragSV"]');
         if(svArea) svArea.style.backgroundColor = `hsl(${h}, 100%, 50%)`;
@@ -353,7 +300,7 @@ class CustomPaletteCreateController {
         tempDiv.innerHTML = this.getColorBlockTemplate().trim();
         const block = tempDiv.firstElementChild;
 
-        const hsv = this.hexToHsv(hex);
+        const hsv = hexToHsv(hex);
         const picker = block.querySelector('[data-ref="customColorPicker"]');
         picker.dataset.h = hsv.h;
         picker.dataset.s = hsv.s;

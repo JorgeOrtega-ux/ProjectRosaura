@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, localInputFormatToUtcString } from '../../../core/utils/uiUtils.js';
 import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
 
 class CanvasResizeController {
@@ -113,20 +113,6 @@ class CanvasResizeController {
         }
     }
 
-    localInputFormatToUtcString(localString) {
-        if (!localString) return null;
-        const dateObj = new Date(localString);
-        if (isNaN(dateObj.getTime())) return null;
-
-        const yyyy = dateObj.getUTCFullYear();
-        const mm = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-        const dd = String(dateObj.getUTCDate()).padStart(2, '0');
-        const hh = String(dateObj.getUTCHours()).padStart(2, '0');
-        const min = String(dateObj.getUTCMinutes()).padStart(2, '0');
-        const ss = '00';
-
-        return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-    }
 
     handleGlobalClick(e) {
         const btnOpenCalendar = e.target.closest('[data-action="openCalendarModal"]');
@@ -330,7 +316,7 @@ class CanvasResizeController {
                 return;
             }
 
-            nextResizeAt = this.localInputFormatToUtcString(localTimeStr);
+            nextResizeAt = localInputFormatToUtcString(localTimeStr);
         }
 
         const payload = {

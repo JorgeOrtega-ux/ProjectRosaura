@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, catchPaginationClick } from '../../../core/utils/uiUtils.js';
 
 class CanvasesManageController {
     constructor() {
@@ -48,18 +48,7 @@ class CanvasesManageController {
     }
 
     handlePaginationClick(e) {
-        const target = e.target.closest('a[href], button[data-nav]');
-        if (!target) return;
-
-        const url = target.getAttribute('href') || target.getAttribute('data-nav') || '';
-        const isPaginationLink = url.includes('page=') || target.closest('[class*="pagin"]') || target.closest('[data-ref="pagination-container"]') || target.hasAttribute('data-action', 'paginate');
-
-        if (isPaginationLink && url !== '#' && !url.includes('javascript:')) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            this.handlePagination(url);
-        }
+        catchPaginationClick(e, url => this.handlePagination(url));
     }
 
     handleGlobalClick(e) {
