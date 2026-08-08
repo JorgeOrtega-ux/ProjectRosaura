@@ -187,10 +187,10 @@ class SecurityController {
                         window.location.href = this.basePath + '/login';
                     }, 1000);
                 } else {
-                    showMessage(res.message || 'Error al cerrar sesiones', 'error');
+                    showMessage(res.message || window.__('err_logout_sessions'), 'error');
                 }
             } catch (err) {
-                showMessage('Error de comunicación', 'error');
+                showMessage(window.__('err_communication'), 'error');
             } finally {
                 restoreButton(btn);
             }

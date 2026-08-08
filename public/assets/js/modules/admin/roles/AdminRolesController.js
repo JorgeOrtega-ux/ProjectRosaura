@@ -1,13 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
-const _t = (key, fallback) => {
-    if (typeof window.__ === 'function') {
-        const trans = window.__(key);
-        if (trans && trans !== key) return trans;
-    }
-    return fallback;
-};
+
 class AdminRolesController {
     constructor() {
         this.api = new ApiService();
@@ -297,14 +291,14 @@ class AdminRolesController {
         const res = await this.api.post(apiRoute, payload, this.abortController.signal);
         if (res.aborted) return;
         if (res.success) {
-            showMessage(_t('msg_action_success', 'Acción realizada con éxito'), 'success');
+            showMessage(window.__('msg_joined_successfully'), 'success');
             if (window.spaRouter) {
                 window.spaRouter.navigate(window.location.pathname + window.location.search);
             } else {
                 window.location.reload();
             }
         } else {
-            showMessage(res.message || _t('err_action_failed', 'Ocurrió un error al procesar la solicitud'), 'error');
+            showMessage(res.message || window.__('err_update_canvas'), 'error');
         }
     }
 }

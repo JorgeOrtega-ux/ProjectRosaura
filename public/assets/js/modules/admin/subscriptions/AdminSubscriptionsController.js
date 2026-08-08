@@ -1,13 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
-const _t = (key, fallback) => {
-    if (typeof window.__ === 'function') {
-        const trans = window.__(key);
-        if (trans && trans !== key) return trans;
-    }
-    return fallback;
-};
+
 class AdminSubscriptionsController {
     constructor() {
         this.api = new ApiService();
@@ -208,7 +202,7 @@ class AdminSubscriptionsController {
         }
     }
     handleRowSelection(target) {
-        const tierId = target.getAttribute('data-tier-id'); // UUID
+        const tierId = target.getAttribute('data-tier-id');
         if (this.selectedTierId === tierId) {
             this.deselectAll();
             return;
@@ -267,11 +261,11 @@ class AdminSubscriptionsController {
                 showMessage(_t('visibility_updated', 'Visibilidad actualizada'), 'success');
                 await this.handlePagination(window.location.href);
             } else {
-                showMessage(res.message || _t('error', 'Error'), 'error');
+                showMessage(res.message || window.__('err_default'), 'error');
             }
         } catch (err) {
             if (err.name !== 'AbortError') {
-                showMessage(_t('error', 'Error al cambiar visibilidad'), 'error');
+                showMessage(window.__('err_update_canvas'), 'error');
             }
         } finally {
             if (btn) restoreButton(btn);
@@ -286,14 +280,14 @@ class AdminSubscriptionsController {
             const res = await this.api.post(ApiRoutes.Admin.SetPopularTier, payload, this.abortController.signal);
             if (res.aborted) return;
             if (res.success) {
-                showMessage(_t('subscription_popular_marked', 'Suscripción marcada como popular'), 'success');
+                showMessage(window.__('subscription_popular_marked'), 'success');
                 await this.handlePagination(window.location.href);
             } else {
-                showMessage(res.message || _t('error', 'Error'), 'error');
+                showMessage(res.message || window.__('err_default'), 'error');
             }
         } catch (err) {
             if (err.name !== 'AbortError') {
-                showMessage(_t('error', 'Error al cambiar opción popular'), 'error');
+                showMessage(window.__('err_update_canvas'), 'error');
             }
         } finally {
             if (btn) restoreButton(btn);
@@ -305,10 +299,10 @@ class AdminSubscriptionsController {
         const tierId = this.selectedTierId;
         const selectedRow = document.querySelector(`[data-action="selectTierRow"][data-tier-id="${tierId}"]`);
         if (selectedRow && parseInt(selectedRow.getAttribute('data-is-system'), 10) === 1) {
-            showMessage(_t('cannot_delete_system_tier', 'No se puede eliminar una suscripción del sistema'), 'error');
+            showMessage(window.__('cannot_delete_system_tier'), 'error');
             return; 
         }
-        const tierName = selectedRow ? selectedRow.getAttribute('data-tier-name') : _t('unknown_tier', 'Suscripción desconocida');
+        const tierName = selectedRow ? selectedRow.getAttribute('data-tier-name') : window.__('unknown_tier');
         const response = await window.modalSystem.show('confirmDeleteTier', { tierName: tierName });
         if (response.confirmed) {
             await this.executeApiAction(btn, ApiRoutes.Admin.DeleteTier, { uuid: tierId });
@@ -321,14 +315,14 @@ class AdminSubscriptionsController {
             const res = await this.api.post(apiRoute, payload, this.abortController.signal);
             if (res.aborted) return;
             if (res.success) {
-                showMessage(_t('action_success', 'Acción realizada con éxito'), 'success');
+                showMessage(window.__('msg_joined_successfully'), 'success');
                 await this.handlePagination(window.location.href);
             } else {
-                showMessage(res.message || _t('error', 'Error'), 'error');
+                showMessage(res.message || window.__('err_default'), 'error');
             }
         } catch (err) {
             if (err.name !== 'AbortError') {
-                showMessage(_t('error', 'Error al procesar la acción'), 'error');
+                showMessage(window.__('err_update_canvas'), 'error');
             }
         } finally {
             if (btn) restoreButton(btn);

@@ -262,7 +262,7 @@ class CanvasesManageController {
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
-            showMessage(window.__('general_save_network_error') || 'Error', 'error');
+            showMessage(window.__('general_save_network_error'), 'error');
         } finally {
             restoreButton(btn);
         }

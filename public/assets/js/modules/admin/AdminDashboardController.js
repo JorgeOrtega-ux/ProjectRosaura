@@ -64,7 +64,6 @@ export class AdminDashboardController {
         this.dom.dropdownIcon = document.getElementById('chart-dropdown-icon');
         this.dom.dropdownText = document.getElementById('chart-dropdown-text');
         
-        // Cargar traducciones desde el DOM
         const langDataEl = document.getElementById('dashboard-lang-data');
         this.lang = {
             activity: langDataEl && langDataEl.getAttribute('data-lbl-activity') ? langDataEl.getAttribute('data-lbl-activity') : window.__('admin_activity_global'),
@@ -140,7 +139,6 @@ export class AdminDashboardController {
             this.renderTabsChart(this.lastChartsData);
         }
         
-        // Close dropdown if open
         const module = document.querySelector('[data-module="moduleChartMode"]');
         if (module) module.classList.add('disabled');
     }
@@ -149,7 +147,6 @@ export class AdminDashboardController {
         if (!this.dom.canvasTabsMain || typeof Chart === 'undefined') return;
         const ctx = this.dom.canvasTabsMain.getContext('2d');
         
-        // Update menu active states and dropdown label
         [this.dom.menuTabAct, this.dom.menuTabReg, this.dom.menuTabErr].forEach(item => {
             if(item) item.classList.remove('active');
         });

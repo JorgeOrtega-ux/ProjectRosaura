@@ -213,7 +213,7 @@ class AdminUsersController {
             this.updateRolesDropdownText();
         } catch (error) {
             if (btn) restoreButton(btn);
-            showMessage(window.__('err_update_roles') || 'Error al cargar los roles', 'error');
+            showMessage(window.__('err_update_roles'), 'error');
         }
     }
     editSelectedUserStatus() {
@@ -419,7 +419,7 @@ class AdminUsersController {
         if (!dropdownText) return;
         const checkedCheckboxes = document.querySelectorAll('.admin-role-checkbox:checked');
         if (checkedCheckboxes.length === 0) {
-            dropdownText.textContent = window.__('lbl_select_roles') || 'Seleccionar Roles';
+            dropdownText.textContent = window.__('lbl_select_roles');
         } else {
             const names = Array.from(checkedCheckboxes).map(cb => {
                 const label = cb.closest('label');
@@ -437,7 +437,7 @@ class AdminUsersController {
         const checkboxes = document.querySelectorAll('.admin-role-checkbox:checked');
         const selectedRoles = Array.from(checkboxes).map(cb => parseInt(cb.value, 10));
         if (selectedRoles.length === 0) {
-            showMessage(window.__('err_select_role') || 'Debe seleccionar al menos un rol', 'warning');
+            showMessage(window.__('err_select_role'), 'warning');
             return;
         }
         
@@ -445,7 +445,7 @@ class AdminUsersController {
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
         if (!password) {
-            showMessage(window.__('err_password_authorize_roles') || 'Contraseña requerida', 'error');
+            showMessage(window.__('err_password_authorize_roles'), 'error');
             return;
         }
         
@@ -471,7 +471,7 @@ class AdminUsersController {
                 showMessage(errorMessage, 'error');
             }
         } catch (error) {
-            showMessage(window.__('err_connection_role') || 'Error de conexión', 'error');
+            showMessage(window.__('err_connection_role'), 'error');
             restoreButton(btn);
         }
     }

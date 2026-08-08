@@ -329,7 +329,7 @@ class AdminBackupsController {
             });
             window.modalSystem.show('dynamicHtmlModal', { html: html });
         } catch (error) {
-            showMessage(window.__('err_start_restore') || 'Error al preparar la restauración', 'error');
+            showMessage(window.__('err_start_restore'), 'error');
         }
     }
     async handleConfirmRestore(btn) {

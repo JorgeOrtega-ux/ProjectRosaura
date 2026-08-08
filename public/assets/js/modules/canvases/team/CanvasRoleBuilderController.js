@@ -125,7 +125,7 @@ class CanvasRoleBuilderController {
         }
 
         if (isNaN(roleWeight) || roleWeight < 0 || roleWeight > 99) {
-            showMessage('El peso debe ser un número entre 0 y 99', 'error');
+            showMessage(window.__('err_weight_range'), 'error');
             return;
         }
 

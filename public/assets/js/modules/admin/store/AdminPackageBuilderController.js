@@ -135,11 +135,11 @@ class AdminPackageBuilderController {
                     this.goBack();
                 }, 1000);
             } else {
-                showMessage(response.message || 'Error al guardar el paquete', 'error');
+                showMessage(response.message || window.__('err_save_advantage'), 'error');
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                showMessage('Error de conexión: ' + error.message, 'error');
+                showMessage(window.__('err_connection') + ': ' + error.message, 'error');
             }
         } finally {
             restoreButton(btn);

@@ -435,12 +435,12 @@ class ProfileController {
                     this.handleLinkGoogleToken(response.access_token, btn);
                 } else {
                     restoreButton(btn);
-                    showMessage('No se pudo obtener la autorización de Google', 'error');
+                    showMessage(window.__('err_google_auth_failed'), 'error');
                 }
             },
             error_callback: () => {
                 restoreButton(btn);
-                showMessage('Error al conectar con Google', 'error');
+                showMessage(window.__('err_google_connect_failed'), 'error');
             }
         });
 
@@ -458,10 +458,10 @@ class ProfileController {
                 showMessage(result.message || 'Cuenta de Google vinculada', 'success');
                 setTimeout(() => window.location.reload(), 1000);
             } else {
-                showMessage(result.message || 'Error al vincular cuenta de Google', 'error');
+                showMessage(result.message || window.__('err_google_link_failed'), 'error');
             }
         } catch (err) {
-            showMessage('Error de comunicación', 'error');
+            showMessage(window.__('err_communication'), 'error');
         } finally {
             restoreButton(btn);
         }
@@ -495,10 +495,10 @@ class ProfileController {
                 showMessage(result.message || 'Cuenta de Google desvinculada', 'success');
                 setTimeout(() => window.location.reload(), 1000);
             } else {
-                showMessage(result.message || 'Error al desvincular cuenta de Google', 'error');
+                showMessage(result.message || window.__('err_google_unlink_failed'), 'error');
             }
         } catch (err) {
-            showMessage('Error de comunicación', 'error');
+            showMessage(window.__('err_communication'), 'error');
         } finally {
             if (btn) restoreButton(btn);
         }

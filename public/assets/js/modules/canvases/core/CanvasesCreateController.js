@@ -1,7 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes } from '../../../core/utils/uiUtils.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
+import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes } from '../../../core/utils/uiUtils.js';
 
 
 class CanvasesCreateController {
@@ -37,7 +37,6 @@ class CanvasesCreateController {
         this.renderPalettes();
         this.checkAdminPermissions();
 
-        // Fetch templates and render
         fetch(`${this.basePath}/assets/config/canvas_templates.json`)
             .then(res => res.ok ? res.json() : [])
             .then(data => {
@@ -93,13 +92,11 @@ class CanvasesCreateController {
     }
 
     syncStateWithDOM() {
-        // Name
         const nameInput = document.querySelector('[data-ref="input-canvasname"]');
         if (nameInput) {
             this.formState.name = nameInput.value.trim();
         }
 
-        // Size
         const activeSizeEl = document.querySelector('.component-menu-link[data-type="size"].active');
         if (activeSizeEl) {
             this.formState.size = activeSizeEl.getAttribute('data-value');
@@ -107,67 +104,56 @@ class CanvasesCreateController {
             this.formState.size = '64x64';
         }
 
-        // Privacy
         const activePrivacyEl = document.querySelector('.component-menu-link[data-type="privacy"].active');
         if (activePrivacyEl) {
             this.formState.privacy = activePrivacyEl.getAttribute('data-value');
         }
 
-        // Requires approval
         const activeApprovalEl = document.querySelector('.component-menu-link[data-type="requires_approval"].active');
         if (activeApprovalEl) {
             this.formState.requires_approval = activeApprovalEl.getAttribute('data-value');
         }
 
-        // Palette ID
         const activePaletteEl = document.querySelector('.component-menu-link[data-action="selectPalette"].active');
         if (activePaletteEl) {
             this.formState.palette_id = activePaletteEl.getAttribute('data-palette-id');
         }
 
-        // Cooldown pixels batch
         const cooldownBatchEl = document.querySelector('[data-ref="val_cooldown_batch"]');
         if (cooldownBatchEl) {
             this.formState.cooldown_pixels_batch = parseInt(cooldownBatchEl.getAttribute('data-value'), 10) || 5;
         }
 
-        // Cooldown seconds
         const cooldownSecondsEl = document.querySelector('[data-ref="val_cooldown_seconds"]');
         if (cooldownSecondsEl) {
             this.formState.cooldown_seconds = parseInt(cooldownSecondsEl.getAttribute('data-value'), 10) || 10;
         }
 
-        // Limit
         const limitEl = document.querySelector('[data-ref="val_limit"]');
         if (limitEl) {
             this.formState.limit = parseInt(limitEl.getAttribute('data-value'), 10) || 10;
         }
 
-        // Allow Purchases
         const allowPurchasesEl = document.querySelector('[data-ref="val_allow_purchases"]');
         if (allowPurchasesEl) {
             this.formState.allow_purchases = allowPurchasesEl.checked ? 1 : 0;
         }
 
-        // Allow Chat
         const allowChatEl = document.querySelector('[data-ref="val_allow_chat"]');
         if (allowChatEl) {
             this.formState.allow_chat = allowChatEl.checked ? 1 : 0;
         }
 
-        // Allow Custom Colors
         const allowCustomColorsEl = document.querySelector('[data-ref="val_allow_custom_colors"]');
         if (allowCustomColorsEl) {
             this.formState.allow_custom_colors = allowCustomColorsEl.checked ? 1 : 0;
         }
 
-        // Is Official
         const isOfficialEl = document.querySelector('[data-ref="val_is_official"]');
         if (isOfficialEl) {
             this.formState.is_official = isOfficialEl.checked ? 1 : 0;
         }
 
-        // Template ID
         const templateEl = document.getElementById('canvas_template_id');
         if (templateEl) {
             this.formState.template_id = templateEl.value || null;
@@ -586,7 +572,6 @@ class CanvasesCreateController {
     }
 
     async submitCanvas(btn) {
-        // Final synchronization with DOM before sending to ensure no stale state
         this.syncStateWithDOM();
 
         setButtonLoading(btn);
@@ -616,10 +601,8 @@ class CanvasesCreateController {
 
         const templates = this.templates || [];
         
-        // Filter templates compatible with current size
         const availableTemplates = templates.filter(tpl => tpl.sizes.includes(size));
         
-        // If current template is not compatible with new size, reset it
         const currentTpl = templates.find(t => t.id === this.formState.template_id);
         if (currentTpl && !currentTpl.sizes.includes(size)) {
             this.formState.template_id = null;
@@ -635,12 +618,11 @@ class CanvasesCreateController {
 
             let html = '';
             
-            // Add default (Lienzo Vacío) option
             const isNoneActive = !this.formState.template_id ? 'active' : '';
             html += `
-                <div class="component-menu-link ${isNoneActive}" data-action="selectCanvasTemplate" data-template-id="" data-label="Lienzo Vacío">
+                <div class="component-menu-link ${isNoneActive}" data-action="selectCanvasTemplate" data-template-id="" data-label="${window.__('lbl_empty_canvas')}">
                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_free</span></div>
-                    <div class="component-menu-link-text"><span>Lienzo Vacío</span></div>
+                    <div class="component-menu-link-text"><span>${window.__('lbl_empty_canvas')}</span></div>
                 </div>
             `;
             

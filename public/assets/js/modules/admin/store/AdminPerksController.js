@@ -2,13 +2,7 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
-const _t = (key, fallback) => {
-    if (typeof window.__ === 'function') {
-        const trans = window.__(key);
-        if (trans && trans !== key) return trans;
-    }
-    return fallback;
-};
+
 
 class AdminPerksController {
     constructor() {
@@ -128,13 +122,13 @@ class AdminPerksController {
 
                 this.initializeFiltersFromURL();
             } else {
-                throw new Error("No se encontró el contenedor principal en la respuesta.");
+                throw new Error("Main container was not found in the response.");
             }
 
         } catch (error) {
             if (error.name !== 'AbortError') {
                 console.error('Pagination error:', error);
-                showMessage('Error al cargar la página', 'error');
+                showMessage(window.__('err_load_canvases'), 'error');
             }
         } finally {
             if (containerToDisable) {
@@ -306,11 +300,11 @@ class AdminPerksController {
                 showMessage(data.message, 'success');
                 this.handlePagination(window.location.href);
             } else {
-                showMessage(data.message || 'Error al actualizar', 'error');
+                showMessage(data.message || window.__('err_update_canvas'), 'error');
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                showMessage('Error de conexión: ' + error.message, 'error');
+                showMessage(window.__('err_connection') + ': ' + error.message, 'error');
             }
         } finally {
             restoreButton(btn);
@@ -319,7 +313,7 @@ class AdminPerksController {
 
     async deletePerk(btn) {
         if (!this.selectedPerkId) return;
-        if (!confirm('¿Estás seguro de que deseas eliminar esta ventaja de forma permanente?')) return;
+        const confirmRes = await window.modalSystem.show('confirmActionModal', { title: window.__('delete_canvas'), message: window.__('msg_confirm_delete_perk') }); if (!confirmRes || !confirmRes.confirmed) return;
         
         setButtonLoading(btn);
         try {
@@ -328,11 +322,11 @@ class AdminPerksController {
                 showMessage(data.message, 'success');
                 this.handlePagination(window.location.href);
             } else {
-                showMessage(data.message || 'Error al eliminar', 'error');
+                showMessage(data.message || window.__('err_delete'), 'error');
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                showMessage('Error de conexión: ' + error.message, 'error');
+                showMessage(window.__('err_connection') + ': ' + error.message, 'error');
             }
         } finally {
             restoreButton(btn);

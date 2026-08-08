@@ -1538,5 +1538,18 @@
     "btn_launch_tectonic_rift": "Lanzar Fisura Tectónica",
     "msg_tectonic_rift_incoming": "¡Actividad Sísmica Detectada (Fisura Tectónica)!",
     "store_content_tectonic_rift_name": "Fisura Tectónica",
-    "store_content_tectonic_rift_desc": "Desordena y desplaza aleatoriamente los píxeles en un gran radio sin borrarlos."
+    "store_content_tectonic_rift_desc": "Desordena y desplaza aleatoriamente los píxeles en un gran radio sin borrarlos.",
+    "lbl_empty_canvas": "Lienzo Vacío",
+    "lbl_select_roles": "Seleccionar Roles",
+    "lbl_item": "Ítem",
+    "err_weight_range": "El peso debe ser un número entre 0 y 99",
+    "err_google_auth_failed": "No se pudo obtener la autorización de Google",
+    "err_google_connect_failed": "Error al conectar con Google",
+    "err_google_link_failed": "Error al vincular cuenta de Google",
+    "err_google_unlink_failed": "Error al desvincular cuenta de Google",
+    "err_logout_sessions": "Error al cerrar sesiones",
+    "title_revoke_invite": "Revocar invitación",
+    "msg_confirm_revoke_invites": "¿Estás seguro de que deseas revocar :count invitación(es)?",
+    "btn_revoke": "Revocar",
+    "lbl_no_expiry": "Sin caducidad"
 }

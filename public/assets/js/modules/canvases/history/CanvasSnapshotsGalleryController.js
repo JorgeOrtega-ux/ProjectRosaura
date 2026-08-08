@@ -18,7 +18,7 @@ class CanvasSnapshotsGalleryController {
         }
         
         this.abortController = new AbortController();
-        document.addEventListener('click', this.handleClickBound);
+        this.bindEvents();
         this.isInitialized = true;
     }
 
@@ -29,6 +29,10 @@ class CanvasSnapshotsGalleryController {
             this.abortController = null;
         }
         this.isInitialized = false;
+    }
+
+    bindEvents() {
+        document.addEventListener('click', this.handleClickBound);
     }
 
     async handleClick(e) {
@@ -58,7 +62,7 @@ class CanvasSnapshotsGalleryController {
     async toggleLike(btn) {
         if (btn.classList.contains('disabled-interaction')) return;
         
-        const snapshotUuid = btn.getAttribute('data-id'); // Using snapshot_uuid from php
+        const snapshotUuid = btn.getAttribute('data-id');
         if (!snapshotUuid) return;
 
         const wasLiked = btn.classList.contains('is-favorite');
@@ -82,7 +86,6 @@ class CanvasSnapshotsGalleryController {
                 btn.classList.remove('is-favorite');
             }
         } else {
-            // Revert on failure
             if (wasLiked) {
                 btn.classList.add('is-favorite');
             } else {
@@ -131,7 +134,7 @@ class CanvasSnapshotsGalleryController {
                         if (!badgesContainer.querySelector('.component-badge--danger')) {
                             const badge = document.createElement('div');
                             badge.className = 'component-badge component-badge--danger';
-                            badge.innerHTML = `<span class="material-symbols-rounded">lock</span><span>${window.__('canvas_privacy_private') || 'Private'}</span>`;
+                            badge.innerHTML = `<span class="material-symbols-rounded">lock</span><span>${window.__('canvas_privacy_private')}</span>`;
                             badgesContainer.appendChild(badge);
                         }
                     } else {
@@ -157,7 +160,6 @@ class CanvasSnapshotsGalleryController {
             message: window.__('confirm_delete_captura')
         });
         if (!confirmRes || !confirmRes.confirmed) return;
-
 
         const res = await this.api.post(ApiRoutes.Canvases.DeleteSnapshot, { id: snapshotUuid }, this.abortController.signal);
         

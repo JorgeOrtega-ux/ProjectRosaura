@@ -1,9 +1,8 @@
-// public/assets/js/modules/admin/roles/AdminRolePermissionsController.js
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { setButtonLoading, restoreButton, showMessage } from '../../../core/utils/uiUtils.js';
 
-const _t = (key, fallback) => typeof window.__ === 'function' ? window.__(key) : fallback;
+
 
 class AdminRolePermissionsController {
     constructor() {
@@ -13,7 +12,7 @@ class AdminRolePermissionsController {
         this.basePath = window.AppBasePath || '';
         this.isInitialized = false;
         this.roleId = null;
-        this.translations = {}; // Diccionario en memoria
+        this.translations = {};
         
         this.targetRoleWeight = 0;
         this.currentUserWeight = 0;
@@ -28,10 +27,8 @@ class AdminRolePermissionsController {
 
         console.log("[DEBUG ROLES] Iniciando AdminRolePermissionsController");
         
-        // Cargar el diccionario de traducciones inyectado en el DOM
         this.loadTranslationsFromDOM();
 
-        // Leer el ID y los pesos desde el atributo HTML
         const viewContent = document.querySelector('.view-content');
         const attrId = viewContent ? viewContent.dataset.roleId : null;
         
@@ -41,23 +38,18 @@ class AdminRolePermissionsController {
         const urlParams = new URLSearchParams(window.location.search);
         const urlId = urlParams.get('id');
 
-        // Asignación segura del roleId
         this.roleId = parseInt(attrId, 10) || parseInt(urlId, 10);
 
         this.bindEvents();
 
         if (!this.roleId || isNaN(this.roleId)) {
-            console.error("[DEBUG ROLES] Falla crítica: El ID es nulo o inválido. Ejecutando expulsión (goBack)...");
+            console.error("[DEBUG ROLES] Critical failure: The ID is null or invalid. Executing expulsion (goBack)...");
             this.goBack();
             return;
         }
         
-        // Aplicar traducciones a los permisos listados
         this.renderTranslations();
         
-        // BLINDAJE FRONTEND: Bloquear permisos según jerarquía (Tiering)
-        // Nota: Esta lógica aprovecha dinámicamente el `data-is-critical` devuelto por la BD
-        // por lo que se adaptó perfectamente a tu nuevo esquema granular de permisos.
         this.enforcePermissionTiering();
 
         console.log("[DEBUG ROLES] Validaciones iniciales superadas. Permaneciendo en la vista.");
@@ -94,7 +86,7 @@ class AdminRolePermissionsController {
             try {
                 this.translations = JSON.parse(viewContent.dataset.i18nPermissions);
             } catch (e) {
-                console.error("[DEBUG ROLES] Error parseando diccionario de permisos", e);
+                console.error("[DEBUG ROLES] Error parsing permissions dictionary", e);
                 this.translations = {};
             }
         }
@@ -108,7 +100,6 @@ class AdminRolePermissionsController {
             const nameEl = block.querySelector('[data-ref="perm-name"]');
             const descEl = block.querySelector('[data-ref="perm-desc"]');
             
-            // Si la clave existe en el diccionario JSON (ej. "delete_backups", "manage_roles_structure")
             if (this.translations[key]) {
                 if (nameEl && this.translations[key].name) {
                     nameEl.textContent = this.translations[key].name;
@@ -125,24 +116,21 @@ class AdminRolePermissionsController {
         let blockedCount = 0;
 
         checkboxes.forEach(cb => {
-            // Evaluamos si el permiso inyectado por PHP está marcado como destructivo/crítico
             const isCritical = parseInt(cb.dataset.isCritical || 0, 10) === 1;
 
             if (isCritical) {
-                // Regla 1: Un rol no puede recibir permisos críticos si pesa menos de 80
-                // Regla 2: Un admin no puede otorgar permisos críticos si no es nivel 100
                 const isRoleTooLow = this.targetRoleWeight < 80;
                 const isAdminTooLow = this.currentUserWeight < 100;
 
                 if (isRoleTooLow || isAdminTooLow) {
                     cb.disabled = true;
-                    cb.checked = false; // Forzamos desmarcado por seguridad en UI
+                    cb.checked = false;
                     cb.classList.add('permission-locked');
                     
                     const block = cb.closest('.component-card__content');
                     if (block) {
                         block.style.opacity = '0.5';
-                        block.setAttribute('title', _t('admin_role_perm_blocked_tier', 'Permiso bloqueado: Requiere jerarquía superior.'));
+                        block.setAttribute('title', window.__('admin_role_perm_blocked_tier'));
                     }
                     blockedCount++;
                 }
@@ -150,10 +138,9 @@ class AdminRolePermissionsController {
         });
 
         if (blockedCount > 0) {
-            console.warn(`[SECURITY] Se han bloqueado ${blockedCount} permisos críticos en la UI debido a restricciones de Tiering.`);
+            console.warn(`[SECURITY] Blocked ${blockedCount} critical permissions in UI due to Tiering restrictions.`);
         }
 
-        // Techo de cristal absoluto: Si el admin pesa menos que el rol, bloqueamos TODO el formulario
         if (this.currentUserWeight < 100 && this.targetRoleWeight >= this.currentUserWeight) {
             checkboxes.forEach(cb => cb.disabled = true);
             const saveBtn = document.querySelector('[data-action="savePermissions"]');
@@ -174,13 +161,11 @@ class AdminRolePermissionsController {
     }
 
     async savePermissions(btn) {
-        // Obtenemos solo los habilitados
         const checkboxes = document.querySelectorAll('input[data-ref="permCheckbox"]:checked:not(:disabled)');
         const permissionsArray = Array.from(checkboxes).map(cb => parseInt(cb.value, 10));
 
         if (btn) setButtonLoading(btn);
 
-        // Uso estricto del ApiService con AbortController (Evita promesas huérfanas)
         const payload = {
             id: this.roleId, 
             permissions: permissionsArray
@@ -198,8 +183,8 @@ class AdminRolePermissionsController {
             showMessage(_t('admin_perms_save_success', 'Permisos actualizados exitosamente'), 'success');
             this.goBack();
         } else {
-            console.error("[DEBUG ROLES] Error del servidor al guardar permisos:", res.message_key);
-            showMessage(_t('msg_error_prefix', 'Error: ') + res.message_key, 'error');
+            console.error("[DEBUG ROLES] Server error saving permissions:", res.message_key);
+            showMessage(window.__('err_default') + ': ' + res.message_key, 'error');
         }
     }
 }

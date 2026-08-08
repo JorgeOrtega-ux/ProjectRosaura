@@ -171,7 +171,6 @@ export class PurchaseHistoryController {
             return;
         }
 
-        // Close dropdown if clicking outside
         if (!e.target.closest('.component-dropdown-wrapper')) {
             const dropdownModules = this.container.querySelectorAll('[data-module="modulePurchaseFilters"]');
             dropdownModules.forEach(m => {
@@ -187,7 +186,7 @@ export class PurchaseHistoryController {
     handleGlobalChange(e) {
         const checkbox = e.target.closest('.filter-checkbox');
         if (checkbox) {
-            const filterCategory = checkbox.getAttribute('data-filter-type'); // 'type' or 'status'
+            const filterCategory = checkbox.getAttribute('data-filter-type');
             const val = checkbox.value;
 
             const dropdownModule = checkbox.closest('[data-module="modulePurchaseFilters"]');

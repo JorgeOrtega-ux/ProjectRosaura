@@ -145,8 +145,8 @@ class AdminMessagesReportsController {
         const visIcon = document.querySelector('[data-ref="admin-visibility-icon"]');
         const labels = {
             'visible': typeof window.__ === 'function' ? window.__('msg_visibility_visible') : 'Visible',
-            'under_review': typeof window.__ === 'function' ? window.__('msg_visibility_under_review') : 'En revisión',
-            'deleted': typeof window.__ === 'function' ? window.__('msg_visibility_deleted') : 'Eliminado'
+            'under_review': window.__('msg_visibility_under_review'),
+            'deleted': window.__('msg_visibility_deleted')
         };
         const icons = {
             'visible': 'check_circle',
@@ -205,10 +205,10 @@ class AdminMessagesReportsController {
                 }
                 this.deselectReport();
             } else {
-                showMessage(response.message || 'Error al actualizar estado', 'error');
+                showMessage(response.message || window.__('err_update_status'), 'error');
             }
         } catch (error) {
-            showMessage(error.message || 'Error de conexión', 'error');
+            showMessage(error.message || window.__('err_connection'), 'error');
         } finally {
             restoreButton(btnElement);
         }
@@ -230,7 +230,7 @@ class AdminMessagesReportsController {
             if (dialogRes.report_reason) {
                 deleteReason = window.__('report_reason_' + dialogRes.report_reason);
             } else {
-                deleteReason = 'Moderación administrativa';
+                deleteReason = window.__('admin_msg_empty');
             }
 
             this.state.deleteReason = deleteReason;
@@ -251,10 +251,10 @@ class AdminMessagesReportsController {
                 this.initialState = JSON.parse(JSON.stringify(this.state));
                 this.checkForChanges();
             } else {
-                showMessage(response.message || 'Error al actualizar visibilidad', 'error');
+                showMessage(response.message || window.__('err_update_visibility'), 'error');
             }
         } catch (error) {
-            showMessage(error.message || 'Error de conexión', 'error');
+            showMessage(error.message || window.__('err_connection'), 'error');
         } finally {
             restoreButton(btnElement);
         }

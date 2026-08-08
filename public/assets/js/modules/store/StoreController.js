@@ -131,7 +131,7 @@ export class StoreController {
 
         const items = selectedRows.map(r => ({
             perkId: r.getAttribute('data-perkid'),
-            name: r.getAttribute('data-name') || 'Ítem',
+            name: r.getAttribute('data-name') || window.__('lbl_item'),
             icon: r.getAttribute('data-icon') || 'star',
             price: parseInt(r.getAttribute('data-price') || '0', 10)
         }));
@@ -171,7 +171,7 @@ export class StoreController {
                         selectionActions.classList.remove('active');
                     }
                 }
-                showMessage(window.__('msg_bulk_purchase_success') || `¡Se han adquirido ${items.length} elementos con éxito!`, 'success');
+                showMessage(window.__('msg_bulk_purchase_success').replace(':count', items.length), 'success');
             } else {
                 if (result && result.message_key === 'store.insufficient_coins') {
                     showMessage(window.__('err_insufficient_coins'), 'error');
@@ -182,7 +182,7 @@ export class StoreController {
             }
         } catch (err) {
             restoreButton(btn);
-            showMessage(window.__('err_network') || 'Error de conexión', 'error');
+            showMessage(window.__('err_network'), 'error');
         }
     }
 
@@ -195,7 +195,7 @@ export class StoreController {
             const idempotencyKey = crypto.randomUUID();
             const result = await this.api.post(ApiRoutes.Store.BuyPerk, { perk_id: perkId, idempotency_key: idempotencyKey });
             if (result && result.success) {
-                showMessage(window.__('msg_perk_purchased')?.replace(':balance', result.new_balance) || '¡Compra realizada con éxito!', 'success');
+                showMessage(window.__('msg_perk_purchased')?.replace(':balance', result.new_balance) || window.__('msg_purchase_success'), 'success');
                 this.updateCoinsDisplay(result.new_balance);
                 const selectedRows = document.querySelectorAll('tr.component-table-row.selected[data-perkid]');
                 selectedRows.forEach(r => r.classList.remove('selected'));
@@ -276,7 +276,7 @@ export class StoreController {
                     coins: purchasedCoins || 0
                 });
             } else {
-                const msgSuccess = (window.__ && window.__('msg_purchase_success')) || '¡Pago completado con éxito!';
+                const msgSuccess = window.__('msg_purchase_success');
                 showMessage(msgSuccess, 'success');
             }
         }

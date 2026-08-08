@@ -1,7 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
+import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { renderSkeleton } from '../../../core/utils/uiUtils.js';
 
 export class SearchController {
@@ -21,7 +21,7 @@ export class SearchController {
         this.contentArea = document.querySelector('[data-ref="dynamic-content-area"]');
         this.title = document.querySelector('[data-ref="search-title"]');
 
-        document.addEventListener('click', this.handleGlobalClickBound);
+        this.bindEvents();
 
         const params = new URLSearchParams(window.location.search);
         const query = params.get('q') || '';
@@ -39,7 +39,6 @@ export class SearchController {
             return;
         }
 
-        
         try {
             if (this.contentArea) {
                 this.contentArea.innerHTML = '<div class="component-grid" data-ref="search-results-grid"></div>';
@@ -81,6 +80,10 @@ export class SearchController {
                 this.contentArea.innerHTML = CardTemplates.emptyState(window.__('err_search_network'), 'wifi_off');
             }
         }
+    }
+
+    bindEvents() {
+        document.addEventListener('click', this.handleGlobalClickBound);
     }
 
     handleGlobalClick(e) {

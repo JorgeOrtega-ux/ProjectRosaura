@@ -247,12 +247,12 @@ export class CanvasSanctionsController {
 
         const password = passwordDialog.data['modal_verify_password'] ? passwordDialog.data['modal_verify_password'].trim() : '';
         if (!password) {
-            showMessage(typeof window.__ === 'function' ? window.__('err_admin_password_required') : 'Debes ingresar tu contraseña', 'error');
+            showMessage(window.__('err_admin_password_required'), 'error');
             return;
         }
 
         if (!formData.suspension_reason) {
-            showMessage(typeof window.__ === 'function' ? window.__('err_select_suspension_reason') : 'Debes seleccionar una razón', 'error');
+            showMessage(window.__('err_select_suspension_reason'), 'error');
             return;
         }
 
@@ -269,10 +269,10 @@ export class CanvasSanctionsController {
 
         const result = await this.api.post(ApiRoutes.Canvases.UpdateChatRestriction, payload, this.abortController.signal);
         if (result.success || result.status === 'success') {
-            showMessage(result.message || 'Sanción actualizada', 'success');
+            showMessage(result.message || window.__('msg_sanction_updated'), 'success');
             this.handlePagination(window.location.href);
         } else {
-            showMessage(result.message || 'Error al actualizar sanción', 'error');
+            showMessage(result.message || window.__('err_sanction_update_failed'), 'error');
         }
     }
 
@@ -284,7 +284,7 @@ export class CanvasSanctionsController {
 
         const password = passwordDialog.data['modal_verify_password'] ? passwordDialog.data['modal_verify_password'].trim() : '';
         if (!password) {
-            showMessage(typeof window.__ === 'function' ? window.__('err_admin_password_required') : 'Debes ingresar tu contraseña', 'error');
+            showMessage(window.__('err_admin_password_required'), 'error');
             return;
         }
 
@@ -297,10 +297,10 @@ export class CanvasSanctionsController {
 
         const result = await this.api.post(ApiRoutes.Canvases.UpdateChatRestriction, payload, this.abortController.signal);
         if (result.success || result.status === 'success') {
-            showMessage(result.message || 'Sanción removida', 'success');
+            showMessage(result.message || window.__('msg_sanction_removed'), 'success');
             this.handlePagination(window.location.href);
         } else {
-            showMessage(result.message || 'Error al remover sanción', 'error');
+            showMessage(result.message || window.__('err_sanction_remove_failed'), 'error');
         }
     }
 

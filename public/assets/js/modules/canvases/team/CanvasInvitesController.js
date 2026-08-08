@@ -1,5 +1,5 @@
-import { ApiService } from '../../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 
 class CanvasInvitesController {
@@ -21,7 +21,7 @@ class CanvasInvitesController {
             this.canvasUuid = this.wrapper.dataset.canvasUuid;
         }
         
-        document.addEventListener('click', this.handleGlobalClickBound);
+        this.bindEvents();
         this.deselectInvite();
     }
 
@@ -29,6 +29,10 @@ class CanvasInvitesController {
         document.removeEventListener('click', this.handleGlobalClickBound);
         this.selectedInviteIds.clear();
         this.isInitialized = false;
+    }
+
+    bindEvents() {
+        document.addEventListener('click', this.handleGlobalClickBound);
     }
 
     handleGlobalClick(e) {
@@ -93,9 +97,9 @@ class CanvasInvitesController {
         if (this.selectedInviteIds.size === 0) return;
         
         const resultDialog = await window.modalSystem.show('confirmAction', {
-            titleKey: 'Revocar invitación',
-            descHtml: `¿Estás seguro de que deseas revocar ${this.selectedInviteIds.size} invitación(es)?`,
-            confirmKey: 'Revocar',
+            titleKey: 'title_revoke_invite',
+            descHtml: window.__('msg_confirm_revoke_invites').replace(':count', this.selectedInviteIds.size),
+            confirmKey: 'btn_revoke',
             confirmClass: 'component-button--danger'
         });
         
@@ -130,7 +134,6 @@ class CanvasInvitesController {
                 showMessage(__('err_invites_revoke').replace(':count', failCount), 'warning');
             }
         } catch (error) {
-            
             showMessage(__('err_connection'), 'error');
         }
     }
@@ -147,7 +150,6 @@ class CanvasInvitesController {
                 navigator.clipboard.writeText(code).then(() => {
                     showMessage(__('msg_code_copied'), 'success');
                 }).catch(err => {
-                    
                     showMessage(__('err_copy_code'), 'error');
                 });
             }

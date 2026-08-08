@@ -5,14 +5,18 @@ export class ManageCookiesController {
     }
 
     init() {
-        document.body.addEventListener('click', this._boundHandleClick);
-        document.body.addEventListener('change', this._boundHandleChange);
+        this.bindEvents();
         this._loadPreferences();
     }
 
     destroy() {
         document.body.removeEventListener('click', this._boundHandleClick);
         document.body.removeEventListener('change', this._boundHandleChange);
+    }
+
+    bindEvents() {
+        document.body.addEventListener('click', this._boundHandleClick);
+        document.body.addEventListener('change', this._boundHandleChange);
     }
 
     _loadPreferences() {
@@ -59,7 +63,6 @@ export class ManageCookiesController {
             
             localStorage.setItem('pr_cookie_consent', JSON.stringify(prefs));
             
-            // Remove cookie banner if it exists in DOM
             const banner = document.querySelector('.component-notice-box--banner');
             if (banner) {
                 banner.remove();

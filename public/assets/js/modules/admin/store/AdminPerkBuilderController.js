@@ -117,7 +117,7 @@ class AdminPerkBuilderController {
         }
 
         if (!name) {
-            showMessage("El nombre o clave de traducción es obligatorio.", "warning");
+            showMessage(window.__("err_name_translation_required"), "warning");
             return;
         }
 
@@ -141,11 +141,11 @@ class AdminPerkBuilderController {
                     this.goBack();
                 }, 1000);
             } else {
-                showMessage(response.message || 'Error al guardar la ventaja', 'error');
+                showMessage(response.message || window.__('err_save_advantage'), 'error');
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                showMessage('Error de conexión: ' + error.message, 'error');
+                showMessage(window.__('err_connection') + ': ' + error.message, 'error');
             }
         } finally {
             restoreButton(btn);

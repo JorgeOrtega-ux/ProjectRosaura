@@ -1,13 +1,13 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
-import { DesignSetup } from './DesignSetup.js';
-import { DesignNetwork } from './DesignNetwork.js';
-import { DesignTemplates } from './templates/DesignTemplates.js';
-import { DesignInteractions } from './DesignInteractions.js';
-import { DesignRender } from './DesignRender.js';
-import { PerksRegistry } from './PerksRegistry.js';
 import { DesignChat } from './DesignChat.js';
+import { DesignInteractions } from './DesignInteractions.js';
+import { DesignNetwork } from './DesignNetwork.js';
+import { DesignRender } from './DesignRender.js';
+import { DesignSetup } from './DesignSetup.js';
+import { PerksRegistry } from './PerksRegistry.js';
 import { soundManager } from './SoundManager.js';
+import { DesignTemplates } from './templates/DesignTemplates.js';
 
 class DesignController {
     constructor() {

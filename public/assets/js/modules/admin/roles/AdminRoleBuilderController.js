@@ -1,13 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { setButtonLoading, restoreButton, showMessage, hexToHsv, hsvToHex, getEventCoords } from '../../../core/utils/uiUtils.js';
-const _t = (key, fallback) => {
-    if (typeof window.__ === 'function') {
-        const trans = window.__(key);
-        if (trans && trans !== key) return trans;
-    }
-    return fallback;
-};
+
 class AdminRoleBuilderController {
     constructor() {
         this.api = new ApiService();
@@ -74,8 +68,8 @@ class AdminRoleBuilderController {
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title" data-ref="blockTitle">${_t()}</h2>
-                            <p class="component-card__description" data-ref="blockDesc">${_t()}</p>
+                            <h2 class="component-card__title" data-ref="blockTitle">${window.__('lbl_empty_canvas')}</h2>
+                            <p class="component-card__description" data-ref="blockDesc">${window.__('lbl_empty_canvas')}</p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--start">
@@ -248,7 +242,7 @@ class AdminRoleBuilderController {
         if (this.isSystemRole) return;
         const input = document.querySelector('[data-ref="roleNameInput"]');
         const display = document.querySelector('[data-ref="display-role-name"]');
-        if (input && display) display.textContent = input.value.trim() || _t();
+        if (input && display) display.textContent = input.value.trim() || window.__('lbl_new_role');
         const viewState = document.querySelector('[data-state="role-name-view"]');
         const editState = document.querySelector('[data-state="role-name-edit"]');
         if (viewState && editState) {
@@ -413,8 +407,8 @@ class AdminRoleBuilderController {
             if (controlsContainer) controlsContainer.classList.add('disabled');
             const titleText = block.querySelector('[data-ref="blockTitle"]');
             const descText = block.querySelector('[data-ref="blockDesc"]');
-            if (titleText) titleText.textContent = _t();
-            if (descText) descText.textContent = _t();
+            if (titleText) titleText.textContent = window.__('lbl_empty_canvas');
+            if (descText) descText.textContent = window.__('canvas_template_desc');
         } else {
             const actualPercentage = percentage !== null ? percentage : 0;
             const pCenter = block.querySelector('[data-ref="percentageCenter"]');
@@ -503,7 +497,7 @@ class AdminRoleBuilderController {
         const roleName = nameInput ? nameInput.value.trim() : '';
         const roleWeight = weightDisplay ? parseInt(weightDisplay.dataset.value, 10) : 1;
         if (!roleName && !this.isSystemRole) {
-            showMessage(_t(), 'error');
+            showMessage(window.__('err_default'), 'error');
             return;
         }
         setButtonLoading(btn);
@@ -522,10 +516,10 @@ class AdminRoleBuilderController {
         if (res.aborted) return;
         restoreButton(btn);
         if (res.success) {
-            showMessage(_t(), 'success');
+            showMessage(window.__('msg_roles_updated'), 'success');
             this.goBack();
         } else {
-            showMessage(_t() + res.message_key, 'error');
+            showMessage(window.__('err_update_canvas') + res.message_key, 'error');
         }
     }
     goBack() {

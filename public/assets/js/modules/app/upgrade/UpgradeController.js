@@ -1,5 +1,5 @@
-import { ApiService } from '../../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
 export class UpgradeController {
@@ -99,10 +99,10 @@ export class UpgradeController {
         const cards = document.querySelectorAll('[data-ref="plan-card"]');
 
         if (window.isYearlyPremium) {
-            if (triggerText) triggerText.textContent = window.__('upgrade_billing_yearly') || 'Anual';
+            if (triggerText) triggerText.textContent = window.__('upgrade_billing_yearly');
             if (triggerIcon) triggerIcon.textContent = 'event_repeat';
         } else {
-            if (triggerText) triggerText.textContent = window.__('upgrade_billing_monthly') || 'Mensual';
+            if (triggerText) triggerText.textContent = window.__('upgrade_billing_monthly');
             if (triggerIcon) triggerIcon.textContent = 'calendar_month';
         }
 

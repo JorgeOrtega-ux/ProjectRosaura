@@ -1,7 +1,7 @@
-import { ApiService } from '../../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
 import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
 class CanvasInvitesGenerateController {
     constructor() {
@@ -29,11 +29,11 @@ class CanvasInvitesGenerateController {
                 this.wrapper.querySelector('[data-ref="invite-endDate-text"]').textContent = display;
             }, () => {
                 this.wrapper.querySelector('[data-ref="hidden-expires-at"]').value = '';
-                this.wrapper.querySelector('[data-ref="invite-endDate-text"]').textContent = 'Sin caducidad';
+                this.wrapper.querySelector('[data-ref="invite-endDate-text"]').textContent = window.__('lbl_no_expiry');
             });
         }
         
-        document.addEventListener('click', this.handleGlobalClickBound);
+        this.bindEvents();
     }
 
     destroy() {
@@ -43,6 +43,10 @@ class CanvasInvitesGenerateController {
             this.calendar = null;
         }
         this.isInitialized = false;
+    }
+
+    bindEvents() {
+        document.addEventListener('click', this.handleGlobalClickBound);
     }
 
     handleGlobalClick(e) {
@@ -111,7 +115,7 @@ class CanvasInvitesGenerateController {
             if (current > max) current = max;
             
             hiddenInput.value = current === 0 ? '' : current;
-            valDisplay.textContent = current === 0 ? 'Sin límite' : current;
+            valDisplay.textContent = current === 0 ? window.__('lbl_no_limit') : current;
             return;
         }
     }
@@ -155,7 +159,6 @@ class CanvasInvitesGenerateController {
                 if (btnSubmit) restoreButton(btnSubmit);
             }
         } catch (error) {
-            
             showMessage(__('err_connection'), 'error');
             if (btnSubmit) restoreButton(btnSubmit);
         }

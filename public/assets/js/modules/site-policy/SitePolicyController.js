@@ -4,11 +4,15 @@ export class SitePolicyController {
     }
 
     init() {
-        document.body.addEventListener('click', this._boundHandleClick);
+        this.bindEvents();
     }
 
     destroy() {
         document.body.removeEventListener('click', this._boundHandleClick);
+    }
+
+    bindEvents() {
+        document.body.addEventListener('click', this._boundHandleClick);
     }
 
     _handleClick(e) {

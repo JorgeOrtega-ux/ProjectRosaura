@@ -28,7 +28,6 @@ class SnapshotViewerController {
         this.showGrid = true;
         this.originalImageUrl = null;
 
-        // Touch handling properties
         this.isPinching = false;
         this.initialPinchDistance = 0;
         this.initialScale = 1;

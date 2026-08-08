@@ -62,7 +62,6 @@ class AdminUserHistoryController {
         this.updateFilterButtonsState();
     }
     resetViewState() {
-        // Nothing to reset, selection state is managed by URL
     }
     async handlePagination(url) {
         const tableContainer = document.querySelector('[data-ref="view-table"]');

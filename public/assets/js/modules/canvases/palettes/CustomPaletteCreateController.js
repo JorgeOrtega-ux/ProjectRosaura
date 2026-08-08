@@ -2,13 +2,7 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { setButtonLoading, restoreButton, showMessage, hexToHsv, hsvToHex, getEventCoords } from '../../../core/utils/uiUtils.js';
 
-const _t = (key, fallback) => {
-    if (typeof window.__ === 'function') {
-        const trans = window.__(key);
-        if (trans && trans !== key) return trans;
-    }
-    return fallback;
-};
+
 
 class CustomPaletteCreateController {
     constructor() {
@@ -82,8 +76,8 @@ class CustomPaletteCreateController {
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title" data-ref="blockTitle">${_t('canvas_palette_color_title', 'Color')}</h2>
-                            <p class="component-card__description" data-ref="blockDesc">${_t('canvas_palette_color_desc', 'Selecciona un color para este bloque.')}</p>
+                            <h2 class="component-card__title" data-ref="blockTitle">${window.__('canvas_palette_color_title')}</h2>
+                            <p class="component-card__description" data-ref="blockDesc">${window.__('canvas_palette_color_desc')}</p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--start">

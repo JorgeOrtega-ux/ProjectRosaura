@@ -1,6 +1,6 @@
-import { CardTemplates } from '../../core/components/CardTemplates.js';
-import { ApiService } from '../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
+import { ApiService } from '../../core/api/ApiServices.js';
+import { CardTemplates } from '../../core/components/CardTemplates.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
 
 export class BillingController {
@@ -117,13 +117,11 @@ export class BillingController {
             statusText = window.__('will_cancel_soon');
         }
 
-        // 1. Plan description
         const planDescEl = this.subscriptionArea.querySelector('[data-ref="sub-plan-desc"]');
         if (planDescEl) {
             planDescEl.textContent = `${tierName} (${statusText})`;
         }
 
-        // 2. Renewal container
         const renewalContainer = this.subscriptionArea.querySelector('[data-ref="sub-renewal-container"]');
         if (renewalContainer) {
             if (data.tier > 0) {
@@ -152,7 +150,6 @@ export class BillingController {
             }
         }
 
-        // 3. Storage section
         const storage = data.storage || { used_mb: 0, max_mb: 20, remaining_mb: 20, used_percentage: 0 };
         const usedMB = storage.used_mb !== undefined ? storage.used_mb : 0;
         const maxMB = storage.max_mb !== undefined ? storage.max_mb : 20;
@@ -166,7 +163,7 @@ export class BillingController {
 
         const percentageEl = this.subscriptionArea.querySelector('[data-ref="sub-storage-percentage"]');
         if (percentageEl) {
-            percentageEl.textContent = `${percentage}% ${window.__('used') || 'usado'}`;
+            percentageEl.textContent = `${percentage}% ${window.__('used')}`;
         }
 
         const progressFill = this.subscriptionArea.querySelector('[data-ref="sub-storage-progress-fill"]');
@@ -174,7 +171,6 @@ export class BillingController {
             progressFill.style.width = `${percentage}%`;
         }
 
-        // 4. Tokens section
         const tokens = data.tokens || { used_tokens: 0, max_tokens: 0, remaining_tokens: 0, used_percentage: 0, reset_in_seconds: 0, has_feature: false };
         const tokensContainer = this.subscriptionArea.querySelector('[data-ref="sub-tokens-container"]');
         const tokensDivider = this.subscriptionArea.querySelector('[data-ref="sub-tokens-divider"]');
@@ -207,7 +203,7 @@ export class BillingController {
 
                 const tokensPercentageEl = tokensContainer.querySelector('[data-ref="sub-tokens-percentage"]');
                 if (tokensPercentageEl) {
-                    tokensPercentageEl.textContent = `${tokPercentage}% ${window.__('used') || 'usado'}`;
+                    tokensPercentageEl.textContent = `${tokPercentage}% ${window.__('used')}`;
                 }
 
                 const tokensProgressFill = tokensContainer.querySelector('[data-ref="sub-tokens-progress-fill"]');
@@ -301,7 +297,7 @@ export class BillingController {
 
             if (response.success) {
                 const msgKey = cancelAtPeriodEnd ? 'renewal_cancelled_success' : 'renewal_reactivated_success';
-                showMessage(window.__(msgKey) || response.message, 'success');
+                showMessage(window.__(msgKey), 'success');
 
                 this.loadSubscriptionStatus();
             } else {

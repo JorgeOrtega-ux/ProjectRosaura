@@ -1,5 +1,5 @@
-import { ApiService } from '../../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton, catchPaginationClick } from '../../../core/utils/uiUtils.js';
 
 class CanvasMembersController {
@@ -194,7 +194,7 @@ class CanvasMembersController {
             this.updateCanvasRolesDropdownText();
         } catch (error) {
             if (btn) restoreButton(btn);
-            showMessage(__('err_connection_role') || 'Error al cargar los roles', 'error');
+            showMessage(__('err_connection_role'), 'error');
         }
     }
 
@@ -358,7 +358,7 @@ class CanvasMembersController {
         if (!dropdownText) return;
         const checkedCheckboxes = document.querySelectorAll('input[name="new_member_roles[]"]:checked');
         if (checkedCheckboxes.length === 0) {
-            dropdownText.textContent = window.__('lbl_select_roles') || 'Seleccionar Roles';
+            dropdownText.textContent = window.__('lbl_select_roles');
         } else {
             const names = Array.from(checkedCheckboxes).map(cb => {
                 const label = cb.closest('label');

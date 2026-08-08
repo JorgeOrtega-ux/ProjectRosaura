@@ -1,5 +1,5 @@
-import { ApiService } from '../../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
 class CanvasRolesController {
@@ -180,7 +180,7 @@ class CanvasRolesController {
                 restoreButton(btn);
             }
         } catch (error) {
-            showMessage('Error de conexión.', "error");
+            showMessage(window.__('err_connection'), 'error');
             restoreButton(btn);
         }
     }

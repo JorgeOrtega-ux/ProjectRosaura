@@ -1,8 +1,8 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { renderSkeleton } from '../../../core/utils/uiUtils.js';
-import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
+import { CardTemplates } from '../../../core/components/CardTemplates.js';
+import { renderSkeleton } from '../../../core/utils/uiUtils.js';
 import { VirtualGridObserver } from '../../../core/utils/VirtualGridObserver.js';
 
 class HomeController {
@@ -168,7 +168,6 @@ class HomeController {
         if (action === 'filterHomeTag') {
             const selectedTag = actionBtn.getAttribute('data-tag') || 'all';
             
-            // Skip if clicking the already-active tag
             if (selectedTag === this.currentTag) return;
             
             document.querySelectorAll('.component-tags-carousel .component-badge').forEach(btn => btn.classList.remove('active'));
@@ -329,18 +328,16 @@ class HomeController {
             grid = container.querySelector('.component-grid');
             if (this.virtualObserver) {
                 this.virtualObserver.disconnect();
-                this.virtualObserver.initObserver(); // Reset observer state
+                this.virtualObserver.initObserver();
             }
         }
         
         const fragment = document.createDocumentFragment();
         
-        // Solo iteramos sobre los canvas que recién llegaron si es load more
         const itemsToRender = isLoadMore ? canvases.slice(this.currentOffset - canvases.length) : canvases;
         
         itemsToRender.forEach(canvas => {
             const wrapper = document.createElement('div');
-            // La clase se añade en observe() internamente
             this.virtualObserver.observe(wrapper, canvas);
             fragment.appendChild(wrapper);
         });

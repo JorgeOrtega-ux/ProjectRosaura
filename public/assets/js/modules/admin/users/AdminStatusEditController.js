@@ -1,7 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 class AdminStatusEditController {
     constructor() {
         this.api = new ApiService();
@@ -255,7 +255,7 @@ class AdminStatusEditController {
     async submitSuspensionUpdate(btn) {
         if (this.state.isSuspended === '1') {
             if (!this.state.suspensionReason) {
-                showMessage(typeof window.__ === 'function' ? window.__('err_select_suspension_reason') : 'Debes seleccionar una razón', 'error'); return;
+                showMessage(window.__('err_select_suspension_reason'), 'error'); return;
             }
             if (this.state.suspendedType === 'temporary' && !this.state.endDate) {
                 showMessage(typeof window.__ === 'function' ? window.__('err_select_end_date') : 'Debes seleccionar una fecha', 'error'); return;
@@ -264,7 +264,7 @@ class AdminStatusEditController {
         const resultDialog = await window.modalSystem.show('verifyPasswordUpdateStatus');
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-        if (!password) { showMessage(typeof window.__ === 'function' ? window.__('err_admin_password_required') : 'Debes ingresar tu contraseña', 'error'); return; }
+        if (!password) { showMessage(window.__('err_admin_password_required'), 'error'); return; }
         setButtonLoading(btn);
         const payload = {
             target_user_id: this.targetUserId,

@@ -1,13 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { setButtonLoading, restoreButton, showMessage, hexToHsv, hsvToHex, getEventCoords } from '../../../core/utils/uiUtils.js';
-const _t = (key, fallback) => {
-    if (typeof window.__ === 'function') {
-        const trans = window.__(key);
-        if (trans && trans !== key) return trans;
-    }
-    return fallback;
-};
+
 class AdminSubscriptionBuilderController {
     constructor() {
         this.api = new ApiService();
@@ -506,10 +500,10 @@ class AdminSubscriptionBuilderController {
                     </div>
                     <div>
                         <div class="component-input-group component-input-group--h34">
-                            <input type="text" class="component-input-field component-input-field--simple b-title" placeholder="Clave de Título (ej. plan_card_canvases)" value="${data.title_key || ''}">
+                            <input type="text" class="component-input-field component-input-field--simple b-title" placeholder="${window.__('placeholder_title_key')}" value="${data.title_key || ''}">
                         </div>
                         <div class="component-input-group component-input-group--h34">
-                            <input type="text" class="component-input-field component-input-field--simple b-desc" placeholder="Clave de Descripción (ej. plan_desc_canvases)" value="${data.desc_key || ''}">
+                            <input type="text" class="component-input-field component-input-field--simple b-desc" placeholder="${window.__('placeholder_desc_key')}" value="${data.desc_key || ''}">
                         </div>
                     </div>
                     <button type="button" class="component-button component-button--icon component-button--h34" data-action="removeBenefit">
@@ -550,7 +544,7 @@ class AdminSubscriptionBuilderController {
             const titleText = block.querySelector('[data-ref="blockTitle"]');
             const descText = block.querySelector('[data-ref="blockDesc"]');
             if (titleText) titleText.textContent = _t('admin_solid_color_title', 'Color Principal');
-            if (descText) descText.textContent = _t('admin_solid_color_desc', 'El color único para esta suscripción.');
+            if (descText) descText.textContent = window.__('admin_solid_color_desc');
         } else {
             const actualPercentage = percentage !== null ? percentage : 0;
             const pCenter = block.querySelector('[data-ref="percentageCenter"]');
@@ -668,7 +662,7 @@ class AdminSubscriptionBuilderController {
         const stripeYearly = document.querySelector('[data-ref="input-stripe-yearly"]')?.value.trim();
         
         if (!tierName || tierLevel === undefined || tierLevel === null) {
-            showMessage(_t('admin_tier_name_level_required', "El nombre de la suscripción y el nivel son obligatorios."), "warning");
+            showMessage(window.__("admin_tier_name_level_required"), "warning");
             return;
         }
 
@@ -679,7 +673,6 @@ class AdminSubscriptionBuilderController {
 
         const featuresPayload = this.extractFeaturesPayload();
         
-        // Check if at least one boolean feature is toggled on OR numeric limits are configured
         const hasFeature = Object.keys(featuresPayload).some(key => {
             if (['price_monthly', 'price_yearly', 'limits'].includes(key)) return false;
             return featuresPayload[key] === true;
@@ -688,7 +681,7 @@ class AdminSubscriptionBuilderController {
         const hasNumericLimits = featuresPayload.limits && Object.values(featuresPayload.limits).some(val => val !== undefined && val !== null && !isNaN(val) && val !== 0);
 
         if (!hasFeature && !hasNumericLimits) {
-            showMessage(_t('admin_tier_feature_required', "Debes habilitar al menos una ventaja o configurar límites numéricos para esta suscripción."), "warning");
+            showMessage(window.__("admin_tier_features_limit_required"), "warning");
             return;
         }
 
@@ -716,7 +709,7 @@ class AdminSubscriptionBuilderController {
             showMessage(res.message, 'success');
             setTimeout(() => this.goBack(), 1500);
         } else {
-            showMessage(res.message || 'Error', 'error');
+            showMessage(res.message || window.__('err_default'), 'error');
         }
     }
 
