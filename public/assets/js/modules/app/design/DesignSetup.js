@@ -353,6 +353,7 @@ export const DesignSetup = {
 
     updateVisibleChunks() {
         if (!this.isProgressive || !this.canvas) return;
+        if (!this.loadedChunks) this.loadedChunks = new Set();
 
         const chunkSize = 512;
         const rect = this.canvas.getBoundingClientRect();

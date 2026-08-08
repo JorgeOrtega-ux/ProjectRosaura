@@ -16,68 +16,8 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             </div>
         </div>
 
-        <!-- Section 1: Color Personalizado y Trigger de Picker -->
-        <div class="component-menu-section-parent" data-ref="active-color-section">
-            <div class="component-menu-top">
-                <div class="component-menu-header-box">
-                    <span class="material-symbols-rounded">brush</span>
-                    <span class="component-menu-header-title"><?php echo __('dt_color_picker') ?: 'Selector de Color'; ?></span>
-                </div>
-            </div>
-            
-            <div class="component-menu-bottom">
-               <div class="component-items-grid" data-ref="custom-colors-container">
-                    <!-- Botón selector de color arcoíris -->
-                    <div class="component-dropdown-wrapper picker-wrapper-disabled" data-ref="recent-picker-dropdown-wrapper">
-                        <button type="button" class="component-color-btn component-color-btn--rainbow" data-action="toggleRecentColorPicker" data-tooltip="<?php echo __('dt_color_picker') ?: 'Selector de Color'; ?>">
-                            <div class="component-color-btn--rainbow-inner">
-                                <span class="material-symbols-rounded">add</span>
-                            </div>
-                        </button>
-                        
-                        <!-- Módulo Dropdown del Color Picker -->
-                        <div class="component-module--dropdown-picker disabled" data-ref="recent-color-picker-dropdown">
-                            <div class="component-color-picker" data-ref="recent-color-picker">
-                                <div class="component-color-picker__sv-area" data-action="dragRecentSV">
-                                    <div class="component-color-picker__sv-bg"></div>
-                                    <div class="component-color-picker__sv-thumb" data-ref="recentSvThumb"></div>
-                                </div>
-                                <div class="component-color-picker__hue-area" data-action="dragRecentHue">
-                                    <div class="component-color-picker__hue-thumb" data-ref="recentHueThumb"></div>
-                                </div>
-                                <div class="component-color-picker__controls">
-                                    <div class="component-input-group component-input-group--h34 component-input-group--color" style="flex: 1;">
-                                        <div class="component-color-swatch component-color-swatch--sm" data-ref="recentHexPreview"></div>
-                                        <input type="text" class="component-input-field component-input-field--mono" data-ref="recentHexInput" value="#FFFFFF">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-               </div>
-            </div>
-        </div>
-
-        <!-- Section 2: Colores Recientes -->
-        <div class="component-menu-section-parent disabled" data-ref="recent-colors-section">
-            <hr class="component-divider">
-            <div class="component-menu-top">
-                <div class="component-menu-header-box">
-                    <span class="material-symbols-rounded">history</span>
-                    <span class="component-menu-header-title"><?php echo __('dt_recent_colors'); ?></span>
-                </div>
-            </div>
-            
-            <div class="component-menu-bottom">
-               <div class="component-items-grid" data-ref="recent-colors-grid">
-                    <!-- Will be populated via JS -->
-               </div>
-            </div>
-        </div>
-
         <!-- Section 3: Colores por Defecto -->
         <div class="component-menu-section-parent">
-            <hr class="component-divider">
             <div class="component-menu-top">
                 <div class="component-menu-header-box">
                     <span class="material-symbols-rounded">color_lens</span>

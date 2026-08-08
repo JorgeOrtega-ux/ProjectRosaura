@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $userPermissions = $_SESSION['user_permissions'] ?? [];
@@ -98,6 +98,12 @@ $translatedName = __('canvas_palette_new');
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
                             <div class="component-group-item">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Añadir colores</h2>
+                                        <p class="component-card__description">Agrega los colores que conformarán tu paleta.</p>
+                                    </div>
+                                </div>
                                 <div class="component-card__actions component-card__actions--end" data-ref="btnAddColorWrapper">
                                     <button type="button" class="component-button component-button--h36" data-ref="btnAddColor" data-action="addColor">
                                         <?php echo __('btn_add_color'); ?>

@@ -195,7 +195,7 @@ class AppViewService {
                 $dbManager = new DatabaseManager();
                 $db = $dbManager->getConnection(DB::CONN_CANVASES);
                 $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, c.is_subscription_locked, 
-                               c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat, c.allow_purchases, c.allow_custom_colors,
+                               c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat, c.allow_purchases,
                                r.is_active as reset_active, r.next_reset_at,
                                rs.is_active as resize_active, rs.next_resize_at, rs.target_size
                         FROM " . DB::TBL_CANVASES . " c
@@ -216,7 +216,7 @@ class AppViewService {
                     $canvasApproval = $canvas['requires_approval'] ?? '0';
                     $canvasAllowChat = $canvas['allow_chat'] ?? '0';
                     $canvasAllowPurchases = $canvas['allow_purchases'] ?? '1';
-                    $canvasAllowCustomColors = $canvas['allow_custom_colors'] ?? '0';
+
                     
                     $canvasCooldownBatch = $canvas['cooldown_pixels_batch'] ?? '5';
                     $canvasCooldownSeconds = $canvas['cooldown_seconds'] ?? '10';
@@ -302,7 +302,6 @@ class AppViewService {
             'canvasApproval' => $canvasApproval,
             'canvasAllowChat' => $canvasAllowChat,
             'canvasAllowPurchases' => $canvasAllowPurchases,
-            'canvasAllowCustomColors' => $canvasAllowCustomColors,
             'canvasCooldownBatch' => $canvasCooldownBatch,
             'canvasCooldownSeconds' => $canvasCooldownSeconds,
             'resetActive' => $resetActive,

@@ -53,30 +53,6 @@ export const DesignInteractions = {
             return; 
         }
 
-        const btnTogglePicker = e.target.closest('[data-action="toggleRecentColorPicker"]');
-        if (btnTogglePicker) {
-            e.preventDefault();
-            e.stopPropagation();
-            this.toggleRecentColorPicker();
-            return;
-        }
-
-        const dropdownPickerInside = e.target.closest('[data-ref="recent-color-picker-dropdown"]');
-        if (dropdownPickerInside) {
-            e.stopPropagation();
-        } else {
-            // Close color picker dropdown if open and clicked outside
-            const pickerDropdown = document.querySelector('[data-ref="recent-color-picker-dropdown"]');
-            if (pickerDropdown && !pickerDropdown.classList.contains('disabled')) {
-                const isClickingOtherColor = e.target.closest('.component-color-btn:not(.component-color-btn--rainbow)');
-                if (isClickingOtherColor) {
-                    pickerDropdown.classList.add('disabled');
-                    pickerDropdown.classList.remove('active');
-                } else {
-                    this.saveRecentColor(true);
-                }
-            }
-        }
 
         const btnPerks = e.target.closest('[data-action="togglePerksInventory"]');
         if (btnPerks) {
@@ -280,7 +256,6 @@ export const DesignInteractions = {
             
             this.updateActiveColorPreview();
             this.syncActiveColorHighlight();
-            this.recordRecentColor(this.currentColor);
             this.requestRender();
             return;
         }
@@ -410,16 +385,6 @@ export const DesignInteractions = {
     },
 
     handleMouseDown(e) {
-        const svArea = e.target.closest('[data-action="dragRecentSV"]');
-        const hueArea = e.target.closest('[data-action="dragRecentHue"]');
-        if (svArea || hueArea) {
-            this.recentDragMode = svArea ? 'sv' : 'hue';
-            this.recentDragArea = svArea || hueArea;
-            this.updateRecentColorFromEvent(e);
-            e.preventDefault();
-            return;
-        }
-
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target) return;
 
@@ -546,12 +511,6 @@ export const DesignInteractions = {
     },
 
     handleMouseMove(e) {
-        if (this.recentDragMode && this.recentDragArea) {
-            this.updateRecentColorFromEvent(e);
-            e.preventDefault();
-            return;
-        }
-
         if ((this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting' || this.interactionMode === 'user_protecting') && this.ownerEraserStep === 1 && this.ownerEraserStart) {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
             if (coords) {
@@ -1448,11 +1407,6 @@ export const DesignInteractions = {
 
         // Se envía el color hexadecimal directamente
         let colorHex = this.currentColor;
-
-        // If the color is a custom picked color, save it to recent colors on first use
-        if (this.customPickedColors && this.customPickedColors.includes(colorHex)) {
-            this.recordRecentColor(colorHex);
-        }
 
         let validPixels = [];
         let hitProtected = false;
@@ -2379,215 +2333,5 @@ export const DesignInteractions = {
         }
     },
 
-    toggleRecentColorPicker() {
-        const pickerDropdown = document.querySelector('[data-ref="recent-color-picker-dropdown"]');
-        const pickerInner = document.querySelector('[data-ref="recent-color-picker"]');
-        if (pickerDropdown) {
-            const isHidden = pickerDropdown.classList.contains('disabled');
-            if (isHidden) {
-                pickerDropdown.classList.remove('disabled');
-                pickerDropdown.classList.add('active');
-                if (pickerInner) pickerInner.classList.remove('disabled');
-                this.initRecentColorPicker();
-            } else {
-                pickerDropdown.classList.add('disabled');
-                pickerDropdown.classList.remove('active');
-            }
-        }
-    },
-
-    initRecentColorPicker() {
-        const picker = document.querySelector('[data-ref="recent-color-picker"]');
-        if (!picker) return;
-        picker.classList.remove('disabled');
-
-        let activeColor = this.currentColor || '#FFFFFF';
-        if (!activeColor.startsWith('#')) activeColor = '#' + activeColor;
-
-        const hsv = hexToHsv(activeColor);
-        picker.dataset.h = hsv.h;
-        picker.dataset.s = hsv.s;
-        picker.dataset.v = hsv.v;
-
-        const hexInput = picker.querySelector('[data-ref="recentHexInput"]');
-        if (hexInput && !hexInput.dataset.bound) {
-            hexInput.dataset.bound = '1';
-            hexInput.addEventListener('input', (e) => {
-                let val = e.target.value.trim();
-                if (!val.startsWith('#')) val = '#' + val;
-                if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-                    const hsvVal = hexToHsv(val);
-                    picker.dataset.h = hsvVal.h;
-                    picker.dataset.s = hsvVal.s;
-                    picker.dataset.v = hsvVal.v;
-                    this.updateRecentPickerUI(false);
-                }
-            });
-            hexInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.saveRecentColor(true);
-                }
-            });
-        }
-
-        this.updateRecentPickerUI();
-    },
-
-    updateRecentPickerUI(updateInput = true) {
-        const picker = document.querySelector('[data-ref="recent-color-picker"]');
-        if (!picker) return;
-
-        let h = Math.max(0, Math.min(360, parseFloat(picker.dataset.h) || 0));
-        let s = Math.max(0, Math.min(100, parseFloat(picker.dataset.s) || 0));
-        let v = Math.max(0, Math.min(100, parseFloat(picker.dataset.v) || 0));
-
-        const hex = hsvToHex(h, s, v);
-        this.recentColorHex = hex;
-
-        const svArea = picker.querySelector('[data-action="dragRecentSV"]');
-        if (svArea) svArea.style.backgroundColor = `hsl(${h}, 100%, 50%)`;
-
-        const svThumb = picker.querySelector('[data-ref="recentSvThumb"]');
-        if (svThumb) {
-            svThumb.style.left = `${s}%`;
-            svThumb.style.top = `${100 - v}%`;
-        }
-
-        const hueThumb = picker.querySelector('[data-ref="recentHueThumb"]');
-        if (hueThumb) {
-            hueThumb.style.left = `${(h / 360) * 100}%`;
-        }
-
-        const hexPreview = picker.querySelector('[data-ref="recentHexPreview"]');
-        if (hexPreview) hexPreview.style.backgroundColor = hex;
-
-        if (updateInput) {
-            const hexInput = picker.querySelector('[data-ref="recentHexInput"]');
-            if (hexInput) hexInput.value = hex;
-        }
-    },
-
-    saveRecentColor(closeDropdown = true) {
-        try {
-            const picker = document.querySelector('[data-ref="recent-color-picker"]');
-            const hexInput = picker ? picker.querySelector('[data-ref="recentHexInput"]') : null;
-            let colorToSave = (hexInput && hexInput.value) ? hexInput.value.trim() : this.recentColorHex;
-
-            if (!colorToSave) return;
-            if (!colorToSave.startsWith('#')) colorToSave = '#' + colorToSave;
-            if (colorToSave.length === 4) {
-                colorToSave = '#' + colorToSave[1] + colorToSave[1] + colorToSave[2] + colorToSave[2] + colorToSave[3] + colorToSave[3];
-            }
-            colorToSave = colorToSave.toUpperCase();
-
-            // 1. Instantly set current color & active preview
-            this.currentColor = colorToSave;
-            if (this.btnColorPalette) {
-                this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
-            }
-            this.updateActiveColorPreview();
-            this.syncActiveColorHighlight();
-
-            // 2. Instantly close picker dropdown if requested
-            if (closeDropdown) {
-                const pickerDropdown = document.querySelector('[data-ref="recent-color-picker-dropdown"]');
-                if (pickerDropdown) {
-                    pickerDropdown.classList.add('disabled');
-                    pickerDropdown.classList.remove('active');
-                }
-            }
-            this.requestRender();
-
-            // 3. Add to custom picked colors in Section 1 (instead of adding directly to Recent colors)
-            this.customPickedColors = [colorToSave];
-            this.renderCustomPickedColors();
-        } catch (e) {
-            console.error('Error saving recent color:', e);
-        }
-    },
-
-    updateRecentColorsLocally(hex) {
-        if (!Array.isArray(this.recentColorsList)) {
-            this.recentColorsList = [];
-        }
-        const formattedHex = hex.toUpperCase();
-        this.recentColorsList = [
-            formattedHex,
-            ...this.recentColorsList.filter(c => c.toUpperCase() !== formattedHex)
-        ].slice(0, 12);
-
-        this.renderRecentColors(this.recentColorsList);
-    },
-
-    recordRecentColor(hex) {
-        if (!this.canvasIntId || !hex) return;
-        if (!hex.startsWith('#')) hex = '#' + hex;
-        if (hex.length === 4) {
-            hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
-        }
-        const formattedHex = hex.toUpperCase();
-
-        // Check if it's already the first item in the local list to avoid duplicates/unnecessary API calls
-        if (this.recentColorsList && this.recentColorsList[0] === formattedHex) {
-            return;
-        }
-
-        // Update local UI immediately for responsiveness
-        this.updateRecentColorsLocally(formattedHex);
-
-        // Queue requests sequentially to avoid race conditions when switching colors rapidly
-        if (!this.recentColorPromiseQueue) {
-            this.recentColorPromiseQueue = Promise.resolve();
-        }
-
-        this.recentColorPromiseQueue = this.recentColorPromiseQueue.then(() => {
-            return this.api.post(ApiRoutes.Canvases.AddRecentColor, {
-                canvas_id: this.canvasIntId,
-                color: formattedHex
-            }).then(response => {
-                if (response && response.success && Array.isArray(response.colors)) {
-                    // Only update and re-render if the response corresponds to our current active color
-                    let currentUpper = this.currentColor ? this.currentColor.toUpperCase() : '';
-                    if (currentUpper && !currentUpper.startsWith('#')) currentUpper = '#' + currentUpper;
-                    if (currentUpper === formattedHex) {
-                        const listsIdentical = Array.isArray(response.colors) && 
-                                               this.recentColorsList && 
-                                               response.colors.length === this.recentColorsList.length && 
-                                               response.colors.every((val, index) => val === this.recentColorsList[index]);
-                        
-                        if (!listsIdentical) {
-                            this.recentColorsList = response.colors;
-                            this.renderRecentColors(response.colors);
-                        }
-                    }
-                }
-            }).catch(e => {
-                console.error('Error recording recent color:', e);
-            });
-        });
-    },
-
-
-    updateRecentColorFromEvent(e) {
-        if (!this.recentDragArea) return;
-        const rect = this.recentDragArea.getBoundingClientRect();
-        const coords = getEventCoords(e);
-
-        let x = Math.max(0, Math.min(coords.clientX - rect.left, rect.width));
-        let y = Math.max(0, Math.min(coords.clientY - rect.top, rect.height));
-
-        const picker = document.querySelector('[data-ref="recent-color-picker"]');
-        if (!picker) return;
-
-        if (this.recentDragMode === 'sv') {
-            picker.dataset.s = (x / rect.width) * 100;
-            picker.dataset.v = 100 - ((y / rect.height) * 100);
-        } else if (this.recentDragMode === 'hue') {
-            picker.dataset.h = (x / rect.width) * 360;
-        }
-
-        this.updateRecentPickerUI();
-    },
 
 }

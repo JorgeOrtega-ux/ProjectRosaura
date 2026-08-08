@@ -1,4 +1,4 @@
-﻿<?php 
+<?php 
 use App\Api\Services\Canvas\CanvasViewService;
 use App\Core\System\SubscriptionPlanConstants;
 
@@ -519,27 +519,7 @@ extract($createData);
                             </label>
                         </div>
                     </div>
-                    <?php $hasCustomColors = SubscriptionPlanConstants::hasFeature($tier, 'custom_colors'); ?>
-                    <hr class="component-divider">
-                    <div class="component-group-item <?php echo !$hasCustomColors ? 'disabled-interaction' : ''; ?>" <?php if(!$hasCustomColors) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro') ?: 'Esta función requiere un plan Pro o superior.') . '" data-position="top"'; ?>>
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">
-                                    <?php echo __('lbl_allow_custom_colors'); ?>
-                                    <?php if(!$hasCustomColors): 
-                                        $lowestColorTier = SubscriptionPlanConstants::getLowestTierNameForFeature('custom_colors');
-                                    ?><span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> <?php echo htmlspecialchars($lowestColorTier ?: 'Pro'); ?></span><?php endif; ?>
-                                </h2>
-                                <p class="component-card__description"><?php echo __('desc_allow_custom_colors'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <label class="component-toggle-switch">
-                                <input type="checkbox" data-ref="val_allow_custom_colors" <?php echo !$hasCustomColors ? 'disabled' : ''; ?>>
-                                <span class="component-toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </div>

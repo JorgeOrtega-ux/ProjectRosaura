@@ -11,12 +11,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             </div>
             
             <div class="component-top-right">
-                <div class="component-actions disabled" data-ref="header-selection-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="downloadReceipt" data-tooltip="<?php echo __('btn_download_receipt'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">download</span>
-                    </button>
-                </div>
-
                 <div class="component-actions active" data-ref="header-default-actions">
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
                         <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="modulePurchaseFilters" data-ref="btn-toggle-filters" data-tooltip="<?php echo __('tooltip_filters'); ?>" data-position="bottom">
@@ -167,7 +161,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 $itemType = $isCoins ? 'coins' : 'subscription';
                                 $itemStatus = ($item['status'] === 'succeeded' || $item['status'] === 'paid') ? 'succeeded' : 'failed';
                             ?>
-                            <tr class="component-table-row" data-action="selectPurchase" data-id="<?php echo htmlspecialchars($item['id'] ?? ''); ?>" data-receipt-url="<?php echo htmlspecialchars($item['receipt_url'] ?? ''); ?>" data-pdf-url="<?php echo htmlspecialchars($item['pdf_url'] ?? ''); ?>" data-type="<?php echo $itemType; ?>" data-status="<?php echo $itemStatus; ?>">
+                            <tr class="component-table-row" data-id="<?php echo htmlspecialchars($item['id'] ?? ''); ?>" data-receipt-url="<?php echo htmlspecialchars($item['receipt_url'] ?? ''); ?>" data-pdf-url="<?php echo htmlspecialchars($item['pdf_url'] ?? ''); ?>" data-type="<?php echo $itemType; ?>" data-status="<?php echo $itemStatus; ?>">
                                 <td>
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded">calendar_month</span>

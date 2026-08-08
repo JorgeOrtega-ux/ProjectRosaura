@@ -48,26 +48,30 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $canvas;
     }
     public function create(array $canvasData): int {
-        $sql = "INSERT INTO " . DB::TBL_CANVASES . " 
-                (uuid, owner_id, name, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, is_official, allow_purchases, allow_chat, allow_custom_colors, tags) 
-                VALUES (:uuid, :owner_id, :name, :privacy, :requires_approval, :size, :palette_id, :max_participants, :cooldown_pixels_batch, :cooldown_seconds, :is_official, :allow_purchases, :allow_chat, :allow_custom_colors, :tags)";
-        
+        $sql = "INSERT INTO " . DB::TBL_CANVASES . "
+            (uuid, owner_id, name, privacy, requires_approval, size, palette_id,
+             max_participants, cooldown_pixels_batch, cooldown_seconds,
+             is_official, allow_purchases, allow_chat, tags)
+            VALUES
+            (:uuid, :owner_id, :name, :privacy, :requires_approval, :size, :palette_id,
+             :max_participants, :cooldown_pixels_batch, :cooldown_seconds,
+             :is_official, :allow_purchases, :allow_chat, :tags)";
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             ':uuid'                  => $canvasData['uuid'],
             ':owner_id'              => $canvasData['owner_id'],
             ':name'                  => $canvasData['name'],
             ':privacy'               => $canvasData['privacy'],
-            ':requires_approval'     => $canvasData['requires_approval'],
+            ':requires_approval'     => $canvasData['requires_approval'] ?? 0,
             ':size'                  => $canvasData['size'],
-            ':palette_id'            => $canvasData['palette_id'],
-            ':max_participants'      => $canvasData['max_participants'],
-            ':cooldown_pixels_batch' => $canvasData['cooldown_pixels_batch'],
-            ':cooldown_seconds'      => $canvasData['cooldown_seconds'],
+            ':palette_id'            => $canvasData['palette_id'] ?? 'default',
+            ':max_participants'      => $canvasData['max_participants'] ?? null,
+            ':cooldown_pixels_batch' => $canvasData['cooldown_pixels_batch'] ?? 1,
+            ':cooldown_seconds'      => $canvasData['cooldown_seconds'] ?? 0,
             ':is_official'           => $canvasData['is_official'] ?? 0,
-            ':allow_purchases'       => $canvasData['allow_purchases'] ?? 1,
+            ':allow_purchases'       => $canvasData['allow_purchases'] ?? 0,
             ':allow_chat'            => $canvasData['allow_chat'] ?? 0,
-            ':allow_custom_colors'   => $canvasData['allow_custom_colors'] ?? 0,
             ':tags'                  => isset($canvasData['tags']) ? json_encode($canvasData['tags']) : null
         ]);
         $id = (int)$this->db->lastInsertId();
@@ -500,7 +504,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     cooldown_seconds = :cooldown_seconds,
                     allow_purchases = :allow_purchases,
                     allow_chat = :allow_chat,
-                    allow_custom_colors = :allow_custom_colors,
                     tags = :tags
                 ";
 
@@ -520,7 +523,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':cooldown_seconds'      => $data['cooldown_seconds'],
             ':allow_purchases'       => $data['allow_purchases'] ?? 1,
             ':allow_chat'            => $data['allow_chat'] ?? 0,
-            ':allow_custom_colors'   => $data['allow_custom_colors'] ?? 0,
             ':tags'                  => isset($data['tags']) ? json_encode($data['tags']) : null,
             ':id'                    => $id
         ];
@@ -1321,75 +1323,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $weight;
     }
 
-    public function getRecentColors(int $userId, int $canvasId): array {
-        if ($this->redisClient) {
-            try {
-                $cached = $this->redisClient->get("canvas:{$canvasId}:recent_colors:{$userId}");
-                if ($cached !== false && $cached !== null) {
-                    return json_decode($cached, true) ?? [];
-                }
-            } catch (\Exception $e) {}
-        }
 
-        $sql = "SELECT colors FROM " . DB::TBL_CANVAS_RECENT_COLORS . " WHERE user_id = :user_id AND canvas_id = :canvas_id LIMIT 1";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            ':user_id' => $userId,
-            ':canvas_id' => $canvasId
-        ]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        $colors = [];
-        if ($row) {
-            $colors = json_decode($row['colors'], true) ?? [];
-        }
-
-        if ($this->redisClient) {
-            try {
-                $this->redisClient->setex("canvas:{$canvasId}:recent_colors:{$userId}", 3600, json_encode($colors));
-            } catch (\Exception $e) {}
-        }
-
-        return $colors;
-    }
-
-    public function saveRecentColors(int $userId, int $canvasId, array $colors): bool {
-        $colorsJson = json_encode($colors);
-        
-        // Write-Behind: Save only to Redis and mark as dirty
-        if ($this->redisClient) {
-            try {
-                $this->redisClient->setex("canvas:{$canvasId}:recent_colors:{$userId}", 3600, $colorsJson);
-                $this->redisClient->sadd("canvas:recent_colors:dirty", "{$canvasId}:{$userId}");
-                return true;
-            } catch (\Exception $e) {
-                // If Redis operation fails, fall back to synchronous MySQL write below
-            }
-        }
-
-        // Fallback: Synchronous write to MySQL
-        return $this->saveRecentColorsDirectly($userId, $canvasId, $colors);
-    }
-
-    public function saveRecentColorsDirectly(int $userId, int $canvasId, array $colors): bool {
-        $sql = "INSERT INTO " . DB::TBL_CANVAS_RECENT_COLORS . " (user_id, canvas_id, colors) 
-                VALUES (:user_id, :canvas_id, :colors)
-                ON DUPLICATE KEY UPDATE colors = :colors_update";
-        $stmt = $this->db->prepare($sql);
-        $colorsJson = json_encode($colors);
-        $success = $stmt->execute([
-            ':user_id' => $userId,
-            ':canvas_id' => $canvasId,
-            ':colors' => $colorsJson,
-            ':colors_update' => $colorsJson
-        ]);
-
-        if ($success && $this->redisClient) {
-            try {
-                $this->redisClient->setex("canvas:{$canvasId}:recent_colors:{$userId}", 3600, $colorsJson);
-            } catch (\Exception $e) {}
-        }
-
-        return $success;
-    }
 }
 ?>

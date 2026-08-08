@@ -559,14 +559,6 @@ class CanvasCoreService {
                 }
             }
 
-            $hasCustomColors = false;
-            if (!$isOfficial) {
-                $hasCustomColors = SubscriptionPlanConstants::hasFeature($tier, 'custom_colors');
-            } else {
-                $hasCustomColors = true;
-            }
-            $allowCustomColors = ($hasCustomColors && $allowCustomColors) ? 1 : 0;
-
             $uuid = Utils::generateUUID();
             $validPalettes = $this->getValidPalettes();
             $paletteId = in_array($paletteId, $validPalettes) ? $paletteId : 'default';
@@ -588,7 +580,6 @@ class CanvasCoreService {
                 'is_official'           => $isOfficial ? 1 : 0,
                 'allow_purchases'       => $allowPurchases,
                 'allow_chat'            => $allowChat,
-                'allow_custom_colors'   => $allowCustomColors,
                 'tags'                  => array_values(array_intersect($tags, [
                     'art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 
                     'community', 'nature', 'scifi', 'fantasy', 'music', 
@@ -781,13 +772,6 @@ class CanvasCoreService {
 
             if (isset($data['allow_chat'])) {
                 $data['allow_chat'] = (int)$data['allow_chat'];
-            }
-
-            if (isset($data['allow_custom_colors'])) {
-                $owner = $canvas['owner_id'] !== null ? $this->userRepository->findById($canvas['owner_id']) : null;
-                $tier = $owner ? ($owner['subscription_tier'] ?? 0) : 3;
-                $hasCustomColors = SubscriptionPlanConstants::hasFeature($tier, 'custom_colors');
-                $data['allow_custom_colors'] = ($hasCustomColors && $data['allow_custom_colors']) ? 1 : 0;
             }
 
             if (isset($data['tags']) && is_array($data['tags'])) {
@@ -1287,32 +1271,5 @@ LUA;
         }
     }
 
-    public function getRecentColors(int $userId, int $canvasId): array {
-        return $this->canvasRepository->getRecentColors($userId, $canvasId);
-    }
 
-    public function addRecentColor(int $userId, int $canvasId, string $color): array {
-        $color = strtoupper(trim($color));
-        if (!preg_match('/^#[0-9A-F]{6}$/', $color)) {
-            return ['success' => false, 'message' => 'Invalid hex color'];
-        }
-
-        $colors = $this->canvasRepository->getRecentColors($userId, $canvasId);
-        
-        $colors = array_filter($colors, function($c) use ($color) {
-            return strtoupper(trim($c)) !== $color;
-        });
-
-        array_unshift($colors, $color);
-
-        if (count($colors) > 12) {
-            $colors = array_slice($colors, 0, 12);
-        }
-
-        $success = $this->canvasRepository->saveRecentColors($userId, $canvasId, $colors);
-        return [
-            'success' => $success,
-            'colors' => $colors
-        ];
-    }
 }
