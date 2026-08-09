@@ -123,17 +123,12 @@ export class StoreController {
             return;
         }
 
-        if (selectedRows.length === 1) {
-            const perkId = selectedRows[0].getAttribute('data-perkid');
-            await this.handleBuyPerk(perkId, btn);
-            return;
-        }
-
         const items = selectedRows.map(r => ({
             perkId: r.getAttribute('data-perkid'),
             name: r.getAttribute('data-name') || window.__('lbl_item'),
             icon: r.getAttribute('data-icon') || 'star',
-            price: parseInt(r.getAttribute('data-price') || '0', 10)
+            price: parseInt(r.getAttribute('data-price') || '0', 10),
+            description: r.getAttribute('data-description') || ''
         }));
         const totalCoins = items.reduce((sum, item) => sum + item.price, 0);
 
@@ -188,6 +183,17 @@ export class StoreController {
 
     async handleBuyPerk(perkId, btn) {
         if (!perkId || btn.dataset.loading === 'true') return;
+
+        const name = btn.getAttribute('data-name') || window.__('lbl_item');
+        const icon = btn.getAttribute('data-icon') || 'star';
+        const price = parseInt(btn.getAttribute('data-price') || '0', 10);
+        const description = btn.getAttribute('data-description') || '';
+
+        const items = [{ perkId, name, icon, price, description }];
+        const totalCoins = price;
+
+        const res = await window.modalSystem.show('confirmBulkPerkPurchaseModal', { items, totalCoins });
+        if (!res || !res.confirmed) return;
 
         setButtonLoading(btn, (window.__('loading')) + '...');
         

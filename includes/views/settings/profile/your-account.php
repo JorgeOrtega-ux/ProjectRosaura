@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Api\Services\Settings\SettingsViewService;
 
 $settingsService = new SettingsViewService();
@@ -149,7 +149,11 @@ extract($accountData);
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--stretch">
-                            <button type="button" class="component-button component-button--h34" data-nav="<?php echo APP_URL; ?>/upgrade"><?php echo __('btn_update_plan'); ?></button>
+                            <?php if ($subscriptionTier >= $maxSubscriptionTier): ?>
+                                <button type="button" class="component-button component-button--h34" data-nav="<?php echo APP_URL; ?>/upgrade"><?php echo __('btn_manage'); ?></button>
+                            <?php else: ?>
+                                <button type="button" class="component-button component-button--h34" data-nav="<?php echo APP_URL; ?>/upgrade"><?php echo __('btn_update_plan'); ?></button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

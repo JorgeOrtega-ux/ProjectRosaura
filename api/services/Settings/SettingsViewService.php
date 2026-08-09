@@ -118,6 +118,7 @@ class SettingsViewService {
             'languages' => $languages,
             'currentLangText' => $currentLangText,
             'subscriptionTier' => $subscriptionTier,
+            'maxSubscriptionTier' => \App\Core\System\SubscriptionPlanConstants::getMaxTierLevel(),
             'subscriptionPlanLabel' => $subscriptionPlanLabel,
             'googleId' => $googleId,
             'isGoogleConnected' => $isGoogleConnected,

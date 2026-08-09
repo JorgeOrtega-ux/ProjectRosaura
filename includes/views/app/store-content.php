@@ -44,7 +44,7 @@ $contentPackages = $viewService->getStoreContentData();
                     </thead>
                     <tbody>
                         <?php foreach ($contentPackages as $pkg): ?>
-                        <tr class="component-table-row clickable" data-action="selectContentPackage" data-perkid="<?= $pkg['id'] ?>" data-price="<?= $pkg['price_coins'] ?>" data-name="<?= htmlspecialchars($pkg['name'], ENT_QUOTES, 'UTF-8') ?>" data-icon="<?= htmlspecialchars($pkg['icon'], ENT_QUOTES, 'UTF-8') ?>">
+                        <tr class="component-table-row clickable" data-action="selectContentPackage" data-perkid="<?= $pkg['id'] ?>" data-price="<?= $pkg['price_coins'] ?>" data-name="<?= htmlspecialchars($pkg['name'], ENT_QUOTES, 'UTF-8') ?>" data-icon="<?= htmlspecialchars($pkg['icon'], ENT_QUOTES, 'UTF-8') ?>" data-description="<?= htmlspecialchars($pkg['description'], ENT_QUOTES, 'UTF-8') ?>">
                             <td>
                                 <div class="td-user-info">
                                     <div class="component-card__icon-container component-card__icon-container--bordered component-card__icon-container--round">

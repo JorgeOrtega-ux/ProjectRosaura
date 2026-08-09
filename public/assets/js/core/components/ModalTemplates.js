@@ -1031,24 +1031,15 @@ export const ModalTemplates = {
 
     confirmUpgradeModal: {
         build: (data = {}) => {
-            const amount = data.amount || '0.00';
-            const currency = (data.currency || 'USD').toUpperCase();
             const isUpgrade = data.isUpgrade || false;
-            const priceText = `${amount} ${currency}`;
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
             const titleStr = __('title_confirm_purchase', []);
-            const totalStr = __('desc_confirm_purchase', [], 'Total a cobrar hoy:');
-            const prorationStr = isUpgrade ? ` (${__('desc_confirm_purchase_proration', [])})` : '';
+            const disclaimerStr = __('upgrade_disclaimer', [], 'Al adquirir, mejorar o cambiar tu plan de suscripción, aceptas nuestros Términos de Servicio y Política de Privacidad. Algunas herramientas y características premium pueden estar sujetas a límites de uso razonable, y su disponibilidad de idiomas, soporte o funciones específicas podría variar según tu país o región.');
             const passwordLabel = __('lbl_account_password', []);
             const btnCancel = __('btn_cancel', []);
             const btnConfirm = __('btn_confirm', []);
 
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <h2 class="component-modal-title">${titleStr}</h2>
-                    <p class="component-modal-desc">${totalStr} <strong>${priceText}</strong>${prorationStr}.</p>
-                </div>
+            const passwordFieldHtml = isUpgrade ? `
                 <div class="component-modal-body">
                     <div class="component-input-group">
                         <input type="password" id="confirmPurchasePasswordInput" data-ref="confirmPurchasePasswordInput" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="current-password">
@@ -1056,6 +1047,15 @@ export const ModalTemplates = {
                         <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
                     </div>
                 </div>
+            ` : '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${titleStr}</h2>
+                    <p class="component-modal-desc">${disclaimerStr}</p>
+                </div>
+                ${passwordFieldHtml}
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
                     <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${btnConfirm}</button>
@@ -1192,7 +1192,6 @@ export const ModalTemplates = {
             const totalCoins = data.totalCoins || 0;
             const formattedTotal = (typeof window.formatNumber === 'function') ? window.formatNumber(totalCoins) : totalCoins;
             
-            // Safe translation helper with optional token replacement fallback
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p) => {
                 let text = k;
                 if (p) {
@@ -1203,7 +1202,7 @@ export const ModalTemplates = {
                 return text;
             });
 
-            // Group duplicate perks to avoid giant scroll heights
+            // Group duplicate perks to show a clean consolidated list
             const grouped = {};
             items.forEach(item => {
                 const perkId = item.perkId;
@@ -1222,51 +1221,49 @@ export const ModalTemplates = {
                 const subtotal = item.price * item.quantity;
                 const formattedPrice = (typeof window.formatNumber === 'function') ? window.formatNumber(item.price) : item.price;
                 const formattedSubtotal = (typeof window.formatNumber === 'function') ? window.formatNumber(subtotal) : subtotal;
+                
+                const descStr = item.quantity > 1 
+                    ? `x${item.quantity} · ${formattedPrice} ${__('coins')} c/u (${formattedSubtotal} ${__('coins')} total)`
+                    : `${formattedPrice} ${__('coins')}`;
+
                 return `
-                    <div class="component-group-item" style="justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-surface-secondary); border: 1px solid var(--border-color); margin-bottom: 6px;">
-                        <div style="display: flex; align-items: center; gap: 10px; text-align: left;">
-                            <div class="component-card__icon-container component-card__icon-container--bordered component-card__icon-container--round" style="width: 32px; height: 32px; flex-shrink: 0; background: var(--bg-surface-primary); display: flex; align-items: center; justify-content: center; margin: 0;">
-                                <span class="material-symbols-rounded" style="font-size: 18px; color: var(--text-secondary);">${item.icon || 'star'}</span>
+                    <div class="component-group-item">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered component-card__icon-container--round">
+                                <span class="material-symbols-rounded">${item.icon || 'star'}</span>
                             </div>
-                            <div style="display: flex; flex-direction: column; gap: 2px;">
-                                <span style="font-weight: 600; font-size: 13px; color: var(--text-primary);">${item.name}</span>
-                                <span style="font-size: 11px; color: var(--text-secondary);">${formattedPrice} ${__('coins')} c/u</span>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                            <div class="component-badge component-badge--sm component-badge--primary" style="margin: 0; padding: 2px 6px;">
-                                <span>x${item.quantity}</span>
-                            </div>
-                            <div class="component-badge component-badge--sm component-badge--warning" style="margin: 0; padding: 2px 6px;">
-                                <span class="material-symbols-rounded" style="font-size: 14px; margin-right: 2px;">toll</span>
-                                <span>${formattedSubtotal}</span>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">${item.name}</h2>
+                                <p class="component-card__description">${descStr}</p>
                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
 
+            const headerIcon = items.length === 1 ? (items[0].icon || 'shopping_bag') : 'shopping_bag';
             const titleText = __('msg_confirm_bulk_purchase_title', { total: formattedTotal });
             const descText = __('msg_confirm_bulk_purchase_desc');
 
+            const isScrollable = Object.keys(grouped).length > 2;
+            const bodyClass = isScrollable 
+                ? 'component-modal-body component-modal-body--scrollable' 
+                : 'component-modal-body';
+
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header" style="padding-bottom: 12px;">
-                    <h2 class="component-modal-title">${titleText}</h2>
-                    <p class="component-modal-desc" style="margin-top: 4px;">
-                        ${descText}
-                    </p>
-                </div>
-                <div class="component-modal-body" style="padding-top: 4px; padding-bottom: 4px;">
-                    <div style="max-height: 180px; overflow-y: auto; padding-right: 4px; border-radius: 8px; border: 1px solid var(--border-color); padding: 8px; background: var(--bg-surface-primary);">
-                        ${rowsHtml}
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered component-card__icon-container--round">
+                        <span class="material-symbols-rounded">${headerIcon}</span>
                     </div>
-                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center; padding-left: 4px; padding-right: 4px;">
-                        <span style="font-weight: 700; font-size: 14px; color: var(--text-primary);">${__('lbl_total')}</span>
-                        <div class="component-badge component-badge--warning" style="font-size: 14px; font-weight: 700; padding: 4px 10px; margin: 0;">
-                            <span class="material-symbols-rounded" style="font-size: 16px; margin-right: 4px;">toll</span>
-                            <span>${formattedTotal} ${__('coins')}</span>
-                        </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${titleText}</h2>
+                        <p class="component-modal-desc">${descText}</p>
+                    </div>
+                </div>
+                <div class="${bodyClass}">
+                    <div class="component-card--grouped" style="margin-top: 8px;">
+                        ${rowsHtml}
                     </div>
                 </div>
                 <div class="component-modal-actions">

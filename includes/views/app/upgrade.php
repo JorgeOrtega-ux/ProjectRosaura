@@ -145,10 +145,10 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
                             </div>
                         <?php endforeach; ?>
                     </div>
-                </div>
 
-                <div class="component-disclaimer">
-                    <?php echo __('upgrade_disclaimer'); ?>
+                    <div class="component-disclaimer">
+                        <?php echo __('upgrade_disclaimer'); ?>
+                    </div>
                 </div>
 
             </div>
