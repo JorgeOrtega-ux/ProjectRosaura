@@ -98,6 +98,22 @@ class CanvasCoreService {
                 return $canvas;
             }, $canvases);
 
+            // Append cache-busting ?v= timestamp from Redis so browsers always reload updated thumbnails
+            try {
+                if (!empty($formattedCanvases) && isset($redis) && $redis) {
+                    $uuids = array_column($formattedCanvases, 'uuid');
+                    $versionKeys = array_map(fn($uuid) => "canvas:{$uuid}:thumbnail_version", $uuids);
+                    $versions = $redis->mGet($versionKeys);
+                    foreach ($formattedCanvases as $i => &$c) {
+                        $v = $versions[$i] ?? null;
+                        if ($v) {
+                            $c['thumbnail_url'] .= '?v=' . $v;
+                        }
+                    }
+                    unset($c);
+                }
+            } catch (\Throwable $e) {}
+
             return ['success' => true, 'data' => $formattedCanvases];
         } catch (Exception $e) {
             Logger::error("Error in getHomeFeed: " . $e->getMessage(), ['user_id' => $currentUserId, 'tag' => $tagFilter]);

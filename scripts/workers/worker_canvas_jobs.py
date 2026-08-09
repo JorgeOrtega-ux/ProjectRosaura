@@ -744,6 +744,19 @@ def thumbnails_thread():
                                 if success:
                                     r.srem("canvases:pending_snapshots", canvas_id)
                                     print(f"[+] Thumbnail/Snapshot processed: canvas_{canvas_id}.png")
+                                    # Invalidate home feed cache so home.php reflects the new thumbnail
+                                    try:
+                                        feed_cache_pattern = "canvases:home:feed:*"
+                                        feed_keys = r.keys(feed_cache_pattern)
+                                        if feed_keys:
+                                            r.delete(*feed_keys)
+                                            print(f"[+] Home feed cache invalidated: {len(feed_keys)} key(s) cleared.")
+                                        # Store thumbnail version timestamp (cache-buster for browser)
+                                        import time as _time
+                                        r.set(f"canvas:{canvas_uuid}:thumbnail_version", int(_time.time()))
+                                        print(f"[+] Thumbnail version timestamp set for canvas_uuid={canvas_uuid}")
+                                    except Exception as cache_err:
+                                        print(f"[!] Could not invalidate home feed cache: {cache_err}")
                             else:
                                 r.srem("canvases:pending_snapshots", canvas_id)
                         else:
