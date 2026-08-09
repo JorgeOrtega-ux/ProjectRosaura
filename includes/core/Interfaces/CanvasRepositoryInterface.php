@@ -6,7 +6,6 @@ interface CanvasRepositoryInterface {
     public function create(array $canvasData): int;
     public function addMember(int $canvasId, int $userId, int $roleId = 1): bool;
     public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null, string $sort = 'newest', int $offset = 0): array;
-    public function getOfficialCanvases(?int $currentUserId = null, string $sort = 'newest', int $limit = 50, int $offset = 0): array;
     public function getUserAndJoinedCanvases(int $userId, int $limit = 50, string $filter = 'all', int $offset = 0): array;
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array;
     public function countUserCanvases(int $ownerId): int;

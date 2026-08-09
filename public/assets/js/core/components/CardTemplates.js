@@ -21,42 +21,18 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const onlinePlayers = parseInt(canvas.online_players || 0, 10);
         const membersCount = parseInt(canvas.members_count || 0, 10);
         const likesCount = parseInt(canvas.favorites_count || 0, 10);
-        const isOfficial = canvas.is_official;
-
-        let badgeHtml = '';
-        if (isOfficial) {
-            badgeHtml = `
-                <div class="component-gallery-badges-container">
-                    <div class="component-badge component-badge--glass">
-                        <span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">person</span>
-                        <span>${formatNumber(onlinePlayers)} ${window.__('online')}</span> 
-                        <span class="component-badge-divider">|</span>
-                        <span class="material-symbols-rounded">group</span>
-                        <span>${formatNumber(membersCount)}</span>
-                        <span class="component-badge-divider">|</span>
-                        <span class="material-symbols-rounded component-text-accent">favorite</span>
-                        <span>${formatNumber(likesCount)}</span>
-                    </div>
-                    <div class="component-badge component-badge--glass">
-                        <span class="material-symbols-rounded">verified</span>
-                        <span>${window.__('official')}</span>
-                    </div>
-                </div>
-            `;
-        } else {
-            badgeHtml = `
-                <div class="component-badge component-badge--glass component-badge--absolute-tr">
-                    <span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">person</span>
-                    <span>${formatNumber(onlinePlayers)} ${window.__('online')}</span> 
-                    <span class="component-badge-divider">|</span>
-                    <span class="material-symbols-rounded">group</span>
-                    <span>${formatNumber(membersCount)}</span>
-                    <span class="component-badge-divider">|</span>
-                    <span class="material-symbols-rounded component-text-accent">favorite</span>
-                    <span>${formatNumber(likesCount)}</span>
-                </div>
-            `;
-        }
+        const badgeHtml = `
+            <div class="component-badge component-badge--glass component-badge--absolute-tr">
+                <span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">person</span>
+                <span>${formatNumber(onlinePlayers)} ${window.__('online')}</span> 
+                <span class="component-badge-divider">|</span>
+                <span class="material-symbols-rounded">group</span>
+                <span>${formatNumber(membersCount)}</span>
+                <span class="component-badge-divider">|</span>
+                <span class="material-symbols-rounded component-text-accent">favorite</span>
+                <span>${formatNumber(likesCount)}</span>
+            </div>
+        `;
         
         let warningOverlay = '';
         

@@ -141,7 +141,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                         <tr>
                             <th><?php echo __('table_header_canvas_name'); ?></th>
                             <th>Rol</th>
-                            <th><?php echo __('table_header_type'); ?></th>
                             <th><?php echo __('table_header_privacy'); ?></th>
                             <th><?php echo __('table_header_size'); ?></th>
                             <th><?php echo __('table_header_limit'); ?></th>
@@ -175,12 +174,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                                 <span><?php echo htmlspecialchars($canvas['user_role_name'] ?? 'Colaborador'); ?></span>
                                             </div>
                                         <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <div class="component-badge component-badge--sm">
-                                            <span class="material-symbols-rounded">category</span>
-                                            <span class="search-target"><?php echo !empty($canvas['is_official']) ? __('canvas_official') : __('canvas_personal'); ?></span>
-                                        </div>
                                     </td>
                                     <td>
                                         <div class="component-badge component-badge--sm">

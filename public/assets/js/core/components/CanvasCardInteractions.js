@@ -580,9 +580,8 @@ export class CanvasCardInteractions {
                     };
                 }
 
-                const isOfficial = parseInt(canvas.is_official, 10) === 1;
                 if (typeEl) {
-                    typeEl.textContent = isOfficial ? 'Lienzo oficial' : 'Lienzo personal';
+                    typeEl.textContent = 'Lienzo personal';
                 }
 
                 if (dimensionsEl) {

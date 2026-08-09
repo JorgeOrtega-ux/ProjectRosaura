@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Api\Services\Canvas\CanvasViewService;
 use App\Core\System\SubscriptionPlanConstants;
 
@@ -87,7 +87,7 @@ $isOfficial = ($canvas['owner_id'] === null);
                                             <div class="component-menu-list component-menu-list--scrollable">
                                                 <?php foreach ($sizesList as $val => $data): 
                                                     $requiredTier = $data['tier'] ?? 0;
-                                                    $isAllowed = $isOfficial ? $canManageOfficial : ($ownerTier >= $requiredTier);
+                                                    $isAllowed = $isOfficial ? false : ($ownerTier >= $requiredTier);
                                                     $disabledClass = $isAllowed ? '' : 'disabled-interaction';
                                                     $action = $isAllowed ? 'selectValue' : '';
                                                     $tierName = SubscriptionPlanConstants::getTierName($requiredTier);
@@ -197,7 +197,7 @@ $isOfficial = ($canvas['owner_id'] === null);
                                                 <div class="component-menu-list component-menu-list--scrollable">
                                                     <?php foreach ($sizesList as $val => $data): 
                                                         $requiredTier = $data['tier'] ?? 0;
-                                                        $isAllowed = $isOfficial ? $canManageOfficial : ($ownerTier >= $requiredTier);
+                                                        $isAllowed = $isOfficial ? false : ($ownerTier >= $requiredTier);
                                                         $disabledClass = $isAllowed ? '' : 'disabled-interaction';
                                                         $action = $isAllowed ? 'selectValue' : '';
                                                         $tierName = SubscriptionPlanConstants::getTierName($requiredTier);

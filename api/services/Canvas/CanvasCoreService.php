@@ -145,9 +145,6 @@ class CanvasCoreService {
         }
     }
 
-    public function getOfficialCanvases(?int $currentUserId = null, int $limit = 50, string $sort = 'newest', int $offset = 0): array {
-        return ['success' => true, 'data' => []];
-    }
 
     public function getMine(?int $userId, int $limit = 50, string $filter = 'all', int $offset = 0): array {
         if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
@@ -466,8 +463,6 @@ class CanvasCoreService {
         string $paletteId = 'default', 
         int $cooldownBatch = 5, 
         int $cooldownSeconds = 10,
-        bool $isOfficial = false,
-        bool $canCreateOfficial = false,
         int $allowPurchases = 1,
         int $allowChat = 0,
         array $tags = [],
@@ -475,14 +470,9 @@ class CanvasCoreService {
         int $allowCustomColors = 0
     ): array {
         try {
-            if ($isOfficial && !$canCreateOfficial) {
-                return ['success' => false, 'message' => __('err_cannot_create_official_canvas')];
-            }
-
-            if (!$isOfficial) {
-                $user = $this->userRepository->findById($userId);
-                $tier = $user['subscription_tier'] ?? 0;
-                $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+            $user = $this->userRepository->findById($userId);
+            $tier = $user['subscription_tier'] ?? 0;
+            $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
 
                 if (method_exists($this->canvasRepository, 'countUserCanvases')) {
                     $currentCanvasCount = $this->canvasRepository->countUserCanvases($userId);
@@ -520,7 +510,6 @@ class CanvasCoreService {
                         'error_code' => 'UPGRADE_REQUIRED'
                     ];
                 }
-            }
 
             $uuid = Utils::generateUUID();
             $validPalettes = $this->getValidPalettes();
@@ -540,7 +529,7 @@ class CanvasCoreService {
                 'max_participants'      => $limit,
                 'cooldown_pixels_batch' => max(1, $cooldownBatch),
                 'cooldown_seconds'      => max(0, $cooldownSeconds),
-                'is_official'           => $isOfficial ? 1 : 0,
+                'is_official'           => 0,
                 'allow_purchases'       => $allowPurchases,
                 'allow_chat'            => $allowChat,
                 'tags'                  => array_values(array_intersect($tags, [
@@ -646,15 +635,13 @@ class CanvasCoreService {
                 }
             }
 
-            if (!$isOfficial) {
-                try {
-                    $dbManager = new DatabaseManager();
-                    $redisCache = new RedisCache();
-                    $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository, $dbManager, $redisCache);
-                    $lockManager->evaluateUserCanvases($userId);
-                } catch (Exception $e) {
-                    Logger::error('Error evaluating canvases on create.', ['error' => $e->getMessage()]);
-                }
+            try {
+                $dbManager = new DatabaseManager();
+                $redisCache = new RedisCache();
+                $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository, $dbManager, $redisCache);
+                $lockManager->evaluateUserCanvases($userId);
+            } catch (Exception $e) {
+                Logger::error('Error evaluating canvases on create.', ['error' => $e->getMessage()]);
             }
 
             try {
@@ -666,9 +653,7 @@ class CanvasCoreService {
                             'cooldown_seconds' => $canvasData['cooldown_seconds']
                         ]);
 
-                        if ($isOfficial) {
-                            $redis->del(CacheConstants::KEY_OFFICIAL_CANVASES);
-                        }
+
                     }
                 }
             } catch (Exception $e) {
@@ -950,9 +935,6 @@ class CanvasCoreService {
                             $redis->del("canvas:{$canvas['id']}:config");
                             $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESET . $canvas['id']);
                             $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESIZE . $canvas['id']);
-                            if ($canvas['owner_id'] === null) {
-                                $redis->del(CacheConstants::KEY_OFFICIAL_CANVASES);
-                            }
                         }
                     }
                 } catch (Exception $e) {}

@@ -47,7 +47,6 @@ class CanvasViewService {
             'maxMembers' => $maxMembers,
             'hasLiveChat' => $hasLiveChat,
             'userPerms' => $userPerms,
-            'canCreateOfficial' => false,
             'canvasSizesList' => $canvasSizesList,
             'defaultSizeKey' => $defaultSizeKey,
             'defaultSizeData' => $defaultSizeData
@@ -575,8 +574,6 @@ class CanvasViewService {
         $cLimit = 10;
         $cAllowPurchases = 1;
         $cAllowChat = 0;
-        $canCreateOfficial = false;
-        $cOfficial = false;
         $cTags = [];
 
         if ($canvasUuid) {
@@ -606,7 +603,6 @@ class CanvasViewService {
                     $cLimit = (int)($canvasData['max_participants'] ?? 10);
                     $cAllowPurchases = (int)($canvasData['allow_purchases'] ?? 1);
                     $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
-                    $cOfficial = (bool)($canvasData['is_official'] ?? 0);
 
                     if (!empty($canvasData['tags'])) {
                         $cTags = json_decode($canvasData['tags'], true) ?? [];
@@ -635,8 +631,6 @@ class CanvasViewService {
             'cLimit' => $cLimit,
             'cAllowPurchases' => $cAllowPurchases,
             'cAllowChat' => $cAllowChat,
-            'canCreateOfficial' => false,
-            'cOfficial' => $cOfficial,
             'cTags' => $cTags
         ];
     }
@@ -872,7 +866,6 @@ class CanvasViewService {
             'canvas' => $canvas,
             'canvasId' => $canvasId,
             'canvasUuid' => $canvasUuid,
-            'canManageOfficial' => $canManageOfficial,
             'ownerTier' => $ownerTier,
             'resizeSettings' => $resizeSettings,
             'sizesList' => $sizesList,

@@ -26,7 +26,6 @@ class CacheConstants {
     public const PREFIX_CANVAS_RESET_LOCK = 'canvas:reset_lock:';
     public const PREFIX_CANVAS_NEXT_RESIZE = 'canvas:next_resize:';
     public const PREFIX_LIVE_SHARE = 'live_share:';
-    public const KEY_OFFICIAL_CANVASES = 'canvases:official_list';
     public const PREFIX_LOCATIONS = 'locations:';
     public const QUEUE_TELEMETRY_API_LATENCY = 'api_latency';
     public const QUEUE_TELEMETRY_PAGEVIEWS   = 'pageviews';
@@ -37,7 +36,6 @@ class CacheConstants {
     public const KEY_SERVER_CONFIG = 'system:server_config';
     public const PREFIX_CHAT_CANVAS_RECENT = 'chat:canvas:recent:';
     public const PREFIX_CANVAS_PUBLIC_PAGE = 'canvases:public:page:';
-    public const PREFIX_CANVAS_OFFICIAL_PAGE = 'canvases:official:page:';
     public const PREFIX_CANVAS_HOME_FEED = 'canvases:home:feed:';
     public const PREFIX_CANVAS_DETAIL = 'canvas:id:';
     public const PREFIX_USER_PROFILE = 'user:profile:';
