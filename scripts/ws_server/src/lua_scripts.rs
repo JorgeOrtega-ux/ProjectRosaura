@@ -1,6 +1,8 @@
 pub const PAINT_PIXEL_LUA: &str = r#"
+local is_owner = ARGV[10] == "1"
+
 local protected_areas_json = redis.call('GET', KEYS[2])
-if protected_areas_json then
+if protected_areas_json and not is_owner then
     local areas = cjson.decode(protected_areas_json)
     local px = tonumber(ARGV[7])
     local py = tonumber(ARGV[8])
@@ -12,7 +14,7 @@ if protected_areas_json then
 end
 
 local canvas_prefix = KEYS[1]:match("^(canvas:[^:]+)")
-if canvas_prefix then
+if canvas_prefix and not is_owner then
     local pixel_offset = math.floor(tonumber(ARGV[1]) / 4)
     local pixel_protected_key = canvas_prefix .. ":protected_pixels:" .. tostring(pixel_offset)
     local protected_by = redis.call('GET', pixel_protected_key)

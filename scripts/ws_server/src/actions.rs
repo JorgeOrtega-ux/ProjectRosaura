@@ -52,19 +52,27 @@ pub async fn get_user_cooldown(state: &AppState, canvas_id: &str, user_id: &str,
     (balance, last_t)
 }
 
-pub async fn check_owner_ratelimit(state: &AppState, canvas_id: &str, user_id: &str) -> bool {
+pub async fn check_owner_ratelimit(state: &AppState, canvas_id: &str, user_id: &str, tool: &str) -> Option<u64> {
     if let Ok(mut c) = state.redis_pool.get().await {
-        let key = format!("canvas:{}:user:{}:owner_ratelimit", canvas_id, user_id);
-        let res: deadpool_redis::redis::RedisResult<Option<String>> = deadpool_redis::redis::cmd("SET")
-            .arg(&key).arg("1").arg("EX").arg(1).arg("NX")
-            .query_async(&mut c).await;
-        match res {
-            Ok(Some(_)) => return true,
-            Ok(None) => return false,
-            Err(_) => return true,
+        let key = format!("canvas:{}:user:{}:owner_ratelimit:{}", canvas_id, user_id, tool);
+        let ttl_ms: i64 = deadpool_redis::redis::cmd("PTTL")
+            .arg(&key)
+            .query_async(&mut c).await.unwrap_or(-2);
+        if ttl_ms > 0 {
+            return Some(ttl_ms as u64);
         }
     }
-    true
+    None
+}
+
+pub async fn set_owner_ratelimit(state: &AppState, canvas_id: &str, user_id: &str, tool: &str, duration_ms: u64) {
+    if duration_ms == 0 { return; }
+    if let Ok(mut c) = state.redis_pool.get().await {
+        let key = format!("canvas:{}:user:{}:owner_ratelimit:{}", canvas_id, user_id, tool);
+        let _: () = deadpool_redis::redis::cmd("SET")
+            .arg(&key).arg("1").arg("PX").arg(duration_ms)
+            .query_async(&mut c).await.unwrap_or(());
+    }
 }
 
 pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str, state: &AppState) {
@@ -219,6 +227,22 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                         "offsets": my_mines_offsets
                     }).to_string();
                     helpers::send_to_client(state, connection_id, &mines_msg).await;
+                }
+
+                if !uid_str.is_empty() && db::check_is_canvas_owner(state, &uid_str, canvas_id).await {
+                    let mut cooldowns = std::collections::HashMap::new();
+                    for tool in &["freeze", "protect", "clear"] {
+                        if let Some(ttl_ms) = check_owner_ratelimit(state, canvas_id, &uid_str, tool).await {
+                            cooldowns.insert(tool.to_string(), ttl_ms);
+                        }
+                    }
+                    if !cooldowns.is_empty() {
+                        let cd_msg = serde_json::json!({
+                            "type": "init_owner_cooldowns",
+                            "cooldowns": cooldowns
+                        }).to_string();
+                        helpers::send_to_client(state, connection_id, &cd_msg).await;
+                    }
                 }
             }
         }
@@ -382,7 +406,15 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         }
         "toggle_freeze" => {
             if uid_str.is_empty() { return; }
-            if !check_owner_ratelimit(state, canvas_id, &uid_str).await { return; }
+            if let Some(ttl_ms) = check_owner_ratelimit(state, canvas_id, &uid_str, "freeze").await {
+                let err_msg = serde_json::json!({
+                    "type": "owner_ratelimit_error",
+                    "cooldown_ms": ttl_ms,
+                    "tool": "freeze"
+                }).to_string();
+                helpers::send_to_client(state, connection_id, &err_msg).await;
+                return;
+            }
             if !db::check_is_canvas_owner(state, &uid_str, canvas_id).await { return; }
             
             let frozen = msg.frozen.unwrap_or(false);
@@ -411,10 +443,20 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 });
                 let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
             }
+
+            set_owner_ratelimit(state, canvas_id, &uid_str, "freeze", 5000).await;
         }
         "protect_area" => {
             if uid_str.is_empty() { return; }
-            if !check_owner_ratelimit(state, canvas_id, &uid_str).await { return; }
+            if let Some(ttl_ms) = check_owner_ratelimit(state, canvas_id, &uid_str, "protect").await {
+                let err_msg = serde_json::json!({
+                    "type": "owner_ratelimit_error",
+                    "cooldown_ms": ttl_ms,
+                    "tool": "protect"
+                }).to_string();
+                helpers::send_to_client(state, connection_id, &err_msg).await;
+                return;
+            }
             if !db::check_is_canvas_owner(state, &uid_str, canvas_id).await { return; }
             
             let x1 = msg.x1.unwrap_or(0);
@@ -426,17 +468,35 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             // Securely load canvas dimensions from DB instead of trusting client input
             let (_, _, _, db_width, db_height, _) = db::get_canvas_config(state, canvas_id).await;
             
-            let min_x = std::cmp::min(x1, x2).max(0);
-            let max_x = std::cmp::max(x1, x2).min(db_width - 1);
-            let min_y = std::cmp::min(y1, y2).max(0);
-            let max_y = std::cmp::max(y1, y2).min(db_height - 1);
-            
-            let mut affected_offsets = Vec::new();
-            for iy in min_y..=max_y {
-                for ix in min_x..=max_x {
-                    affected_offsets.push(iy * db_width + ix);
+            let (affected_offsets, min_x, max_x, min_y, max_y) = if let Some(ref offs) = msg.offsets {
+                if offs.is_empty() { return; }
+                let mut min_x = db_width - 1;
+                let mut max_x = 0;
+                let mut min_y = db_height - 1;
+                let mut max_y = 0;
+                for &off in offs {
+                    let x = (off % db_width).clamp(0, db_width - 1);
+                    let y = (off / db_width).clamp(0, db_height - 1);
+                    if x < min_x { min_x = x; }
+                    if x > max_x { max_x = x; }
+                    if y < min_y { min_y = y; }
+                    if y > max_y { max_y = y; }
                 }
-            }
+                (offs.clone(), min_x, max_x, min_y, max_y)
+            } else {
+                let min_x = std::cmp::min(x1, x2).max(0);
+                let max_x = std::cmp::max(x1, x2).min(db_width - 1);
+                let min_y = std::cmp::min(y1, y2).max(0);
+                let max_y = std::cmp::max(y1, y2).min(db_height - 1);
+                
+                let mut offs = Vec::new();
+                for iy in min_y..=max_y {
+                    for ix in min_x..=max_x {
+                        offs.push(iy * db_width + ix);
+                    }
+                }
+                (offs, min_x, max_x, min_y, max_y)
+            };
             
             let areas_key = format!("canvas:{}:protected_areas", canvas_id);
             
@@ -488,7 +548,8 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 "type": "area_protection_changed",
                 "canvas_id": canvas_id,
                 "x1": min_x, "y1": min_y, "x2": max_x, "y2": max_y,
-                "protect": protect, "width": db_width, "is_owner": true
+                "protect": protect, "width": db_width, "is_owner": true,
+                "offsets": msg.offsets.as_ref()
             }).to_string();
             helpers::broadcast_to_room(state, canvas_id, &b_msg).await;
             
@@ -498,6 +559,10 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 });
                 let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
             }
+
+            let pixel_count = affected_offsets.len() as u64;
+            let cooldown_ms = (1000 + (pixel_count * 5) / 100).min(30000);
+            set_owner_ratelimit(state, canvas_id, &uid_str, "protect", cooldown_ms).await;
         }
         "use_pixel_protection" => {
             if helpers::is_guest(&uid_str) { return; }
@@ -671,7 +736,15 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             let width = msg.width.unwrap_or(64);
 
             if uid_str.is_empty() { return; }
-            if !check_owner_ratelimit(state, canvas_id, &uid_str).await { return; }
+            if let Some(ttl_ms) = check_owner_ratelimit(state, canvas_id, &uid_str, "clear").await {
+                let err_msg = serde_json::json!({
+                    "type": "owner_ratelimit_error",
+                    "cooldown_ms": ttl_ms,
+                    "tool": "clear"
+                }).to_string();
+                helpers::send_to_client(state, connection_id, &err_msg).await;
+                return;
+            }
             if !db::check_is_canvas_owner(state, &uid_str, canvas_id).await { return; }
 
             let min_x = std::cmp::min(x1, x2).max(0);
@@ -748,6 +821,10 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 ("x1", &min_x.to_string()), ("y1", &min_y.to_string()),
                 ("x2", &max_x.to_string()), ("y2", &max_y.to_string())
             ]).await.unwrap_or(());
+
+            let pixel_count = count as u64;
+            let cooldown_ms = (1000 + pixel_count / 100).min(60000);
+            set_owner_ratelimit(state, canvas_id, &uid_str, "clear", cooldown_ms).await;
         }
         "pixel" | "erase_pixel" | "batch_pixels" | "batch_erase_pixels" => {
             if uid_str.is_empty() { return; }
@@ -822,6 +899,9 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             helpers::ensure_canvas_state_loaded(state, canvas_id).await;
             
             let now_t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f64();
+            let is_owner = db::check_is_canvas_owner(state, &uid_str, canvas_id).await;
+            let is_owner_str = if is_owner { "1" } else { "0" };
+            
             let script = deadpool_redis::redis::Script::new(crate::lua_scripts::PAINT_PIXEL_LUA);
             let _ : String = deadpool_redis::redis::cmd("SCRIPT").arg("LOAD").arg(crate::lua_scripts::PAINT_PIXEL_LUA).query_async(&mut *redis_conn).await.unwrap_or_default();
             let hash = script.get_hash();
@@ -851,7 +931,8 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 pipe.cmd("EVALSHA").arg(hash).arg(4)
                     .arg(&keys[0]).arg(&keys[1]).arg(&keys[2]).arg(&keys[3])
                     .arg(&args[0]).arg(&color_bytes).arg(&args[2]).arg(&args[3])
-                    .arg(&args[4]).arg(&args[5]).arg(&args[6]).arg(&args[7]).arg(&args[8]);
+                    .arg(&args[4]).arg(&args[5]).arg(&args[6]).arg(&args[7]).arg(&args[8])
+                    .arg(is_owner_str);
             }
             
             let results: Vec<Vec<String>> = pipe.query_async(&mut redis_conn).await.unwrap_or_default();

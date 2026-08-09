@@ -145,10 +145,12 @@ export class ModalSystem {
             container.appendChild(this.activeOverlay);
 
             requestAnimationFrame(() => {
-                this.activeOverlay.classList.add('active');
+                if (this.activeOverlay) {
+                    this.activeOverlay.classList.add('active');
+                }
 
                 // Init highlight strip for the upgrade modal (default selected column)
-                if (templateName === 'upgradeSubscriptionModal') {
+                if (templateName === 'upgradeSubscriptionModal' && this.activeBox) {
                     requestAnimationFrame(() => {
                         ModalSystem.positionHighlightStrip(this.activeBox);
                     });

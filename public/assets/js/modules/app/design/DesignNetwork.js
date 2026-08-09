@@ -297,22 +297,35 @@ export const DesignNetwork = {
                 else if (data.type === 'area_protection_changed') {
                     if (!this.protectedPixels) this.protectedPixels = new Set();
                     if (!this.ownerProtectedPixels) this.ownerProtectedPixels = new Set();
-                    const w = data.width || this.boardWidth || 64;
-                    const minX = data.x1;
-                    const maxX = data.x2;
-                    const minY = data.y1;
-                    const maxY = data.y2;
                     const protect = data.protect;
 
-                    for (let y = minY; y <= maxY; y++) {
-                        for (let x = minX; x <= maxX; x++) {
-                            const offset = (y * w) + x;
+                    if (data.offsets && Array.isArray(data.offsets)) {
+                        for (const offset of data.offsets) {
                             if (protect) {
                                 this.protectedPixels.add(offset);
                                 this.ownerProtectedPixels.add(offset);
                             } else {
                                 this.protectedPixels.delete(offset);
                                 this.ownerProtectedPixels.delete(offset);
+                            }
+                        }
+                    } else {
+                        const w = data.width || this.boardWidth || 64;
+                        const minX = data.x1;
+                        const maxX = data.x2;
+                        const minY = data.y1;
+                        const maxY = data.y2;
+
+                        for (let y = minY; y <= maxY; y++) {
+                            for (let x = minX; x <= maxX; x++) {
+                                const offset = (y * w) + x;
+                                if (protect) {
+                                    this.protectedPixels.add(offset);
+                                    this.ownerProtectedPixels.add(offset);
+                                } else {
+                                    this.protectedPixels.delete(offset);
+                                    this.ownerProtectedPixels.delete(offset);
+                                }
                             }
                         }
                     }
@@ -359,6 +372,30 @@ export const DesignNetwork = {
                 }
                 else if (data.type === 'canvas_frozen_error') {
                     showMessage(data.message || 'El lienzo está congelado por el administrador', 'warning');
+                }
+                else if (data.type === 'owner_ratelimit_error') {
+                    const secs = (data.cooldown_ms / 1000).toFixed(1);
+                    let toolName = 'Herramienta de dueño';
+                    const tool = data.tool || 'clear';
+                    if (tool === 'freeze') toolName = 'Congelación de lienzo';
+                    else if (tool === 'protect') toolName = 'Protección de zona';
+                    else if (tool === 'clear') toolName = 'Borrador';
+                    
+                    if (!this.ownerCooldowns) this.ownerCooldowns = {};
+                    this.ownerCooldowns[tool] = Date.now() + data.cooldown_ms;
+                    if (typeof this.startOwnerCooldownTimer === 'function') this.startOwnerCooldownTimer();
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+
+                    showMessage(`${toolName} en cooldown. Espera ${secs} segundos.`, 'warning');
+                }
+                else if (data.type === 'init_owner_cooldowns') {
+                    if (!this.ownerCooldowns) this.ownerCooldowns = {};
+                    const now = Date.now();
+                    for (const [tool, ttl_ms] of Object.entries(data.cooldowns || {})) {
+                        this.ownerCooldowns[tool] = now + ttl_ms;
+                    }
+                    if (typeof this.startOwnerCooldownTimer === 'function') this.startOwnerCooldownTimer();
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                 }
                 else if (data.type === 'canvas_locked_resize') {
                     this.handleCanvasLockedResize(data);

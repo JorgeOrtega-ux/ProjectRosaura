@@ -454,14 +454,17 @@ export const DesignInteractions = {
                 const offset = (coords.y * bw) + coords.x;
                 
                 if (this.interactionMode === 'owner_protecting' && (this.ownerEraserStep === 0 || this.ownerEraserStep === 2)) {
-                    if (this.protectedPixels && this.protectedPixels.has(offset)) {
-
-                        window.modalSystem.show('confirmUnprotectAreaModal', { count: 1 }).then(res => {
+                    const hasOffset = (off) => {
+                        if (!this.protectedPixels) return false;
+                        return this.protectedPixels.has(off) || this.protectedPixels.has(String(off));
+                    };
+                    if (hasOffset(offset)) {
+                        const region = this.getContiguousProtectedRegion(coords.x, coords.y);
+                        const count = region.length || 1;
+                        window.modalSystem.show('confirmUnprotectAreaModal', { count }).then(res => {
                             const actStr = (typeof res === 'string') ? res : (res?.action || null);
                             if (actStr === 'unprotect') {
-                                this.ownerEraserBox = { x1: coords.x, y1: coords.y, x2: coords.x, y2: coords.y };
-                                this.ownerEraserStep = 2;
-                                this.executeOwnerProtectArea(false);
+                                this.executeOwnerProtectArea(false, region);
                             }
                         });
 
@@ -2027,6 +2030,11 @@ export const DesignInteractions = {
         }
 
         if (this.isOwner) {
+            const now = Date.now();
+            const clearCooldownLeft = this.ownerCooldowns && this.ownerCooldowns.clear && this.ownerCooldowns.clear > now ? Math.ceil((this.ownerCooldowns.clear - now) / 1000) : 0;
+            const protectCooldownLeft = this.ownerCooldowns && this.ownerCooldowns.protect && this.ownerCooldowns.protect > now ? Math.ceil((this.ownerCooldowns.protect - now) / 1000) : 0;
+            const freezeCooldownLeft = this.ownerCooldowns && this.ownerCooldowns.freeze && this.ownerCooldowns.freeze > now ? Math.ceil((this.ownerCooldowns.freeze - now) / 1000) : 0;
+
             if (this.showOwnerTools || this.interactionMode === 'owner_erasing') {
                 const isToggledOn = (this.interactionMode === 'owner_erasing');
                 const colorClass = isToggledOn ? 'component-text-danger' : '';
@@ -2037,9 +2045,15 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-error)';
                     badgeEl.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
                 }
-                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>${window.__('badge_owner_eraser')}</span>`;
+                if (clearCooldownLeft > 0) {
+                    badgeEl.classList.add('disable-interaction');
+                    badgeEl.innerHTML = `<span class="material-symbols-rounded">cleaning_services</span><span>Borrador (${clearCooldownLeft}s)</span>`;
+                } else {
+                    badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>${window.__('badge_owner_eraser')}</span>`;
+                }
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    if (clearCooldownLeft > 0) return;
                     this.toggleOwnerEraser();
                 });
                 badgesRight.appendChild(badgeEl);
@@ -2055,9 +2069,15 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-warning)';
                     badgeEl.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
                 }
-                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">ac_unit</span><span>${isToggledOn ? (window.__('badge_owner_unfreeze') || 'Descongelar Actividad') : (window.__('badge_owner_freeze') || 'Congelar Actividad')}</span>`;
+                if (freezeCooldownLeft > 0) {
+                    badgeEl.classList.add('disable-interaction');
+                    badgeEl.innerHTML = `<span class="material-symbols-rounded">ac_unit</span><span>Congelar (${freezeCooldownLeft}s)</span>`;
+                } else {
+                    badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">ac_unit</span><span>${isToggledOn ? (window.__('badge_owner_unfreeze') || 'Descongelar Actividad') : (window.__('badge_owner_freeze') || 'Congelar Actividad')}</span>`;
+                }
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    if (freezeCooldownLeft > 0) return;
                     this.toggleOwnerFreeze();
                 });
                 badgesRight.appendChild(badgeEl);
@@ -2073,9 +2093,15 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-success)';
                     badgeEl.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
                 }
-                badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">admin_panel_settings</span><span>${window.__('badge_owner_protect') || 'Protección Administrativa'}</span>`;
+                if (protectCooldownLeft > 0) {
+                    badgeEl.classList.add('disable-interaction');
+                    badgeEl.innerHTML = `<span class="material-symbols-rounded">admin_panel_settings</span><span>Proteger (${protectCooldownLeft}s)</span>`;
+                } else {
+                    badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">admin_panel_settings</span><span>${window.__('badge_owner_protect') || 'Protección Administrativa'}</span>`;
+                }
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    if (protectCooldownLeft > 0) return;
                     this.toggleOwnerProtecting();
                 });
                 badgesRight.appendChild(badgeEl);
@@ -2131,18 +2157,18 @@ export const DesignInteractions = {
     executeOwnerClearArea() {
         if (!this.ownerEraserBox) return;
 
-        // Implement cooldown of 5 seconds
         const now = Date.now();
-        if (this.lastOwnerEraseTime && now - this.lastOwnerEraseTime < 5000) {
-            const secondsLeft = Math.ceil((5000 - (now - this.lastOwnerEraseTime)) / 1000);
+        if (this.ownerCooldowns && this.ownerCooldowns.clear && this.ownerCooldowns.clear > now) {
+            const secondsLeft = Math.ceil((this.ownerCooldowns.clear - now) / 1000);
             if (typeof showMessage === 'function') {
-                showMessage(`Espera ${secondsLeft} segundos antes de usar el borrador de nuevo.`, 'warning');
+                showMessage(`Borrador en cooldown. Espera ${secondsLeft} segundos.`, 'warning');
             }
             return;
         }
-        this.lastOwnerEraseTime = now;
 
         const { x1: minX, y1: minY, x2: maxX, y2: maxY } = this.ownerEraserBox;
+        const count = (maxX - minX + 1) * (maxY - minY + 1);
+        const cooldownMs = Math.min(60000, 1000 + Math.floor(count / 100));
 
         // 2. Broadcast via WebSocket server
         if (this.wsManager) {
@@ -2157,17 +2183,32 @@ export const DesignInteractions = {
             });
         }
 
+        if (!this.ownerCooldowns) this.ownerCooldowns = {};
+        this.ownerCooldowns.clear = Date.now() + cooldownMs;
+        this.startOwnerCooldownTimer();
+
+        this.interactionMode = 'normal';
         this.selectedPixels.clear();
         this.ownerEraserBox = null;
         this.ownerEraserStep = 0;
         this.ownerEraserStart = null;
         this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
         this.requestRender();
         if (typeof showMessage === 'function') showMessage('Zona vaciada con éxito', 'success');
     },
 
     toggleOwnerFreeze() {
         if (!this.isOwner || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        const now = Date.now();
+        if (this.ownerCooldowns && this.ownerCooldowns.freeze && this.ownerCooldowns.freeze > now) {
+            const secondsLeft = Math.ceil((this.ownerCooldowns.freeze - now) / 1000);
+            if (typeof showMessage === 'function') {
+                showMessage(`Congelación de lienzo en cooldown. Espera ${secondsLeft} segundos.`, 'warning');
+            }
+            return;
+        }
 
         const nextFrozen = !this.isFrozen;
         if (this.wsManager) {
@@ -2176,6 +2217,10 @@ export const DesignInteractions = {
                 frozen: nextFrozen
             });
         }
+
+        if (!this.ownerCooldowns) this.ownerCooldowns = {};
+        this.ownerCooldowns.freeze = Date.now() + 5000;
+        this.startOwnerCooldownTimer();
     },
 
     toggleOwnerProtecting() {
@@ -2202,21 +2247,42 @@ export const DesignInteractions = {
         this.requestRender();
     },
 
-    executeOwnerProtectArea(protect = true) {
-        if (!this.ownerEraserBox) return;
+    executeOwnerProtectArea(protect = true, offsets = null) {
+        if (!this.ownerEraserBox && (!offsets || offsets.length === 0)) return;
 
-        const { x1: minX, y1: minY, x2: maxX, y2: maxY } = this.ownerEraserBox;
+        const now = Date.now();
+        if (this.ownerCooldowns && this.ownerCooldowns.protect && this.ownerCooldowns.protect > now) {
+            const secondsLeft = Math.ceil((this.ownerCooldowns.protect - now) / 1000);
+            if (typeof showMessage === 'function') {
+                showMessage(`Protección de zona en cooldown. Espera ${secondsLeft} segundos.`, 'warning');
+            }
+            return;
+        }
+
+        let count = 0;
+        if (offsets && offsets.length > 0) {
+            count = offsets.length;
+        } else if (this.ownerEraserBox) {
+            count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
+        }
+        const cooldownMs = Math.min(30000, 1000 + Math.floor((count * 5) / 100));
 
         if (this.wsManager) {
-            this.wsManager.send({
+            const payload = {
                 type: "protect_area",
-                x1: minX,
-                y1: minY,
-                x2: maxX,
-                y2: maxY,
-                width: this.boardWidth || 64,
                 protect: protect
-            });
+            };
+            if (offsets && offsets.length > 0) {
+                payload.offsets = offsets;
+            } else if (this.ownerEraserBox) {
+                const { x1: minX, y1: minY, x2: maxX, y2: maxY } = this.ownerEraserBox;
+                payload.x1 = minX;
+                payload.y1 = minY;
+                payload.x2 = maxX;
+                payload.y2 = maxY;
+                payload.width = this.boardWidth || 64;
+            }
+            this.wsManager.send(payload);
         }
 
         this.interactionMode = 'normal';
@@ -2333,5 +2399,70 @@ export const DesignInteractions = {
         }
     },
 
+    getContiguousProtectedRegion(startX, startY) {
+        const w = this.boardWidth || 64;
+        const h = this.boardHeight || 64;
+        const startOffset = (startY * w) + startX;
+        
+        const hasOffset = (off) => {
+            if (!this.protectedPixels) return false;
+            return this.protectedPixels.has(off) || this.protectedPixels.has(String(off));
+        };
 
+        if (!hasOffset(startOffset)) {
+            return [];
+        }
+
+        const visited = new Set();
+        const queue = [];
+        
+        queue.push({ x: startX, y: startY, offset: startOffset });
+        visited.add(startOffset);
+
+        let head = 0;
+        while (head < queue.length) {
+            const curr = queue[head++];
+            
+            const neighbors = [
+                { x: curr.x + 1, y: curr.y },
+                { x: curr.x - 1, y: curr.y },
+                { x: curr.x, y: curr.y + 1 },
+                { x: curr.x, y: curr.y - 1 }
+            ];
+
+            for (const n of neighbors) {
+                if (n.x >= 0 && n.x < w && n.y >= 0 && n.y < h) {
+                    const nOffset = (n.y * w) + n.x;
+                    if (hasOffset(nOffset) && !visited.has(nOffset)) {
+                        visited.add(nOffset);
+                        queue.push({ x: n.x, y: n.y, offset: nOffset });
+                    }
+                }
+            }
+        }
+
+        return Array.from(visited);
+    },
+
+    startOwnerCooldownTimer() {
+        if (this.ownerCooldownTimerInterval) return;
+        this.ownerCooldownTimerInterval = setInterval(() => {
+            let active = false;
+            const now = Date.now();
+            if (this.ownerCooldowns) {
+                for (const tool in this.ownerCooldowns) {
+                    if (this.ownerCooldowns[tool] > now) {
+                        active = true;
+                    }
+                }
+            }
+            if (active) {
+                this.updatePerkBadges();
+            } else {
+                clearInterval(this.ownerCooldownTimerInterval);
+                this.ownerCooldownTimerInterval = null;
+                this.updatePerkBadges();
+            }
+        }, 1000);
+    },
 }
