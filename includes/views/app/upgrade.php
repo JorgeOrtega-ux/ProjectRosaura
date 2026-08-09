@@ -49,7 +49,7 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
                             $isPopular = !empty($tier['is_popular']);
                             $tierLevel = (int)$tier['tier_level'];
                             $monthly = number_format((float)($tier['price_monthly'] ?? 0), 2);
-                            $yearly = number_format((float)($tier['price_yearly'] ?? 0) / 12, 2);
+                            $yearly = number_format((float)($tier['price_yearly'] ?? 0), 2);
                             
                             $storageLabel = '200 MB de almacenamiento'; // default placeholder
                             foreach ($rowsToCompare as $row) {
