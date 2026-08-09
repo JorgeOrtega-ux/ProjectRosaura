@@ -1279,6 +1279,30 @@ class AdminServices {
                 $stmtTables = $pdo->query("SHOW TABLES FROM `$dbName`");
                 $schema[$dbName] = $stmtTables->fetchAll(\PDO::FETCH_COLUMN);
             }
+            
+            // Query Cassandra user keyspaces and tables
+            $session = $this->cassandraManager->getSession();
+            if ($session) {
+                try {
+                    $ksRows = $session->query("SELECT keyspace_name FROM system_schema.keyspaces")->asRowsResult();
+                    foreach ($ksRows as $ksRow) {
+                        $ksName = $ksRow['keyspace_name'];
+                        // Skip internal system keyspaces
+                        if (strpos($ksName, 'system') === 0) {
+                            continue;
+                        }
+                        
+                        $tableRows = $session->query("SELECT table_name FROM system_schema.tables WHERE keyspace_name = '$ksName'")->asRowsResult();
+                        $schema[$ksName] = [];
+                        foreach ($tableRows as $tRow) {
+                            $schema[$ksName][] = $tRow['table_name'];
+                        }
+                    }
+                } catch (\Exception $cassandraEx) {
+                    Logger::error("get_backup_schema_cassandra_failed", ["exception" => $cassandraEx->getMessage()]);
+                }
+            }
+            
             return ['success' => true, 'schema' => $schema];
         } catch (\Exception $e) {
             Logger::error("get_backup_schema_failed", ["exception" => $e->getMessage()]);
@@ -1376,7 +1400,14 @@ class AdminServices {
             $redis->expire($jobKey, 3600);
             $redis->setex(CacheConstants::KEY_SYSTEM_RESTORING, 900, '1');
             
-            $payload = json_encode(['job_id' => $jobId, 'type' => 'restore', 'backup_file' => $filename, 'requested_by' => $currentUserId]);
+            $schema = $data['schema'] ?? null;
+            $payload = json_encode([
+                'job_id' => $jobId,
+                'type' => 'restore',
+                'backup_file' => $filename,
+                'schema' => $schema,
+                'requested_by' => $currentUserId
+            ]);
             $redis->rpush(CacheConstants::QUEUE_BACKUP, [$payload]);
 
             return ['success' => true, 'message' => __('admin.restore_queued'), 'job_id' => $jobId];

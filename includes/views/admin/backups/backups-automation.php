@@ -1,15 +1,17 @@
-﻿<?php
+<?php
 use App\Api\Services\Admin\AdminViewService;
 
 $adminService = new AdminViewService();
 $autoData = $adminService->getBackupsAutomationData();
 
-extract($autoData);
-
 $autoEnabled = 0;
 $autoFreq = 24;
 $autoRetention = 5;
 $schemaConfig = [];
+$availableSchema = [];
+
+extract($autoData);
+
 $freqTextMap = [
     1 => __('auto_freq_1h'),
     3 => __('auto_freq_3h'),
@@ -20,7 +22,7 @@ $freqTextMap = [
     168 => __('auto_freq_168h')
 ];
 $currentFreqText = $freqTextMap[$autoFreq] ?? str_replace(':hours', $autoFreq, __('freq_every_x_hours'));
-$availableSchema = [];
+
 $selectedModules = [
     'db' => true,
     'avatars_uploaded' => false,

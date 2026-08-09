@@ -1244,14 +1244,81 @@ class AdminViewService {
     public function getBackupsAutomationData(): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
+        $db = $this->dbManager;
+        $pdo = $db->getConnection(DB::CONN_IDENTITY);
+        $tblServerConfig = DB::TBL_SERVER_CONFIG;
+
+        $autoEnabled = 0;
+        $autoFreq = 24;
+        $autoRetention = 5;
+        $schemaConfig = [];
+
+        try {
+            $stmt = $pdo->query("SELECT auto_backup_enabled, auto_backup_frequency_hours, auto_backup_retention_count, backup_schema_config FROM {$tblServerConfig} WHERE id = 1");
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if ($row) {
+                $autoEnabled = (int)$row['auto_backup_enabled'];
+                $autoFreq = (int)$row['auto_backup_frequency_hours'];
+                $autoRetention = (int)$row['auto_backup_retention_count'];
+                if (!empty($row['backup_schema_config'])) {
+                    $decoded = json_decode($row['backup_schema_config'], true);
+                    if (is_array($decoded)) {
+                        $schemaConfig = $decoded;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            \App\Core\System\Logger::error("getBackupsAutomationData config load error: " . $e->getMessage(), ['exception' => $e]);
+        }
+
+        // Get available schema (MySQL + Cassandra)
+        $availableSchema = [];
+        try {
+            $pdoGlobal = $db->getGlobalConnection();
+            $stmt = $pdoGlobal->query("SHOW DATABASES WHERE `Database` NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys')");
+            $databases = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+            
+            foreach ($databases as $dbName) {
+                $stmtTables = $pdoGlobal->query("SHOW TABLES FROM `$dbName`");
+                $availableSchema[$dbName] = $stmtTables->fetchAll(\PDO::FETCH_COLUMN);
+            }
+            
+            // Query Cassandra keyspaces and tables
+            $session = $this->cassandraManager->getSession();
+            if ($session) {
+                try {
+                    $ksRows = $session->query("SELECT keyspace_name FROM system_schema.keyspaces")->asRowsResult();
+                    foreach ($ksRows as $ksRow) {
+                        $ksName = $ksRow['keyspace_name'];
+                        // Skip internal system keyspaces
+                        if (strpos($ksName, 'system') === 0) {
+                            continue;
+                        }
+                        
+                        $tableRows = $session->query("SELECT table_name FROM system_schema.tables WHERE keyspace_name = '$ksName'")->asRowsResult();
+                        $availableSchema[$ksName] = [];
+                        foreach ($tableRows as $tRow) {
+                            $availableSchema[$ksName][] = $tRow['table_name'];
+                        }
+                    }
+                } catch (\Exception $cassandraEx) {
+                    \App\Core\System\Logger::error("getBackupsAutomationData cassandra schema fetch error: " . $cassandraEx->getMessage());
+                }
+            }
+        } catch (\Throwable $e) {
+            \App\Core\System\Logger::error("getBackupsAutomationData schema fetch error: " . $e->getMessage(), ['exception' => $e]);
+        }
+
         return [
-            'automationConfig' => [
-                'enabled' => false,
-                'frequency' => 'daily'
-            ],
+            'autoEnabled' => $autoEnabled,
+            'autoFreq' => $autoFreq,
+            'autoRetention' => $autoRetention,
+            'schemaConfig' => $schemaConfig,
+            'availableSchema' => $availableSchema,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
     }
+
 
     /**
      * Datos para la creación manual de respaldo (backups/backups-create.php).
@@ -1270,8 +1337,61 @@ class AdminViewService {
     public function getBackupsRestoreData(?string $backupId): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
+        $filename = base64_decode($backupId);
+        if (empty($filename)) {
+            $filename = $backupId;
+        }
+
+        $metaFilename = str_replace('.tar.gz.enc', '.meta.json', $filename);
+        $backupsDir = \ROOT_PATH . '/storage/private/backups';
+        $metaPath = $backupsDir . '/' . $metaFilename;
+
+        $metadata = null;
+        if (file_exists($metaPath)) {
+            $metadata = json_decode(file_get_contents($metaPath), true);
+        }
+
+        // If metadata is null (old backup), load current schema as a fallback
+        if (!$metadata) {
+            $currentSchema = [];
+            try {
+                $db = $this->dbManager;
+                $pdoGlobal = $db->getGlobalConnection();
+                $stmt = $pdoGlobal->query("SHOW DATABASES WHERE `Database` NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys')");
+                $databases = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+                
+                foreach ($databases as $dbName) {
+                    $stmtTables = $pdoGlobal->query("SHOW TABLES FROM `$dbName`");
+                    $currentSchema[$dbName] = $stmtTables->fetchAll(\PDO::FETCH_COLUMN);
+                }
+                
+                $session = $this->cassandraManager->getSession();
+                if ($session) {
+                    $ksRows = $session->query("SELECT keyspace_name FROM system_schema.keyspaces")->asRowsResult();
+                    foreach ($ksRows as $ksRow) {
+                        $ksName = $ksRow['keyspace_name'];
+                        if (strpos($ksName, 'system') === 0) continue;
+                        $tableRows = $session->query("SELECT table_name FROM system_schema.tables WHERE keyspace_name = '$ksName'")->asRowsResult();
+                        $currentSchema[$ksName] = [];
+                        foreach ($tableRows as $tRow) {
+                            $currentSchema[$ksName][] = $tRow['table_name'];
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Ignore errors during schema fallback query
+            }
+            $metadata = [
+                'type' => 'full',
+                'schema' => $currentSchema,
+                'is_fallback' => true
+            ];
+        }
+
         return [
             'backupId' => $backupId,
+            'filename' => $filename,
+            'metadata' => $metadata,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
     }

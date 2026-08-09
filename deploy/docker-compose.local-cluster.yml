@@ -190,6 +190,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db_cassandra:
+        condition: service_healthy
     env_file:
       - ../.env
     networks:
@@ -224,6 +226,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db_cassandra:
+        condition: service_healthy
     env_file:
       - ../.env
     networks:
@@ -246,6 +250,23 @@ services:
     networks:
       - rosaura_local_network
 
+  db_cassandra:
+    image: cassandra:4.1
+    container_name: rosaura_db_cassandra
+    restart: always
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    networks:
+      - rosaura_local_network
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 45s
+
 networks:
   rosaura_local_network:
     driver: bridge
@@ -255,3 +276,4 @@ volumes:
   redis_data:
   typesense_data:
   minio_data:
+  cassandra_data:

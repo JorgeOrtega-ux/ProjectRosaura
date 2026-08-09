@@ -778,6 +778,15 @@ export const ModalTemplates = {
         `
     },
 
+    restoreModalTemplate: {
+        noPadding: true,
+        customClass: 'component-modal-box--restore-container',
+        build: (data) => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            ${data.html}
+        `
+    },
+
     joinLiveShare: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
