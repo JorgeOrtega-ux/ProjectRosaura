@@ -112,7 +112,7 @@ class AdminPerkBuilderController {
         const name = nameInput ? nameInput.value.trim() : '';
         
         if (!perkId) {
-            showMessage("El Identificador de Backend (Perk ID) es obligatorio.", "warning");
+            showMessage(window.__("err_perk_id_required"), "warning");
             return;
         }
 

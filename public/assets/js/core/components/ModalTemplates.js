@@ -1191,29 +1191,82 @@ export const ModalTemplates = {
             const items = data.items || [];
             const totalCoins = data.totalCoins || 0;
             const formattedTotal = (typeof window.formatNumber === 'function') ? window.formatNumber(totalCoins) : totalCoins;
-            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            
+            // Safe translation helper with optional token replacement fallback
+            const __ = (typeof window.__ === 'function') ? window.__ : ((k, p) => {
+                let text = k;
+                if (p) {
+                    for (const [pKey, pValue] of Object.entries(p)) {
+                        text = text.replace(new RegExp(`{${pKey}}`, 'g'), pValue);
+                    }
+                }
+                return text;
+            });
 
-            const badgesHtml = items.map(item => {
+            // Group duplicate perks to avoid giant scroll heights
+            const grouped = {};
+            items.forEach(item => {
+                const perkId = item.perkId;
+                if (!grouped[perkId]) {
+                    grouped[perkId] = {
+                        name: item.name,
+                        icon: item.icon,
+                        price: item.price,
+                        quantity: 0
+                    };
+                }
+                grouped[perkId].quantity++;
+            });
+
+            const rowsHtml = Object.values(grouped).map(item => {
+                const subtotal = item.price * item.quantity;
                 const formattedPrice = (typeof window.formatNumber === 'function') ? window.formatNumber(item.price) : item.price;
+                const formattedSubtotal = (typeof window.formatNumber === 'function') ? window.formatNumber(subtotal) : subtotal;
                 return `
-                    <div class="component-badge component-badge--warning">
-                        <span class="material-symbols-rounded">${item.icon || 'star'}</span>
-                        <span>${item.name} (${formattedPrice} ${__('coins')})</span>
+                    <div class="component-group-item" style="justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 8px; background: var(--bg-surface-secondary); border: 1px solid var(--border-color); margin-bottom: 6px;">
+                        <div style="display: flex; align-items: center; gap: 10px; text-align: left;">
+                            <div class="component-card__icon-container component-card__icon-container--bordered component-card__icon-container--round" style="width: 32px; height: 32px; flex-shrink: 0; background: var(--bg-surface-primary); display: flex; align-items: center; justify-content: center; margin: 0;">
+                                <span class="material-symbols-rounded" style="font-size: 18px; color: var(--text-secondary);">${item.icon || 'star'}</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span style="font-weight: 600; font-size: 13px; color: var(--text-primary);">${item.name}</span>
+                                <span style="font-size: 11px; color: var(--text-secondary);">${formattedPrice} ${__('coins')} c/u</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                            <div class="component-badge component-badge--sm component-badge--primary" style="margin: 0; padding: 2px 6px;">
+                                <span>x${item.quantity}</span>
+                            </div>
+                            <div class="component-badge component-badge--sm component-badge--warning" style="margin: 0; padding: 2px 6px;">
+                                <span class="material-symbols-rounded" style="font-size: 14px; margin-right: 2px;">toll</span>
+                                <span>${formattedSubtotal}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
             }).join('');
 
+            const titleText = __('msg_confirm_bulk_purchase_title', { total: formattedTotal });
+            const descText = __('msg_confirm_bulk_purchase_desc');
+
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <h2 class="component-modal-title">Â¿EstÃ¡s seguro de gastar ${formattedTotal} monedas?</h2>
-                    <p class="component-modal-desc">
-                        EstÃ¡s a punto de adquirir los siguientes elementos para tu cuenta:
+                <div class="component-modal-header" style="padding-bottom: 12px;">
+                    <h2 class="component-modal-title">${titleText}</h2>
+                    <p class="component-modal-desc" style="margin-top: 4px;">
+                        ${descText}
                     </p>
                 </div>
-                <div class="component-modal-body">
-                    <div>
-                        ${badgesHtml}
+                <div class="component-modal-body" style="padding-top: 4px; padding-bottom: 4px;">
+                    <div style="max-height: 180px; overflow-y: auto; padding-right: 4px; border-radius: 8px; border: 1px solid var(--border-color); padding: 8px; background: var(--bg-surface-primary);">
+                        ${rowsHtml}
+                    </div>
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center; padding-left: 4px; padding-right: 4px;">
+                        <span style="font-weight: 700; font-size: 14px; color: var(--text-primary);">${__('lbl_total')}</span>
+                        <div class="component-badge component-badge--warning" style="font-size: 14px; font-weight: 700; padding: 4px 10px; margin: 0;">
+                            <span class="material-symbols-rounded" style="font-size: 16px; margin-right: 4px;">toll</span>
+                            <span>${formattedTotal} ${__('coins')}</span>
+                        </div>
                     </div>
                 </div>
                 <div class="component-modal-actions">

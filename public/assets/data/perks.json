@@ -33,7 +33,7 @@
     "explosion": {
       "style": "missile",
       "duration": 1500,
-      "shake_duration": 800,
+      "shake_duration": 400,
       "flash_duration": 0,
       "screen_shake": true,
       "screen_flash": false
@@ -73,7 +73,7 @@
     "explosion": {
       "style": "medium",
       "duration": 2200,
-      "shake_duration": 1200,
+      "shake_duration": 500,
       "flash_duration": 0,
       "screen_shake": true,
       "screen_flash": false
@@ -113,7 +113,7 @@
     "explosion": {
       "style": "medium",
       "duration": 3000,
-      "shake_duration": 1800,
+      "shake_duration": 2200,
       "flash_duration": 800,
       "screen_shake": true,
       "screen_flash": true
@@ -153,7 +153,7 @@
     "explosion": {
       "style": "nuclear",
       "duration": 6000,
-      "shake_duration": 3500,
+      "shake_duration": 2500,
       "flash_duration": 2000,
       "screen_shake": true,
       "screen_flash": true
@@ -193,7 +193,7 @@
     "explosion": {
       "style": "medium",
       "duration": 2500,
-      "shake_duration": 2500,
+      "shake_duration": 2000,
       "flash_duration": 0,
       "screen_shake": true,
       "screen_flash": false
@@ -233,7 +233,7 @@
     "explosion": {
       "style": "nuclear",
       "duration": 6000,
-      "shake_duration": 4000,
+      "shake_duration": 3000,
       "flash_duration": 2000,
       "screen_shake": true,
       "screen_flash": true
@@ -273,7 +273,7 @@
     "explosion": {
       "style": "blackhole",
       "duration": 6000,
-      "shake_duration": 4000,
+      "shake_duration": 2500,
       "flash_duration": 1800,
       "screen_shake": true,
       "screen_flash": true
@@ -313,7 +313,7 @@
     "explosion": {
       "style": "medium",
       "duration": 2000,
-      "shake_duration": 1000,
+      "shake_duration": 400,
       "flash_duration": 0,
       "screen_shake": true,
       "screen_flash": false
@@ -353,7 +353,7 @@
     "explosion": {
       "style": "nuclear",
       "duration": 5000,
-      "shake_duration": 4000,
+      "shake_duration": 3000,
       "flash_duration": 1500,
       "screen_shake": true,
       "screen_flash": true
@@ -393,7 +393,7 @@
     "explosion": {
       "style": "ion",
       "duration": 2500,
-      "shake_duration": 1500,
+      "shake_duration": 1200,
       "flash_duration": 0,
       "screen_shake": true,
       "screen_flash": false

@@ -176,7 +176,7 @@ export class StoreController {
                 if (result && result.message_key === 'store.insufficient_coins') {
                     showMessage(window.__('err_insufficient_coins'), 'error');
                 } else {
-                    const msg = (result && result.message_key) ? window.__(result.message_key) : 'No se pudo procesar la compra en lote.';
+                    const msg = (result && result.message_key) ? window.__(result.message_key) : window.__('err_bulk_purchase_failed');
                     showMessage(msg, 'error');
                 }
             }
