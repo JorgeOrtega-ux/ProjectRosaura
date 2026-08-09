@@ -7722,35 +7722,56 @@ html.dark-theme .component-skeleton-design-bottom {
 
 .component-card-left-section {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
     min-width: 0;
     max-width: calc(100% - 85px);
+    padding-top: 2px;
 }
 
 .component-radio-circle {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     border: 2px solid var(--text-secondary);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, border-width 0.2s ease, background-color 0.2s ease;
+    background-color: transparent;
+    box-sizing: border-box;
 }
 
+/* Punto central: siempre presente pero invisible, se anima en hover */
+.component-radio-circle::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background-color: var(--text-secondary);
+    border-radius: 50%;
+    display: block;
+    flex-shrink: 0;
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+/* Hover: aparece el punto con animación */
+.component-card--selectable-row:hover:not(.active) .component-radio-circle::after {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Activo: ocultar ::after (el borde de 5px crea el efecto visual) */
 .component-card--selectable-row.active .component-radio-circle {
-    border-color: var(--text-primary);
+    border: 5px solid var(--text-primary);
+    background-color: var(--bg-surface);
 }
 
 .component-card--selectable-row.active .component-radio-circle::after {
-    content: '';
-    width: 10px;
-    height: 10px;
-    background-color: var(--text-primary);
-    border-radius: 50%;
-    display: block;
+    opacity: 0;
+    transform: scale(0);
 }
 
 .component-card-info {
@@ -7814,12 +7835,41 @@ html.dark-theme .component-skeleton-design-bottom {
     flex-direction: column;
     gap: 20px;
     overflow-y: auto;
+    overflow-x: hidden; /* Evita scroll horizontal al resaltar última columna */
+    position: relative;
+}
+
+.component-modal-right .component-table {
+    position: relative;
+    z-index: 1; /* Tabla encima del strip overlay (z-index:0) */
+    width: 100%;
+    padding-right: 28px; /* Espacio para que la ultima columna no tape el borde */
+    box-sizing: border-box;
 }
 
 .component-modal-right .component-table th,
 .component-modal-right .component-table td {
-    border-left: 1px solid transparent;
-    border-right: 1px solid transparent;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color); /* Separadores de fila restaurados */
+}
+
+/* Columnas de tier: centrar contenido */
+.component-modal-right .component-table th:not(:first-child),
+.component-modal-right .component-table td:not(:first-child) {
+    text-align: center;
+}
+
+.component-modal-right .component-table th {
+    background-color: transparent; /* Quitar fondo del th para que el strip se vea */
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+/* Última fila: sin borde inferior */
+.component-modal-right .component-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
 .component-modal-right .component-table .check-icon,
@@ -7827,12 +7877,28 @@ html.dark-theme .component-skeleton-design-bottom {
     font-size: 14px !important;
 }
 
-/* Highlight column effect for selected plan */
+/* Highlight column cells — solo quitan bordes laterales y superior (el strip los pone) */
+/* El border-bottom SE CONSERVA para que las lineas de fila sean visibles */
 .component-table th.highlight-col,
 .component-table td.highlight-col {
-    background-color: var(--bg-hover-light) !important;
-    border-left: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
+    background-color: transparent !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+}
+
+/* Overlay strip: solo marco de borde, fondo transparente — la tabla se ve a traves */
+.modal-highlight-strip {
+    position: absolute;
+    bottom: 0;
+    background-color: transparent;
+    border-left: 2px solid var(--text-primary);
+    border-right: 2px solid var(--text-primary);
+    border-top: 2px solid var(--text-primary);
+    border-radius: 10px 10px 0 0;
+    pointer-events: none;
+    z-index: 0;
+    transition: left 0.25s ease, width 0.25s ease, top 0.25s ease;
 }
 
 /* Responsive */

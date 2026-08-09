@@ -255,11 +255,18 @@ class DesignController {
                 liveShareMenuBtn.removeAttribute('data-module-target');
                 liveShareMenuBtn.removeAttribute('data-menu-target');
 
+                // Determinar el tier mínimo requerido para live_share desde APP_TIERS
+                let liveShareMinTier = 1;
+                if (window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+                    const liveShareTier = window.APP_TIERS.find(t => t.feat_live_share && parseInt(t.tier_level, 10) > 0);
+                    if (liveShareTier) liveShareMinTier = parseInt(liveShareTier.tier_level, 10);
+                }
+
                 liveShareMenuBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     if (window.modalSystem && typeof window.modalSystem.show === 'function') {
-                        window.modalSystem.show('upgradeSubscriptionModal');
+                        window.modalSystem.show('upgradeSubscriptionModal', { requiredTier: liveShareMinTier });
                     } else {
                         window.location.href = (window.AppBasePath || '') + '/upgrade';
                     }

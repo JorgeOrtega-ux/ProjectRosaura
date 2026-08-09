@@ -44,7 +44,13 @@ export const DesignTemplates = {
 
             if (btnToggleLiveBroadcast.getAttribute('data-requires-premium') === 'true') {
                 if (window.modalSystem && typeof window.modalSystem.show === 'function') {
-                    window.modalSystem.show('upgradeSubscriptionModal');
+                    // Leer el tier requerido del atributo o inferirlo de APP_TIERS
+                    let liveShareMinTier = parseInt(btnToggleLiveBroadcast.getAttribute('data-required-tier'), 10) || 1;
+                    if (!btnToggleLiveBroadcast.hasAttribute('data-required-tier') && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+                        const liveShareTier = window.APP_TIERS.find(t => t.feat_live_share && parseInt(t.tier_level, 10) > 0);
+                        if (liveShareTier) liveShareMinTier = parseInt(liveShareTier.tier_level, 10);
+                    }
+                    window.modalSystem.show('upgradeSubscriptionModal', { requiredTier: liveShareMinTier });
                 } else {
                     window.location.href = (window.AppBasePath || '') + '/upgrade';
                 }

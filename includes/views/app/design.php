@@ -98,7 +98,11 @@ extract($designData);
                     
                     <div class="component-divider-vertical" data-ref="main-actions-divider"></div>
 
-                    <button class="component-button component-button--icon component-button--h40 <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'component-button--premium premium-locked' : 'disabled'; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom" <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'data-requires-premium="true"' : ''; ?>>
+                    <?php
+                        $liveTierMin = \App\Core\System\SubscriptionPlanConstants::getLowestTierForFeature('live_share');
+                        $liveTierLevel = $liveTierMin ? (int)$liveTierMin['tier_level'] : 1;
+                    ?>
+                    <button class="component-button component-button--icon component-button--h40 <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'component-button--premium premium-locked' : 'disabled'; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom" <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'data-requires-premium="true" data-required-tier="' . $liveTierLevel . '"' : ''; ?>>
                         <span class="material-symbols-rounded">stream</span>
                     </button>
                     
@@ -147,7 +151,11 @@ extract($designData);
                 <button class="component-button component-button--icon component-button--h24" data-action="rotateTemplate" data-ref="btn-template-rotate" data-tooltip="<?php echo __('tooltip_rotate_template'); ?> [R]" data-position="top">
                     <span class="material-symbols-rounded">rotate_right</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h24 <?php echo (!isset($canInjectTemplate) || !$canInjectTemplate) ? 'component-button--premium premium-locked' : ''; ?>" data-action="injectTemplate" data-ref="btn-template-inject" data-tooltip="<?php echo __('tooltip_inject_template'); ?> [B]" data-position="top">
+                <?php
+                    $injectTierMin = \App\Core\System\SubscriptionPlanConstants::getLowestTierForFeature('inject_templates');
+                    $injectTierLevel = $injectTierMin ? (int)$injectTierMin['tier_level'] : 1;
+                ?>
+                <button class="component-button component-button--icon component-button--h24 <?php echo (!isset($canInjectTemplate) || !$canInjectTemplate) ? 'component-button--premium premium-locked' : ''; ?>" data-action="injectTemplate" data-ref="btn-template-inject" data-tooltip="<?php echo __('tooltip_inject_template'); ?> [B]" data-position="top" <?php echo (!isset($canInjectTemplate) || !$canInjectTemplate) ? 'data-required-tier="' . $injectTierLevel . '"' : ''; ?>>
                     <span class="material-symbols-rounded">brush</span>
                 </button>
                 <button class="component-button component-button--icon component-button--h24" data-action="deleteTemplate" data-ref="btn-template-delete" data-tooltip="<?php echo __('tooltip_remove_template'); ?> [Supr]" data-position="top">

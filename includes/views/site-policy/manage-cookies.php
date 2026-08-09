@@ -1,4 +1,4 @@
-﻿<div class="view-content" data-ref="manage-cookies-wrapper">
+<div class="view-content" data-ref="manage-cookies-wrapper">
     <div class="component-top">
         <div class="component-top-left">
             <h1 class="component-top-title">Administrar cookies</h1>
@@ -15,7 +15,7 @@
                 </div>
 
                 <div class="component-card--grouped component-accordion component-mb-3">
-                    <div class="component-group-item component-accordion-header">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">security</span>
@@ -72,7 +72,7 @@
                 </div>
 
                 <div class="component-card--grouped component-accordion component-mb-3">
-                    <div class="component-group-item component-accordion-header">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">palette</span>
@@ -83,7 +83,7 @@
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <div>
+                            <div data-action="preventAccordion">
                                 <label class="component-toggle-switch">
                                     <input type="checkbox" name="cookie_func" id="cookie_func" checked>
                                     <span class="component-toggle-slider"></span>
@@ -117,7 +117,7 @@
                 </div>
 
                 <div class="component-card--grouped component-accordion component-mb-3">
-                    <div class="component-group-item component-accordion-header">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">monitoring</span>
@@ -128,7 +128,7 @@
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <div>
+                            <div data-action="preventAccordion">
                                 <label class="component-toggle-switch">
                                     <input type="checkbox" name="cookie_perf" id="cookie_perf" checked>
                                     <span class="component-toggle-slider"></span>

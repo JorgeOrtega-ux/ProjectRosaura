@@ -80,7 +80,8 @@ export class MainController {
                 e.stopPropagation();
                 
                 if (window.modalSystem && typeof window.modalSystem.show === 'function') {
-                    window.modalSystem.show('upgradeSubscriptionModal');
+                    const requiredTier = parseInt(premiumLockedBtn.getAttribute('data-required-tier'), 10) || 1;
+                    window.modalSystem.show('upgradeSubscriptionModal', { requiredTier });
                 } else {
                     const basePath = window.AppBasePath || '';
                     if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
@@ -391,9 +392,10 @@ export class MainController {
                 planCard.classList.add('active');
                 
                 const submitBtn = modal.querySelector('[data-action="confirmModalUpgrade"]');
-                const tierVal = planCard.getAttribute('data-tier');
+                const tierVal = parseInt(planCard.getAttribute('data-tier'), 10);
                 if (submitBtn) {
                     submitBtn.setAttribute('data-selected-tier', tierVal);
+                    this._updateUpgradeSubmitBtn(submitBtn, tierVal);
                 }
 
                 // Highlight corresponding column in the comparative table
@@ -403,6 +405,15 @@ export class MainController {
                         cell.classList.add('highlight-col');
                     }
                 });
+
+                // Reposicionar el strip overlay al nuevo tier seleccionado
+                requestAnimationFrame(() => {
+                    if (window.modalSystem && window.modalSystem.activeBox) {
+                        const ModalSystem = window.modalSystem.constructor;
+                        ModalSystem.positionHighlightStrip(window.modalSystem.activeBox);
+                    }
+                });
+
             }
             return;
         }
@@ -500,6 +511,10 @@ export class MainController {
             return;
         }
 
+        // Si el usuario ya tiene este plan, no hacer nada
+        const userTier = parseInt(window.appUserTier || 0, 10);
+        if (userTier >= tierVal) return;
+
         setButtonLoading(btn);
 
         try {
@@ -518,6 +533,36 @@ export class MainController {
             restoreButton(btn);
             showMessage('Error de conexión', 'error');
         }
+    }
+
+    /**
+     * Actualiza el botón de compra del modal de upgrade.
+     * Sigue el mismo patrón que upgrade.php:
+     * - Si el usuario ya tiene ese plan → botón "Tu plan actual" con check_circle (disabled-interaction).
+     * - Si no → botón normal "Continuar con la compra" / "Confirmar pago".
+     * @param {HTMLElement} btn  - El botón actual [data-action="confirmModalUpgrade"]
+     * @param {number}      tier - El tier_level de la card seleccionada
+     */
+    _updateUpgradeSubmitBtn(btn, tier) {
+        const userTier     = parseInt(window.appUserTier || 0, 10);
+        const alreadyOwned = userTier >= tier;
+
+        let newHtml;
+        if (alreadyOwned) {
+            newHtml = `<button class="component-button component-button--dark component-button--rounded-pill component-button--h40 component-modal-submit-btn disabled-interaction" data-action="confirmModalUpgrade" data-selected-tier="${tier}">
+                    <span class="material-symbols-rounded">check_circle</span>
+                    <span>${window.__('plan_btn_current') || 'Tu plan actual'}</span>
+                </button>`;
+        } else {
+            newHtml = `<button class="component-button component-button--dark component-button--rounded-pill component-button--hover-text component-button--h40 component-modal-submit-btn" data-action="confirmModalUpgrade" data-selected-tier="${tier}">
+                    <span class="btn-default-text">${window.__('btn_continue_purchase') || 'Continuar con la compra'}</span>
+                    <span class="btn-hover-text">${window.__('btn_confirm_payment') || 'Confirmar pago'}</span>
+                </button>`;
+        }
+
+        // Reemplazar el botón en el DOM conservando su posición en el flex parent
+        btn.insertAdjacentHTML('afterend', newHtml);
+        btn.remove();
     }
 
     handleDocumentChange(e) {

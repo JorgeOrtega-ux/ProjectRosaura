@@ -1,84 +1,43 @@
-import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
+import { ApiRoutes }           from '../../../core/api/ApiRoutes.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { BaseListController }   from '../../../core/BaseListController.js';
+import { applySelectableTable } from '../../../core/mixins/SelectableTableMixin.js';
 
-class AdminSubscriptionsController {
+function _t(key, fallback = '') {
+    return typeof window.__ === 'function' ? window.__(key) : fallback;
+}
+
+class AdminSubscriptionsController extends BaseListController {
     constructor() {
-        this.api = new ApiService();
-        this.abortController = null;
-        this.basePath = window.AppBasePath || '';
-        this.isInitialized = false; 
+        super();
         this.selectedTierId = null;
-        this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
-        this.handlePaginationClickBound = this.handlePaginationClick.bind(this);
-        this.handleGlobalInputBound = this.handleGlobalInput.bind(this);
-        this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
-        this.filterTimeout = null;
-        this.applyAllFilters = debounce(this.executeServerFilters.bind(this), 400);
     }
-    init() {
-        if (this.isInitialized) return;
-        this.isInitialized = true;
-        this.abortController = new AbortController();
-        this.bindEvents();
-    }
-    destroy() {
-        if (!this.isInitialized) return;
-        if (this.abortController) this.abortController.abort();
-        document.removeEventListener('click', this.handleGlobalClickBound);
-        document.removeEventListener('input', this.handleGlobalInputBound);
-        window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
-        this.selectedTierId = null;
-        this.isInitialized = false;
-    }
-    bindEvents() {
-        document.addEventListener('click', this.handlePaginationClickBound, true);
-        document.addEventListener('click', this.handleGlobalClickBound);
-        document.addEventListener('input', this.handleGlobalInputBound);
-        window.addEventListener('viewLoaded', this.handleViewLoadedBound);
-    }
-    handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/subscriptions') && !e.detail.url.includes('/admin/subscription-')) {
-            this.initializeFiltersFromURL();
-        }
-    }
-    initializeFiltersFromURL() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const searchInput = document.querySelector('[data-ref="tier-search-input"]');
-        if (searchInput) searchInput.value = urlParams.get('q') || '';
-        
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar && searchInput && searchInput.value !== '') {
-            searchToolbar.classList.remove('disabled');
-            searchToolbar.classList.add('active');
-        }
 
-        this.updateFilterButtonsState();
-        this.deselectAll();
-    }
-    handlePaginationClick(e) {
-        catchPaginationClick(e, url => this.handlePagination(url));
-    }
+    // ─── Métodos abstractos de BaseListController ─────────────────────────────
+
+    getViewPath()      { return '/admin/subscriptions'; }
+    getExcludePath()   { return '/admin/subscription-'; }
+    getSearchInputRef(){ return 'tier-search-input'; }
+
+    // ─── Paginación ───────────────────────────────────────────────────────────
+
     async handlePagination(url) {
-        const tableContainer = document.querySelector('[data-ref="tiers-table-wrapper"]');
-        const emptyState = document.querySelector('[data-ref="tiers-empty-state"]');
+        const tableContainer     = document.querySelector('[data-ref="tiers-table-wrapper"]');
+        const emptyState         = document.querySelector('[data-ref="tiers-empty-state"]');
         const currentPaginations = document.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
-        
         const containerToDisable = tableContainer || emptyState;
-        if (containerToDisable) {
-            containerToDisable.classList.add('disabled-interaction');
-        }
+
+        if (containerToDisable) containerToDisable.classList.add('disabled-interaction');
 
         try {
-            const html = await this.api.fetchHtml(url, { signal: this.abortController ? this.abortController.signal : null });
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
+            const html = await this.api.fetchHtml(url, { signal: this.abortController?.signal ?? null });
+            const doc  = new DOMParser().parseFromString(html, 'text/html');
 
             const viewContent = document.querySelector('[data-ref="manageSubscriptionsView"]');
-            const newContent = doc.querySelector('[data-ref="manageSubscriptionsView"]');
+            const newContent  = doc.querySelector('[data-ref="manageSubscriptionsView"]');
 
             if (viewContent && newContent) {
-                const bottomContainer = viewContent.querySelector('.component-bottom');
+                const bottomContainer    = viewContent.querySelector('.component-bottom');
                 const newBottomContainer = newContent.querySelector('.component-bottom');
                 if (bottomContainer && newBottomContainer) {
                     bottomContainer.innerHTML = newBottomContainer.innerHTML;
@@ -87,7 +46,7 @@ class AdminSubscriptionsController {
                 const newPaginations = doc.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
                 if (newPaginations.length > 0 && currentPaginations.length > 0) {
                     currentPaginations.forEach((container, index) => {
-                        if(newPaginations[index]) {
+                        if (newPaginations[index]) {
                             container.innerHTML = newPaginations[index].innerHTML;
                             if (newPaginations[index].hasAttribute('data-tooltip')) {
                                 container.setAttribute('data-tooltip', newPaginations[index].getAttribute('data-tooltip'));
@@ -96,6 +55,7 @@ class AdminSubscriptionsController {
                     });
                 }
             }
+
             window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
             this.updateFilterButtonsState();
             this.deselectAll();
@@ -105,29 +65,42 @@ class AdminSubscriptionsController {
             if (window.spaRouter) window.spaRouter.navigate(url);
             else window.location.href = url;
         } finally {
-            if (containerToDisable) {
-                containerToDisable.classList.remove('disabled-interaction');
-            }
+            if (containerToDisable) containerToDisable.classList.remove('disabled-interaction');
         }
     }
+
+    executeServerFilters() {
+        const queryInput = document.querySelector('[data-ref="tier-search-input"]');
+        const query      = (queryInput ? queryInput.value : '').trim();
+        this.updateFilterButtonsState();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('page', '1');
+        if (query) urlParams.set('q', query);
+        else       urlParams.delete('q');
+
+        this.handlePagination(`${this.basePath}/admin/subscriptions?${urlParams.toString()}`);
+    }
+
+    // ─── Manejadores de eventos ───────────────────────────────────────────────
+
     handleGlobalClick(e) {
-        const selectTarget = e.target.closest('[data-action="selectTierRow"]');
-        const searchBtn = e.target.closest('[data-action="searchTier"]');
-        const addBtn = e.target.closest('[data-action="addTier"]');
-        const editBtn = e.target.closest('[data-action="editTier"]');
-        const delBtn = e.target.closest('[data-action="deleteTier"]');
-        
-        const toggleVisBtn = e.target.closest('[data-action="toggleVisibilityTier"]');
-        const setPopBtn = e.target.closest('[data-action="setPopularTier"]');
-        
-        if (selectTarget) this.handleRowSelection(selectTarget);
-        if (searchBtn) this.toggleSearchToolbar();
-        if (addBtn) this.navigateToAddTier();
-        if (editBtn) this.navigateToEditTier();
-        if (delBtn) this.deleteTier(delBtn);
-        if (toggleVisBtn) this.toggleVisibilityTier(toggleVisBtn);
-        if (setPopBtn) this.setPopularTier(setPopBtn);
-        
+        const selectTarget  = e.target.closest('[data-action="selectTierRow"]');
+        const searchBtn     = e.target.closest('[data-action="searchTier"]');
+        const addBtn        = e.target.closest('[data-action="addTier"]');
+        const editBtn       = e.target.closest('[data-action="editTier"]');
+        const delBtn        = e.target.closest('[data-action="deleteTier"]');
+        const toggleVisBtn  = e.target.closest('[data-action="toggleVisibilityTier"]');
+        const setPopBtn     = e.target.closest('[data-action="setPopularTier"]');
+
+        if (selectTarget)   this.handleRowSelection(selectTarget);
+        if (searchBtn)      this.toggleSearchToolbar();
+        if (addBtn)         this.navigateToAddTier();
+        if (editBtn)        this.navigateToEditTier();
+        if (delBtn)         this.deleteTier(delBtn);
+        if (toggleVisBtn)   this.toggleVisibilityTier(toggleVisBtn);
+        if (setPopBtn)      this.setPopularTier(setPopBtn);
+
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
             if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
@@ -136,137 +109,64 @@ class AdminSubscriptionsController {
             }
         }
     }
+
     handleGlobalInput(e) {
         if (e.target && e.target.getAttribute('data-ref') === 'tier-search-input') {
             this.applyAllFilters();
         }
     }
-    toggleSearchToolbar() {
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        const searchInput = document.querySelector('[data-ref="tier-search-input"]');
-        if (searchToolbar) {
-            if (searchToolbar.classList.contains('disabled')) {
-                searchToolbar.classList.remove('disabled');
-                searchToolbar.classList.add('active');
-                if (searchInput) {
-                    setTimeout(() => searchInput.focus(), 50);
-                }
-            } else {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
-    }
-    updateFilterButtonsState() {
-        const queryInput = document.querySelector('[data-ref="tier-search-input"]');
-        const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
-        const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
-        if (searchBtn) {
-            if (query.length > 0) searchBtn.classList.add('has-active-filter');
-            else searchBtn.classList.remove('has-active-filter');
-        }
-    }
-    
-    
-    executeServerFilters() {
-        const queryInput = document.querySelector('[data-ref="tier-search-input"]');
-        const query = (queryInput ? queryInput.value : '').trim();
-        
-        this.updateFilterButtonsState();
 
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.set('page', '1');
-        
-        if (query) {
-            urlParams.set('q', query);
-        } else {
-            urlParams.delete('q');
-        }
+    // ─── Selección de fila ────────────────────────────────────────────────────
 
-        const url = `${this.basePath}/admin/subscriptions?${urlParams.toString()}`;
-        this.handlePagination(url);
-    }
-    navigateToAddTier() {
-        if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/admin/subscription-create`);
-        } else {
-            window.location.href = `${this.basePath}/admin/subscription-create`;
-        }
-    }
-    navigateToEditTier() {
-        if (!this.selectedTierId) return;
-        if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/admin/subscription-edit/${this.selectedTierId}`);
-        } else {
-            window.location.href = `${this.basePath}/admin/subscription-edit/${this.selectedTierId}`;
-        }
-    }
     handleRowSelection(target) {
         const tierId = target.getAttribute('data-tier-id');
-        if (this.selectedTierId === tierId) {
-            this.deselectAll();
-            return;
-        }
+        if (this.selectedTierId === tierId) { this.deselectAll(); return; }
+
         this.selectedTierId = tierId;
         document.querySelectorAll('[data-action="selectTierRow"]').forEach(row => {
-            if(row.getAttribute('data-tier-id') === tierId) {
-                row.classList.add('selected');
-            } else {
-                row.classList.remove('selected');
-            }
+            row.classList.toggle('selected', row.getAttribute('data-tier-id') === tierId);
         });
-        const defaultMode = document.querySelector('[data-ref="header-default-actions"]');
-        const selectionMode = document.querySelector('[data-ref="subscription-selection-actions"]');
-        if (defaultMode && selectionMode) {
-            defaultMode.classList.replace('active', 'disabled');
-            selectionMode.classList.replace('disabled', 'active');
-        }
-        const isSystem = parseInt(target.getAttribute('data-is-system') || 0, 10) === 1;
-        const tierLevel = parseInt(target.getAttribute('data-tier-level') || 0, 10);
-        const view = document.querySelector('[data-ref="manageSubscriptionsView"]');
-        const currentUserWeight = parseInt(view ? view.getAttribute('data-current-user-weight') : 0, 10);
+        this._toggleSelectionBar(true);
+
+        // Lógica específica: deshabilitar botones para tiers del sistema
+        const isSystem  = parseInt(target.getAttribute('data-is-system') || 0, 10) === 1;
         const deleteBtn = document.querySelector('[data-action="deleteTier"]');
-        const editBtn = document.querySelector('[data-action="editTier"]');
-        if (deleteBtn) { deleteBtn.classList.remove('disabled-interaction');  deleteBtn.removeAttribute('title'); }
-        if (editBtn) { editBtn.classList.remove('disabled-interaction');  editBtn.removeAttribute('title'); }
+        const editBtn   = document.querySelector('[data-action="editTier"]');
+
+        if (deleteBtn) { deleteBtn.classList.remove('disabled-interaction'); deleteBtn.removeAttribute('title'); }
+        if (editBtn)   { editBtn.classList.remove('disabled-interaction');   editBtn.removeAttribute('title'); }
+
         if (isSystem) {
-            if (deleteBtn) {
-                deleteBtn.classList.add('disabled-interaction');
-                deleteBtn.setAttribute('title', _t());
-            }
-            if (editBtn) {
-                editBtn.setAttribute('title', _t());
-            }
+            if (deleteBtn) { deleteBtn.classList.add('disabled-interaction'); deleteBtn.setAttribute('title', _t()); }
+            if (editBtn)   { editBtn.setAttribute('title', _t()); }
         }
     }
-    deselectAll() {
-        this.selectedTierId = null;
-        document.querySelectorAll('[data-action="selectTierRow"]').forEach(row => row.classList.remove('selected'));
-        const defaultMode = document.querySelector('[data-ref="header-default-actions"]');
-        const selectionMode = document.querySelector('[data-ref="subscription-selection-actions"]');
-        if (defaultMode && selectionMode) {
-            selectionMode.classList.replace('active', 'disabled');
-            defaultMode.classList.replace('disabled', 'active');
-        }
+
+    // ─── Navegación ───────────────────────────────────────────────────────────
+
+    navigateToAddTier() {
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/subscription-create`);
+        else window.location.href = `${this.basePath}/admin/subscription-create`;
     }
+
+    navigateToEditTier() {
+        if (!this.selectedTierId) return;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/subscription-edit/${this.selectedTierId}`);
+        else window.location.href = `${this.basePath}/admin/subscription-edit/${this.selectedTierId}`;
+    }
+
+    // ─── Acciones API ─────────────────────────────────────────────────────────
 
     async toggleVisibilityTier(btn = null) {
         if (!this.selectedTierId) return;
         if (btn) setButtonLoading(btn);
         try {
-            const payload = { uuid: this.selectedTierId };
-            const res = await this.api.post(ApiRoutes.Admin.ToggleVisibilityTier, payload, this.abortController.signal);
+            const res = await this.api.post(ApiRoutes.Admin.ToggleVisibilityTier, { uuid: this.selectedTierId }, this.abortController.signal);
             if (res.aborted) return;
-            if (res.success) {
-                showMessage(_t('visibility_updated', 'Visibilidad actualizada'), 'success');
-                await this.handlePagination(window.location.href);
-            } else {
-                showMessage(res.message || window.__('err_default'), 'error');
-            }
+            if (res.success) { showMessage(_t('visibility_updated', 'Visibilidad actualizada'), 'success'); await this.handlePagination(window.location.href); }
+            else showMessage(res.message || window.__('err_default'), 'error');
         } catch (err) {
-            if (err.name !== 'AbortError') {
-                showMessage(window.__('err_update_canvas'), 'error');
-            }
+            if (err.name !== 'AbortError') showMessage(window.__('err_update_canvas'), 'error');
         } finally {
             if (btn) restoreButton(btn);
         }
@@ -276,19 +176,12 @@ class AdminSubscriptionsController {
         if (!this.selectedTierId) return;
         if (btn) setButtonLoading(btn);
         try {
-            const payload = { uuid: this.selectedTierId };
-            const res = await this.api.post(ApiRoutes.Admin.SetPopularTier, payload, this.abortController.signal);
+            const res = await this.api.post(ApiRoutes.Admin.SetPopularTier, { uuid: this.selectedTierId }, this.abortController.signal);
             if (res.aborted) return;
-            if (res.success) {
-                showMessage(window.__('subscription_popular_marked'), 'success');
-                await this.handlePagination(window.location.href);
-            } else {
-                showMessage(res.message || window.__('err_default'), 'error');
-            }
+            if (res.success) { showMessage(window.__('subscription_popular_marked'), 'success'); await this.handlePagination(window.location.href); }
+            else showMessage(res.message || window.__('err_default'), 'error');
         } catch (err) {
-            if (err.name !== 'AbortError') {
-                showMessage(window.__('err_update_canvas'), 'error');
-            }
+            if (err.name !== 'AbortError') showMessage(window.__('err_update_canvas'), 'error');
         } finally {
             if (btn) restoreButton(btn);
         }
@@ -296,17 +189,17 @@ class AdminSubscriptionsController {
 
     async deleteTier(btn = null) {
         if (!this.selectedTierId || !window.modalSystem) return;
-        const tierId = this.selectedTierId;
+        const tierId      = this.selectedTierId;
         const selectedRow = document.querySelector(`[data-action="selectTierRow"][data-tier-id="${tierId}"]`);
+
         if (selectedRow && parseInt(selectedRow.getAttribute('data-is-system'), 10) === 1) {
             showMessage(window.__('cannot_delete_system_tier'), 'error');
-            return; 
+            return;
         }
+
         const tierName = selectedRow ? selectedRow.getAttribute('data-tier-name') : window.__('unknown_tier');
-        const response = await window.modalSystem.show('confirmDeleteTier', { tierName: tierName });
-        if (response.confirmed) {
-            await this.executeApiAction(btn, ApiRoutes.Admin.DeleteTier, { uuid: tierId });
-        }
+        const response = await window.modalSystem.show('confirmDeleteTier', { tierName });
+        if (response.confirmed) await this.executeApiAction(btn, ApiRoutes.Admin.DeleteTier, { uuid: tierId });
     }
 
     async executeApiAction(btn = null, apiRoute, payload) {
@@ -314,19 +207,21 @@ class AdminSubscriptionsController {
         try {
             const res = await this.api.post(apiRoute, payload, this.abortController.signal);
             if (res.aborted) return;
-            if (res.success) {
-                showMessage(window.__('msg_joined_successfully'), 'success');
-                await this.handlePagination(window.location.href);
-            } else {
-                showMessage(res.message || window.__('err_default'), 'error');
-            }
+            if (res.success) { showMessage(window.__('msg_joined_successfully'), 'success'); await this.handlePagination(window.location.href); }
+            else showMessage(res.message || window.__('err_default'), 'error');
         } catch (err) {
-            if (err.name !== 'AbortError') {
-                showMessage(window.__('err_update_canvas'), 'error');
-            }
+            if (err.name !== 'AbortError') showMessage(window.__('err_update_canvas'), 'error');
         } finally {
             if (btn) restoreButton(btn);
         }
     }
 }
+
+// Genera: selectTableRow(), deselectAll(), _toggleSelectionBar()
+applySelectableTable(AdminSubscriptionsController, {
+    idProp:       'selectedTierId',
+    selectionRef: 'subscription-selection-actions',
+    rowSelector:  '[data-action="selectTierRow"]',
+});
+
 export { AdminSubscriptionsController };

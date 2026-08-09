@@ -1591,6 +1591,9 @@
     "placeholder_icon_examples": "Ej. shield, rocket_launch, bomb",
     "msg_confirm_bulk_purchase_title": "¿Estás seguro de gastar {total} monedas?",
     "msg_confirm_bulk_purchase_desc": "Estás a punto de adquirir los siguientes elementos para tu cuenta:",
+    "msg_confirm_bulk_purchase_desc_single": "Compraste :name con un costo de :cost.",
+    "msg_confirm_bulk_purchase_desc_multi": "Compraste :name y :others más con un costo de :cost.",
+    "msg_confirm_bulk_purchase_desc_cost": "Esta compra tiene un costo de :cost.",
     "lbl_total": "Total",
     "coins": "monedas"
 }

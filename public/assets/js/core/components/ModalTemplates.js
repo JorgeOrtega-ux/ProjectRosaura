@@ -1200,7 +1200,7 @@ export const ModalTemplates = {
             const items = data.items || [];
             const totalCoins = data.totalCoins || 0;
             const formattedTotal = (typeof window.formatNumber === 'function') ? window.formatNumber(totalCoins) : totalCoins;
-            
+
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p) => {
                 let text = k;
                 if (p) {
@@ -1211,69 +1211,28 @@ export const ModalTemplates = {
                 return text;
             });
 
-            // Group duplicate perks to show a clean consolidated list
-            const grouped = {};
-            items.forEach(item => {
-                const perkId = item.perkId;
-                if (!grouped[perkId]) {
-                    grouped[perkId] = {
-                        name: item.name,
-                        icon: item.icon,
-                        price: item.price,
-                        quantity: 0
-                    };
-                }
-                grouped[perkId].quantity++;
-            });
-
-            const rowsHtml = Object.values(grouped).map(item => {
-                const subtotal = item.price * item.quantity;
-                const formattedPrice = (typeof window.formatNumber === 'function') ? window.formatNumber(item.price) : item.price;
-                const formattedSubtotal = (typeof window.formatNumber === 'function') ? window.formatNumber(subtotal) : subtotal;
-                
-                const descStr = item.quantity > 1 
-                    ? `x${item.quantity} · ${formattedPrice} ${__('coins')} c/u (${formattedSubtotal} ${__('coins')} total)`
-                    : `${formattedPrice} ${__('coins')}`;
-
-                return `
-                    <div class="component-group-item">
-                        <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered component-card__icon-container--round">
-                                <span class="material-symbols-rounded">${item.icon || 'star'}</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">${item.name}</h2>
-                                <p class="component-card__description">${descStr}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            const headerIcon = items.length === 1 ? (items[0].icon || 'shopping_bag') : 'shopping_bag';
-            const titleText = __('msg_confirm_bulk_purchase_title', { total: formattedTotal });
-            const descText = __('msg_confirm_bulk_purchase_desc');
-
-            const isScrollable = Object.keys(grouped).length > 2;
-            const bodyClass = isScrollable 
-                ? 'component-modal-body component-modal-body--scrollable' 
-                : 'component-modal-body';
+            // Build inline description: "[ventaja] y otras X más, con un costo de [total] monedas"
+            const uniqueNames = [...new Set(items.map(i => i.name))];
+            let descText;
+            if (uniqueNames.length === 0) {
+                descText = `${__('msg_confirm_bulk_purchase_desc_cost').replace(':cost', `<b>${formattedTotal} ${__('coins')}</b>`)}`;
+            } else if (uniqueNames.length === 1) {
+                descText = `${__('msg_confirm_bulk_purchase_desc_single')
+                    .replace(':name', `<b>${uniqueNames[0]}</b>`)
+                    .replace(':cost', `<b>${formattedTotal} ${__('coins')}</b>`)}`;
+            } else {
+                const others = uniqueNames.length - 1;
+                descText = `${__('msg_confirm_bulk_purchase_desc_multi')
+                    .replace(':name', `<b>${uniqueNames[0]}</b>`)
+                    .replace(':others', `<b>${others}</b>`)
+                    .replace(':cost', `<b>${formattedTotal} ${__('coins')}</b>`)}`;
+            }
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered component-card__icon-container--round">
-                        <span class="material-symbols-rounded">${headerIcon}</span>
-                    </div>
-                    <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${titleText}</h2>
-                        <p class="component-modal-desc">${descText}</p>
-                    </div>
-                </div>
-                <div class="${bodyClass}">
-                    <div class="component-card--grouped" style="margin-top: 8px;">
-                        ${rowsHtml}
-                    </div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${__('msg_confirm_bulk_purchase_title', { total: formattedTotal })}</h2>
+                    <p class="component-modal-desc">${descText}</p>
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
@@ -1498,9 +1457,29 @@ export const ModalTemplates = {
                     { tier_level: 2, name: 'Negocios', price_monthly: 24.99, desc: 'Para particulares y equipos', max_canvases: -1, max_snapshots_per_canvas: -1, max_members_per_canvas: -1, max_storage_mb: 1024, feat_advanced_roles: 1, feat_chat_restriction: 1, feat_custom_palettes: 1, feat_unlimited_exports: 1, feat_inject_templates: 1, feat_live_share: 1 }
                   ];
 
+            const requiredTier = parseInt(data.requiredTier, 10) || 0;
+            const userTier     = parseInt(window.appUserTier || 0, 10);
+
+            // Determinar cuál tier preseleccionar:
+            // - Si se proporcionó un tier requerido, usarlo.
+            // - Si el usuario ya tiene ese tier o superior, igualmente mostrarlo para informar.
+            // - Fallback: el primer tier de la lista.
+            let preselectedTierLevel = tiers.length > 0 ? parseInt(tiers[0].tier_level, 10) : 1;
+            if (requiredTier > 0) {
+                const found = tiers.find(t => parseInt(t.tier_level, 10) === requiredTier);
+                if (found) {
+                    preselectedTierLevel = requiredTier;
+                } else {
+                    // Si el tier requerido no existe en la lista, tomar el más bajo que lo supere
+                    const superior = tiers.find(t => parseInt(t.tier_level, 10) > requiredTier);
+                    if (superior) preselectedTierLevel = parseInt(superior.tier_level, 10);
+                }
+            }
+
             let cardsHtml = '';
             tiers.forEach((tier, index) => {
-                const isActiveClass = index === 0 ? 'active' : '';
+                const thisTierLevel = parseInt(tier.tier_level, 10);
+                const isActiveClass = thisTierLevel === preselectedTierLevel ? 'active' : '';
                 const badgeHtml = '';
                 const priceText = tier.price_monthly ? `$${parseFloat(tier.price_monthly).toFixed(2)}` : '$12.99';
                 
@@ -1573,9 +1552,28 @@ export const ModalTemplates = {
                 }
             ];
 
-            let tableHeaders = '<th>Beneficios prÃ©mium</th>';
+            // Estado inicial del botón de submit (mismo patrón que upgrade.php)
+            const alreadyOwned = userTier >= preselectedTierLevel;
+
+            const buildSubmitBtn = (tier, owned) => {
+                if (owned) {
+                    return `<button class="component-button component-button--dark component-button--rounded-pill component-button--h40 component-modal-submit-btn disabled-interaction" data-action="confirmModalUpgrade" data-selected-tier="${tier}">
+                        <span class="material-symbols-rounded">check_circle</span>
+                        <span>${__('plan_btn_current', [], 'Tu plan actual')}</span>
+                    </button>`;
+                }
+                return `<button class="component-button component-button--dark component-button--rounded-pill component-button--hover-text component-button--h40 component-modal-submit-btn" data-action="confirmModalUpgrade" data-selected-tier="${tier}">
+                    <span class="btn-default-text">${__('btn_continue_purchase', [], 'Continuar con la compra')}</span>
+                    <span class="btn-hover-text">${__('btn_confirm_payment', [], 'Confirmar pago')}</span>
+                </button>`;
+            };
+
+            // Determinar qué columna resaltar en la tabla comparativa
+            const highlightTierLevel = preselectedTierLevel;
+
+            let tableHeaders = `<th>${__('plan_benefits_label', [], 'Beneficios prémium')}</th>`;
             tiers.forEach((t, idx) => {
-                const isHighlight = idx === 0 ? 'highlight-col' : '';
+                const isHighlight = parseInt(t.tier_level, 10) === highlightTierLevel ? 'highlight-col' : '';
                 tableHeaders += `<th class="col-tier-${t.tier_level} ${isHighlight}">${t.name}</th>`;
             });
 
@@ -1583,7 +1581,7 @@ export const ModalTemplates = {
             comparisonRows.forEach(row => {
                 tableRowsHtml += `<tr><td>${row.label}</td>`;
                 tiers.forEach((t, idx) => {
-                    const isHighlight = idx === 0 ? 'highlight-col' : '';
+                    const isHighlight = parseInt(t.tier_level, 10) === highlightTierLevel ? 'highlight-col' : '';
                     tableRowsHtml += `<td class="col-tier-${t.tier_level} ${isHighlight}">${row.getValue(t)}</td>`;
                 });
                 tableRowsHtml += `</tr>`;
@@ -1592,20 +1590,17 @@ export const ModalTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-left">
-                    <h2 class="component-modal-title component-modal-title--lg">Actualiza para obtener mÃ¡s acceso</h2>
-                    <p class="component-modal-desc component-modal-desc--lg">Elige tu plan. Puedes cancelar tu suscripciÃ³n cuando quieras.</p>
+                    <h2 class="component-modal-title component-modal-title--lg">${__('upgrade_modal_title', [], 'Actualiza para obtener más acceso')}</h2>
+                    <p class="component-modal-desc component-modal-desc--lg">${__('upgrade_modal_desc', [], 'Elige tu plan. Puedes cancelar tu suscripción cuando quieras.')}</p>
                     
                     <div class="component-modal-list">
                         ${cardsHtml}
                     </div>
                     
-                    <button class="component-button component-button--dark component-button--rounded-pill component-button--hover-text component-button--h40 component-modal-submit-btn" data-action="confirmModalUpgrade" data-selected-tier="${tiers[0]?.tier_level || 1}">
-                        <span class="btn-default-text">Continuar con la compra</span>
-                        <span class="btn-hover-text">Confirmar pago</span>
-                    </button>
+                    ${buildSubmitBtn(preselectedTierLevel, alreadyOwned)}
                     
                     <p class="component-modal-disclaimer">
-                        Te enviaremos un recordatorio antes de cada renovaciÃ³n. Puedes cancelar tu suscripciÃ³n cuando quieras en pocos clics.
+                        ${__('upgrade_modal_disclaimer', [], 'Te enviaremos un recordatorio antes de cada renovación. Puedes cancelar tu suscripción cuando quieras en pocos clics.')}
                     </p>
                 </div>
                 

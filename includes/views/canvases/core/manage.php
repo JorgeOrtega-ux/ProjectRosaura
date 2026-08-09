@@ -83,7 +83,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                         <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_sanctions'); ?></span></div>
                                     </button>
 
-                                    <button type="button" class="component-menu-link <?php echo !$hasAdvancedRoles ? 'premium-locked' : ''; ?>" data-ref="btn-nav-roles" data-nav="">
+                                    <?php
+                                        $rolesTierMin = \App\Core\System\SubscriptionPlanConstants::getLowestTierForFeature('advanced_roles');
+                                        $rolesTierLevel = $rolesTierMin ? (int)$rolesTierMin['tier_level'] : 1;
+                                    ?>
+                                    <button type="button" class="component-menu-link <?php echo !$hasAdvancedRoles ? 'premium-locked' : ''; ?>" data-ref="btn-nav-roles" data-nav="" <?php echo !$hasAdvancedRoles ? 'data-required-tier="' . $rolesTierLevel . '"' : ''; ?>>
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">shield_person</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_roles'); ?></span></div>
                                     </button>
