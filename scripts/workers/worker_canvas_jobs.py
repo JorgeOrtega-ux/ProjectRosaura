@@ -51,10 +51,16 @@ REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = int(os.getenv("REDIS_PORT") or 6379)
 REDIS_PASS = os.getenv("REDIS_PASS")
 
-SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR") or "/var/www/html/storage/private/snapshots"
+def get_absolute_path(env_val, default_val):
+    path = os.getenv(env_val) or default_val
+    if os.path.exists('/app') and path.startswith('/var/www/html'):
+        path = path.replace('/var/www/html', '/app', 1)
+    return path
+
+SNAPSHOTS_DIR = get_absolute_path("SNAPSHOTS_DIR", "/var/www/html/storage/private/snapshots")
 SYNC_INTERVAL = int(os.getenv("WORKER_CANVAS_SYNC_INTERVAL") or 10)
-THUMBNAILS_DIR = os.getenv("THUMBNAILS_DIR") or "/var/www/html/storage/public/thumbnails"
-ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR") or "/var/www/html/storage/private/backups"
+THUMBNAILS_DIR = get_absolute_path("THUMBNAILS_DIR", "/var/www/html/storage/public/thumbnails")
+ARCHIVE_DIR = get_absolute_path("SNAPSHOTS_ARCHIVE_DIR", "/var/www/html/storage/private/backups")
 
 SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR") or 2)
 
@@ -423,7 +429,7 @@ def scheduler_thread():
 THUMBNAIL_MAX_SIZE = int(os.getenv("THUMBNAIL_MAX_SIZE") or 512)
 ARCHIVE_MAX_SIZE = int(os.getenv("ARCHIVE_MAX_SIZE") or 2048)
 
-PALETTES_FILE_PATH = os.getenv("PALETTES_FILE_PATH") or "/var/www/html/public/assets/data/palettes.json"
+PALETTES_FILE_PATH = get_absolute_path("PALETTES_FILE_PATH", "/var/www/html/public/assets/data/palettes.json")
 APP_PALETTES = {}
 
 def load_palettes():
@@ -555,6 +561,21 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         except Exception as e:
             print(f"[!] Error uploading thumbnail to S3: {e}")
             return False
+
+        # Guardar localmente también para compatibilidad con CanvasRepository
+        if THUMBNAILS_DIR:
+            try:
+                os.makedirs(THUMBNAILS_DIR, exist_ok=True)
+                # Guardar con ID numérico (ej: canvas_11.webp)
+                local_path_id = os.path.join(THUMBNAILS_DIR, f"canvas_{canvas_id}.webp")
+                bg_thumb.save(local_path_id, "WEBP", quality=80)
+                
+                # Guardar con UUID (ej: canvas_uuid.webp) si existe
+                if canvas_uuid:
+                    local_path_uuid = os.path.join(THUMBNAILS_DIR, f"canvas_{canvas_uuid}.webp")
+                    bg_thumb.save(local_path_uuid, "WEBP", quality=80)
+            except Exception as local_err:
+                print(f"[!] Error saving thumbnail locally: {local_err}")
 
         
         if r.exists(f"canvas:{canvas_id}:reset_lock") or r.exists(f"canvas:{canvas_id}:snapshot_lock"):

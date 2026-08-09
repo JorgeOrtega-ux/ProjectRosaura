@@ -58,27 +58,21 @@ CREATE TABLE IF NOT EXISTS `store_coin_packages` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `uuid` CHAR(36) UNIQUE DEFAULT NULL,
   `amount` INT NOT NULL DEFAULT 0,
+  `bonus_amount` INT NOT NULL DEFAULT 0,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `is_popular` tinyint(1) NOT NULL DEFAULT 0,
-  `name` varchar(100) NOT NULL,
-  `description` varchar(255) DEFAULT NULL,
   `price_usd` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-  `bonus_text` varchar(100) DEFAULT NULL,
-  `icon` varchar(50) DEFAULT 'monetization_on',
-  `icon_color` varchar(50) DEFAULT NULL,
-  `border_color` varchar(50) DEFAULT NULL,
-  `badge_color` varchar(50) DEFAULT NULL,
   `stripe_price_id` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
-INSERT IGNORE INTO `store_coin_packages` (`id`, `uuid`, `amount`, `is_active`, `is_popular`, `name`, `description`, `price_usd`, `bonus_text`, `icon`, `icon_color`, `border_color`, `badge_color`, `stripe_price_id`) VALUES
-(1, '10000000-0000-0000-0000-000000001000', 1000, 1, 0, 'store_coins_1000_name', 'store_coins_1000_desc', 2.99, NULL, 'monetization_on', NULL, NULL, NULL, 'price_1Tq2JyE4dfTcnyKKhgS3IK9l'),
-(2, '27500000-0000-0000-0000-000000002750', 2750, 1, 1, 'store_coins_2750_name', 'store_coins_2750_desc', 6.99, 'store_coins_2750_bonus', 'monetization_on', NULL, NULL, NULL, 'price_1Tq2KME4dfTcnyKK8LBoUUWT'),
-(3, '57500000-0000-0000-0000-000000005750', 5750, 1, 1, 'store_coins_5750_name', 'store_coins_5750_desc', 12.99, 'store_coins_5750_bonus', 'diamond', NULL, NULL, 'var(--color-success)', 'price_1Tq2KdE4dfTcnyKKY9DebxeP'),
-(4, '13250000-0000-0000-0000-000000013250', 13250, 1, 1, 'store_coins_13250_name', 'store_coins_13250_desc', 24.99, 'store_coins_13250_bonus', 'workspace_premium', '#8b5cf6', '#8b5cf6', '#8b5cf6', 'price_1Tq2L5E4dfTcnyKKa5FoxTj4');
+INSERT IGNORE INTO `store_coin_packages` (`id`, `uuid`, `amount`, `bonus_amount`, `is_active`, `is_popular`, `price_usd`, `stripe_price_id`) VALUES
+(1, '10000000-0000-0000-0000-000000001000', 1000, 0, 1, 0, 2.99, 'price_1Tq2JyE4dfTcnyKKhgS3IK9l'),
+(2, '27500000-0000-0000-0000-000000002750', 2750, 750, 1, 1, 6.99, 'price_1Tq2KME4dfTcnyKK8LBoUUWT'),
+(3, '57500000-0000-0000-0000-000000005750', 5750, 1250, 1, 1, 12.99, 'price_1Tq2KdE4dfTcnyKKY9DebxeP'),
+(4, '13250000-0000-0000-0000-000000013250', 13250, 3250, 1, 1, 24.99, 'price_1Tq2L5E4dfTcnyKKa5FoxTj4');
 
 
 CREATE TABLE IF NOT EXISTS `permissions` (
@@ -435,10 +429,7 @@ CREATE TABLE IF NOT EXISTS `store_perk_packages` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `uuid` CHAR(36) UNIQUE DEFAULT NULL,
   `perk_id` VARCHAR(100) UNIQUE NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `description` varchar(255) DEFAULT NULL,
   `price_coins` INT NOT NULL DEFAULT 0,
-  `icon` varchar(50) DEFAULT 'shield',
   `is_single_use` tinyint(1) NOT NULL DEFAULT 1,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -446,17 +437,17 @@ CREATE TABLE IF NOT EXISTS `store_perk_packages` (
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
-INSERT IGNORE INTO `store_perk_packages` (uuid, perk_id, name, description, price_coins, icon, is_single_use, is_active) VALUES
-('e0000000-0000-0000-0000-000000000002', 'pixel_missile_1', 'store_content_pixel_missile_1_name', 'store_content_pixel_missile_1_desc', 500, 'rocket_launch', 1, 1),
-('e0000000-0000-0000-0000-000000000003', 'pixel_bomb_1', 'store_content_pixel_bomb_1_name', 'store_content_pixel_bomb_1_desc', 1000, 'bomb', 1, 1),
-('e0000000-0000-0000-0000-000000000004', 'cluster_bomb_1', 'store_content_cluster_bomb_1_name', 'store_content_cluster_bomb_1_desc', 2500, 'scatter_plot', 1, 1),
-('e0000000-0000-0000-0000-000000000005', 'atomic_bomb_1', 'store_content_atomic_bomb_1_name', 'store_content_atomic_bomb_1_desc', 5000, 'crisis_alert', 1, 1),
-('e0000000-0000-0000-0000-000000000006', 'meteor_shower_1', 'store_content_meteor_shower_1_name', 'store_content_meteor_shower_1_desc', 10000, 'storm', 1, 1),
-('e0000000-0000-0000-0000-000000000007', 'orbital_cannon_1', 'store_content_orbital_cannon_1_name', 'store_content_orbital_cannon_1_desc', 15000, 'satellite_alt', 1, 1),
-('e0000000-0000-0000-0000-000000000008', 'black_hole_1', 'store_content_black_hole_1_name', 'store_content_black_hole_1_desc', 20000, 'cyclone', 1, 1),
-('e0000000-0000-0000-0000-000000000009', 'mines_1', 'store_content_mines_1_name', 'store_content_mines_1_desc', 1500, 'radar', 1, 1),
-('e0000000-0000-0000-0000-000000000010', 'supernova_blast', 'store_content_supernova_blast_name', 'store_content_supernova_blast_desc', 12000, 'wb_sunny', 1, 1),
-('e0000000-0000-0000-0000-000000000011', 'ion_strike', 'store_content_ion_strike_name', 'store_content_ion_strike_desc', 8000, 'change_history', 1, 1);
+INSERT IGNORE INTO `store_perk_packages` (uuid, perk_id, price_coins, is_single_use, is_active) VALUES
+('e0000000-0000-0000-0000-000000000002', 'pixel_missile_1', 500, 1, 1),
+('e0000000-0000-0000-0000-000000000003', 'pixel_bomb_1', 1000, 1, 1),
+('e0000000-0000-0000-0000-000000000004', 'cluster_bomb_1', 2500, 1, 1),
+('e0000000-0000-0000-0000-000000000005', 'atomic_bomb_1', 5000, 1, 1),
+('e0000000-0000-0000-0000-000000000006', 'meteor_shower_1', 10000, 1, 1),
+('e0000000-0000-0000-0000-000000000007', 'orbital_cannon_1', 15000, 1, 1),
+('e0000000-0000-0000-0000-000000000008', 'black_hole_1', 20000, 1, 1),
+('e0000000-0000-0000-0000-000000000009', 'mines_1', 1500, 1, 1),
+('e0000000-0000-0000-0000-000000000010', 'supernova_blast', 12000, 1, 1),
+('e0000000-0000-0000-0000-000000000011', 'ion_strike', 8000, 1, 1);
 
 CREATE TABLE IF NOT EXISTS `user_coin_transactions` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,

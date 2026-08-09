@@ -108,16 +108,8 @@ class AdminPerkBuilderController {
         const perkIdInput = document.querySelector('[data-ref="input-perk-id"]');
         const perkId = perkIdInput ? perkIdInput.value.trim() : '';
 
-        const nameInput = document.querySelector('[data-ref="input-perk-name"]');
-        const name = nameInput ? nameInput.value.trim() : '';
-        
         if (!perkId) {
             showMessage(window.__("err_perk_id_required"), "warning");
-            return;
-        }
-
-        if (!name) {
-            showMessage(window.__("err_name_translation_required"), "warning");
             return;
         }
 
@@ -126,10 +118,7 @@ class AdminPerkBuilderController {
         const data = {
             uuid: uuid,
             perk_id: perkId,
-            name: name,
-            price_coins: priceVal !== undefined ? parseInt(priceVal, 10) : 1000,
-            description: document.querySelector('[data-ref="input-perk-desc"]')?.value || '',
-            icon: document.querySelector('[data-ref="input-perk-icon"]')?.value || 'shield'
+            price_coins: priceVal !== undefined ? parseInt(priceVal, 10) : 1000
         };
 
         setButtonLoading(btn);

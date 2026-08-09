@@ -3,24 +3,84 @@
 namespace App\Core\System;
 
 class StorePackagesConfig {
+
+    /**
+     * Devuelve los metadatos visuales para un monto de monedas.
+     */
+    public static function getCoinVisualMetadata(int $amount): array {
+        if ($amount >= 10000) {
+            return [
+                'icon' => 'workspace_premium',
+                'icon_color' => '#8b5cf6',
+                'border_color' => '#8b5cf6',
+                'badge_color' => '#8b5cf6',
+            ];
+        }
+        if ($amount >= 5000) {
+            return [
+                'icon' => 'diamond',
+                'icon_color' => null,
+                'border_color' => null,
+                'badge_color' => 'var(--color-success)',
+            ];
+        }
+        return [
+            'icon' => 'monetization_on',
+            'icon_color' => null,
+            'border_color' => null,
+            'badge_color' => null,
+        ];
+    }
+
+    /**
+     * Devuelve los metadatos visuales para un Perk ID.
+     */
+    public static function getPerkVisualMetadata(string $perkId): array {
+        $visuals = [
+            StoreConstants::PERK_PIXEL_MISSILE => ['icon' => 'rocket_launch'],
+            StoreConstants::PERK_PIXEL_BOMB => ['icon' => 'bomb'],
+            StoreConstants::PERK_CLUSTER_BOMB => ['icon' => 'scatter_plot'],
+            StoreConstants::PERK_ATOMIC_BOMB => ['icon' => 'crisis_alert'],
+            StoreConstants::PERK_METEOR_SHOWER => ['icon' => 'storm'],
+            StoreConstants::PERK_ORBITAL_CANNON => ['icon' => 'satellite_alt'],
+            StoreConstants::PERK_BLACK_HOLE => ['icon' => 'cyclone'],
+            StoreConstants::PERK_MINES => ['icon' => 'radar'],
+            StoreConstants::PERK_SUPERNOVA_BLAST => ['icon' => 'wb_sunny'],
+            StoreConstants::PERK_ION_STRIKE => ['icon' => 'change_history'],
+        ];
+
+        return $visuals[$perkId] ?? ['icon' => 'shield'];
+    }
+
     public static function getCoinPackages(): array {
         $packages = [];
         try {
             $db = new \App\Config\Database\DatabaseManager();
             $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $stmt = $pdo->query("SELECT * FROM store_coin_packages WHERE is_active = 1 ORDER BY amount ASC");
+            $stmt = $pdo->query("SELECT uuid, amount, bonus_amount, price_usd, stripe_price_id, is_popular FROM store_coin_packages WHERE is_active = 1 ORDER BY amount ASC");
             while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $packages[(int)$row['amount']] = [
+                $amount = (int)$row['amount'];
+                $bonusAmount = (int)($row['bonus_amount'] ?? 0);
+                $baseAmount = $amount - $bonusAmount;
+                
+                $meta = self::getCoinVisualMetadata($amount);
+
+                $packages[$amount] = [
                     'id' => $row['uuid'],
-                    'name' => __($row['name']) ?: $row['name'],
-                    'amount' => (int)$row['amount'],
-                    'description' => __($row['description']) ?: $row['description'],
+                    'name' => __('store_coins_title_format', ['amount' => number_format($amount)]),
+                    'amount' => $amount,
+                    'bonus_amount' => $bonusAmount,
+                    'description' => $bonusAmount > 0 
+                        ? __('store_coins_desc_bonus_format', ['base' => number_format($baseAmount), 'bonus' => number_format($bonusAmount)])
+                        : __('store_coins_desc_format'),
                     'price_usd' => (float)$row['price_usd'],
-                    'bonus_text' => $row['bonus_text'] ? (__($row['bonus_text']) ?: $row['bonus_text']) : null,
-                    'icon' => $row['icon'] ?: 'monetization_on',
-                    'icon_color' => $row['icon_color'],
-                    'border_color' => $row['border_color'],
-                    'badge_color' => $row['badge_color'],
+                    'bonus_text' => $bonusAmount > 0 
+                        ? __('store_coins_bonus_format', ['bonus' => number_format($bonusAmount)])
+                        : null,
+                    'icon' => $meta['icon'],
+                    'icon_color' => $meta['icon_color'],
+                    'border_color' => $meta['border_color'],
+                    'badge_color' => $meta['badge_color'],
                     'is_featured' => (bool)$row['is_popular'],
                     'stripe_env_key' => null,
                     'default_price_id' => $row['stripe_price_id'],
@@ -37,6 +97,7 @@ class StorePackagesConfig {
                     'id' => StoreConstants::COINS_1000,
                     'name' => __('store_coins_1000_name'),
                     'amount' => 1000,
+                    'bonus_amount' => 0,
                     'description' => __('store_coins_1000_desc'),
                     'price_usd' => 2.99,
                     'bonus_text' => null,
@@ -53,20 +114,24 @@ class StorePackagesConfig {
 
         return $packages;
     }
+
     public static function getContentPackages(): array {
         $packages = [];
         try {
             $db = new \App\Config\Database\DatabaseManager();
             $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $stmt = $pdo->query("SELECT * FROM store_perk_packages WHERE is_active = 1 ORDER BY price_coins ASC");
+            $stmt = $pdo->query("SELECT uuid, perk_id, price_coins, is_single_use FROM store_perk_packages WHERE is_active = 1 ORDER BY price_coins ASC");
             while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $packages[$row['perk_id']] = [
-                    'id' => $row['perk_id'],
+                $perkId = $row['perk_id'];
+                $meta = self::getPerkVisualMetadata($perkId);
+                
+                $packages[$perkId] = [
+                    'id' => $perkId,
                     'uuid' => $row['uuid'],
-                    'name' => __($row['name']) ?: $row['name'],
-                    'description' => __($row['description']) ?: $row['description'],
+                    'name' => __("store_content_{$perkId}_name") ?: $perkId,
+                    'description' => __("store_content_{$perkId}_desc") ?: "",
                     'price_coins' => (int)$row['price_coins'],
-                    'icon' => $row['icon'] ?: 'shield',
+                    'icon' => $meta['icon'],
                     'is_single_use' => (bool)$row['is_single_use'],
                 ];
             }
@@ -172,4 +237,5 @@ class StorePackagesConfig {
         return $packages;
     }
 }
+
 ?>

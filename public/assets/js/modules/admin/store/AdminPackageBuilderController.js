@@ -104,26 +104,16 @@ class AdminPackageBuilderController {
         if (!wrapper) return;
 
         const uuid = wrapper.getAttribute('data-package-uuid') || '';
-        const nameInput = document.querySelector('[data-ref="input-pkg-name"]');
-        const name = nameInput ? nameInput.value.trim() : '';
-        
-        if (!name) {
-            showMessage("El nombre del paquete es obligatorio.", "warning");
-            return;
-        }
-
         const amountVal = document.querySelector('[data-ref="val_pkgAmount"]')?.dataset.value;
+        const bonusAmountVal = document.querySelector('[data-ref="val_pkgBonusAmount"]')?.dataset.value;
         const priceVal = document.querySelector('[data-ref="val_pkgPrice"]')?.dataset.value;
 
         const data = {
             uuid: uuid,
-            name: name,
             amount: amountVal !== undefined ? parseInt(amountVal, 10) : 1000,
+            bonus_amount: bonusAmountVal !== undefined ? parseInt(bonusAmountVal, 10) : 0,
             price_usd: priceVal !== undefined ? parseFloat(priceVal) : 2.99,
-            description: document.querySelector('[data-ref="input-pkg-desc"]')?.value || '',
-            bonus_text: document.querySelector('[data-ref="input-pkg-bonus"]')?.value || '',
-            stripe_price_id: document.querySelector('[data-ref="input-pkg-stripe"]')?.value || '',
-            icon: document.querySelector('[data-ref="input-pkg-icon"]')?.value || 'monetization_on'
+            stripe_price_id: document.querySelector('[data-ref="input-pkg-stripe"]')?.value || ''
         };
 
         setButtonLoading(btn);

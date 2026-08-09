@@ -14,10 +14,7 @@ extract($builderData);
 $perkData = [
     'uuid' => '',
     'perk_id' => '',
-    'name' => '',
     'price_coins' => 1000,
-    'description' => '',
-    'icon' => 'shield',
     'is_single_use' => 1,
     'is_active' => 1
 ];
@@ -101,39 +98,6 @@ if ($isEdit && !empty($perk)) {
                             </div>
                             
                             <hr class="component-divider">
-
-                            <!-- Nombre -->
-                            <div class="component-group-item component-group-item--stateful">
-                                <div class="active component-state-box" data-state="perk-name-view">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('lbl_perk_name_or_translation_key') ?: 'Nombre o Clave de Traducción'; ?></h2>
-                                            <span class="component-display-value" data-ref="display-perk-name"><?php echo htmlspecialchars($perkData['name']) ?: (__('lbl_not_configured') ?: 'Sin configurar'); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-name"><?php echo __('btn_edit') ?: 'Editar'; ?></button>
-                                    </div>
-                                </div>
-                                <div class="disabled component-state-box" data-state="perk-name-edit">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('lbl_perk_name_or_translation_key') ?: 'Nombre o Clave de Traducción'; ?></h2>
-                                            <div class="component-edit-row">
-                                                <div class="component-input-group component-input-group--h34">
-                                                    <input type="text" data-ref="input-perk-name" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($perkData['name']); ?>" data-original-value="<?php echo htmlspecialchars($perkData['name']); ?>" placeholder="e.g. store_content_pixel_shield_1_name">
-                                                </div>
-                                                <div class="component-card__actions component-card__actions--stretch">
-                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-name"><?php echo __('btn_cancel') ?: 'Cancelar'; ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="perk-name"><?php echo __('btn_save') ?: 'Guardar'; ?></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <hr class="component-divider">
                             
                             <!-- Precio en Monedas (price_coins) -->
                             <div class="component-group-item component-group-item--stacked">
@@ -157,73 +121,6 @@ if ($isEdit && !empty($perk)) {
                                     </div>
                                 </div>
                             </div>
-
-                            <hr class="component-divider">
-                            
-                            <!-- Descripción -->
-                            <div class="component-group-item component-group-item--stateful">
-                                <div class="active component-state-box" data-state="perk-desc-view">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('lbl_perk_desc_or_translation_key') ?: 'Descripción o Clave de Traducción'; ?></h2>
-                                            <span class="component-display-value" data-ref="display-perk-desc"><?php echo htmlspecialchars($perkData['description']) ?: (__('lbl_not_configured') ?: 'Sin configurar'); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-desc"><?php echo __('btn_edit') ?: 'Editar'; ?></button>
-                                    </div>
-                                </div>
-                                <div class="disabled component-state-box" data-state="perk-desc-edit">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('lbl_perk_desc_or_translation_key') ?: 'Descripción o Clave de Traducción'; ?></h2>
-                                            <div class="component-edit-row">
-                                                <div class="component-input-group component-input-group--h34">
-                                                    <input type="text" data-ref="input-perk-desc" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($perkData['description']); ?>" data-original-value="<?php echo htmlspecialchars($perkData['description']); ?>" placeholder="e.g. store_content_pixel_shield_1_desc">
-                                                </div>
-                                                <div class="component-card__actions component-card__actions--stretch">
-                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-desc"><?php echo __('btn_cancel') ?: 'Cancelar'; ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="perk-desc"><?php echo __('btn_save') ?: 'Guardar'; ?></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <hr class="component-divider">
-
-                            <!-- Ícono -->
-                            <div class="component-group-item component-group-item--stateful">
-                                <div class="active component-state-box" data-state="perk-icon-view">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('lbl_perk_icon_material') ?: 'Ícono (Material Symbols)'; ?></h2>
-                                            <span class="component-display-value" data-ref="display-perk-icon"><?php echo htmlspecialchars($perkData['icon']) ?: (__('lbl_not_configured') ?: 'Sin configurar'); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-icon"><?php echo __('btn_edit') ?: 'Editar'; ?></button>
-                                    </div>
-                                </div>
-                                <div class="disabled component-state-box" data-state="perk-icon-edit">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('lbl_perk_icon_material') ?: 'Ícono (Material Symbols)'; ?></h2>
-                                            <div class="component-edit-row">
-                                                <div class="component-input-group component-input-group--h34">
-                                                    <input type="text" data-ref="input-perk-icon" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($perkData['icon']); ?>" data-original-value="<?php echo htmlspecialchars($perkData['icon']); ?>" placeholder="<?php echo __('placeholder_icon_examples') ?: 'Ej. shield, rocket_launch, bomb'; ?>">
-                                                </div>
-                                                <div class="component-card__actions component-card__actions--stretch">
-                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-icon"><?php echo __('btn_cancel') ?: 'Cancelar'; ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="perk-icon"><?php echo __('btn_save') ?: 'Guardar'; ?></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                         </div>
                     </div>
                 </div>

@@ -570,7 +570,7 @@ class AdminViewService {
         $searchCondition = "";
         $searchParams = [];
         if ($searchQuery !== '') {
-            $searchCondition = "WHERE name LIKE :search OR description LIKE :search";
+            $searchCondition = "WHERE amount LIKE :search OR stripe_price_id LIKE :search";
             $searchParams[':search'] = '%' . $searchQuery . '%';
         }
 
@@ -603,6 +603,24 @@ class AdminViewService {
             $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
             $stmt->execute();
             while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $amount = (int)$row['amount'];
+                $bonusAmount = (int)($row['bonus_amount'] ?? 0);
+                $baseAmount = $amount - $bonusAmount;
+
+                $meta = \App\Core\System\StorePackagesConfig::getCoinVisualMetadata($amount);
+
+                $row['name'] = __('store_coins_title_format', ['amount' => number_format($amount)]);
+                $row['description'] = $bonusAmount > 0 
+                    ? __('store_coins_desc_bonus_format', ['base' => number_format($baseAmount), 'bonus' => number_format($bonusAmount)])
+                    : __('store_coins_desc_format');
+                $row['bonus_text'] = $bonusAmount > 0 
+                    ? __('store_coins_bonus_format', ['bonus' => number_format($bonusAmount)])
+                    : null;
+                $row['icon'] = $meta['icon'];
+                $row['icon_color'] = $meta['icon_color'];
+                $row['border_color'] = $meta['border_color'];
+                $row['badge_color'] = $meta['badge_color'];
+
                 $packages[] = $row;
             }
         } catch (\Throwable $e) {
@@ -660,7 +678,7 @@ class AdminViewService {
         $searchCondition = "";
         $searchParams = [];
         if ($searchQuery !== '') {
-            $searchCondition = "WHERE name LIKE :search OR perk_id LIKE :search OR description LIKE :search";
+            $searchCondition = "WHERE perk_id LIKE :search";
             $searchParams[':search'] = '%' . $searchQuery . '%';
         }
 
@@ -693,6 +711,13 @@ class AdminViewService {
             $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
             $stmt->execute();
             while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $perkId = $row['perk_id'];
+                $meta = \App\Core\System\StorePackagesConfig::getPerkVisualMetadata($perkId);
+
+                $row['name'] = "store_content_{$perkId}_name";
+                $row['description'] = "store_content_{$perkId}_desc";
+                $row['icon'] = $meta['icon'];
+
                 $perks[] = $row;
             }
         } catch (\Throwable $e) {
