@@ -875,6 +875,22 @@ return [
             ],
         ],
     ],
+    'store.get_transaction_history' => [
+        'controller' => 'App\\Api\\Controllers\\Store\\StoreController',
+        'action' => 'get_transaction_history',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'store_tx_history',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'internal.user.consume_perk' => [
         'controller' => 'App\\Api\\Controllers\\Internal\\InternalUserController',
         'action' => 'consume_perk',

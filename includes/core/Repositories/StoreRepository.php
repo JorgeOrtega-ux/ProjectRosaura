@@ -23,24 +23,70 @@ class StoreRepository implements StoreRepositoryInterface {
     }
 
     public function addCoins(int $userId, int $amount): bool {
-        $stmt = $this->db->prepare("UPDATE users SET coins = coins + ? WHERE id = ?");
-        $res = $stmt->execute([$amount, $userId]);
-        if ($res && $this->redisClient) {
-            $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
-            $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+        try {
+            $this->db->beginTransaction();
+            $stmt = $this->db->prepare("UPDATE users SET coins = coins + ? WHERE id = ?");
+            $res = $stmt->execute([$amount, $userId]);
+            if ($res) {
+                $txUuid = \App\Core\Helpers\Utils::generateUUID();
+                $stmtTx = $this->db->prepare("
+                    INSERT INTO user_coin_transactions 
+                    (uuid, user_id, amount, type, description) 
+                    VALUES (?, ?, ?, 'bonus', ?)
+                ");
+                $stmtTx->execute([
+                    $txUuid,
+                    $userId,
+                    $amount,
+                    "Ajuste manual de monedas (Adición)"
+                ]);
+            }
+            $this->db->commit();
+            if ($res && $this->redisClient) {
+                $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+                $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+            }
+            return $res;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return false;
         }
-        return $res;
     }
 
     public function deductCoins(int $userId, int $amount): bool {
-        $stmt = $this->db->prepare("UPDATE users SET coins = coins - ? WHERE id = ? AND coins >= ?");
-        $stmt->execute([$amount, $userId, $amount]);
-        $res = $stmt->rowCount() > 0;
-        if ($res && $this->redisClient) {
-            $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
-            $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+        try {
+            $this->db->beginTransaction();
+            $stmt = $this->db->prepare("UPDATE users SET coins = coins - ? WHERE id = ? AND coins >= ?");
+            $stmt->execute([$amount, $userId, $amount]);
+            $res = $stmt->rowCount() > 0;
+            if ($res) {
+                $txUuid = \App\Core\Helpers\Utils::generateUUID();
+                $stmtTx = $this->db->prepare("
+                    INSERT INTO user_coin_transactions 
+                    (uuid, user_id, amount, type, description) 
+                    VALUES (?, ?, ?, 'spend', ?)
+                ");
+                $stmtTx->execute([
+                    $txUuid,
+                    $userId,
+                    -$amount,
+                    "Ajuste manual de monedas (Deducción)"
+                ]);
+            }
+            $this->db->commit();
+            if ($res && $this->redisClient) {
+                $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+                $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+            }
+            return $res;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return false;
         }
-        return $res;
     }
 
     public function getCoins(int $userId): int {
@@ -100,8 +146,24 @@ class StoreRepository implements StoreRepositoryInterface {
                 $data['status'] ?? 'succeeded'
             ]);
 
+            $purchaseId = $this->db->lastInsertId();
+
             $stmtAdd = $this->db->prepare("UPDATE users SET coins = coins + ? WHERE id = ?");
             $stmtAdd->execute([$data['item_amount'], $data['user_id']]);
+
+            $txUuid = \App\Core\Helpers\Utils::generateUUID();
+            $stmtTx = $this->db->prepare("
+                INSERT INTO user_coin_transactions 
+                (uuid, user_id, amount, type, reference_table, reference_id, description) 
+                VALUES (?, ?, ?, 'charge', 'store_purchases', ?, ?)
+            ");
+            $stmtTx->execute([
+                $txUuid,
+                $data['user_id'],
+                $data['item_amount'],
+                $purchaseId,
+                "Compra de monedas por Stripe"
+            ]);
 
             $this->db->commit();
 
@@ -142,6 +204,7 @@ class StoreRepository implements StoreRepositoryInterface {
 
             $perkStmt = $this->db->prepare("INSERT INTO user_perks (user_id, perk_id, coins_spent) VALUES (?, ?, ?)");
             $perkStmt->execute([$userId, $perkId, $price]);
+            $userPerkId = $this->db->lastInsertId();
 
             $balanceStmt = $this->db->prepare("
                 INSERT INTO user_perk_balances (user_id, perk_id, quantity_available) 
@@ -149,6 +212,20 @@ class StoreRepository implements StoreRepositoryInterface {
                 ON DUPLICATE KEY UPDATE quantity_available = quantity_available + 1
             ");
             $balanceStmt->execute([$userId, $perkId]);
+
+            $txUuid = \App\Core\Helpers\Utils::generateUUID();
+            $stmtTx = $this->db->prepare("
+                INSERT INTO user_coin_transactions 
+                (uuid, user_id, amount, type, reference_table, reference_id, description) 
+                VALUES (?, ?, ?, 'spend', 'user_perks', ?, ?)
+            ");
+            $stmtTx->execute([
+                $txUuid,
+                $userId,
+                -$price,
+                $userPerkId,
+                "Compra de perk: " . $perkId
+            ]);
 
             $this->db->commit();
 
@@ -202,11 +279,27 @@ class StoreRepository implements StoreRepositoryInterface {
                 VALUES (?, ?, 1) 
                 ON DUPLICATE KEY UPDATE quantity_available = quantity_available + 1
             ");
+            $stmtTx = $this->db->prepare("
+                INSERT INTO user_coin_transactions 
+                (uuid, user_id, amount, type, reference_table, reference_id, description) 
+                VALUES (?, ?, ?, 'spend', 'user_perks', ?, ?)
+            ");
+
             foreach ($perkItems as $item) {
                 $perkId = $item['id'];
                 $price = (int)($item['price'] ?? 0);
                 $perkStmt->execute([$userId, $perkId, $price]);
+                $userPerkId = $this->db->lastInsertId();
                 $balanceStmt->execute([$userId, $perkId]);
+
+                $txUuid = \App\Core\Helpers\Utils::generateUUID();
+                $stmtTx->execute([
+                    $txUuid,
+                    $userId,
+                    -$price,
+                    $userPerkId,
+                    "Compra masiva de perk: " . $perkId
+                ]);
             }
 
             $this->db->commit();
@@ -334,5 +427,19 @@ class StoreRepository implements StoreRepositoryInterface {
             }
             return false;
         }
+    }
+
+    public function getCoinTransactionsHistory(int $userId, int $limit = 50, int $offset = 0): array {
+        $stmt = $this->db->prepare("
+            SELECT * FROM user_coin_transactions 
+            WHERE user_id = ? 
+            ORDER BY created_at DESC 
+            LIMIT ? OFFSET ?
+        ");
+        $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $stmt->bindValue(3, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

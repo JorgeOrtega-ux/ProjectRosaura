@@ -260,4 +260,26 @@ class StoreServices {
             'perk_id' => $perkId
         ];
     }
+
+    public function getTransactionHistory(array $input): array {
+        if (!$this->sessionManager->isLoggedIn()) {
+            http_response_code(401);
+            return ['success' => false, 'message_key' => 'error.unauthorized'];
+        }
+
+        $userId = $this->sessionManager->getActiveAccountId();
+        $limit = isset($input['limit']) ? (int)$input['limit'] : 50;
+        $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
+
+        try {
+            $history = $this->storeRepo->getCoinTransactionsHistory($userId, $limit, $offset);
+            return [
+                'success' => true,
+                'data' => $history
+            ];
+        } catch (\Throwable $e) {
+            Logger::error("Failed to load coin transaction history: " . $e->getMessage());
+            return ['success' => false, 'message_key' => 'store.failed_to_load_history'];
+        }
+    }
 }

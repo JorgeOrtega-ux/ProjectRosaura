@@ -458,3 +458,20 @@ INSERT IGNORE INTO `store_perk_packages` (uuid, perk_id, name, description, pric
 ('e0000000-0000-0000-0000-000000000010', 'supernova_blast', 'store_content_supernova_blast_name', 'store_content_supernova_blast_desc', 12000, 'wb_sunny', 1, 1),
 ('e0000000-0000-0000-0000-000000000011', 'ion_strike', 'store_content_ion_strike_name', 'store_content_ion_strike_desc', 8000, 'change_history', 1, 1);
 
+CREATE TABLE IF NOT EXISTS `user_coin_transactions` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `uuid` CHAR(36) NOT NULL UNIQUE,
+  `user_id` INT(11) NOT NULL,
+  `amount` INT NOT NULL,
+  `type` ENUM('charge', 'spend', 'refund', 'bonus', 'admin_adjustment') NOT NULL,
+  `reference_table` VARCHAR(50) DEFAULT NULL,
+  `reference_id` BIGINT DEFAULT NULL,
+  `description` VARCHAR(255) DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_uct_user (`user_id`),
+  INDEX idx_uct_user_created (`user_id`, `created_at` DESC),
+  INDEX idx_uct_ref (`reference_table`, `reference_id`),
+  CONSTRAINT fk_uct_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+

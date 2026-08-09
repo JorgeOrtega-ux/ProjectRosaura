@@ -15,4 +15,5 @@ interface StoreRepositoryInterface {
     public function purchasePerkAtomic(int $userId, string $perkId, int $price): array;
     public function purchasePerksBulkAtomic(int $userId, array $perkItems): array;
     public function refundPerk(int $userId, string $perkId): bool;
+    public function getCoinTransactionsHistory(int $userId, int $limit = 50, int $offset = 0): array;
 }

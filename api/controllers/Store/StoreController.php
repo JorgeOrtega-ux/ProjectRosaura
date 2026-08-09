@@ -32,4 +32,9 @@ class StoreController extends BaseController {
         try { return $this->respond($this->storeServices->activatePerk($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
+
+    public function get_transaction_history($input) {
+        try { return $this->respond($this->storeServices->getTransactionHistory($input)); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
 }

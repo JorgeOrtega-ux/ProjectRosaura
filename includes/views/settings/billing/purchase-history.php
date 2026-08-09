@@ -8,6 +8,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
         <div class="component-top">
             <div class="component-top-left">
                 <h1 class="component-top-title"><?php echo __('phistory_title'); ?></h1>
+                <div class="component-toggle-pill" style="margin-top: 15px; margin-bottom: 5px;">
+                    <button type="button" class="component-button component-button--rounded-pill active" data-action="toggleHistoryTab" data-value="payments">
+                        <?php echo __('tab_payments_real') ?: 'Pagos (Dinero Real)'; ?>
+                    </button>
+                    <button type="button" class="component-button component-button--rounded-pill" data-action="toggleHistoryTab" data-value="coins">
+                        <?php echo __('tab_coins_virtual') ?: 'Monedas (Virtual)'; ?>
+                    </button>
+                </div>
             </div>
             
             <div class="component-top-right">

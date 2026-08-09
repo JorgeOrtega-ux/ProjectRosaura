@@ -27,6 +27,11 @@ export class PurchaseHistoryController {
             types: ['all'],
             statuses: ['all']
         };
+
+        // Ledger state variables
+        this.activeTab = 'payments'; // 'payments' or 'coins'
+        this.coinItems = [];
+        this.filteredCoinItems = [];
     }
 
     async init() {
@@ -86,6 +91,13 @@ export class PurchaseHistoryController {
         
         const prevPageBtn = e.target.closest('[data-action="prevPage"]');
         const nextPageBtn = e.target.closest('[data-action="nextPage"]');
+        const toggleHistoryTabBtn = e.target.closest('[data-action="toggleHistoryTab"]');
+
+        if (toggleHistoryTabBtn) {
+            const tab = toggleHistoryTabBtn.getAttribute('data-value');
+            this.setHistoryTab(tab);
+            return;
+        }
 
         if (toggleModuleBtn) {
             e.stopPropagation();
@@ -229,11 +241,15 @@ export class PurchaseHistoryController {
     applyFiltersAndRender() {
         this.deselectPurchase();
 
-        this.filteredItems = this.rawItems.filter(item => {
-            const matchType = this.activeFilters.types.includes('all') || this.activeFilters.types.includes(item.type);
-            const matchStatus = this.activeFilters.statuses.includes('all') || this.activeFilters.statuses.includes(item.status);
-            return matchType && matchStatus;
-        });
+        if (this.activeTab === 'payments') {
+            this.filteredItems = this.rawItems.filter(item => {
+                const matchType = this.activeFilters.types.includes('all') || this.activeFilters.types.includes(item.type);
+                const matchStatus = this.activeFilters.statuses.includes('all') || this.activeFilters.statuses.includes(item.status);
+                return matchType && matchStatus;
+            });
+        } else {
+            this.filteredItems = this.coinItems;
+        }
 
         this.totalItems = this.filteredItems.length;
         this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.limit));
@@ -332,7 +348,14 @@ export class PurchaseHistoryController {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
-            if (downloadBtn) downloadBtn.classList.remove('disabled-interaction');
+            if (downloadBtn) {
+                const itemType = this.selectedRow.getAttribute('data-type');
+                if (itemType === 'coins-ledger') {
+                    downloadBtn.classList.add('disabled-interaction');
+                } else {
+                    downloadBtn.classList.remove('disabled-interaction');
+                }
+            }
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');
             if (defaultMode) defaultMode.classList.replace('disabled', 'active');
@@ -451,5 +474,155 @@ export class PurchaseHistoryController {
         this.selectedPurchaseId = null;
         this.selectedReceiptUrl = null;
         this.selectedPdfUrl = null;
+    }
+
+    setHistoryTab(tab) {
+        if (this.activeTab === tab) return;
+
+        this.activeTab = tab;
+        this.deselectPurchase();
+        this.currentPage = 1;
+
+        const tabBtns = this.container.querySelectorAll('[data-action="toggleHistoryTab"]');
+        tabBtns.forEach(btn => {
+            if (btn.getAttribute('data-value') === tab) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        const filterToggleBtn = this.container.querySelector('[data-ref="btn-toggle-filters"]');
+        if (filterToggleBtn) {
+            if (tab === 'coins') {
+                filterToggleBtn.style.display = 'none';
+            } else {
+                filterToggleBtn.style.display = '';
+            }
+        }
+
+        if (tab === 'coins') {
+            if (this.coinItems.length === 0) {
+                this.loadCoinHistory();
+            } else {
+                this.applyFiltersAndRender();
+            }
+        } else {
+            this.applyFiltersAndRender();
+        }
+    }
+
+    async loadCoinHistory() {
+        if (!this.tbody) return;
+
+        this.tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="component-empty-table-cell">
+                    <div class="component-empty-state component-empty-state--table">
+                        <span class="material-symbols-rounded component-empty-state-icon spinner-animation" style="animation: spin 1.5s linear infinite;">progress_activity</span>
+                        <p class="component-empty-state-text">${window.__('loading') || 'Cargando'}...</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        try {
+            const response = await this.api.post(ApiRoutes.Store.GetTransactionHistory, { limit: 100, offset: 0 }, this.abortController.signal);
+            
+            if (response.success && response.data && response.data.length > 0) {
+                this.coinItems = response.data.map(item => {
+                    const date = new Date(item.created_at).toLocaleDateString();
+                    const description = window.__(item.description) || item.description || 'Transacción';
+                    
+                    const amountVal = parseInt(item.amount, 10);
+                    const sign = amountVal > 0 ? '+' : '';
+                    const formattedAmount = `${sign}${amountVal.toLocaleString()} ${window.__('coins') || 'Monedas'}`;
+                    const amountClass = amountVal > 0 ? 'component-text-notice--success' : 'component-badge--danger';
+
+                    let statusClass = 'component-text-notice--success';
+                    let typeText = 'Carga';
+                    if (item.type === 'spend') {
+                        statusClass = 'component-badge--warning';
+                        typeText = 'Gasto';
+                    } else if (item.type === 'refund') {
+                        statusClass = 'component-badge--info';
+                        typeText = 'Devolución';
+                    } else if (item.type === 'bonus') {
+                        statusClass = 'component-text-notice--success';
+                        typeText = 'Bono';
+                    } else if (item.type === 'admin_adjustment') {
+                        statusClass = 'component-badge--muted';
+                        typeText = 'Soporte';
+                    }
+
+                    let iconName = 'toll';
+                    if (item.type === 'spend') iconName = 'shopping_bag';
+                    else if (item.type === 'refund') iconName = 'history';
+                    else if (item.type === 'bonus') iconName = 'stars';
+                    else if (item.type === 'admin_adjustment') iconName = 'admin_panel_settings';
+
+                    const rowHtml = `
+                        <tr class="component-table-row" data-action="selectPurchase" data-id="${item.id}" data-type="coins-ledger" data-status="succeeded">
+                            <td>
+                                <div class="component-badge component-badge--sm">
+                                    <span class="material-symbols-rounded">calendar_month</span>
+                                    <span class="search-target">${date}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="component-badge component-badge--sm">
+                                    <span class="material-symbols-rounded">${iconName}</span>
+                                    <span class="search-target">${escapeHTML(description)}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="component-badge component-badge--sm">
+                                    <span class="material-symbols-rounded">toll</span>
+                                    <span class="search-target ${amountClass}">${formattedAmount}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="component-badge component-badge--sm">
+                                    <span class="search-target ${statusClass}">${typeText}</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+
+                    return {
+                        id: item.id,
+                        type: 'coins-ledger',
+                        status: 'succeeded',
+                        html: rowHtml
+                    };
+                });
+
+                this.applyFiltersAndRender();
+            } else {
+                this.tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="component-empty-table-cell">
+                            <div class="component-empty-state component-empty-state--table">
+                                <span class="material-symbols-rounded component-empty-state-icon">receipt_long</span>
+                                <p class="component-empty-state-text">${window.__('empty_purchase_history') || 'Sin transacciones'}</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                this.tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="component-empty-table-cell">
+                            <div class="component-empty-state component-empty-state--table">
+                                <span class="material-symbols-rounded component-empty-state-icon">error</span>
+                                <p class="component-empty-state-text">${window.__('err_connection') || 'Error de conexión'}</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
     }
 }
