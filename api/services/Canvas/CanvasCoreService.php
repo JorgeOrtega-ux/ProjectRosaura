@@ -168,7 +168,6 @@ class CanvasCoreService {
                     'size' => $canvas['size'],
                     'max_participants' => $canvas['max_participants'],
                     'created_at' => $canvas['created_at'],
-                    'is_official' => $canvas['is_official'] ?? 0,
                     'is_favorite' => $canvas['is_favorite'],
                     'is_owner' => $canvas['is_owner'],
                     'is_member' => !empty($canvas['is_member']),
@@ -529,7 +528,6 @@ class CanvasCoreService {
                 'max_participants'      => $limit,
                 'cooldown_pixels_batch' => max(1, $cooldownBatch),
                 'cooldown_seconds'      => max(0, $cooldownSeconds),
-                'is_official'           => 0,
                 'allow_purchases'       => $allowPurchases,
                 'allow_chat'            => $allowChat,
                 'tags'                  => array_values(array_intersect($tags, [
@@ -734,8 +732,6 @@ class CanvasCoreService {
             } else {
                 $data['tags'] = null;
             }
-
-            // Campo is_official eliminado (lienzos oficiales removidos del sistema)
 
             $updated = $this->canvasRepository->updateCanvasData($canvasId, $data);
 

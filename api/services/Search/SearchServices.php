@@ -58,7 +58,6 @@ class SearchServices {
                         'name'         => $doc['name'],
                         'owner_id'     => $doc['owner_id'] ?? null,
                         'privacy'      => $doc['privacy'],
-                        'is_official'  => $doc['is_official'] ?? 0,
                         'is_favorite'  => false,
                         'favorites_count' => 0,
                         'members_count'   => 0,

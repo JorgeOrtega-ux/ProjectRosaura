@@ -51,11 +51,11 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $sql = "INSERT INTO " . DB::TBL_CANVASES . "
             (uuid, owner_id, name, privacy, requires_approval, size, palette_id,
              max_participants, cooldown_pixels_batch, cooldown_seconds,
-             is_official, allow_purchases, allow_chat, tags)
+             allow_purchases, allow_chat, tags)
             VALUES
             (:uuid, :owner_id, :name, :privacy, :requires_approval, :size, :palette_id,
              :max_participants, :cooldown_pixels_batch, :cooldown_seconds,
-             :is_official, :allow_purchases, :allow_chat, :tags)";
+             :allow_purchases, :allow_chat, :tags)";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -69,7 +69,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':max_participants'      => $canvasData['max_participants'] ?? null,
             ':cooldown_pixels_batch' => $canvasData['cooldown_pixels_batch'] ?? 1,
             ':cooldown_seconds'      => $canvasData['cooldown_seconds'] ?? 0,
-            ':is_official'           => $canvasData['is_official'] ?? 0,
             ':allow_purchases'       => $canvasData['allow_purchases'] ?? 0,
             ':allow_chat'            => $canvasData['allow_chat'] ?? 0,
             ':tags'                  => isset($canvasData['tags']) ? json_encode($canvasData['tags']) : null
@@ -84,7 +83,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     'name'       => $canvasData['name'],
                     'owner_id'   => (int)$canvasData['owner_id'],
                     'privacy'    => $canvasData['privacy'],
-                    'is_official'=> $canvasData['is_official'] ?? 0,
                     'created_at' => time()
                 ];
                 $client->collections['canvases']->documents->create($document);
@@ -147,14 +145,14 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 $isMemberSelect = "CASE WHEN cm.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_member";
             }
 
-            $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.is_official, c.favorites_count,
+            $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.favorites_count,
                            CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                            c.members_count,
                            $isMemberSelect
                     FROM " . DB::TBL_CANVASES . " c
                     LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                     $joinMemberSql
-                    WHERE c.privacy = 'public' AND c.is_official = 0 AND c.is_subscription_locked = 0
+                    WHERE c.privacy = 'public' AND c.is_subscription_locked = 0
                     $orderClause 
                     LIMIT :limit OFFSET :offset";
             
@@ -310,7 +308,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $whereClause = "WHERE (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL) AND f.canvas_id IS NOT NULL";
         }
 
-        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.owner_id, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
+        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.owner_id, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count,
                        CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner,
@@ -343,7 +341,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
-        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_official, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
+        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
@@ -456,9 +454,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     tags = :tags
                 ";
 
-        if (isset($data['is_official'])) {
-            $sql .= ", is_official = :is_official";
-        }
         $sql .= " WHERE id = :id";
         
         $stmt = $this->db->prepare($sql);
@@ -475,9 +470,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':tags'                  => isset($data['tags']) ? json_encode($data['tags']) : null,
             ':id'                    => $id
         ];
-        if (isset($data['is_official'])) {
-            $params[':is_official'] = $data['is_official'];
-        }
         $success = $stmt->execute($params);
         if ($success) {
             $this->invalidateCanvasCache($id);
@@ -488,9 +480,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
                         'name'    => $data['name'],
                         'privacy' => $data['privacy']
                     ];
-                    if (isset($data['is_official'])) {
-                        $document['is_official'] = $data['is_official'];
-                    }
                     $client->collections['canvases']->documents[(string)$id]->update($document);
                 } catch (Exception $e) {
                     Logger::error("Typesense Update Error (Canvas ID {$id}): " . $e->getMessage());

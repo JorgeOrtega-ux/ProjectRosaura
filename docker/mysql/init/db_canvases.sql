@@ -24,16 +24,14 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `members_count` int(11) NOT NULL DEFAULT 0,
   `total_pixels` bigint(20) NOT NULL DEFAULT 0,
   `total_messages` bigint(20) NOT NULL DEFAULT 0,
-  `is_official` tinyint(1) NOT NULL DEFAULT 0,
   `is_frozen` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
   INDEX `idx_owner_canvases` (`owner_id`),
-  INDEX `idx_canvases_privacy_official` (`privacy`, `is_official`),
-  INDEX `idx_canvases_official_owner` (`is_official`, `owner_id`),
-  INDEX `idx_canvases_feed_opt` (`is_subscription_locked`, `privacy`, `is_official`, `created_at`),
+  INDEX `idx_canvases_privacy` (`privacy`),
+  INDEX `idx_canvases_feed_opt` (`is_subscription_locked`, `privacy`, `created_at`),
   INDEX `idx_canvases_tags` ((CAST(tags AS CHAR(32) ARRAY)))
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 

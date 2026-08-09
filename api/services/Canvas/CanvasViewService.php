@@ -91,7 +91,7 @@ class CanvasViewService {
                          LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
                          LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
                          WHERE c.owner_id = :uid2 OR crp.permission_id IS NOT NULL";
-        $sqlSelect = "SELECT DISTINCT c.id, c.uuid, c.name, c.privacy, c.size, c.max_participants, c.created_at, c.is_official, c.favorites_count, c.owner_id 
+        $sqlSelect = "SELECT DISTINCT c.id, c.uuid, c.name, c.privacy, c.size, c.max_participants, c.created_at, c.favorites_count, c.owner_id 
                       FROM {$tblCanvases} c 
                       LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
                       LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
