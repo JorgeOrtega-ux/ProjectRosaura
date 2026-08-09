@@ -97,6 +97,17 @@ class AdminBackupsController {
         if (e.target && e.target.getAttribute('data-ref') === 'backup-search-input') {
             this.applyAllFilters();
         }
+        if (e.target && e.target.getAttribute('data-ref') === 'modal_verify_password') {
+            const password = e.target.value.trim();
+            const submitBtn = document.querySelector('[data-action="confirmRestoreSubmit"]');
+            if (submitBtn) {
+                if (password.length > 0) {
+                    submitBtn.classList.remove('disabled-interaction');
+                } else {
+                    submitBtn.classList.add('disabled-interaction');
+                }
+            }
+        }
     }
     handleChange(e) {
         if (!window.location.pathname.includes('/admin/backups') || window.location.pathname.includes('/admin/backup-schedule') || window.location.pathname.includes('/admin/backup-create') || window.location.pathname.includes('/admin/backup-restore')) return;
@@ -105,12 +116,20 @@ class AdminBackupsController {
         }
         const toggleLock = e.target.closest('[data-action="toggleRestoreLock"]');
         if (toggleLock) {
-            const confirmBtn = document.querySelector('[data-action="confirmRestoreSubmit"]');
-            if (confirmBtn) {
+            const nextBtn = document.querySelector('[data-action="nextToStep3"]');
+            const step3Dot = document.querySelector('.restore-footer-dots .step-modal-dot[data-step-target="restore-step-3"]');
+            if (nextBtn) {
                 if (toggleLock.checked) {
-                    confirmBtn.classList.remove('disabled-interaction');
+                    nextBtn.classList.remove('disabled-interaction');
                 } else {
-                    confirmBtn.classList.add('disabled-interaction');
+                    nextBtn.classList.add('disabled-interaction');
+                }
+            }
+            if (step3Dot) {
+                if (toggleLock.checked) {
+                    step3Dot.classList.remove('disabled-interaction');
+                } else {
+                    step3Dot.classList.add('disabled-interaction');
                 }
             }
         }
@@ -358,9 +377,8 @@ class AdminBackupsController {
             }
         }
         
-        const resultDialog = await window.modalSystem.show('verifyPasswordRestoreBackup');
-        if (!resultDialog.confirmed) return;
-        const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
+        const passwordInput = document.querySelector('[data-ref="modal_verify_password"]');
+        const password = passwordInput ? passwordInput.value.trim() : '';
         if (!password) {
             showMessage(window.__('err_password_authorize_restore'), 'error');
             return;
@@ -370,7 +388,7 @@ class AdminBackupsController {
         const originalText = btn.innerHTML;
         btn.innerHTML = '<span class="material-symbols-rounded spin-icon">autorenew</span>';
         btn.classList.add('disabled-interaction');
-        showMessage(window.__('msg_initiating_lockdown'), 'success');
+        
         const res = await this.api.post(ApiRoutes.Admin.RestoreBackup, { 
             backup_id: backupId, 
             password: password,
@@ -378,6 +396,7 @@ class AdminBackupsController {
         }, this.abortController.signal);
         if (res.aborted) return;
         if (res.success && res.job_id) {
+            showMessage(window.__('msg_initiating_lockdown'), 'success');
             this.pollRestoreStatus(res.job_id, btn, originalText);
         } else {
             this.resetRestoreUI(btn, originalText);
@@ -427,56 +446,131 @@ class AdminBackupsController {
         }
     }
     buildRestoreSchemaHTML(container) {
+        const dbPane = container.querySelector('[data-ref="restore-db-pane"]');
+        const tablesPane = container.querySelector('[data-ref="restore-tables-pane"]');
+        if (!dbPane || !tablesPane) return;
+
         if (!this.restoreSchema || Object.keys(this.restoreSchema).length === 0) {
-            container.innerHTML = '<div>No hay tablas disponibles para restaurar en este respaldo.</div>';
+            dbPane.innerHTML = '<div>No hay esquemas.</div>';
+            tablesPane.innerHTML = '<div>No hay tablas disponibles.</div>';
             return;
         }
-        let html = '<div class="component-list component-list--flush">';
+
+        let dbHtml = '<div class="component-menu-list">';
+        let tablesHtml = '';
+        let index = 0;
+
         for (const [dbName, tables] of Object.entries(this.restoreSchema)) {
-            const totalTables = tables.length;
             const selectedCount = this.selectedRestoreSchema[dbName]?.length || 0;
             const isDbChecked = selectedCount > 0 ? 'checked' : '';
-            
-            html += `
-                <div class="restore-schema-db" style="margin-bottom: 12px; border: 1px solid var(--border-color); border-radius:12px; padding:12px; background:var(--bg-card);">
-                    <div class="restore-schema-db-header" style="display:flex; align-items:center; justify-content:space-between; font-weight:600;">
-                        <span style="display:flex; align-items:center; gap:8px;">
-                            <span class="material-symbols-rounded" style="color:var(--text-secondary);">database</span>
-                            ${dbName}
-                        </span>
+            const isActive = index === 0;
+
+            dbHtml += `
+                <div class="component-menu-link component-menu-link--bordered restore-db-item ${isActive ? 'active' : ''}" data-db="${dbName}">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">database</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span>${dbName}</span>
+                    </div>
+                    <div class="component-menu-link-icon">
                         <label class="component-toggle-switch">
                             <input type="checkbox" class="restore-db-cb" data-db="${dbName}" ${isDbChecked}>
                             <span class="component-toggle-slider"></span>
                         </label>
                     </div>
-                    <div class="restore-schema-tables-list" style="margin-top:10px; padding-left:16px; display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border-color); padding-top:10px;">
+                </div>
+            `;
+
+            tablesHtml += `
+                <div class="restore-tables-container ${isActive ? 'active' : ''}" data-db-tables="${dbName}">
+                    <div class="component-menu-list">
             `;
             tables.forEach(table => {
                 const isTableChecked = this.selectedRestoreSchema[dbName]?.includes(table) ? 'checked' : '';
-                html += `
-                    <div class="restore-schema-table-item" style="display:flex; align-items:center; justify-content:space-between; font-size:13px; color:var(--text-secondary);">
-                        <span style="display:flex; align-items:center; gap:6px;">
-                            <span class="material-symbols-rounded" style="font-size:16px;">table_rows</span>
-                            ${table}
-                        </span>
-                        <label class="component-toggle-switch">
-                            <input type="checkbox" class="restore-table-cb" data-db="${dbName}" value="${table}" ${isTableChecked}>
-                            <span class="component-toggle-slider"></span>
-                        </label>
-                    </div>
+                tablesHtml += `
+                        <div class="component-menu-link component-menu-link--bordered restore-table-item">
+                            <div class="component-menu-link-icon">
+                                <span class="material-symbols-rounded">table_rows</span>
+                            </div>
+                            <div class="component-menu-link-text">
+                                <span>${table}</span>
+                            </div>
+                            <div class="component-menu-link-icon">
+                                <label class="component-toggle-switch">
+                                    <input type="checkbox" class="restore-table-cb" data-db="${dbName}" value="${table}" ${isTableChecked}>
+                                    <span class="component-toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
                 `;
             });
-            html += `
+            tablesHtml += `
                     </div>
                 </div>
             `;
+
+            index++;
         }
-        html += '</div>';
-        container.innerHTML = html;
+
+        dbHtml += '</div>';
+        dbPane.innerHTML = dbHtml;
+        tablesPane.innerHTML = tablesHtml;
         this.bindRestoreCheckboxEvents();
     }
     bindRestoreCheckboxEvents() {
-        const dbCbs = document.querySelectorAll('.restore-db-cb');
+        const container = document.querySelector('[data-ref="restore-schema-tree"]');
+        if (!container) return;
+
+        const dbPane = container.querySelector('[data-ref="restore-db-pane"]');
+        const tablesPane = container.querySelector('[data-ref="restore-tables-pane"]');
+        const dbItems = dbPane ? dbPane.querySelectorAll('.restore-db-item') : [];
+        const dbCbs = dbPane ? dbPane.querySelectorAll('.restore-db-cb') : [];
+        const tableCbs = tablesPane ? tablesPane.querySelectorAll('.restore-table-cb') : [];
+
+        const nextBtnStep2 = document.querySelector('[data-action="nextToStep2"]');
+        const step2Dot = document.querySelector('.restore-footer-dots .step-modal-dot[data-step-target="restore-step-2"]');
+        
+        const updateNextBtnState = () => {
+            let hasSelection = false;
+            for (const [dbName, tables] of Object.entries(this.selectedRestoreSchema)) {
+                if (tables.length > 0) {
+                    hasSelection = true;
+                    break;
+                }
+            }
+            if (nextBtnStep2) {
+                if (hasSelection) {
+                    nextBtnStep2.classList.remove('disabled-interaction');
+                } else {
+                    nextBtnStep2.classList.add('disabled-interaction');
+                }
+            }
+            if (step2Dot) {
+                if (hasSelection) {
+                    step2Dot.classList.remove('disabled-interaction');
+                } else {
+                    step2Dot.classList.add('disabled-interaction');
+                }
+            }
+        };
+
+        dbItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                if (e.target.closest('.component-toggle-switch')) return;
+                
+                const dbName = item.getAttribute('data-db');
+                
+                dbItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                const tablesContainers = tablesPane.querySelectorAll('[data-db-tables]');
+                tablesContainers.forEach(tc => tc.classList.remove('active'));
+                const activeTc = tablesPane.querySelector(`[data-db-tables="${dbName}"]`);
+                if (activeTc) activeTc.classList.add('active');
+            });
+        });
+
         dbCbs.forEach(cb => {
             cb.addEventListener('change', (e) => {
                 const dbName = e.target.getAttribute('data-db');
@@ -488,16 +582,18 @@ class AdminBackupsController {
                     this.selectedRestoreSchema[dbName] = [];
                 }
                 
-                const tableCbs = document.querySelectorAll(`.restore-table-cb[data-db="${dbName}"]`);
-                tableCbs.forEach(tCb => tCb.checked = isChecked);
+                const relatedTableCbs = tablesPane.querySelectorAll(`.restore-table-cb[data-db="${dbName}"]`);
+                relatedTableCbs.forEach(tCb => tCb.checked = isChecked);
+                updateNextBtnState();
             });
         });
-        const tableCbs = document.querySelectorAll('.restore-table-cb');
+
         tableCbs.forEach(cb => {
             cb.addEventListener('change', (e) => {
                 const dbName = e.target.getAttribute('data-db');
                 const tableName = e.target.value;
                 const isChecked = e.target.checked;
+                
                 if (!this.selectedRestoreSchema[dbName]) {
                     this.selectedRestoreSchema[dbName] = [];
                 }
@@ -508,12 +604,15 @@ class AdminBackupsController {
                 } else {
                     this.selectedRestoreSchema[dbName] = this.selectedRestoreSchema[dbName].filter(t => t !== tableName);
                 }
-                const dbCb = document.querySelector(`.restore-db-cb[data-db="${dbName}"]`);
+                const dbCb = dbPane.querySelector(`.restore-db-cb[data-db="${dbName}"]`);
                 if (dbCb) {
                     dbCb.checked = this.selectedRestoreSchema[dbName].length > 0;
                 }
+                updateNextBtnState();
             });
         });
+
+        updateNextBtnState();
     }
 }
 export { AdminBackupsController };

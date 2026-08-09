@@ -7669,10 +7669,10 @@ html.dark-theme .component-skeleton-design-bottom {
 
 /* Modal Columns Layout */
 .component-modal-box--columns {
-    max-width: 1024px !important;
-    width: 1024px !important;
-    height: auto;
-    max-height: 95vh;
+    max-width: 952px !important;
+    width: 952px !important;
+    height: 592px !important;
+    max-height: 592px !important;
     padding: 0 !important;
     border-radius: 24px !important;
     background-color: var(--bg-surface) !important;
