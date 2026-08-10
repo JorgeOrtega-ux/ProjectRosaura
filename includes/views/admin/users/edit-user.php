@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Api\Services\Admin\AdminViewService;
 use App\Core\System\Translator;
 
@@ -17,7 +17,7 @@ $activeRoleBg = $roleBgCss ?? 'var(--text-muted)';
 $formattedAvatar = (!empty($user['profile_picture']) && strpos($user['profile_picture'], 'http') !== 0) 
     ? (defined('APP_URL') ? APP_URL : '') . '/' . ltrim($user['profile_picture'], '/') 
     : $user['profile_picture'];
-$isDefaultAvatar = strpos($formattedAvatar, '/default/') !== false;
+$isDefaultAvatar = \App\Core\Helpers\Utils::isDefaultAvatar($formattedAvatar);
 
 $langMap = Translator::getAvailableLanguages();
 

@@ -283,7 +283,7 @@ class AdminServices {
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $oldPic = $user['profile_picture'];
-        if (strpos($oldPic, '/default/') !== false) return ['success' => false, 'message' => __('admin.avatar_already_default')];
+        if (Utils::isDefaultAvatar($oldPic)) return ['success' => false, 'message' => __('admin.avatar_already_default')];
 
         Utils::deleteOldAvatar($oldPic);
 

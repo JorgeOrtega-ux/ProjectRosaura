@@ -367,6 +367,18 @@ class Utils {
         return $path;
     }
 
+    public static function isDefaultAvatar($path) {
+        if (empty($path)) {
+            return true;
+        }
+        return strpos($path, 'profilePictures/default/') !== false 
+            || strpos($path, 'fallbacks/avatar-default.png') !== false 
+            || strpos($path, '/default/') !== false
+            || strpos($path, '/avatar/') !== false 
+            || str_starts_with($path, 'avatar/')
+            || str_starts_with(ltrim($path, '/'), 'avatar/');
+    }
+
     public static function renderTurnstile(string $action = 'general'): string {
         $siteKey = \App\Core\Helpers\EnvLoader::get('TURNSTILE_SITE_KEY', '');
         

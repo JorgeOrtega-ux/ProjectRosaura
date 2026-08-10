@@ -562,20 +562,8 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             print(f"[!] Error uploading thumbnail to S3: {e}")
             return False
 
-        # Guardar localmente también para compatibilidad con CanvasRepository
-        if THUMBNAILS_DIR:
-            try:
-                os.makedirs(THUMBNAILS_DIR, exist_ok=True)
-                # Guardar con ID numérico (ej: canvas_11.webp)
-                local_path_id = os.path.join(THUMBNAILS_DIR, f"canvas_{canvas_id}.webp")
-                bg_thumb.save(local_path_id, "WEBP", quality=80)
-                
-                # Guardar con UUID (ej: canvas_uuid.webp) si existe
-                if canvas_uuid:
-                    local_path_uuid = os.path.join(THUMBNAILS_DIR, f"canvas_{canvas_uuid}.webp")
-                    bg_thumb.save(local_path_uuid, "WEBP", quality=80)
-            except Exception as local_err:
-                print(f"[!] Error saving thumbnail locally: {local_err}")
+        # S3 upload successful. Local saving skipped since CanvasRepository now loads directly from S3/MinIO.
+        pass
 
         
         if r.exists(f"canvas:{canvas_id}:reset_lock") or r.exists(f"canvas:{canvas_id}:snapshot_lock"):

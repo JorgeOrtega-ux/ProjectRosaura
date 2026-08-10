@@ -62,7 +62,7 @@ class SettingsViewService {
         $rawUserPic = $_SESSION['user_pic'] ?? '';
         $userPic = Utils::getValidImage($rawUserPic, 'avatar');
         $formattedAvatar = htmlspecialchars($userPic);
-        $isDefaultAvatar = strpos($userPic, 'profilePictures/default/') !== false || strpos($userPic, 'fallbacks/avatar-default.png') !== false;
+        $isDefaultAvatar = Utils::isDefaultAvatar($userPic);
 
         $userPrefs = $_SESSION['user_prefs'] ?? [];
         $prefLang = $userPrefs['language'] ?? ($_COOKIE['pr_language'] ?? 'es-419');

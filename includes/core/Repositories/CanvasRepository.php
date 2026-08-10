@@ -31,20 +31,25 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     private function appendSnapshotUrl(array $canvas): array {
-        if (!isset($canvas['id'])) {
+        $identifier = $canvas['uuid'] ?? $canvas['id'] ?? null;
+        if (!$identifier) {
+            $canvas['thumbnail_url'] = null;
             return $canvas;
         }
-        
-        $thumbnailPath = "/storage/public/thumbnails/canvas_" . $canvas['id'] . ".webp";
-        $physicalPath = dirname(__DIR__, 3) . $thumbnailPath;
-        
-        if (file_exists($physicalPath)) {
-            $timestamp = filemtime($physicalPath);
-            $canvas['thumbnail_url'] = $thumbnailPath . "?v=" . $timestamp;
-        } else {
-            $canvas['thumbnail_url'] = null;
+
+        $v = null;
+        if ($this->redisClient && isset($canvas['uuid'])) {
+            try {
+                $v = $this->redisClient->get("canvas:{$canvas['uuid']}:thumbnail_version");
+            } catch (\Throwable $e) {
+                // Ignore Redis errors
+            }
         }
-        
+
+        $s3Key = "thumbnails/canvas_" . $identifier . ".webp";
+        $s3Url = \App\Core\Helpers\Utils::getS3PublicUrl($s3Key);
+        $canvas['thumbnail_url'] = $v ? $s3Url . "?v=" . $v : $s3Url;
+
         return $canvas;
     }
     public function create(array $canvasData): int {
