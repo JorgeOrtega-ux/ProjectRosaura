@@ -47,8 +47,6 @@ extract($designData);
          
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('lbl_design_title'); ?></h1>
-                
                 <?php if (!empty($canvasName)): ?>
                     <h1 class="component-top-title">
                         <?php echo htmlspecialchars($canvasName); ?>
@@ -93,48 +91,20 @@ extract($designData);
                     <?php endif; ?>
                 </div>
 
-                <div class="component-actions <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="design-tools-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="openJoinLiveModal" data-tooltip="<?php echo __('tooltip_join_live'); ?> [J]" data-position="bottom">
-                        <span class="material-symbols-rounded">sensors</span>
-                    </button>
-                    
-                    <div class="component-divider-vertical" data-ref="main-actions-divider"></div>
-
-                    <?php
-                        $liveTierMin = \App\Core\System\SubscriptionPlanConstants::getLowestTierForFeature('live_share');
-                        $liveTierLevel = $liveTierMin ? (int)$liveTierMin['tier_level'] : 1;
-                    ?>
-                    <button class="component-button component-button--icon component-button--h40 <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'component-button--premium premium-locked' : 'disabled'; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom" <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'data-requires-premium="true" data-required-tier="' . $liveTierLevel . '"' : ''; ?>>
-                        <span class="material-symbols-rounded">stream</span>
-                    </button>
-                    
-                    <button class="component-button component-button--icon component-button--h40 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?> [C]" data-position="bottom">
-                        <span class="material-symbols-rounded">palette</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?> [T]" data-position="bottom">
-                        <span class="material-symbols-rounded">photo_library</span>
-                    </button>
-
-                    <button class="component-button component-button--icon component-button--h40 component-button--warning disabled" data-action="unlockTemplateTop" data-ref="btn-top-unlock-template" data-tooltip="Desfijar Plantilla [U]" data-position="bottom">
-                        <span class="material-symbols-rounded">lock_open</span>
-                    </button>
-                    
+                <div class="component-actions">
                     <?php if ($canvasAllowPurchases == '1'): ?>
-                    <div class="component-divider-vertical" data-ref="advantages-actions-divider"></div>
                     <button class="component-button component-button--icon component-button--h40" data-action="togglePerksInventory" data-tooltip="<?php echo __('tooltip_active_advantages'); ?> [P]" data-position="bottom">
                         <span class="material-symbols-rounded">stars</span>
                     </button>
                     <?php endif; ?>
 
                     <?php if (isset($isOwner) && $isOwner): ?>
-                    <div class="component-divider-vertical" data-ref="owner-tools-actions-divider"></div>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
                         <span class="material-symbols-rounded">construction</span>
                     </button>
                     <?php endif; ?>
-                    
+
                     <?php if ($canvasAllowChat == '1'): ?>
-                    <div class="component-divider-vertical" data-ref="chat-actions-divider"></div>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom">
                         <span class="material-symbols-rounded">chat</span>
                     </button>
@@ -145,6 +115,30 @@ extract($designData);
         </div>
         <div class="component-bottom">
             <canvas data-ref="design-canvas" class="component-canvas-surface <?php echo (isset($isBlockedInit) && $isBlockedInit) ? 'component-canvas-blocked disabled-interaction' : ''; ?>"></canvas>
+
+            <?php if (!$isSnapshot): ?>
+            <?php
+                $liveTierMin = \App\Core\System\SubscriptionPlanConstants::getLowestTierForFeature('live_share');
+                $liveTierLevel = $liveTierMin ? (int)$liveTierMin['tier_level'] : 1;
+            ?>
+            <div class="canvas-design-toolbar <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="design-tools-actions">
+                <button class="component-button component-button--icon component-button--h32" data-action="openJoinLiveModal" data-tooltip="<?php echo __('tooltip_join_live'); ?> [J]" data-position="bottom">
+                    <span class="material-symbols-rounded">sensors</span>
+                </button>
+
+                <button class="component-button component-button--icon component-button--h32 <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'component-button--premium premium-locked' : ''; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom" <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'data-requires-premium="true" data-required-tier="' . $liveTierLevel . '"' : ''; ?>>
+                    <span class="material-symbols-rounded">stream</span>
+                </button>
+
+                <button class="component-button component-button--icon component-button--h32 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?> [C]" data-position="bottom">
+                    <span class="material-symbols-rounded">palette</span>
+                </button>
+
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?> [T]" data-position="bottom">
+                    <span class="material-symbols-rounded">photo_library</span>
+                </button>
+            </div>
+            <?php endif; ?>
 
             <div class="component-badge component-badge--dark component-badge--toolbar" data-ref="template-floating-toolbar">
                 <button class="component-button component-button--icon component-button--h24" data-action="toggleTemplateLock" data-ref="btn-template-lock" data-tooltip="<?php echo __('tooltip_toggle_lock'); ?> [U]" data-position="top">

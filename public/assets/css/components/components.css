@@ -4832,6 +4832,71 @@ input:checked+.component-toggle-slider:before {
     width: max-content;
 }
 
+/* ── Canvas Design Toolbar (top-center floating pill) ── */
+.canvas-design-toolbar {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    height: 40px;
+    display: none;
+    align-items: center;
+    gap: 3px;
+    padding: 4px;
+    background: #0d0d10;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 9999px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    pointer-events: auto;
+    white-space: nowrap;
+    color: #ffffff;
+}
+
+.canvas-design-toolbar.active {
+    display: flex;
+}
+
+.canvas-design-toolbar.disabled {
+    display: none;
+}
+
+.canvas-design-toolbar .component-button--icon {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    border-radius: 9999px;
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.canvas-design-toolbar .component-button--icon:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.canvas-design-toolbar .material-symbols-rounded {
+    font-size: 1.1rem;
+    color: #ffffff;
+}
+
+/* Mobile: push badges below the toolbar */
+@media (max-width: 768px) {
+    .canvas-design-toolbar {
+        top: 8px;
+    }
+
+    .canvas-badges-left,
+    .canvas-badges-right {
+        top: 60px;
+    }
+}
+
+
+
+
+
 .icon-spin-slow {
     animation: spin 3s linear infinite;
 }
