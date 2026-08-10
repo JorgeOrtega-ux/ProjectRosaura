@@ -86,16 +86,12 @@ export class MainController {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                if (window.modalSystem && typeof window.modalSystem.show === 'function') {
-                    const requiredTier = parseInt(premiumLockedBtn.getAttribute('data-required-tier'), 10) || 1;
-                    window.modalSystem.show('upgradeSubscriptionModal', { requiredTier });
+                const basePath = window.AppBasePath || '';
+                const targetUrl = basePath + '/upgrade';
+                if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                    window.spaRouter.navigate(targetUrl);
                 } else {
-                    const basePath = window.AppBasePath || '';
-                    if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
-                        window.spaRouter.navigate(basePath + '/upgrade');
-                    } else {
-                        window.location.href = basePath + '/upgrade';
-                    }
+                    window.location.href = targetUrl;
                 }
             }
         }, true);
@@ -121,13 +117,72 @@ export class MainController {
             if (e.detail && e.detail.tier !== undefined) {
                 window.appUserTier = parseInt(e.detail.tier, 10);
                 let tierName = '';
+                let tierColor = null;
                 if (window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
                     const found = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === window.appUserTier);
-                    if (found && found.name) tierName = found.name;
+                    if (found) {
+                        if (found.name) tierName = found.name;
+                        if (found.color) tierColor = found.color;
+                    }
                 }
+                
+                // 1. Update text for tier badges
                 document.querySelectorAll('[data-ref="user-tier-badge"]').forEach(b => {
                     b.textContent = tierName;
                 });
+
+                // 2. Hide premium button in header
+                if (window.appUserTier > 0) {
+                    const upgradeBtn = document.querySelector('[data-ref="header-upgrade-btn"]');
+                    if (upgradeBtn) {
+                        upgradeBtn.remove();
+                    }
+                }
+
+                // 3. Update role dynamic borders
+                const subColorObj = e.detail.color || tierColor;
+                if (subColorObj) {
+                    const parseRoleColor = (colorData) => {
+                        if (!colorData) return 'var(--text-muted)';
+                        if (typeof colorData === 'string') {
+                            try {
+                                colorData = JSON.parse(colorData);
+                            } catch (err) {
+                                return colorData;
+                            }
+                        }
+                        if (colorData && typeof colorData === 'object' && Array.isArray(colorData.colors)) {
+                            const firstColorObj = colorData.colors[0];
+                            let activeRoleBg = typeof firstColorObj === 'string' ? firstColorObj : (firstColorObj.hex || 'var(--text-muted)');
+                            
+                            if (colorData.type === 'gradient' && colorData.colors.length > 1) {
+                                const angle = parseInt(colorData.angle || 0, 10);
+                                const stopsArray = [];
+                                let prevStop = 0;
+                                const colorsCount = colorData.colors.length;
+                                colorData.colors.forEach((colorObj, i) => {
+                                    const hex = typeof colorObj === 'string' ? colorObj : (colorObj.hex || '#000000');
+                                    const percentage = (typeof colorObj === 'object' && colorObj.percentage !== undefined) 
+                                        ? parseInt(colorObj.percentage, 10) 
+                                        : Math.floor(100 / colorsCount);
+                                    let endStop = prevStop + percentage;
+                                    if (i === colorsCount - 1) endStop = 100;
+                                    stopsArray.push(`${hex} ${prevStop}% ${endStop}%`);
+                                    prevStop = endStop;
+                                });
+                                activeRoleBg = `conic-gradient(from ${angle}deg, ${stopsArray.join(', ')})`;
+                            }
+                            return activeRoleBg;
+                        }
+                        return 'var(--text-muted)';
+                    };
+
+                    const cssValue = parseRoleColor(subColorObj);
+                    document.querySelectorAll('.role-dynamic').forEach(el => {
+                        el.setAttribute('data-role-bg', cssValue);
+                        el.style.setProperty('--active-role-bg', cssValue);
+                    });
+                }
             }
         });
     }
@@ -268,38 +323,6 @@ export class MainController {
     }
 
     handleDocumentClick(e) {
-        const planCard = e.target.closest('.component-card--selectable-row');
-        if (planCard) {
-            e.preventDefault();
-            const modal = planCard.closest('.component-modal-box');
-            if (modal) {
-                modal.querySelectorAll('.component-card--selectable-row').forEach(c => c.classList.remove('active'));
-                planCard.classList.add('active');
-                
-                const submitBtn = modal.querySelector('[data-action="confirmModalUpgrade"]');
-                const tierVal = parseInt(planCard.getAttribute('data-tier'), 10);
-                if (submitBtn) {
-                    submitBtn.setAttribute('data-selected-tier', tierVal);
-                    this._updateUpgradeSubmitBtn(submitBtn, tierVal);
-                }
-
-                modal.querySelectorAll('.component-table th, .component-table td').forEach(cell => {
-                    cell.classList.remove('highlight-col');
-                    if (cell.classList.contains(`col-tier-${tierVal}`)) {
-                        cell.classList.add('highlight-col');
-                    }
-                });
-
-                requestAnimationFrame(() => {
-                    if (window.modalSystem?.activeBox) {
-                        const ModalSystemClass = window.modalSystem.constructor;
-                        ModalSystemClass.positionHighlightStrip(window.modalSystem.activeBox);
-                    }
-                });
-            }
-            return;
-        }
-
         const btn = e.target.closest('[data-action]');
         
         if (btn) {
@@ -333,10 +356,6 @@ export class MainController {
                 if (accordion) accordion.classList.toggle('active');
             }
             else if (action === 'toggleEditState') this.toggleEditState(btn.getAttribute('data-target'));
-            else if (action === 'confirmModalUpgrade') {
-                e.preventDefault();
-                this.handleModalUpgradeCheckout(btn);
-            }
             else if (action === 'setPref') {
                 this.savePreference(btn.getAttribute('data-key'), btn.getAttribute('data-value'));
                 this.closeAllModules();
@@ -345,59 +364,6 @@ export class MainController {
         }
 
         this.moduleManager.handleOutsideClick(e);
-    }
-
-    async handleModalUpgradeCheckout(btn) {
-        const tierVal = parseInt(btn.getAttribute('data-selected-tier'), 10);
-        
-        if (!window.activeUserId) {
-            const basePath = window.AppBasePath || '';
-            window.location.href = basePath + '/login';
-            return;
-        }
-
-        const userTier = parseInt(window.appUserTier || 0, 10);
-        if (userTier >= tierVal) return;
-
-        setButtonLoading(btn);
-
-        try {
-            const response = await this.api.post(ApiRoutes.Stripe.CreateCheckout, {
-                tier: tierVal,
-                billing_period: 'monthly'
-            });
-
-            if (response.success && response.checkout_url) {
-                window.location.href = response.checkout_url;
-            } else {
-                restoreButton(btn);
-                showMessage(response.message || 'Error al iniciar el pago', 'error');
-            }
-        } catch (err) {
-            restoreButton(btn);
-            showMessage('Error de conexión', 'error');
-        }
-    }
-
-    _updateUpgradeSubmitBtn(btn, tier) {
-        const userTier     = parseInt(window.appUserTier || 0, 10);
-        const alreadyOwned = userTier >= tier;
-
-        let newHtml;
-        if (alreadyOwned) {
-            newHtml = `<button class="component-button component-button--dark component-button--rounded-pill component-button--h40 component-modal-submit-btn disabled-interaction" data-action="confirmModalUpgrade" data-selected-tier="${tier}">
-                    <span class="material-symbols-rounded">check_circle</span>
-                    <span>${window.__('plan_btn_current') || 'Tu plan actual'}</span>
-                </button>`;
-        } else {
-            newHtml = `<button class="component-button component-button--dark component-button--rounded-pill component-button--hover-text component-button--h40 component-modal-submit-btn" data-action="confirmModalUpgrade" data-selected-tier="${tier}">
-                    <span class="btn-default-text">${window.__('btn_continue_purchase') || 'Continuar con la compra'}</span>
-                    <span class="btn-hover-text">${window.__('btn_confirm_payment') || 'Confirmar pago'}</span>
-                </button>`;
-        }
-
-        btn.insertAdjacentHTML('afterend', newHtml);
-        btn.remove();
     }
 
     handleDocumentChange(e) {

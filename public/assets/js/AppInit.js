@@ -21,6 +21,70 @@ document.addEventListener('DOMContentLoaded', () => {
     window.modalSystem = new ModalSystem();
     window.noticeSystem = new NoticeSystem();
 
+    function checkAndShowPromoNotice() {
+        // 1. Solo debe salir cuando haya una sesión activa (window.activeUserId)
+        if (!window.activeUserId) return;
+
+        // 2. Solo si el usuario es tier 0 (gratuito)
+        if (window.appUserTier !== 0) return;
+
+        // 3. Cookie consent debe estar presente (respetamos la lógica previa)
+        const cookieConsent = localStorage.getItem('pr_cookie_consent');
+        if (!cookieConsent) return;
+
+        // 4. Si estás en alguna sección de auth o de help no lo muestres y pospon
+        const currentPath = window.location.pathname.toLowerCase();
+        const isAuthOrHelp = ['/login', '/register', '/forgot-password', '/reset-password', '/account-suspended', '/account-deleted', '/help', '/support', '/site-policy'].some(route => currentPath.includes(route));
+        
+        if (isAuthOrHelp) {
+            if (window.promoNoticeTimeoutId) {
+                clearTimeout(window.promoNoticeTimeoutId);
+                window.promoNoticeTimeoutId = null;
+            }
+            const activePromo = document.querySelector('.component-notice-box--promo');
+            if (activePromo && window.noticeSystem) {
+                const noticeId = activePromo.getAttribute('data-notice-id');
+                if (noticeId) {
+                    window.noticeSystem.close(noticeId, 'postponed');
+                }
+            }
+            return;
+        }
+
+        // 5. Control de frecuencia (24 horas)
+        const lastPromoTime = localStorage.getItem('pr_promo_last_seen');
+        const now = Date.now();
+        if (lastPromoTime && now - parseInt(lastPromoTime) <= 24 * 60 * 60 * 1000) return;
+
+        // Evitar duplicar el notice si ya se está mostrando en pantalla o hay una en cola
+        if (document.querySelector('.component-notice-box--promo') || window.promoNoticeTimeoutId) return;
+
+        // Mostrar después de un delay de 3 segundos
+        window.promoNoticeTimeoutId = setTimeout(() => {
+            window.promoNoticeTimeoutId = null;
+            // Volver a verificar condiciones por si el usuario navegó a auth/help o cerró sesión en ese intervalo de 3s
+            const verifyPath = window.location.pathname.toLowerCase();
+            const stillAuthOrHelp = ['/login', '/register', '/forgot-password', '/reset-password', '/account-suspended', '/account-deleted', '/help', '/support', '/site-policy'].some(route => verifyPath.includes(route));
+            if (stillAuthOrHelp || !window.activeUserId) return;
+
+            window.noticeSystem.show('promoCard', {
+                title: '¡Mejora tu plan!',
+                message: 'Obtén acceso a todas las funcionalidades exclusivas con nuestra suscripción premium. Cancela cuando quieras.',
+                confirmText: 'Ver planes',
+                cancelText: 'Quizás luego'
+            }).then(res => {
+                if (res.confirmed === 'postponed') {
+                    return;
+                }
+                localStorage.setItem('pr_promo_last_seen', Date.now().toString());
+                if (res.confirmed === true) {
+                    if (window.spaRouter) window.spaRouter.navigate('/premium');
+                    else window.location.href = '/premium';
+                }
+            });
+        }, 3000);
+    }
+
     // Cookie Banner Logic
     const cookieConsent = localStorage.getItem('pr_cookie_consent');
     const isManageCookiesPage = window.location.pathname === '/site-policy/manage-cookies';
@@ -39,30 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else if (res.confirmed === true) {
                 localStorage.setItem('pr_cookie_consent', JSON.stringify({ essential: true, func: true, perf: true, target: true }));
+                checkAndShowPromoNotice();
             }
         });
     } else {
         // Promo Card Logic
-        if (window.appUserTier === 0) {
-            const lastPromoTime = localStorage.getItem('pr_promo_last_seen');
-            const now = Date.now();
-            if (!lastPromoTime || now - parseInt(lastPromoTime) > 24 * 60 * 60 * 1000) {
-                setTimeout(() => {
-                    window.noticeSystem.show('promoCard', {
-                        title: '¡Mejora tu plan!',
-                        message: 'Obtén acceso a todas las funcionalidades exclusivas con nuestra suscripción premium. Cancela cuando quieras.',
-                        confirmText: 'Ver planes',
-                        cancelText: 'Quizás luego'
-                    }).then(res => {
-                        localStorage.setItem('pr_promo_last_seen', Date.now().toString());
-                        if (res.confirmed === true) {
-                            if (window.spaRouter) window.spaRouter.navigate('/premium');
-                            else window.location.href = '/premium';
-                        }
-                    });
-                }, 3000); 
-            }
-        }
+        checkAndShowPromoNotice();
     }
 
     window.tooltipSystem = new TooltipSystem();
@@ -131,6 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.applyRoleDynamicColors) {
             window.applyRoleDynamicColors();
         }
+
+        checkAndShowPromoNotice();
 
         let relativePath = cleanUrl;
         if (window.AppBasePath && cleanUrl.startsWith(window.AppBasePath)) {

@@ -8,14 +8,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
         <div class="component-top">
             <div class="component-top-left">
                 <h1 class="component-top-title"><?php echo __('phistory_title'); ?></h1>
-                <div class="component-toggle-pill" style="margin-top: 15px; margin-bottom: 5px;">
-                    <button type="button" class="component-button component-button--rounded-pill active" data-action="toggleHistoryTab" data-value="payments">
-                        <?php echo __('tab_payments_real') ?: 'Pagos (Dinero Real)'; ?>
-                    </button>
-                    <button type="button" class="component-button component-button--rounded-pill" data-action="toggleHistoryTab" data-value="coins">
-                        <?php echo __('tab_coins_virtual') ?: 'Monedas (Virtual)'; ?>
-                    </button>
-                </div>
             </div>
             
             <div class="component-top-right">
@@ -40,7 +32,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         <div class="component-menu-link-text"><span><?php echo __('filter_purchase_type'); ?></span></div>
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">chevron_right</span></div>
                                     </div>
-                                    <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterStatus">
+                                    <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterStatus" data-ref="filter-status-row">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">rule</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('filter_purchase_status'); ?></span></div>
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">chevron_right</span></div>
@@ -60,16 +52,20 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 </div>
                                 <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="type" value="all" checked></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('type_all'); ?></span></div>
+                                        <div class="component-menu-link-icon"><input type="radio" name="purchase_type_filter" class="filter-radio" data-filter-type="type" value="payments_all" checked></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('type_all_payments') ?: 'Todos los Pagos (Real)'; ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="type" value="subscription" checked></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('type_subscription'); ?></span></div>
+                                        <div class="component-menu-link-icon"><input type="radio" name="purchase_type_filter" class="filter-radio" data-filter-type="type" value="payments_subscription"></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('type_subscription') ?: 'Suscripciones (Real)'; ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="type" value="coins" checked></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('type_coins'); ?></span></div>
+                                        <div class="component-menu-link-icon"><input type="radio" name="purchase_type_filter" class="filter-radio" data-filter-type="type" value="payments_coins"></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('type_coins') ?: 'Compras de Monedas (Real)'; ?></span></div>
+                                    </label>
+                                    <label class="component-menu-link component-menu-link--bordered">
+                                        <div class="component-menu-link-icon"><input type="radio" name="purchase_type_filter" class="filter-radio" data-filter-type="type" value="coins_virtual"></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('tab_coins_virtual') ?: 'Monedas (Virtual)'; ?></span></div>
                                     </label>
                                 </div>
                             </div>

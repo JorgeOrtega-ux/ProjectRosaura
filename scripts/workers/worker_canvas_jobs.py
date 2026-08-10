@@ -60,7 +60,6 @@ def get_absolute_path(env_val, default_val):
 SNAPSHOTS_DIR = get_absolute_path("SNAPSHOTS_DIR", "/var/www/html/storage/private/snapshots")
 SYNC_INTERVAL = int(os.getenv("WORKER_CANVAS_SYNC_INTERVAL") or 10)
 THUMBNAILS_DIR = get_absolute_path("THUMBNAILS_DIR", "/var/www/html/storage/public/thumbnails")
-ARCHIVE_DIR = get_absolute_path("SNAPSHOTS_ARCHIVE_DIR", "/var/www/html/storage/private/backups")
 
 SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR") or 2)
 

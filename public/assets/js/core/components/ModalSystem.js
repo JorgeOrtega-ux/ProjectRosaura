@@ -149,57 +149,14 @@ export class ModalSystem {
                     this.activeOverlay.classList.add('active');
                 }
 
-                // Init highlight strip for the upgrade modal (default selected column)
-                if (templateName === 'upgradeSubscriptionModal' && this.activeBox) {
-                    requestAnimationFrame(() => {
-                        ModalSystem.positionHighlightStrip(this.activeBox);
-                    });
-                }
+
             });
 
             this.activeResolveFn = resolve;
         });
     }
 
-    /**
-     * Creates or repositions the .modal-highlight-strip inside .component-modal-right
-     * so that it covers exactly the highlighted column from the thead th down to the bottom of the panel.
-     */
-    static positionHighlightStrip(modalBox) {
-        const modalRight = modalBox && modalBox.querySelector('.component-modal-right');
-        const highlightTh = modalRight && modalRight.querySelector('th.highlight-col');
-        if (!modalRight || !highlightTh) return;
 
-        // Get or create the strip, always inserted BEFORE the table so it renders behind content
-        let strip = modalRight.querySelector('.modal-highlight-strip');
-        const table = modalRight.querySelector('.component-table');
-        if (!strip) {
-            strip = document.createElement('div');
-            strip.className = 'modal-highlight-strip';
-            if (table) {
-                modalRight.insertBefore(strip, table);
-            } else {
-                modalRight.appendChild(strip);
-            }
-        } else if (table && strip.nextSibling !== table && modalRight.contains(table)) {
-            // Ensure it's before the table
-            modalRight.insertBefore(strip, table);
-        }
-
-        // Usar offset* en lugar de getBoundingClientRect:
-        // offsetTop/offsetLeft son relativos al offsetParent (no al viewport),
-        // por lo que son estables desde el primer frame, sin depender de animaciones.
-        const tableTop  = table ? table.offsetTop  : 0;  // relativo a modalRight
-        const tableLeft = table ? table.offsetLeft : 0;  // relativo a modalRight
-        // Para celdas de tabla, offsetLeft es relativo a la <table>
-        const thLeft  = highlightTh.offsetLeft;
-        const thWidth = highlightTh.offsetWidth;
-
-        strip.style.top    = tableTop + 'px';
-        strip.style.left   = (tableLeft + thLeft) + 'px';
-        strip.style.width  = thWidth + 'px';
-        strip.style.display = 'block';
-    }
 
 
 

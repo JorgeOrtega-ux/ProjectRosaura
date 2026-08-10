@@ -1115,11 +1115,25 @@ class StripeServices {
 
                         $this->subscriptionRepo->updateUserTier($userId, $tier);
 
+                        $subColor = '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
+                        try {
+                            $db = new \App\Config\Database\DatabaseManager();
+                            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+                            $stmtCol = $pdo->prepare("SELECT color FROM subscription_tiers WHERE tier_level = ? LIMIT 1");
+                            $stmtCol->execute([$tier]);
+                            $rowCol = $stmtCol->fetch(\PDO::FETCH_ASSOC);
+                            if ($rowCol && !empty($rowCol['color'])) {
+                                $subColor = $rowCol['color'];
+                            }
+                        } catch (\Throwable $e) {}
+
                         $accounts = $this->sessionManager->getLinkedAccounts();
                         if (isset($accounts[$userId])) {
                             $accounts[$userId]['subscription_tier'] = $tier;
                             $accounts[$userId]['real_subscription_tier'] = $tier;
+                            $accounts[$userId]['subscription_color'] = $subColor;
                             $this->sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+                            $this->sessionManager->set('subscription_color', $subColor);
                             $this->sessionManager->syncRootState();
                         }
 
@@ -1213,6 +1227,21 @@ class StripeServices {
             'reset_in_seconds' => $tokenUsage['reset_in_seconds'],
             'has_feature' => ($maxTokens > 0)
         ];
+
+        $subscriptionColor = '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
+        if ($userTier > 0) {
+            try {
+                $db = new \App\Config\Database\DatabaseManager();
+                $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+                $stmtCol = $pdo->prepare("SELECT color FROM subscription_tiers WHERE tier_level = ? LIMIT 1");
+                $stmtCol->execute([$userTier]);
+                $rowCol = $stmtCol->fetch(\PDO::FETCH_ASSOC);
+                if ($rowCol && !empty($rowCol['color'])) {
+                    $subscriptionColor = $rowCol['color'];
+                }
+            } catch (\Throwable $e) {}
+        }
+        $subscription['color'] = $subscriptionColor;
 
         return [
             'success' => true,

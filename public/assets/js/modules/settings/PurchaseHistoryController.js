@@ -196,6 +196,43 @@ export class PurchaseHistoryController {
     }
 
     handleGlobalChange(e) {
+        const radio = e.target.closest('.filter-radio');
+        if (radio) {
+            const filterCategory = radio.getAttribute('data-filter-type');
+            const val = radio.value;
+
+            if (filterCategory === 'type') {
+                if (val === 'coins_virtual') {
+                    this.activeTab = 'coins';
+                    
+                    const statusRow = this.container.querySelector('[data-ref="filter-status-row"]');
+                    if (statusRow) statusRow.style.display = 'none';
+
+                    if (this.coinItems.length === 0) {
+                        this.loadCoinHistory();
+                    } else {
+                        this.applyFiltersAndRender();
+                    }
+                } else {
+                    this.activeTab = 'payments';
+
+                    const statusRow = this.container.querySelector('[data-ref="filter-status-row"]');
+                    if (statusRow) statusRow.style.display = '';
+
+                    if (val === 'payments_all') {
+                        this.activeFilters.types = ['all'];
+                    } else if (val === 'payments_subscription') {
+                        this.activeFilters.types = ['subscription'];
+                    } else if (val === 'payments_coins') {
+                        this.activeFilters.types = ['coins'];
+                    }
+                    this.currentPage = 1;
+                    this.applyFiltersAndRender();
+                }
+            }
+            return;
+        }
+
         const checkbox = e.target.closest('.filter-checkbox');
         if (checkbox) {
             const filterCategory = checkbox.getAttribute('data-filter-type');
@@ -223,8 +260,6 @@ export class PurchaseHistoryController {
                     allCheckbox.checked = true;
                 }
             }
-
-            
 
             const checkedVals = Array.from(groupCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
             if (filterCategory === 'type') {
@@ -491,15 +526,6 @@ export class PurchaseHistoryController {
                 btn.classList.remove('active');
             }
         });
-
-        const filterToggleBtn = this.container.querySelector('[data-ref="btn-toggle-filters"]');
-        if (filterToggleBtn) {
-            if (tab === 'coins') {
-                filterToggleBtn.style.display = 'none';
-            } else {
-                filterToggleBtn.style.display = '';
-            }
-        }
 
         if (tab === 'coins') {
             if (this.coinItems.length === 0) {

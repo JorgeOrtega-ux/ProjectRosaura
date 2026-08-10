@@ -265,10 +265,12 @@ class DesignController {
                 liveShareMenuBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (window.modalSystem && typeof window.modalSystem.show === 'function') {
-                        window.modalSystem.show('upgradeSubscriptionModal', { requiredTier: liveShareMinTier });
+                    const basePath = window.AppBasePath || '';
+                    const targetUrl = basePath + '/upgrade';
+                    if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                        window.spaRouter.navigate(targetUrl);
                     } else {
-                        window.location.href = (window.AppBasePath || '') + '/upgrade';
+                        window.location.href = targetUrl;
                     }
                 }, true); 
             }
