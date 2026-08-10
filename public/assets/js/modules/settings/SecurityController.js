@@ -139,31 +139,32 @@ class SecurityController {
     async promptDeleteAccount(btn) {
         if (btn.classList.contains('disabled-interaction')) return;
 
-        const dialog = await window.modalSystem.show('confirmDeleteAccountDialog');
+        const dialog = await window.modalSystem.show('confirmDeleteAccountDialog', { asyncConfirm: true });
 
         if (dialog.confirmed) {
             const passInput = dialog.data['modal_delete_password'];
             if (!passInput) {
-                showMessage(window.__('err_password_required'), "error");
+                dialog.failure(window.__('err_password_required'));
                 return;
             }
 
-            setButtonLoading(btn);
-
             const data = { password: passInput };
-            const result = await this.api.post(ApiRoutes.Settings.DeleteAccount, data, this.abortController.signal);
+            try {
+                const result = await this.api.post(ApiRoutes.Settings.DeleteAccount, data, this.abortController.signal);
 
-            if (result.aborted) return;
+                if (result.aborted) return;
 
-            restoreButton(btn);
-
-            if (result.success) {
-                showMessage(result.message || window.__('msg_deletion_started'), "success");
-                setTimeout(() => {
-                    window.location.href = this.basePath + '/login';
-                }, 1500);
-            } else {
-                showMessage(result.message, "error");
+                if (result.success) {
+                    showMessage(result.message || window.__('msg_deletion_started'), "success");
+                    dialog.success();
+                    setTimeout(() => {
+                        window.location.href = this.basePath + '/login';
+                    }, 1500);
+                } else {
+                    dialog.failure(result.message);
+                }
+            } catch (error) {
+                dialog.failure(window.__('err_connection'));
             }
         }
     }

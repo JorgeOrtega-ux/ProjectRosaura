@@ -41,7 +41,9 @@ extract($designData);
          data-resize-active="<?php echo htmlspecialchars($resizeActive); ?>"
          data-resize-at="<?php echo htmlspecialchars($nextResizeAt); ?>"
          data-resize-target="<?php echo htmlspecialchars($resizeTargetSize); ?>"
-         data-resize-timer-action="<?php echo htmlspecialchars($resizeTimerAction); ?>">
+         data-resize-timer-action="<?php echo htmlspecialchars($resizeTimerAction); ?>"
+         data-active-live-share-code="<?php echo htmlspecialchars($activeLiveShareCode ?? ''); ?>"
+         data-active-live-share-data="<?php echo htmlspecialchars(json_encode($activeLiveShareData ?? null)); ?>">
          
         <div class="component-top">
             <div class="component-top-left">

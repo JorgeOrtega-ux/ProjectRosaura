@@ -124,6 +124,47 @@ export const DesignSetup = {
                 this.startResizeTimer();
             }
 
+            const activeLiveShareCode = wrapper.getAttribute('data-active-live-share-code');
+            if (activeLiveShareCode) {
+                this.liveShareStatus = 'owner';
+                this.liveShareCode = activeLiveShareCode;
+                this.liveTemplateId = null;
+
+                // Store the template position data so we can restore it after WS reconnect
+                try {
+                    const rawData = wrapper.getAttribute('data-active-live-share-data');
+                    this._restoredLiveShareData = rawData ? JSON.parse(rawData) : null;
+                } catch (e) {
+                    this._restoredLiveShareData = null;
+                }
+
+                const btnToggleLiveBroadcast = document.querySelector('[data-action="toggleLiveBroadcast"]');
+                if (btnToggleLiveBroadcast) {
+                    btnToggleLiveBroadcast.classList.add('component-color-indicator');
+                    btnToggleLiveBroadcast.style.setProperty('--active-color', 'var(--color-danger, #ef4444)');
+                }
+
+                const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
+                if (btnOpenJoinLive) {
+                    btnOpenJoinLive.classList.add('disabled-interaction');
+                    btnOpenJoinLive.setAttribute('title', window.__('err_cannot_join_while_streaming'));
+                }
+
+                let badge = document.getElementById('live-share-badge');
+                if (!badge) {
+                    badge = document.createElement('div');
+                    badge.className = 'component-badge';
+                    badge.id = 'live-share-badge';
+                    badge.innerHTML = '<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso (1 en línea)</span>';
+                    const badgesContainer = document.querySelector('[data-ref="badges-left"]');
+                    if (badgesContainer) badgesContainer.appendChild(badge);
+                }
+
+                if (typeof this._createCodeBadge === 'function') {
+                    this._createCodeBadge(this.liveShareCode);
+                }
+            }
+
             this.updateLockBadges();
             this.initWebSocket();
         } else {

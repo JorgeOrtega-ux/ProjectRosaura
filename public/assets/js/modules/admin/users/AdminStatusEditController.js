@@ -261,11 +261,13 @@ class AdminStatusEditController {
                 showMessage(typeof window.__ === 'function' ? window.__('err_select_end_date') : 'Debes seleccionar una fecha', 'error'); return;
             }
         }
-        const resultDialog = await window.modalSystem.show('verifyPasswordUpdateStatus');
+        const resultDialog = await window.modalSystem.show('verifyPasswordUpdateStatus', { asyncConfirm: true });
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-        if (!password) { showMessage(window.__('err_admin_password_required'), 'error'); return; }
-        setButtonLoading(btn);
+        if (!password) {
+            resultDialog.failure(window.__('err_admin_password_required'));
+            return;
+        }
         const payload = {
             target_user_id: this.targetUserId,
             is_suspended: this.state.isSuspended,
@@ -275,15 +277,19 @@ class AdminStatusEditController {
             notify_user: false,
             password: password
         };
-        const result = await this.api.post(ApiRoutes.Admin.UpdateSuspension, payload, this.abortController.signal);
-        if (result.aborted) return;
-        restoreButton(btn);
-        if (result.success) {
-            showMessage(result.message, 'success');
-            this.initialState = JSON.parse(JSON.stringify(this.state));
-            this.checkForChanges();
-        } else {
-            showMessage(result.message, 'error');
+        try {
+            const result = await this.api.post(ApiRoutes.Admin.UpdateSuspension, payload, this.abortController.signal);
+            if (result.aborted) return;
+            if (result.success) {
+                resultDialog.success();
+                showMessage(result.message, 'success');
+                this.initialState = JSON.parse(JSON.stringify(this.state));
+                this.checkForChanges();
+            } else {
+                resultDialog.failure(result.message);
+            }
+        } catch (error) {
+            resultDialog.failure(window.__('err_connection'));
         }
     }
 }

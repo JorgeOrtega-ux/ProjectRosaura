@@ -235,33 +235,40 @@ class AdminUsersController {
     async deleteSelectedUsers(btn) {
         if (this.selectedUserIds.size === 0) return;
         const resultDialog = await window.modalSystem.show('verifyPasswordDeleteUsers', {
-            count: this.selectedUserIds.size
+            count: this.selectedUserIds.size,
+            asyncConfirm: true
         });
         if (!resultDialog.confirmed) return;
 
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-        if (!password) { showMessage(__('err_admin_password_required'), 'error'); return; }
-        setButtonLoading(btn);
+        if (!password) {
+            resultDialog.failure(window.__('err_admin_password_required'));
+            return;
+        }
         const payload = {
             user_ids: Array.from(this.selectedUserIds),
             password: password
         };
-        const result = await this.api.post(ApiRoutes.Admin.DeleteUsers, payload, this.abortController.signal);
-        if (result.aborted) return;
-        restoreButton(btn);
-        if (result.success) {
-            if (result.failed_count > 0) {
-                showMessage(`Deleted ${result.deleted_count} user(s). Skipped ${result.failed_count} due to lack of permissions.`, 'warning');
+        try {
+            const result = await this.api.post(ApiRoutes.Admin.DeleteUsers, payload, this.abortController.signal);
+            if (result.aborted) return;
+            if (result.success) {
+                resultDialog.success();
+                if (result.failed_count > 0) {
+                    showMessage(`Deleted ${result.deleted_count} user(s). Skipped ${result.failed_count} due to lack of permissions.`, 'warning');
+                } else {
+                    showMessage(window.__('users_deleted_success').replace('{deleted}', result.deleted_count), 'success');
+                }
+                this.selectedUserIds.clear();
+                setTimeout(() => {
+                    if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/users`, { forceReload: true });
+                    else window.location.reload();
+                }, 2500);
             } else {
-                showMessage(window.__('users_deleted_success').replace('{deleted}', result.deleted_count), 'success');
+                resultDialog.failure(result.message);
             }
-            this.selectedUserIds.clear();
-            setTimeout(() => {
-                if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/users`, { forceReload: true });
-                else window.location.reload();
-            }, 2500);
-        } else {
-            showMessage(result.message, 'error');
+        } catch (error) {
+            resultDialog.failure(window.__('err_connection'));
         }
     }
     openFilterSubMenu(btn) {
@@ -441,15 +448,14 @@ class AdminUsersController {
             return;
         }
         
-        const resultDialog = await window.modalSystem.show('verifyPasswordUpdateRole');
+        const resultDialog = await window.modalSystem.show('verifyPasswordUpdateRole', { asyncConfirm: true });
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
         if (!password) {
-            showMessage(window.__('err_password_authorize_roles'), 'error');
+            resultDialog.failure(window.__('err_password_authorize_roles'));
             return;
         }
         
-        setButtonLoading(btn);
         try {
             const result = await this.api.post(ApiRoutes.Admin.UpdateRole, { 
                 target_user_id: targetUserId, 
@@ -458,21 +464,20 @@ class AdminUsersController {
             }, this.abortController.signal);
             
             if (result.aborted) return;
-            restoreButton(btn);
             
             if (result.success) {
                 showMessage(result.message || window.__('success_roles_updated'), 'success');
+                resultDialog.success();
                 window.modalSystem.closeCurrent();
                 this.applyAllFilters();
             } else {
                 const errorMessage = window.Translations && window.Translations[result.message_key] 
                                      ? window.Translations[result.message_key] 
                                      : (result.message_key || result.message || window.__('err_update_roles'));
-                showMessage(errorMessage, 'error');
+                resultDialog.failure(errorMessage);
             }
         } catch (error) {
-            showMessage(window.__('err_connection_role'), 'error');
-            restoreButton(btn);
+            resultDialog.failure(window.__('err_connection_role'));
         }
     }
 }

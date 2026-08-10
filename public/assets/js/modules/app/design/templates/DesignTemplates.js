@@ -88,14 +88,15 @@ export const DesignTemplates = {
                 }
 
                 if (window.modalSystem) {
-                    window.modalSystem.show('confirmStartBroadcast').then(async (res) => {
+                    window.modalSystem.show('confirmStartBroadcast', { asyncConfirm: true }).then(async (res) => {
                         if (res && res.confirmed) {
                             if (typeof this.startLiveShare === 'function') {
                                 const success = await this.startLiveShare();
 
                                 if (success) {
+                                    res.success();
                                     // Disable join button
-                                    const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
+                                    const btnOpenJoinLive = document.querySelector('[data-ref="openJoinLiveModal"]');
                                     if (btnOpenJoinLive) {
                                         btnOpenJoinLive.classList.add('disabled-interaction');
                                         btnOpenJoinLive.setAttribute('title', window.__('err_cannot_join_while_streaming'));
@@ -107,7 +108,11 @@ export const DesignTemplates = {
 
                                     // Create code badge below the main badge
                                     this._createCodeBadge(this.liveShareCode);
+                                } else {
+                                    res.failure();
                                 }
+                            } else {
+                                res.success();
                             }
                         }
                     });

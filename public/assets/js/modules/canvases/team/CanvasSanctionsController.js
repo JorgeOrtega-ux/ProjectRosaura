@@ -242,17 +242,17 @@ export class CanvasSanctionsController {
         if (!resultDialog.confirmed) return;
 
         const formData = resultDialog.data || {};
-        const passwordDialog = await window.modalSystem.show('verifyPasswordUpdateStatus');
+        const passwordDialog = await window.modalSystem.show('verifyPasswordUpdateStatus', { asyncConfirm: true });
         if (!passwordDialog.confirmed) return;
 
         const password = passwordDialog.data['modal_verify_password'] ? passwordDialog.data['modal_verify_password'].trim() : '';
         if (!password) {
-            showMessage(window.__('err_admin_password_required'), 'error');
+            passwordDialog.failure(window.__('err_admin_password_required'));
             return;
         }
 
         if (!formData.suspension_reason) {
-            showMessage(window.__('err_select_suspension_reason'), 'error');
+            passwordDialog.failure(window.__('err_select_suspension_reason'));
             return;
         }
 
@@ -263,28 +263,36 @@ export class CanvasSanctionsController {
             sanction_scope: formData.sanction_scope || 'chat_mute',
             suspension_type: formData.suspension_type || 'temporary',
             suspension_reason: formData.suspension_reason,
-            end_date: formData.suspension_type === 'temporary' ? (formData.end_date ? formData.end_date.replace('T', ' ') + ':00' : null) : null,
+            end_date: (formData.suspension_type === 'temporary' && formData.sanction_endDate) ? this.formatDateForDB(formData.sanction_endDate) : null,
+            notify_user: false,
             password: password
         };
 
-        const result = await this.api.post(ApiRoutes.Canvases.UpdateChatRestriction, payload, this.abortController.signal);
-        if (result.success || result.status === 'success') {
-            showMessage(result.message || window.__('msg_sanction_updated'), 'success');
-            this.handlePagination(window.location.href);
-        } else {
-            showMessage(result.message || window.__('err_sanction_update_failed'), 'error');
+        try {
+            const res = await this.api.post(ApiRoutes.Admin.UpdateSuspension, payload, this.abortController.signal);
+            if (res.aborted) return;
+            
+            if (res.success) {
+                passwordDialog.success();
+                showMessage(res.message, 'success');
+                await this.handlePagination(window.location.href);
+            } else {
+                passwordDialog.failure(res.message);
+            }
+        } catch (err) {
+            passwordDialog.failure(window.__('err_update_canvas'));
         }
     }
 
-    async liftSanction() {
+    async liftSanction(btn) {
         if (!this.selectedUserId) return;
 
-        const passwordDialog = await window.modalSystem.show('verifyPasswordUpdateStatus');
+        const passwordDialog = await window.modalSystem.show('verifyPasswordUpdateStatus', { asyncConfirm: true });
         if (!passwordDialog.confirmed) return;
 
         const password = passwordDialog.data['modal_verify_password'] ? passwordDialog.data['modal_verify_password'].trim() : '';
         if (!password) {
-            showMessage(window.__('err_admin_password_required'), 'error');
+            passwordDialog.failure(window.__('err_admin_password_required'));
             return;
         }
 
@@ -295,12 +303,18 @@ export class CanvasSanctionsController {
             password: password
         };
 
-        const result = await this.api.post(ApiRoutes.Canvases.UpdateChatRestriction, payload, this.abortController.signal);
-        if (result.success || result.status === 'success') {
-            showMessage(result.message || window.__('msg_sanction_removed'), 'success');
-            this.handlePagination(window.location.href);
-        } else {
-            showMessage(result.message || window.__('err_sanction_remove_failed'), 'error');
+        try {
+            const result = await this.api.post(ApiRoutes.Canvases.UpdateChatRestriction, payload, this.abortController.signal);
+            if (result.aborted) return;
+            if (result.success || result.status === 'success') {
+                passwordDialog.success();
+                showMessage(result.message || window.__('msg_sanction_removed'), 'success');
+                this.handlePagination(window.location.href);
+            } else {
+                passwordDialog.failure(result.message || window.__('err_sanction_remove_failed'));
+            }
+        } catch (err) {
+            passwordDialog.failure(window.__('err_sanction_remove_failed'));
         }
     }
 

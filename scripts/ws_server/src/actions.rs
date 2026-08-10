@@ -183,20 +183,57 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             if let Some(code) = msg.code.clone() {
                 let is_new = state.live_rooms.entry(code.clone()).or_default().insert(connection_id.to_string());
                 
-                if is_new {
-                    if let Ok(mut c) = state.redis_pool.get().await {
-                        let redis_key = format!("live_share:{}:count", code);
-                        let _: () = c.incr(&redis_key, 1).await.unwrap_or(());
-                        let _: () = c.expire(&redis_key, 14400).await.unwrap_or(());
-                        
-                        let global_count: i64 = c.get(&redis_key).await.unwrap_or(1);
-                        
+                if let Ok(mut c) = state.redis_pool.get().await {
+                    // Check if this user is the owner of the live session
+                    let redis_key = format!("live_share:{}", code);
+                    let existing_data_str: Option<String> = c.get(&redis_key).await.unwrap_or(None);
+                    let mut is_owner_reconnect = false;
+                    if let Some(s) = existing_data_str {
+                        if let Ok(data) = serde_json::from_str::<serde_json::Value>(&s) {
+                            if let Some(owner_id_val) = data.get("owner_id") {
+                                let owner_id_str = match owner_id_val {
+                                    serde_json::Value::Number(n) => n.to_string(),
+                                    serde_json::Value::String(st) => st.clone(),
+                                    _ => String::new(),
+                                };
+                                if !owner_id_str.is_empty() && owner_id_str == uid_str {
+                                    // Determine if this is a reconnect (grace task was active)
+                                    // or the very first join (no grace task → fresh session start).
+                                    let had_grace = state.grace_sessions.contains_key(&code);
+                                    if had_grace {
+                                        // True reconnect after reload → abort grace, don't re-increment
+                                        is_owner_reconnect = true;
+                                        if let Some((_, existing_task)) = state.grace_sessions.remove(&code) {
+                                            existing_task.abort();
+                                        }
+                                    }
+                                    // Always register the owner connection
+                                    state.owner_conns.insert(connection_id.to_string(), code.clone());
+                                }
+                            }
+                        }
+                    }
+
+                    // Increment count for new connections — but NOT when owner is reconnecting
+                    // (their slot already exists in the Redis counter from the initial join).
+                    if is_new && !is_owner_reconnect {
+                        let count_key = format!("live_share:{}:count", code);
+                        let _: () = c.incr(&count_key, 1).await.unwrap_or(());
+                        let _: () = c.expire(&count_key, 14400).await.unwrap_or(());
+                    }
+
+                    // Always broadcast the current count to everyone in the room
+                    // so the owner's badge reflects the real participant count.
+                    if is_new {
+                        let count_key = format!("live_share:{}:count", code);
+                        let global_count: i64 = c.get(&count_key).await.unwrap_or(1);
+
                         let count_msg = serde_json::json!({
                             "type": "live_share_count",
                             "code": code,
                             "count": global_count
                         }).to_string();
-                        
+
                         helpers::broadcast_to_live_room(state, &code, &count_msg, None).await;
                         let sync_payload = serde_json::json!({
                             "source_node": &state.node_id,

@@ -230,27 +230,30 @@ class AdminServerConfigController {
         }
     }
     async submitConfig(btn) {
-        const resultDialog = await window.modalSystem.show('verifyPasswordSaveConfig');
+        const resultDialog = await window.modalSystem.show('verifyPasswordSaveConfig', { asyncConfirm: true });
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
         if (!password) {
-            showMessage(window.__('err_admin_password_required'), 'error');
+            resultDialog.failure(window.__('err_admin_password_required'));
             return;
         }
-        setButtonLoading(btn);
         const payload = {
             config: this.state,
             password: password
         };
-        const result = await this.api.post(ApiRoutes.Admin.UpdateServerConfig, payload, this.abortController.signal);
-        if (result.aborted) return;
-        restoreButton(btn);
-        if (result.success) {
-            showMessage(result.message, 'success');
-            this.initialState = JSON.parse(JSON.stringify(this.state));
-            this.checkForChanges(); 
-        } else {
-            showMessage(result.message, 'error');
+        try {
+            const result = await this.api.post(ApiRoutes.Admin.UpdateServerConfig, payload, this.abortController.signal);
+            if (result.aborted) return;
+            if (result.success) {
+                resultDialog.success();
+                showMessage(result.message, 'success');
+                this.initialState = JSON.parse(JSON.stringify(this.state));
+                this.checkForChanges(); 
+            } else {
+                resultDialog.failure(result.message);
+            }
+        } catch (error) {
+            resultDialog.failure(window.__('err_connection'));
         }
     }
 }

@@ -207,14 +207,18 @@ class CanvasesManageController {
     async deleteSelectedCanvases(btn) {
         if (this.selectedCanvasIds.size === 0) return;
 
-        const resultDialog = await window.modalSystem.show('verifyPasswordDeleteCanvases', { count: this.selectedCanvasIds.size });
+        const resultDialog = await window.modalSystem.show('verifyPasswordDeleteCanvases', {
+            count: this.selectedCanvasIds.size,
+            asyncConfirm: true
+        });
 
         if (!resultDialog.confirmed) return;
 
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-        if (!password) { showMessage(__('err_password_required'), 'error'); return; }
-
-        setButtonLoading(btn);
+        if (!password) {
+            resultDialog.failure(window.__('err_password_required'));
+            return;
+        }
 
         const payload = {
             canvas_ids: Array.from(this.selectedCanvasIds),
@@ -222,23 +226,27 @@ class CanvasesManageController {
         };
 
         const route = ApiRoutes.Canvases && ApiRoutes.Canvases.Delete ? ApiRoutes.Canvases.Delete : 'canvases.delete';
-        const result = await this.api.post(route, payload, this.abortController.signal);
-        
-        if (result.aborted) return;
-        restoreButton(btn);
+        try {
+            const result = await this.api.post(route, payload, this.abortController.signal);
+            
+            if (result.aborted) return;
 
-        if (result.success) {
-            showMessage(result.message, 'success');
-            this.selectedCanvasIds.clear();
-            this.selectedCanvasUuid = null;
-            this.currentCanvasSize = null;
+            if (result.success) {
+                resultDialog.success();
+                showMessage(result.message, 'success');
+                this.selectedCanvasIds.clear();
+                this.selectedCanvasUuid = null;
+                this.currentCanvasSize = null;
 
-            setTimeout(() => {
-                if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
-                else window.location.reload();
-            }, 2000);
-        } else {
-            showMessage(result.message, 'error');
+                setTimeout(() => {
+                    if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
+                    else window.location.reload();
+                }, 2000);
+            } else {
+                resultDialog.failure(result.message);
+            }
+        } catch (error) {
+            resultDialog.failure(window.__('err_connection'));
         }
     }
 

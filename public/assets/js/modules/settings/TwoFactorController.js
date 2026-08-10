@@ -129,46 +129,48 @@ class TwoFactorController {
     }
 
     async enable2FA(btn) {
-        const isConfirmed = await window.modalSystem.show('activate2FADialog');
+        const isConfirmed = await window.modalSystem.show('activate2FADialog', { asyncConfirm: true });
         if (!isConfirmed.confirmed) return;
 
         const code = isConfirmed.data['modal_2fa_code'] ? isConfirmed.data['modal_2fa_code'].trim() : '';
 
         if (code.length !== 6) {
-            showMessage(__('err_code_6_digits'), 'error');
+            isConfirmed.failure(window.__('err_code_6_digits'));
             return;
         }
 
-        setButtonLoading(btn);
-        const result = await this.api.post(ApiRoutes.Settings.Enable2FA, { code: code }, this.abortController.signal);
-        
-        if (result.aborted) return;
-        
-        restoreButton(btn);
+        try {
+            const result = await this.api.post(ApiRoutes.Settings.Enable2FA, { code: code }, this.abortController.signal);
+            
+            if (result.aborted) return;
 
-        if (result.success) {
-            showMessage(result.message, 'success');
-            
-            document.querySelector('[data-ref="2fa-setup-container"]').classList.replace('active', 'disabled');
-            const recoveryContainer = document.querySelector('[data-ref="2fa-recovery-container"]');
-            recoveryContainer.classList.replace('disabled', 'active');
-            
-            const codeList = document.querySelector('[data-ref="2fa-recovery-codes-list"]');
-            codeList.innerHTML = '';
-            result.recovery_codes.forEach(c => {
-                const div = document.createElement('div');
-                div.className = 'component-recovery-code';
-                div.innerHTML = `
-                    <span class="material-symbols-rounded component-recovery-code-icon">key</span>
-                    <span class="component-recovery-code-text">${c}</span>
-                `;
-                codeList.appendChild(div);
-            });
-            
-            this.currentRecoveryCodes = result.recovery_codes.join('\n');
-            
-        } else {
-            showMessage(result.message, 'error');
+            if (result.success) {
+                isConfirmed.success();
+                showMessage(result.message, 'success');
+                
+                document.querySelector('[data-ref="2fa-setup-container"]').classList.replace('active', 'disabled');
+                const recoveryContainer = document.querySelector('[data-ref="2fa-recovery-container"]');
+                recoveryContainer.classList.replace('disabled', 'active');
+                
+                const codeList = document.querySelector('[data-ref="2fa-recovery-codes-list"]');
+                codeList.innerHTML = '';
+                result.recovery_codes.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = 'component-recovery-code';
+                    div.innerHTML = `
+                        <span class="material-symbols-rounded component-recovery-code-icon">key</span>
+                        <span class="component-recovery-code-text">${c}</span>
+                    `;
+                    codeList.appendChild(div);
+                });
+                
+                this.currentRecoveryCodes = result.recovery_codes.join('\n');
+                
+            } else {
+                isConfirmed.failure(result.message);
+            }
+        } catch (error) {
+            isConfirmed.failure(window.__('err_connection'));
         }
     }
 

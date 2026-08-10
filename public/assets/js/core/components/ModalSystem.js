@@ -1,6 +1,6 @@
 import { ModalTemplates } from './ModalTemplates.js';
 import { CalendarSystem } from './CalendarSystem.js';
-import { showMessage } from '../utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton } from '../utils/uiUtils.js';
 
 export class ModalSystem {
     constructor() {
@@ -12,6 +12,8 @@ export class ModalSystem {
         this.activeBox = null;
         this.calendarSystem = null;
         this.modalStack = [];
+        this.activeOnConfirm = null;
+        this.activeAsyncConfirm = false;
 
         this.dragState = { startY: 0, currentDiff: 0, isDragging: false };
 
@@ -93,20 +95,25 @@ export class ModalSystem {
                     wrapper: this.activeWrapper,
                     box: this.activeBox,
                     calendarSystem: this.calendarSystem,
-                    dragState: Object.assign({}, this.dragState)
+                    dragState: Object.assign({}, this.dragState),
+                    onConfirm: this.activeOnConfirm,
+                    asyncConfirm: this.activeAsyncConfirm
                 });
                 this.activeResolveFn = null;
                 this.activeOverlay = null;
                 this.activeWrapper = null;
                 this.activeBox = null;
                 this.calendarSystem = null;
+                this.activeOnConfirm = null;
+                this.activeAsyncConfirm = false;
             }
 
+            const template = this.templates[templateName];
             this.activeTemplateName = templateName;
+            this.activeOnConfirm = data.onConfirm || null;
+            this.activeAsyncConfirm = !!(template.asyncConfirm || data.asyncConfirm || this.activeOnConfirm);
 
             const container = this._getContainer();
-
-            const template = this.templates[templateName];
 
             this.activeOverlay = document.createElement('div');
             this.activeOverlay.className = 'component-modal-overlay';
@@ -184,6 +191,19 @@ export class ModalSystem {
                 }
             }
         } else if (e.key === 'Escape') {
+            const activeConfirmBtn = this.activeBox ? this.activeBox.querySelector(
+                'button[data-modal-action="confirm"], ' +
+                'button[data-modal-action="confirm_dynamic_form"], ' +
+                'button[data-modal-action="finish"], ' +
+                'button[data-action="confirm"], ' +
+                'button[data-action="submitJoinLive"], ' +
+                '#btn_confirm_custom_backup'
+            ) : null;
+            const isCurrentlyLoading = activeConfirmBtn && activeConfirmBtn.classList.contains('disabled-interaction');
+            if (isCurrentlyLoading) {
+                e.preventDefault();
+                return;
+            }
             e.preventDefault();
             this.closeCurrent(false);
         }
@@ -191,6 +211,25 @@ export class ModalSystem {
 
     handleClick(e) {
         if (!this.activeResolveFn) return; 
+
+        const activeConfirmBtn = this.activeBox ? this.activeBox.querySelector(
+            'button[data-modal-action="confirm"], ' +
+            'button[data-modal-action="confirm_dynamic_form"], ' +
+            'button[data-modal-action="finish"], ' +
+            'button[data-action="confirm"], ' +
+            'button[data-action="submitJoinLive"], ' +
+            '#btn_confirm_custom_backup'
+        ) : null;
+        const isCurrentlyLoading = activeConfirmBtn && activeConfirmBtn.classList.contains('disabled-interaction');
+        if (isCurrentlyLoading) {
+            const closeBtn = e.target.closest('.component-modal-close-btn');
+            const actionBtn = e.target.closest('[data-modal-action], [data-action="confirm"], [data-action="cancel"], #btn_confirm_custom_backup');
+            if (closeBtn || (actionBtn && actionBtn.getAttribute('data-modal-action') === 'cancel') || e.target === this.activeOverlay || e.target === this.activeWrapper) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+        }
 
         const closeBtn = e.target.closest('.component-modal-close-btn');
         if (closeBtn) {
@@ -426,10 +465,13 @@ export class ModalSystem {
 
             if (action === 'cancel') {
                 this.closeCurrent(false);
-            } else if (action === 'confirm') {
-                this.closeCurrent(true);
             } else {
-                this.closeCurrent(action || true);
+                const isConfirmAction = action === 'confirm' || action === 'confirm_dynamic_form' || action === 'finish' || action === 'submitJoinLive' || actionBtn.id === 'btn_confirm_custom_backup';
+                if (isConfirmAction && this.activeAsyncConfirm) {
+                    this.handleAsyncConfirm(actionBtn, action);
+                } else {
+                    this.closeCurrent(action || true);
+                }
             }
             return;
         }
@@ -440,85 +482,14 @@ export class ModalSystem {
     }
 
     closeCurrent(result = false) {
-        if (!this.activeResolveFn) return;
-
         let formData = {};
         
         try {
             if (result !== false && this.activeBox) {
-                if (this.activeTemplateName === 'calendarModal') {
-                    const trigger = this.activeBox.querySelector('[data-target="modalCalendarDateOnly"]');
-                    const isoDateVal = trigger ? trigger.getAttribute('data-value') : '';
-                    const hoursEl = this.activeBox.querySelector('[data-ref="calendar-modal-hours-val"]');
-                    const minutesEl = this.activeBox.querySelector('[data-ref="calendar-modal-minutes-val"]');
-                    
-                    if (isoDateVal) {
-                        const datePart = isoDateVal.split('T')[0]; // YYYY-MM-DD
-                        const h = hoursEl ? hoursEl.getAttribute('data-value').padStart(2, '0') : '00';
-                        const m = minutesEl ? minutesEl.getAttribute('data-value').padStart(2, '0') : '00';
-                        
-                        const dateObj = new Date(
-                            parseInt(datePart.split('-')[0], 10),
-                            parseInt(datePart.split('-')[1], 10) - 1,
-                            parseInt(datePart.split('-')[2], 10),
-                            parseInt(h, 10),
-                            parseInt(m, 10)
-                        );
-                        
-                        if (this.calendarSystem && this.calendarSystem.disablePastDates) {
-                            const now = new Date();
-                            const minFuture = new Date(now.getTime() + 5 * 60 * 1000);
-                            if (dateObj < minFuture) {
-                                showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha programada debe tener un margen mínimo de 5 minutos al futuro.', 'error');
-                                return;
-                            }
-                        }
-                        
-                        formData.isoString = `${datePart}T${h}:${m}`;
-                        if (this.calendarSystem) {
-                            formData.displayString = this.calendarSystem.getFormattedDisplayDate(dateObj, h, m);
-                        } else {
-                            formData.displayString = `${datePart}, ${h}:${m}`;
-                        }
-                    } else {
-                        formData.isoString = '';
-                        formData.displayString = '';
-                    }
-                }
-
-                const inputs = this.activeBox.querySelectorAll('input, select, textarea');
-                const processedRadioNames = new Set();
-                inputs.forEach(inp => { 
-                    if (inp.type === 'radio') {
-                        const radioName = inp.name;
-                        if (radioName && !processedRadioNames.has(radioName)) {
-                            processedRadioNames.add(radioName);
-                            const checked = this.activeBox.querySelector(`input[name="${radioName}"]:checked`);
-                            formData[radioName] = checked ? checked.value : '';
-                        }
-                        return;
-                    }
-                    const key = inp.id || inp.name || inp.getAttribute('data-ref'); 
-                    if (key) {
-                        if (inp.type === 'checkbox') {
-                            formData[key] = inp.checked;
-                        } else {
-                            formData[key] = inp.value;
-                        }
-                    } 
-                });
-
-                // Collect elements with data-value (like custom dropdown triggers)
-                const valElements = this.activeBox.querySelectorAll('[data-value]');
-                valElements.forEach(el => {
-                    const key = el.getAttribute('data-ref') || el.id;
-                    if (key && !key.endsWith('-val') && !key.includes('val_') && !formData[key]) {
-                        formData[key] = el.getAttribute('data-value');
-                    }
-                });
+                formData = this._getFormData();
             }
         } catch (error) {
-            
+            if (error.message === 'date_minimum_5_minutes') return;
         }
 
         const overlayToRemove = this.activeOverlay;
@@ -538,8 +509,12 @@ export class ModalSystem {
         this.activeWrapper = null;
         this.activeBox = null;
         this.activeTemplateName = null;
+        this.activeOnConfirm = null;
+        this.activeAsyncConfirm = false;
 
-        resolveToCall({ confirmed: result !== false, action: result, data: formData });
+        if (resolveToCall) {
+            resolveToCall({ confirmed: result !== false, action: result, data: formData });
+        }
 
         if (this.modalStack && this.modalStack.length > 0) {
             const prevModal = this.modalStack.pop();
@@ -550,6 +525,8 @@ export class ModalSystem {
             this.activeBox = prevModal.box;
             this.calendarSystem = prevModal.calendarSystem;
             this.dragState = prevModal.dragState;
+            this.activeOnConfirm = prevModal.onConfirm;
+            this.activeAsyncConfirm = prevModal.asyncConfirm;
 
             if (this.activeOverlay) this.activeOverlay.style.display = '';
             if (this.activeWrapper) this.activeWrapper.style.display = '';
@@ -565,6 +542,129 @@ export class ModalSystem {
                 container.remove();
             }
         }, 300); 
+    }
+
+    _getFormData() {
+        let formData = {};
+        if (!this.activeBox) return formData;
+
+        if (this.activeTemplateName === 'calendarModal') {
+            const trigger = this.activeBox.querySelector('[data-target="modalCalendarDateOnly"]');
+            const isoDateVal = trigger ? trigger.getAttribute('data-value') : '';
+            const hoursEl = this.activeBox.querySelector('[data-ref="calendar-modal-hours-val"]');
+            const minutesEl = this.activeBox.querySelector('[data-ref="calendar-modal-minutes-val"]');
+            
+            if (isoDateVal) {
+                const datePart = isoDateVal.split('T')[0];
+                const h = hoursEl ? hoursEl.getAttribute('data-value').padStart(2, '0') : '00';
+                const m = minutesEl ? minutesEl.getAttribute('data-value').padStart(2, '0') : '00';
+                
+                const dateObj = new Date(
+                    parseInt(datePart.split('-')[0], 10),
+                    parseInt(datePart.split('-')[1], 10) - 1,
+                    parseInt(datePart.split('-')[2], 10),
+                    parseInt(h, 10),
+                    parseInt(m, 10)
+                );
+                
+                if (this.calendarSystem && this.calendarSystem.disablePastDates) {
+                    const now = new Date();
+                    const minFuture = new Date(now.getTime() + 5 * 60 * 1000);
+                    if (dateObj < minFuture) {
+                        showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha programada debe tener un margen mínimo de 5 minutos al futuro.', 'error');
+                        throw new Error('date_minimum_5_minutes');
+                    }
+                }
+                
+                formData.isoString = `${datePart}T${h}:${m}`;
+                if (this.calendarSystem) {
+                    formData.displayString = this.calendarSystem.getFormattedDisplayDate(dateObj, h, m);
+                } else {
+                    formData.displayString = `${datePart}, ${h}:${m}`;
+                }
+            } else {
+                formData.isoString = '';
+                formData.displayString = '';
+            }
+        }
+
+        const inputs = this.activeBox.querySelectorAll('input, select, textarea');
+        const processedRadioNames = new Set();
+        inputs.forEach(inp => { 
+            if (inp.type === 'radio') {
+                const radioName = inp.name;
+                if (radioName && !processedRadioNames.has(radioName)) {
+                    processedRadioNames.add(radioName);
+                    const checked = this.activeBox.querySelector(`input[name="${radioName}"]:checked`);
+                    formData[radioName] = checked ? checked.value : '';
+                }
+                return;
+            }
+            const key = inp.id || inp.name || inp.getAttribute('data-ref'); 
+            if (key) {
+                if (inp.type === 'checkbox') {
+                    formData[key] = inp.checked;
+                } else {
+                    formData[key] = inp.value;
+                }
+            } 
+        });
+
+        const valElements = this.activeBox.querySelectorAll('[data-value]');
+        valElements.forEach(el => {
+            const key = el.getAttribute('data-ref') || el.id;
+            if (key && !key.endsWith('-val') && !key.includes('val_') && !formData[key]) {
+                formData[key] = el.getAttribute('data-value');
+            }
+        });
+
+        return formData;
+    }
+
+    async handleAsyncConfirm(confirmBtn, action) {
+        if (confirmBtn.classList.contains('disabled-interaction')) return;
+
+        let formData = {};
+        try {
+            formData = this._getFormData();
+        } catch (error) {
+            if (error.message === 'date_minimum_5_minutes') return;
+        }
+
+        setButtonLoading(confirmBtn);
+
+        if (typeof this.activeOnConfirm === 'function') {
+            try {
+                const success = await this.activeOnConfirm(formData, confirmBtn);
+                if (success) {
+                    this.closeCurrent(action || true);
+                } else {
+                    restoreButton(confirmBtn);
+                }
+            } catch (error) {
+                restoreButton(confirmBtn);
+            }
+        } else {
+            const resolveToCall = this.activeResolveFn;
+            this.activeResolveFn = null;
+
+            if (resolveToCall) {
+                resolveToCall({
+                    confirmed: true,
+                    action: action || true,
+                    data: formData,
+                    success: () => {
+                        this.closeCurrent(action || true);
+                    },
+                    failure: (msg) => {
+                        restoreButton(confirmBtn);
+                        if (msg) {
+                            showMessage(msg, 'error');
+                        }
+                    }
+                });
+            }
+        }
     }
 
     handlePointerDown(e) {

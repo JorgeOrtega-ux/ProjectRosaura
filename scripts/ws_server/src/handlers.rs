@@ -312,31 +312,39 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
             };
 
             if is_owner {
-                info!("Owner disconnected from session {}. Ending session immediately.", code);
+                info!("Owner disconnected from session {}. Starting grace period of 15 seconds.", code);
                 let state_for_grace = state.clone();
                 let grace_code = code.clone();
+                let grace_uid = uid_str.clone();
                 
-                if let Some(existing) = state.grace_sessions.get(&code) {
+                if let Some((_, existing)) = state_for_grace.grace_sessions.remove(&grace_code) {
                     existing.abort();
                 }
                 
-                let end_msg = serde_json::json!({
-                    "type": "live_session_ended",
-                    "code": grace_code
-                }).to_string();
-                
-                helpers::broadcast_to_live_room(&state_for_grace, &grace_code, &end_msg, None).await;
-                state_for_grace.live_rooms.remove(&grace_code);
-                
-                if let Ok(mut c) = state_for_grace.redis_pool.get().await {
-                    let _: () = c.del(format!("live_share:{}", grace_code)).await.unwrap_or(());
-                    let _: () = c.del(format!("live_share:{}:count", grace_code)).await.unwrap_or(());
-                    if !uid_str.is_empty() {
-                        let _: () = c.del(format!("live_share:user_{}", uid_str)).await.unwrap_or(());
+                let task = tokio::spawn(async move {
+                    tokio::time::sleep(tokio::time::Duration::from_secs(15)).await;
+                    info!("Grace period expired for session {}. Cleaning up resources.", grace_code);
+                    
+                    let end_msg = serde_json::json!({
+                        "type": "live_session_ended",
+                        "code": grace_code
+                    }).to_string();
+                    
+                    helpers::broadcast_to_live_room(&state_for_grace, &grace_code, &end_msg, None).await;
+                    state_for_grace.live_rooms.remove(&grace_code);
+                    
+                    if let Ok(mut c) = state_for_grace.redis_pool.get().await {
+                        let _: () = c.del(format!("live_share:{}", grace_code)).await.unwrap_or(());
+                        let _: () = c.del(format!("live_share:{}:count", grace_code)).await.unwrap_or(());
+                        if !grace_uid.is_empty() {
+                            let _: () = c.del(format!("live_share:user_{}", grace_uid)).await.unwrap_or(());
+                        }
                     }
-                }
+                    
+                    state_for_grace.grace_sessions.remove(&grace_code);
+                });
                 
-                state_for_grace.grace_sessions.remove(&grace_code);
+                state.grace_sessions.insert(code.clone(), task);
             } else {
                 // Not owner, decrement count
                 if let Ok(mut c) = state.redis_pool.get().await {

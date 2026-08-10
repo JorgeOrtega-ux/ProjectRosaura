@@ -275,7 +275,7 @@ class ProfileController {
             showMessage(res.message, 'success');
             
             const currentEmail = document.querySelector('[data-ref="display-email"]').textContent.trim();
-            const verifyDialogPromise = window.modalSystem.show('verifyEmailCode', { email: currentEmail });
+            const verifyDialogPromise = window.modalSystem.show('verifyEmailCode', { email: currentEmail, asyncConfirm: true });
             
             const resendBtn = document.querySelector('[data-action="dialogResendCode"]');
             if (resendBtn) {
@@ -291,18 +291,25 @@ class ProfileController {
             if (verifyDialog.confirmed) {
                 const code = verifyDialog.data['modal_email_code'];
                 if (!code) { 
-                    showMessage(__('err_code_required'), 'error'); 
+                    verifyDialog.failure(window.__('err_code_required'));
                     return; 
                 }
-                const verifyRes = await this.api.post(ApiRoutes.Settings.VerifyEmailCode, { code }, this.abortController.signal);
-                
-                if (verifyRes.aborted) return;
-                
-                if (verifyRes.success) { 
-                    showMessage(verifyRes.message, 'success'); 
-                    window.appInstance.toggleEditState('email'); 
-                } 
-                else showMessage(verifyRes.message, 'error');
+                try {
+                    const verifyRes = await this.api.post(ApiRoutes.Settings.VerifyEmailCode, { code }, this.abortController.signal);
+                    
+                    if (verifyRes.aborted) return;
+                    
+                    if (verifyRes.success) { 
+                        verifyDialog.success();
+                        showMessage(verifyRes.message, 'success'); 
+                        window.appInstance.toggleEditState('email'); 
+                    } 
+                    else {
+                        verifyDialog.failure(verifyRes.message);
+                    }
+                } catch (error) {
+                    verifyDialog.failure(window.__('err_connection'));
+                }
             }
         } else {
             showMessage(res.message, 'error');

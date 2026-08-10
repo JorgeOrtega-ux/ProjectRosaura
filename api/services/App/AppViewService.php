@@ -279,12 +279,44 @@ class AppViewService {
                     }
                 }
 
+                $activeLiveShareCode = null;
+                $activeLiveShareData = null;
                 if ($userId) {
                     $uStmt = $dbManager->getConnection(DB::CONN_IDENTITY)->prepare("SELECT subscription_tier FROM users WHERE id = :uid LIMIT 1");
                     $uStmt->execute([':uid' => $userId]);
                     $userTier = (int)($uStmt->fetchColumn() ?: 0);
                     $canInjectTemplate = SubscriptionPlanConstants::hasFeature($userTier, 'inject_templates');
                     $canLiveShare = SubscriptionPlanConstants::hasFeature($userTier, 'live_share');
+
+                    try {
+                        if (class_exists(\App\Config\Database\RedisCache::class)) {
+                            $redisInstance = new \App\Config\Database\RedisCache();
+                            $redis = $redisInstance->getClient();
+                            if ($redis) {
+                                $userBroadcastKey = \App\Core\System\CacheConstants::PREFIX_LIVE_SHARE . 'user_' . $userId;
+                                $activeCode = $redis->get($userBroadcastKey);
+                                if ($activeCode) {
+                                    $activeDataRaw = $redis->get(\App\Core\System\CacheConstants::PREFIX_LIVE_SHARE . $activeCode);
+                                    if ($activeDataRaw) {
+                                        $activeData = json_decode($activeDataRaw, true);
+                                        if (isset($activeData['canvas_id']) && (int)$activeData['canvas_id'] === (int)$canvasIntId) {
+                                            $activeLiveShareCode = $activeCode;
+                                            $activeLiveShareData = [
+                                                'img_url' => $activeData['img_url'] ?? null,
+                                                'x'       => $activeData['x'] ?? 0,
+                                                'y'       => $activeData['y'] ?? 0,
+                                                'w'       => $activeData['w'] ?? 0,
+                                                'h'       => $activeData['h'] ?? 0,
+                                                'opacity' => $activeData['opacity'] ?? 1,
+                                                'angle'   => $activeData['angle'] ?? 0,
+                                            ];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                    }
                 }
 
             } catch (Exception $e) {
@@ -325,7 +357,9 @@ class AppViewService {
             'canInjectTemplate' => $canInjectTemplate,
             'canLiveShare' => $canLiveShare,
             'isBanned' => $isBanned,
-            'isSnapshot' => $isSnapshot
+            'isSnapshot' => $isSnapshot,
+            'activeLiveShareCode' => $activeLiveShareCode,
+            'activeLiveShareData' => $activeLiveShareData
         ];
     }
 }

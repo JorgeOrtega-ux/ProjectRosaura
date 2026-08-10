@@ -246,31 +246,29 @@ class AdminBackupsAutomationController {
         if (btnSave) btnSave.classList.toggle('disabled-interaction', !hasChanges);
     }
     async handleSave(btn) {
-        const resultDialog = await window.modalSystem.show('verifyPasswordSaveAutomation');
+        const resultDialog = await window.modalSystem.show('verifyPasswordSaveAutomation', { asyncConfirm: true });
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password']?.trim();
         if (!password) {
-            showMessage(window.__('err_admin_password_required'), 'error');
+            resultDialog.failure(window.__('err_admin_password_required'));
             return;
         }
-        const originalText = setButtonLoading(btn);
         try {
             const reqData = {
                 password: password,
                 config: this.state
             };
             const response = await this.api.post(ApiRoutes.Admin.UpdateServerConfig, reqData, this.abortController.signal);
-            restoreButton(btn, originalText);
             if (response.success) {
+                resultDialog.success();
                 showMessage(window.__('success_config_saved'), 'success');
                 this.initialState = JSON.parse(JSON.stringify(this.state));
                 this.checkForChanges();
             } else {
-                showMessage(response.message, 'error');
+                resultDialog.failure(response.message);
             }
         } catch (error) {
-            restoreButton(btn, originalText);
-            showMessage(window.__('err_save_config'), 'error');
+            resultDialog.failure(window.__('err_save_config'));
         }
     }
 }

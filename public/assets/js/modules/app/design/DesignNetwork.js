@@ -86,6 +86,53 @@ export const DesignNetwork = {
             
             this.wsManager.on('open', () => {
                 this.wsManager.send({ type: 'init', userId: uid });
+                if (this.liveShareCode) {
+                    this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
+
+                    // Restore owner template overlay after page reload
+                    const restoreData = this._restoredLiveShareData;
+                    if (restoreData && restoreData.img_url && this.liveShareStatus === 'owner') {
+                        const imgUrl = restoreData.img_url;
+                        // Avoid adding duplicate template entries
+                        const alreadyLoaded = this.templates && this.templates.find(t => t.id === imgUrl);
+                        if (!alreadyLoaded) {
+                            const img = new Image();
+                            img.crossOrigin = 'anonymous';
+                            img.onload = async () => {
+                                const loadBitmap = async (src) => {
+                                    if (typeof createImageBitmap === 'function') {
+                                        try { return await createImageBitmap(src); } catch (e) {}
+                                    }
+                                    return null;
+                                };
+                                const imageBitmap = await loadBitmap(img);
+                                if (!this.templates) this.templates = [];
+                                this.templates.push({
+                                    id: imgUrl,
+                                    img,
+                                    imageBitmap,
+                                    src: imgUrl,
+                                    x: parseInt(restoreData.x) || 0,
+                                    y: parseInt(restoreData.y) || 0,
+                                    w: parseInt(restoreData.w) || img.width,
+                                    h: parseInt(restoreData.h) || img.height,
+                                    opacity: parseFloat(restoreData.opacity) ?? 0.5,
+                                    angle: parseFloat(restoreData.angle) || 0,
+                                    locked: false,
+                                });
+                                this.activeTemplateId = imgUrl;
+                                this.liveTemplateId = imgUrl;
+                                this._restoredLiveShareData = null;
+                                if (typeof this.updateTemplateUI === 'function') this.updateTemplateUI();
+                                this.requestRender();
+                            };
+                            img.onerror = () => {
+                                if (img.crossOrigin) { img.crossOrigin = null; img.src = imgUrl; }
+                            };
+                            img.src = imgUrl;
+                        }
+                    }
+                }
             });
 
             this.wsManager.on('qos_evicted', (reason) => {
