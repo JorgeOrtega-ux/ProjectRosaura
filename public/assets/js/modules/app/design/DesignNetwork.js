@@ -465,15 +465,12 @@ export const DesignNetwork = {
                     document.dispatchEvent(new CustomEvent('canvas:chat_message_deleted', { detail: data.data }));
                 }
                 else if (data.type === 'live_image_updated') {
-                    console.log('[DesignNetwork] WebSocket event received: live_image_updated', data);
                     this.handleLiveImageUpdate(data);
                 }
                 else if (data.type === 'live_session_ended') {
-                    console.log('[DesignNetwork] WebSocket event received: live_session_ended', data);
                     this.handleLiveSessionEnded(data);
                 }
                 else if (data.type === 'live_share_count') {
-                    console.log('[DesignNetwork] WebSocket event received: live_share_count', data);
                     this.handleLiveShareCount(data);
                 }
                 else if (data.type === 'canvas_locked_clear') {
@@ -982,7 +979,6 @@ export const DesignNetwork = {
             if (response.aborted) return false;
 
             if (response.success && response.data) {
-                console.log('[DesignNetwork] joinLiveImageSession HTTP success:', response.data);
                 this.liveShareStatus = 'spectator';
                 this.liveShareCode = code;
                 this.liveShareCountVal = null;
@@ -1113,7 +1109,6 @@ export const DesignNetwork = {
         
         const tpl = this.templates.find(t => t.id === this.liveTemplateId);
         if (!tpl) {
-            console.log('[DesignNetwork] emitLiveImageUpdate: sending empty update');
             this.wsManager.send({
                 type: 'update_live_share',
                 code: this.liveShareCode,
@@ -1122,14 +1117,6 @@ export const DesignNetwork = {
             return;
         }
 
-        console.log('[DesignNetwork] emitLiveImageUpdate: sending update with templates data', {
-            x: tpl.x,
-            y: tpl.y,
-            w: tpl.w,
-            h: tpl.h,
-            opacity: tpl.opacity,
-            angle: tpl.angle
-        });
         this.wsManager.send({
             type: 'update_live_share',
             code: this.liveShareCode,
@@ -1367,11 +1354,9 @@ export const DesignNetwork = {
             const startTime = performance.now();
             if (window.__INITIAL_CANVAS_DATA__ && window.__INITIAL_CANVAS_DATA__.data && String(window.__INITIAL_CANVAS_DATA__.data.id) === String(this.canvasIntId)) {
                 response = window.__INITIAL_CANVAS_DATA__;
-                console.log(`%c[Rosaura App] checkCanvasAccess -> Bypassed network request! Using preloaded metadata. Latency: ${(performance.now() - startTime).toFixed(2)}ms`, 'color: #4caf50; font-weight: bold;');
                 window.__INITIAL_CANVAS_DATA__ = null; // Clean up memory
             } else {
                 response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
-                console.log(`%c[Rosaura App] checkCanvasAccess -> Network request resolved. Latency: ${(performance.now() - startTime).toFixed(2)}ms`, 'color: #ff9800; font-weight: bold;');
             }
             if (response.aborted) return;
             

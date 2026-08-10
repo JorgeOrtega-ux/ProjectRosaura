@@ -1597,5 +1597,10 @@
     "msg_confirm_bulk_purchase_desc_multi": "Compraste :name y :others más con un costo de :cost.",
     "msg_confirm_bulk_purchase_desc_cost": "Esta compra tiene un costo de :cost.",
     "lbl_total": "Total",
-    "coins": "monedas"
+    "coins": "monedas",
+    "title_confirm_unlink_google": "¿De verdad quieres desvincular la cuenta de Google “:googleName”?",
+    "desc_confirm_unlink_google": "La próxima vez que inicies sesión en :appName, tendrás que usar tu dirección de correo electrónico :userEmail y tu contraseña.",
+    "title_confirm_delete_template": "¿Eliminar plantilla?",
+    "desc_confirm_delete_template": "Esta acción eliminará de forma permanente tu plantilla de la biblioteca del servidor. No se puede deshacer.",
+    "btn_delete_confirm": "Eliminar permanentemente"
 }

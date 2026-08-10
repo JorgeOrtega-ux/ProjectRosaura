@@ -372,7 +372,7 @@ class AdminBackupsController {
                 if (tables.length > 0) payloadSchema[dbName] = tables;
             }
             if (Object.keys(payloadSchema).length === 0) {
-                showMessage('Debes seleccionar al menos una tabla para restaurar.', 'error');
+                showMessage(window.__('err_select_table_restore'), 'error');
                 return;
             }
         }
@@ -442,7 +442,7 @@ class AdminBackupsController {
             }
             this.buildRestoreSchemaHTML(container);
         } catch (e) {
-            container.innerHTML = '<div style="color:var(--status-danger);">Error al procesar el esquema del respaldo.</div>';
+            container.innerHTML = '<div>' + window.__('err_processing_backup_schema') + '</div>';
         }
     }
     buildRestoreSchemaHTML(container) {
@@ -451,8 +451,8 @@ class AdminBackupsController {
         if (!dbPane || !tablesPane) return;
 
         if (!this.restoreSchema || Object.keys(this.restoreSchema).length === 0) {
-            dbPane.innerHTML = '<div>No hay esquemas.</div>';
-            tablesPane.innerHTML = '<div>No hay tablas disponibles.</div>';
+            dbPane.innerHTML = '<div>' + window.__('lbl_no_schemas') + '</div>';
+            tablesPane.innerHTML = '<div>' + window.__('lbl_no_tables_available') + '</div>';
             return;
         }
 

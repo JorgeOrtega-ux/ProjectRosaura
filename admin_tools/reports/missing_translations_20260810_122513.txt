@@ -1,0 +1,49 @@
+=== REPORTE DE TRADUCCIONES FALTANTES ===
+Fecha: 2026-08-10 12:25:13
+Archivos escaneados: 291
+Claves en código: 2033
+Claves en JSON: 2312
+Claves faltantes: 41
+
+=== LISTA DE CLAVES FALTANTES ===
+admin_perms_save_success
+admin_role_color_desc
+admin_role_color_title
+admin_role_glass_ceiling
+admin_role_hue_adjust
+admin_role_hue_adjust_desc
+admin_role_preview_desc
+admin_role_preview_title
+admin_tier_limit_pixels_per_batch
+admin_tier_limit_pixels_per_batch_desc
+calendar_modal_desc
+calendar_modal_desc_admin
+calendar_modal_desc_invite
+calendar_modal_desc_reset
+calendar_modal_desc_resize
+calendar_modal_title
+calendar_modal_title_admin
+calendar_modal_title_invite
+calendar_modal_title_reset
+calendar_modal_title_resize
+canvas
+err_communication
+err_delete
+err_password_authorize_roles
+err_sanction_remove_failed
+err_sanction_update_failed
+err_update_status
+err_update_visibility
+lbl_deleting
+lbl_hours
+lbl_minutes
+lbl_new_role
+msg_confirm_delete_package
+msg_sanction_updated
+placeholder_desc_key
+placeholder_title_key
+privacy_policy_section_9_p2
+success_roles_updated
+tab_coins_virtual
+terms_conditions_section_6_p4
+type_all_payments

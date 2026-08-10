@@ -589,8 +589,6 @@ export const DesignTemplates = {
             }
         });
 
-        console.log('[DEBUG TEMPLATE TOOLBAR] updateTemplateActionButtons called. activeTemplateId:', this.activeTemplateId, 'templates:', this.templates);
-
         const toolbarEl = document.querySelector('[data-ref="template-floating-toolbar"]');
         const btnLock = document.querySelector('[data-ref="btn-template-lock"]');
         const btnRotate = document.querySelector('[data-ref="btn-template-rotate"]');
@@ -706,13 +704,6 @@ export const DesignTemplates = {
         // DOM pixel offset relative to container (.component-bottom)
         const leftPx = screenX - containerRect.left;
         const topPx = screenY - containerRect.top - 8;
-
-        console.log('[DEBUG TEMPLATE TOOLBAR] Centering Pill Badge:', {
-            templateBoardCenter: { x: tplCenterX, y: tplTopY },
-            templateDimensions: { w: tpl.w, h: tpl.h },
-            calculatedToolbarCenter: { leftPx: Math.round(leftPx), topPx: Math.round(topPx) },
-            zoomScale: this.transform.scale.toFixed(2)
-        });
 
         toolbarEl.style.position = 'absolute';
         toolbarEl.style.left = `${Math.round(leftPx)}px`;

@@ -7,14 +7,9 @@ export const ModalTemplates = {
                 
                 <!-- STEP 1: Current Password -->
                 <div class="component-card--grouped component-card--flush active component-modal-step" data-ref="step-1-current-password">
-                    <div class="component-modal-header component-modal-header--with-icon">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">lock</span>
-                        </div>
-                        <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${__('cp_title')}</h2>
-                            <p class="component-modal-desc">${__('cp_step1_desc')}</p>
-                        </div>
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('cp_title')}</h2>
+                        <p class="component-modal-desc">${__('cp_step1_desc')}</p>
                     </div>
                     
                     <div class="component-modal-body">
@@ -33,14 +28,9 @@ export const ModalTemplates = {
 
                 <!-- STEP 2: New Password -->
                 <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="step-2-new-password">
-                    <div class="component-modal-header component-modal-header--with-icon">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">lock_reset</span>
-                        </div>
-                        <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${__('cp_title')}</h2>
-                            <p class="component-modal-desc">${__('cp_step2_desc')}</p>
-                        </div>
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('cp_title')}</h2>
+                        <p class="component-modal-desc">${__('cp_step2_desc')}</p>
                     </div>
                     
                     <div class="component-modal-body">
@@ -50,7 +40,7 @@ export const ModalTemplates = {
                             <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
                         </div>
                         
-                        <div class="component-input-group" style="margin-top: 16px;">
+                        <div class="component-input-group">
                             <input type="password" data-ref="cp_confirm_password" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="off">
                             <label class="component-input-label">${__('lbl_confirm_password')}</label>
                             <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
@@ -76,17 +66,14 @@ export const ModalTemplates = {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <span class="material-symbols-rounded">group_add</span>
-                    <div class="component-modal-header-text">
-                        <h3 class="component-modal-title">${__('lbl_join_canvas')}</h3>
-                        <p class="component-modal-desc">${__('desc_invite_code')}</p>
-                    </div>
+                <div class="component-modal-header">
+                    <h3 class="component-modal-title">${__('lbl_join_canvas')}</h3>
+                    <p class="component-modal-desc">${__('desc_invite_code')}</p>
                 </div>
                 <div class="component-modal-body">
                     <div class="component-form-box component-form-box--full">
                         <div class="component-input-group">
-                            <input type="text" id="canvas-join-code-modal" data-ref="canvas-join-code-modal" class="component-input-field" placeholder="${__('ph_invite_code') || 'AAAA-1111'}" maxlength="9" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/(.{4})(.+)/, '$1-$2').slice(0, 9);" required autocomplete="off">
+                            <input type="text" id="canvas-join-code-modal" data-ref="canvas-join-code-modal" class="component-input-field" placeholder="${__('ph_invite_code')}" maxlength="9" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/(.{4})(.+)/, '$1-$2').slice(0, 9);" required autocomplete="off">
                             <label class="component-input-label">${__('lbl_invite_code')}</label>
                         </div>
                     </div>
@@ -233,7 +220,7 @@ export const ModalTemplates = {
                                     </div>
                                     <div class="welcome-feature-text">
                                         <span class="welcome-feature-title">${window.__('welcome_adv_storage_title')}</span>
-                                        <span class="welcome-feature-desc">${window.__('welcome_adv_storage_desc') || 'Aumenta tu capacidad de almacenamiento en la nube y crea mÃºltiples proyectos sin restricciones.'}</span>
+                                        <span class="welcome-feature-desc">${window.__('welcome_adv_storage_desc')}</span>
                                     </div>
                                 </div>
 
@@ -252,7 +239,7 @@ export const ModalTemplates = {
                                         <span class="material-symbols-rounded component-icon-sm">bolt</span>
                                     </div>
                                     <div class="welcome-feature-text">
-                                        <span class="welcome-feature-title">${window.__('welcome_adv_speed_title') || 'Renderizado Prioritario y Funciones Beta'}</span>
+                                        <span class="welcome-feature-title">${window.__('welcome_adv_speed_title')}</span>
                                         <span class="welcome-feature-desc">${window.__('welcome_adv_speed_desc')}</span>
                                     </div>
                                 </div>
@@ -420,23 +407,18 @@ export const ModalTemplates = {
                 return fallback;
             };
 
-            const title = data.title || (data.titleKey ? getTrans(data.titleKey, 'Verificar Identidad') : getTrans('title_verify_identity', 'Verificar Identidad'));
-            const desc = data.descHtml || data.message || (data.descKey ? getTrans(data.descKey, 'Confirma tu acciÃ³n para continuar.') : getTrans('desc_verify_identity', 'Confirma tu contraseÃ±a para continuar.'));
-            const cancelBtnText = getTrans('btn_cancel', 'Cancelar');
-            const confirmBtnText = data.confirmKey ? getTrans(data.confirmKey, 'Continuar') : getTrans('btn_continue', 'Continuar');
-            const passwordLblText = getTrans('lbl_current_password', 'ContraseÃ±a actual');
+            const title = data.title || (data.titleKey ? __(data.titleKey) : __('title_verify_identity'));
+            const desc = data.descHtml || data.message || (data.descKey ? __(data.descKey) : __('desc_verify_identity'));
+            const cancelBtnText = __('btn_cancel');
+            const confirmBtnText = data.confirmKey ? __(data.confirmKey) : __('btn_continue');
+            const passwordLblText = __('lbl_current_password');
             const confirmClass = data.confirmClass || 'component-button--dark';
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">lock</span>
-                    </div>
-                    <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${title}</h2>
-                        <p class="component-modal-desc">${desc}</p>
-                    </div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${title}</h2>
+                    <p class="component-modal-desc">${desc}</p>
                 </div>
                 <div class="component-modal-body">
                     <div class="component-input-group">
@@ -456,14 +438,9 @@ export const ModalTemplates = {
     confirmDeleteAccountDialog: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header component-modal-header--with-icon">
-                <div class="component-card__icon-container component-card__icon-container--bordered">
-                    <span class="material-symbols-rounded">warning</span>
-                </div>
-                <div class="component-modal-header-text">
-                    <h2 class="component-modal-title">${__('del_acc_modal_title')}</h2>
-                    <p class="component-modal-desc">${__('del_acc_warning')}</p>
-                </div>
+            <div class="component-modal-header">
+                <h2 class="component-modal-title">${__('del_acc_modal_title')}</h2>
+                <p class="component-modal-desc">${__('del_acc_warning')}</p>
             </div>
             <div class="component-modal-body">
                 <div class="component-input-group">
@@ -482,14 +459,9 @@ export const ModalTemplates = {
     warning: {
         build: (data) => `
             <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header component-modal-header--with-icon">
-                <div class="component-card__icon-container component-card__icon-container--bordered">
-                    <span class="material-symbols-rounded">${data.dangerBtn ? 'warning' : 'info'}</span>
-                </div>
-                <div class="component-modal-header-text">
-                    <h2 class="component-modal-title">${data.titleKey ? __(data.titleKey) : __('title_warning')}</h2>
-                    <p class="component-modal-desc">${data.descHtml || (data.descKey ? __(data.descKey) : __('desc_warning'))}</p>
-                </div>
+            <div class="component-modal-header">
+                <h2 class="component-modal-title">${data.titleKey ? __(data.titleKey) : __('title_warning')}</h2>
+                <p class="component-modal-desc">${data.descHtml || (data.descKey ? __(data.descKey) : __('desc_warning'))}</p>
             </div>
             
             ${data.inputs && data.inputs.length > 0 ? `
@@ -790,12 +762,9 @@ export const ModalTemplates = {
     joinLiveShare: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header component-modal-header--with-icon">
-                <span class="material-symbols-rounded">sensors</span>
-                <div class="component-modal-header-text">
-                    <h3 class="component-modal-title">${__('title_join_live_share')}</h3>
-                    <p class="component-modal-desc">${__('desc_join_live_share')}</p>
-                </div>
+            <div class="component-modal-header">
+                <h3 class="component-modal-title">${__('title_join_live_share')}</h3>
+                <p class="component-modal-desc">${__('desc_join_live_share')}</p>
             </div>
             <div class="component-modal-body">
                 <div class="component-form-box component-form-box--full">
@@ -815,12 +784,9 @@ export const ModalTemplates = {
     startLiveShare: {
         build: (data) => `
             <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header component-modal-header--with-icon">
-                <span class="material-symbols-rounded">stream</span>
-                <div class="component-modal-header-text">
-                    <h3 class="component-modal-title">${__('title_start_live_share')}</h3>
-                    <p class="component-modal-desc">${__('desc_start_live_share')}</p>
-                </div>
+            <div class="component-modal-header">
+                <h3 class="component-modal-title">${__('title_start_live_share')}</h3>
+                <p class="component-modal-desc">${__('desc_start_live_share')}</p>
             </div>
             <div class="component-modal-body" data-ref="live-share-modal-body">
                 <div class="live-share-owner-content">
@@ -888,12 +854,9 @@ export const ModalTemplates = {
     joinCanvasTerms: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header component-modal-header--with-icon">
-                <span class="material-symbols-rounded">gavel</span>
-                <div class="component-modal-header-text">
-                    <h3 class="component-modal-title">${window.__('terms_and_conditions')}</h3>
-                    <p class="component-modal-desc">${window.__('join_accept_rules_desc')}</p>
-                </div>
+            <div class="component-modal-header">
+                <h3 class="component-modal-title">${window.__('terms_and_conditions')}</h3>
+                <p class="component-modal-desc">${window.__('join_accept_rules_desc')}</p>
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
@@ -914,9 +877,9 @@ export const ModalTemplates = {
         build: () => {
             const reasons = window.APP_SANCTION_REASONS ? window.APP_SANCTION_REASONS.delete_messages : [];
             const reasonsHtml = reasons.map(r => `
-                <div class="component-menu-link" data-action="selectReportReason" data-value="${r.key}" data-icon="${r.icon}" data-text="${__('report_reason_' + r.key) || r.key}">
+                <div class="component-menu-link" data-action="selectReportReason" data-value="${r.key}" data-icon="${r.icon}" data-text="${__('report_reason_' + r.key)}">
                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">${r.icon}</span></div>
-                    <div class="component-menu-link-text"><span>${__('report_reason_' + r.key) || r.key}</span></div>
+                    <div class="component-menu-link-text"><span>${__('report_reason_' + r.key)}</span></div>
                 </div>
             `).join('');
 
@@ -930,7 +893,7 @@ export const ModalTemplates = {
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
                         <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleReportReason" data-ref="report_reason" data-value="">
                             <span class="material-symbols-rounded" data-ref="report_trigger_icon">delete</span>
-                            <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder') || 'Selecciona un motivo...'}</span>
+                            <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder')}</span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleReportReason">
@@ -1016,7 +979,6 @@ export const ModalTemplates = {
             });
         }
     },
-
     confirmUnlinkGoogleModal: {
         build: (data = {}) => {
             const googleName = data.googleName || '';
@@ -1025,16 +987,18 @@ export const ModalTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
-                    <h2 class="component-modal-title">Â¿De verdad quieres desvincular la cuenta de Google â€œ${googleName}â€?</h2>
+                    <h2 class="component-modal-title">${window.__('title_confirm_unlink_google').replace(':googleName', googleName)}</h2>
                     <p class="component-modal-desc">
-                        La prÃ³xima vez que inicies sesiÃ³n en ${appName}, tendrÃ¡s que usar tu direcciÃ³n de correo electrÃ³nico ${userEmail} y tu contraseÃ±a.
+                        ${window.__('desc_confirm_unlink_google').replace(':appName', appName).replace(':userEmail', userEmail)}
                     </p>
                 </div>
                 <div class="component-modal-actions">
-                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${window.__('btn_cancel', [])}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${window.__('btn_disconnect', [])}</button>
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${window.__('btn_cancel')}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${window.__('btn_disconnect')}</button>
                 </div>
             `;
+        }
+    },   `;
         }
     },
 
@@ -1043,10 +1007,10 @@ export const ModalTemplates = {
             const isUpgrade = data.isUpgrade || false;
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
             const titleStr = __('title_confirm_purchase', []);
-            const disclaimerStr = __('upgrade_disclaimer', [], 'Al adquirir, mejorar o cambiar tu plan de suscripción, aceptas nuestros Términos de Servicio y Política de Privacidad. Algunas herramientas y características premium pueden estar sujetas a límites de uso razonable, y su disponibilidad de idiomas, soporte o funciones específicas podría variar según tu país o región.');
-            const passwordLabel = __('lbl_account_password', []);
-            const btnCancel = __('btn_cancel', []);
-            const btnConfirm = __('btn_confirm', []);
+            const disclaimerStr = __('upgrade_disclaimer');
+            const passwordLabel = __('lbl_account_password');
+            const btnCancel = __('btn_cancel');
+            const btnConfirm = __('btn_confirm');
 
             const passwordFieldHtml = isUpgrade ? `
                 <div class="component-modal-body">
@@ -1075,8 +1039,8 @@ export const ModalTemplates = {
 
     confirmPasswordModal: {
         build: (data = {}) => {
-            const title = data.title || 'VerificaciÃ³n de Seguridad';
-            const desc = data.desc || 'Ingresa tu contraseÃ±a para autorizar este cambio.';
+            const title = data.title || __('login_2fa_title');
+            const desc = data.desc || __('2fa_verify_desc');
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
@@ -1086,13 +1050,13 @@ export const ModalTemplates = {
                 <div class="component-modal-body">
                     <div class="component-input-group">
                         <input type="password" id="confirmSecPasswordInput" data-ref="confirmSecPasswordInput" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="current-password">
-                        <label class="component-input-label">ContraseÃ±a de tu cuenta</label>
+                        <label class="component-input-label">${__('lbl_account_password')}</label>
                         <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
                     </div>
                 </div>
                 <div class="component-modal-actions">
-                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">Cancelar</button>
-                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">Confirmar</button>
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_confirm')}</button>
                 </div>
             `;
         }
@@ -1102,11 +1066,11 @@ export const ModalTemplates = {
         build: (data = {}) => {
             const count = data.count || 0;
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
-            const titleStr = __('title_confirm_clear_area', [], 'Â¿Vaciar zona seleccionada?');
-            const descRaw = __('desc_confirm_clear_area', []);
+            const titleStr = __('title_confirm_clear_area');
+            const descRaw = __('desc_confirm_clear_area');
             const descStr = descRaw.replace(':count', `<strong>${count}</strong>`);
-            const btnCancel = __('btn_cancel', []);
-            const btnConfirm = __('btn_clear_area', [], 'Vaciar Zona');
+            const btnCancel = __('btn_cancel');
+            const btnConfirm = __('btn_clear_area');
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -1126,11 +1090,11 @@ export const ModalTemplates = {
         build: (data = {}) => {
             const count = data.count || 0;
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
-            const titleStr = __('title_confirm_protect_area', [], 'Proteger zona');
-            const descRaw = __('desc_confirm_protect_area', []);
+            const titleStr = __('title_confirm_protect_area');
+            const descRaw = __('desc_confirm_protect_area');
             const descStr = descRaw.replace(':count', `<strong>${count}</strong>`);
-            const btnCancel = __('btn_cancel', []);
-            const btnProtect = __('btn_protect_area', [], 'Proteger Zona');
+            const btnCancel = __('btn_cancel');
+            const btnProtect = __('btn_protect_area');
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -1150,10 +1114,10 @@ export const ModalTemplates = {
         build: (data = {}) => {
             const templateId = data.templateId || '';
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
-            const titleStr = __('title_confirm_delete_template', [], '¿Eliminar plantilla?');
-            const descStr = __('desc_confirm_delete_template', [], 'Esta acción eliminará de forma permanente tu plantilla de la biblioteca del servidor. No se puede deshacer.');
-            const btnCancel = __('btn_cancel', []);
-            const btnConfirm = __('btn_delete_confirm', [], 'Eliminar permanentemente');
+            const titleStr = __('title_confirm_delete_template');
+            const descStr = __('desc_confirm_delete_template');
+            const btnCancel = __('btn_cancel');
+            const btnConfirm = __('btn_delete_confirm');
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -1175,11 +1139,11 @@ export const ModalTemplates = {
         build: (data = {}) => {
             const count = data.count || 0;
             const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
-            const titleStr = __('title_confirm_unprotect_area', []);
-            const descRaw = __('desc_confirm_unprotect_area', []);
+            const titleStr = __('title_confirm_unprotect_area');
+            const descRaw = __('desc_confirm_unprotect_area');
             const descStr = descRaw.replace(':count', `<strong>${count}</strong>`);
-            const btnCancel = __('btn_cancel', []);
-            const btnRemove = __('btn_remove_protection', []);
+            const btnCancel = __('btn_cancel');
+            const btnRemove = __('btn_remove_protection');
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -1262,7 +1226,7 @@ export const ModalTemplates = {
             }
 
             const scopes = [
-                { key: 'chat_mute', label: __('sanction_scope_chat_mute') || 'Silenciar Chat', icon: 'speaker_notes_off' },
+                { key: 'chat_mute', label: __('sanction_scope_chat_mute'), icon: 'speaker_notes_off' },
                 { key: 'canvas_ban', label: __('sanction_scope_canvas_ban'), icon: 'block' }
             ];
 
@@ -1278,7 +1242,7 @@ export const ModalTemplates = {
             
             const activeReason = reasons.find(r => r.key === suspensionReason);
             const activeReasonKey = activeReason ? activeReason.key : '';
-            const activeReasonLabel = activeReason ? (__(activeReason.key) || activeReason.key) : (__('lbl_select_suspension_reason'));
+            const activeReasonLabel = activeReason ? __(activeReason.key) : __('lbl_select_suspension_reason');
             const activeReasonIcon = activeReason ? activeReason.icon : 'gavel';
 
             const scopeOptionsHtml = scopes.map(s => `
@@ -1435,12 +1399,12 @@ export const ModalTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
-                    <h2 class="component-modal-title">${__('title_leave_broadcast', [], 'Â¿Abandonar transmisiÃ³n?')}</h2>
-                    <p class="component-modal-desc">${__('desc_leave_broadcast', [])}</p>
+                    <h2 class="component-modal-title">${__('title_leave_broadcast')}</h2>
+                    <p class="component-modal-desc">${__('desc_leave_broadcast')}</p>
                 </div>
                 <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [])}</button>
-                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_leave_broadcast', [], 'Abandonar')}</button>
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_leave_broadcast')}</button>
                 </div>
             `;
         }
@@ -1449,13 +1413,13 @@ export const ModalTemplates = {
     calendarModal: {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const title = data.title || __('calendar_modal_title') || 'Programar fecha y hora';
-            const dateDisplay = data.dateDisplay || __('lbl_select_date') || 'Seleccionar fecha';
+            const title = data.title || __('calendar_modal_title');
+            const dateDisplay = data.dateDisplay || __('lbl_select_date');
             const hours = data.hours || '00';
             const minutes = data.minutes || '00';
             const isoDate = data.isoDate || '';
-            const btnCancel = __('btn_cancel') || 'Cancelar';
-            const btnConfirm = __('btn_accept') || 'Aceptar';
+            const btnCancel = __('btn_cancel');
+            const btnConfirm = __('btn_accept');
 
             const description = data.desc || data.description || '';
             const descHtml = description ? `<p class="component-modal-desc">${description}</p>` : '';
@@ -1482,23 +1446,23 @@ export const ModalTemplates = {
                                         <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
                                             <span class="material-symbols-rounded">chevron_left</span>
                                         </button>
-                                        <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year') || 'Mes AÃ±o'}</div>
+                                        <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year')}</div>
                                         <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
                                             <span class="material-symbols-rounded">chevron_right</span>
                                         </button>
                                     </div>
                                     <div class="component-calendar-weekdays">
-                                        <span>${__('cal_su') || 'Do'}</span>
-                                        <span>${__('cal_mo') || 'Lu'}</span>
-                                        <span>${__('cal_tu') || 'Ma'}</span>
-                                        <span>${__('cal_we') || 'Mi'}</span>
-                                        <span>${__('cal_th') || 'Ju'}</span>
-                                        <span>${__('cal_fr') || 'Vi'}</span>
-                                        <span>${__('cal_sa') || 'Sa'}</span>
+                                        <span>${__('cal_su')}</span>
+                                        <span>${__('cal_mo')}</span>
+                                        <span>${__('cal_tu')}</span>
+                                        <span>${__('cal_we')}</span>
+                                        <span>${__('cal_th')}</span>
+                                        <span>${__('cal_fr')}</span>
+                                        <span>${__('cal_sa')}</span>
                                     </div>
                                     <div class="component-calendar-days" data-ref="calendar-days"></div>
                                     <div class="component-calendar-actions">
-                                        <button type="button" class="component-button component-button--h30" data-action="calendarClear">${__('btn_clear') || 'Limpiar'}</button>
+                                        <button type="button" class="component-button component-button--h30" data-action="calendarClear">${__('btn_clear')}</button>
                                         <div>
                                             <button type="button" class="component-button component-button--h30" data-action="calendarCancel">${btnCancel}</button>
                                             <button type="button" class="component-button component-button--h30 component-button--dark" data-action="calendarConfirm">${btnConfirm}</button>

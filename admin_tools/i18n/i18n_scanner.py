@@ -19,7 +19,7 @@ def load_json_keys(json_dir):
         for file in files:
             if file.endswith('.json'):
                 try:
-                    with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
+                    with open(os.path.join(root, file), 'r', encoding='utf-8-sig') as f:
                         data = json.load(f)
                         def extract_keys(d, prefix=''):
                             for k, v in d.items():

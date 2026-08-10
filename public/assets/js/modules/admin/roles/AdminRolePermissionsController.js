@@ -25,8 +25,6 @@ class AdminRolePermissionsController {
         this.isInitialized = true;
         this.abortController = new AbortController();
 
-        console.log("[DEBUG ROLES] Iniciando AdminRolePermissionsController");
-        
         this.loadTranslationsFromDOM();
 
         const viewContent = document.querySelector('.view-content');
@@ -51,8 +49,6 @@ class AdminRolePermissionsController {
         this.renderTranslations();
         
         this.enforcePermissionTiering();
-
-        console.log("[DEBUG ROLES] Validaciones iniciales superadas. Permaneciendo en la vista.");
     }
 
     destroy() {
@@ -170,8 +166,6 @@ class AdminRolePermissionsController {
             id: this.roleId, 
             permissions: permissionsArray
         };
-
-        console.log("[DEBUG ROLES] Enviando payload de permisos:", payload);
 
         const res = await this.api.post(ApiRoutes.Admin.UpdateRolePermissions, payload, this.abortController.signal);
         

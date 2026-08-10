@@ -168,7 +168,6 @@ class DesignController {
     }
 
     async init() {
-        console.log('%c[Rosaura App] DesignController initializing...', 'color: #2196f3; font-weight: bold;');
         try {
             await PerksRegistry.load();
         } catch (e) {
@@ -239,7 +238,6 @@ class DesignController {
         if (typeof this.updateTemplateUI === 'function') {
             this.updateTemplateUI();
         }
-        console.log('%c[Rosaura App] DesignController ready!', 'color: #4caf50; font-weight: bold;');
     }
 
     applyPremiumLocks() {
