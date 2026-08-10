@@ -1,6 +1,6 @@
 import { ApiRoutes }           from '../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
-import { BaseListController }   from '../../../core/BaseListController.js';
+import { BaseListController }   from '../../../core/base/BaseListController.js';
 import { applySelectableTable } from '../../../core/mixins/SelectableTableMixin.js';
 
 function _t(key, fallback = '') {

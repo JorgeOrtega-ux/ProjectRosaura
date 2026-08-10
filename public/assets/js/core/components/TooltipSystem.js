@@ -1,7 +1,7 @@
 export class TooltipSystem {
     constructor() {
         this.activeTooltip = null;
-        this.activePopper = null;
+        this.activeEngine = null;
         this.activeTarget = null;
         this.initialized = false;
 
@@ -59,14 +59,14 @@ export class TooltipSystem {
         
         const arrow = document.createElement('div');
         arrow.className = 'component-tooltip-arrow';
-        arrow.setAttribute('data-popper-arrow', '');
+        arrow.setAttribute('data-ui-arrow', '');
         this.activeTooltip.appendChild(arrow);
 
         document.body.appendChild(this.activeTooltip);
 
         const preferredPosition = target.getAttribute('data-position') || 'auto';
 
-        this.activePopper = Popper.createPopper(target, this.activeTooltip, {
+        this.activeEngine = UiEngine.createEngine(target, this.activeTooltip, {
             placement: preferredPosition,
             modifiers: [
                 { name: 'offset', options: { offset: [0, 8] } },
@@ -77,7 +77,7 @@ export class TooltipSystem {
             ],
         });
 
-        this.activePopper.update().then(() => {
+        this.activeEngine.update().then(() => {
             requestAnimationFrame(() => {
                 if (this.activeTooltip) {
                     this.activeTooltip.classList.add('active'); 
@@ -102,13 +102,13 @@ export class TooltipSystem {
     destroyCurrent() {
         if (this.activeTooltip) {
             const tooltipToRemove = this.activeTooltip;
-            const popperToRemove = this.activePopper;
+            const engineToRemove = this.activeEngine;
 
             tooltipToRemove.classList.remove('active'); 
             
             setTimeout(() => {
-                if (popperToRemove) {
-                    popperToRemove.destroy();
+                if (engineToRemove) {
+                    engineToRemove.destroy();
                 }
                 if (tooltipToRemove.parentNode) {
                     tooltipToRemove.parentNode.removeChild(tooltipToRemove);
@@ -117,7 +117,7 @@ export class TooltipSystem {
         }
 
         this.activeTooltip = null;
-        this.activePopper = null;
+        this.activeEngine = null;
         this.activeTarget = null;
     }
 }

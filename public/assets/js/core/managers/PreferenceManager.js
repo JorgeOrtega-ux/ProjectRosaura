@@ -1,5 +1,5 @@
-import { ApiService } from './api/ApiServices.js';
-import { ApiRoutes } from './api/ApiRoutes.js';
+import { ApiService } from '../api/ApiServices.js';
+import { ApiRoutes } from '../api/ApiRoutes.js';
 
 /**
  * PreferenceManager — Gestiona las preferencias del usuario.

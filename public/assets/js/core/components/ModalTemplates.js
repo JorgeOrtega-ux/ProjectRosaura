@@ -998,8 +998,6 @@ export const ModalTemplates = {
                 </div>
             `;
         }
-    },   `;
-        }
     },
 
     confirmUpgradeModal: {

@@ -342,6 +342,7 @@ class StripeServices {
                                 $redisClient = $redisCache->getClient();
                                 if ($redisClient) {
                                     $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . $userId);
+                                    $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId);
                                 }
                             } catch (\Exception $e) {}
 
@@ -728,6 +729,7 @@ class StripeServices {
                 $redisClient = $redisCache->getClient();
                 if ($redisClient) {
                     $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . $userId);
+                    $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId);
                 }
             } catch (\Exception $e) {
                 Logger::error("Failed to clear user cache on upgrade", ['user_id' => $userId, 'error' => $e->getMessage()]);
@@ -797,6 +799,28 @@ class StripeServices {
 
         $userId = $this->sessionManager->getActiveAccountId();
 
+        // Try to read from Redis cache
+        $redisClient = null;
+        $cacheKey = \App\Core\System\CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId;
+        try {
+            $redisCache = new \App\Config\Database\RedisCache();
+            $redisClient = $redisCache->getClient();
+            if ($redisClient) {
+                $cached = $redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $cachedData = json_decode($cached, true);
+                    if (is_array($cachedData)) {
+                        return [
+                            'success' => true,
+                            'data' => $cachedData
+                        ];
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Fallback: proceed without cache
+        }
+
         $stripeCustomerId = $this->subscriptionRepo->getStripeCustomerIdByUserId($userId);
         $history = [];
         
@@ -839,6 +863,14 @@ class StripeServices {
             }
         } else {
             $history = $this->subscriptionRepo->getPaymentHistory($userId, $fetchLimit, $offset);
+        }
+
+        if ($redisClient) {
+            try {
+                $redisClient->setex($cacheKey, \App\Core\System\CacheConstants::TTL_ONE_HOUR, json_encode($history));
+            } catch (\Exception $e) {
+                // Ignore cache write errors
+            }
         }
 
         return [
@@ -1142,6 +1174,7 @@ class StripeServices {
                             $redisClient = $redisCache->getClient();
                             if ($redisClient) {
                                 $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . $userId);
+                                $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId);
                             }
                         } catch (\Throwable $e) {}
 

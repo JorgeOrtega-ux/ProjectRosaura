@@ -1,6 +1,6 @@
-import { ApiService } from './api/ApiServices.js';
-import { ApiRoutes } from './api/ApiRoutes.js';
-import { setButtonLoading, restoreButton, showMessage } from './utils/uiUtils.js';
+import { ApiService } from '../api/ApiServices.js';
+import { ApiRoutes } from '../api/ApiRoutes.js';
+import { setButtonLoading, restoreButton, showMessage } from '../utils/uiUtils.js';
 
 /**
  * AccountManager — Gestiona autenticación: logout, switch de cuenta, join canvas.

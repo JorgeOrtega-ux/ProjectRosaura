@@ -1,5 +1,5 @@
-import { ApiService }          from './api/ApiServices.js';
-import { catchPaginationClick, debounce } from './utils/uiUtils.js';
+import { ApiService }          from '../api/ApiServices.js';
+import { catchPaginationClick, debounce } from '../utils/uiUtils.js';
 
 /**
  * BaseListController

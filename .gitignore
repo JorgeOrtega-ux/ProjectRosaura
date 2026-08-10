@@ -58,3 +58,8 @@ storage/private/backups/*.gz
 
 # Ignorar imágenes de plantillas (templates)
 /public/assets/img/templates/
+
+# Herramientas de administración (admin_tools)
+/admin_tools/__pycache__/
+/admin_tools/reports/
+/admin_tools/data/

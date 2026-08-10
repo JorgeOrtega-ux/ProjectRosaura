@@ -320,7 +320,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         </div>
     </div>
     
-    <script src="<?php echo $appPath; ?>/assets/js/vendor/ui-engine.min.js"></script>
+    <script src="<?php echo $appPath; ?>/assets/js/core/utils/ui-engine.min.js"></script>
     <script type="module" src="<?php echo $appPath; ?>/assets/js/AppInit.js"></script>
 </body>
 </html>

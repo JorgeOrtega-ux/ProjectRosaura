@@ -39,6 +39,7 @@ class CacheConstants {
     public const PREFIX_CANVAS_HOME_FEED = 'canvases:home:feed:';
     public const PREFIX_CANVAS_DETAIL = 'canvas:id:';
     public const PREFIX_USER_PROFILE = 'user:profile:';
+    public const PREFIX_USER_PAYMENT_HISTORY = 'user:payment_history:';
     public const PREFIX_STORE_COINS = 'store:user:coins:';
     public const PREFIX_USER_TEMPLATE_TOKENS = 'user:template_tokens:';
     public const PATTERN_CACHE = 'cache:*';

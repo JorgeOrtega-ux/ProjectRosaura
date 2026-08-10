@@ -3493,19 +3493,19 @@ input:checked+.component-toggle-slider:before {
     transform: rotate(45deg);
 }
 
-.component-tooltip[data-popper-placement^='top']>.component-tooltip-arrow {
+.component-tooltip[data-ui-placement^='top']>.component-tooltip-arrow {
     bottom: -4px;
 }
 
-.component-tooltip[data-popper-placement^='bottom']>.component-tooltip-arrow {
+.component-tooltip[data-ui-placement^='bottom']>.component-tooltip-arrow {
     top: -4px;
 }
 
-.component-tooltip[data-popper-placement^='left']>.component-tooltip-arrow {
+.component-tooltip[data-ui-placement^='left']>.component-tooltip-arrow {
     right: -4px;
 }
 
-.component-tooltip[data-popper-placement^='right']>.component-tooltip-arrow {
+.component-tooltip[data-ui-placement^='right']>.component-tooltip-arrow {
     left: -4px;
 }
 

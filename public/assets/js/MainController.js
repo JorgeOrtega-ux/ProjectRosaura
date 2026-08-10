@@ -1,11 +1,11 @@
 import { ApiService } from './core/api/ApiServices.js';
 import { ApiRoutes } from './core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton, formatNumber } from './core/utils/uiUtils.js';
-import { ThemeManager } from './core/ThemeManager.js';
-import { PreferenceManager } from './core/PreferenceManager.js';
-import { ModuleManager } from './core/ModuleManager.js';
-import { AccountManager } from './core/AccountManager.js';
-import { ToastSystem } from './core/ToastSystem.js';
+import { ThemeManager } from './core/managers/ThemeManager.js';
+import { PreferenceManager } from './core/managers/PreferenceManager.js';
+import { ModuleManager } from './core/managers/ModuleManager.js';
+import { AccountManager } from './core/managers/AccountManager.js';
+import { ToastSystem } from './core/components/ToastSystem.js';
 
 export class MainController {
     constructor() {

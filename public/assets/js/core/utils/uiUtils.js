@@ -9,7 +9,9 @@ function showMessage(message, type = 'success') {
 function setButtonLoading(btn, loadingText = '') {
     if (!btn) return;
     
-    btn.dataset.originalText = btn.innerHTML;
+    if (btn.dataset.originalText === undefined || btn.dataset.originalText === null) {
+        btn.dataset.originalText = btn.innerHTML;
+    }
     btn.classList.add('disabled-interaction');
     
     if (loadingText) {
@@ -22,8 +24,9 @@ function setButtonLoading(btn, loadingText = '') {
 function restoreButton(btn) {
     if (!btn) return;
     
-    if (btn.dataset.originalText) {
+    if (btn.dataset.originalText !== undefined && btn.dataset.originalText !== null) {
         btn.innerHTML = btn.dataset.originalText;
+        delete btn.dataset.originalText;
     }
     
     btn.classList.remove('disabled-interaction');
