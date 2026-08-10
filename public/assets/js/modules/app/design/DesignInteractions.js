@@ -2045,11 +2045,12 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-error)';
                     badgeEl.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
                 }
+                const label = window.__('badge_owner_eraser') || 'Borrador';
                 if (clearCooldownLeft > 0) {
                     badgeEl.classList.add('disable-interaction');
-                    badgeEl.innerHTML = `<span class="material-symbols-rounded">cleaning_services</span><span>Borrador (${clearCooldownLeft}s)</span>`;
+                    badgeEl.innerHTML = `<span class="material-symbols-rounded">cleaning_services</span><span>${label} (${clearCooldownLeft}s)</span>`;
                 } else {
-                    badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>${window.__('badge_owner_eraser')}</span>`;
+                    badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">cleaning_services</span><span>${label}</span>`;
                 }
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -2069,11 +2070,12 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-warning)';
                     badgeEl.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
                 }
+                const label = isToggledOn ? (window.__('badge_owner_unfreeze') || 'Descongelar Actividad') : (window.__('badge_owner_freeze') || 'Congelar Actividad');
                 if (freezeCooldownLeft > 0) {
                     badgeEl.classList.add('disable-interaction');
-                    badgeEl.innerHTML = `<span class="material-symbols-rounded">ac_unit</span><span>Congelar (${freezeCooldownLeft}s)</span>`;
+                    badgeEl.innerHTML = `<span class="material-symbols-rounded">ac_unit</span><span>${label} (${freezeCooldownLeft}s)</span>`;
                 } else {
-                    badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">ac_unit</span><span>${isToggledOn ? (window.__('badge_owner_unfreeze') || 'Descongelar Actividad') : (window.__('badge_owner_freeze') || 'Congelar Actividad')}</span>`;
+                    badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">ac_unit</span><span>${label}</span>`;
                 }
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -2093,11 +2095,12 @@ export const DesignInteractions = {
                     badgeEl.style.border = '1px solid var(--color-success)';
                     badgeEl.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
                 }
+                const label = window.__('badge_owner_protect') || 'Protección Administrativa';
                 if (protectCooldownLeft > 0) {
                     badgeEl.classList.add('disable-interaction');
-                    badgeEl.innerHTML = `<span class="material-symbols-rounded">admin_panel_settings</span><span>Proteger (${protectCooldownLeft}s)</span>`;
+                    badgeEl.innerHTML = `<span class="material-symbols-rounded">admin_panel_settings</span><span>${label} (${protectCooldownLeft}s)</span>`;
                 } else {
-                    badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">admin_panel_settings</span><span>${window.__('badge_owner_protect') || 'Protección Administrativa'}</span>`;
+                    badgeEl.innerHTML = `<span class="material-symbols-rounded ${colorClass}">admin_panel_settings</span><span>${label}</span>`;
                 }
                 badgeEl.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -2168,7 +2171,7 @@ export const DesignInteractions = {
 
         const { x1: minX, y1: minY, x2: maxX, y2: maxY } = this.ownerEraserBox;
         const count = (maxX - minX + 1) * (maxY - minY + 1);
-        const cooldownMs = Math.min(60000, 1000 + Math.floor(count / 100));
+        const cooldownMs = Math.min(60000, 5000 + Math.floor(count / 100));
 
         // 2. Broadcast via WebSocket server
         if (this.wsManager) {
@@ -2265,7 +2268,7 @@ export const DesignInteractions = {
         } else if (this.ownerEraserBox) {
             count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
         }
-        const cooldownMs = Math.min(30000, 1000 + Math.floor((count * 5) / 100));
+        const cooldownMs = Math.min(30000, 5000 + Math.floor((count * 5) / 100));
 
         if (this.wsManager) {
             const payload = {
@@ -2290,6 +2293,10 @@ export const DesignInteractions = {
         this.ownerEraserBox = null;
         this.ownerEraserStep = 0;
         this.ownerEraserStart = null;
+
+        if (!this.ownerCooldowns) this.ownerCooldowns = {};
+        this.ownerCooldowns.protect = Date.now() + cooldownMs;
+        this.startOwnerCooldownTimer();
 
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();

@@ -561,7 +561,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             }
 
             let pixel_count = affected_offsets.len() as u64;
-            let cooldown_ms = (1000 + (pixel_count * 5) / 100).min(30000);
+            let cooldown_ms = (5000 + (pixel_count * 5) / 100).min(30000);
             set_owner_ratelimit(state, canvas_id, &uid_str, "protect", cooldown_ms).await;
         }
         "use_pixel_protection" => {
@@ -823,7 +823,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             ]).await.unwrap_or(());
 
             let pixel_count = count as u64;
-            let cooldown_ms = (1000 + pixel_count / 100).min(60000);
+            let cooldown_ms = (5000 + pixel_count / 100).min(60000);
             set_owner_ratelimit(state, canvas_id, &uid_str, "clear", cooldown_ms).await;
         }
         "pixel" | "erase_pixel" | "batch_pixels" | "batch_erase_pixels" => {
