@@ -41,6 +41,15 @@ class CanvasViewService {
             $defaultSizeData = $canvasSizesList[$defaultSizeKey];
         }
 
+        $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
+        $tier3CanvasesCount = 0;
+        if ($userId) {
+            try {
+                $canvasRepo = new \App\Core\Repositories\CanvasRepository();
+                $tier3CanvasesCount = $canvasRepo->countUserTierCanvases((int)$userId, 3);
+            } catch (\Throwable $e) {}
+        }
+
         return [
             'tier' => $tier,
             'planLimits' => $planLimits,
@@ -49,7 +58,9 @@ class CanvasViewService {
             'userPerms' => $userPerms,
             'canvasSizesList' => $canvasSizesList,
             'defaultSizeKey' => $defaultSizeKey,
-            'defaultSizeData' => $defaultSizeData
+            'defaultSizeData' => $defaultSizeData,
+            'tier3CanvasesCount' => $tier3CanvasesCount,
+            'maxTier3Canvases' => 3
         ];
     }
 
@@ -861,6 +872,14 @@ class CanvasViewService {
             } catch (\Throwable $e) {}
         }
 
+        $tier3CanvasesCount = 0;
+        if ($canvas['owner_id'] !== null) {
+            try {
+                $canvasRepo = new \App\Core\Repositories\CanvasRepository();
+                $tier3CanvasesCount = $canvasRepo->countUserTierCanvases((int)$canvas['owner_id'], 3);
+            } catch (\Throwable $e) {}
+        }
+
         return [
             'error' => null,
             'canvas' => $canvas,
@@ -877,7 +896,9 @@ class CanvasViewService {
             'isResizeActive' => $isResizeActive,
             'monthShort' => $monthShort,
             'resizeDateLocal' => $resizeDateLocal,
-            'resizeDateDisplay' => $resizeDateDisplay
+            'resizeDateDisplay' => $resizeDateDisplay,
+            'tier3CanvasesCount' => $tier3CanvasesCount,
+            'maxTier3Canvases' => 3
         ];
     }
 

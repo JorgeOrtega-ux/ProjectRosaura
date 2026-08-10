@@ -288,6 +288,8 @@ class CanvasesCreateController {
         if (!wrapper) return;
         
         const userTier = parseInt(wrapper.getAttribute('data-user-tier') || '0', 10);
+        const tier3Count = parseInt(wrapper.getAttribute('data-tier3-count') || '0', 10);
+        const tier3Max = parseInt(wrapper.getAttribute('data-tier3-max') || '3', 10);
         const sizeLinks = document.querySelectorAll('.component-menu-link[data-type="size"]');
         
         sizeLinks.forEach(link => {
@@ -306,7 +308,9 @@ class CanvasesCreateController {
                 }
             }
             
-            const isAllowed = userTier >= reqTier;
+            const isTierAllowed = userTier >= reqTier;
+            const isUltraCapped = (reqTier >= 3 && tier3Count >= tier3Max);
+            const isAllowed = isTierAllowed && !isUltraCapped;
             
             if (isAllowed) {
                 link.classList.remove('disabled-interaction');
@@ -319,15 +323,25 @@ class CanvasesCreateController {
             } else {
                 link.classList.add('disabled-interaction');
                 link.setAttribute('data-action', '');
-                link.setAttribute('title', window.__('tooltip_upgrade_required'));
                 
                 let lockIcon = link.querySelector('.component-badge');
-                if (!lockIcon) {
-                    const tierName = getDynamicTierName(reqTier);
-                    link.insertAdjacentHTML('beforeend', `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${tierName}</span>`);
+                if (isUltraCapped && isTierAllowed) {
+                    link.setAttribute('title', window.__ ? window.__('tooltip_ultra_limit_reached') : 'Límite de 3 lienzos Ultra alcanzado');
+                    const badgeHtml = `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">block</span> ${tier3Count}/${tier3Max} Ultra</span>`;
+                    if (!lockIcon) {
+                        link.insertAdjacentHTML('beforeend', badgeHtml);
+                    } else {
+                        lockIcon.outerHTML = badgeHtml;
+                    }
                 } else {
+                    link.setAttribute('title', window.__ ? window.__('tooltip_upgrade_required') : 'Mejora de plan requerida');
                     const tierName = getDynamicTierName(reqTier);
-                    lockIcon.innerHTML = `<span class="material-symbols-rounded">stars</span> ${tierName}`;
+                    const badgeHtml = `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${tierName}</span>`;
+                    if (!lockIcon) {
+                        link.insertAdjacentHTML('beforeend', badgeHtml);
+                    } else {
+                        lockIcon.outerHTML = badgeHtml;
+                    }
                 }
             }
         });

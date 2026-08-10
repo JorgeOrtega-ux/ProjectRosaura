@@ -454,20 +454,15 @@ export const DesignInteractions = {
                 const offset = (coords.y * bw) + coords.x;
                 
                 if (this.interactionMode === 'owner_protecting' && (this.ownerEraserStep === 0 || this.ownerEraserStep === 2)) {
-                    const hasOffset = (off) => {
-                        if (!this.protectedPixels) return false;
-                        return this.protectedPixels.has(off) || this.protectedPixels.has(String(off));
-                    };
-                    if (hasOffset(offset)) {
-                        const region = this.getContiguousProtectedRegion(coords.x, coords.y);
-                        const count = region.length || 1;
+                    const area = this.protectedAreas ? this.protectedAreas.find(a => coords.x >= a.x1 && coords.x <= a.x2 && coords.y >= a.y1 && coords.y <= a.y2) : null;
+                    if (area) {
+                        const count = (area.x2 - area.x1 + 1) * (area.y2 - area.y1 + 1);
                         window.modalSystem.show('confirmUnprotectAreaModal', { count }).then(res => {
                             const actStr = (typeof res === 'string') ? res : (res?.action || null);
                             if (actStr === 'unprotect') {
-                                this.executeOwnerProtectArea(false, region);
+                                this.executeOwnerUnprotectArea(area.x1, area.y1, area.x2, area.y2);
                             }
                         });
-
                         return;
                     }
                 }
@@ -1919,10 +1914,13 @@ export const DesignInteractions = {
             } else if (perkId === 'pixel_shield_1') {
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 const totalAmount = owned ? parseInt(owned.count, 10) : 0;
+                const myProtectedZonesCount = this.myProtectedPixels ? this.myProtectedPixels.size : 0;
+                const isHighlighting = !!this.showMyProtectionsHighlight;
                 
                 isActive = (this.interactionMode === 'user_protecting');
                 
                 if (isActive) {
+                    // Mode toggled on: selecting zone to protect
                     isToggledOn = true;
                     const titleText = PerksRegistry.getLabel(perkId);
                     activeHtml = `<span class="material-symbols-rounded component-text-success">${icon}</span><span>${titleText} (${totalAmount})</span>`;
@@ -1936,6 +1934,18 @@ export const DesignInteractions = {
                         this.requestRender();
                     };
                     if (this.showInventoryPerks) renderedInventoryCount++;
+                } else if (myProtectedZonesCount > 0) {
+                    // User has protected zones: always show badge to view/highlight them
+                    isActive = true;
+                    isToggledOn = isHighlighting;
+                    const titleText = PerksRegistry.getLabel(perkId);
+                    const label = totalAmount > 0 ? `${titleText} (${totalAmount})` : titleText;
+                    const iconClass = isHighlighting ? 'component-text-success' : '';
+                    activeHtml = `<span class="material-symbols-rounded ${iconClass}">${icon}</span><span>${label}<span data-ref="my-protections-timer-label" class="protection-timer-label"></span></span>`;
+                    clickHandler = () => {
+                        this.toggleMyProtectionsHighlight();
+                    };
+                    if (this.showInventoryPerks && totalAmount > 0) renderedInventoryCount++;
                 } else if (totalAmount > 0 && this.showInventoryPerks) {
                     isActive = true;
                     isToggledOn = false;
@@ -1996,25 +2006,11 @@ export const DesignInteractions = {
             badgesRight.appendChild(emptyBadge);
         }
 
-        // Badge de Zonas Protegidas del usuario (activo solo si tiene zonas protegidas)
+        // Timer label reference: look it up from pixel_shield_1 badge (rendered above in PERK_ORDER loop)
+        const timerLabelEl = badgesRight.querySelector('[data-ref="my-protections-timer-label"]');
+        this.myProtectionsTimerLabel = timerLabelEl || null;
         const myProtectedCount = this.myProtectedPixels ? this.myProtectedPixels.size : 0;
         if (myProtectedCount > 0) {
-            const isHighlighting = !!this.showMyProtectionsHighlight;
-            const protBadge = document.createElement('div');
-            protBadge.className = 'component-badge component-badge--clickable';
-            if (isHighlighting) {
-                protBadge.classList.add('component-badge--success-highlighted');
-                protBadge.innerHTML = `<span class="material-symbols-rounded component-text-success">shield</span><span>Zonas protegidas (${myProtectedCount})<span data-ref="my-protections-timer-label" class="protection-timer-label"></span></span>`;
-            } else {
-                protBadge.innerHTML = `<span class="material-symbols-rounded">shield</span><span>Zonas protegidas (${myProtectedCount})<span data-ref="my-protections-timer-label" class="protection-timer-label"></span></span>`;
-            }
-            protBadge.addEventListener('click', () => {
-                this.toggleMyProtectionsHighlight();
-            });
-            badgesRight.appendChild(protBadge);
-
-
-            this.myProtectionsTimerLabel = protBadge.querySelector('[data-ref="my-protections-timer-label"]');
             if (!this.myProtectionsTimerInterval) {
                 this.myProtectionsTimerInterval = setInterval(() => {
                     this.updateMyProtectionsTimer();
@@ -2154,7 +2150,14 @@ export const DesignInteractions = {
         // We only use ownerEraserBox.
         this.ownerEraserBox = { x1: minX, y1: minY, x2: maxX, y2: maxY };
         this.updateSelectionUI();
-        this.requestRender();
+        // Throttle render during drag to avoid lag on large canvases (4096+)
+        if (!this._areaSelectRenderPending) {
+            this._areaSelectRenderPending = true;
+            requestAnimationFrame(() => {
+                this._areaSelectRenderPending = false;
+                this.requestRender();
+            });
+        }
     },
 
     executeOwnerClearArea() {
@@ -2300,6 +2303,27 @@ export const DesignInteractions = {
 
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
+    },
+
+    executeOwnerUnprotectArea(x1, y1, x2, y2) {
+        if (this.wsManager) {
+            this.wsManager.send({
+                type: "protect_area",
+                protect: false,
+                x1: x1,
+                y1: y1,
+                x2: x2,
+                y2: y2,
+                width: this.boardWidth || 64
+            });
+        }
+        this.interactionMode = 'normal';
+        this.selectedPixels.clear();
+        this.ownerEraserBox = null;
+        this.ownerEraserStep = 0;
+        this.ownerEraserStart = null;
+        this.updateSelectionUI();
         this.requestRender();
     },
 

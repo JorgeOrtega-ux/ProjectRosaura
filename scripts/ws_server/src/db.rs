@@ -101,67 +101,190 @@ pub async fn set_canvas_frozen_db(db: &MySqlPool, canvas_id: &str, is_frozen: bo
     let _ = sqlx::query(&query).bind(val).bind(canvas_id).execute(db).await;
 }
 
-pub async fn get_canvas_protections_db(db: &MySqlPool, canvas_id: &str) -> Vec<i32> {
+pub async fn get_canvas_protections_db(db: &MySqlPool, canvas_id: &str) -> Vec<crate::models::ProtectedArea> {
     let db_name = env::var("DB_CANVASES_NAME").unwrap_or_else(|_| "db_canvases".to_string());
     let query = format!(
-        "SELECT offset FROM `{}`.`canvas_protections` WHERE canvas_id = ? AND (expires_at IS NULL OR expires_at > NOW())",
+        "SELECT id, x1, y1, x2, y2, protected_by, UNIX_TIMESTAMP(expires_at) AS expires_at_unix FROM `{}`.`canvas_protections` WHERE canvas_id = ? AND (expires_at IS NULL OR expires_at > NOW())",
         db_name
     );
     match sqlx::query(&query).bind(canvas_id).fetch_all(db).await {
         Ok(rows) => {
-            rows.into_iter().filter_map(|r| r.try_get("offset").ok()).collect()
+            rows.into_iter().filter_map(|r| {
+                let id: i32 = r.try_get("id").ok()?;
+                let x1: i32 = r.try_get("x1").ok()?;
+                let y1: i32 = r.try_get("y1").ok()?;
+                let x2: i32 = r.try_get("x2").ok()?;
+                let y2: i32 = r.try_get("y2").ok()?;
+                let protected_by: Option<i32> = r.try_get("protected_by").ok();
+                let expires_at: Option<i64> = r.try_get("expires_at_unix").ok().flatten();
+                Some(crate::models::ProtectedArea { id, x1, y1, x2, y2, protected_by, expires_at })
+            }).collect()
         }
         _ => vec![],
     }
 }
 
-pub async fn save_canvas_protections_db(db: &MySqlPool, canvas_id: &str, offsets: &[i32], protect: bool, user_id: Option<&str>) {
-    save_canvas_protections_db_with_expiry(db, canvas_id, offsets, protect, user_id, None).await;
-}
-
-pub async fn save_canvas_protections_db_with_expiry(
+pub async fn save_canvas_protection_db(
     db: &MySqlPool,
     canvas_id: &str,
-    offsets: &[i32],
-    protect: bool,
-    user_id: Option<&str>,
-    expires_in_secs: Option<i64>
-) {
-    if canvas_id.is_empty() || offsets.is_empty() { return; }
+    x1: i32,
+    y1: i32,
+    x2: i32,
+    y2: i32,
+    protected_by: Option<&str>,
+    expires_in_secs: Option<i64>,
+) -> Result<i32, sqlx::Error> {
     let db_name = env::var("DB_CANVASES_NAME").unwrap_or_else(|_| "db_canvases".to_string());
-    
-    if protect {
-        let mut query = format!("INSERT INTO `{}`.`canvas_protections` (canvas_id, offset, protected_by, expires_at) VALUES ", db_name);
-        let mut placeholders = Vec::new();
-        for _ in 0..offsets.len() {
-            if expires_in_secs.is_some() {
-                placeholders.push("(?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))");
-            } else {
-                placeholders.push("(?, ?, ?, NULL)");
-            }
-        }
-        query.push_str(&placeholders.join(", "));
-        query.push_str(" ON DUPLICATE KEY UPDATE protected_by = VALUES(protected_by), expires_at = VALUES(expires_at)");
-        
-        let mut q = sqlx::query(&query);
-        let uid = user_id.and_then(|u| u.parse::<i32>().ok());
-        for &offset in offsets {
-            q = q.bind(canvas_id).bind(offset).bind(uid);
-            if let Some(secs) = expires_in_secs {
-                q = q.bind(secs);
-            }
-        }
-        let _ = q.execute(db).await;
+    let query = if expires_in_secs.is_some() {
+        format!(
+            "INSERT INTO `{}`.`canvas_protections` (canvas_id, x1, y1, x2, y2, protected_by, expires_at) VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))",
+            db_name
+        )
     } else {
-        let placeholders = offsets.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
-        let query = format!("DELETE FROM `{}`.`canvas_protections` WHERE canvas_id = ? AND offset IN ({})", db_name, placeholders);
+        format!(
+            "INSERT INTO `{}`.`canvas_protections` (canvas_id, x1, y1, x2, y2, protected_by, expires_at) VALUES (?, ?, ?, ?, ?, ?, NULL)",
+            db_name
+        )
+    };
+    
+    let uid = protected_by.and_then(|u| u.parse::<i32>().ok());
+    let mut q = sqlx::query(&query)
+        .bind(canvas_id)
+        .bind(x1)
+        .bind(y1)
+        .bind(x2)
+        .bind(y2)
+        .bind(uid);
         
-        let mut q = sqlx::query(&query).bind(canvas_id);
-        for &offset in offsets {
-            q = q.bind(offset);
-        }
-        let _ = q.execute(db).await;
+    if let Some(secs) = expires_in_secs {
+        q = q.bind(secs);
     }
+    
+    let res = q.execute(db).await?;
+    Ok(res.last_insert_id() as i32)
+}
+
+pub async fn delete_canvas_protection_db(
+    db: &MySqlPool,
+    canvas_id: &str,
+    x1: i32,
+    y1: i32,
+    x2: i32,
+    y2: i32,
+) -> Result<(), sqlx::Error> {
+    let db_name = env::var("DB_CANVASES_NAME").unwrap_or_else(|_| "db_canvases".to_string());
+    let query = format!(
+        "DELETE FROM `{}`.`canvas_protections` WHERE canvas_id = ? AND x1 = ? AND y1 = ? AND x2 = ? AND y2 = ?",
+        db_name
+    );
+    sqlx::query(&query)
+        .bind(canvas_id)
+        .bind(x1)
+        .bind(y1)
+        .bind(x2)
+        .bind(y2)
+        .execute(db)
+        .await?;
+    Ok(())
+}
+
+pub async fn delete_intersecting_rect_protections_db(
+    db: &MySqlPool,
+    canvas_id: &str,
+    min_x: i32,
+    min_y: i32,
+    max_x: i32,
+    max_y: i32,
+) -> Result<Vec<crate::models::ProtectedArea>, sqlx::Error> {
+    let db_name = env::var("DB_CANVASES_NAME").unwrap_or_else(|_| "db_canvases".to_string());
+    let query_fetch = format!(
+        "SELECT id, x1, y1, x2, y2, protected_by, UNIX_TIMESTAMP(expires_at) AS expires_at_unix FROM `{}`.`canvas_protections` WHERE canvas_id = ? AND (expires_at IS NULL OR expires_at > NOW())",
+        db_name
+    );
+    let rows = sqlx::query(&query_fetch).bind(canvas_id).fetch_all(db).await?;
+    let mut deleted = Vec::new();
+    let mut deleted_ids = Vec::new();
+    
+    for r in rows {
+        let id: i32 = r.try_get("id").unwrap_or(0);
+        let x1: i32 = r.try_get("x1").unwrap_or(0);
+        let y1: i32 = r.try_get("y1").unwrap_or(0);
+        let x2: i32 = r.try_get("x2").unwrap_or(0);
+        let y2: i32 = r.try_get("y2").unwrap_or(0);
+        let protected_by: Option<i32> = r.try_get("protected_by").ok();
+        let expires_at: Option<i64> = r.try_get("expires_at_unix").ok().flatten();
+        
+        let intersect = !(x2 < min_x || x1 > max_x || y2 < min_y || y1 > max_y);
+        if intersect {
+            deleted_ids.push(id);
+            deleted.push(crate::models::ProtectedArea { id, x1, y1, x2, y2, protected_by, expires_at });
+        }
+    }
+    
+    if !deleted_ids.is_empty() {
+        let placeholders = deleted_ids.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
+        let query_del = format!("DELETE FROM `{}`.`canvas_protections` WHERE id IN ({})", db_name, placeholders);
+        let mut q = sqlx::query(&query_del);
+        for id in deleted_ids {
+            q = q.bind(id);
+        }
+        q.execute(db).await?;
+    }
+    
+    Ok(deleted)
+}
+
+pub async fn delete_intersecting_circle_protections_db(
+    db: &MySqlPool,
+    canvas_id: &str,
+    tx: i32,
+    ty: i32,
+    radius: i32,
+) -> Result<Vec<crate::models::ProtectedArea>, sqlx::Error> {
+    let db_name = env::var("DB_CANVASES_NAME").unwrap_or_else(|_| "db_canvases".to_string());
+    let query_fetch = format!(
+        "SELECT id, x1, y1, x2, y2, protected_by, UNIX_TIMESTAMP(expires_at) AS expires_at_unix FROM `{}`.`canvas_protections` WHERE canvas_id = ? AND (expires_at IS NULL OR expires_at > NOW())",
+        db_name
+    );
+    let rows = sqlx::query(&query_fetch).bind(canvas_id).fetch_all(db).await?;
+    let mut deleted = Vec::new();
+    let mut deleted_ids = Vec::new();
+    
+    for r in rows {
+        let id: i32 = r.try_get("id").unwrap_or(0);
+        let x1: i32 = r.try_get("x1").unwrap_or(0);
+        let y1: i32 = r.try_get("y1").unwrap_or(0);
+        let x2: i32 = r.try_get("x2").unwrap_or(0);
+        let y2: i32 = r.try_get("y2").unwrap_or(0);
+        let protected_by: Option<i32> = r.try_get("protected_by").ok();
+        let expires_at: Option<i64> = r.try_get("expires_at_unix").ok().flatten();
+        
+        let closest_x = tx.clamp(x1, x2);
+        let closest_y = ty.clamp(y1, y2);
+        
+        let distance_x = tx - closest_x;
+        let distance_y = ty - closest_y;
+        
+        let distance_squared = (distance_x * distance_x) + (distance_y * distance_y);
+        let intersect = distance_squared <= (radius * radius);
+        
+        if intersect {
+            deleted_ids.push(id);
+            deleted.push(crate::models::ProtectedArea { id, x1, y1, x2, y2, protected_by, expires_at });
+        }
+    }
+    
+    if !deleted_ids.is_empty() {
+        let placeholders = deleted_ids.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
+        let query_del = format!("DELETE FROM `{}`.`canvas_protections` WHERE id IN ({})", db_name, placeholders);
+        let mut q = sqlx::query(&query_del);
+        for id in deleted_ids {
+            q = q.bind(id);
+        }
+        q.execute(db).await?;
+    }
+    
+    Ok(deleted)
 }
 
 pub async fn consume_user_perk(_db: &MySqlPool, user_id: &str, perk_id: &str) -> bool {

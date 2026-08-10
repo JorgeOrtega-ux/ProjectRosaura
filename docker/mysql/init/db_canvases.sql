@@ -38,12 +38,15 @@ CREATE TABLE IF NOT EXISTS `canvases` (
 CREATE TABLE IF NOT EXISTS `canvas_protections` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `canvas_id` int(11) NOT NULL,
-  `offset` int(11) NOT NULL,
+  `x1` int(11) NOT NULL,
+  `y1` int(11) NOT NULL,
+  `x2` int(11) NOT NULL,
+  `y2` int(11) NOT NULL,
   `protected_by` int(11) DEFAULT NULL,
   `expires_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_cp_canvas_offset` (`canvas_id`, `offset`),
+  INDEX `idx_cp_canvas` (`canvas_id`),
   CONSTRAINT `fk_cp_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 

@@ -1,9 +1,10 @@
 import { ApiRoutes } from '../api/ApiRoutes.js';
 import { showMessage, renderSkeleton } from '../utils/uiUtils.js';
+import { CanvasApiService } from '../api/CanvasApiService.js';
 
 export class CanvasCardInteractions {
     constructor(apiService, basePath, abortController) {
-        this.api = apiService;
+        this.api = new CanvasApiService();
         this.basePath = basePath || '';
         this.abortController = abortController;
         this.initCanvasInfoModuleEvents();

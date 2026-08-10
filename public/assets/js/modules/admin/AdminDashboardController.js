@@ -1,9 +1,9 @@
-import { ApiService } from '../../core/api/ApiServices.js';
+import { AdminApiService } from '../../core/api/AdminApiService.js';
 import { showMessage, formatNumber } from '../../core/utils/uiUtils.js';
 
 export class AdminDashboardController {
     constructor() {
-        this.api = new ApiService();
+        this.api = new AdminApiService();
         this.dom = {};
         this.chartTabsMain = null;
         this.currentTab = 'activity';

@@ -1,9 +1,9 @@
-import { ApiService } from '../../../core/api/ApiServices.js';
+import { CanvasApiService } from '../../../core/api/CanvasApiService.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
 class CanvasRequestsController {
     constructor() {
-        this.api = new ApiService();
+        this.api = new CanvasApiService();
         this.selectedRequestIds = new Set();
         this.canvasId = null;
         

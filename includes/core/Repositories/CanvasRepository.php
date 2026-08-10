@@ -373,6 +373,27 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return (int)$stmt->fetchColumn();
     }
 
+    public function countUserTierCanvases(int $ownerId, int $tier): int {
+        $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
+        $tierSizes = [];
+        foreach ($allSizes as $key => $conf) {
+            if (isset($conf['tier']) && (int)$conf['tier'] === $tier) {
+                $tierSizes[] = $key;
+            }
+        }
+
+        if (empty($tierSizes)) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($tierSizes), '?'));
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = ? AND size IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+        $params = array_merge([$ownerId], $tierSizes);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    }
+
     public function countOlderCanvases(int $canvasId, int $ownerId, string $createdAt): int {
         $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid AND (created_at < :ca OR (created_at = :ca2 AND id < :id))";
         $stmt = $this->db->prepare($sql);

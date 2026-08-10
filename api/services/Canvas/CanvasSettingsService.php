@@ -46,6 +46,14 @@ class CanvasSettingsService {
                 if ($tier < $requiredTier) {
                     return ['success' => false, 'message' => __('err_plan_canvas_size')];
                 }
+
+                $currentTier = (int)($allSizes[$canvas['size']]['tier'] ?? 0);
+                if ($requiredTier >= 3 && $currentTier < 3) {
+                    $tier3Count = $this->canvasRepository->countUserTierCanvases($canvas['owner_id'], 3);
+                    if ($tier3Count >= 3) {
+                        return ['success' => false, 'message' => __('err_canvas_tier3_limit_reached')];
+                    }
+                }
             }
 
             if (class_exists(RedisCache::class)) {
@@ -131,6 +139,14 @@ class CanvasSettingsService {
                 
                 if ($tier < $requiredTier) {
                     return ['success' => false, 'message' => __('err_plan_canvas_size')];
+                }
+
+                $currentTier = (int)($allSizes[$canvas['size']]['tier'] ?? 0);
+                if ($requiredTier >= 3 && $currentTier < 3) {
+                    $tier3Count = $this->canvasRepository->countUserTierCanvases($canvas['owner_id'], 3);
+                    if ($tier3Count >= 3) {
+                        return ['success' => false, 'message' => __('err_canvas_tier3_limit_reached')];
+                    }
                 }
             }
             

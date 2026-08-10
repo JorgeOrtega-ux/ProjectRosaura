@@ -238,6 +238,26 @@ services:
       - rosaura_network
 
 
+  # ==========================================
+  # SERVIDOR WEBSOCKET (Rust)
+  # ==========================================
+  websocket_node:
+    build:
+      context: .
+      dockerfile: docker/rust/Dockerfile.worker
+    container_name: rosaura_websocket_node_rust
+    restart: always
+    depends_on:
+      redis:
+        condition: service_healthy
+      db_mysql:
+        condition: service_healthy
+    env_file:
+      - .env.ws
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
 
   # ==========================================
   # SERVIDOR MINIO (Object Storage Amazon S3 Mock)

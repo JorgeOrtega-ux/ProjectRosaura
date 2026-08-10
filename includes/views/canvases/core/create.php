@@ -7,7 +7,7 @@ $createData = $canvasService->getCanvasCreateData();
 
 extract($createData);
 ?>
-<div class="view-content" data-ref="canvas-create-wrapper" data-user-tier="<?php echo $tier; ?>">
+<div class="view-content" data-ref="canvas-create-wrapper" data-user-tier="<?php echo $tier; ?>" data-tier3-count="<?php echo (int)($tier3CanvasesCount ?? 0); ?>" data-tier3-max="<?php echo (int)($maxTier3Canvases ?? 3); ?>">
     
     <div class="component-top">
         <div class="component-top-left">
@@ -163,14 +163,26 @@ extract($createData);
                                         <div class="component-menu-list component-menu-list--scrollable">
                                             <?php foreach ($canvasSizesList as $val => $data): 
                                                 $requiredTier = $data['tier'] ?? 0;
-                                                $isAllowed = ($tier >= $requiredTier);
+                                                $isTierAllowed = ($tier >= $requiredTier);
+                                                $isUltraCapped = ($requiredTier >= 3 && ($tier3CanvasesCount ?? 0) >= ($maxTier3Canvases ?? 3));
+                                                $isAllowed = $isTierAllowed && !$isUltraCapped;
                                                 $disabledClass = $isAllowed ? '' : 'disabled-interaction';
                                                 $action = $isAllowed ? 'selectValue' : '';
                                                 $tierName = SubscriptionPlanConstants::getTierName($requiredTier);
-                                                $lockIcon = $isAllowed ? '' : '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ' . htmlspecialchars($tierName) . '</span>';
+                                                
+                                                if ($isUltraCapped && $isTierAllowed) {
+                                                    $lockIcon = '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">block</span> ' . ($tier3CanvasesCount ?? 3) . '/' . ($maxTier3Canvases ?? 3) . ' Ultra</span>';
+                                                    $titleAttr = 'title="' . htmlspecialchars(__('tooltip_ultra_limit_reached')) . '"';
+                                                } elseif (!$isTierAllowed) {
+                                                    $lockIcon = '<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ' . htmlspecialchars($tierName) . '</span>';
+                                                    $titleAttr = 'title="' . htmlspecialchars(__('tooltip_upgrade_required')) . '"';
+                                                } else {
+                                                    $lockIcon = '';
+                                                    $titleAttr = '';
+                                                }
                                                 $activeClass = ($val === $defaultSizeKey && $isAllowed) ? 'active' : '';
                                             ?>
-                                            <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>" data-action="<?php echo $action; ?>" data-type="size" data-value="<?php echo htmlspecialchars($val); ?>" data-tier="<?php echo $requiredTier; ?>" data-label="<?php echo htmlspecialchars($data['label']); ?>" data-icon="<?php echo htmlspecialchars($data['icon']); ?>" <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '"'; ?>>
+                                            <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>" data-action="<?php echo $action; ?>" data-type="size" data-value="<?php echo htmlspecialchars($val); ?>" data-tier="<?php echo $requiredTier; ?>" data-label="<?php echo htmlspecialchars($data['label']); ?>" data-icon="<?php echo htmlspecialchars($data['icon']); ?>" <?php echo $titleAttr; ?>>
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($data['icon']); ?></span></div>
                                                 <div class="component-menu-link-text">
                                                     <span><?php echo htmlspecialchars($data['label']); ?></span>

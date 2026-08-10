@@ -178,18 +178,39 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_cleared') {
                     this.handleCanvasCleared(data);
                 }
-                else if (data.type === 'init_protected_pixels') {
-                    this.protectedPixels = new Set(data.offsets);
-                    if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
-                }
-                else if (data.type === 'init_my_protected_pixels') {
-                    this.myProtectedPixels = new Set(data.offsets);
+                else if (data.type === 'init_protected_areas') {
+                    this.protectedAreas = data.areas || [];
+                    this.protectedPixels = new Set();
+                    this.ownerProtectedPixels = new Set();
+                    this.myProtectedPixels = new Set();
                     this.myProtectedExpiries = {};
-                    if (Array.isArray(data.offsets) && Array.isArray(data.expiries)) {
-                        data.offsets.forEach((off, idx) => {
-                            this.myProtectedExpiries[off] = data.expiries[idx];
-                        });
+                    
+                    const w = this.boardWidth || 64;
+                    const currentUserId = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+                    
+                    for (const area of this.protectedAreas) {
+                        for (let y = area.y1; y <= area.y2; y++) {
+                            for (let x = area.x1; x <= area.x2; x++) {
+                                const offset = (y * w) + x;
+                                this.protectedPixels.add(offset);
+                                
+                                if (!area.protected_by) {
+                                    // Zona del owner: permanente
+                                    this.ownerProtectedPixels.add(offset);
+                                } else if (currentUserId && String(area.protected_by) === String(currentUserId)) {
+                                    // Zona propia del usuario: usar expires_at real del servidor
+                                    this.myProtectedPixels.add(offset);
+                                    if (area.expires_at) {
+                                        this.myProtectedExpiries[offset] = area.expires_at;
+                                    }
+                                } else {
+                                    // Zona protegida por otro usuario
+                                    this.ownerProtectedPixels.add(offset);
+                                }
+                            }
+                        }
                     }
+                    if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                 }
                 else if (data.type === 'pixel_protected_broadcast') {
@@ -290,14 +311,33 @@ export const DesignNetwork = {
                     this.isFrozen = data.frozen;
                     this.updateFreezeUI();
                 }
-                else if (data.type === 'init_owner_protected_pixels') {
-                    this.ownerProtectedPixels = new Set(data.offsets);
-                    if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
-                }
                 else if (data.type === 'area_protection_changed') {
                     if (!this.protectedPixels) this.protectedPixels = new Set();
                     if (!this.ownerProtectedPixels) this.ownerProtectedPixels = new Set();
+                    if (!this.protectedAreas) this.protectedAreas = [];
                     const protect = data.protect;
+
+                    const minX = data.x1;
+                    const maxX = data.x2;
+                    const minY = data.y1;
+                    const maxY = data.y2;
+                    const w = data.width || this.boardWidth || 64;
+
+                    // Update this.protectedAreas list
+                    if (protect) {
+                        const exists = this.protectedAreas.some(a => a.x1 === minX && a.y1 === minY && a.x2 === maxX && a.y2 === maxY);
+                        if (!exists) {
+                            this.protectedAreas.push({
+                                x1: minX,
+                                y1: minY,
+                                x2: maxX,
+                                y2: maxY,
+                                protected_by: data.by_perk ? (window.activeUserId || null) : null
+                            });
+                        }
+                    } else {
+                        this.protectedAreas = this.protectedAreas.filter(a => !(a.x1 === minX && a.y1 === minY && a.x2 === maxX && a.y2 === maxY));
+                    }
 
                     if (data.offsets && Array.isArray(data.offsets)) {
                         for (const offset of data.offsets) {
@@ -310,12 +350,6 @@ export const DesignNetwork = {
                             }
                         }
                     } else {
-                        const w = data.width || this.boardWidth || 64;
-                        const minX = data.x1;
-                        const maxX = data.x2;
-                        const minY = data.y1;
-                        const maxY = data.y2;
-
                         for (let y = minY; y <= maxY; y++) {
                             for (let x = minX; x <= maxX; x++) {
                                 const offset = (y * w) + x;

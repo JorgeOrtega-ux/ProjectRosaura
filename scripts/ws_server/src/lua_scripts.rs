@@ -8,19 +8,15 @@ if protected_areas_json and not is_owner then
     local py = tonumber(ARGV[8])
     for _, area in ipairs(areas) do
         if px >= area.x1 and px <= area.x2 and py >= area.y1 and py <= area.y2 then
-            return {'PROTECTED_ERROR', 'admin'}
-        end
-    end
-end
-
-local canvas_prefix = KEYS[1]:match("^(canvas:[^:]+)")
-if canvas_prefix and not is_owner then
-    local pixel_offset = math.floor(tonumber(ARGV[1]) / 4)
-    local pixel_protected_key = canvas_prefix .. ":protected_pixels:" .. tostring(pixel_offset)
-    local protected_by = redis.call('GET', pixel_protected_key)
-    if protected_by then
-        if protected_by ~= ARGV[6] then
-            return {'PROTECTED_ERROR', protected_by}
+            local by = area.protected_by
+            if by then
+                if type(by) == "number" then by = tostring(math.floor(by)) end
+                if by ~= ARGV[6] then
+                    return {'PROTECTED_ERROR', by}
+                end
+            else
+                return {'PROTECTED_ERROR', 'admin'}
+            end
         end
     end
 end

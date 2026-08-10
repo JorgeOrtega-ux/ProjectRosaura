@@ -1074,6 +1074,8 @@
     "err_invalid_params": "Parámetros de entrada inválidos.",
     "lbl_pagination": "Paginación",
     "err_plan_canvas_size": "Tamaño de lienzo no disponible en tu plan.",
+    "err_canvas_tier3_limit_reached": "Has alcanzado el límite máximo de 3 lienzos Ultra (4096).",
+    "tooltip_ultra_limit_reached": "Has alcanzado el límite de 3 lienzos Ultra (4096).",
     "admin_roles_empty_desc": "No hay roles configurados en la plataforma.",
     "desc_chat_restriction": "Aplica una restricción temporal o permanente.",
     "err_invalid_canvas_size": "Tamaño de lienzo no válido.",

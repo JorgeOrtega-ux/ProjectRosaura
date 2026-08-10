@@ -26,14 +26,10 @@ export class WebSocketManager {
             url += `?ticket=${encodeURIComponent(ticket)}`;
         }
 
-        console.log(`websocket_client: ${Date.now()} connecting...`);
         this.ws = new WebSocket(url);
         this.ws.binaryType = "arraybuffer";
 
         this.ws.onopen = () => {
-            console.log('websocket_client: connected');
-            console.log('websocket_client: status CONNECTED');
-            console.log(`websocket_client: request id ${Math.random().toString(16).substring(2, 18)}`);
             
             this.reconnectAttempts = 0; 
             this.trigger('open'); 
@@ -98,7 +94,6 @@ export class WebSocketManager {
         };
 
         this.ws.onclose = (event) => {
-            console.log('websocket_client: connection destroyed');
             this.stopHeartbeat();
 
             if (event.code === 4001) {
@@ -123,13 +118,10 @@ export class WebSocketManager {
             const jitter = Math.floor(Math.random() * 2000); // 0 to 2 seconds of random jitter
             const delay = baseDelayCalc + jitter;
 
-            setTimeout(() => {
+            this.reconnectTimeoutId = setTimeout(() => {  // Fix: store ID so disconnect() can cancel it
                 this.reconnectAttempts++;
-
                 this.connect(this.canvasId, this.ticket);
             }, delay);
-        } else {
-            
         }
     }
 

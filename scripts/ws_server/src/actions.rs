@@ -132,83 +132,17 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             });
             helpers::send_to_client(state, connection_id, &fr_msg.to_string()).await;
             
-            // Load protected pixels
-            let zset_key = format!("canvas:{}:protected_zset", canvas_id);
-            let current_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
-            let _: () = redis_conn.zrembyscore(&zset_key, 0, current_time).await.unwrap_or(());
+            // Load protected areas from DB and sync with Redis
+            let db_areas = db::get_canvas_protections_db(&state.db_pool, canvas_id).await;
+            let areas_key = format!("canvas:{}:protected_areas", canvas_id);
+            let areas_json = serde_json::to_string(&db_areas).unwrap_or_else(|_| "[]".to_string());
+            let _: () = redis_conn.set(&areas_key, areas_json).await.unwrap_or(());
             
-            let protected_offsets: Vec<String> = redis_conn.zrange(&zset_key, 0, -1).await.unwrap_or_default();
-            let mut protected_offsets_int: Vec<i32> = vec![];
-            
-            if protected_offsets.is_empty() {
-                let db_offsets = db::get_canvas_protections_db(&state.db_pool, canvas_id).await;
-                if !db_offsets.is_empty() {
-                    let far_future_expiry = current_time + 3153600000;
-                    let mut pipe = deadpool_redis::redis::pipe();
-                    for &off in &db_offsets {
-                        let pk = format!("canvas:{}:protected_pixels:{}", canvas_id, off);
-                        pipe.cmd("SET").arg(&pk).arg("admin");
-                        pipe.cmd("ZADD").arg(&zset_key).arg(far_future_expiry).arg(off.to_string());
-                    }
-                    let _: () = pipe.query_async(&mut redis_conn).await.unwrap_or(());
-                    protected_offsets_int = db_offsets;
-                }
-            } else {
-                protected_offsets_int = protected_offsets.iter().filter_map(|s| s.parse::<i32>().ok()).collect();
-            }
-            
-            if !protected_offsets_int.is_empty() {
-                let prot_msg = serde_json::json!({
-                    "type": "init_protected_pixels",
-                    "offsets": protected_offsets_int
-                });
-                helpers::send_to_client(state, connection_id, &prot_msg.to_string()).await;
-
-                // Clasificar protecciones en memoria
-                let mut my_protected_offsets: Vec<i32> = vec![];
-                let mut owner_protected_offsets: Vec<i32> = vec![];
-                let mut pipe = deadpool_redis::redis::pipe();
-                for off in &protected_offsets_int {
-                    pipe.cmd("GET").arg(format!("canvas:{}:protected_pixels:{}", canvas_id, off));
-                }
-                let owners: Vec<Option<String>> = pipe.query_async(&mut redis_conn).await.unwrap_or_default();
-                for (idx, owner_opt) in owners.into_iter().enumerate() {
-                    if let Some(owner) = owner_opt {
-                        if owner == "admin" {
-                            owner_protected_offsets.push(protected_offsets_int[idx]);
-                        } else if !uid_str.is_empty() && owner == uid_str {
-                            my_protected_offsets.push(protected_offsets_int[idx]);
-                        }
-                    }
-                }
-
-                if !owner_protected_offsets.is_empty() {
-                    let owner_prot_msg = serde_json::json!({
-                        "type": "init_owner_protected_pixels",
-                        "offsets": owner_protected_offsets
-                    });
-                    helpers::send_to_client(state, connection_id, &owner_prot_msg.to_string()).await;
-                }
-
-                if !my_protected_offsets.is_empty() {
-                    let mut my_protected_expiries: Vec<i64> = vec![];
-                    let mut pipe_score = deadpool_redis::redis::pipe();
-                    let zset_key_temp = format!("canvas:{}:protected_zset", canvas_id);
-                    for off in &my_protected_offsets {
-                        pipe_score.cmd("ZSCORE").arg(&zset_key_temp).arg(off.to_string());
-                    }
-                    let scores: Vec<Option<f64>> = pipe_score.query_async(&mut redis_conn).await.unwrap_or_default();
-                    for score_opt in scores {
-                        my_protected_expiries.push(score_opt.unwrap_or(0.0) as i64);
-                    }
-
-                    let my_prot_msg = serde_json::json!({
-                        "type": "init_my_protected_pixels",
-                        "offsets": my_protected_offsets,
-                        "expiries": my_protected_expiries
-                    });
-                    helpers::send_to_client(state, connection_id, &my_prot_msg.to_string()).await;
-                }
+            let init_msg = serde_json::json!({
+                "type": "init_protected_areas",
+                "areas": db_areas
+            });
+            helpers::send_to_client(state, connection_id, &init_msg.to_string()).await;
 
                 // Load user's mines
                 let mines_key = format!("canvas:{}:mines", canvas_id);
@@ -244,7 +178,6 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                         helpers::send_to_client(state, connection_id, &cd_msg).await;
                     }
                 }
-            }
         }
         "join_live_share" => {
             if let Some(code) = msg.code.clone() {
@@ -468,88 +401,31 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             // Securely load canvas dimensions from DB instead of trusting client input
             let (_, _, _, db_width, db_height, _) = db::get_canvas_config(state, canvas_id).await;
             
-            let (affected_offsets, min_x, max_x, min_y, max_y) = if let Some(ref offs) = msg.offsets {
-                if offs.is_empty() { return; }
-                let mut min_x = db_width - 1;
-                let mut max_x = 0;
-                let mut min_y = db_height - 1;
-                let mut max_y = 0;
-                for &off in offs {
-                    let x = (off % db_width).clamp(0, db_width - 1);
-                    let y = (off / db_width).clamp(0, db_height - 1);
-                    if x < min_x { min_x = x; }
-                    if x > max_x { max_x = x; }
-                    if y < min_y { min_y = y; }
-                    if y > max_y { max_y = y; }
-                }
-                (offs.clone(), min_x, max_x, min_y, max_y)
-            } else {
-                let min_x = std::cmp::min(x1, x2).max(0);
-                let max_x = std::cmp::max(x1, x2).min(db_width - 1);
-                let min_y = std::cmp::min(y1, y2).max(0);
-                let max_y = std::cmp::max(y1, y2).min(db_height - 1);
-                
-                let mut offs = Vec::new();
-                for iy in min_y..=max_y {
-                    for ix in min_x..=max_x {
-                        offs.push(iy * db_width + ix);
-                    }
-                }
-                (offs, min_x, max_x, min_y, max_y)
-            };
+            let min_x = std::cmp::min(x1, x2).max(0).min(db_width - 1);
+            let max_x = std::cmp::max(x1, x2).max(0).min(db_width - 1);
+            let min_y = std::cmp::min(y1, y2).max(0).min(db_height - 1);
+            let max_y = std::cmp::max(y1, y2).max(0).min(db_height - 1);
             
             let areas_key = format!("canvas:{}:protected_areas", canvas_id);
             
             if let Ok(mut c) = state.redis_pool.get().await {
-                let areas_json: String = c.get(&areas_key).await.unwrap_or_else(|_| "[]".to_string());
-                let mut areas: Vec<serde_json::Value> = serde_json::from_str(&areas_json).unwrap_or_default();
-                
                 if protect {
-                    areas.push(serde_json::json!({"x1": min_x, "y1": min_y, "x2": max_x, "y2": max_y}));
+                    let _ = db::save_canvas_protection_db(&state.db_pool, canvas_id, min_x, min_y, max_x, max_y, Some(&uid_str), None).await;
                 } else {
-                    // Remove any area that intersects to simulate unprotect
-                    areas.retain(|a| {
-                        let ax1 = a["x1"].as_i64().unwrap_or(0) as i32;
-                        let ay1 = a["y1"].as_i64().unwrap_or(0) as i32;
-                        let ax2 = a["x2"].as_i64().unwrap_or(0) as i32;
-                        let ay2 = a["y2"].as_i64().unwrap_or(0) as i32;
-                        let intersect = !(ax2 < min_x || ax1 > max_x || ay2 < min_y || ay1 > max_y);
-                        !intersect
-                    });
+                    let _ = db::delete_canvas_protection_db(&state.db_pool, canvas_id, min_x, min_y, max_x, max_y).await;
                 }
                 
-                let new_json = serde_json::to_string(&areas).unwrap_or_else(|_| "[]".to_string());
-                let _: () = c.set(&areas_key, new_json).await.unwrap_or(());
-                
-                // Keep Redis protected_zset and protected_pixels:{offset} in sync!
-                let current_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
-                let far_future_expiry = current_time + 3153600000;
-                let zset_key = format!("canvas:{}:protected_zset", canvas_id);
-                
-                let mut pipe = deadpool_redis::redis::pipe();
-                for &offset in &affected_offsets {
-                    let pk = format!("canvas:{}:protected_pixels:{}", canvas_id, offset);
-                    if protect {
-                        pipe.cmd("SET").arg(&pk).arg("admin");
-                        pipe.cmd("ZADD").arg(&zset_key).arg(far_future_expiry).arg(offset.to_string());
-                    } else {
-                        pipe.cmd("DEL").arg(&pk);
-                        pipe.cmd("ZREM").arg(&zset_key).arg(offset.to_string());
-                    }
-                }
-                let _: () = pipe.query_async(&mut c).await.unwrap_or(());
-            }
-            
-            if !affected_offsets.is_empty() {
-                db::save_canvas_protections_db(&state.db_pool, canvas_id, &affected_offsets, protect, Some(&uid_str)).await;
+                // Sync Redis JSON key with DB
+                let db_areas = db::get_canvas_protections_db(&state.db_pool, canvas_id).await;
+                let areas_json = serde_json::to_string(&db_areas).unwrap_or_else(|_| "[]".to_string());
+                let _: () = c.set(&areas_key, areas_json).await.unwrap_or(());
             }
             
             let b_msg = serde_json::json!({
                 "type": "area_protection_changed",
                 "canvas_id": canvas_id,
                 "x1": min_x, "y1": min_y, "x2": max_x, "y2": max_y,
-                "protect": protect, "width": db_width, "is_owner": true,
-                "offsets": msg.offsets.as_ref()
+                "protect": protect, "width": db_width, "is_owner": true
             }).to_string();
             helpers::broadcast_to_room(state, canvas_id, &b_msg).await;
             
@@ -560,7 +436,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
             }
 
-            let pixel_count = affected_offsets.len() as u64;
+            let pixel_count = ((max_x - min_x + 1) * (max_y - min_y + 1)) as u64;
             let cooldown_ms = (5000 + (pixel_count * 5) / 100).min(30000);
             set_owner_ratelimit(state, canvas_id, &uid_str, "protect", cooldown_ms).await;
         }
@@ -622,7 +498,6 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 helpers::send_to_client(state, connection_id, &err).await;
                 return;
             }
-
             let mut affected_offsets = Vec::new();
             for iy in min_y..=max_y {
                 for ix in min_x..=max_x {
@@ -630,25 +505,16 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 }
             }
 
-            // Guardar en Redis: expiración en 24 horas (86400 segundos)
-            let current_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
-            let expiry_time = current_time + 86400;
-            let zset_key = format!("canvas:{}:protected_zset", canvas_id);
-
-            if let Ok(mut c) = state.redis_pool.get().await {
-                let mut pipe = deadpool_redis::redis::pipe();
-                for &offset in &affected_offsets {
-                    let pk = format!("canvas:{}:protected_pixels:{}", canvas_id, offset);
-                    pipe.cmd("SET").arg(&pk).arg(&uid_str);
-                    pipe.cmd("EXPIRE").arg(&pk).arg(86400);
-                    pipe.cmd("ZADD").arg(&zset_key).arg(expiry_time).arg(offset.to_string());
-                }
-                let _: () = pipe.query_async(&mut c).await.unwrap_or(());
-            }
+            let areas_key = format!("canvas:{}:protected_areas", canvas_id);
 
             // Guardar en MySQL con expiración
-            if !affected_offsets.is_empty() {
-                db::save_canvas_protections_db_with_expiry(&state.db_pool, canvas_id, &affected_offsets, true, Some(&uid_str), Some(86400)).await;
+            let _ = db::save_canvas_protection_db(&state.db_pool, canvas_id, min_x, min_y, max_x, max_y, Some(&uid_str), Some(86400)).await;
+
+            if let Ok(mut c) = state.redis_pool.get().await {
+                // Sync Redis JSON key with DB
+                let db_areas = db::get_canvas_protections_db(&state.db_pool, canvas_id).await;
+                let areas_json = serde_json::to_string(&db_areas).unwrap_or_else(|_| "[]".to_string());
+                let _: () = c.set(&areas_key, areas_json).await.unwrap_or(());
             }
 
             // Broadcast del área protegida para todos los clientes
@@ -668,6 +534,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             }
 
             // Confirmar éxito al cliente que colocó la protección
+            let current_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
             let expiry_time = current_time + 86400;
             let expiries_list = vec![expiry_time; affected_offsets.len()];
             let success_confirm = serde_json::json!({
@@ -766,23 +633,10 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             };
 
             let areas_key = format!("canvas:{}:protected_areas", canvas_id);
-            let areas_json: String = redis_conn.get(&areas_key).await.unwrap_or_else(|_| "[]".to_string());
-            let mut areas: Vec<serde_json::Value> = serde_json::from_str(&areas_json).unwrap_or_default();
-            
-            let original_len = areas.len();
-            areas.retain(|a| {
-                let ax1 = a["x1"].as_i64().unwrap_or(0) as i32;
-                let ay1 = a["y1"].as_i64().unwrap_or(0) as i32;
-                let ax2 = a["x2"].as_i64().unwrap_or(0) as i32;
-                let ay2 = a["y2"].as_i64().unwrap_or(0) as i32;
-                let intersect = !(ax2 < min_x || ax1 > max_x || ay2 < min_y || ay1 > max_y);
-                !intersect
-            });
-            
-            if areas.len() != original_len {
-                let new_json = serde_json::to_string(&areas).unwrap_or_else(|_| "[]".to_string());
-                let _: () = redis_conn.set(&areas_key, new_json).await.unwrap_or(());
-            }
+            let _ = db::delete_intersecting_rect_protections_db(&state.db_pool, canvas_id, min_x, min_y, max_x, max_y).await;
+            let db_areas = db::get_canvas_protections_db(&state.db_pool, canvas_id).await;
+            let areas_json = serde_json::to_string(&db_areas).unwrap_or_else(|_| "[]".to_string());
+            let _: () = redis_conn.set(&areas_key, areas_json).await.unwrap_or(());
 
             let redis_state_key = format!("canvas:{}:state", canvas_id);
             let mut pipe = deadpool_redis::redis::pipe();
@@ -1026,23 +880,12 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                     // Execute immediate explosion!
                     let radius = base_radius;
                     let areas_key = format!("canvas:{}:protected_areas", canvas_id);
-                    let areas_json: String = redis_conn.get(&areas_key).await.unwrap_or_else(|_| "[]".to_string());
-                    let mut areas: Vec<serde_json::Value> = serde_json::from_str(&areas_json).unwrap_or_default();
                     
-                    let original_len = areas.len();
-                    areas.retain(|a| {
-                        let ax1 = a["x1"].as_i64().unwrap_or(0) as i32;
-                        let ay1 = a["y1"].as_i64().unwrap_or(0) as i32;
-                        let ax2 = a["x2"].as_i64().unwrap_or(0) as i32;
-                        let ay2 = a["y2"].as_i64().unwrap_or(0) as i32;
-                        let intersect = !(ax2 < (tx - radius) || ax1 > (tx + radius) || ay2 < (ty - radius) || ay1 > (ty + radius));
-                        !intersect
-                    });
+                    let deleted_areas = db::delete_intersecting_circle_protections_db(&state.db_pool, canvas_id, tx, ty, radius).await.unwrap_or_default();
                     
-                    if areas.len() != original_len {
-                        let new_json = serde_json::to_string(&areas).unwrap_or_else(|_| "[]".to_string());
-                        let _: () = redis_conn.set(&areas_key, new_json).await.unwrap_or(());
-                    }
+                    let db_areas = db::get_canvas_protections_db(&state.db_pool, canvas_id).await;
+                    let areas_json = serde_json::to_string(&db_areas).unwrap_or_else(|_| "[]".to_string());
+                    let _: () = redis_conn.set(&areas_key, areas_json).await.unwrap_or(());
                     
                     let mut pipe_exp = deadpool_redis::redis::pipe();
                     let mut affected_offsets = Vec::new();
@@ -1071,19 +914,16 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                         }
                     }
                     
-                    // Eliminar protecciones de Redis
-                    let zset_key = format!("canvas:{}:protected_zset", canvas_id);
-                    for &offset in &affected_offsets {
-                        let pk = format!("canvas:{}:protected_pixels:{}", canvas_id, offset);
-                        pipe_exp.cmd("DEL").arg(&pk);
-                        pipe_exp.cmd("ZREM").arg(&zset_key).arg(offset.to_string());
-                    }
-                    
                     let _: () = pipe_exp.query_async(&mut redis_conn).await.unwrap_or(());
-                    
-                    // Eliminar protecciones de MySQL
-                    if !affected_offsets.is_empty() {
-                        db::save_canvas_protections_db_with_expiry(&state.db_pool, canvas_id, &affected_offsets, false, None, None).await;
+
+                    for area in deleted_areas {
+                        let b_msg = serde_json::json!({
+                            "type": "area_protection_changed",
+                            "canvas_id": canvas_id,
+                            "x1": area.x1, "y1": area.y1, "x2": area.x2, "y2": area.y2,
+                            "protect": false, "width": width, "is_owner": true
+                        }).to_string();
+                        helpers::broadcast_to_room(state, canvas_id, &b_msg).await;
                     }
                     
                     // Broadcast de desprotección optimizado para actualizar el frontend
@@ -1349,24 +1189,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                             ("r", &radius.to_string()), ("perk", &perk_id_clone)
                         ]).await.unwrap_or(());
 
-                        let areas_key = format!("canvas:{}:protected_areas", c_id_clone2);
-                        let areas_json: String = c.get(&areas_key).await.unwrap_or_else(|_| "[]".to_string());
-                        let mut areas: Vec<serde_json::Value> = serde_json::from_str(&areas_json).unwrap_or_default();
-                        
-                        let original_len = areas.len();
-                        areas.retain(|a| {
-                            let ax1 = a["x1"].as_i64().unwrap_or(0) as i32;
-                            let ay1 = a["y1"].as_i64().unwrap_or(0) as i32;
-                            let ax2 = a["x2"].as_i64().unwrap_or(0) as i32;
-                            let ay2 = a["y2"].as_i64().unwrap_or(0) as i32;
-                            let intersect = !(ax2 < (tx - radius) || ax1 > (tx + radius) || ay2 < (ty - radius) || ay1 > (ty + radius));
-                            !intersect
-                        });
-                        
-                        if areas.len() != original_len {
-                            let new_json = serde_json::to_string(&areas).unwrap_or_else(|_| "[]".to_string());
-                            let _: () = c.set(&areas_key, new_json).await.unwrap_or(());
-                        }
+
                         
                         let redis_state_key = format!("canvas:{}:state", c_id_clone2);
                         let mut affected_offsets = Vec::new();
@@ -1473,44 +1296,41 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                             let _: () = pipe.query_async(&mut c).await.unwrap_or(());
                         }
 
-                        // Eliminar protecciones de Redis
-                        let zset_key = format!("canvas:{}:protected_zset", c_id_clone2);
-                        let mut pipe_del = deadpool_redis::redis::pipe();
-                        for &offset in &affected_offsets {
-                            let pk = format!("canvas:{}:protected_pixels:{}", c_id_clone2, offset);
-                            pipe_del.cmd("DEL").arg(&pk);
-                            pipe_del.cmd("ZREM").arg(&zset_key).arg(offset.to_string());
-                        }
-                        let _: () = pipe_del.query_async(&mut c).await.unwrap_or(());
+                        // Offload heavy MySQL persistence, Redis syncing, and broadcasts to non-blocking subtask
+                        let db_pool = s_clone2.db_pool.clone();
+                        let cid = c_id_clone2.clone();
+                        let s_clone_inner = s_clone2.clone();
+                        let areas_key = format!("canvas:{}:protected_areas", cid);
                         
-                        // Offload heavy MySQL persistence to non-blocking subtask
-                        if !affected_offsets.is_empty() {
-                            let db_pool = s_clone2.db_pool.clone();
-                            let cid = c_id_clone2.clone();
-                            let offsets = affected_offsets.clone();
-                            tokio::spawn(async move {
-                                db::save_canvas_protections_db_with_expiry(&db_pool, &cid, &offsets, false, None, None).await;
-                            });
-                        }
-                        
-                        // Broadcast de desprotección optimizado para actualizar el frontend
-                        let unprotect_msg = if affected_offsets.len() > 100 {
-                            serde_json::json!({
-                                "type": "pixel_unprotected_circle",
-                                "x": tx, "y": ty, "r": radius
-                            }).to_string()
-                        } else {
-                            serde_json::json!({
-                                "type": "pixel_unprotected_broadcast",
-                                "offsets": affected_offsets
-                            }).to_string()
-                        };
-                        helpers::broadcast_to_room(&s_clone2, &c_id_clone2, &unprotect_msg).await;
-                        
-                        if let Ok(mut c2) = s_clone2.redis_pool.get().await {
-                            let sync_payload = serde_json::json!({"source_node": &s_clone2.node_id, "target_type": "canvas", "canvas_id": c_id_clone2, "payload": unprotect_msg});
-                            let _: () = c2.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
-                        }
+                        tokio::spawn(async move {
+                            if let Ok(deleted_areas) = db::delete_intersecting_circle_protections_db(&db_pool, &cid, tx, ty, radius).await {
+                                // Reload from DB
+                                let db_areas = db::get_canvas_protections_db(&db_pool, &cid).await;
+                                if let Ok(mut redis_conn) = s_clone_inner.redis_pool.get().await {
+                                    let areas_json = serde_json::to_string(&db_areas).unwrap_or_else(|_| "[]".to_string());
+                                    let _: () = redis_conn.set(&areas_key, areas_json).await.unwrap_or(());
+                                }
+                                
+                                // Broadcast area_protection_changed for each deleted zone
+                                for area in deleted_areas {
+                                    let b_msg = serde_json::json!({
+                                        "type": "area_protection_changed",
+                                        "canvas_id": cid,
+                                        "x1": area.x1, "y1": area.y1, "x2": area.x2, "y2": area.y2,
+                                        "protect": false, "width": width, "is_owner": true
+                                    }).to_string();
+                                    helpers::broadcast_to_room(&s_clone_inner, &cid, &b_msg).await;
+                                    
+                                    // Also sync other nodes
+                                    if let Ok(mut redis_conn) = s_clone_inner.redis_pool.get().await {
+                                        let sync_payload = serde_json::json!({
+                                            "source_node": &s_clone_inner.node_id, "target_type": "canvas", "canvas_id": cid, "payload": b_msg
+                                        });
+                                        let _: () = redis_conn.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
+                                    }
+                                }
+                            }
+                        });
                     }
                 });
             }

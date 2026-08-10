@@ -8,15 +8,49 @@ export class SpaRouter {
         this.basePath = window.AppBasePath || ''; 
         this.abortController = null; 
         this.api = new ApiService();
+        this.prefetchCache = new Set();
         
         this.handlePopState = this.handlePopState.bind(this);
         this.handleBodyClick = this.handleBodyClick.bind(this);
+        this.handlePointerOver = this.handlePointerOver.bind(this);
+        
+        this.compiledRoutes = [];
+        this.compileRoutes();
         
         this.init();
     }
 
-    _getRoutePattern(url) {
-        // Remove query parameters and trailing slashes if present
+    compileRoutes() {
+        for (const [pattern, config] of Object.entries(RouteModulesMap)) {
+            if (!pattern.includes(':')) {
+                this.compiledRoutes.push({
+                    type: 'exact',
+                    pattern: pattern,
+                    config: config
+                });
+            } else {
+                const parts = pattern.split('/');
+                const params = [];
+                const regexParts = parts.map(part => {
+                    if (part.startsWith(':')) {
+                        params.push(part.slice(1));
+                        return '([^/]+)';
+                    }
+                    return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                });
+                const regex = new RegExp(`^${regexParts.join('/')}$`);
+                this.compiledRoutes.push({
+                    type: 'dynamic',
+                    pattern: pattern,
+                    regex: regex,
+                    params: params,
+                    config: config
+                });
+            }
+        }
+    }
+
+    _matchRoute(url) {
         let cleanUrl = url.split('?')[0].split('#')[0];
         if (cleanUrl.endsWith('/') && cleanUrl.length > 1) {
             cleanUrl = cleanUrl.slice(0, -1);
@@ -30,52 +64,41 @@ export class SpaRouter {
             cleanUrl = '/canvases/manage/resize/' + cleanUrl.substring('/canvases/resize/'.length);
         }
 
-        // Try exact match first
-        if (RouteModulesMap[cleanUrl]) {
-            return cleanUrl;
-        }
-
-        // Try dynamic matching against keys in RouteModulesMap
-        for (const pattern of Object.keys(RouteModulesMap)) {
-            if (pattern.includes(':')) {
-                const patternParts = pattern.split('/');
-                const urlParts = cleanUrl.split('/');
-                if (patternParts.length === urlParts.length) {
-                    let match = true;
-                    for (let i = 0; i < patternParts.length; i++) {
-                        const pPart = patternParts[i];
-                        const uPart = urlParts[i];
-                        if (pPart.startsWith(':')) {
-                            if (!uPart) {
-                                match = false;
-                                break;
-                            }
-                        } else {
-                            if (pPart !== uPart) {
-                                match = false;
-                                break;
-                            }
-                        }
-                    }
-                    if (match) {
-                        return pattern;
-                    }
+        // Try exact match and dynamic matches in precompiled list
+        for (const route of this.compiledRoutes) {
+            if (route.type === 'exact' && route.pattern === cleanUrl) {
+                return { pattern: route.pattern, config: route.config, params: {} };
+            } else if (route.type === 'dynamic') {
+                const match = cleanUrl.match(route.regex);
+                if (match) {
+                    const params = {};
+                    route.params.forEach((paramName, idx) => {
+                        params[paramName] = decodeURIComponent(match[idx + 1]);
+                    });
+                    return { pattern: route.pattern, config: route.config, params: params };
                 }
             }
         }
-        return url;
+        return null;
+    }
+
+    _getRoutePattern(url) {
+        const match = this._matchRoute(url);
+        return match ? match.pattern : url;
     }
 
     init() {
         this.updateDocumentTitle(window.location.pathname);
         window.addEventListener('popstate', this.handlePopState);
         document.body.addEventListener('click', this.handleBodyClick);
+        document.body.addEventListener('pointerover', this.handlePointerOver);
         this.highlightCurrentRoute();
     }
 
     destroy() {
         window.removeEventListener('popstate', this.handlePopState);
         document.body.removeEventListener('click', this.handleBodyClick);
+        document.body.removeEventListener('pointerover', this.handlePointerOver);
         if (this.abortController) {
             this.abortController.abort();
         }
@@ -206,6 +229,7 @@ export class SpaRouter {
                 }
 
                 const html = await response.text();
+                
                 this.render(html);
                 this.highlightCurrentRoute();
                 this.updateDocumentTitle(url);
@@ -291,6 +315,26 @@ export class SpaRouter {
                 </div>
             `);
         }
+    }
+
+    handlePointerOver(e) {
+        const navTarget = e.target.closest('[data-nav]');
+        if (!navTarget) return;
+
+        const url = navTarget.dataset.nav;
+        if (!url || url.startsWith('http') || url.startsWith('javascript:') || this.prefetchCache.has(url)) return;
+
+        this.prefetchCache.add(url);
+
+        // Pre-fetch route chunk when user hovers
+        const prefetchUrl = this.basePath ? (url.startsWith(this.basePath) ? url : this.basePath + url) : url;
+
+        fetch(prefetchUrl, {
+            headers: { 'X-SPA-Request': 'true', 'X-Prefetch': 'true' },
+            priority: 'low'
+        }).catch(() => {
+            this.prefetchCache.delete(url);
+        });
     }
 
     render(html) {

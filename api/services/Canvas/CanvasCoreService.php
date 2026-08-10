@@ -526,6 +526,17 @@ class CanvasCoreService {
                     ];
                 }
 
+                if ($requiredTier >= 3) {
+                    $tier3Count = $this->canvasRepository->countUserTierCanvases($userId, 3);
+                    if ($tier3Count >= 3) {
+                        return [
+                            'success' => false,
+                            'message' => __('err_canvas_tier3_limit_reached'),
+                            'error_code' => 'TIER3_LIMIT_EXCEEDED'
+                        ];
+                    }
+                }
+
             $uuid = Utils::generateUUID();
             $validPalettes = $this->getValidPalettes();
             $paletteId = in_array($paletteId, $validPalettes) ? $paletteId : 'default';

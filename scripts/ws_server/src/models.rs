@@ -123,3 +123,15 @@ pub struct ExplosionData {
     pub screen_shake: Option<bool>,
     pub screen_flash: Option<bool>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProtectedArea {
+    pub id: i32,
+    pub x1: i32,
+    pub y1: i32,
+    pub x2: i32,
+    pub y2: i32,
+    pub protected_by: Option<i32>,
+    /// Unix timestamp (segundos) de expiración, o None si es permanente (owner)
+    pub expires_at: Option<i64>,
+}
