@@ -63,3 +63,6 @@ storage/private/backups/*.gz
 /admin_tools/__pycache__/
 /admin_tools/reports/
 /admin_tools/data/
+
+# Carpeta de sonidos (archivos de audio pesados)
+/sounds/

@@ -10,7 +10,7 @@
     "button_label_key": "btn_launch_missile",
     "warning_icon": "crisis_alert",
     "warning_label_key": "msg_missile_incoming",
-    "warning_seconds": 3,
+    "warning_seconds": 6,
     "category": "bomb",
     "targets": 1,
     "radii": {
@@ -32,8 +32,8 @@
     },
     "explosion": {
       "style": "missile",
-      "duration": 1500,
-      "shake_duration": 400,
+      "duration": 2500,
+      "shake_duration": 600,
       "flash_duration": 0,
       "screen_shake": true,
       "screen_flash": false
@@ -50,7 +50,7 @@
     "button_label_key": "btn_launch_bomb",
     "warning_icon": "crisis_alert",
     "warning_label_key": "msg_bomb_incoming",
-    "warning_seconds": 3,
+    "warning_seconds": 6,
     "category": "bomb",
     "targets": 1,
     "radii": {
@@ -72,8 +72,8 @@
     },
     "explosion": {
       "style": "medium",
-      "duration": 2200,
-      "shake_duration": 500,
+      "duration": 3500,
+      "shake_duration": 800,
       "flash_duration": 0,
       "screen_shake": true,
       "screen_flash": false
@@ -90,7 +90,7 @@
     "button_label_key": "btn_launch_cluster",
     "warning_icon": "scatter_plot",
     "warning_label_key": "msg_cluster_incoming",
-    "warning_seconds": 4,
+    "warning_seconds": 8,
     "category": "bomb",
     "targets": 5,
     "radii": {
@@ -112,9 +112,9 @@
     },
     "explosion": {
       "style": "medium",
-      "duration": 3000,
-      "shake_duration": 2200,
-      "flash_duration": 800,
+      "duration": 5000,
+      "shake_duration": 3000,
+      "flash_duration": 1200,
       "screen_shake": true,
       "screen_flash": true
     }
@@ -130,7 +130,7 @@
     "button_label_key": "btn_launch_nuclear",
     "warning_icon": "crisis_alert",
     "warning_label_key": "msg_nuke_incoming",
-    "warning_seconds": 8,
+    "warning_seconds": 15,
     "category": "bomb",
     "targets": 1,
     "radii": {
@@ -152,9 +152,9 @@
     },
     "explosion": {
       "style": "nuclear",
-      "duration": 6000,
-      "shake_duration": 2500,
-      "flash_duration": 2000,
+      "duration": 10000,
+      "shake_duration": 4000,
+      "flash_duration": 3000,
       "screen_shake": true,
       "screen_flash": true
     }
@@ -170,7 +170,7 @@
     "button_label_key": "btn_launch_meteor",
     "warning_icon": "storm",
     "warning_label_key": "msg_meteor_incoming",
-    "warning_seconds": 6,
+    "warning_seconds": 12,
     "category": "bomb",
     "targets": 1,
     "radii": {
@@ -192,8 +192,8 @@
     },
     "explosion": {
       "style": "medium",
-      "duration": 2500,
-      "shake_duration": 2000,
+      "duration": 4000,
+      "shake_duration": 3000,
       "flash_duration": 0,
       "screen_shake": true,
       "screen_flash": false
@@ -210,7 +210,7 @@
     "button_label_key": "btn_launch_orbital_cannon",
     "warning_icon": "satellite_alt",
     "warning_label_key": "msg_orbital_cannon_incoming",
-    "warning_seconds": 10,
+    "warning_seconds": 15,
     "category": "bomb",
     "targets": 1,
     "radii": {
@@ -232,9 +232,9 @@
     },
     "explosion": {
       "style": "nuclear",
-      "duration": 6000,
-      "shake_duration": 3000,
-      "flash_duration": 2000,
+      "duration": 10000,
+      "shake_duration": 5000,
+      "flash_duration": 3000,
       "screen_shake": true,
       "screen_flash": true
     }
@@ -250,7 +250,7 @@
     "button_label_key": "btn_launch_black_hole",
     "warning_icon": "cyclone",
     "warning_label_key": "msg_black_hole_incoming",
-    "warning_seconds": 6,
+    "warning_seconds": 12,
     "category": "bomb",
     "targets": 1,
     "radii": {
@@ -272,9 +272,9 @@
     },
     "explosion": {
       "style": "blackhole",
-      "duration": 6000,
-      "shake_duration": 2500,
-      "flash_duration": 1800,
+      "duration": 10000,
+      "shake_duration": 4000,
+      "flash_duration": 2500,
       "screen_shake": true,
       "screen_flash": true
     }
@@ -312,8 +312,8 @@
     },
     "explosion": {
       "style": "medium",
-      "duration": 2000,
-      "shake_duration": 400,
+      "duration": 3000,
+      "shake_duration": 600,
       "flash_duration": 0,
       "screen_shake": true,
       "screen_flash": false
@@ -330,7 +330,7 @@
     "button_label_key": "btn_launch_supernova",
     "warning_icon": "wb_sunny",
     "warning_label_key": "msg_supernova_incoming",
-    "warning_seconds": 5,
+    "warning_seconds": 10,
     "category": "bomb",
     "targets": 1,
     "radii": {
@@ -352,9 +352,9 @@
     },
     "explosion": {
       "style": "nuclear",
-      "duration": 5000,
-      "shake_duration": 3000,
-      "flash_duration": 1500,
+      "duration": 8000,
+      "shake_duration": 4500,
+      "flash_duration": 2500,
       "screen_shake": true,
       "screen_flash": true
     }
@@ -370,7 +370,7 @@
     "button_label_key": "btn_launch_ion_strike",
     "warning_icon": "change_history",
     "warning_label_key": "msg_ion_strike_incoming",
-    "warning_seconds": 2,
+    "warning_seconds": 6,
     "category": "bomb",
     "targets": 1,
     "radii": {
@@ -392,8 +392,8 @@
     },
     "explosion": {
       "style": "ion",
-      "duration": 2500,
-      "shake_duration": 1200,
+      "duration": 4500,
+      "shake_duration": 2000,
       "flash_duration": 0,
       "screen_shake": true,
       "screen_flash": false

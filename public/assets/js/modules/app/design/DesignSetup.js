@@ -586,7 +586,7 @@ export const DesignSetup = {
         if (this.canvas && typeof this.canvas.transferControlToOffscreen === 'function' && typeof Worker !== 'undefined') {
             try {
                 if (!this.renderWorker) {
-                    const workerPath = `${this.basePath}/assets/js/modules/app/design/workers/CanvasRenderWorker.js?v=2.0.2`;
+                    const workerPath = `${this.basePath}/assets/js/modules/app/design/workers/CanvasRenderWorker.js?v=2.0.3`;
                     this.renderWorker = new Worker(workerPath);
                     const offscreen = this.canvas.transferControlToOffscreen();
                     const dpr = window.devicePixelRatio || 1;

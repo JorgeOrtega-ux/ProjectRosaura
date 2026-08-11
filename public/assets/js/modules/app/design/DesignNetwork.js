@@ -85,7 +85,7 @@ export const DesignNetwork = {
             this.wsManager = new WebSocketManager();
             
             this.wsManager.on('open', () => {
-                this.wsManager.send({ type: 'init', userId: uid });
+                this.wsManager.send({ type: 'init', userId: uid, version: '2.0.3' });
                 if (this.liveShareCode) {
                     this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
 
@@ -224,6 +224,13 @@ export const DesignNetwork = {
                 } 
                 else if (data.type === 'canvas_cleared') {
                     this.handleCanvasCleared(data);
+                }
+                else if (data.type === 'version_mismatch') {
+                    this.wsManager.disconnect();
+                    showMessage(data.message || __('err_version_mismatch'), 'error');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 4000);
                 }
                 else if (data.type === 'init_protected_areas') {
                     this.protectedAreas = data.areas || [];

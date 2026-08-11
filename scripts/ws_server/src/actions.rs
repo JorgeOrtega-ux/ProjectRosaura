@@ -82,6 +82,19 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
     
     match msg.msg_type.as_str() {
         "init" => {
+            let client_version = msg.version.as_deref().unwrap_or("");
+            let expected_version = "2.0.3";
+            if client_version != expected_version {
+                let err_res = serde_json::json!({
+                    "type": "version_mismatch",
+                    "client_version": client_version,
+                    "server_version": expected_version,
+                    "message": "La versión de tu aplicación no coincide con la del servidor. Por favor, recarga la página para actualizar."
+                });
+                helpers::send_to_client(state, connection_id, &err_res.to_string()).await;
+                return;
+            }
+
             helpers::ensure_canvas_state_loaded(state, canvas_id).await;
             
             let (config_batch, config_sec, _, _, _, _) = db::get_canvas_config(state, canvas_id).await;
@@ -1231,107 +1244,32 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                         let redis_state_key = format!("canvas:{}:state", c_id_clone2);
                         let mut affected_offsets = Vec::new();
 
-                        if perk_id_clone == "ion_strike" {
-                            let mut pipe = deadpool_redis::redis::pipe();
-                            pipe.cmd("SADD").arg("canvases:dirty_states").arg(&c_id_clone2);
+                        let mut pipe = deadpool_redis::redis::pipe();
+                        pipe.cmd("SADD").arg("canvases:dirty_states").arg(&c_id_clone2);
 
-                            // regular triangle vertices
-                            let p1_x = tx as f32;
-                            let p1_y = (ty - radius) as f32;
-                            let p2_x = tx as f32 - radius as f32 * 0.866;
-                            let p2_y = ty as f32 + radius as f32 * 0.5;
-                            let p3_x = tx as f32 + radius as f32 * 0.866;
-                            let p3_y = ty as f32 + radius as f32 * 0.5;
-
-                            let x_min = (tx - radius - 5).max(0);
-                            let x_max = if width > 0 { (tx + radius + 5).min(width - 1) } else { tx + radius + 5 };
-                            let y_min = (ty - radius - 5).max(0);
-                            let y_max = if height > 0 { (ty + radius + 5).min(height - 1) } else { ty + radius + 5 };
-
-                            fn dist_to_segment(px: f32, py: f32, ax: f32, ay: f32, bx: f32, by: f32) -> f32 {
-                                let dx = bx - ax;
-                                let dy = by - ay;
-                                let len_sq = dx * dx + dy * dy;
-                                if len_sq == 0.0 {
-                                    return ((px - ax).powi(2) + (py - ay).powi(2)).sqrt();
-                                }
-                                let mut t = ((px - ax) * dx + (py - ay) * dy) / len_sq;
-                                t = t.clamp(0.0, 1.0);
-                                let proj_x = ax + t * dx;
-                                let proj_y = ay + t * dy;
-                                ((px - proj_x).powi(2) + (py - proj_y).powi(2)).sqrt()
+                        for iy in (ty - radius)..=(ty + radius) {
+                            let dy = iy - ty;
+                            if dy.abs() > radius { continue; }
+                            let dx = ((radius.pow(2) - dy.pow(2)) as f32).sqrt() as i32;
+                            let mut x_start = tx - dx;
+                            let mut x_end = tx + dx;
+                            
+                            if height > 0 && (iy < 0 || iy >= height) { continue; }
+                            x_start = x_start.max(0);
+                            if width > 0 { x_end = x_end.min(width - 1); }
+                            if x_start > x_end { continue; }
+                            
+                            let length = x_end - x_start + 1;
+                            let byte_offset = (iy * width + x_start) * 4;
+                            let transparent_bytes = vec![0u8; (length * 4) as usize];
+                            
+                            pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
+                            
+                            for ix in x_start..=x_end {
+                                affected_offsets.push(iy * width + ix);
                             }
-
-                            for iy in y_min..=y_max {
-                                let mut start_x = -1;
-                                for ix in x_min..=x_max {
-                                    let px = ix as f32;
-                                    let py = iy as f32;
-
-                                    let is_v1 = ((px - p1_x).powi(2) + (py - p1_y).powi(2)).sqrt() <= 4.0;
-                                    let is_v2 = ((px - p2_x).powi(2) + (py - p2_y).powi(2)).sqrt() <= 4.0;
-                                    let is_v3 = ((px - p3_x).powi(2) + (py - p3_y).powi(2)).sqrt() <= 4.0;
-
-                                    let is_l1 = dist_to_segment(px, py, p1_x, p1_y, p2_x, p2_y) <= 1.5;
-                                    let is_l2 = dist_to_segment(px, py, p2_x, p2_y, p3_x, p3_y) <= 1.5;
-                                    let is_l3 = dist_to_segment(px, py, p3_x, p3_y, p1_x, p1_y) <= 1.5;
-
-                                    if is_v1 || is_v2 || is_v3 || is_l1 || is_l2 || is_l3 {
-                                        if start_x == -1 {
-                                            start_x = ix;
-                                        }
-                                    } else {
-                                        if start_x != -1 {
-                                            let length = ix - start_x;
-                                            let byte_offset = (iy * width + start_x) * 4;
-                                            let transparent_bytes = vec![0u8; (length * 4) as usize];
-                                            pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
-                                            for ax in start_x..ix {
-                                                affected_offsets.push(iy * width + ax);
-                                            }
-                                            start_x = -1;
-                                        }
-                                    }
-                                }
-                                if start_x != -1 {
-                                    let length = x_max - start_x + 1;
-                                    let byte_offset = (iy * width + start_x) * 4;
-                                    let transparent_bytes = vec![0u8; (length * 4) as usize];
-                                    pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
-                                    for ax in start_x..=x_max {
-                                        affected_offsets.push(iy * width + ax);
-                                    }
-                                }
-                            }
-                            let _: () = pipe.query_async(&mut c).await.unwrap_or(());
-                        } else {
-                            let mut pipe = deadpool_redis::redis::pipe();
-                            pipe.cmd("SADD").arg("canvases:dirty_states").arg(&c_id_clone2);
-
-                            for iy in (ty - radius)..=(ty + radius) {
-                                let dy = iy - ty;
-                                if dy.abs() > radius { continue; }
-                                let dx = ((radius.pow(2) - dy.pow(2)) as f32).sqrt() as i32;
-                                let mut x_start = tx - dx;
-                                let mut x_end = tx + dx;
-                                
-                                if height > 0 && (iy < 0 || iy >= height) { continue; }
-                                x_start = x_start.max(0);
-                                if width > 0 { x_end = x_end.min(width - 1); }
-                                if x_start > x_end { continue; }
-                                
-                                let length = x_end - x_start + 1;
-                                let byte_offset = (iy * width + x_start) * 4;
-                                let transparent_bytes = vec![0u8; (length * 4) as usize];
-                                
-                                pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
-                                
-                                for ix in x_start..=x_end {
-                                    affected_offsets.push(iy * width + ix);
-                                }
-                            }
-                            let _: () = pipe.query_async(&mut c).await.unwrap_or(());
                         }
+                        let _: () = pipe.query_async(&mut c).await.unwrap_or(());
 
                         // Offload heavy MySQL persistence, Redis syncing, and broadcasts to non-blocking subtask
                         let db_pool = s_clone2.db_pool.clone();
@@ -1413,7 +1351,7 @@ pub async fn handle_binary_action(bin: Vec<u8>, canvas_id: &str, connection_id: 
                 offsets: None,
                 balance: None, max_batch: None, cooldown_sec: None, next_replenish_in: None,
                 code: None, count: None, empty: None, img_url: None, w: None, h: None, opacity: None, angle: None,
-                frozen: None, message: None, perk_id: None, r: None, radius: None, duration: None, targets: None,
+                frozen: None, message: None, version: None, perk_id: None, r: None, radius: None, duration: None, targets: None,
             };
             handle_action(msg, canvas_id, connection_id, state).await;
         }
@@ -1456,7 +1394,7 @@ pub async fn handle_binary_action(bin: Vec<u8>, canvas_id: &str, connection_id: 
                 offsets: None,
                 balance: None, max_batch: None, cooldown_sec: None, next_replenish_in: None,
                 code: None, count: None, empty: None, img_url: None, w: None, h: None, opacity: None, angle: None,
-                frozen: None, message: None, perk_id: None, r: None, radius: None, duration: None, targets: None,
+                frozen: None, message: None, version: None, perk_id: None, r: None, radius: None, duration: None, targets: None,
             };
             handle_action(msg, canvas_id, connection_id, state).await;
         }

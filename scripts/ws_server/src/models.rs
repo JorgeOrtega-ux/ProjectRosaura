@@ -48,6 +48,7 @@ pub struct WsMessage {
     
     // Errors
     pub message: Option<String>,
+    pub version: Option<String>,
     
     // Bombs
     #[serde(alias = "perk", rename = "perk")]

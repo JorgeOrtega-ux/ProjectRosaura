@@ -1,37 +1,130 @@
 /**
- * SoundManager.js - Motor de Audio AAA / Cine Oscuro & Terror (Web Audio API)
+ * SoundManager.js - Motor de Audio MP3 (Web Audio API)
  *
- * Incorpora:
- * 1. Procesamiento DSP de distorsión armónica analógica (WaveShaperNode Valve Saturation) para lograr retumbos caóticos, oscuros y pesados.
- * 2. Carga automática de muestras de audio reales de alta definición (.mp3/.wav) desde /assets/sounds/.
- * 3. Síntesis espacial 3D, generadores de sub-graves de 25Hz y respuesta multicanal de cine.
+ * Sin síntesis JS. Todos los sonidos son archivos MP3 reales.
+ * Agregar un perk nuevo = una entrada en SOUND_PROFILES + el MP3 en /assets/sounds/.
+ *
+ * Características:
+ *  - maxDuration : corta el MP3 al terminar la animación (fade-out de 150ms)
+ *  - throttleMs  : perks multi-objetivo (cluster, meteor) solo disparan 1 sonido
+ *  - Panning espacial según posición X en el canvas
+ *  - DSP chain: compressor → masterGain (limiter de estudio)
  */
 
+// =============================================================================
+// SOUND PROFILES — única fuente de verdad
+// Campos:
+//   file        – nombre del MP3 en /assets/sounds/ (obligatorio)
+//   warnFile    – MP3 de advertencia/loop durante cuenta regresiva (opcional)
+//   maxDuration – segundos máximos de reproducción (recorta el MP3 si es largo)
+//   throttleMs  – ms mínimos entre disparos del mismo perk (0 = sin límite)
+//                 Para perks multi-objetivo: igualar a la duración de la animación
+// =============================================================================
+const SOUND_PROFILES = {
+
+    orbital_cannon_1: {
+        file:        'orbital_cannon.mp3',
+        warnFile:    'orbital_cannon_warning.mp3',
+        maxDuration: 7.0,   // explosion.duration 10s → dejamos sonar 7s
+        throttleMs:  0,
+    },
+
+    atomic_bomb_1: {
+        file:        'atomic_bomb.mp3',
+        warnFile:    'atomic_bomb_warning.mp3',
+        maxDuration: 7.0,   // explosion.duration 10s
+        throttleMs:  0,
+    },
+
+    black_hole_1: {
+        file:        'black_hole.mp3',
+        warnFile:    'black_hole_warning.mp3',
+        maxDuration: 7.0,   // explosion.duration 10s
+        throttleMs:  0,
+    },
+
+    // multi_target — warnThrottleMs: solo 1 warning por ráfaga de N eventos
+    meteor_shower_1: {
+        file:          'meteor_shower.mp3',
+        warnFile:      'meteor_shower_warning.mp3',
+        maxDuration:   5.0,    // explosion.duration 4s + cola
+        throttleMs:    7000,   // jitter_delay 5s → 1 explosión por ráfaga
+        warnThrottleMs: 14000, // warning_seconds 12s → 1 warning total
+    },
+
+    cluster_bomb_1: {
+        file:          'cluster_bomb.mp3',
+        warnFile:      'cluster_bomb_warning.mp3',
+        maxDuration:   5.0,    // explosion.duration 5s
+        throttleMs:    7000,   // 5 objetivos → 1 explosión
+        warnThrottleMs: 10000, // warning_seconds 8s → 1 warning
+    },
+
+    pixel_shield_1: {
+        file:        'pixel_shield.mp3',
+        maxDuration: 2.0,
+        throttleMs:  0,
+    },
+
+    pixel_missile_1: {
+        file:        'pixel_missile.mp3',
+        warnFile:    'pixel_missile_warning.mp3',
+        maxDuration: 2.5,
+        throttleMs:  300,
+    },
+
+    pixel_bomb_1: {
+        file:        'pixel_bomb.mp3',
+        warnFile:    'pixel_bomb_warning.mp3',
+        maxDuration: 3.0,
+        throttleMs:  0,
+    },
+
+    mines_1: {
+        file:        'mines.mp3',
+        // warning_seconds: 0 → no necesita warnFile
+        maxDuration: 2.0,
+        throttleMs:  200,
+    },
+
+    supernova_blast: {
+        file:        'supernova_blast.mp3',
+        warnFile:    'supernova_blast_warning.mp3',
+        maxDuration: 7.0,
+        throttleMs:  0,
+    },
+
+    ion_strike: {
+        file:        'ion_strike.mp3',
+        warnFile:    'ion_strike_warning.mp3',
+        maxDuration: 4.0,
+        throttleMs:  300,
+    },
+};
+
+// =============================================================================
+// SoundManager
+// =============================================================================
 export class SoundManager {
     constructor() {
-        this.ctx = null;
-        this.masterGain = null;
-        this.compressor = null;
-        this.distortionNode = null;
-        this.isMuted = false;
-        this.volume = 0.9;
-        this.activeLoops = new Map(); // key -> audio nodes
-        this.sampleCache = new Map(); // URL -> AudioBuffer
-        
-        this.soundUrls = {
-            'orbital_cannon_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/orbital_cannon.mp3` : '/assets/sounds/orbital_cannon.mp3',
-            'atomic_bomb_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/atomic_bomb.mp3` : '/assets/sounds/atomic_bomb.mp3',
-            'black_hole_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/black_hole.mp3` : '/assets/sounds/black_hole.mp3',
-            'meteor_shower_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/meteor_shower.mp3` : '/assets/sounds/meteor_shower.mp3',
-            'cluster_bomb_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/cluster_bomb.mp3` : '/assets/sounds/cluster_bomb.mp3',
-            'pixel_missile_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/pixel_missile.mp3` : '/assets/sounds/pixel_missile.mp3',
-            'pixel_shield_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/pixel_shield.mp3` : '/assets/sounds/pixel_shield.mp3',
-            'mines_1': window.AppBasePath ? `${window.AppBasePath}/assets/sounds/mines.mp3` : '/assets/sounds/mines.mp3'
-        };
+        this.ctx          = null;
+        this.masterGain   = null;
+        this.compressor   = null;
+        this.isMuted      = false;
+        this.volume       = 0.9;
+
+        this.activeLoops    = new Map(); // key → { source, gainNode }
+        this.sampleCache    = new Map(); // cacheKey → AudioBuffer
+        this._lastExplosion = new Map(); // perkId   → timestamp (throttle explosiones)
+        this._lastWarning   = new Map(); // perkId   → timestamp (throttle warnings)
 
         this.initOnUserGesture();
         this.preloadSamples();
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Inicialización del contexto de audio
+    // ─────────────────────────────────────────────────────────────────────────
 
     initOnUserGesture() {
         const initCtx = () => {
@@ -40,35 +133,82 @@ export class SoundManager {
                 if (!AudioCtx) return;
                 this.ctx = new AudioCtx();
 
-                // 1. Distortion WaveShaper (Saturación analógica para impacto pesado y caótico)
-                this.distortionNode = this.ctx.createWaveShaper();
-                this.distortionNode.curve = this.makeDistortionCurve(25);
-                this.distortionNode.oversample = '4x';
+                // ── Cadena DSP Hollywood ─────────────────────────────────────
+                //  Fuente → inputBus → EQ (3 bandas) → Compressor → Limiter → MasterGain → Salida
+                //
+                //  EQ:
+                //   · Low-shelf  +3 dB @ 80 Hz   — cuerpo y peso en explosiones
+                //   · Peak       +2 dB @ 3 kHz    — presencia e inteligibilidad
+                //   · High-shelf +1.5 dB @ 10 kHz — aire y brillo cinematografico
+                //
+                //  Compressor (cine):
+                //   threshold -18 dB | ratio 4:1 | knee 12 dB (suave)
+                //   attack 5 ms (transparente) | release 300 ms (musical)
+                //
+                //  Limiter (brickwall):
+                //   threshold -0.5 dB | ratio 20:1 | attack 0 ms | release 50 ms
+                //   Evita cualquier clip en el DAC, equivalente a un True Peak limiter
 
-                // 2. Limiter de Estudio (DynamicsCompressorNode)
+                // 1. Bus de entrada — todas las fuentes se conectan aqui
+                this.inputBus = this.ctx.createGain();
+                this.inputBus.gain.setValueAtTime(1.0, this.ctx.currentTime);
+
+                // 2. EQ — Low-shelf
+                this.eqLow = this.ctx.createBiquadFilter();
+                this.eqLow.type            = 'lowshelf';
+                this.eqLow.frequency.value = 80;
+                this.eqLow.gain.value      = 3.0;
+
+                // 3. EQ — Peak de presencia
+                this.eqMid = this.ctx.createBiquadFilter();
+                this.eqMid.type            = 'peaking';
+                this.eqMid.frequency.value = 3000;
+                this.eqMid.Q.value         = 0.8;
+                this.eqMid.gain.value      = 2.0;
+
+                // 4. EQ — High-shelf de aire
+                this.eqHigh = this.ctx.createBiquadFilter();
+                this.eqHigh.type            = 'highshelf';
+                this.eqHigh.frequency.value = 10000;
+                this.eqHigh.gain.value      = 1.5;
+
+                // 5. Compresor cinematografico (suave, transparente)
                 this.compressor = this.ctx.createDynamicsCompressor();
-                this.compressor.threshold.setValueAtTime(-10, this.ctx.currentTime);
-                this.compressor.knee.setValueAtTime(8, this.ctx.currentTime);
-                this.compressor.ratio.setValueAtTime(14, this.ctx.currentTime);
-                this.compressor.attack.setValueAtTime(0.002, this.ctx.currentTime);
-                this.compressor.release.setValueAtTime(0.25, this.ctx.currentTime);
+                this.compressor.threshold.setValueAtTime(-18, this.ctx.currentTime);
+                this.compressor.knee.setValueAtTime(12,   this.ctx.currentTime);
+                this.compressor.ratio.setValueAtTime(4,   this.ctx.currentTime);
+                this.compressor.attack.setValueAtTime(0.005, this.ctx.currentTime);
+                this.compressor.release.setValueAtTime(0.30, this.ctx.currentTime);
 
-                // 3. Control de Volumen Master
+                // 6. Limitador brickwall (evita clips)
+                this.limiter = this.ctx.createDynamicsCompressor();
+                this.limiter.threshold.setValueAtTime(-0.5, this.ctx.currentTime);
+                this.limiter.knee.setValueAtTime(0,    this.ctx.currentTime);
+                this.limiter.ratio.setValueAtTime(20,  this.ctx.currentTime);
+                this.limiter.attack.setValueAtTime(0.0001, this.ctx.currentTime);
+                this.limiter.release.setValueAtTime(0.05,  this.ctx.currentTime);
+
+                // 7. Master gain
                 this.masterGain = this.ctx.createGain();
                 this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
 
-                // Cadena DSP: Fuente -> Distortion -> Compressor -> MasterGain -> Parlantes
-                this.distortionNode.connect(this.compressor);
-                this.compressor.connect(this.masterGain);
+                // Cadena: inputBus → EQ low → EQ mid → EQ high → Compressor → Limiter → MasterGain → Salida
+                this.inputBus.connect(this.eqLow);
+                this.eqLow.connect(this.eqMid);
+                this.eqMid.connect(this.eqHigh);
+                this.eqHigh.connect(this.compressor);
+                this.compressor.connect(this.limiter);
+                this.limiter.connect(this.masterGain);
                 this.masterGain.connect(this.ctx.destination);
+
             } else if (this.ctx.state === 'suspended') {
                 this.ctx.resume();
             }
-            window.removeEventListener('click', initCtx);
+            window.removeEventListener('click',   initCtx);
             window.removeEventListener('keydown', initCtx);
         };
 
-        window.addEventListener('click', initCtx, { once: false });
+        window.addEventListener('click',   initCtx, { once: false });
         window.addEventListener('keydown', initCtx, { once: false });
     }
 
@@ -82,24 +222,17 @@ export class SoundManager {
         }
     }
 
-    /**
-     * Curva de saturación analógica de válvulas para dar peso, crunch y caótica distorsión a las explosiones.
-     */
-    makeDistortionCurve(amount = 25) {
-        const n_samples = 44100;
-        const curve = new Float32Array(n_samples);
-        const deg = Math.PI / 180;
-        for (let i = 0; i < n_samples; ++i) {
-            const x = (i * 2) / n_samples - 1;
-            curve[i] = ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
-        }
-        return curve;
-    }
+    // ─────────────────────────────────────────────────────────────────────────
+    // Volumen y mute
+    // ─────────────────────────────────────────────────────────────────────────
 
     setMuted(muted) {
         this.isMuted = muted;
         if (this.masterGain && this.ctx) {
-            this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : this.volume, this.ctx.currentTime);
+            this.masterGain.gain.setValueAtTime(
+                this.isMuted ? 0 : this.volume,
+                this.ctx.currentTime
+            );
         }
     }
 
@@ -110,7 +243,11 @@ export class SoundManager {
         }
     }
 
-    createPanner(x = null, boardWidth = 4096) {
+    // ─────────────────────────────────────────────────────────────────────────
+    // Panning espacial según posición X en el canvas
+    // ─────────────────────────────────────────────────────────────────────────
+
+    _createPanner(x = null, boardWidth = 4096) {
         if (!this.ctx) return null;
 
         if (typeof this.ctx.createStereoPanner === 'function') {
@@ -119,70 +256,113 @@ export class SoundManager {
                 const pan = Math.max(-0.85, Math.min(0.85, (x / boardWidth) * 2 - 1));
                 panner.pan.setValueAtTime(pan, this.ctx.currentTime);
             }
-            panner.connect(this.distortionNode || this.compressor);
+            panner.connect(this.inputBus);
             return panner;
         }
 
         const panner3d = this.ctx.createPanner();
         panner3d.panningModel = 'equalpower';
         if (x !== null && boardWidth > 0) {
-            const panX = (x / boardWidth) * 2 - 1;
-            panner3d.setPosition(panX, 0, 1);
+            panner3d.setPosition((x / boardWidth) * 2 - 1, 0, 1);
         }
-        panner3d.connect(this.distortionNode || this.compressor);
+        panner3d.connect(this.inputBus);
         return panner3d;
     }
 
-    /**
-     * Intenta precargar archivos de audio MP3 reales si existen en el servidor.
-     */
+    // ─────────────────────────────────────────────────────────────────────────
+    // Precarga de samples MP3
+    // ─────────────────────────────────────────────────────────────────────────
+
     async preloadSamples() {
-        for (const [key, url] of Object.entries(this.soundUrls)) {
-            try {
-                const response = await fetch(url, { method: 'HEAD' });
-                if (response.ok) {
-                    const audioRes = await fetch(url);
-                    const arrayBuffer = await audioRes.arrayBuffer();
-                    if (this.ctx) {
-                        const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-                        this.sampleCache.set(key, audioBuffer);
-                    }
-                }
-            } catch (e) {}
+        const base = window.AppBasePath || '';
+
+        for (const [perkId, profile] of Object.entries(SOUND_PROFILES)) {
+            if (profile.file) {
+                this._loadSample(perkId, `${base}/assets/sounds/${profile.file}`);
+            }
+            if (profile.warnFile) {
+                this._loadSample(`${perkId}_warn`, `${base}/assets/sounds/${profile.warnFile}`);
+            }
         }
     }
 
-    /**
-     * Generador de Ruido Marrón Oscuro para el impacto y turbulencia de detonaciones masivas.
-     */
-    createDarkNoiseBuffer(durationSecs = 3.0) {
+    async _loadSample(cacheKey, url) {
+        try {
+            const head = await fetch(url, { method: 'HEAD' });
+            if (!head.ok) return;
+
+            const res         = await fetch(url);
+            const arrayBuffer = await res.arrayBuffer();
+
+            // Decodificar cuando el AudioContext esté listo
+            const decode = () => {
+                if (!this.ctx) { setTimeout(decode, 300); return; }
+                this.ctx.decodeAudioData(arrayBuffer.slice(0))
+                    .then(buf => this.sampleCache.set(cacheKey, buf))
+                    .catch(() => {});
+            };
+            decode();
+        } catch (e) {}
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helper: reproduce un AudioBuffer con maxDuration y fade-out
+    // ─────────────────────────────────────────────────────────────────────────
+
+    _playBuffer(buf, { maxDuration = null, x = null, boardWidth = 4096, loop = false, loopEnd = null } = {}) {
         if (!this.ctx) return null;
-        const sampleRate = this.ctx.sampleRate;
-        const bufferSize = sampleRate * durationSecs;
-        const buffer = this.ctx.createBuffer(1, bufferSize, sampleRate);
-        const output = buffer.getChannelData(0);
-        let lastOutput = 0.0;
 
-        for (let i = 0; i < bufferSize; i++) {
-            const white = Math.random() * 2 - 1;
-            output[i] = (lastOutput + (0.04 * white)) / 1.04;
-            lastOutput = output[i];
-            output[i] *= 4.2; 
+        const now     = this.ctx.currentTime;
+        const clipDur = maxDuration
+            ? Math.min(buf.duration, maxDuration)
+            : buf.duration;
+
+        // Cola de reverb: el sonido sigue sonando suavemente 0.8s más allá del clip
+        // para que no se corte de golpe cuando acaba la animación
+        const TAIL    = Math.min(0.8, buf.duration - clipDur > 0 ? 0.8 : 0.0);
+        const playDur = clipDur + TAIL;
+
+        const source = this.ctx.createBufferSource();
+        source.buffer = buf;
+        source.playbackRate.value = 0.95 + Math.random() * 0.1;
+
+        if (loop) {
+            source.loop    = true;
+            source.loopEnd = loopEnd ?? Math.min(buf.duration, clipDur);
         }
-        return buffer;
+
+        const fadeGain = this.ctx.createGain();
+        fadeGain.gain.setValueAtTime(1.0, now);
+
+        if (clipDur > 0.3) {
+            // Mantener volumen pleno hasta el punto de corte de animación,
+            // luego hacer un fade-out suave exponencial durante la cola
+            fadeGain.gain.setValueAtTime(1.0, now + clipDur - 0.05);
+            fadeGain.gain.exponentialRampToValueAtTime(0.001, now + playDur);
+        }
+
+        const panner = this._createPanner(x, boardWidth);
+        source.connect(fadeGain);
+        fadeGain.connect(panner ?? this.inputBus);
+
+        source.start(now);
+        source.stop(now + playDur);
+
+        return { source, fadeGain };
     }
 
-    // =========================================================================
-    // SÍNTESIS DE AUDIO AAA DE TERROR & IMPACTO PESADO
-    // =========================================================================
+    // ─────────────────────────────────────────────────────────────────────────
+    // UI click
+    // ─────────────────────────────────────────────────────────────────────────
 
     playUiClick() {
         if (this.isMuted) return;
         this.ensureContext();
         if (!this.ctx) return;
 
+        // Click de UI: sonido corto generado en memoria (no es un perk, no necesita MP3)
         const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
+        const osc  = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
         osc.type = 'sine';
@@ -193,433 +373,95 @@ export class SoundManager {
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
 
         osc.connect(gain);
-        gain.connect(this.compressor);
-
+        gain.connect(this.inputBus);
         osc.start(now);
         osc.stop(now + 0.035);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Warning sound (loop durante la cuenta regresiva)
+    // ─────────────────────────────────────────────────────────────────────────
 
     playWarningSound(perkId, durationSecs = 10, key = null) {
         if (this.isMuted) return;
         this.ensureContext();
         if (!this.ctx) return;
 
-        const now = this.ctx.currentTime;
+        const profile        = SOUND_PROFILES[perkId] || {};
+        const warnThrottleMs = profile.warnThrottleMs || 0;
 
-        if (perkId === 'orbital_cannon_1') {
-            // Zumbido electromagnético espacial sci-fi con trémolo inquietante
-            const carrier = this.ctx.createOscillator();
-            const modulator = this.ctx.createOscillator();
-            const modGain = this.ctx.createGain();
-            const filter = this.ctx.createBiquadFilter();
-            const masterG = this.ctx.createGain();
-
-            carrier.type = 'sawtooth';
-            modulator.type = 'sine';
-            filter.type = 'lowpass';
-            filter.Q.value = 6;
-
-            modulator.frequency.setValueAtTime(6, now);
-            modulator.frequency.linearRampToValueAtTime(24, now + durationSecs); 
-            modGain.gain.setValueAtTime(60, now);
-
-            carrier.frequency.setValueAtTime(90, now);
-            carrier.frequency.exponentialRampToValueAtTime(950, now + durationSecs);
-
-            filter.frequency.setValueAtTime(140, now);
-            filter.frequency.exponentialRampToValueAtTime(3800, now + durationSecs);
-
-            modulator.connect(modGain);
-            modGain.connect(carrier.frequency);
-
-            masterG.gain.setValueAtTime(0.01, now);
-            masterG.gain.linearRampToValueAtTime(0.25, now + durationSecs * 0.85);
-            masterG.gain.linearRampToValueAtTime(0.001, now + durationSecs);
-
-            carrier.connect(filter);
-            filter.connect(masterG);
-            masterG.connect(this.distortionNode || this.compressor);
-
-            carrier.start(now);
-            modulator.start(now);
-            carrier.stop(now + durationSecs);
-            modulator.stop(now + durationSecs);
-
-            if (key) this.activeLoops.set(key, { osc: carrier, gain: masterG });
-
-        } else if (perkId === 'atomic_bomb_1') {
-            // Sirena inquietante de pánico nuclear
-            const osc1 = this.ctx.createOscillator();
-            const osc2 = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-
-            osc1.type = 'sawtooth';
-            osc2.type = 'sine';
-
-            const startTime = now;
-            const endTime = now + durationSecs;
-
-            for (let t = 0; t < durationSecs; t += 1.0) {
-                osc1.frequency.setValueAtTime(280, startTime + t);
-                osc1.frequency.linearRampToValueAtTime(460, startTime + t + 0.5);
-                osc1.frequency.linearRampToValueAtTime(280, startTime + t + 1.0);
-
-                osc2.frequency.setValueAtTime(140, startTime + t);
-                osc2.frequency.linearRampToValueAtTime(230, startTime + t + 0.5);
-                osc2.frequency.linearRampToValueAtTime(140, startTime + t + 1.0);
-            }
-
-            const filter = this.ctx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(900, now);
-
-            gain.gain.setValueAtTime(0.15, startTime);
-            gain.gain.linearRampToValueAtTime(0.001, endTime);
-
-            osc1.connect(filter);
-            osc2.connect(filter);
-            filter.connect(gain);
-            gain.connect(this.distortionNode || this.compressor);
-
-            osc1.start(startTime);
-            osc2.start(startTime);
-            osc1.stop(endTime);
-            osc2.stop(endTime);
-
-            if (key) this.activeLoops.set(key, { osc: osc1, gain });
+        // Throttle de warning: perks multi-objetivo solo reproducen 1 sonido de alarma
+        if (warnThrottleMs > 0) {
+            const last = this._lastWarning.get(perkId) || 0;
+            const now  = Date.now();
+            if (now - last < warnThrottleMs) return;
+            this._lastWarning.set(perkId, now);
         }
+
+        const warnKey = `${perkId}_warn`;
+        if (!this.sampleCache.has(warnKey)) return; // sin MP3 → silencio
+
+        const buf    = this.sampleCache.get(warnKey);
+        const now    = this.ctx.currentTime;
+        const source = this.ctx.createBufferSource();
+        source.buffer  = buf;
+        source.loop    = true;
+        source.loopEnd = Math.min(buf.duration, durationSecs);
+
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.setValueAtTime(0.01, now);
+        gainNode.gain.linearRampToValueAtTime(0.7,   now + Math.min(1.5, durationSecs * 0.2));
+        gainNode.gain.setValueAtTime(0.7,             now + durationSecs - 0.5);
+        gainNode.gain.linearRampToValueAtTime(0.001,  now + durationSecs);
+
+        source.connect(gainNode);
+        gainNode.connect(this.inputBus);
+        source.start(now);
+        source.stop(now + durationSecs);
+
+        if (key) this.activeLoops.set(key, { source, gainNode });
     }
 
     stopWarningSound(key) {
-        if (this.activeLoops.has(key)) {
-            const { osc, gain } = this.activeLoops.get(key);
-            try {
-                if (this.ctx && gain) {
-                    gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
-                }
-                if (osc) {
-                    setTimeout(() => osc.stop(), 100);
-                }
-            } catch (e) {}
-            this.activeLoops.delete(key);
-        }
+        if (!this.activeLoops.has(key)) return;
+        const { source, gainNode } = this.activeLoops.get(key);
+        try {
+            if (this.ctx && gainNode) {
+                gainNode.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+            }
+            if (source) {
+                setTimeout(() => { try { source.stop(); } catch (e) {} }, 110);
+            }
+        } catch (e) {}
+        this.activeLoops.delete(key);
     }
 
-    /**
-     * IMPACTOS PESADOS Y DETONACIONES CINEMATOGRÁFICAS AAA (DE TERROR Y CAÓTICAS)
-     */
+    // ─────────────────────────────────────────────────────────────────────────
+    // Explosion sound
+    // ─────────────────────────────────────────────────────────────────────────
+
     playExplosionSound(perkId, x = null, y = null, boardWidth = 4096) {
         if (this.isMuted) return;
         this.ensureContext();
         if (!this.ctx) return;
+        if (!this.sampleCache.has(perkId)) return; // sin MP3 cargado → silencio
 
-        // Si existe un archivo .mp3 real precargado en sampleCache, reproducirlo directamente
-        if (this.sampleCache.has(perkId)) {
-            const sampleBuf = this.sampleCache.get(perkId);
-            const source = this.ctx.createBufferSource();
-            source.buffer = sampleBuf;
-            const panner = this.createPanner(x, boardWidth);
-            source.connect(panner || this.compressor);
-            source.playbackRate.value = 0.95 + Math.random() * 0.1;
-            source.start(0);
-            return;
+        const profile    = SOUND_PROFILES[perkId] || {};
+        const throttleMs = profile.throttleMs || 0;
+
+        // Throttle: perks multi-objetivo solo disparan 1 sonido por ráfaga
+        if (throttleMs > 0) {
+            const last = this._lastExplosion.get(perkId) || 0;
+            const now  = Date.now();
+            if (now - last < throttleMs) return;
+            this._lastExplosion.set(perkId, now);
         }
 
-        const now = this.ctx.currentTime;
-        const panner = this.createPanner(x, boardWidth);
-        const destination = panner || this.distortionNode || this.compressor;
-
-        if (perkId === 'orbital_cannon_1') {
-            // === CAÑÓN ORBITAL (IMPACTO CAÓTICO Y PROFUNDO DE LÁSER ESPACIAL) ===
-
-            // 1. Supersonic Energy Crack (Impacto de plasma inicial con distorsión)
-            const noiseBuf = this.createDarkNoiseBuffer(0.5);
-            if (noiseBuf) {
-                const noise = this.ctx.createBufferSource();
-                noise.buffer = noiseBuf;
-                const hpFilter = this.ctx.createBiquadFilter();
-                hpFilter.type = 'highpass';
-                hpFilter.frequency.setValueAtTime(1800, now);
-
-                const noiseG = this.ctx.createGain();
-                noiseG.gain.setValueAtTime(0.7, now);
-                noiseG.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-
-                noise.connect(hpFilter);
-                hpFilter.connect(noiseG);
-                noiseG.connect(destination);
-                noise.start(now);
-            }
-
-            // 2. Sub-atomic Laser Drop (Caída de frecuencia láser pesada de 1600Hz a 30Hz)
-            const laserOsc = this.ctx.createOscillator();
-            const laserG = this.ctx.createGain();
-            laserOsc.type = 'sawtooth';
-            laserOsc.frequency.setValueAtTime(1600, now);
-            laserOsc.frequency.exponentialRampToValueAtTime(28, now + 3.5);
-
-            laserG.gain.setValueAtTime(0.65, now);
-            laserG.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
-
-            laserOsc.connect(laserG);
-            laserG.connect(destination);
-            laserOsc.start(now);
-            laserOsc.stop(now + 3.5);
-
-            // 3. Earthquake Sub-Bass Slam (Sub-graves soplados de 22Hz prolongados durante 5.5s)
-            const subOsc = this.ctx.createOscillator();
-            const subG = this.ctx.createGain();
-            subOsc.type = 'sine';
-            subOsc.frequency.setValueAtTime(80, now);
-            subOsc.frequency.exponentialRampToValueAtTime(18, now + 5.5);
-
-            subG.gain.setValueAtTime(0.9, now);
-            subG.gain.exponentialRampToValueAtTime(0.001, now + 5.5);
-
-            subOsc.connect(subG);
-            subG.connect(destination);
-            subOsc.start(now);
-            subOsc.stop(now + 5.5);
-
-        } else if (perkId === 'atomic_bomb_1') {
-            // === BOMBA ATÓMICA (EXPLOSIÓN DE TERROR RETUMBANTE DE 4 CAPAS) ===
-
-            // 1. Shockwave Blast Snap
-            const snapBuf = this.createDarkNoiseBuffer(0.25);
-            if (snapBuf) {
-                const snap = this.ctx.createBufferSource();
-                snap.buffer = snapBuf;
-                const snapG = this.ctx.createGain();
-                snapG.gain.setValueAtTime(0.8, now);
-                snapG.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-                snap.connect(snapG);
-                snapG.connect(destination);
-                snap.start(now);
-            }
-
-            // 2. Heavy Rolling Brown Noise Blast (Cuerpo de explosión retumbante)
-            const brownBuf = this.createDarkNoiseBuffer(3.8);
-            if (brownBuf) {
-                const brown = this.ctx.createBufferSource();
-                brown.buffer = brownBuf;
-                const lpFilter = this.ctx.createBiquadFilter();
-                lpFilter.type = 'lowpass';
-                lpFilter.Q.value = 5; // Resonancia sónica pesada
-                lpFilter.frequency.setValueAtTime(1800, now);
-                lpFilter.frequency.exponentialRampToValueAtTime(32, now + 3.8);
-
-                const brownG = this.ctx.createGain();
-                brownG.gain.setValueAtTime(0.85, now);
-                brownG.gain.exponentialRampToValueAtTime(0.001, now + 3.8);
-
-                brown.connect(lpFilter);
-                lpFilter.connect(brownG);
-                brownG.connect(destination);
-                brown.start(now);
-            }
-
-            // 3. Sub-Bass Earthquake Drop (Sub-graves sismos de 24Hz de ultra baja frecuencia)
-            const sub1 = this.ctx.createOscillator();
-            const sub2 = this.ctx.createOscillator();
-            const subG = this.ctx.createGain();
-
-            sub1.type = 'sine';
-            sub2.type = 'sine';
-
-            sub1.frequency.setValueAtTime(55, now);
-            sub1.frequency.exponentialRampToValueAtTime(20, now + 3.8);
-
-            sub2.frequency.setValueAtTime(38, now);
-            sub2.frequency.exponentialRampToValueAtTime(14, now + 3.8);
-
-            subG.gain.setValueAtTime(0.9, now);
-            subG.gain.exponentialRampToValueAtTime(0.001, now + 3.8);
-
-            sub1.connect(subG);
-            sub2.connect(subG);
-            subG.connect(destination);
-
-            sub1.start(now);
-            sub2.start(now);
-            sub1.stop(now + 3.8);
-            sub2.stop(now + 3.8);
-
-        } else if (perkId === 'black_hole_1') {
-            // === AGUJERO NEGRO (IMPLOSIÓN DE TERROR CÓSMICO Y DESTORSIÓN) ===
-
-            // 1. Succión Inversa de Vacío Oscuro
-            const darkBuf = this.createDarkNoiseBuffer(2.2);
-            if (darkBuf) {
-                const noise = this.ctx.createBufferSource();
-                noise.buffer = darkBuf;
-                const filter = this.ctx.createBiquadFilter();
-                filter.type = 'bandpass';
-                filter.Q.value = 7;
-                filter.frequency.setValueAtTime(50, now);
-                filter.frequency.exponentialRampToValueAtTime(1400, now + 0.9);
-                filter.frequency.exponentialRampToValueAtTime(25, now + 2.2);
-
-                const noiseG = this.ctx.createGain();
-                noiseG.gain.setValueAtTime(0.08, now);
-                noiseG.gain.linearRampToValueAtTime(0.6, now + 0.9);
-                noiseG.gain.exponentialRampToValueAtTime(0.001, now + 2.2);
-
-                noise.connect(filter);
-                filter.connect(noiseG);
-                noiseG.connect(destination);
-                noise.start(now);
-            }
-
-            // 2. Sub-Harmonic Singularity Pulse (Pulso de sub-graves de 22Hz)
-            const sub = this.ctx.createOscillator();
-            const subG = this.ctx.createGain();
-            sub.type = 'sine';
-            sub.frequency.setValueAtTime(32, now);
-            sub.frequency.linearRampToValueAtTime(210, now + 0.9);
-            sub.frequency.exponentialRampToValueAtTime(16, now + 2.2);
-
-            subG.gain.setValueAtTime(0.12, now);
-            subG.gain.linearRampToValueAtTime(0.7, now + 0.9);
-            subG.gain.exponentialRampToValueAtTime(0.001, now + 2.2);
-
-            sub.connect(subG);
-            subG.connect(destination);
-            sub.start(now);
-            sub.stop(now + 2.2);
-
-        } else if (perkId === 'cluster_bomb_1' || perkId === 'meteor_shower_1') {
-            // === METEORITOS & RACIMO (IMPACTOS CAÓTICOS PESADOS Y ESCALONADOS) ===
-            const count = perkId === 'cluster_bomb_1' ? 5 : 7;
-            for (let i = 0; i < count; i++) {
-                const delay = i * 0.09;
-                const nowD = now + delay;
-
-                const darkBuf = this.createDarkNoiseBuffer(0.4);
-                if (darkBuf) {
-                    const noise = this.ctx.createBufferSource();
-                    noise.buffer = darkBuf;
-                    const bpFilter = this.ctx.createBiquadFilter();
-                    bpFilter.type = 'lowpass';
-                    bpFilter.frequency.setValueAtTime(900 + Math.random() * 500, nowD);
-                    bpFilter.frequency.exponentialRampToValueAtTime(60, nowD + 0.35);
-
-                    const noiseG = this.ctx.createGain();
-                    noiseG.gain.setValueAtTime(0.45, nowD);
-                    noiseG.gain.exponentialRampToValueAtTime(0.001, nowD + 0.35);
-
-                    noise.connect(bpFilter);
-                    bpFilter.connect(noiseG);
-                    noiseG.connect(destination);
-                    noise.start(nowD);
-                }
-
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-
-                osc.type = 'sine';
-                const startFreq = 260 + Math.random() * 140;
-                osc.frequency.setValueAtTime(startFreq, nowD);
-                osc.frequency.exponentialRampToValueAtTime(28, nowD + 0.35);
-
-                gain.gain.setValueAtTime(0.4, nowD);
-                gain.gain.exponentialRampToValueAtTime(0.001, nowD + 0.35);
-
-                osc.connect(gain);
-                gain.connect(destination);
-                osc.start(nowD);
-                osc.stop(nowD + 0.35);
-            }
-
-        } else if (perkId === 'pixel_shield_1') {
-            // === PROTECCIÓN DE PÍXELES (ESCUDO DE ENERGÍA PESADO) ===
-            const freqs = [440, 554.37, 659.25, 880];
-            freqs.forEach((freq, idx) => {
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, now + idx * 0.03);
-
-                gain.gain.setValueAtTime(0.2, now + idx * 0.03);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.03 + 0.9);
-
-                osc.connect(gain);
-                gain.connect(destination);
-                osc.start(now + idx * 0.03);
-                osc.stop(now + idx * 0.03 + 0.9);
-            });
-
-        } else if (perkId === 'mines_1') {
-            // === MINAS TERRESTRES (DETONACIÓN METÁLICA PESADA) ===
-            const darkBuf = this.createDarkNoiseBuffer(0.45);
-            if (darkBuf) {
-                const noise = this.ctx.createBufferSource();
-                noise.buffer = darkBuf;
-                const hpFilter = this.ctx.createBiquadFilter();
-                hpFilter.type = 'highpass';
-                hpFilter.frequency.setValueAtTime(1400, now);
-
-                const noiseG = this.ctx.createGain();
-                noiseG.gain.setValueAtTime(0.55, now);
-                noiseG.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-
-                noise.connect(hpFilter);
-                hpFilter.connect(noiseG);
-                noiseG.connect(destination);
-                noise.start(now);
-            }
-
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(320, now);
-            osc.frequency.exponentialRampToValueAtTime(30, now + 0.45);
-
-            gain.gain.setValueAtTime(0.5, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-
-            osc.connect(gain);
-            gain.connect(destination);
-            osc.start(now);
-            osc.stop(now + 0.45);
-
-        } else {
-            // === EXPLOSIÓN GENÉRICA PESADA DE MISIL / BOMBA PIXEL ===
-            const darkBuf = this.createDarkNoiseBuffer(1.0);
-            if (darkBuf) {
-                const noise = this.ctx.createBufferSource();
-                noise.buffer = darkBuf;
-                const lpFilter = this.ctx.createBiquadFilter();
-                lpFilter.type = 'lowpass';
-                lpFilter.Q.value = 4;
-                lpFilter.frequency.setValueAtTime(1200, now);
-                lpFilter.frequency.exponentialRampToValueAtTime(38, now + 1.0);
-
-                const noiseG = this.ctx.createGain();
-                noiseG.gain.setValueAtTime(0.6, now);
-                noiseG.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
-
-                noise.connect(lpFilter);
-                lpFilter.connect(noiseG);
-                noiseG.connect(destination);
-                noise.start(now);
-            }
-
-            const sub = this.ctx.createOscillator();
-            const subG = this.ctx.createGain();
-            sub.type = 'sine';
-            sub.frequency.setValueAtTime(140, now);
-            sub.frequency.exponentialRampToValueAtTime(24, now + 1.0);
-
-            subG.gain.setValueAtTime(0.6, now);
-            subG.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
-
-            sub.connect(subG);
-            subG.connect(destination);
-            sub.start(now);
-            sub.stop(now + 1.0);
-        }
+        this._playBuffer(this.sampleCache.get(perkId), {
+            maxDuration: profile.maxDuration || null,
+            x,
+            boardWidth,
+        });
     }
 }
 

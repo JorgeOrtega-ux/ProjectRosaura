@@ -729,6 +729,7 @@
     "store_content_pixel_shield_1_desc": "Protege temporalmente una zona de píxeles durante 24 horas.",
     "store_content_mines_1_name": "Minas Terrestres",
     "store_content_mines_1_desc": "Compra un paquete de 10 minas terrestres para colocar en el lienzo. Explotan al ser pisadas por otro jugador.",
+    "store.bomb_perks_use_direct": "Las ventajas de tipo bomba se deben activar directamente sobre el lienzo.",
     "perk_mines": "Minas Terrestres",
     "perk_mines_short": "Minas",
     "btn_place_mines": "Colocar Minas",
@@ -1602,5 +1603,6 @@
     "desc_confirm_unlink_google": "La próxima vez que inicies sesión en :appName, tendrás que usar tu dirección de correo electrónico :userEmail y tu contraseña.",
     "title_confirm_delete_template": "¿Eliminar plantilla?",
     "desc_confirm_delete_template": "Esta acción eliminará de forma permanente tu plantilla de la biblioteca del servidor. No se puede deshacer.",
-    "btn_delete_confirm": "Eliminar permanentemente"
+    "btn_delete_confirm": "Eliminar permanentemente",
+    "err_version_mismatch": "La versión de tu aplicación no coincide con la del servidor. Por favor, recarga la página para actualizar."
 }

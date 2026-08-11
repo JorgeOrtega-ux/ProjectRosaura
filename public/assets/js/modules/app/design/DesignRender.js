@@ -706,29 +706,6 @@ export const DesignRender = {
                     this.ctx.fill();
                 }
 
-                if (warning.perkId === 'ion_strike') {
-                    const p1 = { x: wx, y: wy - outerR };
-                    const p2 = { x: wx - outerR * 0.866, y: wy + outerR * 0.5 };
-                    const p3 = { x: wx + outerR * 0.866, y: wy + outerR * 0.5 };
-
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(p1.x, p1.y);
-                    this.ctx.lineTo(p2.x, p2.y);
-                    this.ctx.lineTo(p3.x, p3.y);
-                    this.ctx.closePath();
-                    this.ctx.setLineDash([4 / scale, 4 / scale]);
-                    this.ctx.strokeStyle = primaryColor;
-                    this.ctx.lineWidth = 1.5 / scale;
-                    this.ctx.stroke();
-                    this.ctx.setLineDash([]);
-                    
-                    [p1, p2, p3].forEach(pt => {
-                        this.ctx.beginPath();
-                        this.ctx.arc(pt.x, pt.y, 3 / scale, 0, 2 * Math.PI);
-                        this.ctx.strokeStyle = primaryColor;
-                        this.ctx.stroke();
-                    });
-                }
 
                 if (warning.perkId === 'tectonic_rift') {
                     this.ctx.beginPath();
@@ -772,7 +749,7 @@ export const DesignRender = {
                 this.ctx.stroke();
 
                 // 2. Círculo exterior
-                if (warning.perkId !== 'supernova_blast' && warning.perkId !== 'ion_strike' && warning.perkId !== 'tectonic_rift') {
+                if (warning.perkId !== 'supernova_blast' && warning.perkId !== 'tectonic_rift') {
                     this.ctx.beginPath();
                     this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
                     this.ctx.fillStyle = fillColor;
@@ -901,61 +878,49 @@ export const DesignRender = {
                 const opacity = 1 - progress;
                 
                 if (exp.perkId === 'ion_strike') {
-                    const p1 = { x: exp.x + 0.5, y: exp.y + 0.5 - exp.maxRadius };
-                    const p2 = { x: exp.x + 0.5 - exp.maxRadius * 0.866, y: exp.y + 0.5 + exp.maxRadius * 0.5 };
-                    const p3 = { x: exp.x + 0.5 + exp.maxRadius * 0.866, y: exp.y + 0.5 + exp.maxRadius * 0.5 };
-                    const vertices = [p1, p2, p3];
-                    for (let i = 0; i < 3; i++) {
-                        const strikeProgress = Math.min(1, progress * 2.5 - i * 0.3);
-                        if (strikeProgress > 0 && strikeProgress < 1.0) {
-                            const pt = vertices[i];
-                            const op = 1.0 - strikeProgress;
-                            this.ctx.beginPath();
-                            this.ctx.moveTo(pt.x + (Math.sin(now / 10) * 10) / this.transform.scale, pt.y - 150);
-                            let curY = pt.y - 150;
-                            let curX = pt.x;
-                            const steps = 6;
-                            const stepY = 150 / steps;
-                            for (let s = 1; s <= steps; s++) {
-                                curY += stepY;
-                                const jitterX = (Math.sin(now + s * 2.3) * (15 / steps)) / this.transform.scale;
-                                this.ctx.lineTo(curX + jitterX, curY);
-                            }
-                            this.ctx.strokeStyle = `rgba(0, 240, 255, ${op})`;
-                            this.ctx.lineWidth = Math.max(1.5, 4.0 * op / this.transform.scale);
-                            this.ctx.stroke();
-                        }
-                    }
-                    const triangleProgress = Math.min(1, progress * 1.5 - 0.5);
-                    if (triangleProgress > 0) {
-                        const op = (1 - triangleProgress) * opacity;
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(p1.x, p1.y);
-                        const drawLightningSegment = (a, b) => {
-                            const dx = b.x - a.x;
-                            const dy = b.y - a.y;
-                            const dist = Math.sqrt(dx * dx + dy * dy);
-                            const steps = Math.max(5, Math.floor(dist / 5));
-                            for (let s = 1; s <= steps; s++) {
-                                const t = s / steps;
-                                const targetX = a.x + t * dx;
-                                const targetY = a.y + t * dy;
-                                const jitter = (Math.sin(now / 5 + s * 1.5) * 3) / this.transform.scale;
-                                const nx = -dy / dist;
-                                const ny = dx / dist;
-                                this.ctx.lineTo(targetX + nx * jitter, targetY + ny * jitter);
-                            }
-                        };
-                        this.ctx.moveTo(p1.x, p1.y);
-                        drawLightningSegment(p1, p2);
-                        drawLightningSegment(p2, p3);
-                        drawLightningSegment(p3, p1);
-                        this.ctx.closePath();
-                        this.ctx.strokeStyle = `rgba(0, 240, 255, ${op})`;
-                        this.ctx.lineWidth = Math.max(1.0, 3.0 * op / this.transform.scale);
-                        this.ctx.stroke();
-                        this.ctx.fillStyle = `rgba(0, 240, 255, ${op * 0.12})`;
-                        this.ctx.fill();
+                    const r = exp.maxRadius * (0.1 + 2.0 * progress);
+                    // 1. Anillo de plasma cian brillante
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, r, 0, 2 * Math.PI);
+                    this.ctx.strokeStyle = `rgba(6, 182, 212, ${opacity})`;
+                    this.ctx.lineWidth = Math.max(2, 5 * (1 - progress) / this.transform.scale);
+                    this.ctx.stroke();
+
+                    // 2. Anillo interior secundario (más rápido y blanco)
+                    const innerR = r * 0.65;
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, innerR, 0, 2 * Math.PI);
+                    this.ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.85})`;
+                    this.ctx.lineWidth = Math.max(1, 3 * (1 - progress) / this.transform.scale);
+                    this.ctx.stroke();
+
+                    // 3. Relleno de resplandor de iones
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, r * 0.85, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = `rgba(6, 182, 212, ${opacity * 0.15})`;
+                    this.ctx.fill();
+
+                    // 4. Destello central blanco
+                    const coreR = Math.max(1, (exp.maxRadius * 0.25 * (1 - progress)) / this.transform.scale);
+                    this.ctx.beginPath();
+                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, coreR, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                    this.ctx.fill();
+
+                    // 5. Partículas de plasma cian/blanco flotantes
+                    const particleCount = 15;
+                    for (let i = 0; i < particleCount; i++) {
+                        const hash = Math.sin(exp.startTime + i * 17.31) * 1000;
+                        const angle = (hash * 11) % (2 * Math.PI);
+                        const speed = exp.maxRadius * 1.3 * (0.3 + 0.9 * (Math.abs(hash * 3) % 1));
+                        const dist = speed * (1 - Math.pow(1 - progress, 2));
+
+                        const px = exp.x + 0.5 + dist * Math.cos(angle);
+                        const py = exp.y + 0.5 + dist * Math.sin(angle);
+
+                        const size = Math.max(1, (2.2 * (1 - progress)) / this.transform.scale);
+                        this.ctx.fillStyle = i % 2 === 0 ? '#06b6d4' : '#ffffff';
+                        this.ctx.fillRect(px - size/2, py - size/2, size, size);
                     }
                     return;
                 }
@@ -1183,9 +1148,10 @@ export const DesignRender = {
                         const finalPx = px + 1.5 * Math.sin(now / 80 + i) * progress;
                         const finalPy = py + 1.5 * Math.cos(now / 90 + i) * progress;
                         
-                        const size = Math.max(1, (3 * (1 - progress)) / this.transform.scale);
-                        const colors = ['#facc15', '#f97316', '#ef4444', '#a3e635']; // Colores fuego/radioactivos
-                        this.ctx.fillStyle = colors[Math.abs(Math.floor(hash)) % colors.length];
+                        const size = Math.max(1, (3.5 * (1 - progress)) / this.transform.scale);
+                        // Paleta fuego/ceniza: sin verdes ni colores confeti
+                        const colors = ['#ffffff', '#fef3c7', '#f97316', '#ef4444', '#9f1239', '#6b7280'];
+                        this.ctx.fillStyle = colors[Math.abs(Math.floor(hash * 3.7)) % colors.length];
                         this.ctx.fillRect(finalPx - size/2, finalPy - size/2, size, size);
                     }
                     return;
