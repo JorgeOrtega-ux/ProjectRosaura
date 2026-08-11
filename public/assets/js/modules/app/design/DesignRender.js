@@ -27,6 +27,7 @@ export const DesignRender = {
         this.currentColor = palette.colors[0].hex;
         if (this.btnColorPalette) {
             this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
+            this.applyColorBorderStyle(this.btnColorPalette, this.currentColor);
         }
 
         palette.colors.forEach((colorObj, index) => {
@@ -39,9 +40,9 @@ export const DesignRender = {
 
             const colorName = typeof __ === 'function' ? __(colorObj.name_key) : colorObj.name_key;
             btn.setAttribute('data-tooltip', `${colorName} - ${hex.toUpperCase()}`);
-            
-            btn.style.backgroundColor = hex;
-            btn.style.setProperty('--color-val', hex); 
+
+            btn.style.setProperty('--color-val', hex);
+            this.applyColorBorderStyle(btn, hex);
 
             container.appendChild(btn);
         });
@@ -92,9 +93,9 @@ export const DesignRender = {
                 btn.setAttribute('data-action', 'selectColor');
                 btn.setAttribute('data-color', hex);
                 btn.setAttribute('data-tooltip', hex.toUpperCase());
-                
-                btn.style.backgroundColor = hex;
+
                 btn.style.setProperty('--color-val', hex);
+                this.applyColorBorderStyle(btn, hex);
 
                 container.appendChild(btn);
             });
@@ -112,6 +113,58 @@ export const DesignRender = {
                body.classList.contains('dark-theme') || 
                body.classList.contains('dark') || 
                body.getAttribute('data-theme') === 'dark';
+    },
+
+    /**
+     * Calcula la luminancia relativa (0 = negro, 1 = blanco) de un color HEX.
+     * Usa el estándar WCAG para la transformación sRGB → lineal.
+     */
+    getColorLuminance(hex) {
+        if (!hex || typeof hex !== 'string') return 0.5;
+        const clean = hex.replace(/^#/, '');
+        let r, g, b;
+        if (clean.length === 3) {
+            r = parseInt(clean[0] + clean[0], 16);
+            g = parseInt(clean[1] + clean[1], 16);
+            b = parseInt(clean[2] + clean[2], 16);
+        } else if (clean.length === 6) {
+            r = parseInt(clean.substring(0, 2), 16);
+            g = parseInt(clean.substring(2, 4), 16);
+            b = parseInt(clean.substring(4, 6), 16);
+        } else {
+            return 0.5;
+        }
+        const toLinear = c => {
+            const s = c / 255;
+            return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+        };
+        return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+    },
+
+    /**
+     * Aplica un borde adaptativo al elemento según la luminancia del color.
+     *
+     * Agrega/quita únicamente clases CSS:
+     *   .color-btn--extreme-dark  (luminancia < 0.08)
+     *   .color-btn--extreme-light (luminancia > 0.80)
+     *
+     * Los selectores CSS manejan el contexto de tema (.dark-theme, [data-theme="dark"]…)
+     * sin necesidad de detectar el tema en JS ni usar variables inline.
+     *
+     * El parámetro indicatorOnly ya no es necesario: los selectores CSS distinguen
+     * entre .component-color-btn y .component-color-indicator automáticamente.
+     */
+    applyColorBorderStyle(element, hex) {
+        if (!element || !hex) return;
+        const luminance = this.getColorLuminance(hex);
+
+        element.classList.remove('color-btn--extreme-dark', 'color-btn--extreme-light');
+
+        if (luminance < 0.08) {
+            element.classList.add('color-btn--extreme-dark');
+        } else if (luminance > 0.80) {
+            element.classList.add('color-btn--extreme-light');
+        }
     },
 
     updateOrbitalCannonBallPosition() {

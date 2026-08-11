@@ -4490,7 +4490,9 @@ input:checked+.component-toggle-slider:before {
     border-radius: 50%;
     border: 2px solid var(--bg-surface);
     box-sizing: border-box;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, outline-color 0.2s ease;
+    outline: 1.5px solid var(--indicator-border-color, transparent);
+    outline-offset: 0px;
 }
 
 .component-actions {
@@ -4567,14 +4569,14 @@ input:checked+.component-toggle-slider:before {
     background-color: var(--color-val);
     cursor: pointer;
     outline: none;
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+    box-shadow: inset 0 0 0 var(--adaptive-border-width, 1px) var(--adaptive-border-color, rgba(0, 0, 0, 0.15));
     transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
     padding: 0;
 }
 
 .component-color-btn:hover,
 .component-color-btn.active {
-    box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--color-val), inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--adaptive-ring-color, var(--color-val)), inset 0 0 0 var(--adaptive-border-width, 1px) var(--adaptive-border-color, rgba(0, 0, 0, 0.15));
     transform: scale(0.82);
 }
 
@@ -4611,6 +4613,55 @@ input:checked+.component-toggle-slider:before {
 .component-color-btn--rainbow.active {
     box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--text-primary), inset 0 0 0 1px rgba(0, 0, 0, 0.15);
     transform: scale(0.82);
+}
+
+/* ─── Adaptive borders for extreme-luminance swatches ─────────────────────── */
+/* JS adds .color-btn--extreme-dark (luminance < 0.08)                         */
+/* or .color-btn--extreme-light (luminance > 0.80) based on color value only.  */
+/* CSS selectors handle the theme context — no inline vars needed.             */
+
+/* Very dark color in dark theme → white inset border + white active ring */
+.dark-theme .component-color-btn.color-btn--extreme-dark,
+.dark .component-color-btn.color-btn--extreme-dark,
+[data-theme="dark"] .component-color-btn.color-btn--extreme-dark {
+    --adaptive-border-color: rgba(255, 255, 255, 0.20);
+    --adaptive-border-width: 1.5px;
+    --adaptive-ring-color: var(--text-primary);
+}
+
+/* Very light color in light theme (default) → dark inset border + dark active ring */
+.component-color-btn.color-btn--extreme-light {
+    --adaptive-border-color: rgba(0, 0, 0, 0.20);
+    --adaptive-border-width: 1.5px;
+    --adaptive-ring-color: var(--text-primary);
+}
+/* Reset in dark theme: light colors are already visible, no border needed */
+.dark-theme .component-color-btn.color-btn--extreme-light,
+.dark .component-color-btn.color-btn--extreme-light,
+[data-theme="dark"] .component-color-btn.color-btn--extreme-light {
+    --adaptive-border-color: rgba(0, 0, 0, 0.15);
+    --adaptive-border-width: 1px;
+    --adaptive-ring-color: var(--color-val);
+}
+
+/* ─── Adaptive indicator dot (::after) for extreme-luminance active colors ── */
+
+/* Very dark active color in dark theme → white outline on the dot */
+.dark-theme .component-color-indicator.color-btn--extreme-dark::after,
+.dark .component-color-indicator.color-btn--extreme-dark::after,
+[data-theme="dark"] .component-color-indicator.color-btn--extreme-dark::after {
+    --indicator-border-color: rgba(255, 255, 255, 0.20);
+}
+
+/* Very light active color in light theme → dark outline on the dot */
+.component-color-indicator.color-btn--extreme-light::after {
+    --indicator-border-color: rgba(0, 0, 0, 0.20);
+}
+/* In dark theme light colors are visible — no outline needed */
+.dark-theme .component-color-indicator.color-btn--extreme-light::after,
+.dark .component-color-indicator.color-btn--extreme-light::after,
+[data-theme="dark"] .component-color-indicator.color-btn--extreme-light::after {
+    --indicator-border-color: transparent;
 }
 
 .component-module--dropdown-picker {

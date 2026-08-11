@@ -252,6 +252,7 @@ export const DesignInteractions = {
             
             if (this.btnColorPalette) {
                 this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
+                this.applyColorBorderStyle(this.btnColorPalette, this.currentColor);
             }
             
             this.updateActiveColorPreview();
