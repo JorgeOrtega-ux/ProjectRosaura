@@ -9,7 +9,31 @@ if (isset($userId) && isset($_SESSION['accounts'][$userId]['user_name'])) {
     $chatUsername = $_SESSION['accounts'][$userId]['user_name'];
 }
 
-$canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id']) ? $canvas['owner_id'] : ($canvas['user_id'] ?? null)) == $userId) ? '1' : '0';
+$canModerateChat = '0';
+if (isset($userId) && isset($canvasIntId)) {
+    if (isset($isOwner) && $isOwner) {
+        $canModerateChat = '1';
+    } else {
+        try {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdoCanvases = $db->getConnection(defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
+            $sql = "SELECT 1 
+                    FROM canvas_user_roles cur
+                    INNER JOIN canvas_roles r ON cur.role_id = r.id
+                    INNER JOIN canvas_role_permissions crp ON r.id = crp.role_id
+                    INNER JOIN canvas_permissions p ON crp.permission_id = p.id
+                    WHERE cur.canvas_id = ? 
+                      AND cur.user_id = ? 
+                      AND p.name IN ('manage_sanctions', 'moderate_chat')
+                    LIMIT 1";
+            $stmt = $pdoCanvases->prepare($sql);
+            $stmt->execute([$canvasIntId, $userId]);
+            if ((bool)$stmt->fetchColumn()) {
+                $canModerateChat = '1';
+            }
+        } catch (\Exception $e) {}
+    }
+}
 
 $maxImages = \App\Core\System\ChatConstants::CHAT_MAX_IMAGES;
 $userTier = 0;

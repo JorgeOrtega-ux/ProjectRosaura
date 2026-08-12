@@ -124,6 +124,7 @@ if ($isLoggedIn) {
             <?php else: ?>
                 <button class="component-button component-button--profile role-dynamic" 
                         data-role-bg="<?php echo $activeRoleBg; ?>"
+                        style="--active-role-bg: <?php echo $activeRoleBg; ?>;"
                         data-action="toggleModule" 
                         data-target="moduleMainOptions" 
                         data-tooltip="<?php echo __('tooltip_options_account'); ?>" 

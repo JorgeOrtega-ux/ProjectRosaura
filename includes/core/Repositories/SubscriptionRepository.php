@@ -3,16 +3,20 @@
 namespace App\Core\Repositories;
 
 use App\Config\Database\DatabaseManager;
+use App\Config\Database\RedisCache;
 use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use App\Core\System\DatabaseConstants as DB;
+use App\Core\System\CacheConstants;
 use App\Core\System\Logger;
 
 class SubscriptionRepository implements SubscriptionRepositoryInterface {
 
     private $db;
+    private $redisClient;
 
-    public function __construct(DatabaseManager $db) {
+    public function __construct(DatabaseManager $db, RedisCache $redisCache = null) {
         $this->db = $db;
+        $this->redisClient = $redisCache ? $redisCache->getClient() : null;
     }
 
     public function createSubscription(array $data): int {
@@ -36,13 +40,31 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
     }
 
     public function findActiveByUserId(int $userId): ?array {
+        $cacheKey = CacheConstants::PREFIX_USER_SUBSCRIPTION . $userId;
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    return json_decode($cached, true) ?: null;
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $pdo = $this->db->getConnection(DB::CONN_IDENTITY);
         $stmt = $pdo->prepare(
             "SELECT * FROM subscriptions WHERE user_id = :user_id AND status = 'active' ORDER BY created_at DESC LIMIT 1"
         );
         $stmt->execute([':user_id' => $userId]);
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $result ?: null;
+        $result = $result ?: null;
+
+        if ($this->redisClient) {
+            try {
+                $this->redisClient->setex($cacheKey, CacheConstants::TTL_TEN_MINS, json_encode($result));
+            } catch (\Throwable $e) {}
+        }
+
+        return $result;
     }
 
     public function updateByCheckoutSessionId(string $sessionId, array $data): bool {
@@ -56,7 +78,11 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
         if (empty($sets)) return false;
         $sql = "UPDATE subscriptions SET " . implode(', ', $sets) . " WHERE stripe_checkout_session_id = :session_id";
         $stmt = $pdo->prepare($sql);
-        return $stmt->execute($params);
+        $result = $stmt->execute($params);
+        if ($result && isset($data['user_id']) && $this->redisClient) {
+            try { $this->redisClient->del(CacheConstants::PREFIX_USER_SUBSCRIPTION . $data['user_id']); } catch (\Throwable $e) {}
+        }
+        return $result;
     }
 
     public function updateByStripeSubscriptionId(string $stripeSubId, array $data): bool {
@@ -70,7 +96,11 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
         if (empty($sets)) return false;
         $sql = "UPDATE subscriptions SET " . implode(', ', $sets) . " WHERE stripe_subscription_id = :stripe_sub_id";
         $stmt = $pdo->prepare($sql);
-        return $stmt->execute($params);
+        $result = $stmt->execute($params);
+        if ($result && isset($data['user_id']) && $this->redisClient) {
+            try { $this->redisClient->del(CacheConstants::PREFIX_USER_SUBSCRIPTION . $data['user_id']); } catch (\Throwable $e) {}
+        }
+        return $result;
     }
 
     public function findByCheckoutSessionId(string $sessionId): ?array {
@@ -92,12 +122,11 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
     public function createPaymentRecord(array $data): int {
         $pdo = $this->db->getConnection(DB::CONN_IDENTITY);
 
-        // Prevent duplicate records for the same Invoice or Payment Intent
         if (!empty($data['stripe_invoice_id'])) {
             $check = $pdo->prepare("SELECT id FROM payment_history WHERE stripe_invoice_id = ? LIMIT 1");
             $check->execute([$data['stripe_invoice_id']]);
             if ($check->fetchColumn()) {
-                return 0; // Already processed
+                return 0;
             }
         }
 
@@ -105,7 +134,7 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
             $check = $pdo->prepare("SELECT id FROM payment_history WHERE stripe_payment_intent_id = ? LIMIT 1");
             $check->execute([$data['stripe_payment_intent_id']]);
             if ($check->fetchColumn()) {
-                return 0; // Already processed
+                return 0;
             }
         }
 
@@ -122,10 +151,29 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
             ':description' => $data['description'] ?? null,
             ':status' => $data['status'] ?? 'succeeded'
         ]);
-        return (int) $pdo->lastInsertId();
+        $id = (int) $pdo->lastInsertId();
+
+        // Invalidate payment history cache so next fetch reflects the new record
+        if ($id && $this->redisClient) {
+            try { $this->redisClient->del(CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $data['user_id']); } catch (\Throwable $e) {}
+        }
+
+        return $id;
     }
 
     public function getPaymentHistory(int $userId, int $limit = 20, int $offset = 0): array {
+        // Cache only the first default page to avoid key explosion
+        $cacheKey = null;
+        if ($this->redisClient && $offset === 0 && $limit === 20) {
+            $cacheKey = CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId;
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    return json_decode($cached, true) ?? [];
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $pdo = $this->db->getConnection(DB::CONN_IDENTITY);
         $stmt = $pdo->prepare(
             "SELECT id, stripe_payment_intent_id, stripe_invoice_id, amount_cents, currency, description, status, created_at
@@ -135,13 +183,28 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
         $stmt->bindValue(':lim', $limit, \PDO::PARAM_INT);
         $stmt->bindValue(':off', $offset, \PDO::PARAM_INT);
         $stmt->execute();
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        if ($cacheKey && $this->redisClient) {
+            try {
+                $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($result));
+            } catch (\Throwable $e) {}
+        }
+
+        return $result;
     }
 
     public function updateUserTier(int $userId, int $tier): bool {
         $pdo = $this->db->getConnection(DB::CONN_IDENTITY);
         $stmt = $pdo->prepare("UPDATE users SET subscription_tier = :tier WHERE id = :id");
-        return $stmt->execute([':tier' => $tier, ':id' => $userId]);
+        $result = $stmt->execute([':tier' => $tier, ':id' => $userId]);
+        if ($result && $this->redisClient) {
+            try {
+                $this->redisClient->del(CacheConstants::PREFIX_USER_SUBSCRIPTION . $userId);
+                $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+            } catch (\Throwable $e) {}
+        }
+        return $result;
     }
 
     public function updateUserStripeCustomerId(int $userId, string $customerId): bool {

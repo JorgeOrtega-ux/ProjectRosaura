@@ -74,6 +74,29 @@ class CanvasAccessService {
                 return ['success' => false, 'message' => __('err_cannot_change_owner_roles')];
             }
 
+            $requesterWeight = $isOwner ? 100 : $this->canvasRepository->getUserCanvasWeight($requesterId, $canvasId);
+            
+            if (!empty($roles)) {
+                $placeholders = implode(',', array_fill(0, count($roles), '?'));
+                $db = new DatabaseManager();
+                $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
+                $stmt = $pdo->prepare("SELECT id, name, weight FROM canvas_roles WHERE id IN ($placeholders) AND (canvas_id = ? OR canvas_id IS NULL)");
+                $stmt->execute(array_merge($roles, [$canvasId]));
+                $rolesData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach ($rolesData as $role) {
+                    $roleWeight = (int)$role['weight'];
+                    if (!$isOwner) {
+                        if ($roleWeight >= $requesterWeight) {
+                            return ['success' => false, 'message' => __('err_cannot_assign_high_role') ?: 'No puedes asignar roles con jerarquía igual o superior a la tuya.'];
+                        }
+                    }
+                    if ($roleWeight >= 100 && !$isOwner) {
+                        return ['success' => false, 'message' => __('err_role_protected') ?: 'El rol SuperAdministrator está protegido y solo puede ser asignado por el propietario del lienzo.'];
+                    }
+                }
+            }
+
             $success = $this->canvasRepository->syncUserRoles($canvasId, $targetUserId, $roles);
             if ($success) return ['success' => true, 'message' => __('msg_roles_updated')];
             

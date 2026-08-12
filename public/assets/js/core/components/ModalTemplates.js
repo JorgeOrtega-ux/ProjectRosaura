@@ -159,107 +159,445 @@ export const ModalTemplates = {
     welcomeUserModal: {
         noPadding: true,
         build: () => {
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="step-modal-container">
-                    <div class="step-modal-banner">
-                        <img src="assets/img/welcome-banner.png" alt="Welcome Banner" onerror="this.style.display='none'">
+            const modalId = 'welcome-user';
+
+            // Define los pasos del modal de bienvenida
+            const steps = [
+                {
+                    id: 'welcome-step-1',
+                    title: window.__('welcome_modal_step1_title'),
+                    description: window.__('welcome_modal_step1_desc'),
+                    icons: ['rocket_launch']
+                },
+                {
+                    id: 'welcome-step-2',
+                    title: window.__('welcome_modal_step2_title'),
+                    description: window.__('welcome_modal_step2_desc'),
+                    icons: ['palette']
+                },
+                {
+                    id: 'welcome-step-3',
+                    title: window.__('welcome_modal_step3_title'),
+                    description: window.__('welcome_modal_step3_desc'),
+                    icons: ['bolt']
+                }
+            ];
+
+            let stepsHtml = '';
+            steps.forEach((step, idx) => {
+                const isActive = idx === 0 ? 'active' : '';
+
+                let tilesHtml = '';
+                const stepIcons = step.icons || [];
+                stepIcons.forEach(icon => {
+                    tilesHtml += `
+                        <div class="onboarding-tour-icon-tile">
+                            <span class="material-symbols-rounded msr-${icon}">${icon}</span>
+                        </div>
+                    `;
+                });
+
+                let dotsHtml = `
+                    <div class="step-modal-dots">
+                        <div class="step-modal-dot ${idx === 0 ? 'active' : ''}" data-step-target="welcome-step-1"></div>
+                        <div class="step-modal-dot ${idx === 1 ? 'active' : ''}" data-step-target="welcome-step-2"></div>
+                        <div class="step-modal-dot ${idx === 2 ? 'active' : ''}" data-step-target="welcome-step-3"></div>
                     </div>
+                `;
+
+                let actionsHtml = '';
+                if (idx === 0) {
+                    actionsHtml = `
+                        <div class="step-modal-actions">
+                            <button class="component-button component-button--h40 component-button--dark" data-step-target="welcome-step-2">
+                                ${window.__('welcome_modal_btn_next')}
+                            </button>
+                        </div>
+                    `;
+                } else if (idx === 1) {
+                    actionsHtml = `
+                        <div class="step-modal-actions">
+                            <button class="component-button component-button--h40 component-button--dark" data-step-target="welcome-step-3">
+                                ${window.__('welcome_modal_btn_next')}
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    actionsHtml = `
+                        <div class="step-modal-actions">
+                            <button class="component-button component-button--h40 component-button--dark" data-modal-action="finish">
+                                ${window.__('welcome_modal_btn_finish')}
+                            </button>
+                        </div>
+                    `;
+                }
+
+                let featuresHtml = '';
+                if (step.features && step.features.length > 0) {
+                    featuresHtml = `<div class="welcome-features-list">`;
+                    step.features.forEach(feat => {
+                        featuresHtml += `
+                            <div class="welcome-feature-item">
+                                <div class="welcome-feature-icon">
+                                    <span class="material-symbols-rounded component-icon-sm msr-${feat.icon}">${feat.icon}</span>
+                                </div>
+                                <div class="welcome-feature-text">
+                                    <span class="welcome-feature-title">${feat.title}</span>
+                                    <span class="welcome-feature-desc">${feat.description}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    featuresHtml += `</div>`;
+                }
+
+                stepsHtml += `
+                    <div class="step-modal-step onboarding-tour-step ${isActive}" id="${step.id}">
+                        <div class="onboarding-tour-banner">
+                            ${tilesHtml}
+                        </div>
+                        <div class="onboarding-tour-body">
+                            <h2 class="component-modal-title">${step.title}</h2>
+                            <p class="component-modal-desc step-modal-desc">
+                                ${step.description}
+                            </p>
+                            ${featuresHtml}
+                            ${dotsHtml}
+                            ${actionsHtml}
+                        </div>
+                    </div>
+                `;
+            });
+
+            return `
+                <style>
+                    .onboarding-tour-modal-wrapper {
+                        position: relative;
+                        width: 100%;
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    .onboarding-tour-container.step-modal-content {
+                        padding: 0 !important;
+                        display: flex;
+                        flex-direction: column;
+                        width: 100%;
+                        min-height: 480px;
+                        max-height: 90vh;
+                        background: var(--bg-surface);
+                        overflow: hidden;
+                    }
+                    .onboarding-tour-step {
+                        display: none;
+                        flex-direction: column;
+                        flex: 1;
+                        animation: fadeIn 0.3s ease;
+                    }
+                    .onboarding-tour-step.active {
+                        display: flex;
+                    }
+                    .onboarding-tour-banner {
+                        width: 100%;
+                        height: 215px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 20px;
+                        flex-shrink: 0;
+                        background: linear-gradient(135deg, rgba(186, 230, 253, 0.75) 0%, rgba(224, 204, 254, 0.7) 60%, rgba(199, 210, 254, 0.75) 100%);
+                        position: relative;
+                        overflow: hidden;
+                    }
+
+                    .onboarding-tour-banner::after {
+                        content: '';
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 56px;
+                        background: linear-gradient(to bottom, transparent, var(--bg-surface));
+                        pointer-events: none;
+                    }
                     
-                    <div class="step-modal-content">
-                        <div class="step-modal-step active" id="welcome-step-1">
-                            <h2 class="component-modal-title">${window.__('welcome_modal_step1_title')}</h2>
-                            <p class="component-modal-desc step-modal-desc">
-                                ${window.__('welcome_modal_step1_desc')}
-                            </p>
-                            
-                            <div class="step-modal-dots">
-                                <div class="step-modal-dot active"></div>
-                                <div class="step-modal-dot" data-step-target="welcome-step-2"></div>
-                                <div class="step-modal-dot" data-step-target="welcome-step-3"></div>
-                            </div>
+                    .dark-theme .onboarding-tour-banner,
+                    [data-theme="dark"] .onboarding-tour-banner {
+                        background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(49, 46, 129, 0.75) 50%, rgba(76, 29, 149, 0.7) 100%);
+                    }
 
-                            <div class="step-modal-actions">
-                                <button class="component-button component-button--h40 component-button--dark" data-step-target="welcome-step-2">
-                                    ${window.__('welcome_modal_btn_next')}
-                                </button>
-                            </div>
+                    .onboarding-tour-icon-tile {
+                        width: 65px;
+                        height: 65px;
+                        border-radius: 16px;
+                        background: rgba(255, 255, 255, 0.75);
+                        border: 1px solid rgba(255, 255, 255, 0.4);
+                        backdrop-filter: blur(12px);
+                        -webkit-backdrop-filter: blur(12px);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
+                    }
+
+                    .dark-theme .onboarding-tour-icon-tile,
+                    [data-theme="dark"] .onboarding-tour-icon-tile {
+                        background: rgba(255, 255, 255, 0.07);
+                        border-color: rgba(255, 255, 255, 0.08);
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+                    }
+
+                    .onboarding-tour-icon-tile .material-symbols-rounded {
+                        font-size: 30px;
+                        color: #0f172a;
+                        line-height: 1;
+                    }
+
+                    .dark-theme .onboarding-tour-icon-tile .material-symbols-rounded,
+                    [data-theme="dark"] .onboarding-tour-icon-tile .material-symbols-rounded {
+                        color: #f8fafc;
+                    }
+
+                    .onboarding-tour-body {
+                        padding: 24px;
+                        display: flex;
+                        flex-direction: column;
+                        flex: 1;
+                        overflow-y: auto;
+                    }
+
+                    @media (max-width: 768px) {
+                        .onboarding-tour-modal-wrapper .pill-container {
+                            position: absolute !important;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            z-index: 10;
+                            background: transparent !important;
+                        }
+                        .onboarding-tour-banner {
+                            padding-top: 24px;
+                        }
+                    }
+                </style>
+                <div class="onboarding-tour-modal-wrapper">
+                    <div class="pill-container"><div class="drag-handle"></div></div>
+                    <div class="onboarding-tour-container step-modal-content">
+                        ${stepsHtml}
+                    </div>
+                </div>
+            `;
+        }
+    },
+
+    onboardingTourModal: {
+        noPadding: true,
+        build: (data) => {
+            const steps = data.steps || [];
+            const modalId = data.modalId || 'onboarding-tour';
+            
+            let stepsHtml = '';
+            steps.forEach((step, idx) => {
+                const isActive = idx === 0 ? 'active' : '';
+                const stepNum = idx + 1;
+
+                let tilesHtml = '';
+                const stepIcons = step.icons || ['info'];
+                stepIcons.forEach(icon => {
+                    tilesHtml += `
+                        <div class="onboarding-tour-icon-tile">
+                            <span class="material-symbols-rounded msr-${icon}">${icon}</span>
                         </div>
+                    `;
+                });
 
-                        <!-- Step 2 -->
-                        <div class="step-modal-step" id="welcome-step-2">
-                            <h2 class="component-modal-title">${window.__('welcome_modal_step2_title')}</h2>
-                            <p class="component-modal-desc step-modal-desc">
-                                ${window.__('welcome_modal_step2_desc')}
-                            </p>
-                            
-                            <div class="step-modal-dots">
-                                <div class="step-modal-dot" data-step-target="welcome-step-1"></div>
-                                <div class="step-modal-dot active"></div>
-                                <div class="step-modal-dot" data-step-target="welcome-step-3"></div>
-                            </div>
+                let dotsHtml = '';
+                if (steps.length > 1) {
+                    dotsHtml = `<div class="step-modal-dots">`;
+                    steps.forEach((_, dotIdx) => {
+                        const isDotActive = dotIdx === idx ? 'active' : '';
+                        dotsHtml += `<div class="step-modal-dot ${isDotActive}" data-step-target="${modalId}-step-${dotIdx + 1}"></div>`;
+                    });
+                    dotsHtml += `</div>`;
+                }
 
-                            <div class="step-modal-actions">
-                                <button class="component-button component-button--h40 component-button--dark" data-step-target="welcome-step-3">
-                                    ${window.__('welcome_modal_btn_next')}
-                                </button>
-                            </div>
+                let actionsHtml = '';
+                const backBtn = idx > 0 ? `
+                    <button class="component-button component-button--h40 component-button--ghost" data-step-target="${modalId}-step-${idx}">
+                        ${window.__('btn_back') || 'Atrás'}
+                    </button>
+                ` : '';
+
+                if (idx < steps.length - 1) {
+                    actionsHtml = `
+                        <div class="step-modal-actions">
+                            ${backBtn}
+                            <button class="component-button component-button--h40 component-button--dark" data-step-target="${modalId}-step-${stepNum + 1}">
+                                ${window.__('onboarding_btn_next') || 'Siguiente'}
+                            </button>
                         </div>
-
-                        <!-- Step 3 -->
-                        <div class="step-modal-step" id="welcome-step-3">
-                            <h2 class="component-modal-title">${window.__('welcome_modal_step3_title')}</h2>
-                            <p class="component-modal-desc step-modal-desc">
-                                ${window.__('welcome_modal_step3_desc')}
-                            </p>
-                            
-                            <div class="welcome-features-list">
-                                <div class="welcome-feature-item">
-                                    <div class="welcome-feature-icon">
-                                        <span class="material-symbols-rounded component-icon-sm">cloud</span>
-                                    </div>
-                                    <div class="welcome-feature-text">
-                                        <span class="welcome-feature-title">${window.__('welcome_adv_storage_title')}</span>
-                                        <span class="welcome-feature-desc">${window.__('welcome_adv_storage_desc')}</span>
-                                    </div>
-                                </div>
-
-                                <div class="welcome-feature-item">
-                                    <div class="welcome-feature-icon">
-                                        <span class="material-symbols-rounded component-icon-sm">palette</span>
-                                    </div>
-                                    <div class="welcome-feature-text">
-                                        <span class="welcome-feature-title">${window.__('welcome_adv_tools_title')}</span>
-                                        <span class="welcome-feature-desc">${window.__('welcome_adv_tools_desc')}</span>
-                                    </div>
-                                </div>
-
-                                <div class="welcome-feature-item">
-                                    <div class="welcome-feature-icon">
-                                        <span class="material-symbols-rounded component-icon-sm">bolt</span>
-                                    </div>
-                                    <div class="welcome-feature-text">
-                                        <span class="welcome-feature-title">${window.__('welcome_adv_speed_title')}</span>
-                                        <span class="welcome-feature-desc">${window.__('welcome_adv_speed_desc')}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="step-modal-dots">
-                                <div class="step-modal-dot" data-step-target="welcome-step-1"></div>
-                                <div class="step-modal-dot" data-step-target="welcome-step-2"></div>
-                                <div class="step-modal-dot active"></div>
-                            </div>
-
-                            <div class="step-modal-actions">
-                                <button class="component-button component-button--h40 component-button--ghost" data-nav="/upgrade" data-action="close_modal">
-                                    ${window.__('btn_more_info')}
-                                </button>
-                                <button class="component-button component-button--h40 component-button--dark" data-modal-action="finish">
-                                    ${window.__('welcome_modal_btn_finish')}
-                                </button>
-                            </div>
+                    `;
+                } else {
+                    actionsHtml = `
+                        <div class="step-modal-actions">
+                            ${backBtn}
+                            <button class="component-button component-button--h40 component-button--dark" data-modal-action="finish">
+                                ${window.__('onboarding_btn_finish') || 'Entendido'}
+                            </button>
                         </div>
+                    `;
+                }
+
+                let featuresHtml = '';
+                if (step.features && step.features.length > 0) {
+                    featuresHtml = `<div class="welcome-features-list">`;
+                    step.features.forEach(feat => {
+                        featuresHtml += `
+                            <div class="welcome-feature-item">
+                                <div class="welcome-feature-icon">
+                                    <span class="material-symbols-rounded component-icon-sm">${feat.icon || 'star'}</span>
+                                </div>
+                                <div class="welcome-feature-text">
+                                    <span class="welcome-feature-title">${feat.title}</span>
+                                    <span class="welcome-feature-desc">${feat.description}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    featuresHtml += `</div>`;
+                }
+
+                stepsHtml += `
+                    <div class="step-modal-step onboarding-tour-step ${isActive}" id="${modalId}-step-${stepNum}">
+                        <div class="onboarding-tour-banner">
+                            ${tilesHtml}
+                        </div>
+                        <div class="onboarding-tour-body">
+                            <h2 class="component-modal-title">${step.title}</h2>
+                            <p class="component-modal-desc step-modal-desc">
+                                ${step.description}
+                            </p>
+                            ${featuresHtml}
+                            ${dotsHtml}
+                            ${actionsHtml}
+                        </div>
+                    </div>
+                `;
+            });
+
+            return `
+                <style>
+                    .onboarding-tour-modal-wrapper {
+                        position: relative;
+                        width: 100%;
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    .onboarding-tour-container.step-modal-content {
+                        padding: 0 !important;
+                        display: flex;
+                        flex-direction: column;
+                        width: 100%;
+                        min-height: 480px;
+                        max-height: 90vh;
+                        background: var(--bg-surface);
+                        overflow: hidden;
+                    }
+                    .onboarding-tour-step {
+                        display: none;
+                        flex-direction: column;
+                        flex: 1;
+                        animation: fadeIn 0.3s ease;
+                    }
+                    .onboarding-tour-step.active {
+                        display: flex;
+                    }
+                    .onboarding-tour-banner {
+                        width: 100%;
+                        height: 215px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 20px;
+                        flex-shrink: 0;
+                        background: linear-gradient(135deg, rgba(186, 230, 253, 0.75) 0%, rgba(224, 204, 254, 0.7) 60%, rgba(199, 210, 254, 0.75) 100%);
+                        position: relative;
+                        overflow: hidden;
+                    }
+
+                    .onboarding-tour-banner::after {
+                        content: '';
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 56px;
+                        background: linear-gradient(to bottom, transparent, var(--bg-surface));
+                        pointer-events: none;
+                    }
+                    
+                    .dark-theme .onboarding-tour-banner,
+                    [data-theme="dark"] .onboarding-tour-banner {
+                        background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(49, 46, 129, 0.75) 50%, rgba(76, 29, 149, 0.7) 100%);
+                    }
+
+                    .onboarding-tour-icon-tile {
+                        width: 65px;
+                        height: 65px;
+                        border-radius: 16px;
+                        background: rgba(255, 255, 255, 0.75);
+                        border: 1px solid rgba(255, 255, 255, 0.4);
+                        backdrop-filter: blur(12px);
+                        -webkit-backdrop-filter: blur(12px);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
+                    }
+
+                    .dark-theme .onboarding-tour-icon-tile,
+                    [data-theme="dark"] .onboarding-tour-icon-tile {
+                        background: rgba(255, 255, 255, 0.07);
+                        border-color: rgba(255, 255, 255, 0.08);
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+                    }
+
+                    .onboarding-tour-icon-tile .material-symbols-rounded {
+                        font-size: 30px;
+                        color: #0f172a;
+                        line-height: 1;
+                    }
+
+                    .dark-theme .onboarding-tour-icon-tile .material-symbols-rounded,
+                    [data-theme="dark"] .onboarding-tour-icon-tile .material-symbols-rounded {
+                        color: #f8fafc;
+                    }
+
+                    .onboarding-tour-body {
+                        padding: 24px;
+                        display: flex;
+                        flex-direction: column;
+                        flex: 1;
+                        overflow-y: auto;
+                    }
+
+                    @media (max-width: 768px) {
+                        .onboarding-tour-modal-wrapper .pill-container {
+                            position: absolute !important;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            z-index: 10;
+                            background: transparent !important;
+                        }
+                        .onboarding-tour-banner {
+                            padding-top: 24px;
+                        }
+                    }
+                </style>
+                <div class="onboarding-tour-modal-wrapper">
+                    <div class="pill-container"><div class="drag-handle"></div></div>
+                    <div class="onboarding-tour-container step-modal-content">
+                        ${stepsHtml}
                     </div>
                 </div>
             `;

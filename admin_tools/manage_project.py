@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import time
 import json
@@ -10,6 +11,9 @@ import urllib.parse
 from http.cookiejar import CookieJar
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 # --- CONFIGURACIÓN ---
 WORDS_FILE = 'data/word.txt'
@@ -26,6 +30,134 @@ IGNORE_EXTENSIONS = {
     '.mp3', '.mp4', '.avi', '.mov', '.wav', '.flac',
     '.ttf', '.otf', '.woff', '.woff2', '.eot',
     '.exe', '.dll', '.so', '.dylib', '.bin', '.db', '.sqlite', '.mo', '.po'
+}
+
+# Extensiones válidas para el escaneo i18n (solo vistas y lógica de frontend/backend)
+I18N_TARGET_EXTENSIONS = {'.php', '.js'}
+
+# Palabras de programación en inglés que colisionan con palabras en español.
+# Estas son identificadores de código legítimos, no texto de usuario hardcodeado.
+PROGRAMMING_KEYWORDS = {
+    'use', 'catch', 'false', 'true', 'input', 'data', 'set', 'role', 'roles',
+    'error', 'file', 'files', 'active', 'date', 'response', 'prepare', 'time',
+    'cancel', 'invite', 'invites', 'bonus', 'color', 'colors', 'base', 'id',
+    'no', 're', 'as', 'are', 'has', 'not', 'var', 'let', 'do', 'in', 'if',
+    'else', 'for', 'new', 'null', 'return', 'this', 'class', 'function',
+    'import', 'export', 'from', 'const', 'static', 'public', 'private',
+    'protected', 'abstract', 'interface', 'namespace', 'try', 'throw',
+    'extends', 'implements', 'echo', 'print', 'list', 'array', 'object',
+    'string', 'int', 'float', 'bool', 'void', 'type', 'enum', 'struct',
+    'match', 'mod', 'move', 'ref', 'self', 'super', 'trait', 'where', 'with',
+    'async', 'await', 'break', 'continue', 'loop', 'while', 'map', 'ok',
+    'some', 'none', 'option', 'result', 'value', 'key', 'name', 'mode',
+    'api', 'spa', 'url', 'uri', 'http', 'https', 'html', 'css', 'json',
+    'null', 'true', 'false', 'undefined', 'nan', 'number', 'boolean',
+    'constructor', 'prototype', 'event', 'target', 'source', 'node',
+    'global', 'local', 'module', 'default', 'index', 'root', 'path',
+    'host', 'port', 'user', 'pass', 'token', 'hash', 'salt', 'code',
+    'test', 'spec', 'mock', 'stub', 'assert', 'expect', 'describe', 'it',
+    'error', 'warning', 'info', 'debug', 'log', 'trace', 'fatal',
+    'get', 'set', 'post', 'put', 'delete', 'patch', 'head', 'options',
+    'request', 'response', 'header', 'body', 'query', 'param', 'form',
+    'status', 'code', 'message', 'data', 'result', 'success', 'error',
+    'start', 'stop', 'run', 'init', 'load', 'save', 'open', 'close',
+    'read', 'write', 'send', 'receive', 'connect', 'disconnect', 'join',
+    'split', 'trim', 'replace', 'match', 'search', 'find', 'filter',
+    'map', 'reduce', 'sort', 'reverse', 'slice', 'splice', 'push', 'pop',
+    'shift', 'unshift', 'concat', 'join', 'keys', 'values', 'entries',
+    'has', 'get', 'set', 'add', 'delete', 'clear', 'size', 'length',
+    'top', 'bottom', 'left', 'right', 'center', 'width', 'height',
+    'position', 'display', 'flex', 'grid', 'block', 'inline', 'hidden',
+    'visible', 'absolute', 'relative', 'fixed', 'auto', 'none', 'normal',
+    'bold', 'italic', 'regular', 'light', 'dark', 'white', 'black', 'gray',
+    'red', 'green', 'blue', 'yellow', 'orange', 'purple', 'pink', 'brown',
+    'alpha', 'beta', 'delta', 'gamma', 'sigma', 'omega', 'lambda',
+    'canvas', 'context', 'buffer', 'stream', 'channel', 'socket', 'proxy',
+    'session', 'cookie', 'cache', 'store', 'queue', 'stack', 'list',
+    'tree', 'graph', 'node', 'edge', 'vertex', 'root', 'leaf', 'branch',
+    'idea', 'archive', 'data', 'web', 'net', 'app', 'server', 'client',
+    'email', 'avatar', 'image', 'icon', 'logo', 'banner', 'badge', 'label',
+    'input', 'output', 'log', 'alias', 'container', 'wrapper', 'slot',
+    'central', 'business', 'modal', 'tab', 'panel', 'sidebar', 'menu',
+    'header', 'footer', 'content', 'section', 'row', 'col', 'column',
+    'plus', 'minus', 'times', 'divide', 'equal', 'less', 'greater',
+    'and', 'or', 'not', 'xor', 'bit', 'byte', 'char', 'text', 'hex',
+    'base', 'offset', 'index', 'limit', 'max', 'min', 'sum', 'avg',
+    'count', 'total', 'used', 'free', 'busy', 'idle', 'ready', 'done',
+    'ok', 'fail', 'pass', 'skip', 'next', 'prev', 'first', 'last',
+    'version', 'release', 'build', 'tag', 'ref', 'commit', 'branch', 'fork',
+    'rules', 'uses', 'note', 'feedback', 'rule', 'action', 'handler',
+    'worker', 'job', 'task', 'process', 'thread', 'fiber', 'coroutine',
+    'suspend', 'resume', 'abort', 'reset', 'flush', 'drain', 'pause',
+    'play', 'seek', 'mute', 'volume', 'rate', 'speed', 'frame', 'tick',
+    'event', 'trigger', 'emit', 'on', 'off', 'once', 'listener', 'callback',
+    'promise', 'resolve', 'reject', 'then', 'catch', 'finally', 'async',
+    'file', 'dir', 'path', 'name', 'ext', 'size', 'type', 'mode', 'perm',
+    'link', 'symlink', 'mount', 'unmount', 'drive', 'volume', 'disk',
+    'cpu', 'ram', 'gpu', 'io', 'net', 'mem', 'sys', 'os', 'env',
+    'date', 'time', 'now', 'today', 'year', 'month', 'day', 'hour',
+    'minute', 'second', 'ms', 'ns', 'us', 'timestamp', 'interval',
+    'timeout', 'delay', 'sleep', 'wait', 'poll', 'retry', 'backoff',
+    'error', 'exception', 'panic', 'fatal', 'critical', 'alert', 'notice',
+    'active', 'inactive', 'enabled', 'disabled', 'locked', 'unlocked',
+    'pending', 'running', 'stopped', 'failed', 'completed', 'cancelled',
+    'public', 'private', 'protected', 'internal', 'external', 'open', 'closed',
+    'raw', 'encoded', 'decoded', 'encrypted', 'decrypted', 'signed', 'verified',
+    'fa', 'i', 'j', 'k', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'z',
+    'has', 'is', 'to', 'be', 'of', 'in', 'on', 'at', 'by', 'up', 'go',
+    'la', 'de', 'al', 'tu', 'el', 'un', 'y', 'a', 'o', 'lo', 'le', 'me',
+    'si', 'ya', 'mi', 'su', 'te', 'se', 'no', 'en', 'es', 'ha', 'he',
+    'api', 'db', 'sql', 'orm', 'mvc', 'spa', 'ssr', 'csr', 'jwt', 'oauth',
+    'id', 'uuid', 'guid', 'md5', 'sha', 'aes', 'rsa', 'ssl', 'tls',
+    'png', 'jpg', 'gif', 'svg', 'mp3', 'mp4', 'pdf', 'zip', 'csv', 'xml',
+    'prepare', 'execute', 'fetch', 'query', 'bind', 'commit', 'rollback',
+    'true', 'false', 'null', 'undefined', 'nan', 'infinity',
+    'prototype', 'constructor', 'arguments', 'caller', 'callee',
+    'abstract', 'boolean', 'byte', 'char', 'double', 'final', 'float',
+    'goto', 'implements', 'instanceof', 'interface', 'long', 'native',
+    'package', 'short', 'strictfp', 'super', 'synchronized', 'throws',
+    'transient', 'volatile', 'assert', 'override', 'virtual', 'sealed',
+    'record', 'yield', 'match', 'when', 'unless', 'until', 'repeat',
+    'color', 'colour', 'role', 'file', 'style', 'class', 'item', 'view',
+    'modal', 'dialog', 'popup', 'toast', 'alert', 'confirm', 'prompt',
+    'form', 'field', 'label', 'input', 'button', 'link', 'image', 'video',
+    'table', 'row', 'cell', 'column', 'grid', 'list', 'item', 'card',
+    'nav', 'tabs', 'steps', 'wizard', 'drawer', 'dropdown', 'select',
+    'check', 'radio', 'toggle', 'switch', 'slider', 'range', 'spinner',
+    'loader', 'skeleton', 'placeholder', 'empty', 'blank', 'void',
+    'roles', 'rules', 'files', 'errors', 'items', 'nodes', 'links', 'pages',
+    'active', 'inactive', 'open', 'closed', 'visible', 'hidden', 'disabled',
+    'valid', 'invalid', 'required', 'optional', 'readonly', 'editable',
+    'sorted', 'filtered', 'grouped', 'paginated', 'cached', 'expired',
+    'suspend', 'suspended', 'blocked', 'banned', 'muted', 'reported',
+    'invite', 'invites', 'invited', 'inviting', 'join', 'joined', 'joining',
+    'leave', 'left', 'leaving', 'kick', 'kicked', 'kicking', 'ban', 'banned',
+    'post', 'posted', 'posting', 'comment', 'reply', 'replied', 'replying',
+    'like', 'liked', 'liking', 'share', 'shared', 'sharing', 'follow',
+    'followed', 'following', 'unfollow', 'unfollowed', 'unfollowing',
+    'block', 'blocked', 'blocking', 'unblock', 'unblocked', 'unblocking',
+    'report', 'reported', 'reporting', 'flag', 'flagged', 'flagging',
+    'approve', 'approved', 'approving', 'reject', 'rejected', 'rejecting',
+    'merge', 'merged', 'merging', 'split', 'archive', 'archived', 'archiving',
+    'restore', 'restored', 'restoring', 'delete', 'deleted', 'deleting',
+    'create', 'created', 'creating', 'update', 'updated', 'updating',
+    'insert', 'inserted', 'inserting', 'select', 'selected', 'selecting',
+    'load', 'loaded', 'loading', 'save', 'saved', 'saving', 'export',
+    'exported', 'exporting', 'import', 'imported', 'importing', 'upload',
+    'uploaded', 'uploading', 'download', 'downloaded', 'downloading',
+    'start', 'started', 'starting', 'stop', 'stopped', 'stopping',
+    'pause', 'paused', 'pausing', 'resume', 'resumed', 'resuming',
+    'cancel', 'cancelled', 'cancelling', 'abort', 'aborted', 'aborting',
+    'retry', 'retried', 'retrying', 'reset', 'resetting', 'refresh',
+    'refreshing', 'reload', 'reloaded', 'reloading', 'redirect', 'redirecting',
+    'scroll', 'scrolled', 'scrolling', 'click', 'clicked', 'clicking',
+    'hover', 'hovered', 'hovering', 'focus', 'focused', 'focusing',
+    'blur', 'blurred', 'blurring', 'resize', 'resized', 'resizing',
+    'drag', 'dragged', 'dragging', 'drop', 'dropped', 'dropping',
+    'submit', 'submitted', 'submitting', 'validate', 'validated', 'validating',
+    'parse', 'parsed', 'parsing', 'compile', 'compiled', 'compiling',
+    'render', 'rendered', 'rendering', 'mount', 'mounted', 'mounting',
+    'unmount', 'unmounted', 'unmounting', 'destroy', 'destroyed', 'destroying',
 }
 
 class Colors:
@@ -183,15 +315,63 @@ def load_words(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
         return set([line.strip().lower() for line in f if line.strip()])
 
-def search_in_file(filepath, words_pattern):
-    """Busca las palabras en un archivo usando una expresión regular compilada"""
+# Patrones de líneas de código puro que no pueden contener texto hardcodeado de usuario.
+# Se excluyen del escaneo i18n para eliminar falsos positivos.
+_CODE_LINE_PATTERNS = re.compile(
+    r'^\s*('
+    r'(import|use|from|require|include|namespace)\s'  # imports/namespaces
+    r'|(?:public|private|protected|static|abstract|async|fn|func|def|pub|async\s+fn)\s+\w+'  # function/method decl
+    r'|(?:class|interface|trait|enum|struct|type|record)\s+\w+'  # class/type decl
+    r'|(?:const|let|var|this\.\w+\s*=\s*new)\s'  # var declarations with no strings
+    r'|(?:\$this->|self::|static::)'  # PHP method chains
+    r'|(?:catch\s*\()'  # catch blocks
+    r'|(?:\/\/|\/\*|\*|#).*$'  # comments (entire comment lines)
+    r')',
+    re.IGNORECASE
+)
+
+# Patrón para detectar si una palabra aparece DENTRO de una cadena de texto,
+# lo cual es más probable que sea texto hardcodeado real.
+_STRING_CONTEXT_PATTERN = re.compile(r'["\']([^"\']*)["\']]')
+
+def search_in_file(filepath, search_target):
+    """Busca las palabras en un archivo usando un set de palabras con filtros anti-falsos-positivos"""
     results = []
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
-            for line_num, line in enumerate(f, 1):
-                matches = words_pattern.findall(line.lower())
-                for match in matches:
-                    results.append((line_num, match, line.strip()))
+            if isinstance(search_target, set):
+                word_pattern = re.compile(r'[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]+')
+                # Patron para encontrar contenido dentro de strings
+                string_content_re = re.compile(r'["\']([^"\'\n]*?)["\']')
+                for line_num, line in enumerate(f, 1):
+                    stripped = line.strip()
+                    if not stripped:
+                        continue
+                    # Saltar líneas que son solo código puro (sin strings)
+                    if _CODE_LINE_PATTERNS.match(stripped):
+                        continue
+                    # Saltar líneas sin ningun string literal entre comillas
+                    string_matches = string_content_re.findall(stripped)
+                    if not string_matches:
+                        continue
+                    # Solo buscar palabras dentro del contenido de los strings
+                    already_reported = set()
+                    for string_content in string_matches:
+                        words_found = word_pattern.findall(string_content)
+                        for w in words_found:
+                            if len(w) <= 2:
+                                continue
+                            w_lower = w.lower()
+                            if w_lower in PROGRAMMING_KEYWORDS:
+                                continue
+                            if w_lower in search_target and w_lower not in already_reported:
+                                already_reported.add(w_lower)
+                                results.append((line_num, w, line.strip()))
+            else:
+                for line_num, line in enumerate(f, 1):
+                    matches = search_target.findall(line.lower())
+                    for match in matches:
+                        results.append((line_num, match, line.strip()))
     except (UnicodeDecodeError, OSError):
         pass
     return results
@@ -397,9 +577,7 @@ def main():
             print(f"{Colors.FAIL}Error: No se encontró el archivo {WORDS_FILE}{Colors.ENDC}")
             return
         words_to_search = load_words(words_path)
-        escaped_words = [re.escape(w) for w in words_to_search]
-        pattern_string = r'(?<![\w\-])(' + '|'.join(escaped_words) + r')(?![\w\-])'
-        search_pattern = re.compile(pattern_string, re.IGNORECASE)
+        search_pattern = words_to_search
         print(f"{Colors.HEADER}{Colors.BOLD}Starting advanced i18n scan...{Colors.ENDC}")
         print(f"Searching for {Colors.BLUE}{len(words_to_search)}{Colors.ENDC} keywords.")
         report_title = "Internationalization Scan Report"
@@ -414,7 +592,15 @@ def main():
         report_title = "Debug Code Report"
 
     files_to_scan = get_files_to_scan(target_path)
-    if choice == '2':
+    if choice == '1':
+        files_to_scan = [
+            f for f in files_to_scan
+            if os.path.splitext(f)[1].lower() in I18N_TARGET_EXTENSIONS
+            and not os.path.basename(f).startswith('.')
+            and '.min.' not in os.path.basename(f)
+            and 'emailtemplates.php' not in f.lower()
+        ]
+    elif choice == '2':
         files_to_scan = [f for f in files_to_scan if f.lower().endswith(('.php', '.js')) and 'emailtemplates.php' not in f.lower()]
     elif choice == '3':
         files_to_scan = [f for f in files_to_scan if f.lower().endswith(('.php', '.js', '.ts', '.vue'))]

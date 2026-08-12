@@ -25,7 +25,6 @@ export class DesignChat {
         this.isFirstRenderScrollPending = true;
         this.currentUserId = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.userId || null;
         this.currentUsername = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.username || window.__('user');
-        this.canModerateChat = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.canModerate === '1';
         this.currentUserAvatar = document.querySelector('.header .component-button--profile img')?.getAttribute('src') || null;
         this.currentUserSubColor = document.querySelector('.header .component-button--profile.role-dynamic')?.dataset.roleBg || null;
 
@@ -43,6 +42,10 @@ export class DesignChat {
         if (this.isChatEnabled && this.chatContainer) {
             this.init();
         }
+    }
+
+    get canModerateChat() {
+        return document.querySelector('[data-module="moduleLiveChat"]')?.dataset.canModerate === '1';
     }
 
     init() {
@@ -73,7 +76,7 @@ export class DesignChat {
             this.loadHistory();
         }
 
-
+        this.initAutocomplete();
     }
 
     setupEventListeners() {
@@ -90,6 +93,46 @@ export class DesignChat {
 
         if (this.chatInput) {
             this.chatInput.addEventListener('keydown', (e) => {
+                if (this.autocompleteContainer && !this.autocompleteContainer.classList.contains('disabled')) {
+                    const items = Array.from(this.autocompleteContainer.querySelectorAll('.chat-autocomplete-item'));
+                    let activeIndex = items.findIndex(item => item.classList.contains('active'));
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (items.length > 0) {
+                            if (activeIndex !== -1) items[activeIndex].classList.remove('active');
+                            activeIndex = (activeIndex + 1) % items.length;
+                            items[activeIndex].classList.add('active');
+                            items[activeIndex].scrollIntoView({ block: 'nearest' });
+                        }
+                        return;
+                    }
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (items.length > 0) {
+                            if (activeIndex !== -1) items[activeIndex].classList.remove('active');
+                            activeIndex = (activeIndex - 1 + items.length) % items.length;
+                            items[activeIndex].classList.add('active');
+                            items[activeIndex].scrollIntoView({ block: 'nearest' });
+                        }
+                        return;
+                    }
+                    if (e.key === 'Enter' || e.key === 'Tab') {
+                        e.preventDefault();
+                        if (activeIndex !== -1) {
+                            items[activeIndex].click();
+                        } else if (items.length > 0) {
+                            items[0].click();
+                        }
+                        return;
+                    }
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        this.hideAutocomplete();
+                        return;
+                    }
+                }
+
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     this.sendMessage();
@@ -104,6 +147,8 @@ export class DesignChat {
                         this.btnSend.classList.remove('active');
                     }
                 }
+
+                this.handleAutocompleteTrigger();
 
                 const now = Date.now();
                 const isTyping = this.chatInput.value.trim().length > 0;
@@ -1137,5 +1182,175 @@ export class DesignChat {
             };
             reader.onerror = () => resolve(file);
         });
+    }
+
+    initAutocomplete() {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .component-chat-input-area {
+                position: relative;
+            }
+            .chat-autocomplete-module {
+                position: absolute !important;
+                bottom: calc(100% + 4px) !important;
+                left: 8px !important;
+                right: 8px !important;
+                top: auto !important;
+                width: auto !important;
+                z-index: 100 !important;
+            }
+            .chat-autocomplete-module.disabled {
+                display: none !important;
+            }
+            .component-menu-link.chat-autocomplete-item.active {
+                background: var(--bg-hover, rgba(255, 255, 255, 0.05)) !important;
+            }
+        `;
+        document.head.appendChild(style);
+
+        this.autocompleteContainer = document.createElement('div');
+        this.autocompleteContainer.className = 'component-module component-module--dropdown component-module--dropdown-top chat-autocomplete-module disabled';
+        
+        const inputArea = document.querySelector('.component-chat-input-area');
+        if (inputArea) {
+            inputArea.insertBefore(this.autocompleteContainer, inputArea.firstChild);
+        }
+
+        document.addEventListener('click', (e) => {
+            if (this.autocompleteContainer && !this.autocompleteContainer.classList.contains('disabled')) {
+                if (!e.target.closest('.component-chat-input-area')) {
+                    this.hideAutocomplete();
+                }
+            }
+        });
+    }
+
+    handleAutocompleteTrigger() {
+        if (!this.autocompleteContainer) return;
+
+        const val = this.chatInput.value;
+        const selStart = this.chatInput.selectionStart;
+        const textBeforeCursor = val.substring(0, selStart);
+        const words = textBeforeCursor.split(/\s+/);
+        const lastWord = words[words.length - 1] || '';
+
+        if (lastWord.startsWith('/') && this.canModerateChat) {
+            const commands = [
+                { name: '/timeout', desc: 'Silenciar usuario temporalmente', icon: 'timer' },
+                { name: '/untimeout', desc: 'Levantar silencio de chat', icon: 'lock_open' },
+                { name: '/ban', desc: 'Silenciar permanentemente', icon: 'speaker_notes_off' },
+                { name: '/unban', desc: 'Levantar baneo del chat', icon: 'check_circle' },
+                { name: '/canvasban', desc: 'Baneo permanente del lienzo', icon: 'block' },
+                { name: '/unbancanvas', desc: 'Desbanear del lienzo', icon: 'check_circle' }
+            ];
+            const match = lastWord.toLowerCase();
+            const suggestions = commands.filter(c => c.name.startsWith(match));
+            this.showAutocomplete(suggestions, 'command', lastWord);
+            return;
+        }
+
+        let isUserTrigger = false;
+        let query = '';
+        let triggerWord = '';
+
+        if (lastWord.startsWith('@')) {
+            isUserTrigger = true;
+            query = lastWord.substring(1).toLowerCase();
+            triggerWord = lastWord;
+        } else if (words.length === 2 && ['/timeout', '/untimeout', '/ban', '/unban', '/canvasban', '/bancanvas', '/canvasunban', '/unbancanvas'].includes(words[0].toLowerCase())) {
+            isUserTrigger = true;
+            query = lastWord.toLowerCase();
+            triggerWord = lastWord;
+        }
+
+        if (isUserTrigger) {
+            const usernamesInDom = Array.from(document.querySelectorAll('[data-action="chatReplyMessage"]'))
+                .map(el => el.getAttribute('data-username'))
+                .filter(Boolean);
+            const typingUsernames = Array.from(this.typingUsers.values()).map(u => u.username);
+            
+            const allUsernames = Array.from(new Set([...usernamesInDom, ...typingUsernames]));
+            
+            const suggestions = allUsernames
+                .filter(u => u.toLowerCase().startsWith(query))
+                .map(u => ({ name: u, desc: 'Usuario', icon: 'person' }));
+
+            this.showAutocomplete(suggestions, 'user', triggerWord);
+            return;
+        }
+
+        this.hideAutocomplete();
+    }
+
+    showAutocomplete(suggestions, type, triggerWord) {
+        if (!suggestions || suggestions.length === 0) {
+            this.hideAutocomplete();
+            return;
+        }
+
+        this.autocompleteContainer.innerHTML = '';
+        
+        const menuWrapper = document.createElement('div');
+        menuWrapper.className = 'component-menu component-menu--no-padding active';
+        menuWrapper.style.width = '100%';
+        
+        const listWrapper = document.createElement('div');
+        listWrapper.className = 'component-menu-list component-menu-list--scrollable';
+        listWrapper.style.maxHeight = '180px';
+        listWrapper.style.overflowY = 'auto';
+        
+        suggestions.forEach((item, index) => {
+            const el = document.createElement('div');
+            el.className = 'component-menu-link chat-autocomplete-item' + (index === 0 ? ' active' : '');
+            el.innerHTML = `
+                <div class="component-menu-link-icon">
+                    <span class="material-symbols-rounded">${item.icon || 'star'}</span>
+                </div>
+                <div class="component-menu-link-text" style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-right: 8px;">
+                    <span>${item.name}</span>
+                    ${item.desc ? `<span style="font-size: 11px; color: var(--text-muted, #888); margin-left: auto; font-weight: normal;">${item.desc}</span>` : ''}
+                </div>
+            `;
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.selectSuggestion(item, type, triggerWord);
+            });
+            listWrapper.appendChild(el);
+        });
+        
+        menuWrapper.appendChild(listWrapper);
+        this.autocompleteContainer.appendChild(menuWrapper);
+
+        this.autocompleteContainer.classList.remove('disabled');
+    }
+
+    hideAutocomplete() {
+        if (this.autocompleteContainer) {
+            this.autocompleteContainer.classList.add('disabled');
+            this.autocompleteContainer.innerHTML = '';
+        }
+    }
+
+    selectSuggestion(item, type, triggerWord) {
+        const val = this.chatInput.value;
+        const selStart = this.chatInput.selectionStart;
+        const textBeforeCursor = val.substring(0, selStart);
+        const textAfterCursor = val.substring(selStart);
+
+        let replacement = item.name;
+        if (triggerWord.startsWith('@') && !replacement.startsWith('@')) {
+            replacement = '@' + replacement;
+        }
+
+        const newTextBefore = textBeforeCursor.substring(0, textBeforeCursor.length - triggerWord.length) + replacement + ' ';
+        this.chatInput.value = newTextBefore + textAfterCursor;
+
+        this.chatInput.focus();
+        const newCursorPos = newTextBefore.length;
+        this.chatInput.setSelectionRange(newCursorPos, newCursorPos);
+
+        this.chatInput.dispatchEvent(new Event('input'));
+        this.hideAutocomplete();
     }
 }

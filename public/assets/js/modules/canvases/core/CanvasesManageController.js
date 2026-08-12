@@ -268,6 +268,7 @@ class CanvasesManageController {
 
             if (result.success) {
                 showMessage(result.message, 'success');
+                this.pollSnapshotStatus(canvasId);
             } else {
                 showMessage(result.message, 'error');
             }
@@ -277,6 +278,41 @@ class CanvasesManageController {
         } finally {
             restoreButton(btn);
         }
+    }
+
+    async pollSnapshotStatus(canvasId) {
+        const maxAttempts = 15;
+        const intervalMs = 2000;
+        const signal = this.abortController ? this.abortController.signal : null;
+        
+        setTimeout(async () => {
+            if (signal && signal.aborted) return;
+            showMessage(window.__('msg_captura_processing') || 'Procesando captura del lienzo...', 'info');
+        }, 1500);
+
+        const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.SnapshotStatus) ? ApiRoutes.Canvases.SnapshotStatus : 'canvases.snapshot_status';
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, intervalMs));
+            
+            if (signal && signal.aborted) return;
+            
+            try {
+                const res = await this.api.post(route, { id: parseInt(canvasId, 10) }, signal);
+                if (res && res.success) {
+                    if (res.status === 'idle') {
+                        showMessage(window.__('msg_captura_success') || '¡Captura generada y guardada con éxito!', 'success');
+                        window.dispatchEvent(new CustomEvent('snapshot-created', { detail: { canvasId } }));
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.error('Error checking snapshot status:', err);
+            }
+        }
+        
+        if (signal && signal.aborted) return;
+        showMessage(window.__('msg_captura_timeout') || 'La captura está tardando más de lo esperado en procesarse, se completará en segundo plano.', 'warning');
     }
 
     handleCanvasSelection(rowElement) {

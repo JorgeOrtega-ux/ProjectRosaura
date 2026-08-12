@@ -7,6 +7,7 @@ import { TelemetryTracker } from './core/telemetry/TelemetryTracker.js';
 import { RouteModulesMap } from './core/router/RouteModulesMap.js';
 import { ApiService } from './core/api/ApiServices.js';
 import { ApiRoutes } from './core/api/ApiRoutes.js';
+import { OnboardingTourManager } from './core/managers/OnboardingTourManager.js';
 
 import { formatNumber } from './core/utils/uiUtils.js';
 
@@ -19,6 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.appInstance = app; 
 
     window.modalSystem = new ModalSystem();
+
+    // DEV: Set to true to always show intro/onboarding modals regardless of seen flags.
+    window.DEV_BYPASS_INTRO_MODALS = true;
+
+    window.onboardingTourManager = new OnboardingTourManager();
     window.noticeSystem = new NoticeSystem();
 
     function checkAndShowPromoNotice() {
@@ -266,6 +272,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.activeControllerInstance = null;
             }
         }
+
+        if (window.onboardingTourManager) {
+            window.onboardingTourManager.triggerTour(relativePath);
+        }
     });
 
     let currentPath = window.location.pathname;
@@ -277,7 +287,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const showWelcomeFlow = async () => {
         if (!window.modalSystem || !window.AppUserFlags || !window.APP_USER || !window.activeUserId) return;
-        if (window.AppUserFlags.includes('welcome_modal_seen')) {
+        
+        if (window.AppUserFlags.includes('welcome_modal_seen') && !window.DEV_BYPASS_INTRO_MODALS) {
             return;
         }
 

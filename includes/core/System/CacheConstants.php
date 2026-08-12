@@ -44,10 +44,33 @@ class CacheConstants {
     public const PREFIX_USER_TEMPLATE_TOKENS = 'user:template_tokens:';
     public const PATTERN_CACHE = 'cache:*';
     public const PATTERN_PR_CACHE = 'PR_cache:*';
-    public const TTL_ONE_MIN = 60;
-    public const TTL_FIVE_MINS = 300;
-    public const TTL_ONE_HOUR = 3600;
-    public const TTL_ONE_DAY = 86400;
-    public const TTL_ONE_WEEK = 604800;
+
+    // --- Nuevas constantes de caché ---
+    public const PREFIX_USER_SUBSCRIPTION    = 'user:subscription:';
+    public const PREFIX_USER_STORAGE         = 'user:storage:';
+    public const PREFIX_USER_PERKS           = 'user:perks:';
+    public const PREFIX_USER_PALETTE         = 'user:palettes:';
+    public const PREFIX_CANVAS_OWNER_LIST    = 'canvas:owner:';
+    public const PREFIX_CANVAS_DASHBOARD     = 'canvas:user_dashboard:';
+    public const PREFIX_CANVAS_COUNT         = 'canvas:count:';
+    public const PREFIX_CANVAS_TIER_COUNT    = 'canvas:tier_count:';
+    public const PREFIX_CANVAS_ROLES_LIST    = 'canvas:roles:';
+    public const PREFIX_CANVAS_MEMBER_ROLES  = 'canvas:member_roles:';
+    public const PREFIX_CANVAS_PERMISSION    = 'canvas:perm:';
+    public const PREFIX_CANVAS_SNAPSHOTS     = 'canvas:snapshots:';
+    public const KEY_CANVAS_PERMS_ALL        = 'canvas:permissions:all';
+    public const PREFIX_CANVAS_RESET_SETTINGS  = 'canvas:reset_settings:';
+    public const PREFIX_CANVAS_RESIZE_SETTINGS = 'canvas:resize_settings:';
+
+    // --- TTLs ---
+    public const TTL_THIRTY_SECS  = 30;
+    public const TTL_ONE_MIN      = 60;
+    public const TTL_TWO_MINS     = 120;
+    public const TTL_FIVE_MINS    = 300;
+    public const TTL_TEN_MINS     = 600;
+    public const TTL_FIFTEEN_MINS = 900;
+    public const TTL_ONE_HOUR     = 3600;
+    public const TTL_ONE_DAY      = 86400;
+    public const TTL_ONE_WEEK     = 604800;
 }
 ?>

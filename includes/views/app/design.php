@@ -6,7 +6,9 @@ $viewService = new AppViewService();
 $designData = $viewService->getCanvasDesignData($_GET['id'] ?? '', isset($_GET['snapshot']));
 
 if ($designData['isBanned']) {
-    echo "<div class='view-content'><p>".__('err_user_banned_from_canvas')."</p></div>";
+    global $systemMessageType;
+    $systemMessageType = 'canvas_banned';
+    require ROOT_PATH . '/includes/views/system/message.php';
     return;
 }
 
@@ -90,26 +92,6 @@ extract($designData);
                     </div>
                     <?php endif; ?>
                 </div>
-
-                <div class="component-actions">
-                    <?php if ($canvasAllowPurchases == '1'): ?>
-                    <button class="component-button component-button--icon component-button--h40" data-action="togglePerksInventory" data-tooltip="<?php echo __('tooltip_active_advantages'); ?> [P]" data-position="bottom">
-                        <span class="material-symbols-rounded">stars</span>
-                    </button>
-                    <?php endif; ?>
-
-                    <?php if (isset($isOwner) && $isOwner): ?>
-                    <button class="component-button component-button--icon component-button--h40" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
-                        <span class="material-symbols-rounded">construction</span>
-                    </button>
-                    <?php endif; ?>
-
-                    <?php if ($canvasAllowChat == '1'): ?>
-                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom">
-                        <span class="material-symbols-rounded">chat</span>
-                    </button>
-                    <?php endif; ?>
-                </div>
                 <?php endif; ?>
             </div>
         </div>
@@ -126,7 +108,10 @@ extract($designData);
                     <span class="material-symbols-rounded">sensors</span>
                 </button>
 
-                <button class="component-button component-button--icon component-button--h32 <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'component-button--premium premium-locked' : ''; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom" <?php echo (!isset($canLiveShare) || !$canLiveShare) ? 'data-requires-premium="true" data-required-tier="' . $liveTierLevel . '"' : ''; ?>>
+                <?php
+                    $liveLock = \App\Core\System\SubscriptionFeatureConfig::getLockDetails($userTier ?? 0, 'feat_live_share', 'button');
+                ?>
+                <button class="component-button component-button--icon component-button--h32 <?php echo $liveLock['class']; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom" <?php echo $liveLock['attributes']; ?>>
                     <span class="material-symbols-rounded">stream</span>
                 </button>
 
@@ -137,6 +122,24 @@ extract($designData);
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?> [T]" data-position="bottom">
                     <span class="material-symbols-rounded">photo_library</span>
                 </button>
+
+                <?php if ($canvasAllowPurchases == '1'): ?>
+                <button class="component-button component-button--icon component-button--h32" data-action="togglePerksInventory" data-tooltip="<?php echo __('tooltip_active_advantages'); ?> [P]" data-position="bottom">
+                    <span class="material-symbols-rounded">stars</span>
+                </button>
+                <?php endif; ?>
+
+                <?php if (isset($isOwner) && $isOwner): ?>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
+                    <span class="material-symbols-rounded">construction</span>
+                </button>
+                <?php endif; ?>
+
+                <?php if ($canvasAllowChat == '1'): ?>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom">
+                    <span class="material-symbols-rounded">chat</span>
+                </button>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
 
@@ -148,10 +151,9 @@ extract($designData);
                     <span class="material-symbols-rounded">rotate_right</span>
                 </button>
                 <?php
-                    $injectTierMin = \App\Core\System\SubscriptionPlanConstants::getLowestTierForFeature('inject_templates');
-                    $injectTierLevel = $injectTierMin ? (int)$injectTierMin['tier_level'] : 1;
+                    $injectLock = \App\Core\System\SubscriptionFeatureConfig::getLockDetails($userTier ?? 0, 'feat_inject_templates', 'button');
                 ?>
-                <button class="component-button component-button--icon component-button--h24 <?php echo (!isset($canInjectTemplate) || !$canInjectTemplate) ? 'component-button--premium premium-locked' : ''; ?>" data-action="injectTemplate" data-ref="btn-template-inject" data-tooltip="<?php echo __('tooltip_inject_template'); ?> [B]" data-position="top" <?php echo (!isset($canInjectTemplate) || !$canInjectTemplate) ? 'data-required-tier="' . $injectTierLevel . '"' : ''; ?>>
+                <button class="component-button component-button--icon component-button--h24 <?php echo $injectLock['class']; ?>" data-action="injectTemplate" data-ref="btn-template-inject" data-tooltip="<?php echo __('tooltip_inject_template'); ?> [B]" data-position="top" <?php echo $injectLock['attributes']; ?>>
                     <span class="material-symbols-rounded">brush</span>
                 </button>
                 <button class="component-button component-button--icon component-button--h24" data-action="deleteTemplate" data-ref="btn-template-delete" data-tooltip="<?php echo __('tooltip_remove_template'); ?> [Supr]" data-position="top">

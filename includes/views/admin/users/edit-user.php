@@ -60,7 +60,10 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                 <div class="component-card--grouped admin-edit-group">
                     <div class="component-group-item">
                          <div class="component-card__content">
-                            <div class="component-avatar role-dynamic" data-ref="admin-profile-avatar-container" data-role-bg="<?php echo htmlspecialchars($activeRoleBg); ?>">
+                            <div class="component-avatar role-dynamic" 
+                                 data-ref="admin-profile-avatar-container" 
+                                 data-role-bg="<?php echo htmlspecialchars($activeRoleBg); ?>"
+                                 style="--active-role-bg: <?php echo htmlspecialchars($activeRoleBg); ?>;">
                                 <img src="<?php echo htmlspecialchars($formattedAvatar); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                                      class="image-lazy-fade"
                                      onload="this.classList.add('image-loaded')"

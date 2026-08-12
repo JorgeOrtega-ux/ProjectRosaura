@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Api\Services\Canvas\CanvasViewService;
 
 $canvasService = new CanvasViewService();
@@ -70,6 +70,15 @@ if (trim($rawName) !== '') {
     <div class="component-viewport">
         <div class="component-wrapper">
             <div class="component-bottom">
+                <?php if ($isSystemRole): ?>
+                <div class="component-alert component-alert--warning active" style="margin-bottom: 16px;">
+                    <div class="component-alert-icon">
+                        <span class="material-symbols-rounded">info</span>
+                    </div>
+                    <div class="component-alert-text"><?php echo __('msg_system_role_protected'); ?></div>
+                </div>
+                <?php endif; ?>
+
                 <div data-ref="permissions-container" class="component-list">
                     <?php if (empty($allPermissions)): ?>
                         <div class="component-empty-state">
@@ -86,18 +95,12 @@ if (trim($rawName) !== '') {
                                 $permNameTranslated = __('perm.' . $cleanPermName);
                                 if ($permNameTranslated === 'perm.' . $cleanPermName) $permNameTranslated = str_replace('_', ' ', ucfirst($permName));
 
-                                $permDescTranslated = '';
-                                if (!empty($p['description'])) {
-                                    $t = __($p['description']);
-                                    if ($t !== $p['description']) $permDescTranslated = $t;
-                                }
-                                if (!$permDescTranslated) {
-                                    $t = __('perm.desc_' . $cleanPermName);
-                                    if ($t !== 'perm.desc_' . $cleanPermName) $permDescTranslated = $t;
-                                }
-                                if (!$permDescTranslated) {
-                                    $t = __('desc_' . $cleanPermName);
-                                    if ($t !== 'desc_' . $cleanPermName) $permDescTranslated = $t;
+                                $permDescTranslated = __('perm.desc_' . $cleanPermName);
+                                if ($permDescTranslated === 'perm.desc_' . $cleanPermName) {
+                                    $permDescTranslated = __('desc_' . $cleanPermName);
+                                    if ($permDescTranslated === 'desc_' . $cleanPermName) {
+                                        $permDescTranslated = !empty($p['description']) ? __($p['description']) : '';
+                                    }
                                 }
                             ?>
                             <div class="component-card--grouped">
@@ -105,7 +108,7 @@ if (trim($rawName) !== '') {
                                     <div class="component-card__content">
                                         <div class="component-card__text" data-perm-key="<?php echo htmlspecialchars($p['name']); ?>">
                                             <h2 class="component-card__title" data-ref="perm-name"><?php echo htmlspecialchars($permNameTranslated); ?></h2>
-                                            <?php if ($permDescTranslated): ?>
+                                            <?php if (!empty($permDescTranslated)): ?>
                                                 <p class="component-card__description" data-ref="perm-desc"><?php echo htmlspecialchars($permDescTranslated); ?></p>
                                             <?php endif; ?>
                                         </div>

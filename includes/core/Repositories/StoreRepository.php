@@ -231,6 +231,8 @@ class StoreRepository implements StoreRepositoryInterface {
 
             if ($this->redisClient) {
                 $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+                $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "all:{$userId}");
+                $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "unused:{$userId}");
             }
 
             return [
@@ -306,6 +308,8 @@ class StoreRepository implements StoreRepositoryInterface {
 
             if ($this->redisClient) {
                 $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+                $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "all:{$userId}");
+                $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "unused:{$userId}");
                 $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
             }
 
@@ -344,6 +348,13 @@ class StoreRepository implements StoreRepositoryInterface {
                 $balanceStmt->execute([$userId, $perkId]);
             }
             $this->db->commit();
+            // Invalidate perks cache
+            if ($res && $this->redisClient) {
+                try {
+                    $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "all:{$userId}");
+                    $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "unused:{$userId}");
+                } catch (\Throwable $e) {}
+            }
             return $res;
         } catch (\Throwable $e) {
             if ($this->db->inTransaction()) {
@@ -354,19 +365,47 @@ class StoreRepository implements StoreRepositoryInterface {
     }
 
     public function getUserPerks(int $userId): array {
+        $cacheKey = CacheConstants::PREFIX_USER_PERKS . "all:{$userId}";
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) return json_decode($cached, true) ?? [];
+            } catch (\Throwable $e) {}
+        }
+
         $stmt = $this->db->prepare("SELECT * FROM user_perks WHERE user_id = ? ORDER BY created_at DESC");
         $stmt->execute([$userId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($this->redisClient) {
+            try { $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($result)); } catch (\Throwable $e) {}
+        }
+
+        return $result;
     }
 
     public function getUnusedPerks(int $userId): array {
+        $cacheKey = CacheConstants::PREFIX_USER_PERKS . "unused:{$userId}";
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) return json_decode($cached, true) ?? [];
+            } catch (\Throwable $e) {}
+        }
+
         $stmt = $this->db->prepare("
             SELECT perk_id, quantity_available as count 
             FROM user_perk_balances 
             WHERE user_id = ? AND quantity_available > 0
         ");
         $stmt->execute([$userId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($this->redisClient) {
+            try { $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($result)); } catch (\Throwable $e) {}
+        }
+
+        return $result;
     }
 
     public function markPerkAsUsed(int $userId, string $perkId): bool {
@@ -387,10 +426,24 @@ class StoreRepository implements StoreRepositoryInterface {
                 ");
                 $balanceStmt->execute([$userId, $perkId]);
                 $this->db->commit();
+                // Invalidate perks cache
+                if ($this->redisClient) {
+                    try {
+                        $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "all:{$userId}");
+                        $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "unused:{$userId}");
+                    } catch (\Throwable $e) {}
+                }
                 return true;
             }
-            $this->db->rollBack();
-            return false;
+            $this->db->commit();
+            // Invalidate perks cache
+            if ($this->redisClient) {
+                try {
+                    $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "all:{$userId}");
+                    $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "unused:{$userId}");
+                } catch (\Throwable $e) {}
+            }
+            return true;
         } catch (\Throwable $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\Database\DatabaseManager;
@@ -76,7 +76,7 @@ if (!function_exists('hexToHsv')) {
 }
 
 if (!function_exists('renderColorBlock')) {
-    function renderColorBlock($hex, $percentage, $isSolid) {
+    function renderColorBlock($hex, $percentage, $isSolid, $isSystemRole = false) {
         $hsv = hexToHsv($hex);
         $h = $hsv['h']; $s = $hsv['s']; $v = $hsv['v'];
         $uniqueId = 'cp_' . substr(md5(uniqid()), 0, 9);
@@ -89,7 +89,7 @@ if (!function_exists('renderColorBlock')) {
         $svThumbLeft = "{$s}%";
         $svThumbTop = (100 - $v) . "%";
         $hueThumbLeft = ($h / 360 * 100) . "%";
-        $controlsClass = $isSolid ? 'disabled' : '';
+        $controlsClass = ($isSolid || $isSystemRole) ? 'disabled' : '';
 
         return '
         <div class="component-color-row" data-component="color-block">
@@ -102,7 +102,7 @@ if (!function_exists('renderColorBlock')) {
                 </div>
                 <div class="component-card__actions component-card__actions--start">
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--color" data-ref="dropdownWrapper">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--color" data-action="toggleModule" data-target="' . $uniqueId . '">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--color ' . ($isSystemRole ? 'disabled-interaction' : '') . '" data-action="toggleModule" data-target="' . $uniqueId . '">
                             <div class="component-dropdown-trigger__left">
                                 <div class="component-color-swatch" data-ref="triggerPreview"></div>
                                 <span class="component-dropdown-text component-text--mono" data-ref="triggerHex">' . $hex . '</span>
@@ -210,7 +210,7 @@ if (trim($rawName) !== '') {
             <?php endif; ?>
         </div>
         <div class="component-top-right">
-            <button class="component-button component-button--primary component-button--h40" data-action="saveRoleData">
+            <button class="component-button component-button--primary component-button--h40 <?php echo $isSystemRole ? 'disabled-interaction' : ''; ?>" data-action="saveRoleData" <?php echo $isSystemRole ? 'disabled' : ''; ?>>
                 <span class="material-symbols-rounded">save</span>
                 <?php echo __('btn_save_changes'); ?>
             </button>
@@ -309,7 +309,7 @@ if (trim($rawName) !== '') {
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleColorType">
+                                <div class="component-dropdown-trigger <?php echo $isSystemRole ? 'disabled-interaction' : ''; ?>" data-action="toggleModule" data-target="moduleColorType">
                                     <span class="material-symbols-rounded" data-ref="colorTypeIcon"><?php echo $colorTypeIcon; ?></span>
                                     <span class="component-dropdown-text" data-ref="colorTypeText"><?php echo $colorTypeLabel; ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
@@ -337,7 +337,7 @@ if (trim($rawName) !== '') {
 
                 <div data-ref="solidMasterContainer" class="component-card--grouped <?php echo $colorType !== 'solid' ? 'disabled' : ''; ?>">
                     <div data-ref="solidColorContainer" class="component-color-list">
-                        <?php if ($colorType === 'solid') echo renderColorBlock($colors[0]['hex'], 100, true); ?>
+                        <?php if ($colorType === 'solid') echo renderColorBlock($colors[0]['hex'], 100, true, $isSystemRole); ?>
                     </div>
                 </div>
 
@@ -352,7 +352,7 @@ if (trim($rawName) !== '') {
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleGradientAngle" data-val="<?php echo $gradientAngle; ?>" data-ref="gradientAngleTrigger">
+                                <div class="component-dropdown-trigger <?php echo $isSystemRole ? 'disabled-interaction' : ''; ?>" data-action="toggleModule" data-target="moduleGradientAngle" data-val="<?php echo $gradientAngle; ?>" data-ref="gradientAngleTrigger">
                                     <span class="material-symbols-rounded">rotate_right</span>
                                     <span class="component-dropdown-text" data-ref="gradientAngleText"><?php echo $gradientAngle; ?>°</span>
                                     <span class="material-symbols-rounded">expand_more</span>
@@ -395,7 +395,7 @@ if (trim($rawName) !== '') {
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end" data-ref="btnAddGradientColorWrapper">
-                            <button type="button" class="component-button component-button--h36" data-ref="btnAddGradientColor" data-action="addGradientColor">
+                            <button type="button" class="component-button component-button--h36 <?php echo $isSystemRole ? 'disabled-interaction' : ''; ?>" data-ref="btnAddGradientColor" data-action="addGradientColor">
                                 <?php echo __('btn_add_block'); ?>
                             </button>
                         </div>
@@ -406,7 +406,7 @@ if (trim($rawName) !== '') {
                     <div data-ref="gradientColorsContainer" class="component-color-list">
                         <?php 
                         if ($colorType === 'gradient') {
-                            foreach ($colors as $c) echo renderColorBlock($c['hex'], $c['percentage'], false);
+                            foreach ($colors as $c) echo renderColorBlock($c['hex'], $c['percentage'], false, $isSystemRole);
                         }
                         ?>
                     </div>

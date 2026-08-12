@@ -237,7 +237,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                 <tr class="component-table-row" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-user-uuid="<?php echo htmlspecialchars($user['uuid']); ?>" data-roles-ids="<?php echo htmlspecialchars($roleIds); ?>" data-status="<?php echo htmlspecialchars($dataStatus); ?>">
                                     <td>
                                         <div class="td-user-info">
-                                            <div class="component-button--profile role-dynamic component-avatar--static-sm" data-role-bg="<?php echo htmlspecialchars($roleColorCSS); ?>">
+                                            <div class="component-button--profile role-dynamic component-avatar--static-sm" 
+                                                 data-role-bg="<?php echo htmlspecialchars($roleColorCSS); ?>"
+                                                 style="--active-role-bg: <?php echo htmlspecialchars($roleColorCSS); ?>;">
                                                 <img src="<?php echo $appUrl . '/' . htmlspecialchars($validUserPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                                                      class="image-lazy-fade"
                                                      onload="this.classList.add('image-loaded')"

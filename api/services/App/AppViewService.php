@@ -189,6 +189,7 @@ class AppViewService {
         $canInjectTemplate = false;
         $canLiveShare = false;
         $isBanned = false;
+        $userTier = 0;
 
         if (!empty($canvasUuid)) {
             try {
@@ -359,7 +360,8 @@ class AppViewService {
             'isBanned' => $isBanned,
             'isSnapshot' => $isSnapshot,
             'activeLiveShareCode' => $activeLiveShareCode,
-            'activeLiveShareData' => $activeLiveShareData
+            'activeLiveShareData' => $activeLiveShareData,
+            'userTier' => $userTier
         ];
     }
 }

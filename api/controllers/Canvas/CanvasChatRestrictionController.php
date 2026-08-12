@@ -137,45 +137,89 @@ class CanvasChatRestrictionController {
                     $endDate
                 ]);
                 
-                // Add to Redis for websocket server
-                $redis = $this->redisClient;
-                $ttl = 0;
-                if ($suspensionType === 'temporary' && $endDate) {
-                    $ttl = strtotime($endDate) - time();
-                }
-
-                if ($sanctionScope === 'canvas_ban') {
-                    if ($ttl > 0) {
-                        $redis->setex("canvas:{$canvasId}:canvas_banned:{$targetUserId}", $ttl, '1');
-                        $redis->setex("canvas:{$canvasId}:chat_restricted:{$targetUserId}", $ttl, '1');
-                    } else {
-                        $redis->set("canvas:{$canvasId}:canvas_banned:{$targetUserId}", '1');
-                        $redis->set("canvas:{$canvasId}:chat_restricted:{$targetUserId}", '1');
-                    }
-                } else {
-                    if ($ttl > 0) {
-                        $redis->setex("canvas:{$canvasId}:chat_restricted:{$targetUserId}", $ttl, '1');
-                    } else {
-                        $redis->set("canvas:{$canvasId}:chat_restricted:{$targetUserId}", '1');
-                    }
-                    $redis->del("canvas:{$canvasId}:canvas_banned:{$targetUserId}");
-                }
+                $this->syncUserRestrictionsToRedis($canvasId, $targetUserId);
 
                 return ['status' => 'success', 'message' => __('msg_sanction_applied')];
             } else {
                 // Remove restriction
-                $stmt = $this->pdo->prepare("DELETE FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ?");
-                $stmt->execute([$canvasId, $targetUserId]);
+                $stmt = $this->pdo->prepare("DELETE FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ? AND sanction_scope = ?");
+                $stmt->execute([$canvasId, $targetUserId, $sanctionScope]);
                 
-                $redis = $this->redisClient;
-                $redis->del("canvas:{$canvasId}:chat_restricted:{$targetUserId}");
-                $redis->del("canvas:{$canvasId}:canvas_banned:{$targetUserId}");
+                $this->syncUserRestrictionsToRedis($canvasId, $targetUserId);
                 
                 return ['status' => 'success', 'message' => __('msg_sanction_removed')];
             }
         } catch (\Exception $e) {
             Logger::error("Error de base de datos en updateRestriction: " . $e->getMessage());
             return ['status' => 'error', 'message' => __('err_internal_server_error')];
+        }
+    }
+
+    private function syncUserRestrictionsToRedis($canvasId, $targetUserId) {
+        if (!$this->redisClient) return;
+
+        // Query active sanctions for this user on this canvas
+        $stmt = $this->pdo->prepare("
+            SELECT sanction_scope, suspension_type, end_date 
+            FROM canvas_sanctions 
+            WHERE canvas_id = ? AND user_id = ? 
+              AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW()))
+        ");
+        $stmt->execute([$canvasId, $targetUserId]);
+        $activeSanctions = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $hasCanvasBan = false;
+        $hasChatMute = false;
+        
+        $canvasBanTtl = 0;
+        $chatMuteTtl = 0;
+
+        foreach ($activeSanctions as $sanction) {
+            $scope = $sanction['sanction_scope'];
+            $type = $sanction['suspension_type'];
+            $endDate = $sanction['end_date'];
+            
+            $ttl = 0;
+            if ($type === 'temporary' && $endDate) {
+                $ttl = strtotime($endDate) - time();
+            }
+
+            if ($scope === 'canvas_ban') {
+                $hasCanvasBan = true;
+                $canvasBanTtl = ($type === 'permanent') ? -1 : max($canvasBanTtl, $ttl);
+            } elseif ($scope === 'chat_mute') {
+                $hasChatMute = true;
+                $chatMuteTtl = ($type === 'permanent') ? -1 : max($chatMuteTtl, $ttl);
+            }
+        }
+
+        $banKey = "canvas:{$canvasId}:canvas_banned:{$targetUserId}";
+        if ($hasCanvasBan) {
+            if ($canvasBanTtl == -1) {
+                $this->redisClient->set($banKey, '1');
+            } elseif ($canvasBanTtl > 0) {
+                $this->redisClient->setex($banKey, $canvasBanTtl, '1');
+            } else {
+                $this->redisClient->del($banKey);
+            }
+        } else {
+            $this->redisClient->del($banKey);
+        }
+
+        $chatKey = "canvas:{$canvasId}:chat_restricted:{$targetUserId}";
+        if ($hasCanvasBan || $hasChatMute) {
+            if ($canvasBanTtl == -1 || $chatMuteTtl == -1) {
+                $this->redisClient->set($chatKey, '1');
+            } else {
+                $combinedTtl = max($canvasBanTtl, $chatMuteTtl);
+                if ($combinedTtl > 0) {
+                    $this->redisClient->setex($chatKey, $combinedTtl, '1');
+                } else {
+                    $this->redisClient->del($chatKey);
+                }
+            }
+        } else {
+            $this->redisClient->del($chatKey);
         }
     }
 }

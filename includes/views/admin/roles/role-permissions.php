@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Api\Services\Admin\AdminViewService;
 
 $adminService = new AdminViewService();
@@ -84,7 +84,10 @@ if (!empty($allPermissions)) {
     }
 }
 ?>
-<div class="view-content" data-role-id="<?php echo $roleId; ?>" data-role-weight="<?php echo $targetRoleWeight; ?>" data-current-user-weight="<?php echo $currentUserWeight; ?>" data-is-superadmin="<?php echo $isSuperAdmin; ?>">
+<?php
+$isSystemRole = (isset($role['is_system']) && (int)$role['is_system'] === 1);
+?>
+<div class="view-content" data-role-id="<?php echo $roleId; ?>" data-role-weight="<?php echo $targetRoleWeight; ?>" data-current-user-weight="<?php echo $currentUserWeight; ?>" data-is-superadmin="<?php echo $isSuperAdmin; ?>" data-is-system="<?php echo $isSystemRole ? '1' : '0'; ?>">
     
     <div class="component-top">
         <div class="component-top-left">
@@ -97,7 +100,7 @@ if (!empty($allPermissions)) {
             </h1>
         </div>
         <div class="component-top-right">
-            <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="savePermissions" data-tooltip="<?php echo __('btn_save'); ?>" data-position="bottom">
+            <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="savePermissions" data-tooltip="<?php echo __('btn_save'); ?>" data-position="bottom" <?php echo $isSystemRole ? 'disabled' : ''; ?>>
                 <span class="material-symbols-rounded">save</span>
             </button>
         </div>
@@ -106,6 +109,15 @@ if (!empty($allPermissions)) {
     <div class="component-viewport">
         <div class="component-wrapper">
             <div class="component-bottom">
+                <?php if ($isSystemRole): ?>
+                <div class="component-alert component-alert--warning active" style="margin-bottom: 16px;">
+                    <div class="component-alert-icon">
+                        <span class="material-symbols-rounded">info</span>
+                    </div>
+                    <div class="component-alert-text"><?php echo __('msg_system_role_protected'); ?></div>
+                </div>
+                <?php endif; ?>
+
                 <div data-ref="permissions-container" class="component-list" style="display: flex; flex-direction: column; gap: 16px;">
                     <?php if (empty($allPermissions)): ?>
                         <div class="component-empty-state">
@@ -116,16 +128,14 @@ if (!empty($allPermissions)) {
                         <?php foreach ($groupedPermissions as $catKey => $catData): 
                             if (empty($catData['list'])) continue;
                         ?>
-                            <div class="component-card--grouped component-accordion component-card--flush">
+                            <div class="component-card--grouped component-accordion">
                                 <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                                     <div class="component-card__content">
-                                        <div class="td-user-info">
-                                            <div class="component-avatar--static-sm">
-                                                <span class="material-symbols-rounded"><?php echo $catData['icon']; ?></span>
-                                            </div>
-                                            <div class="component-badge component-badge--sm">
-                                                <span><?php echo htmlspecialchars($catData['title']); ?></span>
-                                            </div>
+                                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                                            <span class="material-symbols-rounded"><?php echo $catData['icon']; ?></span>
+                                        </div>
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title"><?php echo htmlspecialchars($catData['title']); ?></h2>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--end">
@@ -150,7 +160,7 @@ if (!empty($allPermissions)) {
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--end">
                                                     <label class="component-toggle-switch">
-                                                        <input type="checkbox" data-ref="permCheckbox" value="<?php echo $p['id']; ?>" data-is-critical="<?php echo $isCritical; ?>" <?php echo $isChecked; ?>>
+                                                        <input type="checkbox" data-ref="permCheckbox" value="<?php echo $p['id']; ?>" data-is-critical="<?php echo $isCritical; ?>" <?php echo $isChecked; ?> <?php echo $isSystemRole ? 'disabled' : ''; ?>>
                                                         <span class="component-toggle-slider"></span>
                                                     </label>
                                                 </div>

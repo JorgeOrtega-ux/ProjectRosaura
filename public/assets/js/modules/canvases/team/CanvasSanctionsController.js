@@ -221,10 +221,15 @@ export class CanvasSanctionsController {
         }
     }
 
+    formatDateForDB(dateStr) {
+        if (!dateStr) return null;
+        return dateStr.replace('T', ' ') + ':00';
+    }
+
     async openEditSanctionModal() {
         if (!this.selectedUserId) return;
 
-        const selectedRow = document.querySelector(`[data-user-id="${this.selectedUserId}"]`);
+        const selectedRow = document.querySelector(`[data-user-id="${this.selectedUserId}"].selected`) || document.querySelector(`[data-user-id="${this.selectedUserId}"]`);
         const hasSanction = selectedRow ? (selectedRow.getAttribute('data-has-sanction') === '1') : false;
         const currentScope = selectedRow ? (selectedRow.getAttribute('data-sanction-scope') || 'chat_mute') : 'chat_mute';
         const currentType = selectedRow ? (selectedRow.getAttribute('data-suspension-type') || 'temporary') : 'temporary';
@@ -263,13 +268,13 @@ export class CanvasSanctionsController {
             sanction_scope: formData.sanction_scope || 'chat_mute',
             suspension_type: formData.suspension_type || 'temporary',
             suspension_reason: formData.suspension_reason,
-            end_date: (formData.suspension_type === 'temporary' && formData.sanction_endDate) ? this.formatDateForDB(formData.sanction_endDate) : null,
+            end_date: (formData.suspension_type === 'temporary' && formData.end_date) ? this.formatDateForDB(formData.end_date) : null,
             notify_user: false,
             password: password
         };
 
         try {
-            const res = await this.api.post(ApiRoutes.Admin.UpdateSuspension, payload, this.abortController.signal);
+            const res = await this.api.post(ApiRoutes.Canvases.UpdateChatRestriction, payload, this.abortController.signal);
             if (res.aborted) return;
             
             if (res.success) {
@@ -296,10 +301,14 @@ export class CanvasSanctionsController {
             return;
         }
 
+        const selectedRow = document.querySelector(`[data-user-id="${this.selectedUserId}"].selected`);
+        const sanctionScope = selectedRow ? selectedRow.getAttribute('data-sanction-scope') : 'chat_mute';
+
         const payload = {
             canvas_id: this.canvasUuid || this.canvasId,
             target_user_id: this.selectedUserUuid || this.selectedUserId,
             is_suspended: '0',
+            sanction_scope: sanctionScope,
             password: password
         };
 

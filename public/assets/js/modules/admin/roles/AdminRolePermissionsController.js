@@ -32,6 +32,7 @@ class AdminRolePermissionsController {
         
         this.targetRoleWeight = parseInt(viewContent ? viewContent.dataset.roleWeight : 0, 10) || 0;
         this.currentUserWeight = parseInt(viewContent ? viewContent.dataset.currentUserWeight : 0, 10) || 0;
+        this.isSystem = viewContent ? viewContent.dataset.isSystem === '1' : false;
         
         const urlParams = new URLSearchParams(window.location.search);
         const urlId = urlParams.get('id');
@@ -39,6 +40,16 @@ class AdminRolePermissionsController {
         this.roleId = parseInt(attrId, 10) || parseInt(urlId, 10);
 
         this.bindEvents();
+
+        if (this.isSystem) {
+            showMessage(window.__('err_edit_system_role') || 'No se pueden editar roles del sistema', 'warning');
+            const checkboxes = document.querySelectorAll('input[data-ref="permCheckbox"]');
+            checkboxes.forEach(cb => cb.disabled = true);
+            const saveBtn = document.querySelector('[data-action="savePermissions"]');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+            }
+        }
 
         if (!this.roleId || isNaN(this.roleId)) {
             console.error("[DEBUG ROLES] Critical failure: The ID is null or invalid. Executing expulsion (goBack)...");
@@ -157,6 +168,11 @@ class AdminRolePermissionsController {
     }
 
     async savePermissions(btn) {
+        if (this.isSystem) {
+            showMessage(window.__('err_edit_system_role') || 'No se pueden editar roles del sistema', 'error');
+            return;
+        }
+
         const checkboxes = document.querySelectorAll('input[data-ref="permCheckbox"]:checked:not(:disabled)');
         const permissionsArray = Array.from(checkboxes).map(cb => parseInt(cb.value, 10));
 

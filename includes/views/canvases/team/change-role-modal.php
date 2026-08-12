@@ -77,16 +77,26 @@ extract($changeRoleData);
                         }
                         
                         $isChecked = in_array((int)$role['id'], $targetCurrentRoles ?? []) ? 'checked' : '';
+                        
+                        $isHigherHierarchy = !$isRequesterOwner && (int)$role['weight'] >= $userRolesWeight;
+                        $isSuperAdminRole = (int)$role['id'] === 4 || (int)$role['weight'] >= 100;
+                        $isDisabled = ($isHigherHierarchy || ($isSuperAdminRole && !$isRequesterOwner));
+                        $disabledClass = $isDisabled ? 'disabled-interaction' : '';
                     ?>
-                    <label class="component-menu-link component-menu-link--bordered" style="display: flex; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box;">
+                    <label class="component-menu-link component-menu-link--bordered <?php echo $disabledClass; ?>" style="display: flex; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box; cursor: <?php echo $isDisabled ? 'not-allowed' : 'pointer'; ?>;">
                         <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
-                            <input type="checkbox" name="new_member_roles[]" value="<?php echo htmlspecialchars((string)$role['id']); ?>" class="admin-role-checkbox" <?php echo $isChecked; ?>>
+                            <input type="checkbox" name="new_member_roles[]" value="<?php echo htmlspecialchars((string)$role['id']); ?>" class="admin-role-checkbox" <?php echo $isChecked; ?> <?php echo $isDisabled ? 'disabled' : ''; ?>>
                             <div style="display: flex; flex-direction: column; min-width: 0;">
                                 <span style="font-weight: 500; font-size: 14px;"><?php echo htmlspecialchars($translatedName); ?></span>
                                 <span style="font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?php echo htmlspecialchars($desc); ?>"><?php echo htmlspecialchars($desc); ?></span>
                             </div>
                         </div>
-                        <span class="material-symbols-rounded" style="color: var(--text-muted);" title="Jerarquía: <?php echo $role['weight']; ?>"><?php echo $isSystemFlag ? 'shield' : 'person'; ?></span>
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <?php if ($isDisabled): ?>
+                                <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">lock</span> No disponible</span>
+                            <?php endif; ?>
+                            <span class="material-symbols-rounded" style="color: var(--text-muted);" title="Jerarquía: <?php echo $role['weight']; ?>"><?php echo $isSystemFlag ? 'shield' : 'person'; ?></span>
+                        </div>
                     </label>
                     <?php endforeach; ?>
                 </div>

@@ -218,7 +218,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
                                     </td>
                                     <td>
                                         <div class="td-user-info">
-                                            <div class="component-button--profile role-dynamic component-avatar--static-sm">
+                                            <div class="component-button--profile role-dynamic component-avatar--static-sm"
+                                                 data-role-bg="<?php echo htmlspecialchars($activeBgCss); ?>"
+                                                 style="--active-role-bg: <?php echo htmlspecialchars($activeBgCss); ?>;">
                                                 <img src="<?php echo htmlspecialchars($adminPic); ?>" alt="<?php echo __('alt_avatar'); ?>"
                                                      class="image-lazy-fade"
                                                      onload="this.classList.add('image-loaded')"

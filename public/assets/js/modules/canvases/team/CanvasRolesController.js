@@ -110,15 +110,9 @@ class CanvasRolesController {
                 if (btnDelete) btnDelete.classList.remove('disabled-interaction');
             } else {
                 if (btnEdit) btnEdit.classList.add('disabled-interaction');
-
-                if (btnPerms) {
-                    if (canEdit) btnPerms.classList.remove('disabled-interaction');
-                    else btnPerms.classList.add('disabled-interaction');
-                }
+                if (btnPerms) btnPerms.classList.add('disabled-interaction');
                 if (btnDelete) btnDelete.classList.add('disabled-interaction');
             }
-
-            if (isSystem && btnDelete) btnDelete.classList.add('disabled-interaction');
 
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');

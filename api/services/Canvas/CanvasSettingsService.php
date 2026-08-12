@@ -425,6 +425,45 @@ class CanvasSettingsService {
         }
     }
 
+    public function getSnapshotStatus(int $userId, int $canvasId): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+
+            $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId);
+            if (!$isOwner) {
+                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS)) {
+                    return ['success' => false, 'message' => __('err_unauthorized')];
+                }
+            }
+
+            $inQueue = false;
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redisInstance = new RedisCache();
+                    $redis = $redisInstance->getClient();
+                    if ($redis) {
+                        $inQueue = (bool)($redis->sIsMember("canvases:force_snapshots", (string)$canvasId) || 
+                                          $redis->sIsMember("canvases:pending_snapshots", (string)$canvasId));
+                    }
+                }
+            } catch (Exception $e) {
+                // Silently fallback on redis error
+            }
+
+            return [
+                'success' => true,
+                'status' => $inQueue ? 'processing' : 'idle',
+                'in_queue' => $inQueue
+            ];
+        } catch (Exception $e) {
+            Logger::error('Error in getSnapshotStatus.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
     public function getCanvasRoles(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);

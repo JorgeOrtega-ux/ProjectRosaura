@@ -53,4 +53,52 @@ class SubscriptionFeatureConfig {
             ]
         ];
     }
+
+    /**
+     * Genera la información de bloqueo (clase, atributos y badge html opcional) para una feature dada y un tier de usuario.
+     * @param int $userTier El tier actual del usuario.
+     * @param string $featureKey La clave de la feature (ej: 'feat_advanced_roles').
+     * @param string $elementType El tipo de elemento visual ('button' o 'link').
+     * @return array [
+     *     'is_locked' => bool,
+     *     'class' => string,     // Clases CSS a añadir
+     *     'attributes' => string, // Atributos data-*
+     *     'badge_html' => string  // HTML del badge con la estrella y nombre del tier
+     * ]
+     */
+    public static function getLockDetails(int $userTier, string $featureKey, string $elementType = 'button'): array {
+        $hasFeature = SubscriptionPlanConstants::hasFeature($userTier, $featureKey);
+        
+        if ($hasFeature) {
+            return [
+                'is_locked' => false,
+                'class' => '',
+                'attributes' => '',
+                'badge_html' => ''
+            ];
+        }
+
+        $requiredTierMin = SubscriptionPlanConstants::getLowestTierForFeature($featureKey);
+        $requiredTierLevel = $requiredTierMin ? (int)$requiredTierMin['tier_level'] : 1;
+        $requiredTierName = $requiredTierMin ? $requiredTierMin['name'] : 'Pro';
+
+        $classes = 'premium-locked';
+        if ($elementType === 'button') {
+            $classes .= ' component-button--premium';
+        }
+        
+        $attributes = ' data-requires-premium="true" data-required-tier="' . $requiredTierLevel . '"';
+
+        $badgeHtml = '';
+        if ($elementType === 'link') {
+            $badgeHtml = ' <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ' . htmlspecialchars($requiredTierName) . '</span>';
+        }
+
+        return [
+            'is_locked' => true,
+            'class' => $classes,
+            'attributes' => $attributes,
+            'badge_html' => $badgeHtml
+        ];
+    }
 }

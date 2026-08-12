@@ -1,5 +1,5 @@
 import { ApiRoutes } from '../api/ApiRoutes.js';
-import { showMessage, renderSkeleton } from '../utils/uiUtils.js';
+import { showMessage, renderSkeleton, getLockDetails } from '../utils/uiUtils.js';
 import { CanvasApiService } from '../api/CanvasApiService.js';
 
 export class CanvasCardInteractions {
@@ -136,6 +136,7 @@ export class CanvasCardInteractions {
 
             if (result.success) {
                 showMessage(result.message, 'success');
+                this.pollSnapshotStatus(canvasId);
             } else {
                 showMessage(result.message, 'error');
             }
@@ -147,6 +148,41 @@ export class CanvasCardInteractions {
             if (typeof restoreButton === 'function') restoreButton(btn);
             this.closeDropdowns();
         }
+    }
+
+    async pollSnapshotStatus(canvasId) {
+        const maxAttempts = 15;
+        const intervalMs = 2000;
+        const signal = this.abortController ? this.abortController.signal : null;
+        
+        setTimeout(async () => {
+            if (signal && signal.aborted) return;
+            showMessage(window.__('msg_captura_processing') || 'Procesando captura del lienzo...', 'info');
+        }, 1500);
+
+        const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.SnapshotStatus) ? ApiRoutes.Canvases.SnapshotStatus : 'canvases.snapshot_status';
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, intervalMs));
+            
+            if (signal && signal.aborted) return;
+            
+            try {
+                const res = await this.api.post(route, { id: parseInt(canvasId, 10) }, signal);
+                if (res && res.success) {
+                    if (res.status === 'idle') {
+                        showMessage(window.__('msg_captura_success') || '¡Captura generada y guardada con éxito!', 'success');
+                        window.dispatchEvent(new CustomEvent('snapshot-created', { detail: { canvasId } }));
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.error('Error checking snapshot status:', err);
+            }
+        }
+        
+        if (signal && signal.aborted) return;
+        showMessage(window.__('msg_captura_timeout') || 'La captura está tardando más de lo esperado en procesarse, se completará en segundo plano.', 'warning');
     }
 
     openCanvasNewTab(btn) {
@@ -363,6 +399,12 @@ export class CanvasCardInteractions {
 
         let manageSubmenuHtml = '';
         if (isOwner) {
+            const rolesLock = getLockDetails('feat_advanced_roles', 'link');
+            const rolesClass = rolesLock.isLocked ? ` ${rolesLock.classStr}` : '';
+            const rolesAttrs = rolesLock.isLocked ? ` ${rolesLock.attributesStr}` : '';
+            const rolesBadge = rolesLock.isLocked ? rolesLock.badgeHtml : '';
+            const rolesNav = rolesLock.isLocked ? '' : `${this.basePath}/canvases/manage/roles/${uuid}`;
+
             manageSubmenuHtml = `
                 <div class="component-menu-page" data-menu-page="manage">
                     <div class="component-menu-list">
@@ -392,9 +434,9 @@ export class CanvasCardInteractions {
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">group</span></div>
                             <div class="component-menu-link-text"><span>${window.__('tooltip_manage_members')}</span></div>
                         </button>
-                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/manage/roles/${uuid}">
+                        <button type="button" class="component-menu-link${rolesClass}" data-nav="${rolesNav}"${rolesAttrs}>
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">shield_person</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('tooltip_manage_roles')}</span></div>
+                            <div class="component-menu-link-text"><span>${window.__('tooltip_manage_roles')}</span>${rolesBadge}</div>
                         </button>
                         <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/manage/invites/${uuid}">
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>

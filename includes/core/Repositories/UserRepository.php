@@ -95,15 +95,7 @@ class UserRepository implements UserRepositoryInterface {
             $user['permissions'] = !empty($permissionsArray) ? implode(',', $permissionsArray) : null;
 
             $user['real_subscription_tier'] = (int)($user['subscription_tier'] ?? 0);
-
-            try {
-                $stmtCol = $this->pdo->prepare("SELECT color FROM subscription_tiers WHERE tier_level = ? LIMIT 1");
-                $stmtCol->execute([(int)$user['subscription_tier']]);
-                $colRow = $stmtCol->fetch(PDO::FETCH_ASSOC);
-                if ($colRow && !empty($colRow['color'])) {
-                    $user['subscription_color'] = $colRow['color'];
-                }
-            } catch (\Exception $e) {}
+            // subscription_color ya viene del LEFT JOIN en la query principal
 
             if ($cacheKey && $this->redisClient) {
                 $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($user));
@@ -440,7 +432,13 @@ class UserRepository implements UserRepositoryInterface {
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET storage_used_bytes = GREATEST(0, storage_used_bytes + ?) WHERE id = ?");
-            return $stmt->execute([$bytesDelta, $userId]);
+            $res = $stmt->execute([$bytesDelta, $userId]);
+            if ($res && $this->redisClient) {
+                try {
+                    $this->redisClient->del(CacheConstants::PREFIX_USER_STORAGE . $userId);
+                } catch (\Throwable $e) {}
+            }
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'delta' => $bytesDelta, 'exception' => $e]);
             return false;
@@ -448,17 +446,35 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     public function getStorageUsed(int $userId): float {
+        // Check Redis cache first
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get(CacheConstants::PREFIX_USER_STORAGE . $userId);
+                if ($cached !== null && $cached !== false) {
+                    return (float)$cached;
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("SELECT storage_used_bytes FROM {$tblUsers} WHERE id = ?");
             $stmt->execute([$userId]);
             $bytes = (float)$stmt->fetchColumn();
-            
+
             if ($bytes <= 0) {
                 $bytes = $this->calculateDynamicUserStorageBytes($userId);
             }
-            
-            return $bytes / (1024 * 1024);
+
+            $mb = $bytes / (1024 * 1024);
+
+            if ($this->redisClient) {
+                try {
+                    $this->redisClient->setex(CacheConstants::PREFIX_USER_STORAGE . $userId, CacheConstants::TTL_FIVE_MINS, (string)$mb);
+                } catch (\Throwable $e) {}
+            }
+
+            return $mb;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
             return 0.0;
@@ -532,6 +548,16 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     public function getCustomPalettes(int $userId): array {
+        $cacheKey = CacheConstants::PREFIX_USER_PALETTE . $userId;
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    return json_decode($cached, true) ?? [];
+                }
+            } catch (\Throwable $e) {}
+        }
+
         try {
             $stmt = $this->pdo->prepare("SELECT palette_key, name, colors FROM custom_palettes WHERE user_id = :user_id");
             $stmt->execute([':user_id' => $userId]);
@@ -539,6 +565,13 @@ class UserRepository implements UserRepositoryInterface {
             foreach ($customPalettes as &$p) {
                 $p['colors'] = json_decode($p['colors'], true) ?? [];
             }
+
+            if ($this->redisClient) {
+                try {
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_TEN_MINS, json_encode($customPalettes));
+                } catch (\Throwable $e) {}
+            }
+
             return $customPalettes;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);

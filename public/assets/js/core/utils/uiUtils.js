@@ -9,15 +9,21 @@ function showMessage(message, type = 'success') {
 function setButtonLoading(btn, loadingText = '') {
     if (!btn) return;
     
-    if (btn.dataset.originalText === undefined || btn.dataset.originalText === null) {
-        btn.dataset.originalText = btn.innerHTML;
-    }
+    // Avoid setting loading multiple times if already loading
+    if (btn.classList.contains('disabled-interaction')) return;
+    
     btn.classList.add('disabled-interaction');
     
     if (loadingText) {
-        btn.innerHTML = `<span class="component-spinner component-spinner--small"></span> ${loadingText}`;
+        if (btn.dataset.originalText === undefined || btn.dataset.originalText === null) {
+            btn.dataset.originalText = btn.innerHTML;
+        }
+        btn.innerHTML = `<span class="component-spinner"></span> ${loadingText}`;
     } else {
-        btn.innerHTML = '<div class="component-spinner"></div>';
+        btn.classList.add('component-button--processing');
+        const spinner = document.createElement('span');
+        spinner.className = 'component-spinner component-button-loading-spinner';
+        btn.appendChild(spinner);
     }
 }
 
@@ -27,6 +33,14 @@ function restoreButton(btn) {
     if (btn.dataset.originalText !== undefined && btn.dataset.originalText !== null) {
         btn.innerHTML = btn.dataset.originalText;
         delete btn.dataset.originalText;
+    }
+    
+    if (btn.classList.contains('component-button--processing')) {
+        btn.classList.remove('component-button--processing');
+        const spinner = btn.querySelector('.component-button-loading-spinner');
+        if (spinner) {
+            spinner.remove();
+        }
     }
     
     btn.classList.remove('disabled-interaction');
@@ -66,6 +80,61 @@ function getLowestTierForFeature(featureKey) {
         return t[featureKey] === 1 || t['feat_' + featureKey] === 1 || t[featureKey] === true || t['feat_' + featureKey] === true;
     });
     return match ? match.name : '';
+}
+
+function getLockDetails(featureKey, elementType = 'button') {
+    const userTier = window.appUserTier ?? 0;
+    
+    let hasFeature = false;
+    if (window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+        const userTierObj = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === userTier);
+        if (userTierObj) {
+            hasFeature = userTierObj[featureKey] === 1 || userTierObj['feat_' + featureKey] === 1 || 
+                         userTierObj[featureKey] === true || userTierObj['feat_' + featureKey] === true;
+        }
+    }
+
+    if (hasFeature) {
+        return {
+            isLocked: false,
+            classStr: '',
+            attributesStr: '',
+            badgeHtml: ''
+        };
+    }
+
+    let requiredTierLevel = 1;
+    let requiredTierName = 'Pro';
+    if (window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+        const sorted = [...window.APP_TIERS].sort((a, b) => parseInt(a.tier_level, 10) - parseInt(b.tier_level, 10));
+        const match = sorted.find(t => {
+            if (t.is_active !== undefined && (parseInt(t.is_active, 10) === 0 || t.is_active === false)) return false;
+            return t[featureKey] === 1 || t['feat_' + featureKey] === 1 || t[featureKey] === true || t['feat_' + featureKey] === true;
+        });
+        if (match) {
+            requiredTierLevel = parseInt(match.tier_level, 10);
+            requiredTierName = match.name;
+        }
+    }
+
+    let classStr = 'premium-locked';
+    if (elementType === 'button') {
+        classStr += ' component-button--premium';
+    }
+    
+    const attributesStr = ` data-requires-premium="true" data-required-tier="${requiredTierLevel}"`;
+    
+    let badgeHtml = '';
+    if (elementType === 'link') {
+        badgeHtml = ` <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${escapeHTML(requiredTierName)}</span>`;
+    }
+
+    return {
+        isLocked: true,
+        classStr,
+        attributesStr,
+        badgeHtml
+    };
 }
 
 function hexToHsv(hex) {
@@ -196,6 +265,7 @@ export {
     formatNumber, 
     getDynamicTierName, 
     getLowestTierForFeature,
+    getLockDetails,
     hexToHsv,
     hsvToHex,
     getEventCoords,

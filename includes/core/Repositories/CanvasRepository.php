@@ -25,9 +25,57 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     private function invalidateCanvasCache(int $id): void {
-        if ($this->redisClient) {
-            $this->redisClient->del(CacheConstants::PREFIX_CANVAS_DETAIL . $id);
-        }
+        if (!$this->redisClient) return;
+        $this->redisClient->del(CacheConstants::PREFIX_CANVAS_DETAIL . $id);
+        // Invalidate public/home feed pages so listing changes are reflected quickly
+        try {
+            foreach (['newest','oldest','members'] as $sort) {
+                foreach ([20, 50] as $lim) {
+                    $this->redisClient->del(CacheConstants::PREFIX_CANVAS_PUBLIC_PAGE . "{$sort}:{$lim}:0");
+                }
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    private function invalidateUserCanvasListCaches(int $userId): void {
+        if (!$this->redisClient) return;
+        try {
+            $this->redisClient->del(CacheConstants::PREFIX_CANVAS_COUNT . $userId);
+            // Purge tier count cache for all tiers (0-3)
+            for ($t = 0; $t <= 3; $t++) {
+                $this->redisClient->del(CacheConstants::PREFIX_CANVAS_TIER_COUNT . "{$userId}:{$t}");
+            }
+            // Purge paginated owner list (first pages)
+            foreach (['all','mine','joined','favorites'] as $filter) {
+                $this->redisClient->del(CacheConstants::PREFIX_CANVAS_DASHBOARD . "u{$userId}:{$filter}:20:0");
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    private function invalidateMemberCache(int $canvasId, int $userId): void {
+        if (!$this->redisClient) return;
+        try {
+            $this->redisClient->del(CacheConstants::PREFIX_CANVAS_MEMBER_ROLES . "{$canvasId}:{$userId}");
+            $this->redisClient->del("canvas_weight:u{$userId}:c{$canvasId}");
+            $this->redisClient->del(CacheConstants::PREFIX_CANVAS_COUNT . $userId);
+            for ($t = 0; $t <= 3; $t++) {
+                $this->redisClient->del(CacheConstants::PREFIX_CANVAS_TIER_COUNT . "{$userId}:{$t}");
+            }
+            foreach (['all','mine','joined','favorites'] as $filter) {
+                $this->redisClient->del(CacheConstants::PREFIX_CANVAS_DASHBOARD . "u{$userId}:{$filter}:20:0");
+                $this->redisClient->del(CacheConstants::PREFIX_CANVAS_DASHBOARD . "u{$userId}:{$filter}:50:0");
+            }
+            
+            // Delete all permission keys for this user on this canvas
+            $perms = [
+                'place_pixels', 'manage_settings', 'manage_members', 'manage_roles',
+                'assign_roles', 'view_history', 'manage_resets', 'manage_sanctions',
+                'manage_invites', 'create_snapshots'
+            ];
+            foreach ($perms as $p) {
+                $this->redisClient->del(CacheConstants::PREFIX_CANVAS_PERMISSION . "{$canvasId}:{$userId}:" . md5($p));
+            }
+        } catch (\Throwable $e) {}
     }
 
     private function appendSnapshotUrl(array $canvas): array {
@@ -96,6 +144,9 @@ class CanvasRepository implements CanvasRepositoryInterface {
             Logger::error("Typesense Create Error (Canvas ID {$id}): " . $e->getMessage());
         }
 
+        // Invalidate owner list caches
+        $this->invalidateUserCanvasListCaches((int)$canvasData['owner_id']);
+
         return $id;
     }
 
@@ -115,6 +166,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $this->assignMemberRole($canvasId, $userId, $roleId);
 
             $this->db->commit();
+            $this->invalidateMemberCache($canvasId, $userId);
             return true;
         } catch (Exception $e) {
             if ($this->db->inTransaction()) {
@@ -127,11 +179,24 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null, string $sort = 'newest', int $offset = 0): array {
         $cacheKey = null;
-        if ($this->redisClient && $currentUserId === null) {
+        if ($this->redisClient) {
+            // Shared base cache (no per-user is_favorite for guests, short TTL for logged users)
             $cacheKey = CacheConstants::PREFIX_CANVAS_PUBLIC_PAGE . "{$sort}:{$limit}:{$offset}";
             $cached = $this->redisClient->get($cacheKey);
             if ($cached) {
-                return json_decode($cached, true);
+                $data = json_decode($cached, true);
+                // For logged-in users resolve their is_favorite from a lightweight query
+                if ($currentUserId !== null && is_array($data) && !empty($data)) {
+                    $ids = array_column($data, 'id');
+                    $ph = implode(',', array_fill(0, count($ids), '?'));
+                    try {
+                        $stmtFav = $this->db->prepare("SELECT canvas_id FROM " . DB::TBL_CANVAS_FAVORITES . " WHERE user_id = ? AND canvas_id IN ({$ph})");
+                        $stmtFav->execute(array_merge([$currentUserId], $ids));
+                        $favIds = array_flip($stmtFav->fetchAll(PDO::FETCH_COLUMN));
+                        foreach ($data as &$c) { $c['is_favorite'] = isset($favIds[$c['id']]); }
+                    } catch (\Throwable $e) {}
+                }
+                return $data;
             }
         }
 
@@ -302,6 +367,15 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
 
     public function getUserAndJoinedCanvases(int $userId, int $limit = 50, string $filter = 'all', int $offset = 0): array {
+        $cacheKey = CacheConstants::PREFIX_CANVAS_DASHBOARD . "u{$userId}:{$filter}:{$limit}:{$offset}";
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    return json_decode($cached, true) ?? [];
+                }
+            } catch (\Throwable $e) {}
+        }
         $joinRolesSql = "LEFT JOIN " . DB::TBL_CANVAS_MEMBERS . " cm2 ON c.id = cm2.canvas_id AND cm2.user_id = :uid4";
         
         $whereClause = "WHERE (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL)";
@@ -342,10 +416,28 @@ class CanvasRepository implements CanvasRepositoryInterface {
             return $canvas;
         }, $results);
 
-        return array_map([$this, 'appendSnapshotUrl'], $results);
+        $final = array_map([$this, 'appendSnapshotUrl'], $results);
+
+        if ($this->redisClient) {
+            try {
+                $this->redisClient->setex($cacheKey, CacheConstants::TTL_TWO_MINS, json_encode($final));
+            } catch (\Throwable $e) {}
+        }
+
+        return $final;
     }
 
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
+        $cacheKey = CacheConstants::PREFIX_CANVAS_OWNER_LIST . "{$ownerId}:{$limit}:{$offset}";
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    return json_decode($cached, true) ?? [];
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
@@ -362,23 +454,52 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->execute();
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
         $results = array_map(function($canvas) {
             $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
             return $canvas;
         }, $results);
 
-        return array_map([$this, 'appendSnapshotUrl'], $results);
+        $final = array_map([$this, 'appendSnapshotUrl'], $results);
+
+        if ($this->redisClient) {
+            try {
+                $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($final));
+            } catch (\Throwable $e) {}
+        }
+
+        return $final;
     }
 
     public function countUserCanvases(int $ownerId): int {
+        $cacheKey = CacheConstants::PREFIX_CANVAS_COUNT . $ownerId;
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) return (int)$cached;
+            } catch (\Throwable $e) {}
+        }
+
         $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':oid' => $ownerId]);
-        return (int)$stmt->fetchColumn();
+        $count = (int)$stmt->fetchColumn();
+
+        if ($this->redisClient) {
+            try { $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_MIN, (string)$count); } catch (\Throwable $e) {}
+        }
+
+        return $count;
     }
 
     public function countUserTierCanvases(int $ownerId, int $tier): int {
+        $cacheKey = CacheConstants::PREFIX_CANVAS_TIER_COUNT . "{$ownerId}:{$tier}";
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) return (int)$cached;
+            } catch (\Throwable $e) {}
+        }
+
         $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
         $tierSizes = [];
         foreach ($allSizes as $key => $conf) {
@@ -387,16 +508,20 @@ class CanvasRepository implements CanvasRepositoryInterface {
             }
         }
 
-        if (empty($tierSizes)) {
-            return 0;
-        }
+        if (empty($tierSizes)) return 0;
 
         $placeholders = implode(',', array_fill(0, count($tierSizes), '?'));
         $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = ? AND size IN ($placeholders)";
         $stmt = $this->db->prepare($sql);
         $params = array_merge([$ownerId], $tierSizes);
         $stmt->execute($params);
-        return (int)$stmt->fetchColumn();
+        $count = (int)$stmt->fetchColumn();
+
+        if ($this->redisClient) {
+            try { $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_MIN, (string)$count); } catch (\Throwable $e) {}
+        }
+
+        return $count;
     }
 
     public function countOlderCanvases(int $canvasId, int $ownerId, string $createdAt): int {
@@ -429,6 +554,11 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     }
                 }
             }
+            // Invalidate caches for each deleted canvas
+            foreach ($canvasIds as $id) {
+                $this->invalidateCanvasCache((int)$id);
+            }
+            $this->invalidateUserCanvasListCaches($ownerId);
         }
 
         return $success;
@@ -582,29 +712,51 @@ class CanvasRepository implements CanvasRepositoryInterface {
             }
 
             $this->db->commit();
+
+            // Invalidate member role and permission caches
+            $this->invalidateMemberCache($canvasId, $userId);
+
             return true;
         } catch (\Exception $e) {
-            if ($this->db->inTransaction()) {
-                $this->db->rollBack();
-            }
+            if ($this->db->inTransaction()) $this->db->rollBack();
             Logger::error('Error in syncUserRoles.', ['error' => $e->getMessage()]);
             return false;
         }
     }
 
     public function getMemberRoles(int $canvasId, int $userId): array {
+        $cacheKey = CacheConstants::PREFIX_CANVAS_MEMBER_ROLES . "{$canvasId}:{$userId}";
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) return json_decode($cached, true) ?? [];
+            } catch (\Throwable $e) {}
+        }
+
         $sql = "SELECT r.* 
                 FROM " . DB::TBL_CANVAS_USER_ROLES . " cur
                 INNER JOIN " . DB::TBL_CANVAS_ROLES . " r ON cur.role_id = r.id
                 WHERE cur.canvas_id = :canvas_id AND cur.user_id = :user_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $roles = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if ($this->redisClient) {
+            try { $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($roles)); } catch (\Throwable $e) {}
+        }
+
+        return $roles;
     }
 
-
-
     public function hasCanvasPermission(int $canvasId, int $userId, string $permission): bool {
+        $cacheKey = CacheConstants::PREFIX_CANVAS_PERMISSION . "{$canvasId}:{$userId}:" . md5($permission);
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) return (bool)(int)$cached;
+            } catch (\Throwable $e) {}
+        }
+
         $sql = "SELECT 1 
                 FROM " . DB::TBL_CANVAS_USER_ROLES . " cur
                 INNER JOIN " . DB::TBL_CANVAS_ROLES . " r ON cur.role_id = r.id
@@ -615,74 +767,118 @@ class CanvasRepository implements CanvasRepositoryInterface {
                   AND p.name = :permission
                 LIMIT 1";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            ':canvas_id' => $canvasId, 
-            ':user_id' => $userId,
-            ':permission' => $permission
-        ]);
-        return (bool)$stmt->fetchColumn();
+        $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId, ':permission' => $permission]);
+        $result = (bool)$stmt->fetchColumn();
+
+        if ($this->redisClient) {
+            try { $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_MIN, $result ? '1' : '0'); } catch (\Throwable $e) {}
+        }
+
+        return $result;
     }
 
     public function assignMemberRole(int $canvasId, int $userId, int $roleId): bool {
         $sql = "INSERT IGNORE INTO " . DB::TBL_CANVAS_USER_ROLES . " (canvas_id, user_id, role_id) 
                 VALUES (:canvas_id, :user_id, :role_id)";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
+        $res = $stmt->execute([
             ':canvas_id' => $canvasId,
             ':user_id' => $userId,
             ':role_id' => $roleId
         ]);
+        if ($res) {
+            $this->invalidateMemberCache($canvasId, $userId);
+        }
+        return $res;
     }
 
     public function removeMemberRole(int $canvasId, int $userId, int $roleId): bool {
         $sql = "DELETE FROM " . DB::TBL_CANVAS_USER_ROLES . " 
                 WHERE canvas_id = :canvas_id AND user_id = :user_id AND role_id = :role_id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
+        $res = $stmt->execute([
             ':canvas_id' => $canvasId,
             ':user_id' => $userId,
             ':role_id' => $roleId
         ]);
+        if ($res) {
+            $this->invalidateMemberCache($canvasId, $userId);
+        }
+        return $res;
     }
 
     public function getCanvasRoles(?int $canvasId = null): array {
-        $sql = "SELECT * FROM " . DB::TBL_CANVAS_ROLES . " WHERE canvas_id IS NULL OR canvas_id = :canvas_id ORDER BY weight DESC";
+        $cacheKey = CacheConstants::PREFIX_CANVAS_ROLES_LIST . ($canvasId ?? 'global');
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) return json_decode($cached, true) ?? [];
+            } catch (\Throwable $e) {}
+        }
+
+        // Single JOIN query to avoid N+1 pattern
+        $sql = "SELECT r.*, p.name as perm_name
+                FROM " . DB::TBL_CANVAS_ROLES . " r
+                LEFT JOIN " . DB::TBL_CANVAS_ROLE_PERMISSIONS . " crp ON r.id = crp.role_id
+                LEFT JOIN " . DB::TBL_CANVAS_PERMISSIONS . " p ON crp.permission_id = p.id
+                WHERE r.canvas_id IS NULL OR r.canvas_id = :canvas_id
+                ORDER BY r.weight DESC, r.id ASC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
-        
-        $roles = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
-        if (!empty($roles)) {
-            $sqlPerms = "SELECT p.name 
-                         FROM " . DB::TBL_CANVAS_ROLE_PERMISSIONS . " crp
-                         INNER JOIN " . DB::TBL_CANVAS_PERMISSIONS . " p ON crp.permission_id = p.id
-                         WHERE crp.role_id = :role_id";
-            $stmtPerms = $this->db->prepare($sqlPerms);
-            
-            foreach ($roles as &$role) {
-                $stmtPerms->execute([':role_id' => $role['id']]);
-                $role['permissions'] = $stmtPerms->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Aggregate permissions per role
+        $rolesMap = [];
+        foreach ($rows as $row) {
+            $rid = $row['id'];
+            if (!isset($rolesMap[$rid])) {
+                unset($row['perm_name']);
+                $row['permissions'] = [];
+                $rolesMap[$rid] = $row;
+            }
+            if ($row['perm_name'] !== null) {
+                $rolesMap[$rid]['permissions'][] = $row['perm_name'];
             }
         }
-        
+        $roles = array_values($rolesMap);
+
+        if ($this->redisClient) {
+            try { $this->redisClient->setex($cacheKey, CacheConstants::TTL_TEN_MINS, json_encode($roles)); } catch (\Throwable $e) {}
+        }
+
         return $roles;
     }
 
     public function getCanvasPermissions(): array {
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get(CacheConstants::KEY_CANVAS_PERMS_ALL);
+                if ($cached !== null && $cached !== false) return json_decode($cached, true) ?? [];
+            } catch (\Throwable $e) {}
+        }
+
         $sql = "SELECT * FROM " . DB::TBL_CANVAS_PERMISSIONS . " ORDER BY id ASC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $perms = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if ($this->redisClient && !empty($perms)) {
+            try { $this->redisClient->setex(CacheConstants::KEY_CANVAS_PERMS_ALL, CacheConstants::TTL_ONE_DAY, json_encode($perms)); } catch (\Throwable $e) {}
+        }
+
+        return $perms;
     }
 
     public function createCanvasRole(int $canvasId, string $name, array $permissions, int $weight = 10, int $isSystem = 0): int {
         try {
+            $uuid = \App\Core\Helpers\Utils::generateUUID();
             $this->db->beginTransaction();
             
-            $sql = "INSERT INTO " . DB::TBL_CANVAS_ROLES . " (canvas_id, name, weight, is_system) 
-                    VALUES (:canvas_id, :name, :weight, :is_system)";
+            $sql = "INSERT INTO " . DB::TBL_CANVAS_ROLES . " (uuid, canvas_id, name, weight, is_system) 
+                    VALUES (:uuid, :canvas_id, :name, :weight, :is_system)";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
+                ':uuid' => $uuid,
                 ':canvas_id' => $canvasId,
                 ':name' => $name,
                 ':weight' => $weight,
@@ -786,10 +982,28 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getUserStorageUsed(int $userId): float {
-        // Obtenemos el almacenamiento del Identity DB
-        $dbManager = new DatabaseManager();
-        $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager, new \App\Config\Database\RedisCache()));
-        return $userRepo->getStorageUsed($userId);
+        // Check user:storage cache directly via our own redisClient
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get(CacheConstants::PREFIX_USER_STORAGE . $userId);
+                if ($cached !== null && $cached !== false) return (float)$cached;
+            } catch (\Throwable $e) {}
+        }
+        // Fallback: query identity DB directly without instantiating full UserRepository
+        try {
+            $identityDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmt = $identityDb->prepare("SELECT storage_used_bytes FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $bytes = (float)$stmt->fetchColumn();
+            $mb = $bytes > 0 ? $bytes / (1024 * 1024) : 0.0;
+            if ($this->redisClient && $mb > 0) {
+                try { $this->redisClient->setex(CacheConstants::PREFIX_USER_STORAGE . $userId, CacheConstants::TTL_FIVE_MINS, (string)$mb); } catch (\Throwable $e) {}
+            }
+            return $mb;
+        } catch (\Throwable $e) {
+            Logger::error("getUserStorageUsed fallback failed", ['user_id' => $userId, 'error' => $e->getMessage()]);
+            return 0.0;
+        }
     }
 
     public function countCanvasSnapshots(int $canvasId): int {
@@ -853,6 +1067,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             }
             
             $this->db->commit();
+            $this->invalidateMemberCache($canvasId, $userId);
             return true;
         } catch (Exception $e) {
             if ($this->db->inTransaction()) {
@@ -966,12 +1181,24 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getResetSettings(int $canvasId): ?array {
+        $cacheKey = CacheConstants::PREFIX_CANVAS_RESET_SETTINGS . $canvasId;
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) return json_decode($cached, true) ?: null;
+            } catch (\Throwable $e) {}
+        }
+
         $sql = "SELECT * FROM " . DB::TBL_CANVAS_RESET_SETTINGS . " WHERE canvas_id = :canvas_id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
-        
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ?: null;
+        $result = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        if ($result && $this->redisClient) {
+            try { $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($result)); } catch (\Throwable $e) {}
+        }
+
+        return $result;
     }
 
     public function updateResetSettings(int $canvasId, array $settings): bool {
@@ -997,17 +1224,33 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
         if ($success) {
             $this->invalidateCanvasCache($canvasId);
+            // Invalidate reset settings cache
+            if ($this->redisClient) {
+                try { $this->redisClient->del(CacheConstants::PREFIX_CANVAS_RESET_SETTINGS . $canvasId); } catch (\Throwable $e) {}
+            }
         }
         return $success;
     }
 
     public function getResizeSettings(int $canvasId): ?array {
+        $cacheKey = CacheConstants::PREFIX_CANVAS_RESIZE_SETTINGS . $canvasId;
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) return json_decode($cached, true) ?: null;
+            } catch (\Throwable $e) {}
+        }
+
         $sql = "SELECT * FROM " . DB::TBL_CANVAS_RESIZE_SETTINGS . " WHERE canvas_id = :canvas_id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
-        
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ?: null;
+        $result = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        if ($result && $this->redisClient) {
+            try { $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($result)); } catch (\Throwable $e) {}
+        }
+
+        return $result;
     }
 
     public function updateResizeSettings(int $canvasId, array $settings): bool {
@@ -1033,6 +1276,10 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
         if ($success) {
             $this->invalidateCanvasCache($canvasId);
+            // Invalidate resize settings cache
+            if ($this->redisClient) {
+                try { $this->redisClient->del(CacheConstants::PREFIX_CANVAS_RESIZE_SETTINGS . $canvasId); } catch (\Throwable $e) {}
+            }
         }
         return $success;
     }
@@ -1049,12 +1296,26 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getSnapshotsByCanvasId(int $canvasId): array {
+        $cacheKey = CacheConstants::PREFIX_CANVAS_SNAPSHOTS . $canvasId;
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) return json_decode($cached, true) ?? [];
+            } catch (\Throwable $e) {}
+        }
+
         $sql = "SELECT * FROM " . DB::TBL_CANVAS_SNAPSHOTS_HISTORY . " 
                 WHERE canvas_id = :canvas_id 
                 ORDER BY created_at DESC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if ($this->redisClient) {
+            try { $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($result)); } catch (\Throwable $e) {}
+        }
+
+        return $result;
     }
 
     public function getSnapshotsHistoryByUuid(string $uuid): array {
@@ -1084,10 +1345,18 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         $insertId = (int)$this->db->lastInsertId();
 
-        if ($fileSize > 0) {
-            $dbManager = new DatabaseManager();
-            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager, new \App\Config\Database\RedisCache()));
-            $userRepo->updateStorageUsed($userId, $fileSize);
+        if ($fileSize > 0 && $insertId) {
+            try {
+                $identityDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+                $stmtUpd = $identityDb->prepare("UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes + ?) WHERE id = ?");
+                $stmtUpd->execute([$fileSize, $userId]);
+                // Invalidate user storage cache
+                if ($this->redisClient) {
+                    try { $this->redisClient->del(CacheConstants::PREFIX_USER_STORAGE . $userId); } catch (\Throwable $e) {}
+                }
+            } catch (\Throwable $e) {
+                Logger::error("saveTemplateMetadata: failed to update storage", ['user_id' => $userId, 'error' => $e->getMessage()]);
+            }
         }
 
         return $insertId;
@@ -1111,19 +1380,22 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->execute([':id' => $templateId, ':user_id' => $userId]);
         $fileSize = (int)$stmt->fetchColumn();
 
-        $sql = "DELETE FROM " . DB::TBL_USER_TEMPLATES . " 
-                WHERE id = :id AND user_id = :user_id";
-        
+        $sql = "DELETE FROM " . DB::TBL_USER_TEMPLATES . " WHERE id = :id AND user_id = :user_id";
         $stmt = $this->db->prepare($sql);
-        $result = $stmt->execute([
-            ':id'      => $templateId,
-            ':user_id' => $userId
-        ]);
+        $result = $stmt->execute([':id' => $templateId, ':user_id' => $userId]);
 
         if ($result && $fileSize > 0) {
-            $dbManager = new DatabaseManager();
-            $userRepo = new \App\Core\Repositories\UserRepository($dbManager, new \App\Core\Repositories\RoleRepository($dbManager, new \App\Config\Database\RedisCache()));
-            $userRepo->updateStorageUsed($userId, -$fileSize);
+            try {
+                $identityDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+                $stmtUpd = $identityDb->prepare("UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?) WHERE id = ?");
+                $stmtUpd->execute([$fileSize, $userId]);
+                // Invalidate user storage cache
+                if ($this->redisClient) {
+                    try { $this->redisClient->del(CacheConstants::PREFIX_USER_STORAGE . $userId); } catch (\Throwable $e) {}
+                }
+            } catch (\Throwable $e) {
+                Logger::error("deleteTemplate: failed to update storage", ['user_id' => $userId, 'error' => $e->getMessage()]);
+            }
         }
 
         return $result;
@@ -1208,15 +1480,19 @@ class CanvasRepository implements CanvasRepositoryInterface {
         }
 
         $creatorIds = array_unique(array_filter(array_column($invites, 'created_by')));
-        
+
         if (!empty($creatorIds)) {
-            $dbManager = new DatabaseManager();
-            $userRepo = new \App\Core\Repositories\UserRepository(
-                $dbManager, 
-                new \App\Core\Repositories\RoleRepository($dbManager, new \App\Config\Database\RedisCache())
-            );
-            $usernames = $userRepo->getUsernamesByIds($creatorIds);
-            
+            // Fetch usernames directly from identity DB — no full UserRepository instantiation needed
+            try {
+                $identityDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+                $ph = implode(',', array_fill(0, count($creatorIds), '?'));
+                $stmtU = $identityDb->prepare("SELECT id, username FROM users WHERE id IN ({$ph})");
+                $stmtU->execute(array_values($creatorIds));
+                $usernames = $stmtU->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            } catch (\Throwable $e) {
+                Logger::error("getInvites: failed to fetch usernames", ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+                $usernames = [];
+            }
             foreach ($invites as &$invite) {
                 $invite['creator_name'] = $usernames[$invite['created_by']] ?? 'Unknown';
             }
@@ -1253,19 +1529,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getUserCanvasWeight(int $userId, int $canvasId): int {
-        $redis = null;
         $cacheKey = "canvas_weight:u{$userId}:c{$canvasId}";
-        if (class_exists(\App\Config\Database\RedisCache::class)) {
+        // Use the already-injected redisClient instead of creating a new instance
+        if ($this->redisClient) {
             try {
-                $redisInstance = new \App\Config\Database\RedisCache();
-                $redis = $redisInstance->getClient();
-                if ($redis) {
-                    $cached = $redis->get($cacheKey);
-                    if ($cached !== null) {
-                        return (int)$cached;
-                    }
-                }
-            } catch (\Exception $e) {}
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) return (int)$cached;
+            } catch (\Throwable $e) {}
         }
 
         $sql = "SELECT r.weight 
@@ -1278,10 +1548,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $weight = $stmt->fetchColumn();
         $weight = $weight !== false ? (int)$weight : 0;
 
-        if ($redis) {
-            try {
-                $redis->setex($cacheKey, 300, (string)$weight);
-            } catch (\Exception $e) {}
+        if ($this->redisClient) {
+            try { $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, (string)$weight); } catch (\Throwable $e) {}
         }
 
         return $weight;

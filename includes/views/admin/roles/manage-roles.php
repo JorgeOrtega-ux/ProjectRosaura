@@ -114,11 +114,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
                             data-role-weight="<?php echo (int)$role['weight']; ?>">
                             <td>
                                 <div class="td-user-info">
-                                    <div class="component-button--profile component-avatar--static-sm">
-                                        <img src="/public/assets/img/fallbacks/avatar-default.png" alt="<?php echo __('alt_role_avatar'); ?>"
-                                             class="image-lazy-fade"
-                                             onload="this.classList.add('image-loaded')">
-                                    </div>
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded">admin_panel_settings</span>
                                         <span class="search-target"><?php echo htmlspecialchars($translatedName); ?></span>

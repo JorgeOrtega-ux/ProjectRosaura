@@ -628,6 +628,15 @@ return [
             ],
         ],
     ],
+    'canvases.snapshot_status' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasSettingsController',
+        'action' => 'snapshot_status',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ]
+        ],
+    ],
     'canvases.request_access' => [
         'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasAccessController',
         'action' => 'request_access',

@@ -159,7 +159,8 @@ class AdminRolesController extends BaseListController {
 
         if (isSystem) {
             if (deleteBtn) { deleteBtn.classList.add('disabled-interaction'); deleteBtn.setAttribute('title', _t('system_role_cannot_delete', 'Los roles del sistema no pueden eliminarse')); }
-            if (editBtn)   { editBtn.setAttribute('title', _t('system_role_edit_notice', 'Rol del sistema')); }
+            if (editBtn)   { editBtn.classList.add('disabled-interaction'); editBtn.setAttribute('title', _t('system_role_cannot_edit', 'Los roles del sistema no pueden editarse')); }
+            if (permsBtn)  { permsBtn.classList.add('disabled-interaction'); permsBtn.setAttribute('title', _t('system_role_cannot_edit_perms', 'Los permisos de los roles del sistema no pueden modificarse')); }
         }
     }
 

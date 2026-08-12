@@ -171,7 +171,8 @@ class CanvasViewService {
             'totalPages' => $totalPages,
             'page' => $currentPage,
             'isAdmin' => false,
-            'hasAdvancedRoles' => $hasAdvancedRoles
+            'hasAdvancedRoles' => $hasAdvancedRoles,
+            'userTier' => $subscriptionTier
         ];
     }
 
@@ -957,6 +958,15 @@ class CanvasViewService {
             $stmt = $pdoCanvases->prepare("SELECT * FROM canvas_roles WHERE canvas_id IS NULL OR canvas_id = :cid ORDER BY weight DESC");
             $stmt->execute(['cid' => $canvasId]);
             $roles = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($roles as &$role) {
+                if (empty($role['uuid'])) {
+                    $newUuid = \App\Core\Helpers\Utils::generateUUID();
+                    $stmtUpdate = $pdoCanvases->prepare("UPDATE canvas_roles SET uuid = ? WHERE id = ?");
+                    $stmtUpdate->execute([$newUuid, $role['id']]);
+                    $role['uuid'] = $newUuid;
+                }
+            }
+            unset($role);
         } catch (\Throwable $e) {
             Logger::error("getCanvasRolesData roles query error: " . $e->getMessage(), ['exception' => $e]);
         }
@@ -1100,8 +1110,32 @@ class CanvasViewService {
             $stmt = $pdoCanvases->prepare("SELECT * FROM canvas_roles WHERE canvas_id IS NULL OR canvas_id = :cid ORDER BY weight DESC");
             $stmt->execute(['cid' => $canvasId]);
             $availableRoles = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($availableRoles as &$role) {
+                if (empty($role['uuid'])) {
+                    $newUuid = \App\Core\Helpers\Utils::generateUUID();
+                    $stmtUpdate = $pdoCanvases->prepare("UPDATE canvas_roles SET uuid = ? WHERE id = ?");
+                    $stmtUpdate->execute([$newUuid, $role['id']]);
+                    $role['uuid'] = $newUuid;
+                }
+            }
+            unset($role);
         } catch (\Throwable $e) {
             Logger::error("getCanvasChangeRoleData availableRoles error: " . $e->getMessage(), ['exception' => $e]);
+        }
+
+        $isRequesterOwner = ($canvasOwnerId === $userId);
+        $userRolesWeight = 0;
+        if (!$isRequesterOwner) {
+            try {
+                $stmtRole = $pdoCanvases->prepare("SELECT r.weight FROM canvas_roles r JOIN canvas_user_roles ur ON r.id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid ORDER BY r.weight DESC LIMIT 1");
+                $stmtRole->execute(['cid' => $canvasId, 'uid' => $userId]);
+                $w = $stmtRole->fetchColumn();
+                if ($w !== false) {
+                    $userRolesWeight = (int)$w;
+                }
+            } catch (\Exception $e) {}
+        } else {
+            $userRolesWeight = 100;
         }
 
         return [
@@ -1116,6 +1150,8 @@ class CanvasViewService {
             'isOwner' => $isOwner,
             'targetCurrentRoles' => $targetCurrentRoles,
             'availableRoles' => $availableRoles,
+            'userRolesWeight' => $userRolesWeight,
+            'isRequesterOwner' => $isRequesterOwner,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
     }
@@ -1601,7 +1637,7 @@ class CanvasViewService {
             $allRestrictions = $stmtR->fetchAll(\PDO::FETCH_ASSOC);
 
             foreach ($allRestrictions as $r) {
-                $restrictionsMap[$r['user_id']] = $r;
+                $restrictionsMap[$r['user_id']][] = $r;
             }
 
             $restrictedUserIds = array_keys($restrictionsMap);
@@ -1632,7 +1668,7 @@ class CanvasViewService {
                 $userList[] = [
                     'user_id' => $uid,
                     'is_member' => in_array($uid, $activeMemberUserIds),
-                    'restriction' => $restrictionsMap[$uid] ?? null
+                    'restrictions' => $restrictionsMap[$uid] ?? []
                 ];
             }
         } catch (\Throwable $e) {

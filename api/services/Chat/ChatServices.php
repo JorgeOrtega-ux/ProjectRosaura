@@ -206,11 +206,18 @@ class ChatServices
     {
         if ($canvasId <= 0 || (empty($messageText) && empty($files['name'][0]))) {
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
-}
+        }
+
+        if (strpos($messageText, '/') === 0) {
+            $cmdResult = $this->processChatCommand($userId, $canvasId, $messageText);
+            if ($cmdResult !== null) {
+                return $cmdResult;
+            }
+        }
 
         if (mb_strlen($messageText) > 255) {
             return ['success' => false, 'message' => __('err_message_too_long'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
-}
+        }
 
         $stmt = $this->pdo->prepare("SELECT allow_chat, uuid FROM " . DB::TBL_CANVASES . " WHERE id = ?");
         $stmt->execute([$canvasId]);
@@ -612,6 +619,289 @@ class ChatServices
         } catch (\Exception $e) {
             Logger::error("Error generating presigned URL for attachment in ChatServices", ['s3_key' => $s3Key, 'exception' => $e]);
             return ['success' => false, 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
+        }
+    }
+
+    private function processChatCommand($userId, $canvasId, $messageText) {
+        $parts = explode(' ', trim($messageText));
+        $command = strtolower($parts[0]);
+        
+        $allowedCommands = ['/timeout', '/untimeout', '/ban', '/unban', '/canvasban', '/bancanvas', '/canvasunban', '/unbancanvas'];
+        if (!in_array($command, $allowedCommands)) {
+            if ($this->hasModPermissions($userId, $canvasId)) {
+                return [
+                    'success' => false, 
+                    'message' => "Comando desconocido. Comandos de moderación: /timeout, /untimeout, /ban, /unban, /bancanvas, /unbancanvas",
+                    'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST
+                ];
+            }
+            return null; 
+        }
+
+        if (!$this->hasModPermissions($userId, $canvasId)) {
+            return [
+                'success' => false,
+                'message' => 'No tienes permisos para ejecutar comandos de moderación en este lienzo.',
+                'http_code' => \App\Core\System\HttpConstants::FORBIDDEN
+            ];
+        }
+
+        if (count($parts) < 2) {
+            return [
+                'success' => false,
+                'message' => "Uso correcto: {$command} [nombre_de_usuario] [duración_segundos (opcional)]",
+                'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST
+            ];
+        }
+
+        $targetUsername = $parts[1];
+        
+        $stmt = $this->identityPdo->prepare("SELECT id, uuid, username FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1");
+        $stmt->execute([$targetUsername]);
+        $targetUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$targetUser) {
+            return [
+                'success' => false,
+                'message' => "Usuario '{$targetUsername}' no encontrado.",
+                'http_code' => \App\Core\System\HttpConstants::NOT_FOUND
+            ];
+        }
+
+        $targetUserId = (int)$targetUser['id'];
+        $targetUserUuid = $targetUser['uuid'];
+        $realTargetUsername = $targetUser['username'];
+
+        $stmtOwner = $this->pdo->prepare("SELECT owner_id FROM canvases WHERE id = ? LIMIT 1");
+        $stmtOwner->execute([$canvasId]);
+        $ownerId = (int)$stmtOwner->fetchColumn();
+
+        if ($targetUserId === $ownerId) {
+            return [
+                'success' => false,
+                'message' => 'No puedes aplicar sanciones al dueño del lienzo.',
+                'http_code' => \App\Core\System\HttpConstants::FORBIDDEN
+            ];
+        }
+
+        if ($targetUserId === (int)$userId) {
+            return [
+                'success' => false,
+                'message' => 'No puedes aplicarte sanciones a ti mismo.',
+                'http_code' => \App\Core\System\HttpConstants::FORBIDDEN
+            ];
+        }
+
+        switch ($command) {
+            case '/timeout':
+                $duration = 600;
+                if (isset($parts[2]) && is_numeric($parts[2])) {
+                    $duration = (int)$parts[2];
+                }
+                if ($duration <= 0) {
+                    return [
+                        'success' => false,
+                        'message' => 'La duración del silencio debe ser mayor a 0 segundos.',
+                        'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST
+                    ];
+                }
+
+                $endDate = date('Y-m-d H:i:s', time() + $duration);
+
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO canvas_sanctions 
+                    (canvas_id, user_id, restricted_by, sanction_scope, suspension_type, suspension_reason, end_date) 
+                    VALUES (?, ?, ?, 'chat_mute', 'temporary', 'reason_terms', ?)
+                    ON DUPLICATE KEY UPDATE 
+                    restricted_by = VALUES(restricted_by),
+                    suspension_type = VALUES(suspension_type),
+                    suspension_reason = VALUES(suspension_reason),
+                    end_date = VALUES(end_date)
+                ");
+                $stmt->execute([$canvasId, $targetUserId, $userId, $endDate]);
+
+                $this->syncUserRestrictionsToRedis($canvasId, $targetUserId);
+
+                return [
+                    'success' => true,
+                    'is_command' => true,
+                    'message' => "El usuario '{$realTargetUsername}' ha sido silenciado en el chat por {$duration} segundos."
+                ];
+
+            case '/untimeout':
+                $stmt = $this->pdo->prepare("DELETE FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ? AND sanction_scope = 'chat_mute'");
+                $stmt->execute([$canvasId, $targetUserId]);
+
+                $this->syncUserRestrictionsToRedis($canvasId, $targetUserId);
+
+                return [
+                    'success' => true,
+                    'is_command' => true,
+                    'message' => "Se ha levantado el silencio de chat al usuario '{$realTargetUsername}'."
+                ];
+
+            case '/ban':
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO canvas_sanctions 
+                    (canvas_id, user_id, restricted_by, sanction_scope, suspension_type, suspension_reason, end_date) 
+                    VALUES (?, ?, ?, 'chat_mute', 'permanent', 'reason_terms', NULL)
+                    ON DUPLICATE KEY UPDATE 
+                    restricted_by = VALUES(restricted_by),
+                    suspension_type = VALUES(suspension_type),
+                    suspension_reason = VALUES(suspension_reason),
+                    end_date = VALUES(end_date)
+                ");
+                $stmt->execute([$canvasId, $targetUserId, $userId]);
+
+                $this->syncUserRestrictionsToRedis($canvasId, $targetUserId);
+
+                return [
+                    'success' => true,
+                    'is_command' => true,
+                    'message' => "El usuario '{$realTargetUsername}' ha sido silenciado permanentemente del chat."
+                ];
+
+            case '/unban':
+                $stmt = $this->pdo->prepare("DELETE FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ? AND sanction_scope = 'chat_mute'");
+                $stmt->execute([$canvasId, $targetUserId]);
+
+                $this->syncUserRestrictionsToRedis($canvasId, $targetUserId);
+
+                return [
+                    'success' => true,
+                    'is_command' => true,
+                    'message' => "Se ha levantado el baneo de chat al usuario '{$realTargetUsername}'."
+                ];
+
+            case '/canvasban':
+            case '/bancanvas':
+                $stmt = $this->pdo->prepare("DELETE FROM canvas_members WHERE canvas_id = ? AND user_id = ?");
+                $stmt->execute([$canvasId, $targetUserId]);
+
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO canvas_sanctions 
+                    (canvas_id, user_id, restricted_by, sanction_scope, suspension_type, suspension_reason, end_date) 
+                    VALUES (?, ?, ?, 'canvas_ban', 'permanent', 'reason_terms', NULL)
+                    ON DUPLICATE KEY UPDATE 
+                    restricted_by = VALUES(restricted_by),
+                    suspension_type = VALUES(suspension_type),
+                    suspension_reason = VALUES(suspension_reason),
+                    end_date = VALUES(end_date)
+                ");
+                $stmt->execute([$canvasId, $targetUserId, $userId]);
+
+                $this->syncUserRestrictionsToRedis($canvasId, $targetUserId);
+
+                return [
+                    'success' => true,
+                    'is_command' => true,
+                    'message' => "El usuario '{$realTargetUsername}' ha sido baneado permanentemente del lienzo."
+                ];
+
+            case '/canvasunban':
+            case '/unbancanvas':
+                $stmt = $this->pdo->prepare("DELETE FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ? AND sanction_scope = 'canvas_ban'");
+                $stmt->execute([$canvasId, $targetUserId]);
+
+                $this->syncUserRestrictionsToRedis($canvasId, $targetUserId);
+
+                return [
+                    'success' => true,
+                    'is_command' => true,
+                    'message' => "Se ha levantado el baneo del lienzo al usuario '{$realTargetUsername}'."
+                ];
+        }
+
+        return null;
+    }
+
+    private function hasModPermissions($userId, $canvasId): bool {
+        $stmt = $this->pdo->prepare("SELECT owner_id FROM canvases WHERE id = ? LIMIT 1");
+        $stmt->execute([$canvasId]);
+        $ownerId = (int)$stmt->fetchColumn();
+        if ($ownerId === (int)$userId) {
+            return true;
+        }
+
+        $sql = "SELECT 1 
+                FROM canvas_user_roles cur
+                INNER JOIN canvas_roles r ON cur.role_id = r.id
+                INNER JOIN canvas_role_permissions crp ON r.id = crp.role_id
+                INNER JOIN canvas_permissions p ON crp.permission_id = p.id
+                WHERE cur.canvas_id = ? 
+                  AND cur.user_id = ? 
+                  AND p.name IN ('manage_sanctions', 'moderate_chat')
+                LIMIT 1";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$canvasId, $userId]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    private function syncUserRestrictionsToRedis($canvasId, $targetUserId) {
+        if (!$this->redis) return;
+
+        // Query active sanctions for this user on this canvas
+        $stmt = $this->pdo->prepare("
+            SELECT sanction_scope, suspension_type, end_date 
+            FROM canvas_sanctions 
+            WHERE canvas_id = ? AND user_id = ? 
+              AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW()))
+        ");
+        $stmt->execute([$canvasId, $targetUserId]);
+        $activeSanctions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $hasCanvasBan = false;
+        $hasChatMute = false;
+        
+        $canvasBanTtl = 0;
+        $chatMuteTtl = 0;
+
+        foreach ($activeSanctions as $sanction) {
+            $scope = $sanction['sanction_scope'];
+            $type = $sanction['suspension_type'];
+            $endDate = $sanction['end_date'];
+            
+            $ttl = 0;
+            if ($type === 'temporary' && $endDate) {
+                $ttl = strtotime($endDate) - time();
+            }
+
+            if ($scope === 'canvas_ban') {
+                $hasCanvasBan = true;
+                $canvasBanTtl = ($type === 'permanent') ? -1 : max($canvasBanTtl, $ttl);
+            } elseif ($scope === 'chat_mute') {
+                $hasChatMute = true;
+                $chatMuteTtl = ($type === 'permanent') ? -1 : max($chatMuteTtl, $ttl);
+            }
+        }
+
+        $banKey = "canvas:{$canvasId}:canvas_banned:{$targetUserId}";
+        if ($hasCanvasBan) {
+            if ($canvasBanTtl == -1) {
+                $this->redis->set($banKey, '1');
+            } elseif ($canvasBanTtl > 0) {
+                $this->redis->setex($banKey, $canvasBanTtl, '1');
+            } else {
+                $this->redis->del($banKey);
+            }
+        } else {
+            $this->redis->del($banKey);
+        }
+
+        $chatKey = "canvas:{$canvasId}:chat_restricted:{$targetUserId}";
+        if ($hasCanvasBan || $hasChatMute) {
+            if ($canvasBanTtl == -1 || $chatMuteTtl == -1) {
+                $this->redis->set($chatKey, '1');
+            } else {
+                $combinedTtl = max($canvasBanTtl, $chatMuteTtl);
+                if ($combinedTtl > 0) {
+                    $this->redis->setex($chatKey, $combinedTtl, '1');
+                } else {
+                    $this->redis->del($chatKey);
+                }
+            }
+        } else {
+            $this->redis->del($chatKey);
         }
     }
 }

@@ -857,6 +857,15 @@ class AdminViewService {
             $stmt->bindValue(':offset', (int)$offset, \PDO::PARAM_INT);
             $stmt->execute();
             $roles = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($roles as &$role) {
+                if (empty($role['uuid'])) {
+                    $newUuid = \App\Core\Helpers\Utils::generateUUID();
+                    $stmtUpdate = $pdo->prepare("UPDATE {$tblRoles} SET uuid = ? WHERE id = ?");
+                    $stmtUpdate->execute([$newUuid, $role['id']]);
+                    $role['uuid'] = $newUuid;
+                }
+            }
+            unset($role);
         } catch (\Throwable $e) {
             Logger::error("getManageRolesData roles error: " . $e->getMessage(), ['exception' => $e]);
         }
