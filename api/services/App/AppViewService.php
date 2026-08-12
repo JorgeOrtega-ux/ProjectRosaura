@@ -190,13 +190,19 @@ class AppViewService {
         $canLiveShare = false;
         $isBanned = false;
         $userTier = 0;
+        $membersCount = '0';
+        $canvasCreatedAt = '';
+        $ownerUsername = '';
+        $ownerTier = 0;
+        $hasLiveChat = false;
+        $lowestChatTier = 'Pro';
 
         if (!empty($canvasUuid)) {
             try {
                 $dbManager = new DatabaseManager();
                 $db = $dbManager->getConnection(DB::CONN_CANVASES);
                 $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, c.is_subscription_locked, 
-                               c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat, c.allow_purchases,
+                               c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat, c.allow_purchases, c.members_count,
                                r.is_active as reset_active, r.next_reset_at,
                                rs.is_active as resize_active, rs.next_resize_at, rs.target_size
                         FROM " . DB::TBL_CANVASES . " c
@@ -217,6 +223,28 @@ class AppViewService {
                     $canvasApproval = $canvas['requires_approval'] ?? '0';
                     $canvasAllowChat = $canvas['allow_chat'] ?? '0';
                     $canvasAllowPurchases = $canvas['allow_purchases'] ?? '1';
+                    $membersCount = $canvas['members_count'] ?? '0';
+                    $canvasCreatedAt = isset($canvas['created_at']) ? date('d/m/Y', strtotime($canvas['created_at'])) : '';
+
+                    if (!empty($canvas['owner_id'])) {
+                        $oStmt = $dbManager->getConnection(DB::CONN_IDENTITY)->prepare("SELECT username, subscription_tier FROM users WHERE id = :uid LIMIT 1");
+                        $oStmt->execute([':uid' => $canvas['owner_id']]);
+                        $ownerData = $oStmt->fetch(PDO::FETCH_ASSOC);
+                        if ($ownerData) {
+                            $ownerUsername = $ownerData['username'] ?? '';
+                            $ownerTier = (int)($ownerData['subscription_tier'] ?? 0);
+                        }
+                    } else {
+                        $ownerUsername = __('system') ?: 'Sistema';
+                    }
+
+                    $planLimits = SubscriptionPlanConstants::getTierLimits($ownerTier);
+                    $hasLiveChat = SubscriptionPlanConstants::hasFeature($ownerTier, 'chat_restriction') 
+                                || SubscriptionPlanConstants::hasFeature($ownerTier, 'allow_live_chat') 
+                                || !empty($planLimits['allow_live_chat']) 
+                                || !empty($planLimits['feat_chat_restriction']);
+                    
+                    $lowestChatTier = SubscriptionPlanConstants::getLowestTierNameForFeature('allow_live_chat') ?: 'Pro';
 
                     
                     $canvasCooldownBatch = $canvas['cooldown_pixels_batch'] ?? '5';
@@ -361,7 +389,12 @@ class AppViewService {
             'isSnapshot' => $isSnapshot,
             'activeLiveShareCode' => $activeLiveShareCode,
             'activeLiveShareData' => $activeLiveShareData,
-            'userTier' => $userTier
+            'userTier' => $userTier,
+            'membersCount' => $membersCount,
+            'canvasCreatedAt' => $canvasCreatedAt,
+            'ownerUsername' => $ownerUsername,
+            'hasLiveChat' => $hasLiveChat,
+            'lowestChatTier' => $lowestChatTier
         ];
     }
 }

@@ -923,24 +923,19 @@ export const DesignNetwork = {
     },
 
     async startLiveShare() {
-        if (!this.activeTemplateId) {
-            showMessage(__('err_select_template'), 'warning');
-            return false;
-        }
-
         try {
             const route = ApiRoutes.Canvases?.CreateLiveShare || 'canvas/live-share/create';
-            const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+            const tpl = this.activeTemplateId ? this.templates.find(t => t.id === this.activeTemplateId) : null;
             
             const response = await this.api.post(route, { 
                 canvas_id: this.canvasIntId,
-                img_url: tpl.img.src,
-                x: tpl.x,
-                y: tpl.y,
-                w: tpl.w,
-                h: tpl.h,
-                opacity: 0.5,
-                angle: tpl.angle || 0
+                img_url: tpl ? tpl.img.src : '',
+                x: tpl ? tpl.x : 0,
+                y: tpl ? tpl.y : 0,
+                w: tpl ? tpl.w : 100,
+                h: tpl ? tpl.h : 100,
+                opacity: tpl ? 0.5 : 0,
+                angle: tpl ? (tpl.angle || 0) : 0
             }, this.abortController.signal);
             
             if (response.aborted) return false;
@@ -951,8 +946,10 @@ export const DesignNetwork = {
                 this.liveTemplateId = this.activeTemplateId;
                 this.liveShareCountVal = 1;
                 
-                // Force standard opacity
-                tpl.opacity = 0.5;
+                if (tpl) {
+                    // Force standard opacity
+                    tpl.opacity = 0.5;
+                }
                 
                 if (this.wsManager) {
                     this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
@@ -977,14 +974,22 @@ export const DesignNetwork = {
                 return false;
             }
         } catch (error) {
+            console.error('[DesignNetwork] Error starting live share:', error);
             showMessage(__('err_server_live_start'), 'error');
             return false;
         }
     },
 
-    stopLiveShare() {
+    async stopLiveShare() {
         if (this.liveShareStatus !== 'owner') return false;
         
+        try {
+            const route = ApiRoutes.Canvases?.StopLiveShare || 'canvases.stop_live_share';
+            await this.api.post(route, { canvas_id: this.canvasIntId }, this.abortController.signal);
+        } catch (e) {
+            console.error('[DesignNetwork] Error calling stopLiveShare API:', e);
+        }
+
         if (this.wsManager && this.liveShareCode) {
             this.wsManager.send({ type: 'end_live_share', code: this.liveShareCode });
         }
@@ -1042,51 +1047,67 @@ export const DesignNetwork = {
 
                 let tpl = this.templates.find(t => t.id === liveId);
                 if (!tpl) {
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    
-                    await new Promise((resolve) => {
-                        img.onload = () => {
-                            this.templates.push({
-                                id: liveId,
-                                img: img,
-                                x: response.data.x !== undefined && response.data.x !== null ? parseInt(response.data.x) : 0,
-                                y: response.data.y !== undefined && response.data.y !== null ? parseInt(response.data.y) : 0,
-                                w: response.data.w !== undefined && response.data.w !== null ? parseInt(response.data.w) : img.width,
-                                h: response.data.h !== undefined && response.data.h !== null ? parseInt(response.data.h) : img.height,
-                                opacity: response.data.empty ? 0 : (response.data.opacity !== undefined && response.data.opacity !== null ? parseFloat(response.data.opacity) : 0.5),
-                                angle: response.data.angle !== undefined && response.data.angle !== null ? parseFloat(response.data.angle) : 0,
-                                locked: true, 
-                                url: img.src
-                            });
-                            this.activeTemplateId = liveId;
-                            
-                            let badge = document.getElementById('live-share-badge');
-                            const countText = this.liveShareCountVal ? ` (${this.liveShareCountVal} en línea)` : '';
-                            if (!badge) {
-                                badge = document.createElement('div');
-                                badge.className = 'component-badge';
-                                badge.id = 'live-share-badge';
-                                badge.innerHTML = `<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso${countText}</span>`;
-                                const badgesContainer = document.querySelector('[data-ref="badges-left"]');
-                                if (badgesContainer) badgesContainer.appendChild(badge);
-                            } else {
-                                badge.innerHTML = `<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso${countText}</span>`;
-                            }
-                            
-                            resolve();
-                        };
-                        img.onerror = () => {
-                            if (img.crossOrigin) {
-                                img.crossOrigin = null;
-                                img.src = response.data.img_url;
-                            } else {
-                                showMessage(__('err_load_live_img'), 'error');
+                    if (response.data.empty || !response.data.img_url) {
+                        this.activeTemplateId = liveId;
+                        let badge = document.getElementById('live-share-badge');
+                        const countText = this.liveShareCountVal ? ` (${this.liveShareCountVal} en línea)` : '';
+                        if (!badge) {
+                            badge = document.createElement('div');
+                            badge.className = 'component-badge';
+                            badge.id = 'live-share-badge';
+                            badge.innerHTML = `<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso${countText}</span>`;
+                            const badgesContainer = document.querySelector('[data-ref="badges-left"]');
+                            if (badgesContainer) badgesContainer.appendChild(badge);
+                        } else {
+                            badge.innerHTML = `<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso${countText}</span>`;
+                        }
+                    } else {
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        
+                        await new Promise((resolve) => {
+                            img.onload = () => {
+                                this.templates.push({
+                                    id: liveId,
+                                    img: img,
+                                    x: response.data.x !== undefined && response.data.x !== null ? parseInt(response.data.x) : 0,
+                                    y: response.data.y !== undefined && response.data.y !== null ? parseInt(response.data.y) : 0,
+                                    w: response.data.w !== undefined && response.data.w !== null ? parseInt(response.data.w) : img.width,
+                                    h: response.data.h !== undefined && response.data.h !== null ? parseInt(response.data.h) : img.height,
+                                    opacity: response.data.empty ? 0 : (response.data.opacity !== undefined && response.data.opacity !== null ? parseFloat(response.data.opacity) : 0.5),
+                                    angle: response.data.angle !== undefined && response.data.angle !== null ? parseFloat(response.data.angle) : 0,
+                                    locked: true, 
+                                    url: img.src
+                                });
+                                this.activeTemplateId = liveId;
+                                
+                                let badge = document.getElementById('live-share-badge');
+                                const countText = this.liveShareCountVal ? ` (${this.liveShareCountVal} en línea)` : '';
+                                if (!badge) {
+                                    badge = document.createElement('div');
+                                    badge.className = 'component-badge';
+                                    badge.id = 'live-share-badge';
+                                    badge.innerHTML = `<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso${countText}</span>`;
+                                    const badgesContainer = document.querySelector('[data-ref="badges-left"]');
+                                    if (badgesContainer) badgesContainer.appendChild(badge);
+                                } else {
+                                    badge.innerHTML = `<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso${countText}</span>`;
+                                }
+                                
                                 resolve();
-                            }
-                        };
-                        img.src = response.data.img_url;
-                    });
+                            };
+                            img.onerror = () => {
+                                if (img.crossOrigin) {
+                                    img.crossOrigin = null;
+                                    img.src = response.data.img_url;
+                                } else {
+                                    showMessage(__('err_load_live_img'), 'error');
+                                    resolve();
+                                }
+                            };
+                            img.src = response.data.img_url;
+                        });
+                    }
                 } else {
                     let badge = document.getElementById('live-share-badge');
                     if (!badge) {

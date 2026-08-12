@@ -27,7 +27,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 <span>${formatNumber(onlinePlayers)} ${window.__('online')}</span> 
                 <span class="component-badge-divider">|</span>
                 <span class="material-symbols-rounded">group</span>
-                <span>${formatNumber(membersCount)}</span>
+                <span class="member-count-val">${formatNumber(membersCount)}</span>
                 <span class="component-badge-divider">|</span>
                 <span class="material-symbols-rounded component-text-accent">favorite</span>
                 <span>${formatNumber(likesCount)}</span>
@@ -52,7 +52,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const linkClass = '';
 
         return `
-            <div class="component-gallery-card" data-card-id="${canvas.id}">
+            <div class="component-gallery-card" data-card-id="${canvas.id}" data-privacy="${canvas.privacy || 'public'}">
                 ${warningOverlay}
                 ${imgHtml}
                 ${badgeHtml}

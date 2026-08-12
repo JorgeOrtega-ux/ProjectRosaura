@@ -2,6 +2,7 @@
 namespace App\Core\Repositories;
 
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
+use App\Core\System\CacheConstants;
 use App\Core\System\Logger;
 use Predis\Client;
 
@@ -34,9 +35,9 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
 
             $json = json_encode($data);
 
-            $this->redis->setex("vercode:id:{$id}", $ttl, $json);
-            $this->redis->setex("vercode:ident:{$identifier}:{$codeType}", $ttl, $id);
-            $this->redis->setex("vercode:code:{$code}:{$codeType}", $ttl, $id);
+            $this->redis->setex(CacheConstants::PREFIX_VERCODE_ID   . $id,                              $ttl, $json);
+            $this->redis->setex(CacheConstants::PREFIX_VERCODE_IDENT . "{$identifier}:{$codeType}",    $ttl, $id);
+            $this->redis->setex(CacheConstants::PREFIX_VERCODE_CODE  . "{$code}:{$codeType}",           $ttl, $id);
 
             return true;
         } catch (\Exception $e) {
@@ -47,12 +48,12 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
 
     public function findLatestValidByIdentifierAndType(string $identifier, string $codeType): ?array {
         try {
-            $keyIdent = "vercode:ident:{$identifier}:{$codeType}";
+            $keyIdent = CacheConstants::PREFIX_VERCODE_IDENT . "{$identifier}:{$codeType}";
             $id = $this->redis->get($keyIdent);
             
             if (!$id) return null;
 
-            $json = $this->redis->get("vercode:id:{$id}");
+            $json = $this->redis->get(CacheConstants::PREFIX_VERCODE_ID . $id);
             if (!$json) return null;
 
             $data = json_decode($json, true);
@@ -66,12 +67,12 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
 
     public function findValidByCodeAndType(string $code, string $codeType): ?array {
         try {
-            $keyCode = "vercode:code:{$code}:{$codeType}";
+            $keyCode = CacheConstants::PREFIX_VERCODE_CODE . "{$code}:{$codeType}";
             $id = $this->redis->get($keyCode);
             
             if (!$id) return null;
 
-            $json = $this->redis->get("vercode:id:{$id}");
+            $json = $this->redis->get(CacheConstants::PREFIX_VERCODE_ID . $id);
             return $json ? json_decode($json, true) : null;
         } catch (\Exception $e) {
             Logger::error("Redis find code failed", ['code_type' => $codeType, 'exception' => $e->getMessage()]);
@@ -81,7 +82,7 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
 
     public function hasActiveCode(string $identifier, string $codeType): bool {
         try {
-            return (bool) $this->redis->exists("vercode:ident:{$identifier}:{$codeType}");
+            return (bool) $this->redis->exists(CacheConstants::PREFIX_VERCODE_IDENT . "{$identifier}:{$codeType}");
         } catch (\Exception $e) {
             Logger::error("Redis active code check failed", ['identifier' => $identifier, 'code_type' => $codeType, 'exception' => $e->getMessage()]);
             return false;
@@ -90,12 +91,12 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
 
     public function deleteById(int $id): bool {
         try {
-            $json = $this->redis->get("vercode:id:{$id}");
+            $json = $this->redis->get(CacheConstants::PREFIX_VERCODE_ID . $id);
             if ($json) {
                 $data = json_decode($json, true);
-                $this->redis->del("vercode:ident:{$data['identifier']}:{$data['code_type']}");
-                $this->redis->del("vercode:code:{$data['code']}:{$data['code_type']}");
-                $this->redis->del("vercode:id:{$id}");
+                $this->redis->del(CacheConstants::PREFIX_VERCODE_IDENT . "{$data['identifier']}:{$data['code_type']}");
+                $this->redis->del(CacheConstants::PREFIX_VERCODE_CODE  . "{$data['code']}:{$data['code_type']}");
+                $this->redis->del(CacheConstants::PREFIX_VERCODE_ID    . $id);
             }
             return true;
         } catch (\Exception $e) {
@@ -106,7 +107,7 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
 
     public function deleteByIdentifierAndType(string $identifier, string $codeType): bool {
         try {
-            $keyIdent = "vercode:ident:{$identifier}:{$codeType}";
+            $keyIdent = CacheConstants::PREFIX_VERCODE_IDENT . "{$identifier}:{$codeType}";
             $id = $this->redis->get($keyIdent);
             if ($id) {
                 $this->deleteById((int)$id);

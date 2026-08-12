@@ -207,7 +207,7 @@ class CanvasCoreService {
         $t0 = microtime(true);
         ini_set('memory_limit', '512M');
         
-        $cacheKey = "canvas:{$canvasId}:meta:u:" . ($userId ?? 0);
+        $cacheKey = CacheConstants::PREFIX_CANVAS_META . $canvasId . CacheConstants::SUFFIX_CANVAS_META_USER . ($userId ?? 0);
         $redis = null;
         try {
             if (class_exists(RedisCache::class)) {
@@ -1232,5 +1232,52 @@ LUA;
         }
     }
 
+    public function updateCanvasChatStatus(int $userId, int $canvasId, int $allowChat): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+
+            if ((int)$canvas['owner_id'] !== $userId) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            if ($allowChat === 1) {
+                $owner = $this->userRepository->findById($userId);
+                $tier = $owner['subscription_tier'] ?? 0;
+                $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+                $hasLiveChat = SubscriptionPlanConstants::hasFeature($tier, 'chat_restriction') 
+                            || SubscriptionPlanConstants::hasFeature($tier, 'allow_live_chat') 
+                            || !empty($planLimits['allow_live_chat']) 
+                            || !empty($planLimits['feat_chat_restriction']);
+                
+                if (!$hasLiveChat) {
+                    return ['success' => false, 'message' => __('err_requires_pro') ?: 'Esta función requiere un plan Pro o superior.'];
+                }
+            }
+
+            $updated = $this->canvasRepository->updateChatStatus($canvasId, $allowChat);
+            if ($updated) {
+                if (class_exists(RedisCache::class)) {
+                    try {
+                        $redis = (new RedisCache())->getClient();
+                        if ($redis) {
+                            $redis->hSet("canvas:{$canvasId}:config", "allow_chat", (string)$allowChat);
+                        }
+                    } catch (\Throwable $ex) {}
+                }
+                return ['success' => true, 'allow_chat' => $allowChat];
+            }
+
+            return ['success' => false, 'message' => __('err_database')];
+        } catch (Exception $e) {
+            Logger::error('Error during canvas chat status update.', [
+                'canvas_id' => $canvasId,
+                'exception' => $e->getMessage()
+            ]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
 
 }

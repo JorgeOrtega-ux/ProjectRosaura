@@ -62,6 +62,23 @@ class CacheConstants {
     public const PREFIX_CANVAS_RESET_SETTINGS  = 'canvas:reset_settings:';
     public const PREFIX_CANVAS_RESIZE_SETTINGS = 'canvas:resize_settings:';
 
+    // --- Claves no-CacheConstants (internamente usadas en repos) ---
+    // canvas:{canvasId}:meta:u:{userId}
+    public const PREFIX_CANVAS_META            = 'canvas:';
+    public const SUFFIX_CANVAS_META_USER       = ':meta:u:';
+    // canvas_weight:u{userId}:c{canvasId}
+    public const PREFIX_CANVAS_WEIGHT          = 'canvas_weight:u';
+    public const INFIX_CANVAS_WEIGHT           = ':c';
+    // auth tokens (remember-me / auto-login)
+    public const PREFIX_AUTH_TOKEN             = 'auth:token:';
+    // verification codes (email/2fa)
+    public const PREFIX_VERCODE_ID             = 'vercode:id:';
+    public const PREFIX_VERCODE_IDENT          = 'vercode:ident:';
+    public const PREFIX_VERCODE_CODE           = 'vercode:code:';
+    // user perks subkeys (concatenar a PREFIX_USER_PERKS)
+    public const SUBKEY_PERKS_ALL              = 'all:';
+    public const SUBKEY_PERKS_UNUSED           = 'unused:';
+
     // --- TTLs ---
     public const TTL_THIRTY_SECS  = 30;
     public const TTL_ONE_MIN      = 60;

@@ -39,9 +39,9 @@ export class DesignChat {
 
         this.typingContainer = null;
 
-        if (this.isChatEnabled && this.chatContainer) {
-            this.init();
-        }
+        this.toolbarChatBtn = document.querySelector('[data-action="toggleMenuInModule"][data-module-target="moduleLiveChat"]');
+
+        this.init();
     }
 
     get canModerateChat() {
@@ -51,35 +51,40 @@ export class DesignChat {
     init() {
         this.setupEventListeners();
 
-        this.resizeObserver = new ResizeObserver(() => {
-            if (this.isFirstRenderScrollPending && this.chatContainer.clientHeight > 0) {
-                this.scrollToBottom();
-                this.isFirstRenderScrollPending = false; 
-            }
-        });
-        this.resizeObserver.observe(this.chatContainer);
+        if (this.isChatEnabled) {
+            this.resizeObserver = new ResizeObserver(() => {
+                if (this.isFirstRenderScrollPending && this.chatContainer.clientHeight > 0) {
+                    this.scrollToBottom();
+                    this.isFirstRenderScrollPending = false; 
+                }
+            });
+            if (this.chatContainer) this.resizeObserver.observe(this.chatContainer);
 
-        this.typingInterval = setInterval(() => {
-            if (this.typingUsers.size > 0) {
-                this.updateTypingUI();
-            }
-        }, 1000);
+            this.typingInterval = setInterval(() => {
+                if (this.typingUsers.size > 0) {
+                    this.updateTypingUI();
+                }
+            }, 1000);
 
-        this.initialHistoryLoaded = false;
-        const chatModule = document.querySelector('[data-module="moduleLiveChat"]');
-        
-        if (chatModule && !chatModule.classList.contains('disabled')) {
-            this.initialHistoryLoaded = true;
-            this.loadHistory();
-        } else if (!chatModule) {
-            this.initialHistoryLoaded = true;
-            this.loadHistory();
+            this.initialHistoryLoaded = false;
+            const chatModule = document.querySelector('[data-module="moduleLiveChat"]');
+            
+            if (chatModule && !chatModule.classList.contains('disabled')) {
+                this.initialHistoryLoaded = true;
+                this.loadHistory();
+            } else if (!chatModule) {
+                this.initialHistoryLoaded = true;
+                this.loadHistory();
+            }
+
+            this.initAutocomplete();
         }
-
-        this.initAutocomplete();
     }
 
     setupEventListeners() {
+        if (this.isEventsBound) return;
+        this.isEventsBound = true;
+
         if (this.btnSend) {
             this.btnSend.addEventListener('click', (e) => {
                 if (e) e.preventDefault();
@@ -181,56 +186,58 @@ export class DesignChat {
             });
         }
 
-        this.chatContainer.addEventListener('click', (e) => {
-            const btnDelete = e.target.closest('[data-action="chatDeleteMessage"]');
-            if (btnDelete) {
-                const id = btnDelete.dataset.id;
-                this.deleteMessage(id);
-                const dropdown = btnDelete.closest('.chat-dropdown-module');
-                if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
-            }
+        if (this.chatContainer) {
+            this.chatContainer.addEventListener('click', (e) => {
+                const btnDelete = e.target.closest('[data-action="chatDeleteMessage"]');
+                if (btnDelete) {
+                    const id = btnDelete.dataset.id;
+                    this.deleteMessage(id);
+                    const dropdown = btnDelete.closest('.chat-dropdown-module');
+                    if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
+                }
 
-            const btnReply = e.target.closest('[data-action="chatReplyMessage"]');
-            if (btnReply) {
-                const id = btnReply.dataset.id;
-                const username = btnReply.dataset.username;
-                const message = btnReply.dataset.message;
-                this.setReplyTarget(id, username, message);
-                const dropdown = btnReply.closest('.chat-dropdown-module');
-                if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
-            }
+                const btnReply = e.target.closest('[data-action="chatReplyMessage"]');
+                if (btnReply) {
+                    const id = btnReply.dataset.id;
+                    const username = btnReply.dataset.username;
+                    const message = btnReply.dataset.message;
+                    this.setReplyTarget(id, username, message);
+                    const dropdown = btnReply.closest('.chat-dropdown-module');
+                    if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
+                }
 
-            const replyContext = e.target.closest('.chat-message-reply-context');
-            if (replyContext) {
-                const replyToId = replyContext.dataset.replyToId;
-                if (replyToId) {
-                    const targetMsg = this.chatContainer.querySelector(`[data-message-id="${replyToId}"]`);
-                    if (targetMsg) {
-                        targetMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        targetMsg.classList.add('chat-message--highlighted');
-                        setTimeout(() => {
-                            targetMsg.classList.remove('chat-message--highlighted');
-                        }, 1500);
+                const replyContext = e.target.closest('.chat-message-reply-context');
+                if (replyContext) {
+                    const replyToId = replyContext.dataset.replyToId;
+                    if (replyToId) {
+                        const targetMsg = this.chatContainer.querySelector(`[data-message-id="${replyToId}"]`);
+                        if (targetMsg) {
+                            targetMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            targetMsg.classList.add('chat-message--highlighted');
+                            setTimeout(() => {
+                                targetMsg.classList.remove('chat-message--highlighted');
+                            }, 1500);
+                        }
                     }
                 }
-            }
 
-            const btnReport = e.target.closest('[data-action="chatReportMessage"]');
-            if (btnReport) {
-                const id = btnReport.dataset.id;
-                this.reportMessage(id);
-                const dropdown = btnReport.closest('.chat-dropdown-module');
-                if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
-            }
+                const btnReport = e.target.closest('[data-action="chatReportMessage"]');
+                if (btnReport) {
+                    const id = btnReport.dataset.id;
+                    this.reportMessage(id);
+                    const dropdown = btnReport.closest('.chat-dropdown-module');
+                    if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
+                }
 
-            const btnRestrict = e.target.closest('[data-action="chatRestrictUser"]');
-            if (btnRestrict) {
-                const canvasUuid = this.canvasUuid || this.canvasId;
-                window.open((window.AppBasePath || '') + `/canvases/manage/sanctions/${canvasUuid}`, '_blank');
-                const dropdown = btnRestrict.closest('.chat-dropdown-module');
-                if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
-            }
-        });
+                const btnRestrict = e.target.closest('[data-action="chatRestrictUser"]');
+                if (btnRestrict) {
+                    const canvasUuid = this.canvasUuid || this.canvasId;
+                    window.open((window.AppBasePath || '') + `/canvases/manage/sanctions/${canvasUuid}`, '_blank');
+                    const dropdown = btnRestrict.closest('.chat-dropdown-module');
+                    if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
+                }
+            });
+        }
 
 
         if (this.chatContainer) {
@@ -248,6 +255,53 @@ export class DesignChat {
 
                 if (this.chatContainer.scrollTop <= 15 && !this.isLoading && this.hasMore) {
                     this.loadHistory();
+                }
+            });
+        }
+
+        if (this.toolbarChatBtn) {
+            this.toolbarChatBtn.addEventListener('click', (e) => {
+                if (!this.isChatEnabled) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.showActivationModal();
+                }
+            });
+        }
+
+        const chatModule = document.querySelector('[data-module="moduleLiveChat"]');
+        if (chatModule) {
+            chatModule.addEventListener('click', (e) => {
+                const deactivateBtn = e.target.closest('[data-action="deactivateChatOption"]');
+                if (deactivateBtn) {
+                    e.preventDefault();
+                    const dropdown = chatModule.querySelector('[data-module="chat-options-menu"]');
+                    if (dropdown) dropdown.classList.add('disabled');
+                    this.handleDeactivateChat();
+                    return;
+                }
+
+                const infoBtn = e.target.closest('[data-action="showGeneralInfoOption"]');
+                if (infoBtn) {
+                    e.preventDefault();
+                    const dropdown = chatModule.querySelector('[data-module="chat-options-menu"]');
+                    if (dropdown) dropdown.classList.add('disabled');
+                    this.showGeneralInfoMenu();
+                    return;
+                }
+
+                const backBtn = e.target.closest('[data-action="backToChatMenu"]');
+                if (backBtn) {
+                    e.preventDefault();
+                    this.transitionMenus('menu-chat-info', 'menu-chat');
+                    return;
+                }
+
+                const activatePanelBtn = e.target.closest('[data-action="activateChatFromPanel"]');
+                if (activatePanelBtn) {
+                    e.preventDefault();
+                    this.showActivationModal();
+                    return;
                 }
             });
         }
@@ -570,9 +624,15 @@ export class DesignChat {
                 
                 const emptyState = this.chatContainer.querySelector('[data-ref="empty-state-rendered"]');
                 if (this.offset === 0 && msgs.length === 0) {
-                    if (emptyState) emptyState.classList.remove('disabled'); emptyState.classList.add('active');
+                    if (emptyState) {
+                        emptyState.classList.remove('disabled');
+                        emptyState.classList.add('active');
+                    }
                 } else {
-                    if (emptyState) emptyState.classList.remove('active'); emptyState.classList.add('disabled');
+                    if (emptyState) {
+                        emptyState.classList.remove('active');
+                        emptyState.classList.add('disabled');
+                    }
                 }
 
                 this.hasMore = response.data.has_more;
@@ -1352,5 +1412,162 @@ export class DesignChat {
 
         this.chatInput.dispatchEvent(new Event('input'));
         this.hideAutocomplete();
+    }
+
+    async showActivationModal() {
+        const wrapper = document.querySelector('[data-ref="design-wrapper"]');
+        const hasLiveChat = wrapper?.dataset.hasLiveChat === '1';
+        const lowestChatTier = wrapper?.dataset.lowestChatTier || 'Pro';
+        const isOwner = wrapper?.dataset.isOwner === '1';
+        const canvasId = wrapper?.dataset.canvasId;
+
+        const res = await window.modalSystem.show('activateChatConfirmationModal', {
+            hasLiveChat: hasLiveChat,
+            lowestChatTier: lowestChatTier,
+            isOwner: isOwner,
+            asyncConfirm: true
+        });
+
+        if (res.confirmed) {
+            try {
+                const response = await this.api.post(ApiRoutes.Canvases.ToggleChat, {
+                    id: canvasId,
+                    allow_chat: 1
+                });
+
+                if (response && response.success) {
+                    res.success();
+                    showMessage(window.__('chat_activated_success') || 'Chat activado con éxito.', 'success');
+                    
+                    if (wrapper) wrapper.dataset.allowChat = '1';
+                    this.isChatEnabled = true;
+
+                    const menuChat = document.querySelector('[data-ref="menu-chat"]');
+                    if (menuChat) {
+                        menuChat.classList.replace('chat-disabled-state', 'chat-enabled-state');
+                    }
+
+                    this.init();
+                } else {
+                    res.failure();
+                    showMessage(response.message || window.__('err_generic'), 'error');
+                }
+            } catch (error) {
+                res.failure();
+                showMessage(window.__('err_generic'), 'error');
+            }
+        }
+    }
+
+    async handleDeactivateChat() {
+        const wrapper = document.querySelector('[data-ref="design-wrapper"]');
+        const canvasId = wrapper?.dataset.canvasId;
+
+        const confirmRes = await window.modalSystem.show('confirmActionModal', {
+            title: window.__('chat_deactivate_title') || 'Desactivar Chat en Vivo',
+            message: window.__('chat_deactivate_desc') || '¿Estás seguro de que deseas desactivar el chat en vivo en este lienzo? Los miembros ya no podrán enviar ni ver mensajes en tiempo real.',
+            asyncConfirm: true
+        });
+
+        if (confirmRes.confirmed) {
+            try {
+                const response = await this.api.post(ApiRoutes.Canvases.ToggleChat, {
+                    id: canvasId,
+                    allow_chat: 0
+                });
+
+                if (response && response.success) {
+                    confirmRes.success();
+                    showMessage(window.__('chat_deactivated_success') || 'Chat desactivado con éxito.', 'success');
+
+                    if (wrapper) wrapper.dataset.allowChat = '0';
+                    this.isChatEnabled = false;
+
+                    const menuChat = document.querySelector('[data-ref="menu-chat"]');
+                    if (menuChat) {
+                        menuChat.classList.replace('chat-enabled-state', 'chat-disabled-state');
+                    }
+
+                    if (this.chatContainer) {
+                        const loader = this.chatContainer.querySelector('[data-ref="chat-loader"]');
+                        this.chatContainer.innerHTML = '';
+                        if (loader) this.chatContainer.appendChild(loader);
+                    }
+                    this.messages = [];
+                    this.offset = 0;
+                    this.hasMore = true;
+                } else {
+                    confirmRes.failure();
+                    showMessage(response.message || window.__('err_generic'), 'error');
+                }
+            } catch (error) {
+                confirmRes.failure();
+                showMessage(window.__('err_generic'), 'error');
+            }
+        }
+    }
+
+    showGeneralInfoMenu() {
+        this.transitionMenus('menu-chat', 'menu-chat-info');
+        this.loadMediaGallery();
+    }
+
+    transitionMenus(fromRef, toRef) {
+        const fromMenu = document.querySelector(`[data-ref="${fromRef}"]`);
+        const toMenu = document.querySelector(`[data-ref="${toRef}"]`);
+        if (fromMenu && toMenu) {
+            fromMenu.classList.replace('active', 'disabled');
+            toMenu.classList.replace('disabled', 'active');
+        }
+    }
+
+    async loadMediaGallery() {
+        const grid = document.querySelector('[data-ref="chat-info-gallery-grid"]');
+        if (!grid) return;
+
+        grid.innerHTML = `
+            <div style="grid-column: span 3; text-align: center; color: var(--text-secondary); font-size: 0.75rem; padding: 16px;">
+                ${window.__('lbl_loading_photos') || 'Cargando fotos...'}
+            </div>
+        `;
+
+        try {
+            const response = await this.api.post(ApiRoutes.Chat.MediaGallery, {
+                canvas_id: this.canvasId
+            });
+
+            if (response && response.success && Array.isArray(response.photos)) {
+                if (response.photos.length === 0) {
+                    grid.innerHTML = `
+                        <div style="grid-column: span 3; text-align: center; color: var(--text-secondary); font-size: 0.75rem; padding: 16px;">
+                            ${window.__('lbl_no_photos') || 'No se han enviado fotos.'}
+                        </div>
+                    `;
+                } else {
+                    grid.innerHTML = '';
+                    response.photos.forEach(photoUrl => {
+                        const item = document.createElement('div');
+                        item.className = 'chat-info-gallery-item';
+                        item.innerHTML = `<img src="${photoUrl}" alt="Photo" loading="lazy">`;
+                        item.addEventListener('click', () => {
+                            window.open(photoUrl, '_blank');
+                        });
+                        grid.appendChild(item);
+                    });
+                }
+            } else {
+                grid.innerHTML = `
+                    <div style="grid-column: span 3; text-align: center; color: var(--danger-color); font-size: 0.75rem; padding: 16px;">
+                        ${response.message || window.__('err_generic') || 'Error al cargar fotos.'}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            grid.innerHTML = `
+                <div style="grid-column: span 3; text-align: center; color: var(--danger-color); font-size: 0.75rem; padding: 16px;">
+                    ${window.__('err_generic') || 'Error al cargar fotos.'}
+                </div>
+            `;
+        }
     }
 }

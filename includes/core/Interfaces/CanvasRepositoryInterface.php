@@ -31,6 +31,7 @@ interface CanvasRepositoryInterface {
     public function updateCanvasRolePermissions(int $roleId, array $permissions): bool;
     public function deleteCanvasRole(int $roleId, int $canvasId): bool;
     public function updateSize(int $canvasId, string $newSize): bool;
+    public function updateChatStatus(int $canvasId, int $allowChat): bool;
     public function countCanvasMembers(int $canvasId): int;
     public function getUserStorageUsed(int $userId): float;
     public function countCanvasSnapshots(int $canvasId): int;
@@ -54,6 +55,7 @@ interface CanvasRepositoryInterface {
     public function toggleFavorite(int $userId, int $canvasId): array;
 
     public function isFavorite(int $userId, int $canvasId): bool;
+    public function isMember(int $userId, int $canvasId): bool;
     public function createInvite(int $canvasId, string $code, string $roleId, ?int $maxUses, ?string $expiresAt, int $createdBy): int;
     public function getInvites(int $canvasId): array;
     public function getInviteByCode(string $code): ?array;

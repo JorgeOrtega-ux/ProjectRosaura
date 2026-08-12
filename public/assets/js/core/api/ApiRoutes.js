@@ -115,6 +115,7 @@ export const ApiRoutes = {
         GetChunks: 'canvases.get_chunks',
         Create: 'canvases.create',
         Update: 'canvases.update',
+        ToggleChat: 'canvases.toggle_chat',
         Delete: 'canvases.delete',
         Downgrade: 'canvases.downgrade',
         Leave: 'canvases.leave',
@@ -149,6 +150,7 @@ export const ApiRoutes = {
         GetTemplateTokens: 'canvases.template_tokens',
 
         CreateLiveShare: 'canvases.create_live_share',
+        StopLiveShare: 'canvases.stop_live_share',
         JoinLiveShare: 'canvases.join_live_share',
 
         GetCustomPalettes: 'canvases.get_custom_palettes',
@@ -193,7 +195,8 @@ export const ApiRoutes = {
         History: 'chat.history',
         Send: 'chat.send',
         Delete: 'chat.delete',
-        Report: 'chat.report'
+        Report: 'chat.report',
+        MediaGallery: 'chat.media_gallery'
     },
     Telemetry: {
         Collect: 'telemetry.collect'

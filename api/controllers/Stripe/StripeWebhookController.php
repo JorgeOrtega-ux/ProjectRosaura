@@ -83,14 +83,9 @@ class StripeWebhookController {
     }
 
     private function setUserTierAndEvaluateCanvases(int $userId, int $tier): void {
+        // updateUserTier ya invalida PREFIX_USER_SUBSCRIPTION y PREFIX_USER_PROFILE
+        // internamente a través de CacheInvalidator.
         $this->subRepo->updateUserTier($userId, $tier);
-
-        try {
-            $redisClient = $this->redisCache->getClient();
-            if ($redisClient) {
-                $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . $userId);
-            }
-        } catch (\Throwable $e) {}
 
         try {
             $this->lockManager->evaluateUserCanvases($userId);

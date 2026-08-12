@@ -261,7 +261,22 @@ export class CanvasCardInteractions {
         if (res.success) {
             showMessage(window.__('msg_canvas_left'), 'success');
             const card = document.querySelector(`.component-gallery-card[data-card-id="${id}"]`);
-            if (card) card.remove();
+            if (card) {
+                const privacy = card.getAttribute('data-privacy') || 'public';
+                if (privacy === 'private') {
+                    card.remove();
+                } else {
+                    const triggerBtn = card.querySelector(`button[data-action="toggleDynamicMenu"]`);
+                    if (triggerBtn) {
+                        triggerBtn.setAttribute('data-member', '0');
+                    }
+                    const countEl = card.querySelector('.member-count-val');
+                    if (countEl) {
+                        const currentVal = parseInt(countEl.textContent.replace(/,/g, '') || '0', 10);
+                        countEl.textContent = Math.max(0, currentVal - 1).toLocaleString();
+                    }
+                }
+            }
         } else {
             showMessage(res.message, 'error');
         }
@@ -289,9 +304,17 @@ export class CanvasCardInteractions {
         if (response.success) {
             if (typeof showMessage === 'function') showMessage(response.message, 'success');
             
-            const triggerBtn = document.querySelector(`button[data-action="toggleDynamicMenu"][data-id="${id}"]`);
-            if (triggerBtn) {
-                triggerBtn.setAttribute('data-member', '1');
+            const card = document.querySelector(`.component-gallery-card[data-card-id="${id}"]`);
+            if (card) {
+                const triggerBtn = card.querySelector(`button[data-action="toggleDynamicMenu"]`);
+                if (triggerBtn) {
+                    triggerBtn.setAttribute('data-member', '1');
+                }
+                const countEl = card.querySelector('.member-count-val');
+                if (countEl) {
+                    const currentVal = parseInt(countEl.textContent.replace(/,/g, '') || '0', 10);
+                    countEl.textContent = (currentVal + 1).toLocaleString();
+                }
             }
         } else {
             if (typeof showMessage === 'function') showMessage(response.message, 'error');

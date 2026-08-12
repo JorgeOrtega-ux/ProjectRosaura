@@ -149,6 +149,13 @@ class CanvasAccessService {
 
             $memberRoles = $this->canvasRepository->getMemberRoles($canvasId, $userId);
             if (!empty($memberRoles) || $canvas['owner_id'] === $userId) {
+                // Self-heal: If they have roles (or are the owner), but are missing from canvas_members, insert them!
+                if ($canvas['owner_id'] !== $userId) {
+                    $isRealMember = $this->canvasRepository->isMember($userId, $canvasId);
+                    if (!$isRealMember) {
+                        $this->canvasRepository->addMember($canvasId, $userId, (int)($memberRoles[0]['id'] ?? 1));
+                    }
+                }
                 return ['success' => true, 'joined' => true, 'message' => __('msg_already_member')];
             }
 
@@ -245,7 +252,7 @@ class CanvasAccessService {
         }
     }
 
-    public function createLiveShare(int $userId, int $canvasId, string $imgUrl, float $x, float $y, float $w, float $h, float $opacity, float $angle): array {
+    public function createLiveShare(int $userId, int $canvasId, $imgUrl, float $x, float $y, float $w, float $h, float $opacity, float $angle): array {
         try {
             $user = $this->userRepository->findById($userId);
             $tier = $user['subscription_tier'] ?? 0;
@@ -318,7 +325,35 @@ class CanvasAccessService {
             Logger::error('Error createLiveShare.', ['error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_internal_server_error')];
         }
-    }
+     }
+
+     public function stopLiveShare(int $userId, int $canvasId): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+
+            if (class_exists(RedisCache::class)) {
+                $redisInstance = new RedisCache();
+                $redis = $redisInstance->getClient();
+                if ($redis) {
+                    $userBroadcastKey = CacheConstants::PREFIX_LIVE_SHARE . 'user_' . $userId;
+                    $code = $redis->get($userBroadcastKey);
+                    if ($code) {
+                        $redis->del(CacheConstants::PREFIX_LIVE_SHARE . $code);
+                        $redis->del(CacheConstants::PREFIX_LIVE_SHARE . $code . ':count');
+                    }
+                    $redis->del($userBroadcastKey);
+                    return ['success' => true];
+                }
+            }
+            return ['success' => false, 'message' => __('err_stream_service_unavailable')];
+        } catch (Exception $e) {
+            Logger::error('Error stopLiveShare.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_internal_server_error')];
+        }
+     }
 
     public function joinLiveShare(string $code, int $targetCanvasId, ?int $userId = null): array {
         try {
@@ -478,6 +513,13 @@ class CanvasAccessService {
 
             $memberRoles = $this->canvasRepository->getMemberRoles($canvasId, $userId);
             if (!empty($memberRoles) || $canvas['owner_id'] === $userId) {
+                // Self-heal: If they have roles (or are the owner), but are missing from canvas_members, insert them!
+                if ($canvas['owner_id'] !== $userId) {
+                    $isRealMember = $this->canvasRepository->isMember($userId, $canvasId);
+                    if (!$isRealMember) {
+                        $this->canvasRepository->addMember($canvasId, $userId, (int)($memberRoles[0]['id'] ?? 1));
+                    }
+                }
                 return ['success' => true, 'message' => __('msg_already_member'), 'data' => ['uuid' => $canvas['uuid']]];
             }
 

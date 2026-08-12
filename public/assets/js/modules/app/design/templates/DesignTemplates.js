@@ -82,11 +82,6 @@ export const DesignTemplates = {
                 }
             } else {
                 // Not broadcasting → confirm start
-                if (!this.activeTemplateId) {
-                    showMessage(__('err_no_template_selected', []), 'warning');
-                    return true;
-                }
-
                 if (window.modalSystem) {
                     window.modalSystem.show('confirmStartBroadcast', { asyncConfirm: true }).then(async (res) => {
                         if (res && res.confirmed) {
@@ -96,7 +91,7 @@ export const DesignTemplates = {
                                 if (success) {
                                     res.success();
                                     // Disable join button
-                                    const btnOpenJoinLive = document.querySelector('[data-ref="openJoinLiveModal"]');
+                                    const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
                                     if (btnOpenJoinLive) {
                                         btnOpenJoinLive.classList.add('disabled-interaction');
                                         btnOpenJoinLive.setAttribute('title', window.__('err_cannot_join_while_streaming'));
@@ -641,14 +636,8 @@ export const DesignTemplates = {
         }
 
         if (btnLive) {
-            if (btnLive.classList.contains('premium-locked')) {
-                btnLive.classList.remove('disabled');
-            } else {
-                if (this.activeTemplateId && this.templates && this.templates.some(t => t.id === this.activeTemplateId)) {
-                    btnLive.classList.remove('disabled');
-                } else {
-                    btnLive.classList.add('disabled');
-                }
+            if (!btnLive.classList.contains('premium-locked')) {
+                btnLive.classList.remove('disabled-interaction');
             }
         }
     },

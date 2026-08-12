@@ -138,4 +138,29 @@ class ChatController extends BaseController
             exit;
         }
     }
+
+    public function getMediaGallery($request)
+    {
+        try {
+            $userId = $this->sessionManager->getActiveAccountId();
+            if (!$userId) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+
+            $canvasId = $request['canvas_id'] ?? null;
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas')]);
+            }
+
+            if (!is_numeric($canvasId)) {
+                $canvasId = $this->chatServices->resolveCanvasIntId($canvasId);
+            }
+
+            $result = $this->chatServices->getMediaGallery($userId, (int)$canvasId);
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
 }

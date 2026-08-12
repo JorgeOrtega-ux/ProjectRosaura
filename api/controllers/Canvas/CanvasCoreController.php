@@ -361,4 +361,26 @@ class CanvasCoreController extends BaseController {
         }
     }
 
+    public function toggleChat($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['id'] ?? null;
+            $allowChat = isset($input['allow_chat']) ? (int)$input['allow_chat'] : 0;
+            
+            if (!$userId || !$canvasId) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+
+            $result = $this->canvasServices->updateCanvasChatStatus($userId, (int)$canvasId, $allowChat);
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
 }

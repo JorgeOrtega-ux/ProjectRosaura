@@ -62,6 +62,7 @@ class SearchServices {
                         'favorites_count' => 0,
                         'members_count'   => 0,
                         'online_players'  => 0,
+                        'is_member'    => false,
                         'is_owner'     => $currentUserId !== null && $currentUserId === (int)($doc['owner_id'] ?? 0),
                         'thumbnail_url' => $this->getThumbnailUrl($doc['uuid'])
                     ];
@@ -88,15 +89,27 @@ class SearchServices {
             
             $userIdParam = $currentUserId ?? 0;
             
+            $joinMemberSql = "";
+            $isMemberSelect = "0 as is_member";
+            if ($currentUserId) {
+                $joinMemberSql = "LEFT JOIN (SELECT canvas_id, user_id FROM " . DB::TBL_CANVAS_MEMBERS . " UNION SELECT canvas_id, user_id FROM " . DB::TBL_CANVAS_USER_ROLES . ") cm ON c.id = cm.canvas_id AND cm.user_id = ?";
+                $isMemberSelect = "CASE WHEN cm.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_member";
+            }
+
             $sql = "SELECT c.id, c.favorites_count, c.members_count, 
-                           CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite
+                           CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
+                           $isMemberSelect
                     FROM " . DB::TBL_CANVASES . " c
                     LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = ?
+                    $joinMemberSql
                     WHERE c.id IN ($inQuery)";
                     
             $stmt = $db->prepare($sql);
             
             $params = [$userIdParam];
+            if ($currentUserId) {
+                $params[] = $userIdParam;
+            }
             foreach ($canvasIds as $id) {
                 $params[] = $id;
             }
@@ -110,6 +123,7 @@ class SearchServices {
                     $canvases[$id]['favorites_count'] = (int)$row['favorites_count'];
                     $canvases[$id]['members_count'] = (int)$row['members_count'];
                     $canvases[$id]['is_favorite'] = (bool)$row['is_favorite'];
+                    $canvases[$id]['is_member'] = isset($row['is_member']) ? (bool)$row['is_member'] : false;
                 }
             }
         } catch (\Exception $e) {

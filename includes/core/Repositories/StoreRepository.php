@@ -4,6 +4,7 @@ namespace App\Core\Repositories;
 use App\Config\Database\DatabaseManager;
 use App\Config\Database\RedisCache;
 use App\Core\System\CacheConstants;
+use App\Core\System\CacheInvalidator;
 use App\Core\Interfaces\StoreRepositoryInterface;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
@@ -11,6 +12,7 @@ use PDO;
 class StoreRepository implements StoreRepositoryInterface {
     private $db;
     private $redisClient;
+    private CacheInvalidator $cacheInvalidator;
 
     public function __construct(DatabaseManager $db, RedisCache $redisCache = null) {
         $this->db = $db->getConnection(DB::CONN_IDENTITY);
@@ -20,6 +22,15 @@ class StoreRepository implements StoreRepositoryInterface {
             } catch (\Throwable $e) {}
         }
         $this->redisClient = $redisCache ? $redisCache->getClient() : null;
+        $this->cacheInvalidator = new CacheInvalidator($this->redisClient);
+    }
+
+    /** Elimina el caché de monedas de un usuario de forma segura. */
+    private function redis_del_coins(int $userId): void {
+        if (!$this->redisClient) return;
+        try {
+            $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+        } catch (\Throwable $e) {}
     }
 
     public function addCoins(int $userId, int $amount): bool {
@@ -42,9 +53,9 @@ class StoreRepository implements StoreRepositoryInterface {
                 ]);
             }
             $this->db->commit();
-            if ($res && $this->redisClient) {
-                $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
-                $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+            if ($res) {
+                $this->cacheInvalidator->user($userId);
+                $this->redis_del_coins($userId);
             }
             return $res;
         } catch (\Throwable $e) {
@@ -76,9 +87,9 @@ class StoreRepository implements StoreRepositoryInterface {
                 ]);
             }
             $this->db->commit();
-            if ($res && $this->redisClient) {
-                $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
-                $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+            if ($res) {
+                $this->cacheInvalidator->user($userId);
+                $this->redis_del_coins($userId);
             }
             return $res;
         } catch (\Throwable $e) {
@@ -167,10 +178,8 @@ class StoreRepository implements StoreRepositoryInterface {
 
             $this->db->commit();
 
-            if ($this->redisClient) {
-                $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $data['user_id']);
-                $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $data['user_id']);
-            }
+            $this->cacheInvalidator->user($data['user_id']);
+            $this->redis_del_coins($data['user_id']);
             return true;
         } catch (\Throwable $e) {
             if ($this->db->inTransaction()) {
@@ -229,11 +238,8 @@ class StoreRepository implements StoreRepositoryInterface {
 
             $this->db->commit();
 
-            if ($this->redisClient) {
-                $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
-                $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "all:{$userId}");
-                $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "unused:{$userId}");
-            }
+            $this->redis_del_coins($userId);
+            $this->cacheInvalidator->userPerks($userId);
 
             return [
                 'success' => true,
@@ -306,12 +312,9 @@ class StoreRepository implements StoreRepositoryInterface {
 
             $this->db->commit();
 
-            if ($this->redisClient) {
-                $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
-                $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "all:{$userId}");
-                $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "unused:{$userId}");
-                $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
-            }
+            $this->redis_del_coins($userId);
+            $this->cacheInvalidator->userPerks($userId);
+            $this->cacheInvalidator->user($userId);
 
             $newBalance = $currentCoins - $totalPrice;
 
@@ -349,11 +352,8 @@ class StoreRepository implements StoreRepositoryInterface {
             }
             $this->db->commit();
             // Invalidate perks cache
-            if ($res && $this->redisClient) {
-                try {
-                    $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "all:{$userId}");
-                    $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "unused:{$userId}");
-                } catch (\Throwable $e) {}
+            if ($res) {
+                $this->cacheInvalidator->userPerks($userId);
             }
             return $res;
         } catch (\Throwable $e) {
@@ -365,7 +365,7 @@ class StoreRepository implements StoreRepositoryInterface {
     }
 
     public function getUserPerks(int $userId): array {
-        $cacheKey = CacheConstants::PREFIX_USER_PERKS . "all:{$userId}";
+        $cacheKey = CacheConstants::PREFIX_USER_PERKS . CacheConstants::SUBKEY_PERKS_ALL . $userId;
         if ($this->redisClient) {
             try {
                 $cached = $this->redisClient->get($cacheKey);
@@ -385,7 +385,7 @@ class StoreRepository implements StoreRepositoryInterface {
     }
 
     public function getUnusedPerks(int $userId): array {
-        $cacheKey = CacheConstants::PREFIX_USER_PERKS . "unused:{$userId}";
+        $cacheKey = CacheConstants::PREFIX_USER_PERKS . CacheConstants::SUBKEY_PERKS_UNUSED . $userId;
         if ($this->redisClient) {
             try {
                 $cached = $this->redisClient->get($cacheKey);
@@ -427,22 +427,12 @@ class StoreRepository implements StoreRepositoryInterface {
                 $balanceStmt->execute([$userId, $perkId]);
                 $this->db->commit();
                 // Invalidate perks cache
-                if ($this->redisClient) {
-                    try {
-                        $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "all:{$userId}");
-                        $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "unused:{$userId}");
-                    } catch (\Throwable $e) {}
-                }
+                $this->cacheInvalidator->userPerks($userId);
                 return true;
             }
             $this->db->commit();
             // Invalidate perks cache
-            if ($this->redisClient) {
-                try {
-                    $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "all:{$userId}");
-                    $this->redisClient->del(CacheConstants::PREFIX_USER_PERKS . "unused:{$userId}");
-                } catch (\Throwable $e) {}
-            }
+            $this->cacheInvalidator->userPerks($userId);
             return true;
         } catch (\Throwable $e) {
             if ($this->db->inTransaction()) {

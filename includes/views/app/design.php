@@ -24,6 +24,7 @@ extract($designData);
          data-ref="design-wrapper" 
          data-canvas-id="<?php echo htmlspecialchars($canvasIntId); ?>"
          data-canvas-uuid="<?php echo htmlspecialchars($canvasUuid); ?>"
+         data-canvas-name="<?php echo htmlspecialchars($canvasName); ?>"
          data-size="<?php echo htmlspecialchars($canvasSize); ?>" 
          data-initial-zoom="<?php echo htmlspecialchars($canvasInitialZoom ?? '0.5'); ?>"
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
@@ -34,6 +35,11 @@ extract($designData);
          data-is-spectator="<?php echo isset($isSpectatorInit) && $isSpectatorInit ? '1' : '0'; ?>"
          data-approval="<?php echo htmlspecialchars($canvasApproval); ?>"
          data-allow-chat="<?php echo htmlspecialchars($canvasAllowChat); ?>"
+         data-has-live-chat="<?php echo $hasLiveChat ? '1' : '0'; ?>"
+         data-lowest-chat-tier="<?php echo htmlspecialchars($lowestChatTier); ?>"
+         data-owner-username="<?php echo htmlspecialchars($ownerUsername); ?>"
+         data-members-count="<?php echo htmlspecialchars($membersCount); ?>"
+         data-created-at="<?php echo htmlspecialchars($canvasCreatedAt); ?>"
          data-allow-custom-colors="<?php echo htmlspecialchars($canvasAllowCustomColors); ?>"
          data-cooldown-batch="<?php echo htmlspecialchars($canvasCooldownBatch); ?>"
          data-cooldown-seconds="<?php echo htmlspecialchars($canvasCooldownSeconds); ?>"
@@ -135,11 +141,15 @@ extract($designData);
                 </button>
                 <?php endif; ?>
 
-                <?php if ($canvasAllowChat == '1'): ?>
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom">
+                <?php
+                    $chatLock = ['class' => '', 'attributes' => ''];
+                    if (isset($isOwner) && $isOwner) {
+                        $chatLock = \App\Core\System\SubscriptionFeatureConfig::getLockDetails($userTier ?? 0, 'feat_chat_restriction', 'button');
+                    }
+                ?>
+                <button class="component-button component-button--icon component-button--h32 <?php echo $chatLock['class']; ?>" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom" <?php echo $chatLock['attributes']; ?>>
                     <span class="material-symbols-rounded">chat</span>
                 </button>
-                <?php endif; ?>
             </div>
             <?php endif; ?>
 
@@ -211,9 +221,7 @@ extract($designData);
 
     <?php if (!$isSnapshot): ?>
         <?php require_once __DIR__ . '/../../modules/moduleDesignTools.php'; ?>
-        <?php if ($canvasAllowChat == '1'): ?>
-            <?php require_once __DIR__ . '/../../modules/moduleLiveChat.php'; ?>
-        <?php endif; ?>
+        <?php require_once __DIR__ . '/../../modules/moduleLiveChat.php'; ?>
     <?php endif; ?>
 
 </div>

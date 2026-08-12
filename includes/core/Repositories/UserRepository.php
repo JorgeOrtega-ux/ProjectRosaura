@@ -9,6 +9,7 @@ use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\SecurityConstants;
 use App\Core\System\CacheConstants;
+use App\Core\System\CacheInvalidator;
 use App\Config\Database\RedisCache;
 use PDO;
 use PDOException;
@@ -18,30 +19,17 @@ class UserRepository implements UserRepositoryInterface {
     private $pdo;
     private $roleRepository;
     private $redisClient;
+    private CacheInvalidator $cacheInvalidator;
 
     public function __construct(DatabaseManager $db, RoleRepositoryInterface $roleRepository, RedisCache $redisCache = null) {
         $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
         $this->roleRepository = $roleRepository;
         $this->redisClient = $redisCache ? $redisCache->getClient() : null;
+        $this->cacheInvalidator = new CacheInvalidator($this->redisClient);
     }
     
     public function invalidateProfileCache(int $userId, ?string $uuid = null): void {
-        if ($this->redisClient) {
-            $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
-            $this->redisClient->del(CacheConstants::PREFIX_USER_TEMPLATE_TOKENS . $userId);
-            if ($uuid) {
-                $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $uuid);
-            } else {
-                try {
-                    $stmt = $this->pdo->prepare("SELECT uuid FROM " . DB::TBL_USERS . " WHERE id = ?");
-                    $stmt->execute([$userId]);
-                    $userUuid = $stmt->fetchColumn();
-                    if ($userUuid) {
-                        $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userUuid);
-                    }
-                } catch (\Throwable $e) {}
-            }
-        }
+        $this->cacheInvalidator->user($userId, $uuid);
     }
 
     private function getUserWithDetails(string $column, $value): ?array {
@@ -421,7 +409,11 @@ class UserRepository implements UserRepositoryInterface {
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("DELETE FROM {$tblUsers} WHERE id = ?");
-            return $stmt->execute([$userId]);
+            $res = $stmt->execute([$userId]);
+            if ($res) {
+                $this->cacheInvalidator->user($userId);
+            }
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
             return false;

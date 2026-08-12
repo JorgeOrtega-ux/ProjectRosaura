@@ -7,16 +7,19 @@ use App\Config\Database\RedisCache;
 use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\CacheConstants;
+use App\Core\System\CacheInvalidator;
 use App\Core\System\Logger;
 
 class SubscriptionRepository implements SubscriptionRepositoryInterface {
 
     private $db;
     private $redisClient;
+    private CacheInvalidator $cacheInvalidator;
 
     public function __construct(DatabaseManager $db, RedisCache $redisCache = null) {
         $this->db = $db;
         $this->redisClient = $redisCache ? $redisCache->getClient() : null;
+        $this->cacheInvalidator = new CacheInvalidator($this->redisClient);
     }
 
     public function createSubscription(array $data): int {
@@ -26,17 +29,22 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
              VALUES (:user_id, :stripe_customer_id, :stripe_subscription_id, :stripe_checkout_session_id, :tier, :billing_period, :status, :current_period_start, :current_period_end)"
         );
         $stmt->execute([
-            ':user_id' => $data['user_id'],
-            ':stripe_customer_id' => $data['stripe_customer_id'] ?? null,
-            ':stripe_subscription_id' => $data['stripe_subscription_id'] ?? null,
-            ':stripe_checkout_session_id' => $data['stripe_checkout_session_id'] ?? null,
-            ':tier' => $data['tier'],
-            ':billing_period' => $data['billing_period'],
-            ':status' => $data['status'] ?? 'incomplete',
-            ':current_period_start' => $data['current_period_start'] ?? null,
-            ':current_period_end' => $data['current_period_end'] ?? null
+            ':user_id'                      => $data['user_id'],
+            ':stripe_customer_id'           => $data['stripe_customer_id'] ?? null,
+            ':stripe_subscription_id'       => $data['stripe_subscription_id'] ?? null,
+            ':stripe_checkout_session_id'   => $data['stripe_checkout_session_id'] ?? null,
+            ':tier'                         => $data['tier'],
+            ':billing_period'               => $data['billing_period'],
+            ':status'                       => $data['status'] ?? 'incomplete',
+            ':current_period_start'         => $data['current_period_start'] ?? null,
+            ':current_period_end'           => $data['current_period_end'] ?? null
         ]);
-        return (int) $pdo->lastInsertId();
+        $id = (int) $pdo->lastInsertId();
+        // Invalidar caché de suscripción para que el siguiente fetch refleje la nueva entrada
+        if ($id) {
+            $this->cacheInvalidator->userSubscription($data['user_id']);
+        }
+        return $id;
     }
 
     public function findActiveByUserId(int $userId): ?array {
@@ -79,8 +87,8 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
         $sql = "UPDATE subscriptions SET " . implode(', ', $sets) . " WHERE stripe_checkout_session_id = :session_id";
         $stmt = $pdo->prepare($sql);
         $result = $stmt->execute($params);
-        if ($result && isset($data['user_id']) && $this->redisClient) {
-            try { $this->redisClient->del(CacheConstants::PREFIX_USER_SUBSCRIPTION . $data['user_id']); } catch (\Throwable $e) {}
+        if ($result && isset($data['user_id'])) {
+            $this->cacheInvalidator->userSubscription($data['user_id']);
         }
         return $result;
     }
@@ -97,8 +105,8 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
         $sql = "UPDATE subscriptions SET " . implode(', ', $sets) . " WHERE stripe_subscription_id = :stripe_sub_id";
         $stmt = $pdo->prepare($sql);
         $result = $stmt->execute($params);
-        if ($result && isset($data['user_id']) && $this->redisClient) {
-            try { $this->redisClient->del(CacheConstants::PREFIX_USER_SUBSCRIPTION . $data['user_id']); } catch (\Throwable $e) {}
+        if ($result && isset($data['user_id'])) {
+            $this->cacheInvalidator->userSubscription($data['user_id']);
         }
         return $result;
     }
@@ -198,11 +206,9 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
         $pdo = $this->db->getConnection(DB::CONN_IDENTITY);
         $stmt = $pdo->prepare("UPDATE users SET subscription_tier = :tier WHERE id = :id");
         $result = $stmt->execute([':tier' => $tier, ':id' => $userId]);
-        if ($result && $this->redisClient) {
-            try {
-                $this->redisClient->del(CacheConstants::PREFIX_USER_SUBSCRIPTION . $userId);
-                $this->redisClient->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
-            } catch (\Throwable $e) {}
+        if ($result) {
+            $this->cacheInvalidator->userSubscription($userId);
+            $this->cacheInvalidator->user($userId);
         }
         return $result;
     }

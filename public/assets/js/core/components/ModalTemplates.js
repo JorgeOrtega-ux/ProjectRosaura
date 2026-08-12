@@ -1,4 +1,69 @@
 export const ModalTemplates = {
+    activateChatConfirmationModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const safeTrans = (key, def) => {
+                const val = __(key);
+                return (val === key) ? def : val;
+            };
+
+            const hasLiveChat = data.hasLiveChat;
+            const lowestChatTier = data.lowestChatTier || 'Pro';
+            const isOwner = data.isOwner;
+            
+            if (!isOwner) {
+                return `
+                    <div class="pill-container"><div class="drag-handle"></div></div>
+                    <div class="component-modal-header">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-rounded" style="color: var(--text-secondary); font-size: 2rem;">chat_off</span>
+                            <h3 class="component-modal-title">${safeTrans('chat_deactivated_title', 'Chat Desactivado')}</h3>
+                        </div>
+                        <p class="component-modal-desc" style="margin-top: 12px;">
+                            ${safeTrans('chat_non_owner_deactivated_desc', 'El chat de este lienzo está desactivado. Solo el creador del lienzo puede activarlo.')}
+                        </p>
+                    </div>
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--dark component-button--h40" data-modal-action="cancel">${safeTrans('btn_accept', 'Aceptar')}</button>
+                    </div>
+                `;
+            }
+            
+            if (!hasLiveChat) {
+                return `
+                    <div class="pill-container"><div class="drag-handle"></div></div>
+                    <div class="component-modal-header">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-rounded" style="color: var(--text-accent); font-size: 2rem;">stars</span>
+                            <h3 class="component-modal-title">${safeTrans('chat_activation_pro_required', 'Función Premium')}</h3>
+                        </div>
+                        <p class="component-modal-desc" style="margin-top: 12px;">
+                            ${safeTrans('chat_pro_required_desc', `Esta función requiere el plan <strong>${lowestChatTier}</strong> o superior para ser activada en este lienzo.`)}
+                        </p>
+                    </div>
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-modal-action="cancel">${safeTrans('btn_cancel', 'Cancelar')}</button>
+                        <a href="/upgrade" class="component-button component-button--dark component-button--h40" style="display: flex; align-items: center; justify-content: center; gap: 4px; text-decoration: none;">
+                            <span class="material-symbols-rounded">stars</span>
+                            <span>${safeTrans('btn_upgrade', 'Mejorar Plan')}</span>
+                        </a>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h3 class="component-modal-title">${safeTrans('chat_activate_title', 'Activar Chat en Vivo')}</h3>
+                    <p class="component-modal-desc">${safeTrans('chat_activate_desc', '¿Estás seguro de que deseas activar el chat en vivo en este lienzo? Los miembros podrán enviar mensajes en tiempo real.')}</p>
+                </div>
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${safeTrans('btn_cancel', 'Cancelar')}</button>
+                    <button class="component-button component-button--dark component-button--h40" data-modal-action="confirm">${safeTrans('btn_activate_live_chat_confirm', 'Activar')}</button>
+                </div>
+            `;
+        }
+    },
     changePasswordModal: {
         build: () => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);

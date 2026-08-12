@@ -179,11 +179,30 @@ class CanvasAccessController extends BaseController {
             $opacity = $input['opacity'] ?? 1;
             $angle = $input['angle'] ?? 0;
 
-            if (!$canvasId || !$imgUrl) {
+            if (!$canvasId) {
                 return $this->respond(['success' => false, 'message' => __('err_missing_live_share_params')]);
             }
 
             $result = $this->canvasServices->createLiveShare($userId, (int)$canvasId, $imgUrl, (float)$x, (float)$y, (float)$w, (float)$h, (float)$opacity, (float)$angle);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function stop_live_share($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['canvas_id'] ?? null;
+
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => __('err_missing_live_share_params')]);
+            }
+
+            $result = $this->canvasServices->stopLiveShare($userId, (int)$canvasId);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

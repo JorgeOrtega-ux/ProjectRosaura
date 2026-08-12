@@ -904,4 +904,47 @@ class ChatServices
             $this->redis->del($chatKey);
         }
     }
+
+    public function getMediaGallery($userId, $canvasId)
+    {
+        if ($canvasId <= 0) {
+            return ['success' => false, 'message' => __('err_invalid_canvas')];
+        }
+
+        $stmt = $this->pdo->prepare("SELECT allow_chat, uuid FROM " . DB::TBL_CANVASES . " WHERE id = ?");
+        $stmt->execute([$canvasId]);
+        $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$canvas) {
+            return ['success' => false, 'message' => __('err_canvas_not_found')];
+        }
+
+        $session = $this->cassandraManager->getSession();
+        $photos = [];
+
+        if ($session) {
+            try {
+                $stmt = $session->prepare("SELECT uuid, attachments, visibility FROM canvas_chat_messages WHERE canvas_id = ? LIMIT 1000");
+                $rows = $session->execute($stmt, [(int)$canvasId])->asRowsResult();
+                
+                foreach ($rows as $row) {
+                    if (($row['visibility'] ?? 'visible') !== 'visible') {
+                        continue;
+                    }
+                    if (!empty($row['attachments'])) {
+                        $decoded = is_string($row['attachments']) ? json_decode($row['attachments'], true) : $row['attachments'];
+                        if (is_array($decoded)) {
+                            foreach ($decoded as $att) {
+                                $photos[] = '/api/index.php?route=chat.attachment&canvas_uuid=' . $canvas['uuid'] . '&file=' . urlencode(basename($att));
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Logger::error("Error querying chat media gallery from Cassandra", ['exception' => $e]);
+            }
+        }
+        
+        return ['success' => true, 'photos' => $photos];
+    }
 }

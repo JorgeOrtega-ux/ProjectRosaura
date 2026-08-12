@@ -67,6 +67,22 @@ return [
             ],
         ],
     ],
+    'chat.media_gallery' => [
+        'controller' => 'App\\Api\\Controllers\\Chat\\ChatController',
+        'action' => 'getMediaGallery',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'chat_media_gallery',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'chat.attachment' => [
         'controller' => 'App\\Api\\Controllers\\Chat\\ChatController',
         'action' => 'attachment',
@@ -255,6 +271,22 @@ return [
                 'type' => 'RateLimit',
                 'key' => 'canvas_update',
                 'max' => 10,
+                'time' => 5,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'canvases.toggle_chat' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
+        'action' => 'toggleChat',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_toggle_chat',
+                'max' => 15,
                 'time' => 5,
                 'identifier' => 'user_id',
             ],
@@ -888,6 +920,22 @@ return [
                 'type' => 'RateLimit',
                 'key' => 'canvas_create_live',
                 'max' => 5,
+                'time' => 5,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'canvases.stop_live_share' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasAccessController',
+        'action' => 'stop_live_share',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_stop_live',
+                'max' => 10,
                 'time' => 5,
                 'identifier' => 'user_id',
             ],

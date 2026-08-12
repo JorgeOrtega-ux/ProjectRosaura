@@ -339,11 +339,10 @@ class StripeServices {
                             
                             try {
                                 $redisCache = new \App\Config\Database\RedisCache();
-                                $redisClient = $redisCache->getClient();
-                                if ($redisClient) {
-                                    $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . $userId);
-                                    $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId);
-                                }
+                                $inv = new \App\Core\System\CacheInvalidator($redisCache->getClient());
+                                $inv->user($userId);
+                                $inv->userSubscription($userId);
+                                $redisCache->getClient()?->del(\App\Core\System\CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId);
                             } catch (\Exception $e) {}
 
                             $invoice = \Stripe\Invoice::retrieve($subscription->latest_invoice);
@@ -726,11 +725,10 @@ class StripeServices {
 
             try {
                 $redisCache = new \App\Config\Database\RedisCache();
-                $redisClient = $redisCache->getClient();
-                if ($redisClient) {
-                    $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . $userId);
-                    $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId);
-                }
+                $inv = new \App\Core\System\CacheInvalidator($redisCache->getClient());
+                $inv->user($userId);
+                $inv->userSubscription($userId);
+                $redisCache->getClient()?->del(\App\Core\System\CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId);
             } catch (\Exception $e) {
                 Logger::error("Failed to clear user cache on upgrade", ['user_id' => $userId, 'error' => $e->getMessage()]);
             }
@@ -1171,11 +1169,10 @@ class StripeServices {
 
                         try {
                             $redisCache = new \App\Config\Database\RedisCache();
-                            $redisClient = $redisCache->getClient();
-                            if ($redisClient) {
-                                $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PROFILE . $userId);
-                                $redisClient->del(\App\Core\System\CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId);
-                            }
+                            $inv = new \App\Core\System\CacheInvalidator($redisCache->getClient());
+                            $inv->user($userId);
+                            $inv->userSubscription($userId);
+                            $redisCache->getClient()?->del(\App\Core\System\CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId);
                         } catch (\Throwable $e) {}
 
                         try {
