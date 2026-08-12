@@ -101,6 +101,8 @@ class CacheInvalidator {
         if (!$this->redis) return;
         try {
             $this->redis->del(CacheConstants::PREFIX_CANVAS_DETAIL . $canvasId);
+            $this->redis->del(CacheConstants::PREFIX_CANVAS_RESET_SETTINGS . $canvasId);
+            $this->redis->del(CacheConstants::PREFIX_CANVAS_RESIZE_SETTINGS . $canvasId);
 
             // Primeras páginas de listados públicos
             foreach (['newest', 'oldest', 'members'] as $sort) {
@@ -195,6 +197,50 @@ class CacheInvalidator {
         if (!$this->redis) return;
         try {
             $this->redis->del(CacheConstants::KEY_SERVER_CONFIG);
+        } catch (\Throwable $e) {}
+    }
+
+    // -------------------------------------------------------------------------
+    // Monedas, Historial de Pagos, Almacenamiento y Paletas
+    // -------------------------------------------------------------------------
+
+    /**
+     * Invalida el caché de monedas de un usuario.
+     */
+    public function userCoins(int $userId): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+        } catch (\Throwable $e) {}
+    }
+
+    /**
+     * Invalida el caché de historial de pagos de un usuario.
+     */
+    public function userPaymentHistory(int $userId): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId);
+        } catch (\Throwable $e) {}
+    }
+
+    /**
+     * Invalida el caché de almacenamiento de un usuario.
+     */
+    public function userStorage(int $userId): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(CacheConstants::PREFIX_USER_STORAGE . $userId);
+        } catch (\Throwable $e) {}
+    }
+
+    /**
+     * Invalida el caché de paletas de un usuario.
+     */
+    public function userPalettes(int $userId): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(CacheConstants::PREFIX_USER_PALETTE . $userId);
         } catch (\Throwable $e) {}
     }
 }

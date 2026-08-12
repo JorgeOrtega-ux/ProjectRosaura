@@ -162,8 +162,8 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
         $id = (int) $pdo->lastInsertId();
 
         // Invalidate payment history cache so next fetch reflects the new record
-        if ($id && $this->redisClient) {
-            try { $this->redisClient->del(CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $data['user_id']); } catch (\Throwable $e) {}
+        if ($id) {
+            $this->cacheInvalidator->userPaymentHistory($data['user_id']);
         }
 
         return $id;
@@ -216,7 +216,11 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface {
     public function updateUserStripeCustomerId(int $userId, string $customerId): bool {
         $pdo = $this->db->getConnection(DB::CONN_IDENTITY);
         $stmt = $pdo->prepare("UPDATE users SET stripe_customer_id = :cid WHERE id = :id");
-        return $stmt->execute([':cid' => $customerId, ':id' => $userId]);
+        $result = $stmt->execute([':cid' => $customerId, ':id' => $userId]);
+        if ($result) {
+            $this->cacheInvalidator->user($userId);
+        }
+        return $result;
     }
 
     public function getStripeCustomerIdByUserId(int $userId): ?string {

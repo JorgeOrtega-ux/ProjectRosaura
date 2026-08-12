@@ -9,12 +9,14 @@ use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
 use App\Config\Database\RedisCache;
 use App\Core\System\CacheConstants;
+use App\Core\System\CacheInvalidator;
 
 class CanvasLockManager {
     private $canvasRepository;
     private $userRepository;
     private $dbManager;
     private $redisCache;
+    private CacheInvalidator $cacheInvalidator;
 
     public function __construct(
         CanvasRepositoryInterface $canvasRepository, 
@@ -26,6 +28,7 @@ class CanvasLockManager {
         $this->userRepository = $userRepository;
         $this->dbManager = $dbManager;
         $this->redisCache = $redisCache;
+        $this->cacheInvalidator = new CacheInvalidator($redisCache->getClient());
     }
 
     /**
@@ -60,8 +63,6 @@ class CanvasLockManager {
             
             $updateStmt = $canvasesDb->prepare("UPDATE canvases SET is_subscription_locked = :is_subscription_locked, locked_reasons = :locked_reasons WHERE id = :id");
             $canvasesDb->beginTransaction();
-            
-            $redisClient = $this->redisCache->getClient();
 
             foreach ($canvases as $canvas) {
                 $isSubscriptionLocked = false;
@@ -96,9 +97,7 @@ class CanvasLockManager {
                     'id' => $canvas['id']
                 ]);
                 
-                if ($redisClient) {
-                    $redisClient->del(CacheConstants::PREFIX_CANVAS_DETAIL . $canvas['id']);
-                }
+                $this->cacheInvalidator->canvas($canvas['id']);
             }
 
             $canvasesDb->commit();

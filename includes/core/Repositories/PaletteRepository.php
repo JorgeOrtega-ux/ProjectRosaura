@@ -6,6 +6,7 @@ use App\Config\Database\DatabaseManager;
 use App\Config\Database\RedisCache;
 use App\Core\System\DatabaseConstants;
 use App\Core\System\CacheConstants;
+use App\Core\System\CacheInvalidator;
 use PDO;
 use PDOException;
 use App\Core\System\Logger;
@@ -14,11 +15,13 @@ class PaletteRepository implements PaletteRepositoryInterface {
     private $dbManager;
     private $pdo;
     private $redisClient;
+    private CacheInvalidator $cacheInvalidator;
 
     public function __construct(DatabaseManager $dbManager, RedisCache $redisCache = null) {
         $this->dbManager = $dbManager;
         $this->pdo = $dbManager->getConnection(DatabaseConstants::CONN_IDENTITY);
         $this->redisClient = $redisCache ? $redisCache->getClient() : null;
+        $this->cacheInvalidator = new CacheInvalidator($this->redisClient);
     }
 
     public function getCustomPalettes(int $userId): array {
@@ -63,10 +66,8 @@ class PaletteRepository implements PaletteRepositoryInterface {
                 ':colors' => json_encode($colors)
             ]);
             // Invalidate palette cache
-            if ($result && $this->redisClient) {
-                try {
-                    $this->redisClient->del(CacheConstants::PREFIX_USER_PALETTE . $userId);
-                } catch (\Throwable $e) {}
+            if ($result) {
+                $this->cacheInvalidator->userPalettes($userId);
             }
             return $result;
         } catch (PDOException $e) {
@@ -84,10 +85,8 @@ class PaletteRepository implements PaletteRepositoryInterface {
             ]);
             $deleted = $stmt->rowCount() > 0;
             // Invalidate palette cache
-            if ($deleted && $this->redisClient) {
-                try {
-                    $this->redisClient->del(CacheConstants::PREFIX_USER_PALETTE . $userId);
-                } catch (\Throwable $e) {}
+            if ($deleted) {
+                $this->cacheInvalidator->userPalettes($userId);
             }
             return $deleted;
         } catch (PDOException $e) {

@@ -387,7 +387,11 @@ class UserRepository implements UserRepositoryInterface {
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET deletion_scheduled_at = ? WHERE id = ?");
-            return $stmt->execute([$date, $userId]);
+            $res = $stmt->execute([$date, $userId]);
+            if ($res) {
+                $this->cacheInvalidator->user($userId);
+            }
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'date' => $date, 'exception' => $e]);
             return false;
@@ -398,7 +402,11 @@ class UserRepository implements UserRepositoryInterface {
         $tblUsers = DB::TBL_USERS;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET deletion_scheduled_at = NULL WHERE id = ?");
-            return $stmt->execute([$userId]);
+            $res = $stmt->execute([$userId]);
+            if ($res) {
+                $this->cacheInvalidator->user($userId);
+            }
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
             return false;
@@ -425,10 +433,8 @@ class UserRepository implements UserRepositoryInterface {
         try {
             $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET storage_used_bytes = GREATEST(0, storage_used_bytes + ?) WHERE id = ?");
             $res = $stmt->execute([$bytesDelta, $userId]);
-            if ($res && $this->redisClient) {
-                try {
-                    $this->redisClient->del(CacheConstants::PREFIX_USER_STORAGE . $userId);
-                } catch (\Throwable $e) {}
+            if ($res) {
+                $this->cacheInvalidator->userStorage($userId);
             }
             return $res;
         } catch (PDOException $e) {

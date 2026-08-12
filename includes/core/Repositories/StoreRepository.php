@@ -27,10 +27,7 @@ class StoreRepository implements StoreRepositoryInterface {
 
     /** Elimina el caché de monedas de un usuario de forma segura. */
     private function redis_del_coins(int $userId): void {
-        if (!$this->redisClient) return;
-        try {
-            $this->redisClient->del(CacheConstants::PREFIX_STORE_COINS . $userId);
-        } catch (\Throwable $e) {}
+        $this->cacheInvalidator->userCoins($userId);
     }
 
     public function addCoins(int $userId, int $amount): bool {
