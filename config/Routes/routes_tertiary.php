@@ -665,6 +665,9 @@ return [
                 'time' => 5,
                 'identifier' => 'user_id',
             ],
+            [
+                'type' => 'Turnstile',
+            ],
         ],
     ],
     'stripe.preview_upgrade' => [
@@ -760,6 +763,9 @@ return [
                 'max' => 5,
                 'time' => 5,
                 'identifier' => 'user_id',
+            ],
+            [
+                'type' => 'Turnstile',
             ],
         ],
     ],

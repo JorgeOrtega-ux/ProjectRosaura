@@ -65,6 +65,9 @@ return [
                 'time' => 30,
                 'identifier' => 'ip',
             ],
+            [
+                'type' => 'Turnstile',
+            ],
         ],
     ],
     'auth.google' => [
@@ -80,6 +83,9 @@ return [
                 'max' => 5,
                 'time' => 15,
                 'identifier' => 'ip',
+            ],
+            [
+                'type' => 'Turnstile',
             ],
         ],
     ],
@@ -273,6 +279,9 @@ return [
                 'time' => 30,
                 'identifier' => 'user_id',
             ],
+            [
+                'type' => 'Turnstile',
+            ],
         ],
     ],
     'settings.resend_email_code' => [
@@ -288,6 +297,9 @@ return [
                 'max' => 3,
                 'time' => 30,
                 'identifier' => 'user_id',
+            ],
+            [
+                'type' => 'Turnstile',
             ],
         ],
     ],

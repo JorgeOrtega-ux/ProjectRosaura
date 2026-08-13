@@ -428,7 +428,10 @@ class AuthController {
 
     async handleGoogleLogin(credential) {
         this.clearMessages();
-        const data = { credential: credential };
+        const data = {
+            credential: credential,
+            turnstile_token: await this._getTurnstileToken()
+        };
         const result = await this.api.post(ApiRoutes.Auth.Google, data, this.abortController?.signal);
 
         if (result.aborted) return;
@@ -645,7 +648,10 @@ class AuthController {
         btn.classList.add('disabled-interaction', 'component-text-notice--muted');
         btn.textContent = __('btn_sending');
 
-        const data = { reg_token: regToken };
+        const data = {
+            reg_token: regToken,
+            turnstile_token: await this._getTurnstileToken()
+        };
         const result = await this.api.post(ApiRoutes.Auth.RegisterResendCode, data, this.abortController.signal);
 
         if (result.aborted) return;
