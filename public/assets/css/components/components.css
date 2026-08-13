@@ -1356,6 +1356,10 @@ textarea.component-input-field::placeholder {
     gap: 16px;
 }
 
+.component-group-item--wrap {
+    flex-wrap: wrap;
+}
+
 .component-group-item--stacked {
     flex-direction: column;
     align-items: flex-start;
@@ -1399,7 +1403,8 @@ textarea.component-input-field::placeholder {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
 }
 
 .component-card__form-area {
@@ -1437,7 +1442,7 @@ textarea.component-input-field::placeholder {
 }
 
 .component-card__actions--end {
-    flex-grow: 1;
+    margin-left: auto;
     justify-content: flex-end;
 }
 
@@ -3563,25 +3568,20 @@ html.dark-theme .component-tab-close:hover,
     width: 100%;
 }
 
-.google-verify-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    width: 100%;
-    gap: 6px;
-}
-
-.google-verify-container.disabled,
-.password-verify-container.disabled {
-    display: none !important;
-}
-
+.component-verify-container,
+.google-verify-container,
 .password-verify-container {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     width: 100%;
-    gap: 6px;
+    gap: 2px;
+}
+
+.component-verify-container.disabled,
+.google-verify-container.disabled,
+.password-verify-container.disabled {
+    display: none !important;
 }
 
 .google-verify-badge,

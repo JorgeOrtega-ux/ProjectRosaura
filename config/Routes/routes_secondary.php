@@ -3,6 +3,22 @@
 use App\Core\System\RateLimitConstants as RL;
 
 return [
+    'support.submit' => [
+        'controller' => 'App\\Api\\Controllers\\Support\\SupportController',
+        'action' => 'submit',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'support_submit',
+                'max' => 5,
+                'time' => 10,
+                'identifier' => 'ip',
+            ],
+        ],
+    ],
     'chat.history' => [
         'controller' => 'App\\Api\\Controllers\\Chat\\ChatController',
         'action' => 'history',

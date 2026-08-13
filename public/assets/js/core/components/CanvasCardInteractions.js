@@ -364,9 +364,17 @@ export class CanvasCardInteractions {
         document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
             el.classList.remove('active');
             el.classList.add('disabled');
-            // Remove dynamic card menus from DOM
-            if (el.closest('.component-dropdown-wrapper')) {
-                setTimeout(() => el.remove(), 250); // Le damos tiempo a la animación de cierre
+
+            // Reset internal menu page to main if it exists
+            const mainPage = el.querySelector('[data-menu-page="main"]');
+            if (mainPage) {
+                el.querySelectorAll('.component-menu-page').forEach(p => p.classList.remove('active'));
+                mainPage.classList.add('active');
+            }
+
+            // Remove dynamic card menus from DOM after close animation
+            if (el.dataset.module?.startsWith('snapshot-menu-') || el.closest('.component-gallery-actions-wrapper')) {
+                setTimeout(() => el.remove(), 250);
             }
         });
     }
@@ -378,16 +386,15 @@ export class CanvasCardInteractions {
         let moduleEl = wrapper.querySelector('.component-module');
         
         if (moduleEl) {
-            if (moduleEl.classList.contains('active')) {
-                moduleEl.classList.remove('active');
-                moduleEl.classList.add('disabled');
-                setTimeout(() => moduleEl.remove(), 250);
+            const isCurrentlyActive = moduleEl.classList.contains('active');
+            this.closeDropdowns();
+            if (!isCurrentlyActive) {
+                moduleEl.remove();
             } else {
-                this.closeDropdowns();
-                moduleEl.classList.remove('disabled');
-                moduleEl.classList.add('active');
+                return;
             }
-            return;
+        } else {
+            this.closeDropdowns();
         }
 
         const id = btn.getAttribute('data-id');

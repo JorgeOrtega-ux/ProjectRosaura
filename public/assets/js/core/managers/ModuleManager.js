@@ -92,6 +92,18 @@ export class ModuleManager {
     close(module) {
         module.classList.replace('active', 'disabled');
         module.querySelectorAll('.component-menu').forEach(p => p.removeAttribute('style'));
+
+        // Reset internal menu pages to main
+        const mainPage = module.querySelector('[data-menu-page="main"]');
+        if (mainPage) {
+            module.querySelectorAll('.component-menu-page').forEach(p => p.classList.remove('active'));
+            mainPage.classList.add('active');
+        }
+
+        // Remove dynamic card dropdowns from DOM after close animation
+        if (module.dataset.module?.startsWith('snapshot-menu-') || module.closest('.component-gallery-actions-wrapper')) {
+            setTimeout(() => module.remove(), 250);
+        }
     }
 
     closeAllModules() {

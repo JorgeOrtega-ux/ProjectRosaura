@@ -173,7 +173,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const cardId = escapeHTML(card.id || '');
 
         return `
-            <div class="component-group-item component-group-item--wrap" data-pm-id="${cardId}">
+            <div class="component-group-item" data-pm-id="${cardId}">
                 <div class="component-card__content">
                     <div class="component-card__icon-container component-card__icon-container--bordered">
                         ${logoSvg}
@@ -184,9 +184,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="deletePaymentMethod" data-pm-id="${cardId}" data-tooltip="${window.__('delete_card')}" data-position="left">
-                        <span class="material-symbols-rounded">delete</span>
-                    </button>
+                    <button type="button" class="component-button component-button--h36 component-button--danger" data-action="deletePaymentMethod" data-pm-id="${cardId}">${window.__('delete_card') || 'Eliminar tarjeta'}</button>
                 </div>
             </div>
         `;

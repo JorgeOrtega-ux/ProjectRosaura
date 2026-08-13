@@ -9,7 +9,7 @@ export function renderVerificationInput(data = {}) {
     if (isGoogleUser) {
         return `
             <div class="verification-method-container" data-ref="verification-method-container">
-                <div class="google-verify-container" data-ref="google-verify-box">
+                <div class="component-verify-container google-verify-container" data-ref="google-verify-box">
                     <div class="component-badge component-badge--sm component-badge--interactive component-badge--full google-verify-badge verify-toggle-badge" 
                          data-action="triggerGoogleVerify" 
                          data-ref="credential" 
@@ -23,13 +23,13 @@ export function renderVerificationInput(data = {}) {
                         </svg>
                         <span class="google-verify-text">${__('btn_verify_google_session')}</span>
                     </div>
-                    <div data-ref="google_token" data-value=""></div>
+                    <input type="hidden" data-ref="google_token" name="google_token" data-value="" value="">
                     <div class="component-badge component-badge--sm component-badge--interactive component-badge--full verify-toggle-badge" data-action="toggleVerifyMethod" data-mode="password">
                         <span class="material-symbols-rounded">key</span>
                         <span>${__('link_verify_with_password')}</span>
                     </div>
                 </div>
-                <div class="password-verify-container disabled" data-ref="password-verify-box">
+                <div class="component-verify-container password-verify-container disabled" data-ref="password-verify-box">
                     <div class="component-input-group">
                         <input type="password" ${inputId ? `id="${inputId}"` : ''} data-ref="${inputRef}" class="component-input-field component-input-field--with-icon" placeholder=" " ${autocomplete ? `autocomplete="${autocomplete}"` : ''}>
                         <label class="component-input-label">${labelText}</label>

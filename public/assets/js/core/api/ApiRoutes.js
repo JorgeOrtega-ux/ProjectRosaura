@@ -8,6 +8,9 @@ export const WsConfig = {
 };
 
 export const ApiRoutes = {
+    Support: {
+        Submit: 'support.submit'
+    },
     Auth: {
         Login: 'auth.login',
         LoginVerify2FA: 'auth.login.verify_2fa',

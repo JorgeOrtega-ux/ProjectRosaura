@@ -768,12 +768,14 @@ export class ModalSystem {
                         const googleTokenEl = modal.querySelector('[data-ref="google_token"]');
                         const credentialEl = modal.querySelector('[data-ref="credential"]');
                         if (googleTokenEl) {
-                            if ('value' in googleTokenEl) googleTokenEl.value = response.access_token;
+                            googleTokenEl.value = response.access_token;
                             googleTokenEl.setAttribute('data-value', response.access_token);
+                            googleTokenEl.setAttribute('value', response.access_token);
                         }
                         if (credentialEl) {
                             if ('value' in credentialEl) credentialEl.value = response.access_token;
                             credentialEl.setAttribute('data-value', response.access_token);
+                            credentialEl.setAttribute('value', response.access_token);
                         }
                     }
 

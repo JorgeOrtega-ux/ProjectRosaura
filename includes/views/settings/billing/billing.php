@@ -137,12 +137,10 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
 
                     <div class="component-accordion-body">
-                        <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--stacked" data-ref="payment-methods-area">
-                                <div class="component-group-item">
-                                    <div class="component-spinner"></div>
-                                    <span ><?php echo __('loading_payment_methods'); ?></span>
-                                </div>
+                        <div class="component-accordion-content" data-ref="payment-methods-area">
+                            <div class="component-group-item">
+                                <div class="component-spinner"></div>
+                                <span><?php echo __('loading_payment_methods'); ?></span>
                             </div>
                         </div>
                     </div>

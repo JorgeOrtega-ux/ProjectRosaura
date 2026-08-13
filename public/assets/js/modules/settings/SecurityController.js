@@ -75,7 +75,8 @@ class SecurityController {
         const credentialInp = document.querySelector('[data-ref="credential"]');
         
         const val = input ? input.value.trim() : '';
-        const googleToken = (googleTokenInp && googleTokenInp.value) || (credentialInp && credentialInp.value) || '';
+        const googleToken = (googleTokenInp && (googleTokenInp.value || googleTokenInp.getAttribute('data-value'))) || 
+                            (credentialInp && (credentialInp.value || credentialInp.getAttribute('data-value'))) || '';
 
         if (val === '' && !googleToken) { 
             showMessage(window.__('err_current_password_required'), 'error'); 

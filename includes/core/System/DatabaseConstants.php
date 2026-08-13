@@ -42,6 +42,7 @@ class DatabaseConstants {
     public const TBL_CANVAS_RECENT_COLORS       = 'canvas_recent_colors';
     public const TBL_SUBSCRIPTIONS              = 'subscriptions';
     public const TBL_PAYMENT_HISTORY            = 'payment_history';
+    public const TBL_SUPPORT_TICKETS            = 'support_tickets';
     public const SUSPENSION_TEMP = 'temporary';
     public const SUSPENSION_PERM = 'permanent';
     public const DELETED_BY_USER  = 'user';
