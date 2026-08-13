@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage } from '../../../core/utils/uiUtils.js';
+import { showMessage, initCarouselScroll } from '../../../core/utils/uiUtils.js';
 class AdminLogsViewerController {
     constructor() {
         this.api = new ApiService();
@@ -39,6 +39,17 @@ class AdminLogsViewerController {
         const tab = e.target.closest('.component-tab');
         const closeBtn = e.target.closest('.component-tab-close');
         const toggleSyntaxBtn = e.target.closest('[data-action="toggle-syntax"]');
+        const scrollLeftBtn = e.target.closest('[data-action="scrollLogsTabsLeft"]');
+        const scrollRightBtn = e.target.closest('[data-action="scrollLogsTabsRight"]');
+
+        if (scrollLeftBtn) {
+            this.scrollTabs(-220);
+            return;
+        }
+        if (scrollRightBtn) {
+            this.scrollTabs(220);
+            return;
+        }
         if (toggleSyntaxBtn) {
             this.isSyntaxModeEnabled = !this.isSyntaxModeEnabled;
             toggleSyntaxBtn.classList.toggle('component-button--dark', this.isSyntaxModeEnabled);
@@ -54,6 +65,31 @@ class AdminLogsViewerController {
         } else if (tab) {
             const tabId = tab.getAttribute('data-tab-id');
             this.switchTab(tabId);
+        }
+    }
+    scrollTabs(delta) {
+        const tabsContainer = document.querySelector('[data-ref="logs-viewer-tabs"]');
+        if (tabsContainer) {
+            tabsContainer.scrollBy({ left: delta, behavior: 'smooth' });
+            setTimeout(() => this.updateCarouselButtons(), 300);
+        }
+    }
+    updateCarouselButtons() {
+        const tabsContainer = document.querySelector('[data-ref="logs-viewer-tabs"]');
+        const leftBtn = document.querySelector('[data-action="scrollLogsTabsLeft"]');
+        const rightBtn = document.querySelector('[data-action="scrollLogsTabsRight"]');
+        if (!tabsContainer || !leftBtn || !rightBtn) return;
+
+        if (tabsContainer.scrollLeft > 5) {
+            leftBtn.classList.remove('disabled');
+        } else {
+            leftBtn.classList.add('disabled');
+        }
+
+        if (tabsContainer.scrollWidth > tabsContainer.clientWidth && Math.ceil(tabsContainer.scrollLeft + tabsContainer.clientWidth) < tabsContainer.scrollWidth - 5) {
+            rightBtn.classList.remove('disabled');
+        } else {
+            rightBtn.classList.add('disabled');
         }
     }
     async loadLogs(urlStr) {
@@ -127,6 +163,10 @@ class AdminLogsViewerController {
                 </div>
             `;
             tabsContainer.insertAdjacentHTML('beforeend', tabHtml);
+        }
+        const wrapper = tabsContainer.closest('.component-tags-carousel-wrapper');
+        if (wrapper) {
+            initCarouselScroll(wrapper);
         }
     }
     escapeHTML(str) {

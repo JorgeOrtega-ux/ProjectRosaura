@@ -256,6 +256,103 @@ function isDarkMode() {
            body.getAttribute('data-theme') === 'dark';
 }
 
+function initCarouselScroll(wrapper) {
+    if (!wrapper) return null;
+
+    const carousel = wrapper.querySelector('.component-tags-carousel, .component-tabs-header');
+    const leftBtn = wrapper.querySelector('.component-tag-nav-left, [data-action$="Left"]');
+    const rightBtn = wrapper.querySelector('.component-tag-nav-right, [data-action$="Right"]');
+
+    if (!carousel) return null;
+
+    const updateButtons = () => {
+        if (leftBtn) {
+            if (carousel.scrollLeft > 5) leftBtn.classList.remove('disabled');
+            else leftBtn.classList.add('disabled');
+        }
+        if (rightBtn) {
+            if (carousel.scrollWidth > carousel.clientWidth && Math.ceil(carousel.scrollLeft + carousel.clientWidth) < carousel.scrollWidth - 5) {
+                rightBtn.classList.remove('disabled');
+            } else {
+                rightBtn.classList.add('disabled');
+            }
+        }
+    };
+
+    if (leftBtn && !leftBtn.hasAttribute('data-carousel-bound')) {
+        leftBtn.setAttribute('data-carousel-bound', 'true');
+        leftBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            carousel.scrollBy({ left: -220, behavior: 'smooth' });
+            setTimeout(updateButtons, 300);
+        });
+    }
+
+    if (rightBtn && !rightBtn.hasAttribute('data-carousel-bound')) {
+        rightBtn.setAttribute('data-carousel-bound', 'true');
+        rightBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            carousel.scrollBy({ left: 220, behavior: 'smooth' });
+            setTimeout(updateButtons, 300);
+        });
+    }
+
+    if (!carousel.hasAttribute('data-carousel-bound')) {
+        carousel.setAttribute('data-carousel-bound', 'true');
+        carousel.addEventListener('scroll', updateButtons);
+        window.addEventListener('resize', updateButtons);
+
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let isDragging = false;
+
+        carousel.addEventListener('mousedown', (e) => {
+            if (e.target.closest('button, a, input, select, .component-tab-close')) return;
+            isDown = true;
+            isDragging = false;
+            startX = e.pageX - carousel.offsetLeft;
+            scrollLeft = carousel.scrollLeft;
+        });
+
+        carousel.addEventListener('mouseleave', () => {
+            isDown = false;
+            carousel.classList.remove('is-dragging');
+        });
+
+        carousel.addEventListener('mouseup', () => {
+            isDown = false;
+            carousel.classList.remove('is-dragging');
+            setTimeout(() => { isDragging = false; }, 50);
+        });
+
+        carousel.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - carousel.offsetLeft;
+            const walk = (x - startX) * 2;
+            if (Math.abs(walk) > 5) {
+                isDragging = true;
+                carousel.classList.add('is-dragging');
+            }
+            if (isDragging) {
+                carousel.scrollLeft = scrollLeft - walk;
+            }
+        });
+
+        carousel.addEventListener('click', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, { capture: true });
+    }
+
+    setTimeout(updateButtons, 100);
+
+    return { updateButtons };
+}
+
 export { 
     showMessage, 
     setButtonLoading, 
@@ -273,5 +370,6 @@ export {
     catchPaginationClick,
     getAllPalettes,
     localInputFormatToUtcString,
-    isDarkMode
+    isDarkMode,
+    initCarouselScroll
 };

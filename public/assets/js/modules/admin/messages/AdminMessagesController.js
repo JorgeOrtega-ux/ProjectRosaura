@@ -39,12 +39,20 @@ class AdminMessagesController {
         const deselectBtn = e.target.closest('[data-action="deselectMessage"]');
         const viewReportsBtn = e.target.closest('[data-action="viewMessageReports"]');
 
+        const changeVisBtn = e.target.closest('[data-action="changeMessageVisibility"]');
+
         if (searchBtn) this.toggleSearchToolbar();
         if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
         if (backToMainFiltersBtn) {
             e.preventDefault();
             e.stopPropagation();
             this.backToMainFilters();
+        }
+
+        if (changeVisBtn) {
+            e.preventDefault();
+            const val = changeVisBtn.getAttribute('data-value');
+            this.changeSelectedMessageVisibility(val, changeVisBtn);
         }
 
         if (selectTargetRow && !e.target.closest('button') && !e.target.closest('a') && !e.target.closest('.component-dropdown-wrapper')) {
@@ -185,6 +193,48 @@ class AdminMessagesController {
         document.querySelectorAll('[data-action="selectMessage"]').forEach(el => el.classList.remove('selected'));
         this.updateSelectionUI();
     }
+    syncVisibilityDropdown(visibility) {
+        const options = document.querySelectorAll('[data-action="changeMessageVisibility"]');
+        options.forEach(opt => {
+            if (opt.getAttribute('data-value') === visibility) {
+                opt.classList.add('active');
+            } else {
+                opt.classList.remove('active');
+            }
+        });
+    }
+    async changeSelectedMessageVisibility(newVisibility, btnElement) {
+        if (!this.selectedMessageId) return;
+        try {
+            const response = await this.api.post(ApiRoutes.Admin.UpdateMessageVisibility, {
+                uuid: this.selectedMessageId,
+                visibility: newVisibility
+            });
+
+            if (response && response.success !== false) {
+                showMessage(response.message || (typeof window.__ === 'function' ? window.__('msg_visibility_updated', [], 'Visibilidad actualizada') : 'Visibilidad actualizada'), 'success');
+
+                const selectedRow = document.querySelector(`tr[data-message-uuid="${this.selectedMessageId}"]`);
+                if (selectedRow) {
+                    selectedRow.setAttribute('data-visibility', newVisibility);
+                    const badgeCell = selectedRow.children[3];
+                    if (badgeCell) {
+                        const badgeClass = newVisibility === 'visible' ? 'success' : (newVisibility === 'deleted' ? 'danger' : 'warning');
+                        badgeCell.innerHTML = `<span class="component-badge component-badge--sm component-badge--${badgeClass}">${newVisibility}</span>`;
+                    }
+                }
+
+                this.syncVisibilityDropdown(newVisibility);
+
+                const module = btnElement ? btnElement.closest('[data-module]') : null;
+                if (module) module.classList.add('disabled');
+            } else {
+                showMessage(response?.message || 'Error al actualizar visibilidad', 'error');
+            }
+        } catch (err) {
+            showMessage(err.message || 'Error al actualizar visibilidad', 'error');
+        }
+    }
     updateSelectionUI() {
         const defaultMode = document.querySelector('[data-ref="header-default-actions"]');
         const selectionMode = document.querySelector('[data-ref="header-selection-actions"]');
@@ -194,6 +244,12 @@ class AdminMessagesController {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
             
+            const selectedRow = document.querySelector(`tr[data-message-uuid="${this.selectedMessageId}"]`);
+            if (selectedRow) {
+                const currentVis = selectedRow.getAttribute('data-visibility') || 'visible';
+                this.syncVisibilityDropdown(currentVis);
+            }
+
             const isRedis = this.selectedMessageId.startsWith('REDIS-');
             if (viewReportsBtn) {
                 if (isRedis) {

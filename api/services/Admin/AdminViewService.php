@@ -1015,7 +1015,7 @@ class AdminViewService {
     /**
 
      */
-    public function getManageMessagesData(?string $searchQuery, int $page = 1): array {
+    public function getManageMessagesData(?string $searchQuery = '', int $page = 1, string $filter = 'all', string $sort = 'recent'): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
         $db = $this->dbManager;
@@ -1026,19 +1026,7 @@ class AdminViewService {
         if ($page < 1) $page = 1;
 
         $session = $this->cassandraManager->getSession();
-        $allMessages = [];
-        $totalMessages = 0;
-
-        try {
-            $totalMessages = (int)$pdo->query("SELECT COALESCE(SUM(total_messages), 0) FROM canvases")->fetchColumn();
-        } catch (\Throwable $e) {
-            Logger::error("getManageMessagesData totalMessages error: " . $e->getMessage(), ['exception' => $e]);
-        }
-
-        $totalPages = ceil($totalMessages / $limit);
-        if ($totalPages < 1) $totalPages = 1;
-        if ($page > $totalPages) $page = $totalPages;
-        $offset = ($page - 1) * $limit;
+        $rawMessages = [];
 
         if ($session) {
             try {
@@ -1065,7 +1053,7 @@ class AdminViewService {
                         }
                     }
                     
-                    $allMessages[] = [
+                    $rawMessages[] = [
                         'id' => $row['uuid'] ?? '',
                         'uuid' => $row['uuid'] ?? '',
                         'canvas_id' => (int)($row['canvas_id'] ?? 0),
@@ -1079,17 +1067,108 @@ class AdminViewService {
                         'created_at' => $createdAt
                     ];
                 }
-                
-                // Sort by created_at DESC
-                usort($allMessages, function($a, $b) {
-                    return strcmp($b['created_at'], $a['created_at']);
-                });
             } catch (\Throwable $e) {
                 Logger::error("getManageMessagesData select messages error: " . $e->getMessage(), ['exception' => $e]);
             }
         }
 
-        $messages = array_slice($allMessages, $offset, $limit);
+        // Enrich with user names (DB::CONN_IDENTITY)
+        $userIds = array_values(array_filter(array_unique(array_column($rawMessages, 'user_id'))));
+        $userMap = [];
+        if (!empty($userIds)) {
+            try {
+                $pdoIdentity = $db->getConnection(DB::CONN_IDENTITY);
+                $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+                $stmt = $pdoIdentity->prepare("SELECT id, username FROM users WHERE id IN ($placeholders)");
+                $stmt->execute($userIds);
+                while ($uRow = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    $userMap[$uRow['id']] = $uRow['username'];
+                }
+            } catch (\Throwable $e) {
+                Logger::error("getManageMessagesData fetch users error: " . $e->getMessage(), ['exception' => $e]);
+            }
+        }
+
+        // Enrich with canvas names (DB::CONN_CANVASES)
+        $canvasIds = array_values(array_filter(array_unique(array_column($rawMessages, 'canvas_id'))));
+        $canvasMap = [];
+        $canvasUuidMap = [];
+        if (!empty($canvasIds)) {
+            try {
+                $placeholders = implode(',', array_fill(0, count($canvasIds), '?'));
+                $stmt = $pdo->prepare("SELECT id, uuid, name FROM canvases WHERE id IN ($placeholders)");
+                $stmt->execute($canvasIds);
+                while ($cRow = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    $canvasMap[$cRow['id']] = $cRow['name'];
+                    $canvasUuidMap[$cRow['id']] = $cRow['uuid'];
+                }
+            } catch (\Throwable $e) {
+                Logger::error("getManageMessagesData fetch canvases error: " . $e->getMessage(), ['exception' => $e]);
+            }
+        }
+
+        // Enrich with report counts (DB::CONN_CANVASES -> canvas_chat_reports)
+        $msgUuids = array_values(array_filter(array_unique(array_column($rawMessages, 'uuid'))));
+        $reportCountMap = [];
+        if (!empty($msgUuids)) {
+            try {
+                $placeholders = implode(',', array_fill(0, count($msgUuids), '?'));
+                $stmt = $pdo->prepare("SELECT message_id, COUNT(*) as rep_count FROM canvas_chat_reports WHERE message_id IN ($placeholders) GROUP BY message_id");
+                $stmt->execute($msgUuids);
+                while ($rRow = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    $reportCountMap[$rRow['message_id']] = (int)$rRow['rep_count'];
+                }
+            } catch (\Throwable $e) {
+                Logger::error("getManageMessagesData fetch reports error: " . $e->getMessage(), ['exception' => $e]);
+            }
+        }
+
+        foreach ($rawMessages as &$msg) {
+            $msg['username'] = $userMap[$msg['user_id']] ?? ('Usuario #' . $msg['user_id']);
+            $msg['canvas_name'] = $canvasMap[$msg['canvas_id']] ?? ('ID: ' . $msg['canvas_id']);
+            $msg['canvas_uuid'] = $canvasUuidMap[$msg['canvas_id']] ?? '';
+            $msg['report_count'] = $reportCountMap[$msg['uuid']] ?? 0;
+        }
+        unset($msg);
+
+        // Filter
+        $filtered = [];
+        foreach ($rawMessages as $msg) {
+            if ($filter === 'reported' && ($msg['report_count'] ?? 0) <= 0) {
+                continue;
+            }
+            if ($searchQuery !== '') {
+                $q = mb_strtolower($searchQuery);
+                $match = (mb_stripos($msg['message'], $q) !== false) ||
+                         (mb_stripos($msg['username'], $q) !== false) ||
+                         (mb_stripos($msg['uuid'], $q) !== false) ||
+                         (mb_stripos($msg['canvas_name'], $q) !== false);
+                if (!$match) continue;
+            }
+            $filtered[] = $msg;
+        }
+
+        // Sort
+        if ($sort === 'most_reported') {
+            usort($filtered, function($a, $b) {
+                if ($b['report_count'] !== $a['report_count']) {
+                    return $b['report_count'] <=> $a['report_count'];
+                }
+                return strcmp($b['created_at'], $a['created_at']);
+            });
+        } else {
+            usort($filtered, function($a, $b) {
+                return strcmp($b['created_at'], $a['created_at']);
+            });
+        }
+
+        $totalMessages = count($filtered);
+        $totalPages = (int)ceil($totalMessages / $limit);
+        if ($totalPages < 1) $totalPages = 1;
+        if ($page > $totalPages) $page = $totalPages;
+        $offset = ($page - 1) * $limit;
+
+        $messages = array_slice($filtered, $offset, $limit);
 
         return [
             'messages' => $messages,
@@ -1104,45 +1183,136 @@ class AdminViewService {
     /**
      * Datos para los reportes de contenido (messages/reports.php).
      */
-    public function getReportsData(?string $searchQuery, int $page = 1): array {
+    public function getReportsData(?string $messageUuid = null, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
         $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_CANVASES);
 
-        $limit = 25;
-        if ($page < 1) $page = 1;
+        $messageUuid = trim($messageUuid ?? ($_GET['uuid'] ?? ($_GET['id'] ?? '')));
+
+        $session = $this->cassandraManager->getSession();
+        $messageData = null;
+
+        if ($session && !empty($messageUuid)) {
+            try {
+                $stmt = $session->prepare("SELECT uuid, canvas_id, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason, created_at FROM canvas_chat_messages WHERE uuid = ?");
+                $rows = $session->execute($stmt, [$messageUuid])->asRowsResult();
+                foreach ($rows as $row) {
+                    $createdAt = '';
+                    if (isset($row['created_at'])) {
+                        $dt = null;
+                        if ($row['created_at'] instanceof \DateTime) {
+                            $dt = $row['created_at'];
+                        } else if (is_string($row['created_at'])) {
+                            try {
+                                $dt = new \DateTime($row['created_at']);
+                            } catch (\Exception $ex) {}
+                        } else if (is_numeric($row['created_at'])) {
+                            $dt = new \DateTime('@' . intval($row['created_at'] / 1000));
+                        }
+                        
+                        if ($dt) {
+                            $dt->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+                            $createdAt = $dt->format('Y-m-d H:i:s');
+                        } else if (is_string($row['created_at'])) {
+                            $createdAt = $row['created_at'];
+                        }
+                    }
+
+                    $messageData = [
+                        'id' => $row['uuid'] ?? $messageUuid,
+                        'uuid' => $row['uuid'] ?? $messageUuid,
+                        'canvas_id' => (int)($row['canvas_id'] ?? 0),
+                        'user_id' => (int)($row['user_id'] ?? 0),
+                        'message' => $row['message'] ?? '',
+                        'attachments' => $row['attachments'] ?? null,
+                        'file_size' => (int)($row['file_size'] ?? 0),
+                        'visibility' => $row['visibility'] ?? 'visible',
+                        'deleted_by' => $row['deleted_by'] ?? null,
+                        'delete_reason' => $row['delete_reason'] ?? null,
+                        'created_at' => $createdAt
+                    ];
+                    break;
+                }
+            } catch (\Throwable $e) {
+                Logger::error("getReportsData message fetch error: " . $e->getMessage(), ['exception' => $e]);
+            }
+        }
+
+        if (!$messageData) {
+            $messageData = [
+                'id' => $messageUuid,
+                'uuid' => $messageUuid,
+                'visibility' => 'visible',
+                'deleted_by' => '',
+                'delete_reason' => ''
+            ];
+        }
 
         $reports = [];
-        $totalReports = 0;
-
-        try {
-            $stmtCount = $pdo->query("SELECT COUNT(id) FROM canvas_chat_reports");
-            $totalReports = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {
-            Logger::error("getReportsData totalReports error: " . $e->getMessage(), ['exception' => $e]);
+        if (!empty($messageUuid)) {
+            try {
+                $stmt = $pdo->prepare("SELECT * FROM canvas_chat_reports WHERE message_id = :mid ORDER BY created_at DESC");
+                $stmt->execute([':mid' => $messageUuid]);
+                $reports = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            } catch (\Throwable $e) {
+                Logger::error("getReportsData select reports error: " . $e->getMessage(), ['exception' => $e]);
+            }
         }
 
-        $totalPages = ceil($totalReports / $limit);
-        if ($totalPages < 1) $totalPages = 1;
-        if ($page > $totalPages) $page = $totalPages;
-        $offset = ($page - 1) * $limit;
-
-        try {
-            $stmt = $pdo->prepare("SELECT * FROM canvas_chat_reports ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
-            $stmt->bindValue(':limit', (int)$limit, \PDO::PARAM_INT);
-            $stmt->bindValue(':offset', (int)$offset, \PDO::PARAM_INT);
-            $stmt->execute();
-            $reports = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {
-            Logger::error("getReportsData select reports error: " . $e->getMessage(), ['exception' => $e]);
+        if (!empty($reports)) {
+            $reporterIds = array_values(array_filter(array_unique(array_column($reports, 'reporter_user_id'))));
+            if (!empty($reporterIds)) {
+                try {
+                    $pdoIdentity = $db->getConnection(DB::CONN_IDENTITY);
+                    $placeholders = implode(',', array_fill(0, count($reporterIds), '?'));
+                    $stmtUser = $pdoIdentity->prepare("SELECT id, username FROM users WHERE id IN ($placeholders)");
+                    $stmtUser->execute($reporterIds);
+                    $userMap = [];
+                    while ($uRow = $stmtUser->fetch(\PDO::FETCH_ASSOC)) {
+                        $userMap[$uRow['id']] = $uRow['username'];
+                    }
+                    foreach ($reports as &$rep) {
+                        $rep['reporter_username'] = $userMap[$rep['reporter_user_id']] ?? ('Usuario #' . $rep['reporter_user_id']);
+                    }
+                    unset($rep);
+                } catch (\Throwable $e) {
+                    Logger::error("getReportsData reporter users error: " . $e->getMessage(), ['exception' => $e]);
+                }
+            }
         }
+
+        $visibility = $messageData['visibility'] ?? 'visible';
+        $deletedBy = $messageData['deleted_by'] ?? '';
+        $deleteReason = $messageData['delete_reason'] ?? '';
+
+        $visibilityLabels = [
+            'visible' => __('msg_visibility_visible'),
+            'under_review' => __('msg_visibility_under_review'),
+            'deleted' => __('msg_visibility_deleted')
+        ];
+        $visibilityIcons = [
+            'visible' => 'check_circle',
+            'under_review' => 'pending',
+            'deleted' => 'delete'
+        ];
+
+        $currentVisIcon = $visibilityIcons[$visibility] ?? 'check_circle';
+        $currentVisText = $visibilityLabels[$visibility] ?? $visibility;
 
         return [
+            'messageUuid' => $messageUuid,
+            'messageData' => $messageData,
+            'visibility' => $visibility,
+            'deletedBy' => $deletedBy,
+            'deleteReason' => $deleteReason,
+            'currentVisIcon' => $currentVisIcon,
+            'currentVisText' => $currentVisText,
             'reports' => $reports,
-            'totalReports' => $totalReports,
-            'totalPages' => $totalPages,
-            'page' => $page,
+            'totalReports' => count($reports),
+            'totalPages' => 1,
+            'page' => 1,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
     }

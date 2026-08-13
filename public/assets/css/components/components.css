@@ -2648,6 +2648,19 @@ input:checked+.component-toggle-slider:before {
     scrollbar-width: thin;
     scrollbar-color: var(--border-color) transparent;
     flex-shrink: 0;
+    padding: 8px;
+    gap: 6px;
+}
+
+.component-tags-carousel-wrapper .component-tabs-header {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+    flex: 1;
+}
+
+.component-tags-carousel-wrapper .component-tabs-header::-webkit-scrollbar {
+    display: none;
 }
 
 .component-tab {
@@ -2656,7 +2669,8 @@ input:checked+.component-toggle-slider:before {
     gap: 8px;
     padding: 0 12px;
     height: 40px;
-    border-right: 1px solid var(--border-color);
+    border: 1px solid #00000015;
+    border-radius: 12px;
     background-color: transparent;
     color: var(--text-secondary);
     font-size: 0.7rem;
@@ -2664,17 +2678,38 @@ input:checked+.component-toggle-slider:before {
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+html[data-theme="dark"] .component-tab,
+html.dark-theme .component-tab,
+[data-theme="dark"] .component-tab {
+    border-color: #ffffff15;
 }
 
 .component-tab:hover {
-    background-color: var(--bg-hover-light);
+    background-color: transparent;
+    border-color: #00000035;
+    color: var(--text-primary);
+}
+
+html[data-theme="dark"] .component-tab:hover,
+html.dark-theme .component-tab:hover,
+[data-theme="dark"] .component-tab:hover {
+    border-color: #ffffff35;
 }
 
 .component-tab.active {
     background-color: var(--bg-surface);
     color: var(--text-primary);
-    border-bottom: 2px solid var(--action-primary);
+    border: 1px solid #000000;
+    border-radius: 12px;
+}
+
+html[data-theme="dark"] .component-tab.active,
+html.dark-theme .component-tab.active,
+[data-theme="dark"] .component-tab.active {
+    border-color: #ffffff;
 }
 
 .component-tab-close {
@@ -2683,14 +2718,22 @@ input:checked+.component-toggle-slider:before {
     justify-content: center;
     width: 20px;
     height: 20px;
-    border-radius: 4px;
+    border-radius: 50px;
+    border: 1px solid transparent;
     color: var(--text-tertiary);
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .component-tab-close:hover {
-    background-color: var(--border-color);
+    background-color: transparent;
+    border: 1px solid #00000020;
     color: var(--color-error);
+}
+
+html[data-theme="dark"] .component-tab-close:hover,
+html.dark-theme .component-tab-close:hover,
+[data-theme="dark"] .component-tab-close:hover {
+    border-color: #ffffff20;
 }
 
 .component-tab-close .material-symbols-rounded {
@@ -6462,13 +6505,15 @@ html.dark-theme .component-skeleton-design-bottom {
     display: none;
 }
 
-.component-tags-carousel.is-dragging {
+.component-tags-carousel.is-dragging,
+.component-tabs-header.is-dragging {
     scroll-behavior: auto;
     cursor: grabbing;
     user-select: none;
 }
 
-.component-tags-carousel.is-dragging .component-badge {
+.component-tags-carousel.is-dragging .component-badge,
+.component-tabs-header.is-dragging .component-tab {
     pointer-events: none;
 }
 

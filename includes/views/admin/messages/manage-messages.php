@@ -7,7 +7,7 @@ $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'recent';
 
 $adminService = new AdminViewService();
-$msgData = $adminService->getManageMessagesData($searchQuery, $page);
+$msgData = $adminService->getManageMessagesData($searchQuery, $page, $filter, $sort);
 
 extract($msgData);
 
@@ -33,6 +33,37 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
             
             <div class="component-top-right">
                 <div class="component-actions disabled" data-ref="header-selection-actions">
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
+                        <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleMessageVisibility" data-ref="btn-toggle-visibility" data-tooltip="<?php echo __('admin_visibility_tooltip', [], 'Cambiar visibilidad'); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded">visibility</span>
+                        </button>
+                        
+                        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--spaced disabled" data-module="moduleMessageVisibility">
+                            <div class="component-menu component-menu--w200 component-menu--h-auto component-menu--no-padding active" data-ref="menuVisibility">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-header">
+                                    <div class="component-menu-header-box">
+                                        <span class="component-menu-header-title"><?php echo __('lbl_visibility', [], 'Visibilidad'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="component-menu-list component-menu-list--compact">
+                                    <div class="component-menu-link component-menu-link--bordered" data-action="changeMessageVisibility" data-value="visible" data-ref="vis-option-visible">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">check_circle</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('msg_visibility_visible', [], 'Visible'); ?></span></div>
+                                    </div>
+                                    <div class="component-menu-link component-menu-link--bordered" data-action="changeMessageVisibility" data-value="under_review" data-ref="vis-option-under_review">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">pending</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('msg_visibility_under_review', [], 'En revisión'); ?></span></div>
+                                    </div>
+                                    <div class="component-menu-link component-menu-link--bordered" data-action="changeMessageVisibility" data-value="deleted" data-ref="vis-option-deleted">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('msg_visibility_deleted', [], 'Eliminado'); ?></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <button class="component-button component-button--icon component-button--h40" data-action="viewMessageReports" data-tooltip="<?php echo __('tooltip_view_reports'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">flag</span>
                     </button>
@@ -176,7 +207,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                             <?php foreach ($messages as $msg): 
                                 $repCount = (int)($msg['report_count'] ?? 0);
                             ?>
-                            <tr class="component-table-row" data-action="selectMessage" data-message-uuid="<?php echo htmlspecialchars($msg['uuid']); ?>" data-report-count="<?php echo $repCount; ?>">
+                            <tr class="component-table-row" data-action="selectMessage" data-message-uuid="<?php echo htmlspecialchars($msg['uuid']); ?>" data-visibility="<?php echo htmlspecialchars($msg['visibility'] ?? 'visible'); ?>" data-report-count="<?php echo $repCount; ?>">
                                 <td><span class="component-badge component-badge--sm search-target"><?php echo htmlspecialchars($msg['id']); ?></span></td>
                                 <td>
                                     <?php 

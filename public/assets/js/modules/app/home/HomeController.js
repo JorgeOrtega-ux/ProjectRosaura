@@ -2,7 +2,7 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
-import { renderSkeleton } from '../../../core/utils/uiUtils.js';
+import { renderSkeleton, initCarouselScroll } from '../../../core/utils/uiUtils.js';
 import { VirtualGridObserver } from '../../../core/utils/VirtualGridObserver.js';
 
 class HomeController {
@@ -75,12 +75,9 @@ class HomeController {
     bindEvents() {
         document.addEventListener('click', this.handleGlobalClickBound);
         
-        const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
-        if (carousel) {
-            carousel.addEventListener('scroll', this.updateCarouselButtonsBound);
-            window.addEventListener('resize', this.updateCarouselButtonsBound);
-            
-            setTimeout(() => this.updateCarouselButtonsBound(), 100);
+        const wrapper = document.querySelector('.component-tags-carousel-wrapper');
+        if (wrapper) {
+            initCarouselScroll(wrapper);
         }
     }
 

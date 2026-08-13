@@ -1,15 +1,19 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
 
+$messageUuid = $_GET['uuid'] ?? ($_GET['id'] ?? '');
+
 $adminService = new AdminViewService();
-$reportsData = $adminService->getReportsData($_GET['q'] ?? null, (int)($_GET['page'] ?? 1));
+$reportsData = $adminService->getReportsData($messageUuid);
 
 extract($reportsData);
 
 $sanctionReasons = \App\Core\Helpers\Utils::getSanctionReasons();
 $reasonLabels = [];
-foreach ($sanctionReasons['report_messages'] as $r) {
-    $reasonLabels[$r['key']] = __('report_reason_' . $r['key']);
+if (!empty($sanctionReasons['report_messages'])) {
+    foreach ($sanctionReasons['report_messages'] as $r) {
+        $reasonLabels[$r['key']] = __('report_reason_' . $r['key']);
+    }
 }
 
 $statusLabels = [
@@ -28,7 +32,6 @@ $visibilityIcons = [
     'under_review' => 'pending',
     'deleted' => 'delete'
 ];
-?>
 
 $backUrl = $appUrl . '/admin/messages';
 ?>
@@ -72,39 +75,7 @@ $backUrl = $appUrl . '/admin/messages';
                     </div>
                 </div>
 
-                <!-- ACCIONES DEFAULT DE NAVEGACIÓN Y VISIBILIDAD -->
                 <div class="component-actions active" data-ref="header-default-actions">
-                    <!-- Dropdown de Visibilidad -->
-                    <div class="component-dropdown-wrapper">
-                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleVisibilityStatus">
-                            <span class="material-symbols-rounded" data-ref="admin-visibility-icon"><?php echo $currentVisIcon; ?></span>
-                            <span class="component-dropdown-text" data-ref="admin-visibility-text"><?php echo htmlspecialchars($currentVisText); ?></span>
-                            <span class="material-symbols-rounded">expand_more</span>
-                        </div>
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleVisibilityStatus">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list component-menu-list--scrollable">
-                                    <div class="component-menu-link <?php echo $visibility === 'visible' ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="visibility" data-value="visible">
-                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">check_circle</span></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('msg_visibility_visible'); ?></span></div>
-                                    </div>
-                                    <div class="component-menu-link <?php echo $visibility === 'under_review' ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="visibility" data-value="under_review">
-                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">pending</span></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('msg_visibility_under_review'); ?></span></div>
-                                    </div>
-                                    <div class="component-menu-link <?php echo $visibility === 'deleted' ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="visibility" data-value="deleted">
-                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('msg_visibility_deleted'); ?></span></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button class="component-button component-button--icon component-button--h40 disabled-interaction" data-action="submitVisibilityUpdate" data-ref="btn-save-visibility" data-tooltip="<?php echo __('tooltip_save_visibility'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">save</span>
-                    </button>
                 </div>
             </div>
         </div>
