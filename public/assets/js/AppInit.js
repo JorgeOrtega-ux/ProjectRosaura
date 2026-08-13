@@ -20,25 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
     window.appInstance = app; 
 
     window.modalSystem = new ModalSystem();
-
-    // DEV: Set to true to always show intro/onboarding modals regardless of seen flags.
-    window.DEV_BYPASS_INTRO_MODALS = true;
-
     window.onboardingTourManager = new OnboardingTourManager();
     window.noticeSystem = new NoticeSystem();
 
     function checkAndShowPromoNotice() {
-        // 1. Solo debe salir cuando haya una sesión activa (window.activeUserId)
         if (!window.activeUserId) return;
-
-        // 2. Solo si el usuario es tier 0 (gratuito)
         if (window.appUserTier !== 0) return;
 
-        // 3. Cookie consent debe estar presente (respetamos la lógica previa)
         const cookieConsent = localStorage.getItem('pr_cookie_consent');
         if (!cookieConsent) return;
 
-        // 4. Si estás en alguna sección de auth o de help no lo muestres y pospon
         const currentPath = window.location.pathname.toLowerCase();
         const isAuthOrHelp = ['/login', '/register', '/forgot-password', '/reset-password', '/account-suspended', '/account-deleted', '/help', '/support', '/site-policy'].some(route => currentPath.includes(route));
         
@@ -57,27 +48,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 5. Control de frecuencia (24 horas)
         const lastPromoTime = localStorage.getItem('pr_promo_last_seen');
         const now = Date.now();
         if (lastPromoTime && now - parseInt(lastPromoTime) <= 24 * 60 * 60 * 1000) return;
 
-        // Evitar duplicar el notice si ya se está mostrando en pantalla o hay una en cola
         if (document.querySelector('.component-notice-box--promo') || window.promoNoticeTimeoutId) return;
 
-        // Mostrar después de un delay de 3 segundos
         window.promoNoticeTimeoutId = setTimeout(() => {
             window.promoNoticeTimeoutId = null;
-            // Volver a verificar condiciones por si el usuario navegó a auth/help o cerró sesión en ese intervalo de 3s
             const verifyPath = window.location.pathname.toLowerCase();
             const stillAuthOrHelp = ['/login', '/register', '/forgot-password', '/reset-password', '/account-suspended', '/account-deleted', '/help', '/support', '/site-policy'].some(route => verifyPath.includes(route));
             if (stillAuthOrHelp || !window.activeUserId) return;
 
             window.noticeSystem.show('promoCard', {
-                title: '¡Mejora tu plan!',
-                message: 'Obtén acceso a todas las funcionalidades exclusivas con nuestra suscripción premium. Cancela cuando quieras.',
-                confirmText: 'Ver planes',
-                cancelText: 'Quizás luego'
+                title: window.__('promo_notice_title'),
+                message: window.__('promo_notice_desc'),
+                confirmText: window.__('btn_view_plans'),
+                cancelText: window.__('btn_maybe_later')
             }).then(res => {
                 if (res.confirmed === 'postponed') {
                     return;
@@ -91,15 +78,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     }
 
-    // Cookie Banner Logic
     const cookieConsent = localStorage.getItem('pr_cookie_consent');
     const isManageCookiesPage = window.location.pathname === '/site-policy/manage-cookies';
     if (!cookieConsent && !isManageCookiesPage) {
         window.noticeSystem.show('cookieBanner', {
-            title: 'Aviso de Privacidad',
-            message: 'Utilizamos cookies propias y de terceros para analizar nuestros servicios y mostrarte publicidad relacionada con tus preferencias en base a un perfil elaborado a partir de tus hábitos de navegación.',
-            confirmText: 'Aceptar todas las cookies',
-            cancelText: 'Administrar cookies'
+            title: window.__('cookie_notice_title'),
+            message: window.__('cookie_notice_desc'),
+            confirmText: window.__('btn_accept_all_cookies'),
+            cancelText: window.__('btn_manage_cookies')
         }).then(res => {
             if (res.confirmed === 'manage_cookies' || res.action === 'manage_cookies') {
                 if (window.spaRouter) {
@@ -113,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     } else {
-        // Promo Card Logic
         checkAndShowPromoNotice();
     }
 
@@ -288,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const showWelcomeFlow = async () => {
         if (!window.modalSystem || !window.AppUserFlags || !window.APP_USER || !window.activeUserId) return;
         
-        if (window.AppUserFlags.includes('welcome_modal_seen') && !window.DEV_BYPASS_INTRO_MODALS) {
+        if (window.AppUserFlags.includes('welcome_modal_seen')) {
             return;
         }
 

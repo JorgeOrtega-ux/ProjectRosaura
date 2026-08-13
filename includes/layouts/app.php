@@ -198,7 +198,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken ?? '', ENT_QUOTES, 'UTF-8'); ?>">
     
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/icons.css">
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/icons.css?v=<?php echo file_exists(ROOT_PATH . '/public/assets/css/icons.css') ? filemtime(ROOT_PATH . '/public/assets/css/icons.css') : '1.0'; ?>">
     <script>
         (function() {
             function applyIcon(el) {
@@ -320,7 +320,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         </div>
     </div>
     
-    <script src="<?php echo $appPath; ?>/assets/js/core/utils/ui-engine.min.js"></script>
-    <script type="module" src="<?php echo $appPath; ?>/assets/js/AppInit.js"></script>
+    <script src="<?php echo $appPath; ?>/assets/js/core/utils/ui-engine.min.js?v=<?php echo file_exists(ROOT_PATH . '/public/assets/js/core/utils/ui-engine.min.js') ? filemtime(ROOT_PATH . '/public/assets/js/core/utils/ui-engine.min.js') : '1.0'; ?>"></script>
+    <script type="module" src="<?php echo $appPath; ?>/assets/js/AppInit.js?v=<?php echo file_exists(ROOT_PATH . '/public/assets/js/AppInit.js') ? filemtime(ROOT_PATH . '/public/assets/js/AppInit.js') : '1.0'; ?>"></script>
 </body>
 </html>

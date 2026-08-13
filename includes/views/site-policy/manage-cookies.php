@@ -1,7 +1,7 @@
 <div class="view-content" data-ref="manage-cookies-wrapper">
     <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title">Administrar cookies</h1>
+            <h1 class="component-top-title"><?php echo __('cookies_manage_title'); ?></h1>
         </div>
     </div>
 
@@ -10,8 +10,8 @@
             <div class="component-bottom">
                 
                 <div class="component-header-card component-mb-4">
-                    <h1 class="component-page-title">Configuración de cookies</h1>
-                    <p class="component-page-description">Las cookies y tecnologías similares recopilan cierta información sobre cómo utilizas nuestro sitio web. Algunas son esenciales y sin ellas no podrías usar la web. No obstante, hay otras que son opcionales y para las que te ofrecemos la posibilidad de elegir si las usamos.</p>
+                    <h1 class="component-page-title"><?php echo __('cookies_page_title'); ?></h1>
+                    <p class="component-page-description"><?php echo __('cookies_page_desc'); ?></p>
                 </div>
 
                 <div class="component-card--grouped component-accordion component-mb-3">
@@ -21,8 +21,8 @@
                                 <span class="material-symbols-rounded">security</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Cookies esenciales</h2>
-                                <p class="component-card__description">Siempre activadas, son fundamentales para que el sitio funcione de forma segura.</p>
+                                <h2 class="component-card__title"><?php echo __('cookies_essential_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('cookies_essential_short_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -35,8 +35,8 @@
                             <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Cloudflare</h2>
-                                        <p class="component-card__description">Red de distribución de contenido y seguridad.</p>
+                                        <h2 class="component-card__title"><?php echo __('cookies_cloudflare_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('cookies_cloudflare_desc'); ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -44,8 +44,8 @@
                             <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Stripe</h2>
-                                        <p class="component-card__description">Procesamiento de pagos y prevención de fraude.</p>
+                                        <h2 class="component-card__title"><?php echo __('cookies_stripe_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('cookies_stripe_desc'); ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -53,8 +53,8 @@
                             <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Google Login</h2>
-                                        <p class="component-card__description">Autenticación segura mediante cuenta de Google.</p>
+                                        <h2 class="component-card__title"><?php echo __('cookies_google_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('cookies_google_desc'); ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -62,8 +62,8 @@
                             <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Autenticación Propia</h2>
-                                        <p class="component-card__description">Gestión de sesiones de usuario registradas en la plataforma.</p>
+                                        <h2 class="component-card__title"><?php echo __('cookies_own_auth_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('cookies_own_auth_desc'); ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -78,8 +78,8 @@
                                 <span class="material-symbols-rounded">palette</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Cookies de funcionalidad</h2>
-                                <p class="component-card__description">Nos ayudan a proporcionar una personalización mejorada.</p>
+                                <h2 class="component-card__title"><?php echo __('cookies_functional_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('cookies_functional_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -98,8 +98,8 @@
                             <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Preferencias de Idioma</h2>
-                                        <p class="component-card__description">Recuerda el idioma que has seleccionado para la interfaz.</p>
+                                        <h2 class="component-card__title"><?php echo __('cookies_pref_lang_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('cookies_pref_lang_desc'); ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -107,8 +107,8 @@
                             <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Preferencias de Tema UI</h2>
-                                        <p class="component-card__description">Almacena si prefieres el modo claro o el modo oscuro.</p>
+                                        <h2 class="component-card__title"><?php echo __('cookies_pref_theme_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('cookies_pref_theme_desc'); ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -123,8 +123,8 @@
                                 <span class="material-symbols-rounded">monitoring</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Cookies de rendimiento</h2>
-                                <p class="component-card__description">Analizan cuántas personas usan la plataforma y cómo la utilizan.</p>
+                                <h2 class="component-card__title"><?php echo __('cookies_performance_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('cookies_performance_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -140,22 +140,17 @@
                     
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-
                             <div class="component-group-item">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Telemetría Interna</h2>
-                                        <p class="component-card__description">Datos anónimos de uso para mejorar la experiencia de usuario.</p>
+                                        <h2 class="component-card__title"><?php echo __('cookies_telemetry_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('cookies_telemetry_desc'); ?></p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-
-
-
 
             </div>
         </div>

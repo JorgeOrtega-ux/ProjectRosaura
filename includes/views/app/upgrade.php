@@ -29,12 +29,13 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
         </div>
 
         <div class="component-viewport">
-            <div class="component-wrapper component-wrapper--full upgrade-wrapper">
-                <div class="component-bottom upgrade-bottom-section">
-                    <div class="upgrade-bottom-header">
-                        <h2 class="upgrade-bottom-title"><?php echo __('upgrade_bottom_title'); ?></h2>
-                        <p class="upgrade-bottom-desc"><?php echo __('upgrade_bottom_desc'); ?></p>
-                        <div class="component-toggle-pill">
+            <div class="component-wrapper component-wrapper--full">
+                <div class="component-bottom component-pricing-section">
+                    <div class="component-pricing-header">
+                        <h2 class="component-pricing-title"><?php echo __('upgrade_bottom_title'); ?></h2>
+                        <p class="component-pricing-desc"><?php echo __('upgrade_bottom_desc'); ?></p>
+                        <div class="component-toggle-pill" data-ref="billing-toggle-pill" data-cycle="monthly">
+                            <div class="component-toggle-pill-glider" data-ref="billing-glider"></div>
                             <button type="button" class="component-button component-button--rounded-pill active" data-action="setBillingCycle" data-value="monthly">
                                 <?php echo __('upgrade_billing_monthly'); ?>
                             </button>
@@ -44,7 +45,7 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
                         </div>
                     </div>
 
-                    <div class="upgrade-cards-container">
+                    <div class="component-pricing-grid">
                         <?php foreach ($allTiers as $tier):
                             $isPopular = !empty($tier['is_popular']);
                             $tierLevel = (int)$tier['tier_level'];
@@ -56,43 +57,44 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
                                 if ($row['icon'] === 'cloud') {
                                     $val = $row['values_fn']($tier);
                                     if ($val !== false) {
-                                        $storageLabel = $val === true ? $row['label'] : $val . ' de ' . $row['label'];
+                                        $lbl = trim($row['label']);
+                                        $storageLabel = $val === true ? $lbl : (str_starts_with($lbl, 'de ') ? $val . ' ' . $lbl : $val . ' de ' . $lbl);
                                     }
                                 }
                             }
                         ?>
-                            <div class="component-card component-card--grouped upgrade-card <?php echo $isPopular ? 'upgrade-card--popular' : 'upgrade-card--standard'; ?>" data-tier="<?php echo $tierLevel; ?>" data-ref="plan-card">
+                            <div class="component-card component-card--grouped component-card--plan <?php echo $isPopular ? 'component-card--featured' : 'component-card--standard'; ?>" data-tier="<?php echo $tierLevel; ?>" data-ref="plan-card">
                                 
-                                <div>
+                                <div class="component-card-section component-card-section--header">
                                     <?php if ($isPopular): ?>
-                                        <div class="upgrade-card-popular-badge"><?php echo __('upgrade_card_popular_badge'); ?></div>
+                                        <div class="component-card-popular-badge"><?php echo __('upgrade_card_popular_badge'); ?></div>
                                     <?php endif; ?>
-                                    <h3 class="upgrade-card-title"><?php echo htmlspecialchars($tier['name']); ?></h3>
-                                    <p class="upgrade-card-desc"><?php echo __('upgrade_card_desc'); ?></p>
-                                    <span class="component-badge component-badge--sm upgrade-card-storage-badge">
+                                    <h3 class="component-card-title"><?php echo htmlspecialchars($tier['name']); ?></h3>
+                                    <p class="component-card-desc"><?php echo __('upgrade_card_desc'); ?></p>
+                                    <span class="component-badge component-badge--sm component-card-storage-badge">
                                         <span class="material-symbols-rounded">cloud</span>
                                         <span><?php echo $storageLabel; ?></span>
                                     </span>
                                 </div>
 
-                                <div>
-                                    <div class="upgrade-card-price-label"><?php echo __('upgrade_card_price_from'); ?></div>
-                                    <div class="upgrade-card-price-container">
-                                        <span class="upgrade-card-price">
+                                <div class="component-card-section component-card-section--price">
+                                    <div class="component-card-price-label"><?php echo __('upgrade_card_price_from'); ?></div>
+                                    <div class="component-card-price-container">
+                                        <span class="component-card-price">
                                             USD $<span data-ref="plan-price" data-monthly="<?php echo $monthly; ?>" data-yearly="<?php echo $yearly; ?>"><?php echo $monthly; ?></span>
                                         </span>
-                                        <span class="upgrade-card-period" data-ref="plan-period" data-period-monthly="<?php echo __('upgrade_period_monthly_full'); ?>" data-period-yearly="<?php echo __('upgrade_period_yearly_full'); ?>"><?php echo __('upgrade_period_monthly_full'); ?></span>
+                                        <span class="component-card-period" data-ref="plan-period" data-period-monthly="<?php echo __('upgrade_period_monthly_full'); ?>" data-period-yearly="<?php echo __('upgrade_period_yearly_full'); ?>"><?php echo __('upgrade_period_monthly_full'); ?></span>
                                     </div>
                                 </div>
 
-                                <div>
+                                <div class="component-card-section component-card-section--action">
                                     <?php if ($currentUserTier === $tierLevel): ?>
-                                        <button type="button" class="component-button component-button--dark component-button--rounded-pill disabled-interaction component-cursor-pointer upgrade-card-button">
+                                        <button type="button" class="component-button component-button--dark component-button--rounded-pill disabled-interaction component-cursor-pointer component-card-button">
                                             <span class="material-symbols-rounded">check_circle</span>
                                             <span><?php echo __('plan_btn_current'); ?></span>
                                         </button>
                                     <?php else: ?>
-                                        <button type="button" class="component-button component-button--dark component-button--rounded-pill component-button--hover-text component-cursor-pointer upgrade-card-button <?php echo $isPopular ? 'upgrade-card-button--popular' : ''; ?>" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>">
+                                        <button type="button" class="component-button component-button--dark component-button--rounded-pill component-button--hover-text component-cursor-pointer component-card-button <?php echo $isPopular ? 'component-card-button--featured' : ''; ?>" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>">
                                             <span class="btn-default-text">
                                                 <?php echo sprintf(__('plan_btn_get'), htmlspecialchars($tier['name'])); ?>
                                             </span>
@@ -105,30 +107,31 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
 
                                 <hr class="component-divider">
 
-                                <div>
-                                    <div class="upgrade-card-features">
+                                <div class="component-card-section component-card-section--features">
+                                    <div class="component-card-features">
                                         <?php 
                                         $featureIndex = 0;
                                         foreach ($rowsToCompare as $row): 
                                             $val = $row['values_fn']($tier);
                                             if ($val === false) continue;
                                             
-                                            $featureTitle = $val === true ? htmlspecialchars($row['label']) : htmlspecialchars($val) . ' de ' . htmlspecialchars($row['label']);
+                                            $lbl = trim($row['label']);
+                                            $featureTitle = $val === true ? htmlspecialchars($row['label']) : (str_starts_with($lbl, 'de ') ? htmlspecialchars($val) . ' ' . htmlspecialchars($lbl) : htmlspecialchars($val) . ' de ' . htmlspecialchars($lbl));
                                             
                                             $desc = htmlspecialchars($row['desc'] ?? '');
                                         ?>
                                             <?php if ($featureIndex === 2): // Add separator after the second feature ?>
-                                                <div class="upgrade-card-feature-divider-container">
-                                                    <hr class="component-divider upgrade-card-feature-divider">
-                                                    <p class="upgrade-card-feature-divider-text"><?php echo __('upgrade_card_feature_divider_text'); ?></p>
+                                                <div class="component-card-feature-divider-container">
+                                                    <hr class="component-divider component-card-feature-divider">
+                                                    <p class="component-card-feature-divider-text"><?php echo __('upgrade_card_feature_divider_text'); ?></p>
                                                 </div>
                                             <?php endif; ?>
 
-                                            <div class="upgrade-card-feature-item <?php echo $featureIndex > 4 ? 'upgrade-card-feature-item--hidden' : ''; ?>" data-hidden="<?php echo $featureIndex > 4 ? 'true' : 'false'; ?>">
-                                                <span class="material-symbols-rounded upgrade-card-feature-icon"><?php echo $row['icon']; ?></span>
-                                                <div class="upgrade-card-feature-text-container">
-                                                    <span class="upgrade-card-feature-title"><?php echo $featureTitle; ?></span>
-                                                    <span class="upgrade-card-feature-desc"><?php echo $desc; ?></span>
+                                            <div class="component-card-feature-item <?php echo $featureIndex > 4 ? 'component-card-feature-item--hidden' : ''; ?>" data-hidden="<?php echo $featureIndex > 4 ? 'true' : 'false'; ?>">
+                                                <span class="material-symbols-rounded component-card-feature-icon"><?php echo $row['icon']; ?></span>
+                                                <div class="component-card-feature-text-container">
+                                                    <span class="component-card-feature-title"><?php echo $featureTitle; ?></span>
+                                                    <span class="component-card-feature-desc"><?php echo $desc; ?></span>
                                                 </div>
                                             </div>
                                         <?php 
@@ -136,7 +139,7 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
                                         endforeach; ?>
                                         
                                         <?php if ($featureIndex > 5): ?>
-                                            <div class="upgrade-card-features-toggle-container">
+                                            <div class="component-card-features-toggle-container">
                                                 <span class="component-badge component-cursor-pointer" data-action="toggle-plan-features">Mostrar todos los beneficios</span>
                                             </div>
                                         <?php endif; ?>

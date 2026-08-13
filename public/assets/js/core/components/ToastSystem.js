@@ -35,6 +35,7 @@ export class ToastSystem {
         toast.innerHTML = `<div class="component-toast-icon"><span class="material-symbols-rounded">${iconName}</span></div><div class="component-toast-text">${message}</div>`;
 
         container.appendChild(toast);
+        void toast.offsetHeight;
         requestAnimationFrame(() => toast.classList.add('active'));
 
         const extendedAlerts = this._getPref

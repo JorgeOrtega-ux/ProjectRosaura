@@ -42,7 +42,7 @@ if ($isMaintenanceActive && !$isPrivileged) {
         if ($isAuthView && count($linkedAccounts) < 3) {
             
         } else {
-            if ($currentView === 'settings/guest.php') {
+            if ($currentView === 'settings/preferences/guest.php' || $currentView === 'settings/guest.php') {
                 $currentView = 'settings/profile/your-account.php';
                 $redirectUrl = APP_URL . '/settings/your-account';
             } else {
@@ -104,7 +104,7 @@ if ($isMaintenanceActive && !$isPrivileged) {
             $currentView = 'admin/dashboard.php';
             $redirectUrl = APP_URL . '/admin/dashboard';
         } elseif ($currentView === 'settings/index.php') {
-            $currentView = $isLoggedIn ? 'settings/profile/your-account.php' : 'settings/guest.php';
+            $currentView = $isLoggedIn ? 'settings/profile/your-account.php' : 'settings/preferences/guest.php';
             $redirectUrl = $isLoggedIn ? APP_URL . '/settings/your-account' : APP_URL . '/settings/guest';
         } elseif ($currentView === 'site-policy/site-policy.php') {
             $currentView = 'site-policy/terms-conditions.php';

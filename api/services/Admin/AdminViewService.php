@@ -939,6 +939,72 @@ class AdminViewService {
     }
 
     /**
+     * Obtiene los datos de configuración para el constructor/editor de roles.
+     */
+    public function getRoleBuilderData(?string $uuid = null, ?int $id = null): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        $db = $this->dbManager;
+        $pdo = $db->getConnection(DB::CONN_IDENTITY);
+        $tblRoles = DB::TBL_ROLES;
+
+        $isEdit = false;
+        $roleData = [
+            'id' => 0,
+            'name' => '',
+            'color' => json_encode(['type' => 'solid', 'angle' => 0, 'colors' => [['hex' => '#808080', 'percentage' => 100]]]),
+            'weight' => 1
+        ];
+
+        try {
+            if ($uuid) {
+                $stmt = $pdo->prepare("SELECT * FROM {$tblRoles} WHERE uuid = ?");
+                $stmt->execute([$uuid]);
+                $role = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if ($role) {
+                    $isEdit = true;
+                    $roleData = array_merge($roleData, $role);
+                }
+            } elseif ($id) {
+                $stmt = $pdo->prepare("SELECT * FROM {$tblRoles} WHERE id = ?");
+                $stmt->execute([(int)$id]);
+                $role = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if ($role) {
+                    $isEdit = true;
+                    $roleData = array_merge($roleData, $role);
+                }
+            }
+        } catch (\Throwable $e) {
+            Logger::error("getRoleBuilderData fetch error: " . $e->getMessage(), ['exception' => $e]);
+        }
+
+        $isSystemRole = ($isEdit && (isset($roleData['is_system']) ? (int)$roleData['is_system'] === 1 : (int)$roleData['id'] <= 4));
+        
+        $currentRoleId = isset($_SESSION['user_role_id']) ? (int)$_SESSION['user_role_id'] : 0;
+        $currentUserWeight = 0;
+        if ($currentRoleId > 0) {
+            try {
+                $stmtW = $pdo->prepare("SELECT weight FROM {$tblRoles} WHERE id = ?");
+                $stmtW->execute([$currentRoleId]);
+                $rowW = $stmtW->fetch(\PDO::FETCH_ASSOC);
+                if ($rowW) {
+                    $currentUserWeight = (int)$rowW['weight'];
+                }
+            } catch (\Throwable $e) {
+                Logger::error("getRoleBuilderData weight fetch error: " . $e->getMessage(), ['exception' => $e]);
+            }
+        }
+
+        return [
+            'isEdit' => $isEdit,
+            'roleData' => $roleData,
+            'isSystemRole' => $isSystemRole,
+            'currentUserWeight' => $currentUserWeight,
+            'appUrl' => defined('APP_URL') ? APP_URL : ''
+        ];
+    }
+
+    /**
 
      */
     public function getManageMessagesData(?string $searchQuery, int $page = 1): array {

@@ -42,7 +42,6 @@ return [
     '/canvases/manage/requests/:uuid' => ['view' => 'canvases/team/requests.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/manage/resets/:uuid' => ['view' => 'canvases/workspace/reset.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/edit/:uuid' => ['view' => 'canvases/workspace/edit.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
-    '/fix-roles' => ['view' => 'system/fix-roles.php', 'auth' => false, 'requires_2fa' => false],
     '/canvases/members/:uuid' => ['view' => 'canvases/team/members.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/members/:uuid/role/:user_uuid' => ['view' => 'canvases/team/change-role-modal.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/manage/resize/:uuid' => ['view' => 'canvases/workspace/resize.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],

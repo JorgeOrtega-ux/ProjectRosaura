@@ -24,21 +24,21 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('admin_tiers_title') ?: 'Suscripciones (Niveles)'; ?></h1>
+                <h1 class="component-top-title"><?php echo __('admin_tiers_title'); ?></h1>
             </div>
             <div class="component-top-right">
                 <div class="component-actions disabled" data-ref="subscription-selection-actions">
                     <?php if ($canManageTiers): ?>
-                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="editTier" data-tooltip="<?php echo __('btn_edit'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="editTier" data-tooltip="<?php echo __('btn_edit'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">edit</span>
                     </button>
-                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="toggleVisibilityTier" data-tooltip="<?php echo __('btn_toggle_visibility'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleVisibilityTier" data-tooltip="<?php echo __('btn_toggle_visibility'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
                     </button>
-                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="setPopularTier" data-tooltip="<?php echo __('btn_set_popular'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="setPopularTier" data-tooltip="<?php echo __('btn_set_popular'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">star</span>
                     </button>
-                    <button class="component-button component-button--danger component-button--icon component-button--h40" data-action="deleteTier" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteTier" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
                     <?php endif; ?>

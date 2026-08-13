@@ -75,19 +75,25 @@ export class UpgradeController {
     }
 
     _toggleFeatures(btn) {
-        const container = btn.closest('.upgrade-card-features');
+        const container = btn.closest('.component-card-features') || btn.closest('.upgrade-card-features');
         if (!container) return;
         
-        const hiddenItems = container.querySelectorAll('.upgrade-card-feature-item[data-hidden="true"]');
+        const hiddenItems = container.querySelectorAll('.component-card-feature-item[data-hidden="true"], .upgrade-card-feature-item[data-hidden="true"]');
         if (!hiddenItems.length) return;
         
-        const isCurrentlyHidden = hiddenItems[0].classList.contains('upgrade-card-feature-item--hidden');
+        const isCurrentlyHidden = hiddenItems[0].classList.contains('component-card-feature-item--hidden') || hiddenItems[0].classList.contains('upgrade-card-feature-item--hidden');
         
         if (isCurrentlyHidden) {
-            hiddenItems.forEach(item => item.classList.remove('upgrade-card-feature-item--hidden'));
+            hiddenItems.forEach(item => {
+                item.classList.remove('component-card-feature-item--hidden');
+                item.classList.remove('upgrade-card-feature-item--hidden');
+            });
             btn.textContent = window.__('upgrade_hide_features');
         } else {
-            hiddenItems.forEach(item => item.classList.add('upgrade-card-feature-item--hidden'));
+            hiddenItems.forEach(item => {
+                item.classList.add('component-card-feature-item--hidden');
+                item.classList.add('upgrade-card-feature-item--hidden');
+            });
             btn.textContent = window.__('upgrade_show_features');
         }
     }
@@ -97,6 +103,11 @@ export class UpgradeController {
         const triggerIcon = document.querySelector('[data-target="moduleBillingCycle"] [data-ref="billingCycleIcon"]');
         const links = document.querySelectorAll('[data-action="setBillingCycle"]');
         const cards = document.querySelectorAll('[data-ref="plan-card"]');
+        const togglePill = document.querySelector('[data-ref="billing-toggle-pill"]');
+
+        if (togglePill) {
+            togglePill.setAttribute('data-cycle', window.isYearlyPremium ? 'yearly' : 'monthly');
+        }
 
         if (window.isYearlyPremium) {
             if (triggerText) triggerText.textContent = window.__('upgrade_billing_yearly');
@@ -120,8 +131,8 @@ export class UpgradeController {
             const periodEl = card.querySelector('[data-ref="plan-period"]');
             
             if (priceEl && periodEl) {
-                priceEl.style.opacity = '0';
-                periodEl.style.opacity = '0';
+                priceEl.classList.add('disabled-interaction');
+                periodEl.classList.add('disabled-interaction');
                 
                 setTimeout(() => {
                     priceEl.textContent = window.isYearlyPremium 
@@ -132,11 +143,9 @@ export class UpgradeController {
                         ? periodEl.getAttribute('data-period-yearly') 
                         : periodEl.getAttribute('data-period-monthly');
                         
-                    priceEl.style.opacity = '1';
-                    periodEl.style.opacity = '1';
                     priceEl.classList.remove('disabled-interaction');
                     periodEl.classList.remove('disabled-interaction');
-                }, 150);
+                }, 100);
             }
         });
     }

@@ -545,8 +545,8 @@ export class PurchaseHistoryController {
             <tr>
                 <td colspan="4" class="component-empty-table-cell">
                     <div class="component-empty-state component-empty-state--table">
-                        <span class="material-symbols-rounded component-empty-state-icon spinner-animation" style="animation: spin 1.5s linear infinite;">progress_activity</span>
-                        <p class="component-empty-state-text">${window.__('loading') || 'Cargando'}...</p>
+                        <div class="component-spinner component-spinner--centered"></div>
+                        <p class="component-empty-state-text">${window.__('dt_loading')}</p>
                     </div>
                 </td>
             </tr>
@@ -558,27 +558,27 @@ export class PurchaseHistoryController {
             if (response.success && response.data && response.data.length > 0) {
                 this.coinItems = response.data.map(item => {
                     const date = new Date(item.created_at).toLocaleDateString();
-                    const description = window.__(item.description) || item.description || 'Transacción';
+                    const description = window.__(item.description) || item.description || window.__('transaction');
                     
                     const amountVal = parseInt(item.amount, 10);
                     const sign = amountVal > 0 ? '+' : '';
-                    const formattedAmount = `${sign}${amountVal.toLocaleString()} ${window.__('coins') || 'Monedas'}`;
+                    const formattedAmount = `${sign}${amountVal.toLocaleString()} ${window.__('coins')}`;
                     const amountClass = amountVal > 0 ? 'component-text-notice--success' : 'component-badge--danger';
 
                     let statusClass = 'component-text-notice--success';
-                    let typeText = 'Carga';
+                    let typeText = window.__('type_charge');
                     if (item.type === 'spend') {
                         statusClass = 'component-badge--warning';
-                        typeText = 'Gasto';
+                        typeText = window.__('type_spend');
                     } else if (item.type === 'refund') {
                         statusClass = 'component-badge--info';
-                        typeText = 'Devolución';
+                        typeText = window.__('type_refund');
                     } else if (item.type === 'bonus') {
                         statusClass = 'component-text-notice--success';
-                        typeText = 'Bono';
+                        typeText = window.__('type_bonus');
                     } else if (item.type === 'admin_adjustment') {
                         statusClass = 'component-badge--muted';
-                        typeText = 'Soporte';
+                        typeText = window.__('type_support');
                     }
 
                     let iconName = 'toll';
@@ -630,7 +630,7 @@ export class PurchaseHistoryController {
                         <td colspan="4" class="component-empty-table-cell">
                             <div class="component-empty-state component-empty-state--table">
                                 <span class="material-symbols-rounded component-empty-state-icon">receipt_long</span>
-                                <p class="component-empty-state-text">${window.__('empty_purchase_history') || 'Sin transacciones'}</p>
+                                <p class="component-empty-state-text">${window.__('empty_purchase_history')}</p>
                             </div>
                         </td>
                     </tr>
@@ -643,7 +643,7 @@ export class PurchaseHistoryController {
                         <td colspan="4" class="component-empty-table-cell">
                             <div class="component-empty-state component-empty-state--table">
                                 <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                                <p class="component-empty-state-text">${window.__('err_connection') || 'Error de conexión'}</p>
+                                <p class="component-empty-state-text">${window.__('err_connection')}</p>
                             </div>
                         </td>
                     </tr>

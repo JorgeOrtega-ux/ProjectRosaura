@@ -19,31 +19,31 @@ $isTargetSuperAdmin = in_array(4, $assignedRoleIds);
         <span class="material-symbols-rounded">shield_person</span>
     </div>
     <div class="component-modal-header-text">
-        <h2 class="component-modal-title">Gestión de Roles de Usuario</h2>
-        <p class="component-modal-desc">Modifica los roles de acceso y jerarquía de permisos para el usuario <b><?php echo htmlspecialchars($user['username']); ?></b>.</p>
+        <h2 class="component-modal-title"><?php echo __('modal_manage_user_roles_title'); ?></h2>
+        <p class="component-modal-desc"><?php echo __('modal_manage_user_roles_desc'); ?> <b><?php echo htmlspecialchars($user['username']); ?></b>.</p>
     </div>
 </div>
 
 <div class="component-modal-body" data-ref="admin-roles-form" data-target-user-id="<?php echo htmlspecialchars((string)$targetUserId); ?>">
     
-    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit" style="width: 100%;">
-        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownRolesList" style="width: 100%; justify-content: space-between; box-sizing: border-box;">
-            <div style="display: flex; align-items: center; gap: 8px;">
+    <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+        <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleModule" data-target="dropdownRolesList">
+            <div class="component-dropdown-trigger-title">
                 <span class="material-symbols-rounded">admin_panel_settings</span>
-                <span class="component-dropdown-text" data-ref="roles-dropdown-text">Seleccionar Roles</span>
+                <span class="component-dropdown-text" data-ref="roles-dropdown-text"><?php echo __('lbl_select_roles'); ?></span>
             </div>
             <span class="material-symbols-rounded">expand_more</span>
         </div>
 
-        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--spaced disabled" data-module="dropdownRolesList" style="width: 100%; left: 0; box-sizing: border-box;">
+        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--dropdown-full component-module--spaced disabled" data-module="dropdownRolesList">
             <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-menu-header">
                     <div class="component-menu-header-box">
-                        <span class="component-menu-header-title">Roles Disponibles</span>
+                        <span class="component-menu-header-title"><?php echo __('lbl_available_roles'); ?></span>
                     </div>
                 </div>
-                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact" style="max-height: 250px; overflow-y: auto;">
+                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact component-menu-list--max-h250">
                     <?php 
                     foreach ($allRoles as $index => $r): 
                         $rKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower(trim($r['name'])));
@@ -59,20 +59,20 @@ $isTargetSuperAdmin = in_array(4, $assignedRoleIds);
                         $disabledClass = $isDisabled ? 'disabled-interaction' : '';
                     ?>
                     
-                    <label class="component-menu-link component-menu-link--bordered <?php echo $disabledClass; ?>" style="display: flex; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box; cursor: <?php echo $isDisabled ? 'not-allowed' : 'pointer'; ?>;">
-                        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
-                            <input type="checkbox" name="assigned_roles[]" value="<?php echo htmlspecialchars($r['id']); ?>" class="admin-role-checkbox" <?php echo $isChecked; ?> <?php echo $isDisabled ? 'disabled' : ''; ?> style="pointer-events: auto;">
-                            <div style="display: flex; flex-direction: column; min-width: 0;">
-                                <span style="font-weight: 500; font-size: 14px;"><?php echo htmlspecialchars($rTrans); ?></span>
-                                <span style="font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?php echo htmlspecialchars($rDescTrans); ?>"><?php echo htmlspecialchars($rDescTrans); ?></span>
+                    <label class="component-menu-link component-menu-link--bordered component-menu-link-role <?php echo $disabledClass; ?>">
+                        <div class="component-menu-link-role-main">
+                            <input type="checkbox" name="assigned_roles[]" value="<?php echo htmlspecialchars((string)$r['id']); ?>" class="admin-role-checkbox" <?php echo $isChecked; ?> <?php echo $isDisabled ? 'disabled' : ''; ?>>
+                            <div class="component-menu-link-role-info">
+                                <span class="component-menu-link-role-name"><?php echo htmlspecialchars($rTrans); ?></span>
+                                <span class="component-menu-link-role-desc" title="<?php echo htmlspecialchars($rDescTrans); ?>"><?php echo htmlspecialchars($rDescTrans); ?></span>
                             </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 4px;">
+                        <div class="component-menu-link-role-badges">
                             <?php if($r['id'] == 1): ?> 
-                                <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">lock</span> Base</span> 
+                                <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">lock</span> <?php echo __('lbl_base'); ?></span> 
                             <?php endif; ?>
                             <?php if ($r['id'] == 4): ?>
-                                <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">lock</span> No disponible</span>
+                                <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">lock</span> <?php echo __('lbl_unavailable'); ?></span>
                             <?php endif; ?>
                         </div>
                     </label>

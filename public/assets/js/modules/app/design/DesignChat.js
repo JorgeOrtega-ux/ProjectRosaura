@@ -1366,9 +1366,9 @@ export class DesignChat {
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">${item.icon || 'star'}</span>
                 </div>
-                <div class="component-menu-link-text" style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-right: 8px;">
+                <div class="component-menu-link-text component-menu-link-text--between">
                     <span>${item.name}</span>
-                    ${item.desc ? `<span style="font-size: 11px; color: var(--text-muted, #888); margin-left: auto; font-weight: normal;">${item.desc}</span>` : ''}
+                    ${item.desc ? `<span class="component-menu-link-meta">${item.desc}</span>` : ''}
                 </div>
             `;
             el.addEventListener('click', (e) => {
@@ -1526,8 +1526,8 @@ export class DesignChat {
         if (!grid) return;
 
         grid.innerHTML = `
-            <div style="grid-column: span 3; text-align: center; color: var(--text-secondary); font-size: 0.75rem; padding: 16px;">
-                ${window.__('lbl_loading_photos') || 'Cargando fotos...'}
+            <div class="chat-info-gallery-empty">
+                ${window.__('lbl_loading_photos')}
             </div>
         `;
 
@@ -1539,8 +1539,8 @@ export class DesignChat {
             if (response && response.success && Array.isArray(response.photos)) {
                 if (response.photos.length === 0) {
                     grid.innerHTML = `
-                        <div style="grid-column: span 3; text-align: center; color: var(--text-secondary); font-size: 0.75rem; padding: 16px;">
-                            ${window.__('lbl_no_photos') || 'No se han enviado fotos.'}
+                        <div class="chat-info-gallery-empty">
+                            ${window.__('lbl_no_photos')}
                         </div>
                     `;
                 } else {
@@ -1557,15 +1557,15 @@ export class DesignChat {
                 }
             } else {
                 grid.innerHTML = `
-                    <div style="grid-column: span 3; text-align: center; color: var(--danger-color); font-size: 0.75rem; padding: 16px;">
-                        ${response.message || window.__('err_generic') || 'Error al cargar fotos.'}
+                    <div class="chat-info-gallery-error">
+                        ${response.message || window.__('err_generic')}
                     </div>
                 `;
             }
         } catch (error) {
             grid.innerHTML = `
-                <div style="grid-column: span 3; text-align: center; color: var(--danger-color); font-size: 0.75rem; padding: 16px;">
-                    ${window.__('err_generic') || 'Error al cargar fotos.'}
+                <div class="chat-info-gallery-error">
+                    ${window.__('err_generic')}
                 </div>
             `;
         }

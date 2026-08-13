@@ -86,8 +86,7 @@ export class ModalSystem {
 
             if (this.activeResolveFn) {
                 if (!this.modalStack) this.modalStack = [];
-                if (this.activeOverlay) this.activeOverlay.style.display = 'none';
-                if (this.activeWrapper) this.activeWrapper.style.display = 'none';
+                if (this.activeOverlay) this.activeOverlay.classList.add('disabled');
                 this.modalStack.push({
                     templateName: this.activeTemplateName,
                     resolveFn: this.activeResolveFn,
@@ -151,12 +150,13 @@ export class ModalSystem {
             this.activeOverlay.appendChild(this.activeWrapper);
             container.appendChild(this.activeOverlay);
 
+            // Force layout reflow so initial state (translateY 100%, opacity 0) is registered
+            void this.activeOverlay.offsetHeight;
+
             requestAnimationFrame(() => {
                 if (this.activeOverlay) {
                     this.activeOverlay.classList.add('active');
                 }
-
-
             });
 
             this.activeResolveFn = resolve;
@@ -417,7 +417,7 @@ export class ModalSystem {
                 if (inputName === 'suspension_type') {
                     const endDateGroup = modal.querySelector('.modal-end-date-group');
                     if (endDateGroup) {
-                        endDateGroup.style.display = (val === 'temporary') ? 'block' : 'none';
+                        endDateGroup.classList.toggle('disabled', val !== 'temporary');
                     }
                 }
 
@@ -528,8 +528,7 @@ export class ModalSystem {
             this.activeOnConfirm = prevModal.onConfirm;
             this.activeAsyncConfirm = prevModal.asyncConfirm;
 
-            if (this.activeOverlay) this.activeOverlay.style.display = '';
-            if (this.activeWrapper) this.activeWrapper.style.display = '';
+            if (this.activeOverlay) this.activeOverlay.classList.remove('disabled');
         }
 
         setTimeout(() => {

@@ -193,7 +193,7 @@ class CanvasChatRestrictionController {
             }
         }
 
-        $banKey = "canvas:{$canvasId}:canvas_banned:{$targetUserId}";
+        $banKey = sprintf(CacheConstants::PREFIX_CANVAS_BANNED, $canvasId, $targetUserId);
         if ($hasCanvasBan) {
             if ($canvasBanTtl == -1) {
                 $this->redisClient->set($banKey, '1');
@@ -206,7 +206,7 @@ class CanvasChatRestrictionController {
             $this->redisClient->del($banKey);
         }
 
-        $chatKey = "canvas:{$canvasId}:chat_restricted:{$targetUserId}";
+        $chatKey = sprintf(CacheConstants::PREFIX_CHAT_RESTRICTED, $canvasId, $targetUserId);
         if ($hasCanvasBan || $hasChatMute) {
             if ($canvasBanTtl == -1 || $chatMuteTtl == -1) {
                 $this->redisClient->set($chatKey, '1');

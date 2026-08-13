@@ -86,6 +86,7 @@ export class NoticeSystem {
             posContainer.appendChild(noticeBox);
 
             // Animate in
+            void noticeBox.offsetHeight;
             requestAnimationFrame(() => noticeBox.classList.add('active'));
 
             this.activeNotices.set(noticeId, {

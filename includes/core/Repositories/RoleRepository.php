@@ -16,50 +16,37 @@ class RoleRepository implements RoleRepositoryInterface {
     private $pdo;
     private $redisCache;
     private $redisClient;
+    private $cacheInvalidator;
 
     public function __construct(DatabaseManager $dbManager, RedisCache $redisCache) {
         $this->pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
         $this->redisCache = $redisCache;
         $this->redisClient = $redisCache->getClient();
+        $this->cacheInvalidator = new \App\Core\System\CacheInvalidator($this->redisClient);
     }
 
     public function invalidateGlobalRolesCache(): void {
         if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
-        $this->redisClient->del([CacheConstants::PREFIX_ROLES_ALL]);
+        $this->cacheInvalidator->globalRoles();
     }
 
     public function invalidateRoleCache(int $roleId): void {
         if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
         $role = $this->findById($roleId);
-        
-        $keysToDelete = [
-            CacheConstants::PREFIX_ROLE_BY_ID . $roleId,
-            CacheConstants::PREFIX_ROLE_PERMS . $roleId,
-            CacheConstants::PREFIX_ROLES_ALL
-        ];
-
-        if ($role) {
-            $keysToDelete[] = CacheConstants::PREFIX_ROLE_BY_NAME . md5($role['name']);
-        }
-
-        $this->redisClient->del($keysToDelete);
+        $roleName = $role ? md5($role['name']) : null;
+        $this->cacheInvalidator->globalRole($roleId, $roleName);
         $this->redisClient->setex(CacheConstants::PREFIX_FORCE_REAUTH_ROLE . $roleId, CacheConstants::TTL_ONE_DAY, time());
     }
 
     public function invalidateUserCache(int $userId): void {
         if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
-        
-        $this->redisClient->del([
-            CacheConstants::PREFIX_USER_ROLES . $userId,
-            CacheConstants::PREFIX_USER_PERMS . $userId,
-            CacheConstants::PREFIX_USER_HIGHEST_ROLE . $userId
-        ]);
+        $this->cacheInvalidator->user($userId);
         $this->redisClient->setex(CacheConstants::PREFIX_FORCE_REAUTH_USER . $userId, CacheConstants::TTL_ONE_DAY, time());
     }
 
     public function invalidateGlobalPermissionsCache(): void {
         if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
-        $this->redisClient->del([CacheConstants::PREFIX_ALL_PERMISSIONS]);
+        $this->cacheInvalidator->globalPermissions();
     }
 
     public function getAll(): array {

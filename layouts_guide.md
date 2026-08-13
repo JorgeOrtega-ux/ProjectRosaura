@@ -28,8 +28,8 @@ A continuación se presentan las plantillas HTML (PHP) listas para copiar y pega
         <!-- SVG o imagen del Logo -->
     </div>
     <div class="component-form-box">
-        <h1 class="auth-title">Título del Formulario</h1>
-        <p class="auth-description">Texto descriptivo corto secundario.</p>
+        <h1 class="component-form-title">Título del Formulario</h1>
+        <p class="component-form-desc">Texto descriptivo corto secundario.</p>
         
         <form id="authForm">
             <!-- Campos de formulario -->
@@ -120,7 +120,7 @@ A continuación se presentan las plantillas HTML (PHP) listas para copiar y pega
             </div>
             <div class="component-top-right">
                 <!-- Barra de búsqueda o filtro -->
-                <button class="component-button component-button--primary component-button--h40">Nuevo Elemento</button>
+                <button class="component-button component-button--dark component-button--h40">Nuevo Elemento</button>
             </div>
         </div>
         <div class="component-bottom">

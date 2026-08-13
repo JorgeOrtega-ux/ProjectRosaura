@@ -1,54 +1,13 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-use App\Config\Database\DatabaseManager;
-use App\Core\System\DatabaseConstants as DB;
-use PDO;
+use App\Api\Services\Admin\AdminViewService;
 
-$db = new DatabaseManager();
-$pdo = $db->getConnection(DB::CONN_IDENTITY);
-
-$tblRoles = DB::TBL_ROLES;
+$adminViewService = new AdminViewService();
+$roleBuilderData = $adminViewService->getRoleBuilderData($_GET['uuid'] ?? null, isset($_GET['id']) ? (int)$_GET['id'] : null);
+extract($roleBuilderData);
 
 $userPermissions = $_SESSION['user_permissions'] ?? [];
-
-$isEdit = false;
-$roleData = [
-    'id' => 0,
-    'name' => '',
-    'color' => json_encode(['type' => 'solid', 'angle' => 0, 'colors' => [['hex' => '#808080', 'percentage' => 100]]]),
-    'weight' => 1
-];
-
-if (isset($_GET['uuid']) || isset($_GET['id'])) {
-    $uuid = $_GET['uuid'] ?? null;
-    $id = $_GET['id'] ?? null;
-    
-    if ($uuid) {
-        $stmt = $pdo->prepare("SELECT * FROM {$tblRoles} WHERE uuid = ?");
-        $stmt->execute([$uuid]);
-    } else {
-        $stmt = $pdo->prepare("SELECT * FROM {$tblRoles} WHERE id = ?");
-        $stmt->execute([(int)$id]);
-    }
-    $role = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($role) {
-        $isEdit = true;
-        $roleData = array_merge($roleData, $role);
-    }
-}
-$isSystemRole = ($isEdit && (isset($roleData['is_system']) ? (int)$roleData['is_system'] === 1 : $roleData['id'] <= 4));
-$currentRoleId = isset($_SESSION['user_role_id']) ? (int)$_SESSION['user_role_id'] : 0;
-$currentUserWeight = 0;
-if ($currentRoleId > 0) {
-    $stmtW = $pdo->prepare("SELECT weight FROM {$tblRoles} WHERE id = ?");
-    $stmtW->execute([$currentRoleId]);
-    $rowW = $stmtW->fetch(PDO::FETCH_ASSOC);
-    if ($rowW) {
-        $currentUserWeight = (int)$rowW['weight'];
-    }
-}
 if (!function_exists('hexToHsv')) {
     function hexToHsv($hex) {
         $hex = ltrim($hex, '#');

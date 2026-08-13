@@ -224,6 +224,107 @@ class CacheInvalidator {
         } catch (\Throwable $e) {}
     }
 
+    // -------------------------------------------------------------------------
+    // Roles y Permisos Globales (RBAC)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Invalida la lista global de roles y permisos del sistema.
+     */
+    public function globalRoles(): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(CacheConstants::PREFIX_ROLES_ALL);
+            $this->redis->del(CacheConstants::PREFIX_ALL_PERMISSIONS);
+        } catch (\Throwable $e) {}
+    }
+
+    /**
+     * Invalida el caché de un rol global concreto.
+     *
+     * @param int         $roleId   ID del rol.
+     * @param string|null $roleName Nombre del rol (opcional).
+     */
+    public function globalRole(int $roleId, ?string $roleName = null): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(CacheConstants::PREFIX_ROLE_BY_ID . $roleId);
+            $this->redis->del(CacheConstants::PREFIX_ROLE_PERMS . $roleId);
+            $this->redis->del(CacheConstants::PREFIX_ROLES_ALL);
+            $this->redis->del(CacheConstants::PREFIX_ALL_PERMISSIONS);
+            if ($roleName !== null) {
+                $this->redis->del(CacheConstants::PREFIX_ROLE_BY_NAME . $roleName);
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    /**
+     * Invalida la lista global de permisos del sistema.
+     */
+    public function globalPermissions(): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(CacheConstants::PREFIX_ALL_PERMISSIONS);
+            $this->redis->del(CacheConstants::PREFIX_ROLES_ALL);
+        } catch (\Throwable $e) {}
+    }
+
+    // -------------------------------------------------------------------------
+    // Roles de Canvas y Snapshots
+    // -------------------------------------------------------------------------
+
+    /**
+     * Invalida la lista de roles asociados a un lienzo (o los roles globales de lienzo).
+     *
+     * @param int|null $canvasId ID del lienzo (null para globales de lienzo).
+     */
+    public function canvasRoles(?int $canvasId = null): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(CacheConstants::PREFIX_CANVAS_ROLES_LIST . ($canvasId ?? 'global'));
+            $this->redis->del(CacheConstants::PREFIX_CANVAS_ROLES_LIST . 'global');
+        } catch (\Throwable $e) {}
+    }
+
+    /**
+     * Invalida el listado de snapshots/capturas de un lienzo.
+     *
+     * @param int $canvasId ID del lienzo.
+     */
+    public function canvasSnapshots(int $canvasId): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(CacheConstants::PREFIX_CANVAS_SNAPSHOTS . $canvasId);
+        } catch (\Throwable $e) {}
+    }
+
+    /**
+     * Invalida las restricciones y bans de un usuario en un lienzo concreto.
+     *
+     * @param int $canvasId ID del lienzo.
+     * @param int $userId   ID del usuario.
+     */
+    public function canvasSanctions(int $canvasId, int $userId): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(sprintf(CacheConstants::PREFIX_CANVAS_BANNED, $canvasId, $userId));
+            $this->redis->del(sprintf(CacheConstants::PREFIX_CHAT_RESTRICTED, $canvasId, $userId));
+        } catch (\Throwable $e) {}
+    }
+
+    /**
+     * Invalida la caché de todos los perfiles de usuario (usado en cambios globales de planes/suscripciones).
+     */
+    public function allUsers(): void {
+        if (!$this->redis) return;
+        try {
+            $keys = $this->redis->keys('user:*');
+            if (!empty($keys)) {
+                $this->redis->del($keys);
+            }
+        } catch (\Throwable $e) {}
+    }
+
     /**
      * Invalida el caché de almacenamiento de un usuario.
      */

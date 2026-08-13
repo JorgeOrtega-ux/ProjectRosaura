@@ -11,12 +11,12 @@ if (!empty($changeRoleData['error'])) {
             <span class="material-symbols-rounded">warning</span>
         </div>
         <div class="component-modal-header-text">
-            <h2 class="component-modal-title">Error</h2>
+            <h2 class="component-modal-title"><?php echo __('lbl_error'); ?></h2>
             <p class="component-modal-desc"><?php echo htmlspecialchars($changeRoleData['error']); ?></p>
         </div>
     </div>
     <div class="component-modal-actions">
-        <button class="component-button component-button--h40" data-modal-action="cancel"><?php echo __('btn_close') ?: 'Cerrar'; ?></button>
+        <button class="component-button component-button--h40" data-modal-action="cancel"><?php echo __('btn_close'); ?></button>
     </div>
     <?php
     return;
@@ -30,7 +30,7 @@ extract($changeRoleData);
     </div>
     <div class="component-modal-header-text">
         <h2 class="component-modal-title"><?php echo __('lbl_manage_role') . ': ' . htmlspecialchars($targetUsername); ?></h2>
-        <p class="component-modal-desc">Modifica los roles del miembro del equipo en este lienzo.</p>
+        <p class="component-modal-desc"><?php echo __('modal_change_canvas_role_desc'); ?></p>
     </div>
 </div>
 
@@ -40,30 +40,30 @@ extract($changeRoleData);
      data-target-user-id="<?php echo htmlspecialchars((string)$targetUserId); ?>">
 
     <?php if ($isOwner): ?>
-    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 10px; background: rgba(var(--warning-rgb), 0.1); border-radius: 6px; color: var(--warning-color);">
+    <div class="component-alert component-alert--warning">
         <span class="material-symbols-rounded">info</span>
-        <span style="font-size: 13px;"><?php echo __('msg_owner_role_warning'); ?></span>
+        <span class="component-alert-text"><?php echo __('msg_owner_role_warning'); ?></span>
     </div>
     <?php endif; ?>
 
-    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit" style="width: 100%;">
-        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCanvasRolesList" style="width: 100%; justify-content: space-between; box-sizing: border-box;">
-            <div style="display: flex; align-items: center; gap: 8px;">
+    <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+        <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleModule" data-target="dropdownCanvasRolesList">
+            <div class="component-dropdown-trigger-title">
                 <span class="material-symbols-rounded">shield</span>
-                <span class="component-dropdown-text">Seleccionar Roles de Lienzo</span>
+                <span class="component-dropdown-text"><?php echo __('lbl_select_canvas_roles'); ?></span>
             </div>
             <span class="material-symbols-rounded">expand_more</span>
         </div>
 
-        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--spaced disabled" data-module="dropdownCanvasRolesList" style="width: 100%; left: 0; box-sizing: border-box;">
+        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--dropdown-full component-module--spaced disabled" data-module="dropdownCanvasRolesList">
             <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-menu-header">
                     <div class="component-menu-header-box">
-                        <span class="component-menu-header-title">Roles del Lienzo</span>
+                        <span class="component-menu-header-title"><?php echo __('lbl_available_canvas_roles'); ?></span>
                     </div>
                 </div>
-                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact" style="max-height: 250px; overflow-y: auto;">
+                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact component-menu-list--max-h250">
                     <?php foreach ($availableRoles as $role): 
                         $rawName = $role['name'];
                         $isSystemFlag = $role['is_system'] ?? 0;
@@ -83,19 +83,19 @@ extract($changeRoleData);
                         $isDisabled = ($isHigherHierarchy || ($isSuperAdminRole && !$isRequesterOwner));
                         $disabledClass = $isDisabled ? 'disabled-interaction' : '';
                     ?>
-                    <label class="component-menu-link component-menu-link--bordered <?php echo $disabledClass; ?>" style="display: flex; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box; cursor: <?php echo $isDisabled ? 'not-allowed' : 'pointer'; ?>;">
-                        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                    <label class="component-menu-link component-menu-link--bordered component-menu-link-role <?php echo $disabledClass; ?>">
+                        <div class="component-menu-link-role-main">
                             <input type="checkbox" name="new_member_roles[]" value="<?php echo htmlspecialchars((string)$role['id']); ?>" class="admin-role-checkbox" <?php echo $isChecked; ?> <?php echo $isDisabled ? 'disabled' : ''; ?>>
-                            <div style="display: flex; flex-direction: column; min-width: 0;">
-                                <span style="font-weight: 500; font-size: 14px;"><?php echo htmlspecialchars($translatedName); ?></span>
-                                <span style="font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?php echo htmlspecialchars($desc); ?>"><?php echo htmlspecialchars($desc); ?></span>
+                            <div class="component-menu-link-role-info">
+                                <span class="component-menu-link-role-name"><?php echo htmlspecialchars($translatedName); ?></span>
+                                <span class="component-menu-link-role-desc" title="<?php echo htmlspecialchars($desc); ?>"><?php echo htmlspecialchars($desc); ?></span>
                             </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 4px;">
+                        <div class="component-menu-link-role-badges">
                             <?php if ($isDisabled): ?>
-                                <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">lock</span> No disponible</span>
+                                <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">lock</span> <?php echo __('lbl_unavailable'); ?></span>
                             <?php endif; ?>
-                            <span class="material-symbols-rounded" style="color: var(--text-muted);" title="Jerarquía: <?php echo $role['weight']; ?>"><?php echo $isSystemFlag ? 'shield' : 'person'; ?></span>
+                            <span class="material-symbols-rounded" title="<?php echo __('lbl_hierarchy') . ': ' . $role['weight']; ?>"><?php echo $isSystemFlag ? 'shield' : 'person'; ?></span>
                         </div>
                     </label>
                     <?php endforeach; ?>

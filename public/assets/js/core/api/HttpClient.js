@@ -238,6 +238,20 @@ export class HttpClient {
         return res;
     }
 
+    async fetchBinary(url, data = {}, signal = null) {
+        const fetchOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/octet-stream',
+                'X-CSRF-Token': this._getCsrfToken()
+            },
+            body: JSON.stringify(data)
+        };
+        if (signal) fetchOptions.signal = signal;
+        return await fetch(url, fetchOptions);
+    }
+
     async stream(route, data = {}, signal = null) {
         const fetchOptions = {
             method: 'POST',

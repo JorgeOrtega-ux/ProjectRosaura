@@ -31,13 +31,13 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
             <div class="component-top-right">
                 <div class="component-actions disabled" data-ref="package-selection-actions">
                     <?php if ($canManageStore): ?>
-                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="editPackage" data-tooltip="<?php echo __('btn_edit'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="editPackage" data-tooltip="<?php echo __('btn_edit'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">edit</span>
                     </button>
-                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="toggleVisibilityPackage" data-tooltip="<?php echo __('btn_toggle_visibility'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleVisibilityPackage" data-tooltip="<?php echo __('btn_toggle_visibility'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
                     </button>
-                    <button class="component-button component-button--danger component-button--icon component-button--h40" data-action="deletePackage" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deletePackage" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
                     <?php endif; ?>

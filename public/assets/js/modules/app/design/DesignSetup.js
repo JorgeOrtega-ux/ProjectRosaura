@@ -447,19 +447,11 @@ export const DesignSetup = {
             
             fetchPromises.push((async () => {
                 try {
-                    const response = await fetch('/api/go/canvases/get_chunks', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/octet-stream',
-                            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                        },
-                        body: JSON.stringify({
-                            canvas_id: parseInt(this.canvasIntId, 10),
-                            board_w: this.boardWidth,
-                            board_h: this.boardHeight,
-                            chunks: batch
-                        })
+                    const response = await api.fetchBinary('/api/go/canvases/get_chunks', {
+                        canvas_id: parseInt(this.canvasIntId, 10),
+                        board_w: this.boardWidth,
+                        board_h: this.boardHeight,
+                        chunks: batch
                     });
 
                     if (!response.ok) {

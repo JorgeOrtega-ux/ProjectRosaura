@@ -348,6 +348,41 @@ class AppViewService {
                     }
                 }
 
+                $canModerateChat = '0';
+                if ($userId && $canvasIntId) {
+                    if ($isOwner) {
+                        $canModerateChat = '1';
+                    } else {
+                        try {
+                            $permSql = "SELECT 1 
+                                        FROM canvas_user_roles cur
+                                        INNER JOIN canvas_roles r ON cur.role_id = r.id
+                                        INNER JOIN canvas_role_permissions crp ON r.id = crp.role_id
+                                        INNER JOIN canvas_permissions p ON crp.permission_id = p.id
+                                        WHERE cur.canvas_id = :cid 
+                                          AND cur.user_id = :uid 
+                                          AND p.name IN ('manage_sanctions', 'moderate_chat')
+                                        LIMIT 1";
+                            $pStmt = $db->prepare($permSql);
+                            $pStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
+                            if ((bool)$pStmt->fetchColumn()) {
+                                $canModerateChat = '1';
+                            }
+                        } catch (\Throwable $e) {}
+                    }
+                }
+
+                $chatUsername = __('user');
+                if ($userId && isset($_SESSION['accounts'][$userId]['user_name'])) {
+                    $chatUsername = $_SESSION['accounts'][$userId]['user_name'];
+                } elseif ($userId && isset($_SESSION['user_name'])) {
+                    $chatUsername = $_SESSION['user_name'];
+                }
+
+                $maxImages = \App\Core\System\ChatConstants::CHAT_MAX_IMAGES;
+                $userPlanLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($userTier);
+                $maxUploadMB = $userPlanLimits['max_upload_mb'] ?? 10;
+
             } catch (Exception $e) {
                 Logger::error('err_design_view_load', ['exception' => $e->getMessage()]);
             }
@@ -394,7 +429,11 @@ class AppViewService {
             'canvasCreatedAt' => $canvasCreatedAt,
             'ownerUsername' => $ownerUsername,
             'hasLiveChat' => $hasLiveChat,
-            'lowestChatTier' => $lowestChatTier
+            'lowestChatTier' => $lowestChatTier,
+            'canModerateChat' => $canModerateChat ?? '0',
+            'chatUsername' => $chatUsername ?? __('user'),
+            'maxImages' => $maxImages ?? 4,
+            'maxUploadMB' => $maxUploadMB ?? 10
         ];
     }
 }

@@ -174,7 +174,7 @@ export class OnboardingTourManager {
         if (!rawConfig) return;
 
         const hasSeen = window.AppUserFlags && window.AppUserFlags.includes(rawConfig.flagKey);
-        if (hasSeen && !window.DEV_BYPASS_INTRO_MODALS) {
+        if (hasSeen) {
             return;
         }
 

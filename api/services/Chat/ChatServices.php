@@ -875,7 +875,7 @@ class ChatServices
             }
         }
 
-        $banKey = "canvas:{$canvasId}:canvas_banned:{$targetUserId}";
+        $banKey = sprintf(\App\Core\System\CacheConstants::PREFIX_CANVAS_BANNED, $canvasId, $targetUserId);
         if ($hasCanvasBan) {
             if ($canvasBanTtl == -1) {
                 $this->redis->set($banKey, '1');
@@ -888,7 +888,7 @@ class ChatServices
             $this->redis->del($banKey);
         }
 
-        $chatKey = "canvas:{$canvasId}:chat_restricted:{$targetUserId}";
+        $chatKey = sprintf(\App\Core\System\CacheConstants::PREFIX_CHAT_RESTRICTED, $canvasId, $targetUserId);
         if ($hasCanvasBan || $hasChatMute) {
             if ($canvasBanTtl == -1 || $chatMuteTtl == -1) {
                 $this->redis->set($chatKey, '1');

@@ -178,7 +178,7 @@ class CanvasMediaService {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.id, s.privacy, c.owner_id 
+                SELECT s.id, s.privacy, s.canvas_id, c.owner_id 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :uuid 
@@ -202,6 +202,11 @@ class CanvasMediaService {
             $stmt = $pdo->prepare("UPDATE canvas_snapshots_history SET privacy = :priv WHERE id = :id");
             $stmt->execute([':priv' => $newPrivacy, ':id' => $data['id']]);
 
+            try {
+                $redis = (new \App\Config\Database\RedisCache())->getClient();
+                (new \App\Core\System\CacheInvalidator($redis))->canvasSnapshots((int)$data['canvas_id']);
+            } catch (\Throwable $e) {}
+
             return ['success' => true, 'data' => ['privacy' => $newPrivacy], 'message' => __('msg_privacy_updated')];
 
         } catch (Exception $e) {
@@ -216,7 +221,7 @@ class CanvasMediaService {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.id, s.file_path, c.owner_id 
+                SELECT s.id, s.file_path, s.canvas_id, c.owner_id 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :uuid 
@@ -237,6 +242,11 @@ class CanvasMediaService {
 
             $stmt = $pdo->prepare("DELETE FROM canvas_snapshots_history WHERE id = :id");
             $stmt->execute([':id' => $data['id']]);
+
+            try {
+                $redis = (new \App\Config\Database\RedisCache())->getClient();
+                (new \App\Core\System\CacheInvalidator($redis))->canvasSnapshots((int)$data['canvas_id']);
+            } catch (\Throwable $e) {}
 
             $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
             $s3Client = Utils::getS3Client();

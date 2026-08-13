@@ -752,15 +752,10 @@ class AdminServices {
                 try {
                     $redisCache = new \App\Config\Database\RedisCache();
                     $redis = $redisCache->getClient();
-                    if ($redis) {
-                        $keys = $redis->keys('user:*');
-                        if (!empty($keys)) {
-                            foreach ($keys as $k) { $redis->del($k); }
-                        }
-                    }
+                    (new \App\Core\System\CacheInvalidator($redis))->allUsers();
                 } catch (\Throwable $t) {}
 
-                return ['success' => true, 'message' => 'Suscripción actualizada'];
+                return ['success' => true, 'message' => __('admin.subscription_updated')];
             } else {
                 // Insert
                 $uuid = \App\Core\Helpers\Utils::generateUUID();
@@ -770,19 +765,14 @@ class AdminServices {
                 try {
                     $redisCache = new \App\Config\Database\RedisCache();
                     $redis = $redisCache->getClient();
-                    if ($redis) {
-                        $keys = $redis->keys('user:*');
-                        if (!empty($keys)) {
-                            foreach ($keys as $k) { $redis->del($k); }
-                        }
-                    }
+                    (new \App\Core\System\CacheInvalidator($redis))->allUsers();
                 } catch (\Throwable $t) {}
 
-                return ['success' => true, 'message' => 'Suscripción creada', 'data' => ['uuid' => $uuid]];
+                return ['success' => true, 'message' => __('admin.subscription_created'), 'data' => ['uuid' => $uuid]];
             }
         } catch (\PDOException $e) {
             Logger::error("saveSubscription Error", ['exception' => $e]);
-            return ['success' => false, 'message' => 'Error de base de datos'];
+            return ['success' => false, 'message' => __('err_database')];
         }
     }
 

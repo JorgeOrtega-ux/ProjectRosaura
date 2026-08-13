@@ -881,6 +881,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             }
             
             $this->db->commit();
+            $this->cacheInvalidator->canvasRoles($canvasId);
             return $roleId;
         } catch (Exception $e) {
             if ($this->db->inTransaction()) {
@@ -909,6 +910,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             }
             
             $this->db->commit();
+            $this->cacheInvalidator->canvasRoles($canvasId);
             return true;
         } catch (Exception $e) {
             if ($this->db->inTransaction()) {
@@ -924,6 +926,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $this->db->beginTransaction();
             $this->syncRolePermissions($roleId, $permissions);
             $this->db->commit();
+            
+            // Invalidate canvas roles cache
+            $stmtCid = $this->db->prepare("SELECT canvas_id FROM " . DB::TBL_CANVAS_ROLES . " WHERE id = ?");
+            $stmtCid->execute([$roleId]);
+            $canvasId = (int)$stmtCid->fetchColumn();
+            $this->cacheInvalidator->canvasRoles($canvasId ?: null);
+            
             return true;
         } catch (Exception $e) {
             if ($this->db->inTransaction()) {
@@ -937,10 +946,14 @@ class CanvasRepository implements CanvasRepositoryInterface {
     public function deleteCanvasRole(int $roleId, int $canvasId): bool {
         $sql = "DELETE FROM " . DB::TBL_CANVAS_ROLES . " WHERE id = :id AND canvas_id = :canvas_id AND is_system = 0";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
+        $res = $stmt->execute([
             ':id' => $roleId,
             ':canvas_id' => $canvasId
         ]);
+        if ($res) {
+            $this->cacheInvalidator->canvasRoles($canvasId);
+        }
+        return $res;
     }
 
     private function syncRolePermissions(int $roleId, array $permissions) {
@@ -1340,10 +1353,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 $identityDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
                 $stmtUpd = $identityDb->prepare("UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes + ?) WHERE id = ?");
                 $stmtUpd->execute([$fileSize, $userId]);
-                // Invalidate user storage cache
-                if ($this->redisClient) {
-                    try { $this->redisClient->del(CacheConstants::PREFIX_USER_STORAGE . $userId); } catch (\Throwable $e) {}
-                }
+                $this->cacheInvalidator->userStorage($userId);
             } catch (\Throwable $e) {
                 Logger::error("saveTemplateMetadata: failed to update storage", ['user_id' => $userId, 'error' => $e->getMessage()]);
             }
@@ -1379,10 +1389,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 $identityDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
                 $stmtUpd = $identityDb->prepare("UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?) WHERE id = ?");
                 $stmtUpd->execute([$fileSize, $userId]);
-                // Invalidate user storage cache
-                if ($this->redisClient) {
-                    try { $this->redisClient->del(CacheConstants::PREFIX_USER_STORAGE . $userId); } catch (\Throwable $e) {}
-                }
+                $this->cacheInvalidator->userStorage($userId);
             } catch (\Throwable $e) {
                 Logger::error("deleteTemplate: failed to update storage", ['user_id' => $userId, 'error' => $e->getMessage()]);
             }

@@ -29,19 +29,19 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
             <div class="component-top-right">
                 <div class="component-actions disabled" data-ref="role-selection-actions">
                     <?php if ($canManageRoles): ?>
-                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="editRole" data-tooltip="<?php echo __('btn_edit'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="editRole" data-tooltip="<?php echo __('btn_edit'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">edit</span>
                     </button>
                     <?php endif; ?>
                     
                     <?php if ($isSuperAdmin): ?>
-                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="editPermissions" data-tooltip="<?php echo __('btn_edit_permissions'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="editPermissions" data-tooltip="<?php echo __('btn_edit_permissions'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">admin_panel_settings</span>
                     </button>
                     <?php endif; ?>
 
                     <?php if ($canManageRoles): ?>
-                    <button class="component-button component-button--danger component-button--icon component-button--h40" data-action="deleteRole" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteRole" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
                     <?php endif; ?>
