@@ -1247,26 +1247,111 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                         let mut pipe = deadpool_redis::redis::pipe();
                         pipe.cmd("SADD").arg("canvases:dirty_states").arg(&c_id_clone2);
 
-                        for iy in (ty - radius)..=(ty + radius) {
-                            let dy = iy - ty;
-                            if dy.abs() > radius { continue; }
-                            let dx = ((radius.pow(2) - dy.pow(2)) as f32).sqrt() as i32;
-                            let mut x_start = tx - dx;
-                            let mut x_end = tx + dx;
-                            
-                            if height > 0 && (iy < 0 || iy >= height) { continue; }
-                            x_start = x_start.max(0);
-                            if width > 0 { x_end = x_end.min(width - 1); }
-                            if x_start > x_end { continue; }
-                            
-                            let length = x_end - x_start + 1;
-                            let byte_offset = (iy * width + x_start) * 4;
-                            let transparent_bytes = vec![0u8; (length * 4) as usize];
-                            
-                            pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
-                            
-                            for ix in x_start..=x_end {
-                                affected_offsets.push(iy * width + ix);
+                        if perk_id_clone == "ion_strike" {
+                            let r_f = radius as f32;
+                            let c_x = tx as f32;
+                            let c_y = ty as f32;
+
+                            let p1 = (c_x, c_y - r_f);
+                            let p2 = (c_x - r_f * 0.866, c_y + r_f * 0.5);
+                            let p3 = (c_x + r_f * 0.866, c_y + r_f * 0.5);
+
+                            let dist_to_seg = |px: f32, py: f32, ax: f32, ay: f32, bx: f32, by: f32| -> f32 {
+                                let dx = bx - ax;
+                                let dy = by - ay;
+                                let len_sq = dx * dx + dy * dy;
+                                if len_sq == 0.0 {
+                                    return ((px - ax).powi(2) + (py - ay).powi(2)).sqrt();
+                                }
+                                let mut t = ((px - ax) * dx + (py - ay) * dy) / len_sq;
+                                t = t.max(0.0).min(1.0);
+                                let proj_x = ax + t * dx;
+                                let proj_y = ay + t * dy;
+                                ((px - proj_x).powi(2) + (py - proj_y).powi(2)).sqrt()
+                            };
+
+                            let point_in_triangle = |px: f32, py: f32, a: (f32, f32), b: (f32, f32), c: (f32, f32)| -> bool {
+                                let d1 = (px - b.0) * (a.1 - b.1) - (a.0 - b.0) * (py - b.1);
+                                let d2 = (px - c.0) * (b.1 - c.1) - (b.0 - c.0) * (py - c.1);
+                                let d3 = (px - a.0) * (c.1 - a.1) - (c.0 - a.0) * (py - a.1);
+                                let has_neg = (d1 < -0.001) || (d2 < -0.001) || (d3 < -0.001);
+                                let has_pos = (d1 > 0.001) || (d2 > 0.001) || (d3 > 0.001);
+                                !(has_neg && has_pos)
+                            };
+
+                            let y_min = (ty - radius - 5).max(0);
+                            let y_max = (ty + radius + 5).min(if height > 0 { height - 1 } else { ty + radius + 5 });
+                            let x_min = (tx - radius - 5).max(0);
+                            let x_max = (tx + radius + 5).min(if width > 0 { width - 1 } else { tx + radius + 5 });
+
+                            for iy in y_min..=y_max {
+                                let py = iy as f32;
+                                let mut span_start: Option<i32> = None;
+                                let mut span_len = 0i32;
+
+                                for ix in x_min..=x_max {
+                                    let px = ix as f32;
+
+                                    let is_inside = point_in_triangle(px, py, p1, p2, p3);
+                                    let is_v1 = ((px - p1.0).powi(2) + (py - p1.1).powi(2)).sqrt() <= 4.0;
+                                    let is_v2 = ((px - p2.0).powi(2) + (py - p2.1).powi(2)).sqrt() <= 4.0;
+                                    let is_v3 = ((px - p3.0).powi(2) + (py - p3.1).powi(2)).sqrt() <= 4.0;
+
+                                    let is_l1 = dist_to_seg(px, py, p1.0, p1.1, p2.0, p2.1) <= 1.5;
+                                    let is_l2 = dist_to_seg(px, py, p2.0, p2.1, p3.0, p3.1) <= 1.5;
+                                    let is_l3 = dist_to_seg(px, py, p3.0, p3.1, p1.0, p1.1) <= 1.5;
+
+                                    let hit = is_inside || is_v1 || is_v2 || is_v3 || is_l1 || is_l2 || is_l3;
+
+                                    if hit {
+                                        if span_start.is_none() {
+                                            span_start = Some(ix);
+                                            span_len = 1;
+                                        } else {
+                                            span_len += 1;
+                                        }
+                                    } else if let Some(start_x) = span_start {
+                                        let byte_offset = (iy * width + start_x) * 4;
+                                        let transparent_bytes = vec![0u8; (span_len * 4) as usize];
+                                        pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
+                                        for offset_x in start_x..(start_x + span_len) {
+                                            affected_offsets.push(iy * width + offset_x);
+                                        }
+                                        span_start = None;
+                                        span_len = 0;
+                                    }
+                                }
+                                if let Some(start_x) = span_start {
+                                    let byte_offset = (iy * width + start_x) * 4;
+                                    let transparent_bytes = vec![0u8; (span_len * 4) as usize];
+                                    pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
+                                    for offset_x in start_x..(start_x + span_len) {
+                                        affected_offsets.push(iy * width + offset_x);
+                                    }
+                                }
+                            }
+                        } else {
+                            for iy in (ty - radius)..=(ty + radius) {
+                                let dy = iy - ty;
+                                if dy.abs() > radius { continue; }
+                                let dx = ((radius.pow(2) - dy.pow(2)) as f32).sqrt() as i32;
+                                let mut x_start = tx - dx;
+                                let mut x_end = tx + dx;
+                                
+                                if height > 0 && (iy < 0 || iy >= height) { continue; }
+                                x_start = x_start.max(0);
+                                if width > 0 { x_end = x_end.min(width - 1); }
+                                if x_start > x_end { continue; }
+                                
+                                let length = x_end - x_start + 1;
+                                let byte_offset = (iy * width + x_start) * 4;
+                                let transparent_bytes = vec![0u8; (length * 4) as usize];
+                                
+                                pipe.cmd("SETRANGE").arg(&redis_state_key).arg(byte_offset).arg(transparent_bytes);
+                                
+                                for ix in x_start..=x_end {
+                                    affected_offsets.push(iy * width + ix);
+                                }
                             }
                         }
                         let _: () = pipe.query_async(&mut c).await.unwrap_or(());

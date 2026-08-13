@@ -612,7 +612,9 @@ export const DesignRender = {
 
                 const elapsed = now - warning.startTime;
                 const duration = warning.endTime - warning.startTime;
-                const progress = duration > 0 ? Math.min(1, Math.max(0, elapsed / duration)) : 1;                if (warning.perkId === 'black_hole_1' || warning.perkId === 'supernova_blast') {
+                const progress = duration > 0 ? Math.min(1, Math.max(0, elapsed / duration)) : 1;
+
+                if (warning.perkId === 'black_hole_1' || warning.perkId === 'supernova_blast') {
                     // Lógica de succión de píxeles (fallback)
                     if (warning.candidates) {
                         while (warning.candidateIndex < warning.candidates.length) {
@@ -628,9 +630,121 @@ export const DesignRender = {
                             warning.candidateIndex++;
                         }
                     }
-                }    
+                }
 
-                if (warning.perkId === 'black_hole_1') {
+                // --- 1. CÁPSULAS / SATÉLITES GIRATORIOS EN ÓRBITA EXTERIOR (Estilo de foto de referencia) ---
+                const numPods = warning.perkId === 'ion_strike' ? 3 : (warning.perkId === 'atomic_bomb_1' ? 6 : 8);
+                const orbitR = outerR * 1.5;
+                const spinAngle = (now / 1800) % (2 * Math.PI);
+
+                // Anillo de órbita exterior
+                this.ctx.beginPath();
+                this.ctx.arc(wx, wy, orbitR, 0, 2 * Math.PI);
+                this.ctx.strokeStyle = secondaryColor;
+                this.ctx.lineWidth = 0.8 / scale;
+                this.ctx.stroke();
+
+                // Cápsulas orbitales giratorias y líneas radiales
+                for (let i = 0; i < numPods; i++) {
+                    const podAngle = spinAngle + (i * 2 * Math.PI / numPods);
+                    const px = wx + orbitR * Math.cos(podAngle);
+                    const py = wy + orbitR * Math.sin(podAngle);
+
+                    // Línea radial desde el centro a la cápsula
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(wx, wy);
+                    this.ctx.lineTo(px, py);
+                    this.ctx.strokeStyle = secondaryColor;
+                    this.ctx.lineWidth = 0.6 / scale;
+                    this.ctx.stroke();
+
+                    // Pulso de energía viajando hacia el centro
+                    const pTravel = ((now / 800 + i * 0.25) % 1.0);
+                    const pulseX = px + (wx - px) * pTravel;
+                    const pulseY = py + (wy - py) * pTravel;
+                    this.ctx.beginPath();
+                    this.ctx.arc(pulseX, pulseY, 1.2 / scale, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = primaryColor;
+                    this.ctx.fill();
+
+                    // Cápsula / Satélite orbital (doble círculo)
+                    const podRadius = 5 / scale;
+                    this.ctx.beginPath();
+                    this.ctx.arc(px, py, podRadius, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = primaryColor;
+                    this.ctx.lineWidth = 1.2 / scale;
+                    this.ctx.stroke();
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(px, py, podRadius * 0.55, 0, 2 * Math.PI);
+                    this.ctx.strokeStyle = secondaryColor;
+                    this.ctx.lineWidth = 0.8 / scale;
+                    this.ctx.stroke();
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(px, py, podRadius * 0.25, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = primaryColor;
+                    this.ctx.fill();
+                }
+
+                // --- 2. EFECTOS ESPECIALES ESPECÍFICOS POR PERK ---
+                if (warning.perkId === 'ion_strike') {
+                    // --- ATAQUE DE SATÉLITE TRIANGULADO: RETÍCULA EN TRIÁNGULO DE PLASMA ---
+                    const p1 = { x: wx, y: wy - outerR };
+                    const p2 = { x: wx - outerR * 0.866, y: wy + outerR * 0.5 };
+                    const p3 = { x: wx + outerR * 0.866, y: wy + outerR * 0.5 };
+
+                    // Triángulo exterior
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(p1.x, p1.y);
+                    this.ctx.lineTo(p2.x, p2.y);
+                    this.ctx.lineTo(p3.x, p3.y);
+                    this.ctx.closePath();
+                    this.ctx.fillStyle = fillColor;
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = primaryColor;
+                    this.ctx.lineWidth = lineW * 1.5;
+                    this.ctx.stroke();
+
+                    // Triángulo interior cerrándose progresivamente
+                    const innerR = outerR * (1 - progress);
+                    if (innerR > 0.1) {
+                        const ip1 = { x: wx, y: wy - innerR };
+                        const ip2 = { x: wx - innerR * 0.866, y: wy + innerR * 0.5 };
+                        const ip3 = { x: wx + innerR * 0.866, y: wy + innerR * 0.5 };
+
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(ip1.x, ip1.y);
+                        this.ctx.lineTo(ip2.x, ip2.y);
+                        this.ctx.lineTo(ip3.x, ip3.y);
+                        this.ctx.closePath();
+                        this.ctx.fillStyle = secondaryColor;
+                        this.ctx.fill();
+                        this.ctx.strokeStyle = primaryColor;
+                        this.ctx.lineWidth = lineW;
+                        this.ctx.stroke();
+                    }
+
+                    // Chispas de plasma de alto voltaje a lo largo de los bordes del triángulo
+                    const sparkCount = 9;
+                    for (let s = 0; s < sparkCount; s++) {
+                        const edge = s % 3;
+                        const t = ((now / 200 + s * 0.33) % 1.0);
+                        let startP = p1, endP = p2;
+                        if (edge === 1) { startP = p2; endP = p3; }
+                        else if (edge === 2) { startP = p3; endP = p1; }
+
+                        const sparkX = startP.x + (endP.x - startP.x) * t;
+                        const sparkY = startP.y + (endP.y - startP.y) * t;
+
+                        this.ctx.beginPath();
+                        this.ctx.arc(sparkX, sparkY, 1.5 / scale, 0, 2 * Math.PI);
+                        this.ctx.fillStyle = s % 2 === 0 ? '#ffffff' : '#06b6d4';
+                        this.ctx.fill();
+                    }
+                } else if (warning.perkId === 'black_hole_1') {
                     // Dibujar disco de acreción del agujero negro
                     const diskRadius = outerR * 0.45 * (1.0 + 0.05 * Math.sin(now / 250));
                     if (diskRadius > 0.1) {
@@ -641,7 +755,7 @@ export const DesignRender = {
                         grad.addColorStop(0.75, 'rgba(100, 100, 110, 0.7)');
                         grad.addColorStop(0.9, 'rgba(230, 230, 240, 0.35)');
                         grad.addColorStop(1.0, 'rgba(230, 230, 240, 0.0)');
-                        
+
                         this.ctx.beginPath();
                         this.ctx.arc(wx, wy, diskRadius, 0, 2 * Math.PI);
                         this.ctx.fillStyle = grad;
@@ -686,9 +800,7 @@ export const DesignRender = {
                             this.ctx.fillRect(px - pSize / 2, py - pSize / 2, pSize, pSize);
                         }
                     }
-                }
-
-                if (warning.perkId === 'supernova_blast') {
+                } else if (warning.perkId === 'supernova_blast') {
                     const currentR = outerR * progress;
                     this.ctx.beginPath();
                     this.ctx.arc(wx, wy, currentR, 0, 2 * Math.PI);
@@ -704,16 +816,13 @@ export const DesignRender = {
                     this.ctx.arc(wx, wy, Math.min(outerR * 0.15, 3), 0, 2 * Math.PI);
                     this.ctx.fillStyle = '#ffffff';
                     this.ctx.fill();
-                }
-
-
-                if (warning.perkId === 'tectonic_rift') {
+                } else if (warning.perkId === 'tectonic_rift') {
                     this.ctx.beginPath();
                     this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
                     this.ctx.strokeStyle = primaryColor;
                     this.ctx.lineWidth = 1.0 / scale;
                     this.ctx.stroke();
-                    
+
                     const seed = warning.startTime;
                     this.ctx.beginPath();
                     for (let k = 0; k < 5; k++) {
@@ -737,19 +846,19 @@ export const DesignRender = {
                     this.ctx.stroke();
                 }
 
-                // --- RENDERIZADO DEL CÍRCULO BASE Y LA MIRA ---
-                // 1. Mira telescópica cruzada en el centro
-                this.ctx.beginPath();
-                this.ctx.moveTo(wx - crossLength, wy);
-                this.ctx.lineTo(wx + crossLength, wy);
-                this.ctx.moveTo(wx, wy - crossLength);
-                this.ctx.lineTo(wx, wy + crossLength);
-                this.ctx.lineWidth = lineW;
-                this.ctx.strokeStyle = secondaryColor;
-                this.ctx.stroke();
+                // --- 3. RENDERIZADO DEL CÍRCULO BASE Y MIRA (para Perks no triangulares) ---
+                if (warning.perkId !== 'ion_strike' && warning.perkId !== 'supernova_blast' && warning.perkId !== 'tectonic_rift') {
+                    // Mira telescópica cruzada en el centro
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(wx - crossLength, wy);
+                    this.ctx.lineTo(wx + crossLength, wy);
+                    this.ctx.moveTo(wx, wy - crossLength);
+                    this.ctx.lineTo(wx, wy + crossLength);
+                    this.ctx.lineWidth = lineW;
+                    this.ctx.strokeStyle = secondaryColor;
+                    this.ctx.stroke();
 
-                // 2. Círculo exterior
-                if (warning.perkId !== 'supernova_blast' && warning.perkId !== 'tectonic_rift') {
+                    // Círculo exterior
                     this.ctx.beginPath();
                     this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
                     this.ctx.fillStyle = fillColor;
@@ -758,7 +867,7 @@ export const DesignRender = {
                     this.ctx.strokeStyle = primaryColor;
                     this.ctx.stroke();
 
-                    // 3. Anillo cerrándose progresivamente
+                    // Anillo cerrándose progresivamente
                     const innerR = outerR * (1 - progress);
                     if (innerR > 0.1) {
                         this.ctx.beginPath();
@@ -771,8 +880,42 @@ export const DesignRender = {
                     }
                 }
 
-                // --- ANIMACIONES EXTRAS ESPECÍFICAS DE ADVERTENCIA ---
-                if (warning.perkId === 'orbital_cannon_1') {
+                // --- 4. DETALLES MILITARES Y TÁCTICOS ADICIONALES ---
+                if (warning.perkId === 'pixel_bomb_1' || warning.perkId === 'pixel_missile_1') {
+                    // Esquinas de fijación de objetivo militar [ ]
+                    const bLen = Math.min(outerR * 0.4, 8 / scale);
+                    const gap = outerR + 2 / scale;
+                    this.ctx.strokeStyle = primaryColor;
+                    this.ctx.lineWidth = 1.8 / scale;
+
+                    // Esquina Superior Izquierda
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(wx - gap, wy - gap + bLen);
+                    this.ctx.lineTo(wx - gap, wy - gap);
+                    this.ctx.lineTo(wx - gap + bLen, wy - gap);
+                    this.ctx.stroke();
+
+                    // Esquina Superior Derecha
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(wx + gap - bLen, wy - gap);
+                    this.ctx.lineTo(wx + gap, wy - gap);
+                    this.ctx.lineTo(wx + gap, wy - gap + bLen);
+                    this.ctx.stroke();
+
+                    // Esquina Inferior Izquierda
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(wx - gap, wy + gap - bLen);
+                    this.ctx.lineTo(wx - gap, wy + gap);
+                    this.ctx.lineTo(wx - gap + bLen, wy + gap);
+                    this.ctx.stroke();
+
+                    // Esquina Inferior Derecha
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(wx + gap - bLen, wy + gap);
+                    this.ctx.lineTo(wx + gap, wy + gap);
+                    this.ctx.lineTo(wx + gap, wy + gap - bLen);
+                    this.ctx.stroke();
+                } else if (warning.perkId === 'orbital_cannon_1') {
                     // Anillo de retícula exterior discontinua giratorio
                     this.ctx.beginPath();
                     this.ctx.arc(wx, wy, outerR + (2 / scale), 0, 2 * Math.PI);
@@ -781,9 +924,9 @@ export const DesignRender = {
                     this.ctx.lineWidth = 1 / scale;
                     this.ctx.lineDashOffset = -now / 150;
                     this.ctx.stroke();
-                    this.ctx.setLineDash([]); // Limpiar estilo dashed
+                    this.ctx.setLineDash([]);
 
-                    // Protones/Partículas electromagnéticas cargando en espiral circular hacia el centro
+                    // Partículas de plasma cargando hacia el centro
                     const particleCount = 10;
                     for (let i = 0; i < particleCount; i++) {
                         const travelProgress = ((now + i * 150) % 1500) / 1500;
@@ -795,7 +938,7 @@ export const DesignRender = {
                         this.ctx.fillRect(px - (1 / scale), py - (1 / scale), 2 / scale, 2 / scale);
                     }
                 } else if (warning.perkId === 'atomic_bomb_1') {
-                    // Múltiples aureolas concéntricas de pulso naranja expansivas continuas
+                    // Múltiples aureolas concéntricas de pulso naranja expansivas
                     for (let p = 0; p < 3; p++) {
                         const pulseProgress = (((now / 1200) + p * 0.33) % 1.0);
                         const pulseR = outerR * pulseProgress;
@@ -810,19 +953,19 @@ export const DesignRender = {
                     const particleCount = 8;
                     for (let i = 0; i < particleCount; i++) {
                         const angle = (i * 2 * Math.PI / particleCount) + (now / 250);
-                        const r = outerR * 0.35 * (0.8 + 0.2 * Math.sin(now / 100 + i)); // Órbita vibrante
+                        const r = outerR * 0.35 * (0.8 + 0.2 * Math.sin(now / 100 + i));
                         const px = wx + r * Math.cos(angle);
                         const py = wy + r * Math.sin(angle);
                         this.ctx.fillStyle = '#fb923c';
                         this.ctx.fillRect(px - (1 / scale), py - (1 / scale), 2 / scale, 2 / scale);
                     }
                 } else if (warning.perkId === 'cluster_bomb_1') {
-                    // Cuadrícula táctica de puntos finos en lugar de líneas continuas
+                    // Cuadrícula táctica de puntos
                     this.ctx.save();
                     this.ctx.beginPath();
                     this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
                     this.ctx.clip();
-                    
+
                     this.ctx.fillStyle = 'rgba(163, 230, 53, 0.35)';
                     const spacing = Math.max(3, outerR / 3);
                     for (let xOffset = -outerR; xOffset <= outerR; xOffset += spacing) {
@@ -841,19 +984,19 @@ export const DesignRender = {
                     this.ctx.fillStyle = 'rgba(163, 230, 53, 0.15)';
                     this.ctx.fill();
                 } else if (warning.perkId === 'meteor_shower_1') {
-                    // Protones de meteoros cayendo de forma limpia
+                    // Meteoros cayendo de forma limpia
                     const particleCount = 6;
                     this.ctx.save();
                     this.ctx.beginPath();
                     this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
                     this.ctx.clip();
-                    
+
                     for (let i = 0; i < particleCount; i++) {
                         const offset = (i * 350) % 1000;
                         const pProgress = ((now + offset) % 1000) / 1000;
                         const px = wx - outerR + (2 * outerR * ((i * 17) % 10 / 10));
                         const py = wy - outerR + (2 * outerR * pProgress);
-                        
+
                         this.ctx.beginPath();
                         this.ctx.arc(px, py, 0.8 / scale, 0, 2 * Math.PI);
                         this.ctx.fillStyle = `rgba(232, 121, 249, ${0.75 * (1 - pProgress)})`;
@@ -878,49 +1021,70 @@ export const DesignRender = {
                 const opacity = 1 - progress;
                 
                 if (exp.perkId === 'ion_strike') {
-                    const r = exp.maxRadius * (0.1 + 2.0 * progress);
-                    // 1. Anillo de plasma cian brillante
+                    const r = exp.maxRadius * (0.1 + 1.8 * progress);
+                    const cx = exp.x + 0.5;
+                    const cy = exp.y + 0.5;
+
+                    const p1 = { x: cx, y: cy - r };
+                    const p2 = { x: cx - r * 0.866, y: cy + r * 0.5 };
+                    const p3 = { x: cx + r * 0.866, y: cy + r * 0.5 };
+
+                    // 1. Relleno de resplandor de onda expansiva triangular de plasma cian
                     this.ctx.beginPath();
-                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, r, 0, 2 * Math.PI);
+                    this.ctx.moveTo(p1.x, p1.y);
+                    this.ctx.lineTo(p2.x, p2.y);
+                    this.ctx.lineTo(p3.x, p3.y);
+                    this.ctx.closePath();
+                    this.ctx.fillStyle = `rgba(6, 182, 212, ${opacity * 0.35})`;
+                    this.ctx.fill();
+
+                    // 2. Trazo del triángulo de plasma brillante exterior
                     this.ctx.strokeStyle = `rgba(6, 182, 212, ${opacity})`;
-                    this.ctx.lineWidth = Math.max(2, 5 * (1 - progress) / this.transform.scale);
+                    this.ctx.lineWidth = Math.max(2, 6 * (1 - progress) / this.transform.scale);
                     this.ctx.stroke();
 
-                    // 2. Anillo interior secundario (más rápido y blanco)
+                    // 3. Triángulo interior secundario (más concentrado y blanco)
                     const innerR = r * 0.65;
+                    const ip1 = { x: cx, y: cy - innerR };
+                    const ip2 = { x: cx - innerR * 0.866, y: cy + innerR * 0.5 };
+                    const ip3 = { x: cx + innerR * 0.866, y: cy + innerR * 0.5 };
+
                     this.ctx.beginPath();
-                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, innerR, 0, 2 * Math.PI);
-                    this.ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.85})`;
-                    this.ctx.lineWidth = Math.max(1, 3 * (1 - progress) / this.transform.scale);
+                    this.ctx.moveTo(ip1.x, ip1.y);
+                    this.ctx.lineTo(ip2.x, ip2.y);
+                    this.ctx.lineTo(ip3.x, ip3.y);
+                    this.ctx.closePath();
+                    this.ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.9})`;
+                    this.ctx.lineWidth = Math.max(1, 3.5 * (1 - progress) / this.transform.scale);
                     this.ctx.stroke();
 
-                    // 3. Relleno de resplandor de iones
-                    this.ctx.beginPath();
-                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, r * 0.85, 0, 2 * Math.PI);
-                    this.ctx.fillStyle = `rgba(6, 182, 212, ${opacity * 0.15})`;
-                    this.ctx.fill();
+                    // 4. Rayos de impacto de iones concentrados en los 3 vértices
+                    const verts = [p1, p2, p3];
+                    const coreR = Math.max(1.5, (exp.maxRadius * 0.25 * (1 - progress)) / this.transform.scale);
+                    verts.forEach(v => {
+                        this.ctx.beginPath();
+                        this.ctx.arc(v.x, v.y, coreR, 0, 2 * Math.PI);
+                        this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                        this.ctx.fill();
+                        this.ctx.strokeStyle = `rgba(6, 182, 212, ${opacity})`;
+                        this.ctx.lineWidth = 1.5 / this.transform.scale;
+                        this.ctx.stroke();
+                    });
 
-                    // 4. Destello central blanco
-                    const coreR = Math.max(1, (exp.maxRadius * 0.25 * (1 - progress)) / this.transform.scale);
-                    this.ctx.beginPath();
-                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, coreR, 0, 2 * Math.PI);
-                    this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-                    this.ctx.fill();
-
-                    // 5. Partículas de plasma cian/blanco flotantes
-                    const particleCount = 15;
+                    // 5. Partículas de plasma flotantes dispersándose desde la figura del triángulo
+                    const particleCount = 18;
                     for (let i = 0; i < particleCount; i++) {
                         const hash = Math.sin(exp.startTime + i * 17.31) * 1000;
                         const angle = (hash * 11) % (2 * Math.PI);
                         const speed = exp.maxRadius * 1.3 * (0.3 + 0.9 * (Math.abs(hash * 3) % 1));
                         const dist = speed * (1 - Math.pow(1 - progress, 2));
 
-                        const px = exp.x + 0.5 + dist * Math.cos(angle);
-                        const py = exp.y + 0.5 + dist * Math.sin(angle);
+                        const px = cx + dist * Math.cos(angle);
+                        const py = cy + dist * Math.sin(angle);
 
                         const size = Math.max(1, (2.2 * (1 - progress)) / this.transform.scale);
                         this.ctx.fillStyle = i % 2 === 0 ? '#06b6d4' : '#ffffff';
-                        this.ctx.fillRect(px - size/2, py - size/2, size, size);
+                        this.ctx.fillRect(px - size / 2, py - size / 2, size, size);
                     }
                     return;
                 }

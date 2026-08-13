@@ -274,35 +274,35 @@ export class SoundManager {
     // ─────────────────────────────────────────────────────────────────────────
 
     async preloadSamples() {
-        const base = window.AppBasePath || '';
-
-        for (const [perkId, profile] of Object.entries(SOUND_PROFILES)) {
-            if (profile.file) {
-                this._loadSample(perkId, `${base}/assets/sounds/${profile.file}`);
-            }
-            if (profile.warnFile) {
-                this._loadSample(`${perkId}_warn`, `${base}/assets/sounds/${profile.warnFile}`);
-            }
-        }
+        // Carga 100% bajo demanda: Cero peticiones de audio al entrar al lienzo.
+        // Los sonidos MP3 se descargan únicamente cuando se activa o lanza cada ventaja.
     }
 
     async _loadSample(cacheKey, url) {
+        if (this.sampleCache.has(cacheKey)) {
+            return this.sampleCache.get(cacheKey);
+        }
         try {
-            const head = await fetch(url, { method: 'HEAD' });
-            if (!head.ok) return;
+            const res = await fetch(url);
+            if (!res.ok) return null;
 
-            const res         = await fetch(url);
             const arrayBuffer = await res.arrayBuffer();
 
-            // Decodificar cuando el AudioContext esté listo
-            const decode = () => {
-                if (!this.ctx) { setTimeout(decode, 300); return; }
-                this.ctx.decodeAudioData(arrayBuffer.slice(0))
-                    .then(buf => this.sampleCache.set(cacheKey, buf))
-                    .catch(() => {});
-            };
-            decode();
-        } catch (e) {}
+            return new Promise((resolve) => {
+                const decode = () => {
+                    if (!this.ctx) { setTimeout(decode, 200); return; }
+                    this.ctx.decodeAudioData(arrayBuffer.slice(0))
+                        .then(buf => {
+                            this.sampleCache.set(cacheKey, buf);
+                            resolve(buf);
+                        })
+                        .catch(() => resolve(null));
+                };
+                decode();
+            });
+        } catch (e) {
+            return null;
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -382,7 +382,7 @@ export class SoundManager {
     // Warning sound (loop durante la cuenta regresiva)
     // ─────────────────────────────────────────────────────────────────────────
 
-    playWarningSound(perkId, durationSecs = 10, key = null) {
+    async playWarningSound(perkId, durationSecs = 10, key = null) {
         if (this.isMuted) return;
         this.ensureContext();
         if (!this.ctx) return;
@@ -399,9 +399,13 @@ export class SoundManager {
         }
 
         const warnKey = `${perkId}_warn`;
-        if (!this.sampleCache.has(warnKey)) return; // sin MP3 → silencio
+        let buf = this.sampleCache.get(warnKey);
+        if (!buf && profile.warnFile) {
+            const base = window.AppBasePath || '';
+            buf = await this._loadSample(warnKey, `${base}/assets/sounds/${profile.warnFile}`);
+        }
+        if (!buf) return;
 
-        const buf    = this.sampleCache.get(warnKey);
         const now    = this.ctx.currentTime;
         const source = this.ctx.createBufferSource();
         source.buffer  = buf;
@@ -440,11 +444,10 @@ export class SoundManager {
     // Explosion sound
     // ─────────────────────────────────────────────────────────────────────────
 
-    playExplosionSound(perkId, x = null, y = null, boardWidth = 4096) {
+    async playExplosionSound(perkId, x = null, y = null, boardWidth = 4096) {
         if (this.isMuted) return;
         this.ensureContext();
         if (!this.ctx) return;
-        if (!this.sampleCache.has(perkId)) return; // sin MP3 cargado → silencio
 
         const profile    = SOUND_PROFILES[perkId] || {};
         const throttleMs = profile.throttleMs || 0;
@@ -457,11 +460,19 @@ export class SoundManager {
             this._lastExplosion.set(perkId, now);
         }
 
-        this._playBuffer(this.sampleCache.get(perkId), {
-            maxDuration: profile.maxDuration || null,
-            x,
-            boardWidth,
-        });
+        let buf = this.sampleCache.get(perkId);
+        if (!buf && profile.file) {
+            const base = window.AppBasePath || '';
+            buf = await this._loadSample(perkId, `${base}/assets/sounds/${profile.file}`);
+        }
+
+        if (buf) {
+            this._playBuffer(buf, {
+                maxDuration: profile.maxDuration || null,
+                x,
+                boardWidth,
+            });
+        }
     }
 }
 
