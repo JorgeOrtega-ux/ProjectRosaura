@@ -233,7 +233,7 @@ $featuresData = [
                                             <h2 class="component-card__title"><?php echo __('admin_tier_name'); ?></h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
-                                                    <input type="text" id="tierName" data-ref="input-tier-name" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['name']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['name']); ?>" placeholder="Ej. Pro, Ultra">
+                                                    <input type="text" data-ref="input-tier-name" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['name']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['name']); ?>" placeholder="Ej. Pro, Ultra">
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
                                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="tier-name"><?php echo __('btn_cancel'); ?></button>

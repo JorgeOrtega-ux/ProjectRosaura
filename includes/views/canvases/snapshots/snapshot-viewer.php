@@ -25,8 +25,6 @@ $canvasSize = $viewerData['canvasSize'];
             
             <?php if (empty($snapshotId)): ?>
                 <p><strong><?php echo __('lbl_problem'); ?>:</strong> <?php echo __('err_missing_get_id'); ?></p>
-                <p><strong><?php echo __('lbl_get_vars_received'); ?>:</strong></p>
-                <pre><?php print_r($_GET); ?></pre>
                 <p><strong><?php echo __('lbl_requested_uri'); ?>:</strong> <?php echo htmlspecialchars($_SERVER['REQUEST_URI'] ?? __('lbl_unknown')); ?></p>
             <?php endif; ?>
         </div>
@@ -46,10 +44,10 @@ $canvasSize = $viewerData['canvasSize'];
             
             <div class="component-top-right">
                 <div class="component-actions active">
-                    <button id="tl-btn-download" class="component-button component-button--icon component-button--h40" data-action="downloadSnapshotHighRes" data-tooltip="<?php echo __('btn_download'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="downloadSnapshotHighRes" data-tooltip="<?php echo __('btn_download'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">high_quality</span>
                     </button>
-                    <button id="tl-btn-toggle-grid" class="component-button component-button--icon component-button--h40 active" data-action="toggleSnapshotGrid" data-tooltip="<?php echo __('dt_grid'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 active" data-action="toggleSnapshotGrid" data-tooltip="<?php echo __('dt_grid'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">grid_on</span>
                     </button>
                 </div>

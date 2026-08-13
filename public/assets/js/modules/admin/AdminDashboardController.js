@@ -49,25 +49,25 @@ export class AdminDashboardController {
     }
 
     cacheDOM() {
-        this.dom.statNewUsers = document.getElementById('stat-new-users');
-        this.dom.statLogins = document.getElementById('stat-logins');
-        this.dom.statPageviews = document.getElementById('stat-pageviews');
-        this.dom.statPixels = document.getElementById('stat-pixels');
-        this.dom.statMessages = document.getElementById('stat-messages');
-        this.dom.statPerks = document.getElementById('stat-perks');
-        this.dom.statCanvases = document.getElementById('stat-canvases');
-        this.dom.statBanned = document.getElementById('stat-banned');
-        this.dom.statLatency = document.getElementById('stat-latency');
-        this.dom.canvasTabsMain = document.getElementById('chartTabsMain');
+        this.dom.statNewUsers = document.querySelector('[data-ref="stat-new-users"]');
+        this.dom.statLogins = document.querySelector('[data-ref="stat-logins"]');
+        this.dom.statPageviews = document.querySelector('[data-ref="stat-pageviews"]');
+        this.dom.statPixels = document.querySelector('[data-ref="stat-pixels"]');
+        this.dom.statMessages = document.querySelector('[data-ref="stat-messages"]');
+        this.dom.statPerks = document.querySelector('[data-ref="stat-perks"]');
+        this.dom.statCanvases = document.querySelector('[data-ref="stat-canvases"]');
+        this.dom.statBanned = document.querySelector('[data-ref="stat-banned"]');
+        this.dom.statLatency = document.querySelector('[data-ref="stat-latency"]');
+        this.dom.canvasTabsMain = document.querySelector('[data-ref="chartTabsMain"]');
         
-        this.dom.menuTabAct = document.getElementById('menu-tab-act');
-        this.dom.menuTabReg = document.getElementById('menu-tab-reg');
-        this.dom.menuTabErr = document.getElementById('menu-tab-err');
+        this.dom.menuTabAct = document.querySelector('[data-ref="menu-tab-act"]');
+        this.dom.menuTabReg = document.querySelector('[data-ref="menu-tab-reg"]');
+        this.dom.menuTabErr = document.querySelector('[data-ref="menu-tab-err"]');
         
-        this.dom.dropdownIcon = document.getElementById('chart-dropdown-icon');
-        this.dom.dropdownText = document.getElementById('chart-dropdown-text');
+        this.dom.dropdownIcon = document.querySelector('[data-ref="chart-dropdown-icon"]');
+        this.dom.dropdownText = document.querySelector('[data-ref="chart-dropdown-text"]');
         
-        const langDataEl = document.getElementById('dashboard-lang-data');
+        const langDataEl = document.querySelector('[data-ref="dashboard-lang-data"]');
         this.lang = {
             activity: langDataEl && langDataEl.getAttribute('data-lbl-activity') ? langDataEl.getAttribute('data-lbl-activity') : window.__('admin_activity_global'),
             regs: langDataEl && langDataEl.getAttribute('data-lbl-regs') ? langDataEl.getAttribute('data-lbl-regs') : window.__('admin_new_regs'),

@@ -4,9 +4,13 @@ This guide outlines the mandatory coding rules and architectural constraints tha
 
 ---
 
-## 1. Zero Inline Styles
-* **Rule**: Do not use or introduce any inline styling (`style="..."` attributes) in HTML, PHP templates, or dynamically injected Javascript elements.
-* **Action**: If you find inline styles in code you are modifying, **remove them entirely**. Do not replace them with CSS classes or alternative helper classes unless explicitly asked. Just delete the style attribute.
+## 1. Zero Inline Styles (With Allowed Exceptions)
+* **Rule**: Do not use or introduce static inline styling (`style="..."` attributes) in HTML, PHP templates, or dynamically injected Javascript elements when CSS classes can be used.
+* **Action**: If you find static inline styles in code you are modifying, **remove them**. Do not replace them with CSS classes or alternative helper classes unless explicitly asked. Just delete the style attribute.
+* **Mandatory Exceptions (Where Inline Styles ARE Allowed/Required)**:
+  - **Dynamic Theme & Color Data**: Dynamic values generated at runtime from database or user data (e.g., subscription tier border/badge colors, custom dynamic category badges, user-configured themes).
+  - **Email Templates**: HTML email templates and email notification bodies, where inline CSS is mandatory for cross-client email rendering compatibility.
+  - **Dynamic Runtime Layout Calculations**: Javascript position/dimension calculations computed strictly at runtime when CSS classes or CSS variables cannot handle the requirement.
 
 ## 2. Zero Hardcoded User-Facing Text
 * **Rule**: All user-facing text, alerts, placeholders, and tooltips must use translation keys. No raw Spanish or English strings in views or scripts.

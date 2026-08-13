@@ -124,9 +124,9 @@ class CanvasesCreateController {
             this.formState.allow_chat = allowChatEl.checked ? 1 : 0;
         }
 
-        const templateEl = document.getElementById('canvas_template_id');
+        const templateEl = document.querySelector('[data-ref="canvas_template_id"]');
         if (templateEl) {
-            this.formState.template_id = templateEl.value || null;
+            this.formState.template_id = templateEl.getAttribute('data-value') || templateEl.value || null;
         }
     }
 
@@ -229,16 +229,16 @@ class CanvasesCreateController {
             const templateId = actionBtn.getAttribute('data-template-id');
             this.formState.template_id = templateId || null;
             
-            const listContainer = document.getElementById('canvas_templates_list');
+            const listContainer = document.querySelector('[data-ref="canvas_templates_list"]');
             if (listContainer) {
                 listContainer.querySelectorAll('.component-menu-link').forEach(el => el.classList.remove('active'));
                 actionBtn.classList.add('active');
             }
             
-            const triggerText = document.getElementById('text-template');
+            const triggerText = document.querySelector('[data-ref="text-template"]');
             if (triggerText) {
                 const label = actionBtn.getAttribute('data-label');
-                triggerText.textContent = label || 'Seleccionar plantilla';
+                triggerText.textContent = label || __('lbl_select_template');
             }
             
             const dropdownModule = actionBtn.closest('.component-module--dropdown');
@@ -247,9 +247,10 @@ class CanvasesCreateController {
                 dropdownModule.classList.add('disabled');
             }
             
-            const hiddenInput = document.getElementById('canvas_template_id');
+            const hiddenInput = document.querySelector('[data-ref="canvas_template_id"]');
             if (hiddenInput) {
-                hiddenInput.value = templateId || '';
+                hiddenInput.setAttribute('data-value', templateId || '');
+                if ('value' in hiddenInput) hiddenInput.value = templateId || '';
             }
             return;
         }
@@ -576,10 +577,10 @@ class CanvasesCreateController {
     }
 
     renderTemplatesGrid(size) {
-        const trigger = document.getElementById('template_dropdown_trigger');
-        const triggerText = document.getElementById('text-template');
-        const listContainer = document.getElementById('canvas_templates_list');
-        const hiddenInput = document.getElementById('canvas_template_id');
+        const trigger = document.querySelector('[data-ref="template_dropdown_trigger"]');
+        const triggerText = document.querySelector('[data-ref="text-template"]');
+        const listContainer = document.querySelector('[data-ref="canvas_templates_list"]');
+        const hiddenInput = document.querySelector('[data-ref="canvas_template_id"]');
 
         if (!trigger || !listContainer) return;
 

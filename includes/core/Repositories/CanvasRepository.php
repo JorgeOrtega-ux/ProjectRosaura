@@ -346,7 +346,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 }
             } catch (\Throwable $e) {}
         }
-        $joinRolesSql = "LEFT JOIN " . DB::TBL_CANVAS_MEMBERS . " cm2 ON c.id = cm2.canvas_id AND cm2.user_id = :uid4";
+        $joinRolesSql = "LEFT JOIN (SELECT canvas_id, user_id FROM " . DB::TBL_CANVAS_MEMBERS . " UNION SELECT canvas_id, user_id FROM " . DB::TBL_CANVAS_USER_ROLES . ") cm2 ON c.id = cm2.canvas_id AND cm2.user_id = :uid4";
         
         $whereClause = "WHERE (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL)";
         if ($filter === 'mine') {

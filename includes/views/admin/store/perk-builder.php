@@ -65,12 +65,12 @@ if ($isEdit && !empty($perk)) {
                                 <div class="active component-state-box" data-state="perk-id-view">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('lbl_perk_backend_id') ?: 'Identificador de Backend (Perk ID)'; ?></h2>
-                                            <span class="component-display-value" data-ref="display-perk-id"><?php echo htmlspecialchars($perkData['perk_id']) ?: (__('lbl_not_configured') ?: 'Sin configurar'); ?></span>
+                                            <h2 class="component-card__title"><?php echo __('lbl_perk_backend_id'); ?></h2>
+                                            <span class="component-display-value" data-ref="display-perk-id"><?php echo htmlspecialchars($perkData['perk_id']) ?: __('lbl_not_configured'); ?></span>
                                             <?php if ($isEdit): ?>
-                                                <p class="component-card__description" style="color: var(--color-danger); margin-top: 4px; font-size: 11px;">
-                                                    <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">warning</span>
-                                                    <?php echo __('warning_modify_perk_id') ?: '¡Modificar esto romperá el enlace con las ventajas programadas en el servidor WebSocket!'; ?>
+                                                <p class="component-card__description">
+                                                    <span class="material-symbols-rounded">warning</span>
+                                                    <?php echo __('warning_modify_perk_id'); ?>
                                                 </p>
                                             <?php endif; ?>
                                         </div>

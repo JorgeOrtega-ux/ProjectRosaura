@@ -46,7 +46,7 @@ extract($dashboardData);
                     </div>
                     <div class="component-stat-card__content">
                         <span class="component-stat-card__title"><?php echo __('admin_dashboard_new_users'); ?></span>
-                        <span class="component-stat-card__value" id="stat-new-users">--</span>
+                        <span class="component-stat-card__value" data-ref="stat-new-users">--</span>
                     </div>
                 </div>
 
@@ -56,7 +56,7 @@ extract($dashboardData);
                     </div>
                     <div class="component-stat-card__content">
                         <span class="component-stat-card__title"><?php echo __('admin_dashboard_logins'); ?></span>
-                        <span class="component-stat-card__value" id="stat-logins">--</span>
+                        <span class="component-stat-card__value" data-ref="stat-logins">--</span>
                     </div>
                 </div>
 
@@ -66,7 +66,7 @@ extract($dashboardData);
                     </div>
                     <div class="component-stat-card__content">
                         <span class="component-stat-card__title"><?php echo __('admin_dashboard_pageviews'); ?></span>
-                        <span class="component-stat-card__value" id="stat-pageviews">--</span>
+                        <span class="component-stat-card__value" data-ref="stat-pageviews">--</span>
                     </div>
                 </div>
 
@@ -76,7 +76,7 @@ extract($dashboardData);
                     </div>
                     <div class="component-stat-card__content">
                         <span class="component-stat-card__title"><?php echo __('admin_dashboard_total_pixels'); ?></span>
-                        <span class="component-stat-card__value" id="stat-pixels">--</span>
+                        <span class="component-stat-card__value" data-ref="stat-pixels">--</span>
                     </div>
                 </div>
 
@@ -86,7 +86,7 @@ extract($dashboardData);
                     </div>
                     <div class="component-stat-card__content">
                         <span class="component-stat-card__title"><?php echo __('admin_dashboard_total_messages'); ?></span>
-                        <span class="component-stat-card__value" id="stat-messages">--</span>
+                        <span class="component-stat-card__value" data-ref="stat-messages">--</span>
                     </div>
                 </div>
 
@@ -96,7 +96,7 @@ extract($dashboardData);
                     </div>
                     <div class="component-stat-card__content">
                         <span class="component-stat-card__title"><?php echo __('admin_dashboard_perks_used'); ?></span>
-                        <span class="component-stat-card__value" id="stat-perks">--</span>
+                        <span class="component-stat-card__value" data-ref="stat-perks">--</span>
                     </div>
                 </div>
 
@@ -106,7 +106,7 @@ extract($dashboardData);
                     </div>
                     <div class="component-stat-card__content">
                         <span class="component-stat-card__title"><?php echo __('admin_dashboard_avg_latency'); ?></span>
-                        <span class="component-stat-card__value" id="stat-latency">--</span>
+                        <span class="component-stat-card__value" data-ref="stat-latency">--</span>
                     </div>
                 </div>
 
@@ -116,7 +116,7 @@ extract($dashboardData);
                     </div>
                     <div class="component-stat-card__content">
                         <span class="component-stat-card__title"><?php echo __('admin_dashboard_total_canvases'); ?></span>
-                        <span class="component-stat-card__value" id="stat-canvases">--</span>
+                        <span class="component-stat-card__value" data-ref="stat-canvases">--</span>
                     </div>
                 </div>
 
@@ -126,7 +126,7 @@ extract($dashboardData);
                     </div>
                     <div class="component-stat-card__content">
                         <span class="component-stat-card__title"><?php echo __('admin_dashboard_suspended_users'); ?></span>
-                        <span class="component-stat-card__value" id="stat-banned">--</span>
+                        <span class="component-stat-card__value" data-ref="stat-banned">--</span>
                     </div>
                 </div>
 
@@ -152,7 +152,7 @@ extract($dashboardData);
             </div>
 
             <!-- Div de datos para traducciones de JS -->
-            <div id="dashboard-lang-data" class="disabled"
+            <div data-ref="dashboard-lang-data" class="disabled"
                  data-lbl-activity="<?php echo __('admin_dashboard_global_activity'); ?>"
                  data-lbl-regs="<?php echo __('admin_dashboard_new_registrations'); ?>"
                  data-lbl-errors="<?php echo __('admin_dashboard_access_errors'); ?>"
@@ -169,8 +169,8 @@ extract($dashboardData);
                     
                     <div class="component-dropdown-wrapper">
                         <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleChartMode">
-                            <span class="material-symbols-rounded" id="chart-dropdown-icon">monitoring</span>
-                            <span class="component-dropdown-text" id="chart-dropdown-text"><?php echo __('admin_dashboard_global_activity'); ?></span>
+                            <span class="material-symbols-rounded" data-ref="chart-dropdown-icon">monitoring</span>
+                            <span class="component-dropdown-text" data-ref="chart-dropdown-text"><?php echo __('admin_dashboard_global_activity'); ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleChartMode">
@@ -178,17 +178,17 @@ extract($dashboardData);
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">
                                     
-                                    <div class="component-menu-link active" id="menu-tab-act" data-tab="activity">
+                                    <div class="component-menu-link active" data-ref="menu-tab-act" data-tab="activity">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">monitoring</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('admin_dashboard_global_activity'); ?></span></div>
                                     </div>
                                     
-                                    <div class="component-menu-link" id="menu-tab-reg" data-tab="regs">
+                                    <div class="component-menu-link" data-ref="menu-tab-reg" data-tab="regs">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">person_add</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('admin_dashboard_new_registrations'); ?></span></div>
                                     </div>
 
-                                    <div class="component-menu-link" id="menu-tab-err" data-tab="errors">
+                                    <div class="component-menu-link" data-ref="menu-tab-err" data-tab="errors">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">warning</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('admin_dashboard_access_errors'); ?></span></div>
                                     </div>
@@ -203,7 +203,7 @@ extract($dashboardData);
                 <!-- Body del Chart Card -->
                 <div class="dashboard-chart-body">
                     <div class="dashboard-chart-inner">
-                        <canvas id="chartTabsMain"></canvas>
+                        <canvas data-ref="chartTabsMain"></canvas>
                     </div>
                 </div>
             </div>
@@ -214,10 +214,10 @@ extract($dashboardData);
                         <span class="material-symbols-rounded component-message-icon">lock</span>
                     </div>
                     <h1 class="component-message-title">
-                        <?php echo __('no_permission_title', [], 'Acceso Denegado'); ?>
+                        <?php echo __('no_permission_title'); ?>
                     </h1>
                     <p class="component-message-desc">
-                        <?php echo __('admin_dashboard_metrics_locked_desc', [], 'Tu rol actual no dispone de permisos para visualizar el resumen analítico del sistema. Puedes utilizar los botones de la barra superior para gestionar las secciones asignadas a tu cuenta.'); ?>
+                        <?php echo __('admin_dashboard_metrics_locked_desc'); ?>
                     </p>
                 </div>
             </div>

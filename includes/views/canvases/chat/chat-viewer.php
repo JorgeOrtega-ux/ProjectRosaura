@@ -17,19 +17,19 @@ extract($chatViewerData);
             <?php if ($totalImages > 0 || $isPending): ?>
             <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo htmlspecialchars(__('lbl_pagination')); ?>" data-position="bottom">
                 <div class="component-inline-control__group">
-                    <button class="component-inline-control__btn <?php echo $idx === 0 ? 'disabled-interaction' : ''; ?>" id="cv-btn-prev">
+                    <button class="component-inline-control__btn <?php echo $idx === 0 ? 'disabled-interaction' : ''; ?>" data-action="prevImage" data-ref="cv-btn-prev">
                         <span class="material-symbols-rounded">chevron_left</span>
                     </button>
                 </div>
-                <div class="component-inline-control__center" id="cv-counter"><?php echo ($idx + 1) . ' / ' . max(1, $totalImages); ?></div>
+                <div class="component-inline-control__center" data-ref="cv-counter"><?php echo ($idx + 1) . ' / ' . max(1, $totalImages); ?></div>
                 <div class="component-inline-control__group">
-                    <button class="component-inline-control__btn <?php echo ($idx === $totalImages - 1 || $isPending) ? 'disabled-interaction' : ''; ?>" id="cv-btn-next">
+                    <button class="component-inline-control__btn <?php echo ($idx === $totalImages - 1 || $isPending) ? 'disabled-interaction' : ''; ?>" data-action="nextImage" data-ref="cv-btn-next">
                         <span class="material-symbols-rounded">chevron_right</span>
                     </button>
                 </div>
             </div>
             
-            <button class="component-button component-button--icon component-button--h40" id="cv-btn-download" data-tooltip="<?php echo htmlspecialchars(__('lbl_download_template')); ?>" data-position="bottom">
+            <button class="component-button component-button--icon component-button--h40" data-action="downloadImage" data-ref="cv-btn-download" data-tooltip="<?php echo htmlspecialchars(__('lbl_download_template')); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">download</span>
             </button>
             <?php endif; ?>
@@ -41,7 +41,7 @@ extract($chatViewerData);
             <div><?php echo htmlspecialchars($errorMsg); ?></div>
         <?php elseif ($totalImages > 0 || $isPending): ?>
             <div class="component-image-viewer-container">
-                <img id="cv-main-image" class="component-image-viewer-image image-lazy-fade" src="<?php echo $totalImages > 0 ? htmlspecialchars($attachments[$idx]) : ''; ?>"
+                <img data-ref="cv-main-image" class="component-image-viewer-image image-lazy-fade" src="<?php echo $totalImages > 0 ? htmlspecialchars($attachments[$idx]) : ''; ?>"
                      onload="this.classList.add('image-loaded')"
                      onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/canvas-default.png'; this.classList.add('image-loaded');">
             </div>

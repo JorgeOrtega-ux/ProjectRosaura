@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Api\Services\Canvas\CanvasViewService;
 
 $canvasService = new CanvasViewService();
@@ -151,7 +151,7 @@ $isResetActive = $resetSettings['is_active'];
                                             <span class="material-symbols-rounded">expand_more</span>
                                         </div>
                                         
-                                        <input type="hidden" data-ref="next_reset_at" value="<?php echo htmlspecialchars($resetDateLocal); ?>">
+                                        <div data-ref="next_reset_at" data-value="<?php echo htmlspecialchars($resetDateLocal); ?>"></div>
                                     </div>
                                 </div>
                             </div>

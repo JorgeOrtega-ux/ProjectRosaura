@@ -241,7 +241,7 @@ extract($editData);
                                 <h2 class="component-card__title"><?php echo __('canvas_cooldown_batch_title'); ?></h2>
                                 <p class="component-card__description">
                                     <?php echo __('canvas_cooldown_batch_desc'); ?> 
-                                    <span style="opacity: 0.7; font-size: 0.9em; display: block; margin-top: 4px;">
+                                    <span class="component-card__subdescription">
                                         (Máximo de <?php echo $maxPixelsPerBatch; ?> píxeles por tu plan <?php echo htmlspecialchars($planLimits['name'] ?? 'Free'); ?>)
                                     </span>
                                 </p>

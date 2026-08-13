@@ -780,7 +780,7 @@ export class ModalSystem {
                     restoreButton(btn);
                     btn.classList.add('google-verify-badge--verified');
                     btn.innerHTML = `
-                        <span class="material-symbols-rounded" style="font-size:14px; margin-right:2px;">check_circle</span>
+                        <span class="material-symbols-rounded component-icon-sm">check_circle</span>
                         <span class="google-verify-text">${__('google_session_verified')}</span>
                     `;
 

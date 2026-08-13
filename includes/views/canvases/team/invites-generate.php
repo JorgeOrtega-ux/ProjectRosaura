@@ -49,7 +49,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
     <div class="component-viewport">
         <div class="component-wrapper">
             <div class="component-bottom">
-                <div id="form-generate-invite" class="component-form">
+                <div data-ref="form-generate-invite" class="component-form">
                     <div class="component-card--grouped">
                         
                                                 <div class="component-group-item component-group-item--stacked">
@@ -108,7 +108,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                         </div>
                                     </div>
                                 </div>
-                                <input type="hidden" name="role" data-ref="hidden-role-id" value="<?php echo $defaultRole ? htmlspecialchars($defaultRole['id']) : ''; ?>" required>
+                                <div data-ref="hidden-role-id" data-value="<?php echo $defaultRole ? htmlspecialchars($defaultRole['id']) : ''; ?>"></div>
                             </div>
                         </div>
 
@@ -133,7 +133,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                         <button type="button" class="component-inline-control__btn" data-action="adjustMaxUses" data-step="5" data-max="999"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
                                     </div>
                                 </div>
-                                <input type="hidden" name="max_uses" data-ref="hidden-max-uses" value="">
+                                <div data-ref="hidden-max-uses" data-value=""></div>
                             </div>
                         </div>
 
@@ -153,7 +153,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                         <span class="component-dropdown-text" data-ref="invite-endDate-text"><?php echo __('lbl_no_expiration'); ?></span>
                                     </div>
                                 </div>
-                                <input type="hidden" name="expires_at" data-ref="hidden-expires-at" value="">
+                                <div data-ref="hidden-expires-at" data-value=""></div>
                             </div>
                         </div>
 

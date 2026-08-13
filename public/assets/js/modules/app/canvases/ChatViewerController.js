@@ -41,7 +41,7 @@ class ChatViewerController {
     handleClick(e) {
         if (!window.location.pathname.includes('/canvases/c/v/') && !window.location.pathname.includes('/canvases/chat-viewer')) return;
 
-        const btnPrev = e.target.closest('#cv-btn-prev');
+        const btnPrev = e.target.closest('[data-ref="cv-btn-prev"], [data-action="prevImage"]');
         if (btnPrev) {
             if (btnPrev.classList.contains('disabled-interaction')) return;
             if (this.currentIndex > 0) {
@@ -51,7 +51,7 @@ class ChatViewerController {
             return;
         }
 
-        const btnNext = e.target.closest('#cv-btn-next');
+        const btnNext = e.target.closest('[data-ref="cv-btn-next"], [data-action="nextImage"]');
         if (btnNext) {
             if (btnNext.classList.contains('disabled-interaction')) return;
             if (this.currentIndex < this.images.length - 1) {
@@ -61,7 +61,7 @@ class ChatViewerController {
             return;
         }
 
-        const btnDownload = e.target.closest('#cv-btn-download');
+        const btnDownload = e.target.closest('[data-ref="cv-btn-download"], [data-action="downloadImage"]');
         if (btnDownload) {
             this.handleDownload(btnDownload);
             return;
@@ -99,10 +99,10 @@ class ChatViewerController {
     }
 
     updateView() {
-        const mainImg = document.getElementById('cv-main-image');
-        const counter = document.getElementById('cv-counter');
-        const btnPrev = document.getElementById('cv-btn-prev');
-        const btnNext = document.getElementById('cv-btn-next');
+        const mainImg = document.querySelector('[data-ref="cv-main-image"]');
+        const counter = document.querySelector('[data-ref="cv-counter"]');
+        const btnPrev = document.querySelector('[data-ref="cv-btn-prev"]');
+        const btnNext = document.querySelector('[data-ref="cv-btn-next"]');
         
         if (!mainImg) return;
         

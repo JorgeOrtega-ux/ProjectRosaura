@@ -117,7 +117,7 @@ class SnapshotViewerController {
     }
 
     bindActionTools() {
-        const btnToggleGrid = document.getElementById('tl-btn-toggle-grid');
+        const btnToggleGrid = document.querySelector('[data-action="toggleSnapshotGrid"]');
         if (btnToggleGrid) {
             btnToggleGrid.addEventListener('click', () => {
                 this.showGrid = !this.showGrid;
@@ -130,7 +130,7 @@ class SnapshotViewerController {
             });
         }
 
-        const btnDownload = document.getElementById('tl-btn-download');
+        const btnDownload = document.querySelector('[data-action="downloadSnapshotHighRes"]');
         if (btnDownload) {
             btnDownload.addEventListener('click', () => {
                 this.downloadSnapshot();

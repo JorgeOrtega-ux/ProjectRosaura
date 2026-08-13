@@ -23,7 +23,7 @@ export function renderVerificationInput(data = {}) {
                         </svg>
                         <span class="google-verify-text">${__('btn_verify_google_session')}</span>
                     </div>
-                    <div data-ref="google_token" data-value="" style="display:none;"></div>
+                    <div data-ref="google_token" data-value=""></div>
                     <div class="component-badge component-badge--sm component-badge--interactive component-badge--full verify-toggle-badge" data-action="toggleVerifyMethod" data-mode="password">
                         <span class="material-symbols-rounded">key</span>
                         <span>${__('link_verify_with_password')}</span>

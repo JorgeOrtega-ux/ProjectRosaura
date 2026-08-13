@@ -114,7 +114,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
                                 </div>
                             </td>
                             <td>
-                                <code style="font-family: monospace; background: var(--bg-surface-secondary); padding: 2px 6px; border-radius: 4px;">
+                                <code>
                                     <?php echo htmlspecialchars($pkg['perk_id']); ?>
                                 </code>
                             </td>

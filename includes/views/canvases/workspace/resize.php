@@ -270,7 +270,7 @@ $currentCanvasTier = (int)($sizesList[$currentSizeRaw]['tier'] ?? 0);
                                             <span class="material-symbols-rounded">expand_more</span>
                                         </div>
                                         
-                                        <input type="hidden" data-ref="next_resize_at" value="<?php echo htmlspecialchars($resizeDateLocal); ?>">
+                                        <div data-ref="next_resize_at" data-value="<?php echo htmlspecialchars($resizeDateLocal); ?>"></div>
                                     </div>
                                 </div>
                             </div>

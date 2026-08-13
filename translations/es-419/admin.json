@@ -498,5 +498,17 @@
     "backup_restore_tables_available": "{count} tablas disponibles",
     "backup_restore_tables_selected": "{selected} de {total} seleccionadas",
     "backup_restore_table_desc": "Estructura y registros de la tabla {table}",
-    "admin_verify_identity_desc_restore": "Ingresa tu contraseña de administrador para autorizar la restauración del sistema."
+    "admin_verify_identity_desc_restore": "Ingresa tu contraseña de administrador para autorizar la restauración del sistema.",
+    "admin_dashboard_metrics_locked_desc": "Métricas bloqueadas para tu nivel de permisos.",
+    "admin_perms_save_success": "Permisos de rol actualizados correctamente.",
+    "admin_role_color_desc": "Color distintivo asignado al rol.",
+    "admin_role_color_title": "Color del Rol",
+    "admin_role_glass_ceiling": "Límite Jerárquico",
+    "admin_role_hue_adjust": "Ajuste de Matiz de Color",
+    "admin_role_hue_adjust_desc": "Ajusta la tonalidad del color de este rol.",
+    "admin_role_preview_desc": "Previsualización del distintivo de rol.",
+    "admin_role_preview_title": "Vista previa del Rol",
+    "admin_tier_limit_pixels_per_batch": "Límite de Píxeles por Lote",
+    "admin_tier_limit_pixels_per_batch_desc": "Límite de píxeles permitidos por acción según el plan.",
+    "admin_visibility_tooltip": "Cambiar visibilidad"
 }

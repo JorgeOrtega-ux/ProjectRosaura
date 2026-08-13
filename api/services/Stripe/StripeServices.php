@@ -1044,13 +1044,17 @@ class StripeServices {
     public function downloadReceipt(array $input) {
         if (!$this->sessionManager->isLoggedIn()) {
             http_response_code(401);
-            exit('Unauthorized');
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+            exit;
         }
 
         $id = $input['id'] ?? '';
         if (empty($id)) {
             http_response_code(400);
-            exit('Missing payment ID');
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Missing payment ID']);
+            exit;
         }
 
         $userId = $this->sessionManager->getActiveAccountId();

@@ -71,7 +71,7 @@ if (trim($rawName) !== '') {
         <div class="component-wrapper">
             <div class="component-bottom">
                 <?php if ($isSystemRole): ?>
-                <div class="component-alert component-alert--warning active" style="margin-bottom: 16px;">
+                <div class="component-alert component-alert--warning active">
                     <div class="component-alert-icon">
                         <span class="material-symbols-rounded">info</span>
                     </div>

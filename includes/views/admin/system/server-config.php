@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Api\Services\Admin\AdminViewService;
 
 $adminService = new AdminViewService();
@@ -124,7 +124,7 @@ extract($serverConfigData);
                                                     </div>
                                                 </div>
                                             </div>
-                                            <input type="hidden" data-ref="raw_allowed_email_domains" value="<?php echo htmlspecialchars($config['allowed_email_domains'] ?? ''); ?>">
+                                            <div data-ref="raw_allowed_email_domains" data-value="<?php echo htmlspecialchars($config['allowed_email_domains'] ?? ''); ?>"></div>
                                         </div>
                                     </div>
                                 </div>

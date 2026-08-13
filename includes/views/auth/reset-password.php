@@ -41,7 +41,7 @@ $userEmail = $resetData['userEmail'];
 
             <div class="component-form-body">
                 
-                <input type="hidden" data-ref="reset_token" value="<?php echo htmlspecialchars($token); ?>">
+                <div data-ref="reset_token" data-value="<?php echo htmlspecialchars($token); ?>"></div>
 
                 <div class="component-input-group">
                     <input type="password" data-ref="new_password" name="password" class="component-input-field component-input-field--with-icon" placeholder=" ">
