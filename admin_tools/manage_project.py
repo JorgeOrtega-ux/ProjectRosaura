@@ -412,7 +412,7 @@ def main():
         return
 
     if choice == '5':
-        from i18n import i18n_scanner
+        from scripts import i18n_scanner
         i18n_scanner.run_scanner(target_path, script_dir)
         return
 
@@ -469,7 +469,8 @@ def main():
                 
                 print(f"{Colors.WARNING}📁 Encontrado en: {rel_path}{Colors.ENDC} ({len(matches)} coincidencias)")
 
-    reports_dir = os.path.join(script_dir, 'reports')
+    today_folder = datetime.now().strftime('%Y-%m-%d')
+    reports_dir = os.path.join(script_dir, 'reports', today_folder)
     os.makedirs(reports_dir, exist_ok=True)
     
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

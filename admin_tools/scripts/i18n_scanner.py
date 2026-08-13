@@ -84,7 +84,8 @@ def run_scanner(project_root, script_dir):
         print(f"{Colors.WARNING}Se encontraron {len(missing_keys)} claves en el código que NO ESTÁN en los JSONs.{Colors.ENDC}")
         
     # 4. Guardar reporte
-    reports_dir = os.path.join(script_dir, 'reports')
+    today_folder = datetime.now().strftime('%Y-%m-%d')
+    reports_dir = os.path.join(script_dir, 'reports', today_folder)
     os.makedirs(reports_dir, exist_ok=True)
     
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
