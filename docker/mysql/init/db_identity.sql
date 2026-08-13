@@ -96,7 +96,10 @@ INSERT IGNORE INTO roles (id, uuid, name, weight, is_system) VALUES
   (1, UUID(), 'User', 1, 1),
   (2, UUID(), 'Moderator', 50, 1),
   (3, UUID(), 'Administrator', 80, 1),
-  (4, UUID(), 'SuperAdministrator', 100, 1);
+  (4, UUID(), 'SuperAdministrator', 100, 1),
+  (5, UUID(), 'SupportAgentL1', 20, 1),
+  (6, UUID(), 'SupportAgentL2', 40, 1),
+  (7, UUID(), 'SupportAgentL3', 60, 1);
 
 INSERT IGNORE INTO permissions (id, name, description, is_critical) VALUES
   (1, 'access_admin_panel', 'desc_access_admin_panel', 0),
@@ -124,22 +127,43 @@ INSERT IGNORE INTO permissions (id, name, description, is_critical) VALUES
   (23, 'manage_subscriptions', 'desc_manage_subscriptions', 0),
   (24, 'manage_store_packages', 'desc_manage_store_packages', 0),
   (25, 'manage_store_perks', 'desc_manage_store_perks', 0),
-  (26, 'manage_content', 'desc_manage_content', 0);
+  (26, 'manage_content', 'desc_manage_content', 0),
+  (27, 'access_support_panel', 'desc_access_support_panel', 0),
+  (28, 'support_chat_attend_l1', 'desc_support_chat_attend_l1', 0),
+  (29, 'support_chat_attend_l2', 'desc_support_chat_attend_l2', 0),
+  (30, 'support_chat_attend_l3', 'desc_support_chat_attend_l3', 0),
+  (31, 'support_chat_escalate', 'desc_support_chat_escalate', 0),
+  (32, 'support_chat_reassign', 'desc_support_chat_reassign', 1),
+  (33, 'support_tickets_manage', 'desc_support_tickets_manage', 0),
+  (34, 'support_manage_canned', 'desc_support_manage_canned', 0),
+  (35, 'support_view_metrics', 'desc_support_view_metrics', 0),
+  (36, 'support_audit_logs', 'desc_support_audit_logs', 1);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9),
   (4, 10), (4, 11), (4, 12), (4, 13), (4, 14), (4, 15), (4, 16), (4, 17), (4, 18),
-  (4, 19), (4, 20), (4, 21), (4, 22), (4, 23), (4, 24), (4, 25), (4, 26);
+  (4, 19), (4, 20), (4, 21), (4, 22), (4, 23), (4, 24), (4, 25), (4, 26),
+  (4, 27), (4, 28), (4, 29), (4, 30), (4, 31), (4, 32), (4, 33), (4, 34), (4, 35), (4, 36);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 8), (3, 10), (3, 13), (3, 17), 
-  (3, 19), (3, 20), (3, 21), (3, 22), (3, 23), (3, 24), (3, 25), (3, 26);
+  (3, 19), (3, 20), (3, 21), (3, 22), (3, 23), (3, 24), (3, 25), (3, 26),
+  (3, 27), (3, 28), (3, 29), (3, 30), (3, 31), (3, 32), (3, 33), (3, 34), (3, 35), (3, 36);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (2, 1), (2, 2), (2, 4), (2, 5), (2, 6), (2, 19), (2, 20), (2, 21), (2, 26);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (1, 19), (1, 20), (1, 21);
+
+INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
+  (5, 1), (5, 27), (5, 28), (5, 31), (5, 33), (5, 34);
+
+INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
+  (6, 1), (6, 2), (6, 27), (6, 28), (6, 29), (6, 31), (6, 33), (6, 34);
+
+INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
+  (7, 1), (7, 2), (7, 4), (7, 27), (7, 28), (7, 29), (7, 30), (7, 31), (7, 32), (7, 33), (7, 34), (7, 35), (7, 36);
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -491,6 +515,105 @@ CREATE TABLE IF NOT EXISTS `support_tickets` (
   KEY `idx_support_tickets_created_at` (`created_at`),
   CONSTRAINT `fk_support_tickets_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `support_chat_sessions` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `uuid` CHAR(36) NOT NULL UNIQUE,
+  `user_id` INT(11) DEFAULT NULL,
+  `department_level` ENUM('l1', 'l2', 'l3') NOT NULL DEFAULT 'l1',
+  `status` ENUM('waiting_in_queue', 'active', 'escalated', 'closed', 'abandoned') NOT NULL DEFAULT 'waiting_in_queue',
+  `assigned_agent_id` INT(11) DEFAULT NULL,
+  `category` VARCHAR(50) NOT NULL DEFAULT 'general',
+  `subject` VARCHAR(200) NOT NULL,
+  `initial_message` TEXT DEFAULT NULL,
+  `priority` ENUM('low', 'medium', 'high', 'urgent') NOT NULL DEFAULT 'medium',
+  `started_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `accepted_at` TIMESTAMP NULL DEFAULT NULL,
+  `closed_at` TIMESTAMP NULL DEFAULT NULL,
+  `closed_by` ENUM('user', 'agent', 'system', 'timeout') DEFAULT NULL,
+  `resolution_summary` TEXT DEFAULT NULL,
+  `user_rating` TINYINT DEFAULT NULL,
+  `user_feedback` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_scs_user_id` (`user_id`),
+  KEY `idx_scs_agent_id` (`assigned_agent_id`),
+  KEY `idx_scs_status_level` (`status`, `department_level`),
+  KEY `idx_scs_created_at` (`created_at`),
+  CONSTRAINT `fk_scs_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_scs_agent` FOREIGN KEY (`assigned_agent_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `support_chat_messages` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `uuid` CHAR(36) NOT NULL UNIQUE,
+  `session_id` BIGINT UNSIGNED NOT NULL,
+  `sender_type` ENUM('user', 'agent', 'system', 'internal_note') NOT NULL,
+  `sender_id` INT(11) DEFAULT NULL,
+  `sender_name` VARCHAR(100) NOT NULL,
+  `message` TEXT NOT NULL,
+  `attachments` JSON DEFAULT NULL,
+  `is_internal` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_scm_session_id` (`session_id`),
+  KEY `idx_scm_created_at` (`created_at`),
+  CONSTRAINT `fk_scm_session` FOREIGN KEY (`session_id`) REFERENCES `support_chat_sessions`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_scm_sender` FOREIGN KEY (`sender_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `support_chat_transfers` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `session_id` BIGINT UNSIGNED NOT NULL,
+  `from_agent_id` INT(11) DEFAULT NULL,
+  `to_agent_id` INT(11) DEFAULT NULL,
+  `from_level` ENUM('l1', 'l2', 'l3') NOT NULL,
+  `to_level` ENUM('l1', 'l2', 'l3') NOT NULL,
+  `reason` VARCHAR(255) NOT NULL,
+  `internal_note` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_sct_session_id` (`session_id`),
+  CONSTRAINT `fk_sct_session` FOREIGN KEY (`session_id`) REFERENCES `support_chat_sessions`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_sct_from_agent` FOREIGN KEY (`from_agent_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_sct_to_agent` FOREIGN KEY (`to_agent_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `support_agent_status` (
+  `agent_id` INT(11) NOT NULL,
+  `status` ENUM('online', 'busy', 'away', 'offline') NOT NULL DEFAULT 'offline',
+  `current_active_chats` INT NOT NULL DEFAULT 0,
+  `max_concurrent_chats` INT NOT NULL DEFAULT 3,
+  `level` ENUM('l1', 'l2', 'l3') NOT NULL DEFAULT 'l1',
+  `last_heartbeat` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`agent_id`),
+  KEY `idx_sas_status_level` (`status`, `level`),
+  CONSTRAINT `fk_sas_agent` FOREIGN KEY (`agent_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `support_canned_responses` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `uuid` CHAR(36) NOT NULL UNIQUE,
+  `shortcut` VARCHAR(50) NOT NULL UNIQUE,
+  `title` VARCHAR(100) NOT NULL,
+  `content` TEXT NOT NULL,
+  `category` VARCHAR(50) NOT NULL DEFAULT 'general',
+  `min_level` ENUM('l1', 'l2', 'l3') NOT NULL DEFAULT 'l1',
+  `created_by` INT(11) DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_scr_category` (`category`),
+  CONSTRAINT `fk_scr_creator` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO `support_canned_responses` (`id`, `uuid`, `shortcut`, `title`, `content`, `category`, `min_level`) VALUES
+  (1, UUID(), 'saludo', 'Saludo Inicial de Soporte', '¡Hola! Gracias por comunicarte con el equipo de soporte técnico de Rosaura. ¿En qué podemos colaborarte hoy?', 'general', 'l1'),
+  (2, UUID(), 'pedir_captura', 'Solicitud de Captura de Pantalla', 'Para poder analizar tu caso en detalle, ¿podrías adjuntarnos una captura o describir exactamente el paso a paso donde ocurre el error?', 'technical', 'l1'),
+  (3, UUID(), 'escalar_l2', 'Aviso de Transferencia Especializada', 'He verificado tu caso y para brindarte una solución más ágil lo he transferido a un Especialista de Nivel 2. Por favor mantente en línea mientras revisamos tu expediente.', 'technical', 'l1'),
+  (4, UUID(), 'escalar_l3', 'Aviso de Transferencia a Supervisión', 'Tu caso ha sido escalado al Departamento de Supervisión e Ingeniería (Nivel 3). Estamos investigando a fondo la incidencia en el servidor.', 'technical', 'l2'),
+  (5, UUID(), 'despedida', 'Despedida y Cierre', 'Ha sido un placer ayudarte. Si tienes alguna otra duda o consulta adicional no dudes en escribirnos nuevamente. ¡Que tengas un excelente día!', 'general', 'l1');
 
 
 

@@ -651,6 +651,278 @@ return [
             ],
         ],
     ],
+    'admin.support.get_agent_status' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'getAgentStatus',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_agent_status',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.update_agent_status' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'updateAgentStatus',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_upd_status',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.get_live_queues' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'getLiveQueues',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_queues',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.claim_session' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'claimSession',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_claim',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.escalate_session' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'escalateSession',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_escalate',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.reassign_session' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'reassignSession',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_reassign',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.send_message' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'sendAgentMessage',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_send_msg',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.add_internal_note' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'addInternalNote',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_add_note',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.close_session' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'closeSession',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_close',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.get_canned_responses' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'getCannedResponses',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_get_canned',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.save_canned_response' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'saveCannedResponse',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_save_canned',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.delete_canned_response' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'deleteCannedResponse',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_del_canned',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.get_tickets_list' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'getTicketsList',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_get_tickets',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.get_ticket_detail' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'getTicketDetail',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_get_ticket',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.update_ticket_status' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'updateTicketStatus',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_upd_ticket',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.reply_ticket' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'replyTicket',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_reply_ticket',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.support.get_metrics' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'getSupportMetrics',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_metrics',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'stripe.create_checkout' => [
         'controller' => 'App\\Api\\Controllers\\Stripe\\StripeController',
         'action' => 'create_checkout',

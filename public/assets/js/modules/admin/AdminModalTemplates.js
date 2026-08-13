@@ -82,5 +82,219 @@ export const AdminModalTemplates = {
                 </div>
             `;
         }
+    },
+    escalateChatModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const sessionUuid = data.sessionUuid || '';
+            const currentLevel = data.currentLevel || 'l1';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">forward</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('modal_escalate_chat_title')}</h2>
+                        <p class="component-modal-desc">${__('modal_escalate_chat_desc')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body" data-ref="admin-escalate-form" data-session-uuid="${sessionUuid}">
+                    <div class="component-group-item component-group-item--stacked component-mb-3">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <span class="component-stat-card__title">${__('lbl_escalate_to_level')}</span>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownEscalateLevel">
+                                    <span class="material-symbols-rounded">arrow_upward</span>
+                                    <span class="component-dropdown-text" data-ref="escalate-level-text" data-value="l2">${__('lbl_dept_l2')}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownEscalateLevel">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            <div class="component-menu-link active" data-action="selectEscalateLevel" data-val="l2">
+                                                <div class="component-menu-link-text"><span>${__('lbl_dept_l2')}</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectEscalateLevel" data-val="l3">
+                                                <div class="component-menu-link-text"><span>${__('lbl_dept_l3')}</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-group-item component-group-item--stacked component-mb-3">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <span class="component-stat-card__title">${__('lbl_escalation_reason')}</span>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <div class="component-input-group component-input-group--h34">
+                                <input class="component-input-field component-input-field--simple" data-ref="escalate-reason-input" type="text" placeholder="${__('placeholder_escalation_reason')}" maxlength="255" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <span class="component-stat-card__title">${__('lbl_internal_note_next_agent')}</span>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <textarea class="component-input-field" data-ref="escalate-note-input" placeholder="${__('placeholder_internal_escalation_note')}" rows="3" maxlength="1500"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--dark" data-action="submitEscalateChat">${__('btn_confirm_escalate')}</button>
+                </div>
+            `;
+        }
+    },
+    closeChatModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const sessionUuid = data.sessionUuid || '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">check_circle</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('modal_close_chat_title')}</h2>
+                        <p class="component-modal-desc">${__('modal_close_chat_desc')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body" data-ref="admin-close-chat-form" data-session-uuid="${sessionUuid}">
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <span class="component-stat-card__title">${__('lbl_resolution_summary')}</span>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <textarea class="component-input-field" data-ref="close-chat-summary-input" placeholder="${__('placeholder_resolution_summary')}" rows="3" maxlength="2000"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--dark" data-action="submitCloseChat">${__('btn_confirm_resolve')}</button>
+                </div>
+            `;
+        }
+    },
+    cannedResponseModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const item = data.item || {};
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">quickreply</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${item.uuid ? __('modal_edit_canned_title') : __('modal_create_canned_title')}</h2>
+                        <p class="component-modal-desc">${__('modal_canned_desc')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body" data-ref="admin-canned-form" data-uuid="${item.uuid || ''}">
+                    <div class="component-group-item component-group-item--stacked component-mb-3">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <span class="component-stat-card__title">${__('lbl_canned_shortcut')}</span>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <div class="component-input-group component-input-group--h34">
+                                <input class="component-input-field component-input-field--simple" data-ref="canned-shortcut-input" type="text" placeholder="${__('placeholder_canned_shortcut')}" value="${item.shortcut || ''}" maxlength="50" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-group-item component-group-item--stacked component-mb-3">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <span class="component-stat-card__title">${__('lbl_canned_title')}</span>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <div class="component-input-group component-input-group--h34">
+                                <input class="component-input-field component-input-field--simple" data-ref="canned-title-input" type="text" placeholder="${__('placeholder_canned_title')}" value="${item.title || ''}" maxlength="100" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-group-item component-group-item--stacked component-mb-3">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <span class="component-stat-card__title">${__('lbl_canned_content')}</span>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <textarea class="component-input-field" data-ref="canned-content-input" placeholder="${__('placeholder_canned_content')}" rows="4" maxlength="3000">${item.content || ''}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <span class="component-stat-card__title">${__('lbl_min_level_allowed')}</span>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCannedLevel">
+                                    <span class="component-dropdown-text" data-ref="canned-level-text" data-value="${item.min_level || 'l1'}">${item.min_level === 'l3' ? __('lbl_dept_l3') : (item.min_level === 'l2' ? __('lbl_dept_l2') : __('lbl_dept_l1'))}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownCannedLevel">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            <div class="component-menu-link ${(!item.min_level || item.min_level === 'l1') ? 'active' : ''}" data-action="selectCannedLevel" data-val="l1">
+                                                <div class="component-menu-link-text"><span>${__('lbl_dept_l1')}</span></div>
+                                            </div>
+                                            <div class="component-menu-link ${item.min_level === 'l2' ? 'active' : ''}" data-action="selectCannedLevel" data-val="l2">
+                                                <div class="component-menu-link-text"><span>${__('lbl_dept_l2')}</span></div>
+                                            </div>
+                                            <div class="component-menu-link ${item.min_level === 'l3' ? 'active' : ''}" data-action="selectCannedLevel" data-val="l3">
+                                                <div class="component-menu-link-text"><span>${__('lbl_dept_l3')}</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--dark" data-action="submitCannedForm">${__('btn_save')}</button>
+                </div>
+            `;
+        }
     }
 };
+

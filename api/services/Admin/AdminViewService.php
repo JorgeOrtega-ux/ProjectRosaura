@@ -72,6 +72,7 @@ class AdminViewService {
         $canManageSubscriptions = in_array(PermissionsConstants::MANAGE_SUBSCRIPTIONS, $userPermissions);
         $canManageStorePackages = in_array(PermissionsConstants::MANAGE_STORE_PACKAGES, $userPermissions);
         $canManageStorePerks = in_array(PermissionsConstants::MANAGE_STORE_PERKS, $userPermissions);
+        $canAccessSupport = in_array(PermissionsConstants::ACCESS_SUPPORT_PANEL, $userPermissions);
 
         $appUrl = defined('APP_URL') ? APP_URL : '';
 
@@ -83,6 +84,7 @@ class AdminViewService {
             'canManageSubscriptions' => $canManageSubscriptions,
             'canManageStorePackages' => $canManageStorePackages,
             'canManageStorePerks' => $canManageStorePerks,
+            'canAccessSupport' => $canAccessSupport,
             'appUrl' => $appUrl
         ];
     }

@@ -8,8 +8,12 @@ export class ContactSupportController {
         this.container = null;
         this.abortController = null;
         this.turnstileWidgetId = undefined;
+        this.pollInterval = null;
+        this.activeSessionUuid = null;
+        this.currentRating = 5;
 
         this._boundClick = this.handleClick.bind(this);
+        this._boundKeydown = this.handleKeydown.bind(this);
     }
 
     init() {
@@ -17,28 +21,40 @@ export class ContactSupportController {
         this.abortController = new AbortController();
         this.bindEvents();
         this._renderTurnstile();
+        this._checkLiveChatStatus();
     }
 
     bindEvents() {
-        if (this.container) {
-            this.container.addEventListener('click', this._boundClick);
-        }
         document.body.addEventListener('click', this._boundClick);
+        document.body.addEventListener('keydown', this._boundKeydown);
     }
 
     destroy() {
+        if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+        }
+
         if (this.abortController) {
             this.abortController.abort();
             this.abortController = null;
         }
 
-        if (this.container) {
-            this.container.removeEventListener('click', this._boundClick);
-        }
         document.body.removeEventListener('click', this._boundClick);
+        document.body.removeEventListener('keydown', this._boundKeydown);
 
         this._resetTurnstile();
         this.turnstileWidgetId = undefined;
+    }
+
+    handleKeydown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            const chatInput = e.target.closest('[data-ref="support-chat-input-text"]');
+            if (chatInput) {
+                e.preventDefault();
+                this._sendChatMessage();
+            }
+        }
     }
 
     handleClick(e) {
@@ -59,10 +75,59 @@ export class ContactSupportController {
             return;
         }
 
+        const liveCategoryItem = e.target.closest('[data-action="selectLiveSupportCategory"]');
+        if (liveCategoryItem) {
+            e.preventDefault();
+            this._handleLiveCategorySelect(liveCategoryItem);
+            return;
+        }
+
         const submitBtn = e.target.closest('[data-action="submitSupportTicket"]');
         if (submitBtn) {
             e.preventDefault();
             this._submitTicket(submitBtn);
+            return;
+        }
+
+        const startLiveBtn = e.target.closest('[data-action="startLiveSupportChat"]');
+        if (startLiveBtn) {
+            e.preventDefault();
+            this._startLiveChat(startLiveBtn);
+            return;
+        }
+
+        const sendMsgBtn = e.target.closest('[data-action="sendSupportChatMessage"]');
+        if (sendMsgBtn) {
+            e.preventDefault();
+            this._sendChatMessage();
+            return;
+        }
+
+        const endChatBtn = e.target.closest('[data-action="endSupportChatSession"]');
+        if (endChatBtn) {
+            e.preventDefault();
+            this._endLiveChatSession();
+            return;
+        }
+
+        const ratingBtn = e.target.closest('[data-action="setCsatRating"]');
+        if (ratingBtn) {
+            e.preventDefault();
+            this._handleRatingSelect(ratingBtn);
+            return;
+        }
+
+        const submitCsatBtn = e.target.closest('[data-action="submitSupportFeedback"]');
+        if (submitCsatBtn) {
+            e.preventDefault();
+            this._submitCsatFeedback(submitCsatBtn);
+            return;
+        }
+
+        const downloadBtn = e.target.closest('[data-action="downloadSupportTranscript"]');
+        if (downloadBtn) {
+            e.preventDefault();
+            this._downloadTranscript();
             return;
         }
 
@@ -108,6 +173,40 @@ export class ContactSupportController {
         }
     }
 
+    _handleLiveCategorySelect(item) {
+        const val = item.getAttribute('data-val');
+        const icon = item.getAttribute('data-icon');
+        const labelEl = item.querySelector('.component-menu-link-text span');
+        const labelText = labelEl ? labelEl.textContent.trim() : val;
+
+        const textEl = document.querySelector('[data-ref="support-live-cat-text"]');
+        const iconEl = document.querySelector('[data-ref="support-live-cat-icon"]');
+
+        if (textEl) {
+            textEl.textContent = labelText;
+            textEl.setAttribute('data-value', val);
+        }
+
+        if (iconEl) {
+            iconEl.className = `material-symbols-rounded msr-${icon}`;
+            iconEl.textContent = icon;
+        }
+
+        const menuList = item.closest('.component-menu-list');
+        if (menuList) {
+            menuList.querySelectorAll('.component-menu-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            item.classList.add('active');
+        }
+
+        const dropdownModule = document.querySelector('[data-module="supportLiveModuleCategory"]');
+        if (dropdownModule) {
+            dropdownModule.classList.remove('active');
+            dropdownModule.classList.add('disabled');
+        }
+    }
+
     _focusEmailForm() {
         const liveChatModule = document.querySelector('[data-module="moduleSupportChat"]');
         if (liveChatModule) {
@@ -121,6 +220,356 @@ export class ContactSupportController {
             setTimeout(() => {
                 subjectInput.focus();
             }, 300);
+        }
+    }
+
+    async _checkLiveChatStatus() {
+        try {
+            const res = await this.api.post(ApiRoutes.Support.GetQueueStatus, {
+                session_uuid: this.activeSessionUuid
+            }, this.abortController ? this.abortController.signal : undefined);
+
+            if (res && res.success) {
+                const statusText = document.querySelector('[data-ref="support-agents-status-text"]');
+                if (statusText) {
+                    if (res.available_agents > 0) {
+                        statusText.textContent = window.__('msg_support_agents_available', { count: res.available_agents });
+                    } else {
+                        statusText.textContent = window.__('support_livechat_unavailable_desc');
+                    }
+                }
+
+                if (res.active_session) {
+                    this.activeSessionUuid = res.active_session.uuid;
+                    if (res.active_session.status === 'waiting_in_queue' || res.active_session.status === 'escalated') {
+                        this._showState('queue');
+                        const qNum = document.querySelector('[data-ref="support-queue-position-number"]');
+                        if (qNum) qNum.textContent = `#${res.active_session.queue_position || 1}`;
+                        this._startPolling();
+                    } else if (res.active_session.status === 'active') {
+                        this._showState('room');
+                        this._updateAgentDisplay(res.active_session);
+                        this._startPolling();
+                        this._loadMessages();
+                    }
+                } else if (!res.is_online) {
+                    this._showState('offline');
+                } else {
+                    this._showState('preform');
+                }
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+        }
+    }
+
+    _showState(stateName) {
+        const states = {
+            preform: document.querySelector('[data-ref="support-state-preform"]'),
+            queue: document.querySelector('[data-ref="support-state-queue"]'),
+            room: document.querySelector('[data-ref="support-state-room"]'),
+            feedback: document.querySelector('[data-ref="support-state-feedback"]'),
+            offline: document.querySelector('[data-ref="support-state-offline"]')
+        };
+
+        const footer = document.querySelector('[data-ref="support-chat-room-footer"]');
+
+        Object.keys(states).forEach(key => {
+            const el = states[key];
+            if (el) {
+                if (key === stateName) {
+                    el.classList.remove('disabled');
+                } else {
+                    el.classList.add('disabled');
+                }
+            }
+        });
+
+        if (footer) {
+            if (stateName === 'room') {
+                footer.classList.remove('disabled');
+            } else {
+                footer.classList.add('disabled');
+            }
+        }
+    }
+
+    async _startLiveChat(btn) {
+        if (!btn || btn.classList.contains('disabled-interaction')) return;
+
+        const subjectInput = document.querySelector('[data-ref="support-live-subject"]');
+        const messageInput = document.querySelector('[data-ref="support-live-message"]');
+        const categoryText = document.querySelector('[data-ref="support-live-cat-text"]');
+
+        const category = categoryText ? categoryText.getAttribute('data-value') : 'general';
+        const subject = subjectInput ? subjectInput.value.trim() : '';
+        const initialMessage = messageInput ? messageInput.value.trim() : '';
+
+        if (!subject || subject.length < 3) {
+            showMessage(window.__('err_support_invalid_subject'), 'error');
+            if (subjectInput) subjectInput.focus();
+            return;
+        }
+
+        if (!initialMessage || initialMessage.length < 5) {
+            showMessage(window.__('err_support_invalid_message'), 'error');
+            if (messageInput) messageInput.focus();
+            return;
+        }
+
+        setButtonLoading(btn);
+
+        try {
+            const res = await this.api.post(ApiRoutes.Support.StartLiveSession, {
+                category: category,
+                subject: subject,
+                initial_message: initialMessage
+            }, this.abortController ? this.abortController.signal : undefined);
+
+            restoreButton(btn);
+
+            if (res && res.success) {
+                this.activeSessionUuid = res.session_uuid;
+                this._showState('queue');
+                const qNum = document.querySelector('[data-ref="support-queue-position-number"]');
+                if (qNum) qNum.textContent = `#${res.queue_position || 1}`;
+                this._startPolling();
+            } else {
+                showMessage(res && res.message ? res.message : window.__('err_support_chat_start_failed'), 'error');
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            restoreButton(btn);
+            showMessage(window.__('err_support_chat_start_failed'), 'error');
+        }
+    }
+
+    _startPolling() {
+        if (this.pollInterval) clearInterval(this.pollInterval);
+        this.pollInterval = setInterval(() => {
+            this._pollSessionStatus();
+        }, 3000);
+    }
+
+    async _pollSessionStatus() {
+        if (!this.activeSessionUuid) return;
+
+        try {
+            const res = await this.api.post(ApiRoutes.Support.GetSessionMessages, {
+                session_uuid: this.activeSessionUuid
+            }, this.abortController ? this.abortController.signal : undefined);
+
+            if (res && res.success) {
+                const session = res.session;
+                if (session.status === 'waiting_in_queue' || session.status === 'escalated') {
+                    this._showState('queue');
+                    const qNum = document.querySelector('[data-ref="support-queue-position-number"]');
+                    if (qNum) qNum.textContent = `#${session.queue_position || 1}`;
+                } else if (session.status === 'active') {
+                    this._showState('room');
+                    this._updateAgentDisplay(session);
+                    this._renderMessages(res.messages);
+                } else if (session.status === 'closed') {
+                    if (this.pollInterval) {
+                        clearInterval(this.pollInterval);
+                        this.pollInterval = null;
+                    }
+                    this._showState('feedback');
+                }
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+        }
+    }
+
+    async _loadMessages() {
+        if (!this.activeSessionUuid) return;
+
+        try {
+            const res = await this.api.post(ApiRoutes.Support.GetSessionMessages, {
+                session_uuid: this.activeSessionUuid
+            }, this.abortController ? this.abortController.signal : undefined);
+
+            if (res && res.success) {
+                this._renderMessages(res.messages);
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+        }
+    }
+
+    _updateAgentDisplay(session) {
+        const nameEl = document.querySelector('[data-ref="support-agent-name-display"]');
+        const levelEl = document.querySelector('[data-ref="support-agent-level-display"]');
+        const avatarBox = document.querySelector('[data-ref="support-agent-avatar-box"]');
+
+        if (nameEl) {
+            nameEl.textContent = session.agent_name || window.__('support_agent_assigned');
+        }
+
+        if (levelEl) {
+            const deptKey = session.department_level === 'l3' ? 'lbl_dept_l3' : (session.department_level === 'l2' ? 'lbl_dept_l2' : 'lbl_dept_l1');
+            levelEl.textContent = window.__(deptKey);
+        }
+
+        if (avatarBox && session.agent_avatar) {
+            avatarBox.innerHTML = `<img class="chat-message-avatar-img" src="${session.agent_avatar}" alt="${session.agent_name || 'Agent'}">`;
+        }
+    }
+
+    _renderMessages(messages) {
+        const container = document.querySelector('[data-ref="support-chat-messages-list"]');
+        if (!container) return;
+
+        let html = '';
+        (messages || []).forEach(msg => {
+            if (msg.sender_type === 'system') {
+                html += `
+                    <div class="chat-message chat-message--status">
+                        <div class="chat-message-status-bubble">
+                            <span class="material-symbols-rounded">info</span>
+                            <span>${this._escapeHtml(msg.message)}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const isMine = msg.sender_type === 'user';
+                const senderClass = isMine ? 'chat-message--mine' : '';
+                html += `
+                    <div class="chat-message ${senderClass}">
+                        <div class="chat-message-bubble">
+                            <div class="chat-message-header">
+                                <span class="chat-message-username">${this._escapeHtml(msg.sender_name)}</span>
+                                <span class="chat-message-time">${msg.created_at || ''}</span>
+                            </div>
+                            <div class="chat-message-text">${this._escapeHtml(msg.message)}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        container.innerHTML = html;
+        container.scrollTop = container.scrollHeight;
+    }
+
+    async _sendChatMessage() {
+        const input = document.querySelector('[data-ref="support-chat-input-text"]');
+        if (!input || !this.activeSessionUuid) return;
+
+        const text = input.value.trim();
+        if (!text) return;
+
+        input.value = '';
+
+        try {
+            const res = await this.api.post(ApiRoutes.Support.SendMessage, {
+                session_uuid: this.activeSessionUuid,
+                message: text
+            }, this.abortController ? this.abortController.signal : undefined);
+
+            if (res && res.success) {
+                this._loadMessages();
+            } else {
+                showMessage(res && res.message ? res.message : window.__('err_support_message_send_failed'), 'error');
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            showMessage(window.__('err_support_message_send_failed'), 'error');
+        }
+    }
+
+    async _endLiveChatSession() {
+        if (!this.activeSessionUuid) return;
+
+        try {
+            const res = await this.api.post(ApiRoutes.Support.EndLiveSession, {
+                session_uuid: this.activeSessionUuid
+            }, this.abortController ? this.abortController.signal : undefined);
+
+            if (res && res.success) {
+                if (this.pollInterval) {
+                    clearInterval(this.pollInterval);
+                    this.pollInterval = null;
+                }
+                this._showState('feedback');
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+        }
+    }
+
+    _handleRatingSelect(btn) {
+        const rating = parseInt(btn.getAttribute('data-rating') || '5', 10);
+        this.currentRating = rating;
+
+        const ratingContainer = document.querySelector('[data-ref="support-csat-stars"]');
+        if (ratingContainer) {
+            ratingContainer.setAttribute('data-value', rating.toString());
+            const allBtns = ratingContainer.querySelectorAll('[data-action="setCsatRating"]');
+            allBtns.forEach(b => {
+                const r = parseInt(b.getAttribute('data-rating') || '0', 10);
+                if (r <= rating) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+        }
+    }
+
+    async _submitCsatFeedback(btn) {
+        if (!this.activeSessionUuid || !btn || btn.classList.contains('disabled-interaction')) return;
+
+        const commentInput = document.querySelector('[data-ref="support-csat-comment"]');
+        const feedback = commentInput ? commentInput.value.trim() : '';
+
+        setButtonLoading(btn);
+
+        try {
+            const res = await this.api.post(ApiRoutes.Support.SubmitFeedback, {
+                session_uuid: this.activeSessionUuid,
+                rating: this.currentRating,
+                feedback: feedback
+            }, this.abortController ? this.abortController.signal : undefined);
+
+            restoreButton(btn);
+
+            if (res && res.success) {
+                showMessage(window.__('msg_support_feedback_received'), 'success');
+                this.activeSessionUuid = null;
+                setTimeout(() => {
+                    this._showState('preform');
+                }, 1500);
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            restoreButton(btn);
+            showMessage(window.__('err_support_feedback_failed'), 'error');
+        }
+    }
+
+    async _downloadTranscript() {
+        if (!this.activeSessionUuid) return;
+
+        try {
+            const res = await this.api.post(ApiRoutes.Support.DownloadTranscript, {
+                session_uuid: this.activeSessionUuid
+            }, this.abortController ? this.abortController.signal : undefined);
+
+            if (res && res.success && res.content) {
+                const blob = new Blob([res.content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = res.filename || 'support_transcript.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
         }
     }
 
@@ -244,11 +693,22 @@ export class ContactSupportController {
                     });
                 } catch (error) {
                     clearTimeout(timeoutId);
+                    this._resetTurnstile();
                     resolve(null);
                 }
             } else {
                 resolve(null);
             }
         });
+    }
+
+    _escapeHtml(str) {
+        if (!str) return '';
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 }

@@ -8539,3 +8539,130 @@ html.dark-theme .component-skeleton-design-bottom {
 .component-menu--chat.chat-disabled-state .chat-active-only {
     display: none !important;
 }
+
+.component-bottom--support-console {
+    display: flex;
+    flex-direction: row;
+    height: calc(100vh - 64px);
+    overflow: hidden;
+    gap: 1px;
+    background: var(--border-color);
+}
+
+.admin-support-column {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-surface);
+    overflow: hidden;
+}
+
+.admin-support-column--queues {
+    width: 340px;
+    flex: 0 0 340px;
+    border-right: 1px solid var(--border-color);
+}
+
+.admin-support-column--chat {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.admin-support-column--sidebar {
+    width: 320px;
+    flex: 0 0 320px;
+    border-left: 1px solid var(--border-color);
+}
+
+.admin-support-column-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    flex: 0 0 auto;
+}
+
+.admin-support-queue-list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.admin-support-chat-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 0 0 auto;
+}
+
+.admin-support-messages-container {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.admin-support-chat-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    flex: 0 0 auto;
+}
+
+.admin-support-sidebar-content {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.admin-support-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-message--internal {
+    align-self: stretch;
+}
+
+.chat-message-bubble--internal {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px dashed rgba(245, 158, 11, 0.5);
+    color: var(--text-primary);
+}
+
+.component-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.status-online {
+    color: #10b981;
+}
+
+.status-busy {
+    color: #ef4444;
+}
+
+.status-away {
+    color: #f59e0b;
+}
+
+.status-offline {
+    color: #6b7280;
+}
+
+.component-rating-selector {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.component-rating-selector .component-button.active {
+    color: #f59e0b;
+}

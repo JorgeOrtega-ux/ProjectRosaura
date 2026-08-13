@@ -90,6 +90,12 @@ return [
     '/admin/backup-restore/:uuid' => ['view' => 'admin/backups/backups-restore.php', 'auth' => true, 'permissions' => [PC::RESTORE_BACKUPS], 'requires_2fa' => false],
     '/admin/system-settings' => ['view' => 'admin/system/server-config.php', 'auth' => true, 'permissions' => [PC::MANAGE_SERVER_CONFIG], 'requires_2fa' => false],
     '/admin/logs' => ['view' => 'admin/logs/logs.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false],
-    '/admin/logs/viewer' => ['view' => 'admin/logs/logs-viewer.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false]
+    '/admin/logs/viewer' => ['view' => 'admin/logs/logs-viewer.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false],
+    '/admin/support' => ['view' => 'admin/support/live-console.php', 'auth' => true, 'permissions' => [PC::ACCESS_SUPPORT_PANEL], 'requires_2fa' => false],
+    '/admin/support/live-console' => ['view' => 'admin/support/live-console.php', 'auth' => true, 'permissions' => [PC::ACCESS_SUPPORT_PANEL], 'requires_2fa' => false],
+    '/admin/support/tickets' => ['view' => 'admin/support/manage-tickets.php', 'auth' => true, 'permissions' => [PC::SUPPORT_TICKETS_MANAGE], 'requires_2fa' => false],
+    '/admin/support/ticket/:uuid' => ['view' => 'admin/support/ticket-detail.php', 'auth' => true, 'permissions' => [PC::SUPPORT_TICKETS_MANAGE], 'requires_2fa' => false],
+    '/admin/support/canned-responses' => ['view' => 'admin/support/canned-responses.php', 'auth' => true, 'permissions' => [PC::SUPPORT_MANAGE_CANNED], 'requires_2fa' => false],
+    '/admin/support/metrics' => ['view' => 'admin/support/metrics.php', 'auth' => true, 'permissions' => [PC::SUPPORT_VIEW_METRICS], 'requires_2fa' => false]
 ];
 ?>

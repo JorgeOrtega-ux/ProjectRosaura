@@ -43,6 +43,11 @@ class DatabaseConstants {
     public const TBL_SUBSCRIPTIONS              = 'subscriptions';
     public const TBL_PAYMENT_HISTORY            = 'payment_history';
     public const TBL_SUPPORT_TICKETS            = 'support_tickets';
+    public const TBL_SUPPORT_CHAT_SESSIONS      = 'support_chat_sessions';
+    public const TBL_SUPPORT_CHAT_MESSAGES      = 'support_chat_messages';
+    public const TBL_SUPPORT_CHAT_TRANSFERS     = 'support_chat_transfers';
+    public const TBL_SUPPORT_AGENT_STATUS       = 'support_agent_status';
+    public const TBL_SUPPORT_CANNED_RESPONSES   = 'support_canned_responses';
     public const SUSPENSION_TEMP = 'temporary';
     public const SUSPENSION_PERM = 'permanent';
     public const DELETED_BY_USER  = 'user';

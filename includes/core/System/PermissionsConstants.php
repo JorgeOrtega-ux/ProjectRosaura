@@ -25,14 +25,23 @@ class PermissionsConstants {
     public const MANAGE_CANVASES = 'manage_canvases';
     public const JOIN_CANVAS = 'join_canvas';
 
-    // Nuevos permisos granulares para el panel de administración
     public const VIEW_DASHBOARD = 'view_dashboard';
     public const MANAGE_SUBSCRIPTIONS = 'manage_subscriptions';
     public const MANAGE_STORE_PACKAGES = 'manage_store_packages';
     public const MANAGE_STORE_PERKS = 'manage_store_perks';
     public const MANAGE_CONTENT = 'manage_content';
+
+    public const ACCESS_SUPPORT_PANEL = 'access_support_panel';
+    public const SUPPORT_CHAT_ATTEND_L1 = 'support_chat_attend_l1';
+    public const SUPPORT_CHAT_ATTEND_L2 = 'support_chat_attend_l2';
+    public const SUPPORT_CHAT_ATTEND_L3 = 'support_chat_attend_l3';
+    public const SUPPORT_CHAT_ESCALATE = 'support_chat_escalate';
+    public const SUPPORT_CHAT_REASSIGN = 'support_chat_reassign';
+    public const SUPPORT_TICKETS_MANAGE = 'support_tickets_manage';
+    public const SUPPORT_MANAGE_CANNED = 'support_manage_canned';
+    public const SUPPORT_VIEW_METRICS = 'support_view_metrics';
+    public const SUPPORT_AUDIT_LOGS = 'support_audit_logs';
     
-    // Antiguos / Compatibilidad con lienzos (localizados en CanvasPermissionsConstants)
     public const MANAGE_SETTINGS = 'manage_settings';
     public const MANAGE_MEMBERS = 'manage_members';
     public const MODERATE_CHAT = 'moderate_chat';

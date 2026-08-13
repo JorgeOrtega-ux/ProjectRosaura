@@ -9,7 +9,14 @@ export const WsConfig = {
 
 export const ApiRoutes = {
     Support: {
-        Submit: 'support.submit'
+        Submit: 'support.submit',
+        GetQueueStatus: 'support.get_queue_status',
+        StartLiveSession: 'support.start_live_session',
+        GetSessionMessages: 'support.get_session_messages',
+        SendMessage: 'support.send_message',
+        EndLiveSession: 'support.end_live_session',
+        SubmitFeedback: 'support.submit_feedback',
+        DownloadTranscript: 'support.download_transcript'
     },
     Auth: {
         Login: 'auth.login',
@@ -110,6 +117,25 @@ export const ApiRoutes = {
         BackupStatus: 'admin.backup_status',
         ReadLogs: 'admin.read_logs',
         CheckWorkerStatus: 'admin.backups.check_worker_status'
+    },
+    AdminSupport: {
+        GetAgentStatus: 'admin.support.get_agent_status',
+        UpdateAgentStatus: 'admin.support.update_agent_status',
+        GetLiveQueues: 'admin.support.get_live_queues',
+        ClaimSession: 'admin.support.claim_session',
+        EscalateSession: 'admin.support.escalate_session',
+        ReassignSession: 'admin.support.reassign_session',
+        SendMessage: 'admin.support.send_message',
+        AddInternalNote: 'admin.support.add_internal_note',
+        CloseSession: 'admin.support.close_session',
+        GetCannedResponses: 'admin.support.get_canned_responses',
+        SaveCannedResponse: 'admin.support.save_canned_response',
+        DeleteCannedResponse: 'admin.support.delete_canned_response',
+        GetTicketsList: 'admin.support.get_tickets_list',
+        GetTicketDetail: 'admin.support.get_ticket_detail',
+        UpdateTicketStatus: 'admin.support.update_ticket_status',
+        ReplyTicket: 'admin.support.reply_ticket',
+        GetMetrics: 'admin.support.get_metrics'
     },
     Canvases: {
         GetHomeFeed: 'canvases.get_home_feed',

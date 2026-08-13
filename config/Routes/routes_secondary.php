@@ -19,6 +19,118 @@ return [
             ],
         ],
     ],
+    'support.get_queue_status' => [
+        'controller' => 'App\\Api\\Controllers\\Support\\SupportController',
+        'action' => 'getQueueStatus',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'support_queue_status',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'ip',
+            ],
+        ],
+    ],
+    'support.start_live_session' => [
+        'controller' => 'App\\Api\\Controllers\\Support\\SupportController',
+        'action' => 'startLiveSession',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'support_start_live',
+                'max' => 10,
+                'time' => 5,
+                'identifier' => 'ip',
+            ],
+        ],
+    ],
+    'support.get_session_messages' => [
+        'controller' => 'App\\Api\\Controllers\\Support\\SupportController',
+        'action' => 'getSessionMessages',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'support_get_messages',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'ip',
+            ],
+        ],
+    ],
+    'support.send_message' => [
+        'controller' => 'App\\Api\\Controllers\\Support\\SupportController',
+        'action' => 'sendMessage',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'support_send_message',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'ip',
+            ],
+        ],
+    ],
+    'support.end_live_session' => [
+        'controller' => 'App\\Api\\Controllers\\Support\\SupportController',
+        'action' => 'endLiveSession',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'support_end_live',
+                'max' => 10,
+                'time' => 5,
+                'identifier' => 'ip',
+            ],
+        ],
+    ],
+    'support.submit_feedback' => [
+        'controller' => 'App\\Api\\Controllers\\Support\\SupportController',
+        'action' => 'submitFeedback',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'support_feedback',
+                'max' => 10,
+                'time' => 5,
+                'identifier' => 'ip',
+            ],
+        ],
+    ],
+    'support.download_transcript' => [
+        'controller' => 'App\\Api\\Controllers\\Support\\SupportController',
+        'action' => 'downloadTranscript',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'support_transcript',
+                'max' => 20,
+                'time' => 5,
+                'identifier' => 'ip',
+            ],
+        ],
+    ],
     'chat.history' => [
         'controller' => 'App\\Api\\Controllers\\Chat\\ChatController',
         'action' => 'history',
