@@ -3557,6 +3557,76 @@ html.dark-theme .component-tab-close:hover,
     font-size: 0.85rem;
     font-weight: 500;
 }
+.verification-method-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.google-verify-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    gap: 6px;
+}
+
+.google-verify-container.disabled,
+.password-verify-container.disabled {
+    display: none !important;
+}
+
+.password-verify-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    gap: 6px;
+}
+
+.google-verify-badge,
+.verify-toggle-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 28px;
+    padding: 4px 10px;
+    font-size: 0.65rem;
+    font-weight: 500;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease-in-out;
+}
+
+.verify-toggle-badge .material-symbols-rounded {
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.google-verify-badge--verified {
+    background: #10b981 !important;
+    color: #ffffff !important;
+    border-color: #059669 !important;
+}
+
+.google-verify-icon {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+}
+
+.component-margin-top-6 {
+    margin-top: 6px;
+    width: 100%;
+}
+
+.component-margin-top-12 {
+    margin-top: 12px;
+}
 
 .component-modal-actions {
     display: flex;

@@ -44,6 +44,8 @@
     "auto_freq_48h": "Cada 48 horas",
     "auto_freq_168h": "Cada semana",
     "admin_verify_identity_title": "Verifica tu identidad",
+    "admin_verify_identity_roles_desc": "Verifica tu sesión o ingresa tu contraseña para actualizar los roles de este usuario.",
+    "admin_verify_identity_desc_automation": "Verifica tu sesión o ingresa tu contraseña para guardar la automatización.",
     "btn_save_config": "Guardar configuración",
     "tooltip_filters": "Filtros",
     "filter_search_title": "Opciones de filtrado",

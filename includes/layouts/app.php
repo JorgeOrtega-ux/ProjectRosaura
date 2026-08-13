@@ -275,6 +275,9 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     <title><?php echo htmlspecialchars($initialTitle); ?></title>
     
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <?php if (!empty(\App\Core\Helpers\EnvLoader::get('GOOGLE_CLIENT_ID', ''))): ?>
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <?php endif; ?>
 
     <script>
         window.__INITIAL_CANVAS_DATA__ = <?php echo $initialCanvasDataJson; ?>;
@@ -287,6 +290,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         window.AppUserFlags = <?php echo (!$isDegraded && $isLoggedIn && isset($_SESSION['accounts'][$activeAccountId]['user_flags'])) ? json_encode($_SESSION['accounts'][$activeAccountId]['user_flags']) : '[]'; ?>;
         window.AppServerConfig = <?php echo isset($serverConfig) && !empty($serverConfig) ? json_encode($serverConfig) : '{}'; ?>;
         window.AppTurnstileSiteKey = "<?php echo \App\Core\Helpers\EnvLoader::get('TURNSTILE_SITE_KEY', ''); ?>";
+        window.GOOGLE_CLIENT_ID = "<?php echo \App\Core\Helpers\EnvLoader::get('GOOGLE_CLIENT_ID', ''); ?>";
         window.AppTranslations = <?php echo json_encode(\App\Core\System\Translator::getAll()); ?>;
         window.APP_SANCTION_REASONS = <?php echo json_encode(\App\Core\Helpers\Utils::getSanctionReasons()); ?>;
         window.APP_PALETTES = <?php echo $palettesJson; ?>;

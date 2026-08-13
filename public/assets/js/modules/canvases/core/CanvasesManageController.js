@@ -215,14 +215,17 @@ class CanvasesManageController {
         if (!resultDialog.confirmed) return;
 
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-        if (!password) {
+        const credential = resultDialog.data['credential'] || resultDialog.data['google_token'] || '';
+        if (!password && !credential) {
             resultDialog.failure(window.__('err_password_required'));
             return;
         }
 
         const payload = {
             canvas_ids: Array.from(this.selectedCanvasIds),
-            password: password
+            password: password,
+            credential: credential,
+            google_token: credential
         };
 
         const route = ApiRoutes.Canvases && ApiRoutes.Canvases.Delete ? ApiRoutes.Canvases.Delete : 'canvases.delete';

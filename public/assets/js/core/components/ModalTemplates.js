@@ -1,3 +1,63 @@
+export function renderVerificationInput(data = {}) {
+    const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+    const isGoogleUser = (window.APP_USER && window.APP_USER.is_google === true);
+    const inputRef = data.inputRef || 'modal_verify_password';
+    const inputId = data.inputId || '';
+    const labelText = data.label || __('lbl_current_password');
+    const autocomplete = data.autocomplete || '';
+
+    if (isGoogleUser) {
+        return `
+            <div class="verification-method-container" data-ref="verification-method-container">
+                <div class="google-verify-container" data-ref="google-verify-box">
+                    <div class="component-badge component-badge--sm component-badge--interactive component-badge--full google-verify-badge verify-toggle-badge" 
+                         data-action="triggerGoogleVerify" 
+                         data-ref="credential" 
+                         data-value="" 
+                         data-input-ref="${inputRef}">
+                        <svg class="google-verify-icon" width="14" height="14" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.13C3.26 21.3 7.31 24 12 24z"/>
+                            <path fill="#FBBC05" d="M5.28 14.24c-.25-.75-.38-1.55-.38-2.36s.13-1.61.38-2.36V6.39H1.29C.47 8.03 0 9.96 0 12s.47 3.97 1.29 5.61l3.99-3.37z"/>
+                            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.39l3.99 3.37c.95-2.85 3.6-4.96 6.72-4.96z"/>
+                        </svg>
+                        <span class="google-verify-text">${__('btn_verify_google_session')}</span>
+                    </div>
+                    <div data-ref="google_token" data-value="" style="display:none;"></div>
+                    <div class="component-badge component-badge--sm component-badge--interactive component-badge--full verify-toggle-badge" data-action="toggleVerifyMethod" data-mode="password">
+                        <span class="material-symbols-rounded">key</span>
+                        <span>${__('link_verify_with_password')}</span>
+                    </div>
+                </div>
+                <div class="password-verify-container disabled" data-ref="password-verify-box">
+                    <div class="component-input-group">
+                        <input type="password" ${inputId ? `id="${inputId}"` : ''} data-ref="${inputRef}" class="component-input-field component-input-field--with-icon" placeholder=" " ${autocomplete ? `autocomplete="${autocomplete}"` : ''}>
+                        <label class="component-input-label">${labelText}</label>
+                        <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
+                    </div>
+                    <div class="component-badge component-badge--sm component-badge--interactive component-badge--full verify-toggle-badge" data-action="toggleVerifyMethod" data-mode="google">
+                        <svg class="google-verify-icon" width="14" height="14" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.13C3.26 21.3 7.31 24 12 24z"/>
+                            <path fill="#FBBC05" d="M5.28 14.24c-.25-.75-.38-1.55-.38-2.36s.13-1.61.38-2.36V6.39H1.29C.47 8.03 0 9.96 0 12s.47 3.97 1.29 5.61l3.99-3.37z"/>
+                            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.39l3.99 3.37c.95-2.85 3.6-4.96 6.72-4.96z"/>
+                        </svg>
+                        <span>${__('link_verify_with_google')}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="component-input-group">
+            <input type="password" ${inputId ? `id="${inputId}"` : ''} data-ref="${inputRef}" class="component-input-field component-input-field--with-icon" placeholder=" " ${autocomplete ? `autocomplete="${autocomplete}"` : ''}>
+            <label class="component-input-label">${labelText}</label>
+            <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
+        </div>
+    `;
+}
+
 export const ModalTemplates = {
     activateChatConfirmationModal: {
         build: (data = {}) => {
@@ -74,11 +134,7 @@ export const ModalTemplates = {
                     </div>
                     
                     <div class="component-modal-body">
-                        <div class="component-input-group">
-                            <input type="password" data-ref="cp_current_password" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="off">
-                            <label class="component-input-label">${__('lbl_current_password')}</label>
-                            <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
-                        </div>
+                        ${renderVerificationInput({ inputRef: 'cp_current_password', label: __('lbl_current_password'), autocomplete: 'off' })}
                     </div>
                     
                     <div class="component-modal-actions">
@@ -820,11 +876,7 @@ export const ModalTemplates = {
                     <p class="component-modal-desc">${desc}</p>
                 </div>
                 <div class="component-modal-body">
-                    <div class="component-input-group">
-                        <input type="password" data-ref="modal_verify_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                        <label class="component-input-label">${passwordLblText}</label>
-                        <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
-                    </div>
+                    ${renderVerificationInput({ inputRef: 'modal_verify_password', label: passwordLblText })}
                 </div>
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${cancelBtnText}</button>
@@ -842,11 +894,7 @@ export const ModalTemplates = {
                 <p class="component-modal-desc">${__('del_acc_warning')}</p>
             </div>
             <div class="component-modal-body">
-                <div class="component-input-group">
-                    <input type="password" data-ref="modal_delete_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                    <label class="component-input-label">${__('lbl_password')}</label>
-                    <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
-                </div>
+                ${renderVerificationInput({ inputRef: 'modal_delete_password', label: __('lbl_password') })}
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
@@ -1403,11 +1451,7 @@ export const ModalTemplates = {
 
             const passwordFieldHtml = isUpgrade ? `
                 <div class="component-modal-body">
-                    <div class="component-input-group">
-                        <input type="password" id="confirmPurchasePasswordInput" data-ref="confirmPurchasePasswordInput" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="current-password">
-                        <label class="component-input-label">${passwordLabel}</label>
-                        <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
-                    </div>
+                    ${renderVerificationInput({ inputId: 'confirmPurchasePasswordInput', inputRef: 'confirmPurchasePasswordInput', label: passwordLabel, autocomplete: 'current-password' })}
                 </div>
             ` : '';
 
@@ -1437,11 +1481,7 @@ export const ModalTemplates = {
                     <p class="component-modal-desc">${desc}</p>
                 </div>
                 <div class="component-modal-body">
-                    <div class="component-input-group">
-                        <input type="password" id="confirmSecPasswordInput" data-ref="confirmSecPasswordInput" class="component-input-field component-input-field--with-icon" placeholder=" " autocomplete="current-password">
-                        <label class="component-input-label">${__('lbl_account_password')}</label>
-                        <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
-                    </div>
+                    ${renderVerificationInput({ inputId: 'confirmSecPasswordInput', inputRef: 'confirmSecPasswordInput', label: __('lbl_account_password'), autocomplete: 'current-password' })}
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>

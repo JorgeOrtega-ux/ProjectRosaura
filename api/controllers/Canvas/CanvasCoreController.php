@@ -191,13 +191,14 @@ class CanvasCoreController extends BaseController {
             }
 
             $password = $input['password'] ?? '';
-            if (empty(trim($password))) {
+            $credential = $input['credential'] ?? $input['google_token'] ?? null;
+            if (empty(trim($password)) && empty($credential)) {
                 return $this->respond(['success' => false, 'message' => __('err_password_required')]);
             }
 
             $uuid = $input['id'] ?? $input['uuid'] ?? null;
             if ($uuid && is_string($uuid) && empty($input['canvas_ids'])) {
-                $result = $this->canvasServices->deleteCanvas($userId, $uuid, $password);
+                $result = $this->canvasServices->deleteCanvas($userId, $uuid, $password, $credential);
                 return $this->respond($result);
             }
 
@@ -207,7 +208,7 @@ class CanvasCoreController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_no_canvases_selected')]);
             }
 
-            $result = $this->canvasServices->deleteUserCanvases($userId, $canvasIds, $password);
+            $result = $this->canvasServices->deleteUserCanvases($userId, $canvasIds, $password, $credential);
             
             return $this->respond($result);
 
@@ -283,11 +284,12 @@ class CanvasCoreController extends BaseController {
             }
 
             $password = $input['password'] ?? '';
-            if (empty($password)) {
+            $credential = $input['credential'] ?? $input['google_token'] ?? null;
+            if (empty($password) && empty($credential)) {
                 return $this->respond(['success' => false, 'message' => __('err_password_required')]);
             }
 
-            $result = $this->canvasServices->downgradeCanvasToBasic($userId, $uuid, $password);
+            $result = $this->canvasServices->downgradeCanvasToBasic($userId, $uuid, $password, $credential);
             return $this->respond($result);
 
         } catch (\Throwable $e) {

@@ -43,16 +43,17 @@ class CanvasChatRestrictionController {
         
         // Add password verification
         $password = $data['password'] ?? '';
+        $credential = $data['credential'] ?? $data['google_token'] ?? '';
         
-        if (!$canvasId || !$targetUserId || !$password) {
+        if (!$canvasId || !$targetUserId || (empty($password) && empty($credential))) {
             return ['status' => 'error', 'message' => __('err_missing_parameters')];
         }
 
         $identityDb = $this->db->getConnection(DatabaseConstants::CONN_IDENTITY);
-        $stmt = $identityDb->prepare("SELECT password FROM users WHERE id = ?");
+        $stmt = $identityDb->prepare("SELECT * FROM users WHERE id = ?");
         $stmt->execute([$userId]);
-        $hash = $stmt->fetchColumn();
-        if (!$hash || !password_verify($password, $hash)) {
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$user || !\App\Core\Helpers\Utils::verifyUserIdentity($user, $data)) {
             return ['status' => 'error', 'message' => __('err_invalid_password')];
         }
 

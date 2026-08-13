@@ -206,7 +206,8 @@ class AdminBackupsRestoreController {
         if (!resultDialog.confirmed) return;
 
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-        if (!password) {
+        const credential = resultDialog.data['credential'] || resultDialog.data['google_token'] || '';
+        if (!password && !credential) {
             resultDialog.failure(window.__('err_admin_password_required'));
             return;
         }
@@ -217,6 +218,8 @@ class AdminBackupsRestoreController {
         const res = await this.api.post(ApiRoutes.Admin.RestoreBackup, {
             backup_id: backupId,
             password: password,
+            credential: credential,
+            google_token: credential,
             schema: payloadSchema
         }, this.abortController.signal);
 

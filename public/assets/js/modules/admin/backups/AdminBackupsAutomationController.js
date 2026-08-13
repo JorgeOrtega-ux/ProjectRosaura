@@ -249,13 +249,16 @@ class AdminBackupsAutomationController {
         const resultDialog = await window.modalSystem.show('verifyPasswordSaveAutomation', { asyncConfirm: true });
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password']?.trim();
-        if (!password) {
+        const credential = resultDialog.data['credential'] || resultDialog.data['google_token'] || '';
+        if (!password && !credential) {
             resultDialog.failure(window.__('err_admin_password_required'));
             return;
         }
         try {
             const reqData = {
                 password: password,
+                credential: credential,
+                google_token: credential,
                 config: this.state
             };
             const response = await this.api.post(ApiRoutes.Admin.UpdateServerConfig, reqData, this.abortController.signal);

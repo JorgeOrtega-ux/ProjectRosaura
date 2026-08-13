@@ -79,6 +79,7 @@ export class PreferenceManager {
      */
     async save(key, value, password = '') {
         const previousValue = this.get(key);
+        let googleCredential = '';
 
         // Caso especial: compra rápida requiere confirmar contraseña
         if (key === 'purchase_preference' && value === 'fast' && !password) {
@@ -90,7 +91,8 @@ export class PreferenceManager {
 
                 if (res && (res.confirmed || res.action === 'confirm' || res.action === true)) {
                     password = (res.data && res.data.confirmSecPasswordInput) || res.confirmSecPasswordInput || '';
-                    if (!password) {
+                    googleCredential = (res.data && (res.data.credential || res.data.google_token)) || '';
+                    if (!password && !googleCredential) {
                         this.showToast(window.__('auth_incorrect_password'), 'error');
                         return;
                     }
@@ -123,6 +125,10 @@ export class PreferenceManager {
             try {
                 const payload = { key, value };
                 if (password) payload.password = password;
+                if (googleCredential) {
+                    payload.credential = googleCredential;
+                    payload.google_token = googleCredential;
+                }
 
                 const response = await this.api.post(ApiRoutes.Settings.UpdatePreferences, payload, this.prefAbortController.signal);
 

@@ -67,7 +67,9 @@ class AdminController extends BaseController {
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 'username' => $input['username'] ?? null,
-                'password' => $input['password'] ?? null
+                'password' => $input['password'] ?? null,
+                'credential' => $input['credential'] ?? $input['google_token'] ?? null,
+                'google_token' => $input['google_token'] ?? $input['credential'] ?? null
             ];
             return $this->respond($this->adminServices->updateUsername($safeInput)); 
         }
@@ -80,7 +82,9 @@ class AdminController extends BaseController {
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 'email' => $input['email'] ?? null,
-                'password' => $input['password'] ?? null
+                'password' => $input['password'] ?? null,
+                'credential' => $input['credential'] ?? $input['google_token'] ?? null,
+                'google_token' => $input['google_token'] ?? $input['credential'] ?? null
             ];
             return $this->respond($this->adminServices->updateEmail($safeInput)); 
         }
@@ -106,7 +110,9 @@ class AdminController extends BaseController {
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 'roles' => $input['roles'] ?? null,
-                'password' => $input['password'] ?? null
+                'password' => $input['password'] ?? null,
+                'credential' => $input['credential'] ?? $input['google_token'] ?? null,
+                'google_token' => $input['google_token'] ?? $input['credential'] ?? null
             ];
             return $this->respond($this->adminServices->updateRoles($safeInput)); 
         }
@@ -118,7 +124,9 @@ class AdminController extends BaseController {
             $this->requirePermission(PermissionsConstants::DELETE_USERS);
             $safeInput = [
                 'user_ids' => $input['user_ids'] ?? [],
-                'password' => $input['password'] ?? null
+                'password' => $input['password'] ?? null,
+                'credential' => $input['credential'] ?? $input['google_token'] ?? null,
+                'google_token' => $input['google_token'] ?? $input['credential'] ?? null
             ];
             return $this->respond($this->adminServices->deleteUsers($safeInput)); 
         }
@@ -131,6 +139,8 @@ class AdminController extends BaseController {
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 'password' => $input['password'] ?? null,
+                'credential' => $input['credential'] ?? $input['google_token'] ?? null,
+                'google_token' => $input['google_token'] ?? $input['credential'] ?? null,
                 'is_suspended' => $input['is_suspended'] ?? null,
                 'suspension_type' => $input['suspension_type'] ?? null,
                 'suspension_reason' => $input['suspension_reason'] ?? null,
@@ -362,7 +372,9 @@ class AdminController extends BaseController {
             $this->requirePermission(PermissionsConstants::MANAGE_SERVER_CONFIG);
             $safeInput = [
                 'config' => $input['config'] ?? null,
-                'password' => $input['password'] ?? null
+                'password' => $input['password'] ?? null,
+                'credential' => $input['credential'] ?? $input['google_token'] ?? null,
+                'google_token' => $input['google_token'] ?? $input['credential'] ?? null
             ];
             return $this->respond($this->adminServices->updateServerConfig($safeInput)); 
         }
@@ -391,9 +403,11 @@ class AdminController extends BaseController {
             $this->requirePermission(PermissionsConstants::RESTORE_BACKUPS);
             $safeInput = [
                 'backup_id' => $input['backup_id'] ?? null,
-                'password' => $input['password'] ?? null
+                'password' => $input['password'] ?? null,
+                'credential' => $input['credential'] ?? $input['google_token'] ?? null,
+                'google_token' => $input['google_token'] ?? $input['credential'] ?? null
             ];
-            if (empty($safeInput['backup_id']) || empty($safeInput['password'])) {
+            if (empty($safeInput['backup_id']) || (empty($safeInput['password']) && empty($safeInput['credential']))) {
                 return $this->respond(['success' => false, 'message' => __('err_validation_missing_fields')]);
             }
             return $this->respond($this->adminServices->restoreBackup($safeInput)); 

@@ -135,13 +135,14 @@ class AdminServices {
         return ['allowed' => true];
     }
 
-    private function verifyAdminSudoMode(string $password): array {
+    private function verifyAdminSudoMode($passwordData): array {
         $currentUserId = $this->sessionManager->get('user_id');
         $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
         if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
         $adminData = $this->userRepository->findById($currentUserId);
-        if (!$adminData || !password_verify($password, $adminData['password'])) {
+        $payload = is_array($passwordData) ? $passwordData : ['password' => (string)$passwordData];
+        if (!$adminData || !\App\Core\Helpers\Utils::verifyUserIdentity($adminData, $payload)) {
             return ['success' => false, 'message' => __('auth.incorrect_password')];
         }
         $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}");
@@ -306,7 +307,7 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
-        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        $sudo = $this->verifyAdminSudoMode($data);
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
@@ -351,7 +352,7 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
-        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        $sudo = $this->verifyAdminSudoMode($data);
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
@@ -421,7 +422,7 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
-        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        $sudo = $this->verifyAdminSudoMode($data);
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
@@ -466,7 +467,7 @@ class AdminServices {
             return ['success' => false, 'message' => __('validation.invalid_data')];
         }
 
-        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        $sudo = $this->verifyAdminSudoMode($data);
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
@@ -548,7 +549,7 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
-        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        $sudo = $this->verifyAdminSudoMode($data);
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
@@ -1260,7 +1261,7 @@ class AdminServices {
     public function updateServerConfig($data) {
         if (!$this->hasPermission(PermissionsConstants::MANAGE_SERVER_CONFIG)) return ['success' => false, 'message' => __('error.unauthorized')];
 
-        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        $sudo = $this->verifyAdminSudoMode($data);
         if (!$sudo['success']) return $sudo;
 
         $allowedFields = [
@@ -1422,7 +1423,7 @@ class AdminServices {
     public function restoreBackup($data) {
         if (!$this->hasPermission(PermissionsConstants::RESTORE_BACKUPS)) return ['success' => false, 'message' => __('error.unauthorized')];
         
-        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        $sudo = $this->verifyAdminSudoMode($data);
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 

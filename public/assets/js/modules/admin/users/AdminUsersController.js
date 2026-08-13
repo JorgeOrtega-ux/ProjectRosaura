@@ -250,13 +250,16 @@ class AdminUsersController {
         if (!resultDialog.confirmed) return;
 
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-        if (!password) {
+        const credential = resultDialog.data['credential'] || resultDialog.data['google_token'] || '';
+        if (!password && !credential) {
             resultDialog.failure(window.__('err_admin_password_required'));
             return;
         }
         const payload = {
             user_ids: Array.from(this.selectedUserIds),
-            password: password
+            password: password,
+            credential: credential,
+            google_token: credential
         };
         try {
             const result = await this.api.post(ApiRoutes.Admin.DeleteUsers, payload, this.abortController.signal);
@@ -460,7 +463,8 @@ class AdminUsersController {
         const resultDialog = await window.modalSystem.show('verifyPasswordUpdateRole', { asyncConfirm: true });
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-        if (!password) {
+        const credential = resultDialog.data['credential'] || resultDialog.data['google_token'] || '';
+        if (!password && !credential) {
             resultDialog.failure(window.__('err_password_authorize_roles'));
             return;
         }
@@ -469,7 +473,9 @@ class AdminUsersController {
             const result = await this.api.post(ApiRoutes.Admin.UpdateRole, { 
                 target_user_id: targetUserId, 
                 roles: selectedRoles, 
-                password: password
+                password: password,
+                credential: credential,
+                google_token: credential
             }, this.abortController.signal);
             
             if (result.aborted) return;

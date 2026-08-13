@@ -71,15 +71,20 @@ class SecurityController {
 
     async verifyCurrentPassword(btn) {
         const input = document.querySelector('[data-ref="cp_current_password"]');
-        if (!input) return;
-        const val = input.value.trim();
-        if (val === '') { 
+        const googleTokenInp = document.querySelector('[data-ref="google_token"]');
+        const credentialInp = document.querySelector('[data-ref="credential"]');
+        
+        const val = input ? input.value.trim() : '';
+        const googleToken = (googleTokenInp && googleTokenInp.value) || (credentialInp && credentialInp.value) || '';
+
+        if (val === '' && !googleToken) { 
             showMessage(window.__('err_current_password_required'), 'error'); 
             return; 
         }
         
         setButtonLoading(btn);
-        const result = await this.api.post(ApiRoutes.Settings.VerifyCurrentPassword, { current_password: val }, this.abortController.signal);
+        const payload = googleToken ? { credential: googleToken, google_token: googleToken } : { current_password: val };
+        const result = await this.api.post(ApiRoutes.Settings.VerifyCurrentPassword, payload, this.abortController.signal);
         
         if (result.aborted) return;
         
@@ -143,12 +148,13 @@ class SecurityController {
 
         if (dialog.confirmed) {
             const passInput = dialog.data['modal_delete_password'];
-            if (!passInput) {
+            const credential = dialog.data['credential'] || dialog.data['google_token'];
+            if (!passInput && !credential) {
                 dialog.failure(window.__('err_password_required'));
                 return;
             }
 
-            const data = { password: passInput };
+            const data = credential ? { credential: credential, google_token: credential } : { password: passInput };
             try {
                 const result = await this.api.post(ApiRoutes.Settings.DeleteAccount, data, this.abortController.signal);
 

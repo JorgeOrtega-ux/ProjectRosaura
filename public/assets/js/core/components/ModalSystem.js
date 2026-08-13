@@ -445,6 +445,32 @@ export class ModalSystem {
             return;
         }
 
+        const triggerGoogleBtn = e.target.closest('[data-action="triggerGoogleVerify"]');
+        if (triggerGoogleBtn) {
+            e.preventDefault();
+            this.handleGoogleVerifyInModal(triggerGoogleBtn);
+            return;
+        }
+
+        const toggleVerifyBtn = e.target.closest('[data-action="toggleVerifyMethod"]');
+        if (toggleVerifyBtn) {
+            e.preventDefault();
+            const mode = toggleVerifyBtn.getAttribute('data-mode');
+            const container = toggleVerifyBtn.closest('[data-ref="verification-method-container"]');
+            if (container) {
+                const googleBox = container.querySelector('[data-ref="google-verify-box"]');
+                const passBox = container.querySelector('[data-ref="password-verify-box"]');
+                if (mode === 'password') {
+                    if (googleBox) googleBox.classList.add('disabled');
+                    if (passBox) passBox.classList.remove('disabled');
+                } else {
+                    if (passBox) passBox.classList.add('disabled');
+                    if (googleBox) googleBox.classList.remove('disabled');
+                }
+            }
+            return;
+        }
+
         const actionBtn = e.target.closest('[data-modal-action], [data-action="confirm"], [data-action="cancel"], #btn_confirm_custom_backup');
         
         if (actionBtn) {
@@ -715,5 +741,70 @@ export class ModalSystem {
         }
         
         this.dragState.currentDiff = 0;
+    }
+
+    handleGoogleVerifyInModal(btn) {
+        const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+
+        if (!window.google || !window.google.accounts) {
+            showMessage(__('err_google_sdk_not_loaded'), 'error');
+            return;
+        }
+        const clientId = window.GOOGLE_CLIENT_ID || '';
+        if (!clientId) {
+            showMessage(__('err_google_client_id_missing'), 'error');
+            return;
+        }
+
+        setButtonLoading(btn);
+
+        const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: 'openid email profile',
+            callback: (response) => {
+                if (response.access_token) {
+                    const modal = btn.closest('.component-modal-box');
+                    if (modal) {
+                        const googleTokenEl = modal.querySelector('[data-ref="google_token"]');
+                        const credentialEl = modal.querySelector('[data-ref="credential"]');
+                        if (googleTokenEl) {
+                            if ('value' in googleTokenEl) googleTokenEl.value = response.access_token;
+                            googleTokenEl.setAttribute('data-value', response.access_token);
+                        }
+                        if (credentialEl) {
+                            if ('value' in credentialEl) credentialEl.value = response.access_token;
+                            credentialEl.setAttribute('data-value', response.access_token);
+                        }
+                    }
+
+                    restoreButton(btn);
+                    btn.classList.add('google-verify-badge--verified');
+                    btn.innerHTML = `
+                        <span class="material-symbols-rounded" style="font-size:14px; margin-right:2px;">check_circle</span>
+                        <span class="google-verify-text">${__('google_session_verified')}</span>
+                    `;
+
+                    const confirmBtn = modal ? modal.querySelector(
+                        'button[data-modal-action="confirm"], ' +
+                        'button[data-action="submitVerifyCurrentPassword"], ' +
+                        'button[data-modal-action="confirm_dynamic_form"], ' +
+                        'button[data-action="confirm"]'
+                    ) : null;
+
+                    if (confirmBtn && !confirmBtn.disabled) {
+                        setTimeout(() => confirmBtn.click(), 400);
+                    }
+                } else {
+                    restoreButton(btn);
+                    showMessage(__('err_google_auth_failed'), 'error');
+                }
+            },
+            error_callback: () => {
+                restoreButton(btn);
+                showMessage(__('err_google_connect_failed'), 'error');
+            }
+        });
+
+        client.requestAccessToken();
     }
 }

@@ -233,13 +233,16 @@ class AdminServerConfigController {
         const resultDialog = await window.modalSystem.show('verifyPasswordSaveConfig', { asyncConfirm: true });
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-        if (!password) {
+        const credential = resultDialog.data['credential'] || resultDialog.data['google_token'] || '';
+        if (!password && !credential) {
             resultDialog.failure(window.__('err_admin_password_required'));
             return;
         }
         const payload = {
             config: this.state,
-            password: password
+            password: password,
+            credential: credential,
+            google_token: credential
         };
         try {
             const result = await this.api.post(ApiRoutes.Admin.UpdateServerConfig, payload, this.abortController.signal);

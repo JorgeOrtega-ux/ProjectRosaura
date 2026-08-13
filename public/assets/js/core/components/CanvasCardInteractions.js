@@ -218,14 +218,18 @@ export class CanvasCardInteractions {
             if (!confirm.confirmed) return;
             
             const password = confirm.data['modal_verify_password'] ? confirm.data['modal_verify_password'].trim() : '';
-            if (!password) {
+            const credential = confirm.data['credential'] || confirm.data['google_token'] || '';
+
+            if (!password && !credential) {
                 showMessage(window.__('err_password_required'), 'error');
                 return;
             }
 
             const payload = {
                 canvas_ids: [id],
-                password: password
+                password: password,
+                credential: credential,
+                google_token: credential
             };
 
             const res = await this.api.post(ApiRoutes.Canvases.Delete, payload, this.abortController.signal);
@@ -334,12 +338,14 @@ export class CanvasCardInteractions {
             if (!confirmRes || !confirmRes.confirmed) return;
 
             const password = confirmRes.data && confirmRes.data.modal_verify_password ? confirmRes.data.modal_verify_password.trim() : '';
-            if (!password) {
+            const credential = confirmRes.data && (confirmRes.data.credential || confirmRes.data.google_token) ? (confirmRes.data.credential || confirmRes.data.google_token) : '';
+
+            if (!password && !credential) {
                 if (typeof showMessage === 'function') showMessage(window.__('err_password_required'), 'error');
                 return;
             }
 
-            const res = await this.api.post(ApiRoutes.Canvases.Downgrade, { uuid: uuid, password: password }, this.abortController.signal);
+            const res = await this.api.post(ApiRoutes.Canvases.Downgrade, { uuid: uuid, password: password, credential: credential, google_token: credential }, this.abortController.signal);
             
             if (res.aborted) return;
 

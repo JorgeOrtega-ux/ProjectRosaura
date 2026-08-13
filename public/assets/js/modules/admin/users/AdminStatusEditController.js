@@ -264,7 +264,8 @@ class AdminStatusEditController {
         const resultDialog = await window.modalSystem.show('verifyPasswordUpdateStatus', { asyncConfirm: true });
         if (!resultDialog.confirmed) return;
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-        if (!password) {
+        const credential = resultDialog.data['credential'] || resultDialog.data['google_token'] || '';
+        if (!password && !credential) {
             resultDialog.failure(window.__('err_admin_password_required'));
             return;
         }
@@ -275,7 +276,9 @@ class AdminStatusEditController {
             suspension_reason: this.state.isSuspended === '1' ? this.state.suspensionReason : null,
             end_date: (this.state.isSuspended === '1' && this.state.suspendedType === 'temporary') ? this.formatDateForDB(this.state.endDate) : null,
             notify_user: false,
-            password: password
+            password: password,
+            credential: credential,
+            google_token: credential
         };
         try {
             const result = await this.api.post(ApiRoutes.Admin.UpdateSuspension, payload, this.abortController.signal);

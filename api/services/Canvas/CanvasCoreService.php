@@ -791,14 +791,13 @@ class CanvasCoreService {
         }
     }
 
-    public function downgradeCanvasToBasic(int $userId, string $uuid, string $password = ''): array {
+    public function downgradeCanvasToBasic(int $userId, string $uuid, string $password = '', ?string $credential = null): array {
         try {
             $user = $this->userRepository->findById($userId);
             if (!$user) {
                 return ['success' => false, 'message' => __('err_user_not_found')];
             }
-            $passwordHash = $user['password_hash'] ?? $user['password'] ?? '';
-            if (empty($password) || empty($passwordHash) || !password_verify($password, $passwordHash)) {
+            if (!\App\Core\Helpers\Utils::verifyUserIdentity($user, ['password' => $password, 'credential' => $credential])) {
                 return ['success' => false, 'message' => __('err_invalid_password')];
             }
 
@@ -922,15 +921,14 @@ class CanvasCoreService {
         }
     }
 
-    public function deleteCanvas(?int $userId, string $uuid, string $password = ''): array {
+    public function deleteCanvas(?int $userId, string $uuid, string $password = '', ?string $credential = null): array {
         try {
             if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
 
             $user = $this->userRepository->findById($userId);
             if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
 
-            $passwordHash = $user['password_hash'] ?? $user['password'] ?? '';
-            if (empty($password) || empty($passwordHash) || !password_verify($password, $passwordHash)) {
+            if (!\App\Core\Helpers\Utils::verifyUserIdentity($user, ['password' => $password, 'credential' => $credential])) {
                 return ['success' => false, 'message' => __('err_invalid_password')];
             }
 
@@ -983,7 +981,7 @@ class CanvasCoreService {
         }
     }
 
-    public function deleteUserCanvases(int $userId, array $canvasIds, string $password): array {
+    public function deleteUserCanvases(int $userId, array $canvasIds, string $password = '', ?string $credential = null): array {
         try {
             if (empty($canvasIds)) {
                 return ['success' => false, 'message' => __('err_no_canvases_selected')];
@@ -992,8 +990,7 @@ class CanvasCoreService {
             $user = $this->userRepository->findById($userId);
             if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
 
-            $passwordHash = $user['password_hash'] ?? $user['password'] ?? '';
-            if (empty($password) || empty($passwordHash) || !password_verify($password, $passwordHash)) {
+            if (!\App\Core\Helpers\Utils::verifyUserIdentity($user, ['password' => $password, 'credential' => $credential])) {
                 return ['success' => false, 'message' => __('err_invalid_password')];
             }
 

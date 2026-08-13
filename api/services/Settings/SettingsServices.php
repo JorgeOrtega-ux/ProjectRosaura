@@ -362,8 +362,7 @@ class SettingsServices
             
             if ($value === 'fast') {
                 $user = $this->userRepository->findById($userId);
-                $password = trim($data['password'] ?? '');
-                if (!$user || empty($password) || !password_verify($password, $user['password'] ?? '')) {
+                if (!$user || !Utils::verifyUserIdentity($user, $data)) {
                     return ['success' => false, 'message' => __('auth.incorrect_password')];
                 }
             }
@@ -460,8 +459,7 @@ class SettingsServices
         $user = $this->userRepository->findById($userId);
         if (!$user) return ['success' => false, 'message' => __('error.user_not_found')];
 
-        $submittedPassword = trim($data['current_password'] ?? $data['password'] ?? '');
-        if (!empty($submittedPassword) && password_verify($submittedPassword, $user['password'] ?? '')) {
+        if (Utils::verifyUserIdentity($user, $data)) {
             $this->rateLimiter->clear(RateLimitConstants::KEY_SET_VERIFY_PASSWORD . "_{$userId}");
             $codeMinutes = $this->config['verification_code_minutes'];
             $this->sessionManager->set('can_change_password_expires', time() + ($codeMinutes * 60));
@@ -526,11 +524,9 @@ class SettingsServices
         }
 
         $user = $this->userRepository->findById($userId);
+        $identityValid = $user && Utils::verifyUserIdentity($user, $data);
 
-        $submittedPassword = trim($data['password'] ?? '');
-        $passwordValid = !empty($submittedPassword) && password_verify($submittedPassword, $user['password'] ?? '');
-
-        if ($user && $passwordValid) {
+        if ($user && $identityValid) {
             $this->rateLimiter->clear(RateLimitConstants::KEY_SET_DELETE_ACCOUNT . "_{$userId}");
 
             $this->tokenRepository->deleteAllByUserId($userId);
@@ -680,7 +676,7 @@ class SettingsServices
 
         $user = $this->userRepository->findById($userId);
 
-        if ($user && password_verify(trim($data['password'] ?? ''), $user['password'])) {
+        if ($user && Utils::verifyUserIdentity($user, $data)) {
             if ($this->userRepository->update2FA($userId, null, 0, null)) {
                 $this->sessionManager->set('user_2fa', 0);
                 $this->rateLimiter->clear(RateLimitConstants::KEY_2FA_DISABLE . "_{$userId}");
@@ -815,7 +811,7 @@ class SettingsServices
         $user = $this->userRepository->findById($userId);
 
         if ($user) {
-            if (password_verify(trim($data['password'] ?? ''), $user['password'])) {
+            if (Utils::verifyUserIdentity($user, $data)) {
                 $this->rateLimiter->clear(RateLimitConstants::KEY_2FA_REGEN_CODES . "_{$userId}");
 
                 $codes = Utils::generateRecoveryCodes(10, 8);

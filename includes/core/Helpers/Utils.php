@@ -311,6 +311,43 @@ class Utils {
         return ['valid' => true];
     }
 
+    /**
+     * Verify user identity via password or Google OAuth token.
+     *
+     * @param array $user
+     * @param array $data
+     * @return bool
+     */
+    public static function verifyUserIdentity(array $user, array $data): bool {
+        if (empty($user)) {
+            return false;
+        }
+
+        // 1. Check Google token verification if credential or google_token is passed
+        $googleCredential = $data['credential'] ?? $data['google_token'] ?? null;
+        if (!empty($googleCredential) && !empty($user['google_id'])) {
+            $payload = \App\Core\Security\GoogleOAuthProvider::verifyToken($googleCredential);
+            if ($payload && isset($payload['sub']) && (string)$payload['sub'] === (string)$user['google_id']) {
+                return true;
+            }
+        }
+
+        // 2. Check Password verification if password is submitted
+        $submittedPassword = trim(
+            $data['current_password'] ?? 
+            $data['password'] ?? 
+            $data['modal_verify_password'] ?? 
+            $data['confirmSecPasswordInput'] ?? 
+            $data['confirmPurchasePasswordInput'] ?? 
+            ''
+        );
+        if (!empty($submittedPassword) && !empty($user['password']) && password_verify($submittedPassword, $user['password'])) {
+            return true;
+        }
+
+        return false;
+    }
+
     public static function validateUsernameFormat($username, $minLen = 3, $maxLen = 32) {
         $trimmed = trim($username);
         $userLen = mb_strlen($trimmed, 'UTF-8');
