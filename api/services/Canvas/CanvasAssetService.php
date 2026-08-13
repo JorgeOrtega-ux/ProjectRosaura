@@ -208,6 +208,10 @@ class CanvasAssetService {
 
             $success = $this->paletteRepository->createCustomPalette($userId, $paletteKey, $name, $validColors);
             if ($success) {
+                try {
+                    $redisCache = new RedisCache();
+                    (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->userPalettes($userId);
+                } catch (\Throwable $t) {}
                 return ['success' => true, 'message' => __('msg_palette_created'), 'data' => ['palette_key' => $paletteKey]];
             }
 
@@ -222,6 +226,10 @@ class CanvasAssetService {
         try {
             $success = $this->paletteRepository->deleteCustomPalette($userId, $paletteKey);
             if ($success) {
+                try {
+                    $redisCache = new RedisCache();
+                    (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->userPalettes($userId);
+                } catch (\Throwable $t) {}
                 return ['success' => true, 'message' => __('msg_palette_deleted')];
             }
             return ['success' => false, 'message' => __('err_palette_not_found')];

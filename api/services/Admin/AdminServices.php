@@ -756,7 +756,9 @@ class AdminServices {
                 try {
                     $redisCache = new \App\Config\Database\RedisCache();
                     $redis = $redisCache->getClient();
-                    (new \App\Core\System\CacheInvalidator($redis))->allUsers();
+                    $invalidator = new \App\Core\System\CacheInvalidator($redis);
+                    $invalidator->allUsers();
+                    $invalidator->subscriptionTiers();
                 } catch (\Throwable $t) {}
 
                 return ['success' => true, 'message' => __('admin.subscription_updated')];
@@ -764,12 +766,14 @@ class AdminServices {
                 // Insert
                 $uuid = \App\Core\Helpers\Utils::generateUUID();
                 $stmt = $pdo->prepare("INSERT INTO subscription_tiers (uuid, name, tier_level, is_active, color, stripe_price_id_monthly, stripe_price_id_yearly, price_monthly, price_yearly, max_canvases, max_storage_mb, max_snapshots_per_canvas, max_members_per_canvas, max_custom_palettes, feat_advanced_roles, feat_chat_restriction, feat_custom_palettes, feat_priority_rendering, feat_unlimited_exports, feat_beta_access, feat_inject_templates, max_template_tokens, max_upload_mb, max_pixels_per_batch) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$uuid, $name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featPriorityRendering, $featUnlimitedExports, $featBetaAccess, $featInjectTemplates, $maxTemplateTokens, $maxUploadMb, $maxPixelsPerBatch]);
+                $stmt->execute([$name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featPriorityRendering, $featUnlimitedExports, $featBetaAccess, $featInjectTemplates, $maxTemplateTokens, $maxUploadMb, $maxPixelsPerBatch]);
                 
                 try {
                     $redisCache = new \App\Config\Database\RedisCache();
                     $redis = $redisCache->getClient();
-                    (new \App\Core\System\CacheInvalidator($redis))->allUsers();
+                    $invalidator = new \App\Core\System\CacheInvalidator($redis);
+                    $invalidator->allUsers();
+                    $invalidator->subscriptionTiers();
                 } catch (\Throwable $t) {}
 
                 return ['success' => true, 'message' => __('admin.subscription_created'), 'data' => ['uuid' => $uuid]];
@@ -790,6 +794,12 @@ class AdminServices {
             $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
             $stmt = $pdo->prepare("UPDATE subscription_tiers SET is_active = NOT is_active WHERE uuid = ?");
             $stmt->execute([$uuid]);
+
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->subscriptionTiers();
+            } catch (\Throwable $t) {}
+
             return ['success' => true, 'message' => 'Visibilidad actualizada'];
         } catch (\PDOException $e) {
             Logger::error("toggleSubscriptionVisibility Error", ['exception' => $e]);
@@ -812,6 +822,12 @@ class AdminServices {
             $stmt = $pdo->prepare("UPDATE subscription_tiers SET is_popular = 1 WHERE uuid = ?");
             $stmt->execute([$uuid]);
             $pdo->commit();
+
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->subscriptionTiers();
+            } catch (\Throwable $t) {}
+
             return ['success' => true, 'message' => 'Popularidad actualizada'];
         } catch (\PDOException $e) {
             if (isset($pdo) && $pdo->inTransaction()) {
@@ -856,6 +872,12 @@ class AdminServices {
                 
                 $stmt = $pdo->prepare("UPDATE subscription_tiers SET is_active = 0 WHERE uuid = ?");
                 $stmt->execute([$uuid]);
+
+                try {
+                    $redisCache = new \App\Config\Database\RedisCache();
+                    (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->subscriptionTiers();
+                } catch (\Throwable $t) {}
+
                 return [
                     'success' => true, 
                     'message' => 'Suscripción archivada. Tiene ' . $usersCount . ' usuario(s) asignados y no puede ser eliminada permanentemente.'
@@ -864,6 +886,12 @@ class AdminServices {
                 // Hard Delete
                 $stmt = $pdo->prepare("DELETE FROM subscription_tiers WHERE uuid = ?");
                 $stmt->execute([$uuid]);
+
+                try {
+                    $redisCache = new \App\Config\Database\RedisCache();
+                    (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->subscriptionTiers();
+                } catch (\Throwable $t) {}
+
                 return ['success' => true, 'message' => 'Suscripción eliminada permanentemente'];
             }
         } catch (\PDOException $e) {
@@ -899,6 +927,11 @@ class AdminServices {
                 $msg = 'Paquete creado correctamente';
             }
 
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePackages();
+            } catch (\Throwable $t) {}
+
             return ['success' => true, 'message' => $msg, 'uuid' => $uuid];
         } catch (\PDOException $e) {
             Logger::error("saveStorePackage Error", ['exception' => $e]);
@@ -913,6 +946,12 @@ class AdminServices {
             $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
             $stmt = $pdo->prepare("UPDATE store_coin_packages SET is_active = 1 - is_active WHERE uuid = ?");
             $stmt->execute([$uuid]);
+
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePackages();
+            } catch (\Throwable $t) {}
+
             return ['success' => true, 'message' => 'Visibilidad actualizada'];
         } catch (\PDOException $e) {
             return ['success' => false, 'message' => 'Error de BD'];
@@ -928,6 +967,12 @@ class AdminServices {
             $pdo->query("UPDATE store_coin_packages SET is_popular = 0");
             $stmt = $pdo->prepare("UPDATE store_coin_packages SET is_popular = 1 WHERE uuid = ?");
             $stmt->execute([$uuid]);
+
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePackages();
+            } catch (\Throwable $t) {}
+
             return ['success' => true, 'message' => 'Paquete marcado como popular'];
         } catch (\PDOException $e) {
             return ['success' => false, 'message' => 'Error de BD'];
@@ -941,6 +986,12 @@ class AdminServices {
             $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
             $stmt = $pdo->prepare("DELETE FROM store_coin_packages WHERE uuid = ?");
             $stmt->execute([$uuid]);
+
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePackages();
+            } catch (\Throwable $t) {}
+
             return ['success' => true, 'message' => 'Paquete eliminado permanentemente'];
         } catch (\PDOException $e) {
             Logger::error("deleteStorePackage Error", ['exception' => $e]);
@@ -973,6 +1024,11 @@ class AdminServices {
                 $msg = __('msg_perk_created_success');
             }
 
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePerkPackages();
+            } catch (\Throwable $t) {}
+
             return ['success' => true, 'message' => $msg, 'uuid' => $uuid];
         } catch (\PDOException $e) {
             Logger::error("saveStorePerk Error", ['exception' => $e]);
@@ -987,6 +1043,12 @@ class AdminServices {
             $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
             $stmt = $pdo->prepare("UPDATE store_perk_packages SET is_active = 1 - is_active WHERE uuid = ?");
             $stmt->execute([$uuid]);
+
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePerkPackages();
+            } catch (\Throwable $t) {}
+
             return ['success' => true, 'message' => __('msg_perk_visibility_updated')];
         } catch (\PDOException $e) {
             return ['success' => false, 'message' => __('err_db_error')];
@@ -1000,6 +1062,12 @@ class AdminServices {
             $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
             $stmt = $pdo->prepare("DELETE FROM store_perk_packages WHERE uuid = ?");
             $stmt->execute([$uuid]);
+
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePerkPackages();
+            } catch (\Throwable $t) {}
+
             return ['success' => true, 'message' => __('msg_perk_deleted_success')];
         } catch (\PDOException $e) {
             Logger::error("deleteStorePerk Error", ['exception' => $e]);

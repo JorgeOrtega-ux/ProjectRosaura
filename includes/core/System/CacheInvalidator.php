@@ -49,17 +49,18 @@ class CacheInvalidator {
             $this->redis->del(CacheConstants::PREFIX_CANVAS_RESET_SETTINGS . $canvasId);
             $this->redis->del(CacheConstants::PREFIX_CANVAS_RESIZE_SETTINGS . $canvasId);
             $this->redis->del("canvas:{$canvasId}:config");
+            $this->redis->del("canvas:{$canvasId}:state");
 
             $uuidKeys = $this->redis->keys(CacheConstants::PREFIX_CANVAS_DETAIL . 'uuid:*');
             if (!empty($uuidKeys)) {
                 $this->redis->del($uuidKeys);
             }
 
-            $viewKeys = $this->redis->keys('canvas:view_data:*');
+            $viewKeys = $this->redis->keys("canvas:view_data:{$canvasId}:*");
             if (!empty($viewKeys)) {
                 $this->redis->del($viewKeys);
             }
-            $preloadKeys = $this->redis->keys('canvas:layout_preload:*');
+            $preloadKeys = $this->redis->keys("canvas:layout_preload:{$canvasId}:*");
             if (!empty($preloadKeys)) {
                 $this->redis->del($preloadKeys);
             }
@@ -70,10 +71,9 @@ class CacheInvalidator {
                 $this->redis->del($metaKeys);
             }
 
-            foreach (['newest', 'oldest', 'members'] as $sort) {
-                foreach ([20, 50] as $lim) {
-                    $this->redis->del(CacheConstants::PREFIX_CANVAS_PUBLIC_PAGE . "{$sort}:{$lim}:0");
-                }
+            $pubKeys = $this->redis->keys(CacheConstants::PREFIX_CANVAS_PUBLIC_PAGE . '*');
+            if (!empty($pubKeys)) {
+                $this->redis->del($pubKeys);
             }
 
             $homeKeys = $this->redis->keys(CacheConstants::PREFIX_CANVAS_HOME_FEED . '*');
@@ -87,14 +87,15 @@ class CacheInvalidator {
         if (!$this->redis) return;
         try {
             $this->redis->del(CacheConstants::PREFIX_CANVAS_COUNT . $userId);
+            $this->redis->del(CacheConstants::PREFIX_CANVAS_OWNER_LIST . $userId);
 
             for ($t = 0; $t <= 3; $t++) {
                 $this->redis->del(CacheConstants::PREFIX_CANVAS_TIER_COUNT . "{$userId}:{$t}");
             }
 
-            foreach (['all', 'mine', 'joined', 'favorites'] as $filter) {
-                $this->redis->del(CacheConstants::PREFIX_CANVAS_DASHBOARD . "u{$userId}:{$filter}:20:0");
-                $this->redis->del(CacheConstants::PREFIX_CANVAS_DASHBOARD . "u{$userId}:{$filter}:50:0");
+            $dashKeys = $this->redis->keys(CacheConstants::PREFIX_CANVAS_DASHBOARD . "u{$userId}:*");
+            if (!empty($dashKeys)) {
+                $this->redis->del($dashKeys);
             }
 
             $keys = $this->redis->keys(CacheConstants::PREFIX_CANVAS_HOME_FEED . '*');
@@ -221,6 +222,36 @@ class CacheInvalidator {
         if (!$this->redis) return;
         try {
             $this->redis->del(CacheConstants::PREFIX_USER_PALETTE . $userId);
+        } catch (\Throwable $e) {}
+    }
+
+    public function storePackages(): void {
+        if (!$this->redis) return;
+        try {
+            $keys = $this->redis->keys('store:coin_packages:*');
+            if (!empty($keys)) {
+                $this->redis->del($keys);
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    public function storePerkPackages(): void {
+        if (!$this->redis) return;
+        try {
+            $keys = $this->redis->keys('store:perk_packages:*');
+            if (!empty($keys)) {
+                $this->redis->del($keys);
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    public function subscriptionTiers(): void {
+        if (!$this->redis) return;
+        try {
+            $keys = $this->redis->keys('subscription:tiers:*');
+            if (!empty($keys)) {
+                $this->redis->del($keys);
+            }
         } catch (\Throwable $e) {}
     }
 }

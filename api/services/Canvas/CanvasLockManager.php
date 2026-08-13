@@ -100,6 +100,8 @@ class CanvasLockManager {
                 $this->cacheInvalidator->canvas($canvas['id']);
             }
 
+            $this->cacheInvalidator->userCanvasList($userId);
+
             $canvasesDb->commit();
             return true;
         } catch (\Exception $e) {
