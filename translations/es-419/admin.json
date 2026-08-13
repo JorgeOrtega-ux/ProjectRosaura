@@ -461,5 +461,20 @@
     "err_select_table_restore": "Debes seleccionar al menos una tabla para restaurar.",
     "lbl_no_schemas": "No hay esquemas.",
     "lbl_no_tables_available": "No hay tablas disponibles.",
-    "err_processing_backup_schema": "Error al procesar el esquema del respaldo."
+    "err_processing_backup_schema": "Error al procesar el esquema del respaldo.",
+    "backup_restore_target_title": "Archivo de Respaldo",
+    "backup_restore_target_desc": "Detalles del paquete de copia de seguridad seleccionado.",
+    "backup_restore_schema_title": "Esquema y Tablas a Restaurar",
+    "backup_restore_schema_desc": "Selecciona las bases de datos y tablas que deseas restaurar en el sistema.",
+    "backup_restore_warning_title": "Advertencia de Sobrescritura",
+    "backup_restore_warning_desc": "La restauración reemplazará la estructura y todos los registros seleccionados. Esta acción es irreversible y sobrescribirá los datos existentes en producción.",
+    "backup_restore_lock_title": "Desbloqueo de Seguridad",
+    "backup_restore_lock_desc": "Habilita este interruptor para autorizar el procedimiento de restauración.",
+    "backup_restore_auth_title": "Verificación de Identidad",
+    "backup_restore_auth_desc": "Ingresa tu contraseña de administrador para confirmar y ejecutar la restauración.",
+    "backup_restore_legacy_badge": "Respaldo heredado",
+    "backup_restore_tables_available": "{count} tablas disponibles",
+    "backup_restore_tables_selected": "{selected} de {total} seleccionadas",
+    "backup_restore_table_desc": "Estructura y registros de la tabla {table}",
+    "admin_verify_identity_desc_restore": "Ingresa tu contraseña de administrador para autorizar la restauración del sistema."
 }

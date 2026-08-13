@@ -1136,22 +1136,14 @@ export const ModalTemplates = {
 
     verifyPasswordRestoreBackup: {
         build: () => ModalTemplates.verifyPasswordDialog.build({
-            titleKey: 'title_confirm_restore',
-            descKey: 'msg_confirm_restore_password',
-            confirmKey: 'btn_confirm_restore'
+            titleKey: 'admin_verify_identity_title',
+            descKey: 'admin_verify_identity_desc_restore',
+            confirmKey: 'btn_confirm_restore',
+            confirmClass: 'component-button--danger'
         })
     },
 
     dynamicHtmlModal: {
-        build: (data) => `
-            <div class="pill-container"><div class="drag-handle"></div></div>
-            ${data.html}
-        `
-    },
-
-    restoreModalTemplate: {
-        noPadding: true,
-        customClass: 'component-modal-box--restore-container',
         build: (data) => `
             <div class="pill-container"><div class="drag-handle"></div></div>
             ${data.html}

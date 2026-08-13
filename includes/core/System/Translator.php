@@ -91,6 +91,7 @@ class Translator {
         
         foreach ($params as $paramKey => $paramValue) {
             $text = str_replace('{' . $paramKey . '}', $paramValue, $text);
+            $text = str_replace(':' . $paramKey, $paramValue, $text);
         }
 
         return $text; 
@@ -129,6 +130,7 @@ class Translator {
 
         foreach ($params as $paramKey => $paramValue) {
             $text = str_replace('{' . $paramKey . '}', $paramValue, $text);
+            $text = str_replace(':' . $paramKey, $paramValue, $text);
         }
         return $text;
     }

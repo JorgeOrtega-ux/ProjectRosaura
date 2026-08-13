@@ -285,9 +285,11 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
             let text = (window.AppTranslations && window.AppTranslations[key] !== undefined) ? window.AppTranslations[key] : key; 
             for (const [pKey, pValue] of Object.entries(params)) {
                 text = text.replace(new RegExp(`{${pKey}}`, 'g'), pValue);
+                text = text.replace(new RegExp(`:${pKey}\\b`, 'g'), pValue);
             }
             return text;
         }
+        window.__ = __;
 
         (function() {
             var theme = 'system';

@@ -84,7 +84,7 @@ export class ModalSystem {
                 return;
             }
 
-            if (this.activeResolveFn) {
+            if (this.activeOverlay || this.activeBox) {
                 if (!this.modalStack) this.modalStack = [];
                 if (this.activeOverlay) this.activeOverlay.classList.add('disabled');
                 this.modalStack.push({
@@ -169,7 +169,7 @@ export class ModalSystem {
 
 
     handleKeyDown(e) {
-        if (!this.activeResolveFn) return;
+        if (!this.activeBox) return;
 
         if (e.key === 'Enter') {
             const activeEl = document.activeElement;
@@ -210,7 +210,7 @@ export class ModalSystem {
     }
 
     handleClick(e) {
-        if (!this.activeResolveFn) return; 
+        if (!this.activeBox) return; 
 
         const activeConfirmBtn = this.activeBox ? this.activeBox.querySelector(
             'button[data-modal-action="confirm"], ' +
@@ -667,7 +667,7 @@ export class ModalSystem {
     }
 
     handlePointerDown(e) {
-        if (!this.activeResolveFn) return; 
+        if (!this.activeBox) return; 
         if (window.innerWidth > 768) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return; 
 

@@ -1412,6 +1412,10 @@ class AdminViewService {
     public function getBackupsRestoreData(?string $backupId): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
+        if (empty($backupId)) {
+            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/backups"];
+        }
+
         $filename = base64_decode($backupId);
         if (empty($filename)) {
             $filename = $backupId;

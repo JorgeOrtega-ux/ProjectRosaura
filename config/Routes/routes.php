@@ -87,7 +87,7 @@ return [
     '/admin/backups' => ['view' => 'admin/backups/backups.php', 'auth' => true, 'permissions' => [PC::CREATE_BACKUPS, PC::RESTORE_BACKUPS], 'requires_2fa' => false],
     '/admin/backup-schedule' => ['view' => 'admin/backups/backups-automation.php', 'auth' => true, 'permissions' => [PC::CREATE_BACKUPS], 'requires_2fa' => false],
     '/admin/backup-create' => ['view' => 'admin/backups/backups-create.php', 'auth' => true, 'permissions' => [PC::CREATE_BACKUPS], 'requires_2fa' => false],
-    '/admin/backup-restore/:uuid' => ['view' => 'admin/backups/backup-restore-modal.php', 'auth' => true, 'permissions' => [PC::RESTORE_BACKUPS], 'requires_2fa' => false],
+    '/admin/backup-restore/:uuid' => ['view' => 'admin/backups/backups-restore.php', 'auth' => true, 'permissions' => [PC::RESTORE_BACKUPS], 'requires_2fa' => false],
     '/admin/system-settings' => ['view' => 'admin/system/server-config.php', 'auth' => true, 'permissions' => [PC::MANAGE_SERVER_CONFIG], 'requires_2fa' => false],
     '/admin/logs' => ['view' => 'admin/logs/logs.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false],
     '/admin/logs/viewer' => ['view' => 'admin/logs/logs-viewer.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false]

@@ -1,23 +1,24 @@
-import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
+import { catchPaginationClick, debounce } from '../../../core/utils/uiUtils.js';
+
 class AdminBackupsController {
     constructor() {
-        this.selectedBackupId = null; 
+        this.selectedBackupId = null;
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
-        this.isInitialized = false; 
+        this.isInitialized = false;
+
         this.handlePaginationClickBound = this.handlePaginationClick.bind(this);
         this.handleClickBound = this.handleClick.bind(this);
         this.handleInputBound = this.handleInput.bind(this);
         this.handleChangeBound = this.handleChange.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.filterTimeout = null;
-        this.isRestoring = false;
-        this.pollInterval = null;
+
         this.applyAllFilters = debounce(this.executeServerFilters.bind(this), 400);
     }
+
     init() {
         if (this.isInitialized) return;
         this.isInitialized = true;
@@ -25,6 +26,7 @@ class AdminBackupsController {
         this.bindEvents();
         this.initializeFiltersFromURL();
     }
+
     destroy() {
         if (this.abortController) {
             this.abortController.abort();
@@ -34,12 +36,9 @@ class AdminBackupsController {
         document.removeEventListener('input', this.handleInputBound);
         document.removeEventListener('change', this.handleChangeBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
-        if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-            this.pollInterval = null;
-        }
         this.isInitialized = false;
     }
+
     bindEvents() {
         document.addEventListener('click', this.handlePaginationClickBound, true);
         document.addEventListener('click', this.handleClickBound);
@@ -47,6 +46,7 @@ class AdminBackupsController {
         document.addEventListener('change', this.handleChangeBound);
         window.addEventListener('viewLoaded', this.handleViewLoadedBound);
     }
+
     handlePaginationClick(e) {
         if (!window.location.pathname.includes('/admin/backups') || 
             window.location.pathname.includes('/admin/backup-schedule') || 
@@ -54,11 +54,13 @@ class AdminBackupsController {
             window.location.pathname.includes('/admin/backup-restore')) return;
         catchPaginationClick(e, url => this.handlePagination(url));
     }
+
     async handleClick(e) {
         if (!window.location.pathname.includes('/admin/backups') || 
             window.location.pathname.includes('/admin/backup-schedule') || 
             window.location.pathname.includes('/admin/backup-create') ||
             window.location.pathname.includes('/admin/backup-restore')) return;
+
         const searchBtn = e.target.closest('[data-action="searchBackup"]');
         const toggleFiltersBtn = e.target.closest('[data-action="toggleBackupFilters"]');
         const selectTarget = e.target.closest('[data-action="selectBackup"]');
@@ -66,6 +68,7 @@ class AdminBackupsController {
         const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
         const backToMainFiltersBtn = e.target.closest('[data-action="backToMainFilters"]');
         const prepareRestoreBtn = e.target.closest('[data-action="prepareRestore"]');
+
         if (searchBtn) this.toggleSearchToolbar();
         if (toggleFiltersBtn) this.toggleFiltersModule();
         if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
@@ -79,11 +82,7 @@ class AdminBackupsController {
         }
         if (deselectBtn) this.deselectBackup();
         if (prepareRestoreBtn) this.prepareRestore(prepareRestoreBtn);
-        const confirmRestoreSubmit = e.target.closest('[data-action="confirmRestoreSubmit"]');
-        if (confirmRestoreSubmit) {
-            e.preventDefault();
-            this.handleConfirmRestore(confirmRestoreSubmit);
-        }
+
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
             if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
@@ -92,53 +91,38 @@ class AdminBackupsController {
             }
         }
     }
+
     handleInput(e) {
-        if (!window.location.pathname.includes('/admin/backups') || window.location.pathname.includes('/admin/backup-schedule') || window.location.pathname.includes('/admin/backup-create') || window.location.pathname.includes('/admin/backup-restore')) return;
+        if (!window.location.pathname.includes('/admin/backups') || 
+            window.location.pathname.includes('/admin/backup-schedule') || 
+            window.location.pathname.includes('/admin/backup-create') || 
+            window.location.pathname.includes('/admin/backup-restore')) return;
+
         if (e.target && e.target.getAttribute('data-ref') === 'backup-search-input') {
             this.applyAllFilters();
         }
-        if (e.target && e.target.getAttribute('data-ref') === 'modal_verify_password') {
-            const password = e.target.value.trim();
-            const submitBtn = document.querySelector('[data-action="confirmRestoreSubmit"]');
-            if (submitBtn) {
-                if (password.length > 0) {
-                    submitBtn.classList.remove('disabled-interaction');
-                } else {
-                    submitBtn.classList.add('disabled-interaction');
-                }
-            }
-        }
     }
+
     handleChange(e) {
-        if (!window.location.pathname.includes('/admin/backups') || window.location.pathname.includes('/admin/backup-schedule') || window.location.pathname.includes('/admin/backup-create') || window.location.pathname.includes('/admin/backup-restore')) return;
+        if (!window.location.pathname.includes('/admin/backups') || 
+            window.location.pathname.includes('/admin/backup-schedule') || 
+            window.location.pathname.includes('/admin/backup-create') || 
+            window.location.pathname.includes('/admin/backup-restore')) return;
+
         if (e.target && e.target.classList.contains('filter-checkbox')) {
             this.applyAllFilters();
         }
-        const toggleLock = e.target.closest('[data-action="toggleRestoreLock"]');
-        if (toggleLock) {
-            const nextBtn = document.querySelector('[data-action="nextToStep3"]');
-            const step3Dot = document.querySelector('.restore-footer-dots .step-modal-dot[data-step-target="restore-step-3"]');
-            if (nextBtn) {
-                if (toggleLock.checked) {
-                    nextBtn.classList.remove('disabled-interaction');
-                } else {
-                    nextBtn.classList.add('disabled-interaction');
-                }
-            }
-            if (step3Dot) {
-                if (toggleLock.checked) {
-                    step3Dot.classList.remove('disabled-interaction');
-                } else {
-                    step3Dot.classList.add('disabled-interaction');
-                }
-            }
-        }
     }
+
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/backups') && !e.detail.url.includes('/admin/backup-schedule') && !e.detail.url.includes('/admin/backup-create') && !e.detail.url.includes('/admin/backup-restore')) {
+        if (e.detail.url.includes('/admin/backups') && 
+            !e.detail.url.includes('/admin/backup-schedule') && 
+            !e.detail.url.includes('/admin/backup-create') && 
+            !e.detail.url.includes('/admin/backup-restore')) {
             this.initializeFiltersFromURL();
         }
     }
+
     initializeFiltersFromURL() {
         const urlParams = new URLSearchParams(window.location.search);
         
@@ -167,6 +151,7 @@ class AdminBackupsController {
         this.updateFilterButtonsState();
         this.deselectBackup();
     }
+
     async handlePagination(url) {
         const tableContainer = document.querySelector('[data-ref="view-table"]');
         const currentPaginations = document.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
@@ -205,9 +190,11 @@ class AdminBackupsController {
             }
         }
     }
+
     resetViewState() {
         this.deselectBackup();
     }
+
     openFilterSubMenu(btn) {
         const targetId = btn.getAttribute('data-target');
         const targetMenu = document.querySelector(`[data-ref="${targetId}"]`);
@@ -219,6 +206,7 @@ class AdminBackupsController {
             targetMenu.classList.add('active');
         }
     }
+
     backToMainFilters() {
         const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
         const subMenus = document.querySelectorAll('[data-module="moduleBackupFilters"] .component-menu:not([data-ref="menuMainFilters"])');
@@ -231,6 +219,7 @@ class AdminBackupsController {
             mainFilters.classList.add('active');
         }
     }
+
     toggleFiltersModule() {
         if (window.appInstance) {
             window.appInstance.toggleModule('moduleBackupFilters');
@@ -240,6 +229,7 @@ class AdminBackupsController {
             }
         }
     }
+
     handleBackupSelection(target) {
         const backupId = target.getAttribute('data-backup-id');
         if (this.selectedBackupId === backupId) {
@@ -260,6 +250,7 @@ class AdminBackupsController {
             if (window.appInstance) window.appInstance.closeModule(filtersModule);
         }
     }
+
     deselectBackup() {
         this.selectedBackupId = null;
         document.querySelectorAll('[data-action="selectBackup"]').forEach(el => el.classList.remove('selected'));
@@ -270,6 +261,7 @@ class AdminBackupsController {
             defaultMode.classList.replace('disabled', 'active');
         }
     }
+
     toggleSearchToolbar() {
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         const searchInput = document.querySelector('[data-ref="backup-search-input"]');
@@ -290,6 +282,7 @@ class AdminBackupsController {
             }
         }
     }
+
     updateFilterButtonsState() {
         const queryInput = document.querySelector('[data-ref="backup-search-input"]');
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
@@ -340,279 +333,16 @@ class AdminBackupsController {
         const url = `${this.basePath}/admin/backups?${urlParams.toString()}`;
         this.handlePagination(url);
     }
-    async prepareRestore(btn) {
+
+    prepareRestore(btn) {
         if (!this.selectedBackupId) return;
-        try {
-            const html = await this.api.fetchHtml(this.basePath + '/admin/backup-restore/' + encodeURIComponent(this.selectedBackupId), {
-                headers: { 'X-SPA-Request': 'true' }
-            });
-            window.modalSystem.show('restoreModalTemplate', { html: html });
-            this.initRestoreSchemaTree();
-        } catch (error) {
-            showMessage(window.__('err_start_restore'), 'error');
-        }
-    }
-    async handleConfirmRestore(btn) {
-        let backupId = null;
-        const dataEl = document.querySelector('[data-backup-id]');
-        if (dataEl && dataEl.getAttribute('data-backup-id')) {
-            backupId = dataEl.getAttribute('data-backup-id');
-        }
-        if (!backupId && this.selectedBackupId) {
-            backupId = this.selectedBackupId;
-        }
-        if (!backupId) {
-            showMessage(window.__('err_backup_id_missing'), 'error');
-            return;
-        }
-        
-        const payloadSchema = {};
-        if (this.selectedRestoreSchema) {
-            for (const [dbName, tables] of Object.entries(this.selectedRestoreSchema)) {
-                if (tables.length > 0) payloadSchema[dbName] = tables;
-            }
-            if (Object.keys(payloadSchema).length === 0) {
-                showMessage(window.__('err_select_table_restore'), 'error');
-                return;
-            }
-        }
-        
-        const passwordInput = document.querySelector('[data-ref="modal_verify_password"]');
-        const password = passwordInput ? passwordInput.value.trim() : '';
-        if (!password) {
-            showMessage(window.__('err_password_authorize_restore'), 'error');
-            return;
-        }
-        if (this.isRestoring) return;
-        this.isRestoring = true;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-rounded spin-icon">autorenew</span>';
-        btn.classList.add('disabled-interaction');
-        
-        const res = await this.api.post(ApiRoutes.Admin.RestoreBackup, { 
-            backup_id: backupId, 
-            password: password,
-            schema: Object.keys(payloadSchema).length > 0 ? payloadSchema : null
-        }, this.abortController.signal);
-        if (res.aborted) return;
-        if (res.success && res.job_id) {
-            showMessage(window.__('msg_initiating_lockdown'), 'success');
-            this.pollRestoreStatus(res.job_id, btn, originalText);
+        const url = `${this.basePath}/admin/backup-restore/${encodeURIComponent(this.selectedBackupId)}`;
+        if (window.spaRouter) {
+            window.spaRouter.navigate(url);
         } else {
-            this.resetRestoreUI(btn, originalText);
-            showMessage(res.message || window.__('err_start_restore'), 'error');
+            window.location.href = url;
         }
-    }
-    async pollRestoreStatus(jobId, btn, originalText) {
-        if (this.pollInterval) clearInterval(this.pollInterval);
-        this.pollInterval = setInterval(async () => {
-            const res = await this.api.post(ApiRoutes.Admin.CheckWorkerStatus, {}, this.abortController.signal);
-            if (res.aborted) return;
-            if (res.success) {
-                if (res.status === 'finished') {
-                    clearInterval(this.pollInterval);
-                    this.resetRestoreUI(btn, originalText);
-                    showMessage(window.__('success_db_restored'), 'success');
-                    window.location.href = this.basePath + '/login';
-                } else if (res.status === 'restoring') {
-                }
-            } else {
-                clearInterval(this.pollInterval);
-                this.resetRestoreUI(btn, originalText);
-                showMessage(res.message || window.__('err_connection'), 'error');
-            }
-        }, 2500);
-    }
-    resetRestoreUI(btn, originalText) {
-        this.isRestoring = false;
-        if (btn) {
-            btn.innerHTML = originalText;
-            btn.classList.remove('disabled-interaction');
-        }
-    }
-    initRestoreSchemaTree() {
-        const schemaElement = document.querySelector('[data-ref="restore-available-schema"]');
-        const container = document.querySelector('[data-ref="restore-schema-tree"]');
-        if (!schemaElement || !container) return;
-        try {
-            this.restoreSchema = JSON.parse(schemaElement.textContent);
-            this.selectedRestoreSchema = {};
-            for (const dbName in this.restoreSchema) {
-                this.selectedRestoreSchema[dbName] = [...this.restoreSchema[dbName]];
-            }
-            this.buildRestoreSchemaHTML(container);
-        } catch (e) {
-            container.innerHTML = '<div>' + window.__('err_processing_backup_schema') + '</div>';
-        }
-    }
-    buildRestoreSchemaHTML(container) {
-        const dbPane = container.querySelector('[data-ref="restore-db-pane"]');
-        const tablesPane = container.querySelector('[data-ref="restore-tables-pane"]');
-        if (!dbPane || !tablesPane) return;
-
-        if (!this.restoreSchema || Object.keys(this.restoreSchema).length === 0) {
-            dbPane.innerHTML = '<div>' + window.__('lbl_no_schemas') + '</div>';
-            tablesPane.innerHTML = '<div>' + window.__('lbl_no_tables_available') + '</div>';
-            return;
-        }
-
-        let dbHtml = '<div class="component-menu-list">';
-        let tablesHtml = '';
-        let index = 0;
-
-        for (const [dbName, tables] of Object.entries(this.restoreSchema)) {
-            const selectedCount = this.selectedRestoreSchema[dbName]?.length || 0;
-            const isDbChecked = selectedCount > 0 ? 'checked' : '';
-            const isActive = index === 0;
-
-            dbHtml += `
-                <div class="component-menu-link component-menu-link--bordered restore-db-item ${isActive ? 'active' : ''}" data-db="${dbName}">
-                    <div class="component-menu-link-icon">
-                        <span class="material-symbols-rounded">database</span>
-                    </div>
-                    <div class="component-menu-link-text">
-                        <span>${dbName}</span>
-                    </div>
-                    <div class="component-menu-link-icon">
-                        <label class="component-toggle-switch">
-                            <input type="checkbox" class="restore-db-cb" data-db="${dbName}" ${isDbChecked}>
-                            <span class="component-toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-            `;
-
-            tablesHtml += `
-                <div class="restore-tables-container ${isActive ? 'active' : ''}" data-db-tables="${dbName}">
-                    <div class="component-menu-list">
-            `;
-            tables.forEach(table => {
-                const isTableChecked = this.selectedRestoreSchema[dbName]?.includes(table) ? 'checked' : '';
-                tablesHtml += `
-                        <div class="component-menu-link component-menu-link--bordered restore-table-item">
-                            <div class="component-menu-link-icon">
-                                <span class="material-symbols-rounded">table_rows</span>
-                            </div>
-                            <div class="component-menu-link-text">
-                                <span>${table}</span>
-                            </div>
-                            <div class="component-menu-link-icon">
-                                <label class="component-toggle-switch">
-                                    <input type="checkbox" class="restore-table-cb" data-db="${dbName}" value="${table}" ${isTableChecked}>
-                                    <span class="component-toggle-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                `;
-            });
-            tablesHtml += `
-                    </div>
-                </div>
-            `;
-
-            index++;
-        }
-
-        dbHtml += '</div>';
-        dbPane.innerHTML = dbHtml;
-        tablesPane.innerHTML = tablesHtml;
-        this.bindRestoreCheckboxEvents();
-    }
-    bindRestoreCheckboxEvents() {
-        const container = document.querySelector('[data-ref="restore-schema-tree"]');
-        if (!container) return;
-
-        const dbPane = container.querySelector('[data-ref="restore-db-pane"]');
-        const tablesPane = container.querySelector('[data-ref="restore-tables-pane"]');
-        const dbItems = dbPane ? dbPane.querySelectorAll('.restore-db-item') : [];
-        const dbCbs = dbPane ? dbPane.querySelectorAll('.restore-db-cb') : [];
-        const tableCbs = tablesPane ? tablesPane.querySelectorAll('.restore-table-cb') : [];
-
-        const nextBtnStep2 = document.querySelector('[data-action="nextToStep2"]');
-        const step2Dot = document.querySelector('.restore-footer-dots .step-modal-dot[data-step-target="restore-step-2"]');
-        
-        const updateNextBtnState = () => {
-            let hasSelection = false;
-            for (const [dbName, tables] of Object.entries(this.selectedRestoreSchema)) {
-                if (tables.length > 0) {
-                    hasSelection = true;
-                    break;
-                }
-            }
-            if (nextBtnStep2) {
-                if (hasSelection) {
-                    nextBtnStep2.classList.remove('disabled-interaction');
-                } else {
-                    nextBtnStep2.classList.add('disabled-interaction');
-                }
-            }
-            if (step2Dot) {
-                if (hasSelection) {
-                    step2Dot.classList.remove('disabled-interaction');
-                } else {
-                    step2Dot.classList.add('disabled-interaction');
-                }
-            }
-        };
-
-        dbItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                if (e.target.closest('.component-toggle-switch')) return;
-                
-                const dbName = item.getAttribute('data-db');
-                
-                dbItems.forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
-                
-                const tablesContainers = tablesPane.querySelectorAll('[data-db-tables]');
-                tablesContainers.forEach(tc => tc.classList.remove('active'));
-                const activeTc = tablesPane.querySelector(`[data-db-tables="${dbName}"]`);
-                if (activeTc) activeTc.classList.add('active');
-            });
-        });
-
-        dbCbs.forEach(cb => {
-            cb.addEventListener('change', (e) => {
-                const dbName = e.target.getAttribute('data-db');
-                const isChecked = e.target.checked;
-                
-                if (isChecked) {
-                    this.selectedRestoreSchema[dbName] = [...this.restoreSchema[dbName]];
-                } else {
-                    this.selectedRestoreSchema[dbName] = [];
-                }
-                
-                const relatedTableCbs = tablesPane.querySelectorAll(`.restore-table-cb[data-db="${dbName}"]`);
-                relatedTableCbs.forEach(tCb => tCb.checked = isChecked);
-                updateNextBtnState();
-            });
-        });
-
-        tableCbs.forEach(cb => {
-            cb.addEventListener('change', (e) => {
-                const dbName = e.target.getAttribute('data-db');
-                const tableName = e.target.value;
-                const isChecked = e.target.checked;
-                
-                if (!this.selectedRestoreSchema[dbName]) {
-                    this.selectedRestoreSchema[dbName] = [];
-                }
-                if (isChecked) {
-                    if (!this.selectedRestoreSchema[dbName].includes(tableName)) {
-                        this.selectedRestoreSchema[dbName].push(tableName);
-                    }
-                } else {
-                    this.selectedRestoreSchema[dbName] = this.selectedRestoreSchema[dbName].filter(t => t !== tableName);
-                }
-                const dbCb = dbPane.querySelector(`.restore-db-cb[data-db="${dbName}"]`);
-                if (dbCb) {
-                    dbCb.checked = this.selectedRestoreSchema[dbName].length > 0;
-                }
-                updateNextBtnState();
-            });
-        });
-
-        updateNextBtnState();
     }
 }
+
 export { AdminBackupsController };
