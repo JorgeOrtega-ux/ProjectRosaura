@@ -406,19 +406,23 @@ class AdminViewService {
             Logger::error("getEditUserRoleData allRoles error: " . $e->getMessage(), ['exception' => $e]);
         }
 
-        $currentUserRoleId = null;
+        $assignedRoleIds = [];
         try {
-            $stmtUserRole = $pdo->prepare("SELECT role_id FROM " . DB::TBL_USER_ROLES . " WHERE user_id = :uid LIMIT 1");
+            $stmtUserRole = $pdo->prepare("SELECT role_id FROM " . DB::TBL_USER_ROLES . " WHERE user_id = :uid");
             $stmtUserRole->execute(['uid' => $targetUserId]);
-            $currentUserRoleId = $stmtUserRole->fetchColumn();
-            if ($currentUserRoleId !== false) {
-                $currentUserRoleId = (int)$currentUserRoleId;
-            }
+            $assignedRoleIds = $stmtUserRole->fetchAll(\PDO::FETCH_COLUMN);
+            $assignedRoleIds = array_map('intval', $assignedRoleIds);
         } catch (\Throwable $e) {
-            Logger::error("getEditUserRoleData currentUserRoleId error: " . $e->getMessage(), ['exception' => $e]);
+            Logger::error("getEditUserRoleData assignedRoleIds error: " . $e->getMessage(), ['exception' => $e]);
         }
 
+        if (empty($assignedRoleIds) && isset($targetUser['role_id'])) {
+            $assignedRoleIds = [(int)$targetUser['role_id']];
+        }
+
+        $currentUserRoleId = !empty($assignedRoleIds) ? $assignedRoleIds[0] : 1;
         $currentUserWeight = isset($_SESSION['user_role_weight']) ? (int)$_SESSION['user_role_weight'] : 0;
+        $isSuperAdmin = isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4;
 
         return [
             'redirect' => null,
@@ -427,7 +431,9 @@ class AdminViewService {
             'targetUserUuid' => $targetUserUuid,
             'allRoles' => $allRoles,
             'currentUserRoleId' => $currentUserRoleId,
+            'assignedRoleIds' => $assignedRoleIds,
             'currentUserWeight' => $currentUserWeight,
+            'isSuperAdmin' => $isSuperAdmin,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
     }

@@ -99,6 +99,22 @@ return [
             ],
         ],
     ],
+    'admin.get_user_roles' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'get_user_roles',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_get_user_roles',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'admin.update_avatar' => [
         'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
         'action' => 'update_avatar',

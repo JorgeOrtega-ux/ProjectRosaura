@@ -1,6 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
+import { AdminModalTemplates } from '../AdminModalTemplates.js';
 class AdminUsersController {
     constructor() {
         this.api = new ApiService();
@@ -18,6 +19,9 @@ class AdminUsersController {
     }
     init() {
         if (this.isInitialized) return;
+        if (window.modalSystem) {
+            window.modalSystem.registerTemplates(AdminModalTemplates);
+        }
         this.isInitialized = true;
         this.abortController = new AbortController();
         this.bindEvents();
@@ -106,7 +110,7 @@ class AdminUsersController {
         }
     }
     handleGlobalChange(e) {
-        if (e.target && e.target.classList.contains('filter-checkbox')) {
+        if (e.target && e.target.classList.contains('filter-checkbox') && !e.target.closest('.component-modal-body')) {
             this.applyAllFilters();
         }
         if (e.target && e.target.classList.contains('admin-role-checkbox')) {
@@ -205,12 +209,17 @@ class AdminUsersController {
         const uuid = row ? row.getAttribute('data-user-uuid') : id;
         if (btn) setButtonLoading(btn);
         try {
-            const html = await this.api.fetchHtml(`${this.basePath}/admin/user-roles/${uuid}`, {
-                headers: { 'X-SPA-Request': 'true' }
-            });
+            const res = await this.api.post(ApiRoutes.Admin.GetUserRoles, { target_user_uuid: uuid });
             if (btn) restoreButton(btn);
-            await window.modalSystem.show('dynamicHtmlModal', { html: html });
-            this.updateRolesDropdownText();
+            if (res.success && res.data) {
+                if (window.modalSystem) {
+                    window.modalSystem.registerTemplates(AdminModalTemplates);
+                }
+                await window.modalSystem.show('editUserRoleModal', res.data);
+                this.updateRolesDropdownText();
+            } else {
+                showMessage(res.message || window.__('err_update_roles'), 'error');
+            }
         } catch (error) {
             if (btn) restoreButton(btn);
             showMessage(window.__('err_update_roles'), 'error');

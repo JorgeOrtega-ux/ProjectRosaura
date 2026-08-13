@@ -436,6 +436,22 @@ return [
             ],
         ],
     ],
+    'canvases.get_member_role_data' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasAccessController',
+        'action' => 'get_member_role_data',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_get_member_role_data',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'canvases.get_roles' => [
         'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasSettingsController',
         'action' => 'get_roles',

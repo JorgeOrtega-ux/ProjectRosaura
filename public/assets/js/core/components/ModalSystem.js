@@ -28,6 +28,14 @@ export class ModalSystem {
         this.init();
     }
 
+    registerTemplate(name, template) {
+        this.templates[name] = template;
+    }
+
+    registerTemplates(templates) {
+        Object.assign(this.templates, templates);
+    }
+
     init() {
         if (this.initialized) return;
         this.initialized = true;

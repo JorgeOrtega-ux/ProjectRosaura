@@ -29,6 +29,17 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
+    public function get_user_roles($input) {
+        try { 
+            $this->requirePermission(PermissionsConstants::ASSIGN_ROLES);
+            $targetUserUuid = $input['target_user_uuid'] ?? null;
+            $adminViewService = new \App\Api\Services\Admin\AdminViewService();
+            $data = $adminViewService->getEditUserRoleData($targetUserUuid);
+            return $this->respond(['success' => true, 'data' => $data]); 
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
     public function update_avatar($input) {
         try { 
             $this->requirePermission(PermissionsConstants::EDIT_USERS);

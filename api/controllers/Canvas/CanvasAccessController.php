@@ -121,6 +121,19 @@ class CanvasAccessController extends BaseController {
         }
     }
 
+    public function get_member_role_data($input) {
+        try {
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            $canvasUuid = $input['canvas_uuid'] ?? null;
+            $targetUserUuid = $input['target_user_uuid'] ?? null;
+            $canvasViewService = new \App\Api\Services\Canvas\CanvasViewService();
+            $data = $canvasViewService->getCanvasChangeRoleData($canvasUuid, $targetUserUuid);
+            return $this->respond(['success' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function assign_member_role($input) {
         try {
             if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);

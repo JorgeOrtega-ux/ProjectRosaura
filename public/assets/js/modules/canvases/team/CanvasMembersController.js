@@ -186,12 +186,17 @@ class CanvasMembersController {
 
         if (btn) setButtonLoading(btn);
         try {
-            const html = await this.api.fetchHtml(`${this.basePath}/canvases/members/${uuid}/role/${targetUserUuid}`, {
-                headers: { 'X-SPA-Request': 'true' }
+            const res = await this.api.post(ApiRoutes.Canvases.GetMemberRoleData, {
+                canvas_uuid: uuid,
+                target_user_uuid: targetUserUuid
             });
             if (btn) restoreButton(btn);
-            await window.modalSystem.show('dynamicHtmlModal', { html: html });
-            this.updateCanvasRolesDropdownText();
+            if (res.success && res.data) {
+                await window.modalSystem.show('changeCanvasRoleModal', res.data);
+                this.updateCanvasRolesDropdownText();
+            } else {
+                showMessage(res.message || __('err_connection_role'), 'error');
+            }
         } catch (error) {
             if (btn) restoreButton(btn);
             showMessage(__('err_connection_role'), 'error');

@@ -1917,5 +1917,105 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+    changeCanvasRoleModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const targetUsername = data.targetUsername || '';
+            const isOwner = !!data.isOwner;
+            const canvasId = data.canvasId || '';
+            const canvasUuid = data.canvasUuid || '';
+            const targetUserId = data.targetUserId || '';
+            const availableRoles = data.availableRoles || [];
+            const targetCurrentRoles = data.targetCurrentRoles || [];
+            const isRequesterOwner = !!data.isRequesterOwner;
+            const userRolesWeight = data.userRolesWeight || 0;
+
+            const rolesHtml = availableRoles.map(role => {
+                const rawName = role.name;
+                const isSystemFlag = role.is_system || 0;
+                let translatedName = rawName;
+                if (isSystemFlag) {
+                    const roleKey = 'role.' + rawName.toLowerCase().trim().replace(/[\s\W_]+/g, '_');
+                    translatedName = __(roleKey) || rawName;
+                }
+
+                const isChecked = targetCurrentRoles.includes(parseInt(role.id)) ? 'checked' : '';
+                const isHigherHierarchy = !isRequesterOwner && (parseInt(role.weight) >= userRolesWeight);
+                const isSuperAdminRole = parseInt(role.id) === 4 || parseInt(role.weight) >= 100;
+                const isDisabled = isHigherHierarchy || (isSuperAdminRole && !isRequesterOwner);
+                const disabledClass = isDisabled ? 'disabled-interaction' : '';
+                const disabledAttr = isDisabled ? 'disabled' : '';
+
+                let badgeHtml = '';
+                if (isDisabled) {
+                    badgeHtml = `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">lock</span> ${__('lbl_unavailable')}</span>`;
+                }
+
+                return `
+                    <label class="component-menu-link component-menu-link--bordered nav-item ${disabledClass}">
+                        <div class="component-menu-link-icon">
+                            <input type="checkbox" name="new_member_roles[]" value="${role.id}" class="admin-role-checkbox" ${isChecked} ${disabledAttr}>
+                        </div>
+                        <div class="component-menu-link-text">
+                            <span>${translatedName}</span>
+                            ${badgeHtml}
+                        </div>
+                    </label>
+                `;
+            }).join('');
+
+            const ownerWarningHtml = isOwner ? `
+                <div class="component-alert component-alert--warning">
+                    <span class="material-symbols-rounded">info</span>
+                    <span class="component-alert-text">${__('msg_owner_role_warning')}</span>
+                </div>
+            ` : '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">manage_accounts</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('lbl_manage_role')}: ${targetUsername}</h2>
+                        <p class="component-modal-desc">${__('modal_change_canvas_role_desc')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body" data-ref="change-role-wrapper" 
+                     data-canvas-id="${canvasId}"
+                     data-canvas-uuid="${canvasUuid}"
+                     data-target-user-id="${targetUserId}">
+
+                    ${ownerWarningHtml}
+
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleModule" data-target="dropdownCanvasRolesList">
+                            <div class="component-dropdown-trigger-title">
+                                <span class="material-symbols-rounded">shield</span>
+                                <span class="component-dropdown-text">${__('lbl_select_canvas_roles')}</span>
+                            </div>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+
+                        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--dropdown-full component-module--spaced disabled" data-module="dropdownCanvasRolesList">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact component-menu-list--max-h250">
+                                    ${rolesHtml}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--dark" data-action="saveCanvasMemberRoleSubmit">${__('btn_save_changes')}</button>
+                </div>
+            `;
+        }
     }
 };

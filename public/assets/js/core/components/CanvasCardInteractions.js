@@ -431,8 +431,8 @@ export class CanvasCardInteractions {
             manageSubmenuHtml = `
                 <div class="component-menu-page" data-menu-page="manage">
                     <div class="component-menu-list">
-                        <button type="button" class="component-menu-link" data-action="menuGoBack">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">arrow_back</span></div>
+                        <button type="button" class="component-menu-link component-menu-link--bordered nav-item" data-action="menuGoBack">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded msr-arrow_back">arrow_back</span></div>
                             <div class="component-menu-link-text"><span>Volver</span></div>
                         </button>
                         <div class="component-menu-divider"></div>
