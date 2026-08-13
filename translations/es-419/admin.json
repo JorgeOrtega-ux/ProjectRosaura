@@ -238,6 +238,26 @@
             "name": "Acceso al panel de administración",
             "desc": "Permite el acceso a la zona de administración general."
         },
+        "view_dashboard": {
+            "name": "Visualizar panel principal",
+            "desc": "Permite acceder y visualizar las métricas del panel de control."
+        },
+        "manage_subscriptions": {
+            "name": "Administrar suscripciones",
+            "desc": "Permite gestionar los planes, precios y características de suscripciones."
+        },
+        "manage_store_packages": {
+            "name": "Administrar tienda de monedas",
+            "desc": "Permite gestionar los paquetes de monedas y sus precios."
+        },
+        "manage_store_perks": {
+            "name": "Administrar tienda de ventajas",
+            "desc": "Permite gestionar las ventajas y perks disponibles en la tienda."
+        },
+        "manage_content": {
+            "name": "Moderar contenido y mensajes",
+            "desc": "Permite supervisar mensajes, reportes y visibilidad de contenido."
+        },
         "manage_users": {
             "name": "Gestionar usuarios",
             "desc": "Puede editar datos básicos de usuarios (avatar, email, nombre)."

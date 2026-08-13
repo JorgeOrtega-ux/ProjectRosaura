@@ -204,6 +204,11 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
 
                 <div class="component-menu-divider"></div>
                 
+                <?php 
+                $hasUsersPerm = count(array_intersect(['view_users', 'edit_users', 'moderate_users', 'delete_users', 'assign_roles'], $userPermissions)) > 0;
+                $hasBackupsPerm = count(array_intersect(['create_backups', 'restore_backups', 'delete_backups'], $userPermissions)) > 0;
+                $hasServerConfigPerm = in_array('manage_server_config', $userPermissions);
+                ?>
                 <div class="component-menu-link nav-item" data-nav="/admin/dashboard">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">dashboard</span>
@@ -213,8 +218,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                     </div>
                 </div>
                 
-                <?php if (count(array_intersect(['view_users', 'edit_users', 'moderate_users', 'delete_users', 'assign_roles'], $userPermissions)) > 0): ?>
-                <div class="component-menu-link nav-item" data-nav="/admin/users">
+                <div class="component-menu-link nav-item <?php echo !$hasUsersPerm ? 'disabled-interaction' : ''; ?>" data-nav="/admin/users">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">group</span>
                     </div>
@@ -222,14 +226,12 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                         <span><?php echo __('menu_admin_users'); ?></span>
                     </div>
                 </div>
-                <?php endif; ?>
             </div>
         </div>
 
         <div class="component-menu-bottom">
             <div class="component-menu-list">
-                <?php if (count(array_intersect(['create_backups', 'restore_backups', 'delete_backups'], $userPermissions)) > 0): ?>
-                <div class="component-menu-link nav-item" data-nav="/admin/backups">
+                <div class="component-menu-link nav-item <?php echo !$hasBackupsPerm ? 'disabled-interaction' : ''; ?>" data-nav="/admin/backups">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">backup</span>
                     </div>
@@ -237,10 +239,8 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                         <span><?php echo __('menu_admin_backups'); ?></span>
                     </div>
                 </div>
-                <?php endif; ?>
                 
-                <?php if (in_array('manage_server_config', $userPermissions)): ?>
-                <div class="component-menu-link nav-item" data-nav="/admin/system-settings">
+                <div class="component-menu-link nav-item <?php echo !$hasServerConfigPerm ? 'disabled-interaction' : ''; ?>" data-nav="/admin/system-settings">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">dns</span>
                     </div>
@@ -248,7 +248,6 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                         <span><?php echo __('menu_admin_server'); ?></span>
                     </div>
                 </div>
-                <?php endif; ?>
             </div>
         </div>
 

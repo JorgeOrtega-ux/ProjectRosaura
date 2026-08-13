@@ -24,6 +24,13 @@ class PermissionsConstants {
     public const CREATE_CANVAS = 'create_canvas';
     public const MANAGE_CANVASES = 'manage_canvases';
     public const JOIN_CANVAS = 'join_canvas';
+
+    // Nuevos permisos granulares para el panel de administración
+    public const VIEW_DASHBOARD = 'view_dashboard';
+    public const MANAGE_SUBSCRIPTIONS = 'manage_subscriptions';
+    public const MANAGE_STORE_PACKAGES = 'manage_store_packages';
+    public const MANAGE_STORE_PERKS = 'manage_store_perks';
+    public const MANAGE_CONTENT = 'manage_content';
     
     // Antiguos / Compatibilidad con lienzos (localizados en CanvasPermissionsConstants)
     public const MANAGE_SETTINGS = 'manage_settings';

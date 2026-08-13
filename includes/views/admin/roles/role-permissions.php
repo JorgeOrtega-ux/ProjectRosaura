@@ -23,34 +23,49 @@ $rolePermissionsIds = $rolePermissions;
 
 $categories = [
     'users' => [
-        'title' => __('perm_cat_users'),
+        'title' => __('perm_cat_users', [], 'Usuarios'),
         'icon' => 'group',
         'perms' => ['view_users', 'edit_users', 'moderate_users', 'delete_users', 'view_kardex', 'manage_kardex']
     ],
     'roles' => [
-        'title' => __('perm_cat_roles'),
+        'title' => __('perm_cat_roles', [], 'Roles'),
         'icon' => 'admin_panel_settings',
         'perms' => ['view_roles', 'manage_roles_structure', 'assign_roles']
     ],
+    'subscriptions' => [
+        'title' => __('perm_cat_subscriptions', [], 'Suscripciones'),
+        'icon' => 'workspace_premium',
+        'perms' => ['manage_subscriptions']
+    ],
+    'store' => [
+        'title' => __('perm_cat_store', [], 'Tienda'),
+        'icon' => 'storefront',
+        'perms' => ['manage_store_packages', 'manage_store_perks']
+    ],
+    'content' => [
+        'title' => __('perm_cat_content', [], 'Contenido'),
+        'icon' => 'chat',
+        'perms' => ['manage_content']
+    ],
     'canvases' => [
-        'title' => __('perm_cat_canvases'),
+        'title' => __('perm_cat_canvases', [], 'Lienzos'),
         'icon' => 'palette',
         'perms' => ['create_canvas', 'manage_canvases', 'join_canvas']
     ],
     'backups' => [
-        'title' => __('perm_cat_backups'),
+        'title' => __('perm_cat_backups', [], 'Copias de Seguridad'),
         'icon' => 'backup',
         'perms' => ['create_backups', 'restore_backups', 'delete_backups', 'download_backups']
     ],
     'logs' => [
-        'title' => __('perm_cat_logs'),
+        'title' => __('perm_cat_logs', [], 'Registros y Logs'),
         'icon' => 'history',
         'perms' => ['view_logs', 'delete_logs']
     ],
     'system' => [
-        'title' => __('perm_cat_system'),
+        'title' => __('perm_cat_system', [], 'Sistema'),
         'icon' => 'settings',
-        'perms' => ['access_admin_panel', 'manage_server_config', 'perform_system_maintenance']
+        'perms' => ['access_admin_panel', 'view_dashboard', 'manage_server_config', 'perform_system_maintenance']
     ]
 ];
 
@@ -150,6 +165,10 @@ $isSystemRole = (isset($role['is_system']) && (int)$role['is_system'] === 1);
                                             $cleanPermName = preg_replace('/[\s\W_]+/', '_', strtolower(trim($p['name'])));
                                             $permNameTranslated = __('perm.' . $cleanPermName);
                                             $permDescTranslated = __('perm.desc_' . $cleanPermName);
+                                            if ($permNameTranslated === 'perm.' . $cleanPermName) {
+                                                $permNameTranslated = __('permissions.' . $cleanPermName . '.name', [], $p['name']);
+                                                $permDescTranslated = __('permissions.' . $cleanPermName . '.desc', [], $p['description'] ?? '');
+                                            }
                                         ?>
                                             <div class="component-group-item" style="padding-left: 24px; padding-right: 24px;">
                                                 <div class="component-card__content">

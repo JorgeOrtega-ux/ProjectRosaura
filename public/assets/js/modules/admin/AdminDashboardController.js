@@ -13,6 +13,9 @@ export class AdminDashboardController {
     async init() {
         window.dashboardController = this;
         this.cacheDOM();
+        if (!this.dom.statNewUsers) {
+            return;
+        }
         this.bindEvents();
         this._setLoadingState();
         try {

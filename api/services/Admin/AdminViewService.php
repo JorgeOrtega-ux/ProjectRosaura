@@ -65,16 +65,24 @@ class AdminViewService {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
         $userPermissions = $_SESSION['user_permissions'] ?? [];
+        $canViewDashboard = in_array(PermissionsConstants::VIEW_DASHBOARD, $userPermissions);
         $canManageRoles = in_array(PermissionsConstants::VIEW_ROLES, $userPermissions);
         $canViewLogs = in_array(PermissionsConstants::VIEW_LOGS, $userPermissions);
-        $canManageMessages = true;
+        $canManageMessages = in_array(PermissionsConstants::MANAGE_CONTENT, $userPermissions);
+        $canManageSubscriptions = in_array(PermissionsConstants::MANAGE_SUBSCRIPTIONS, $userPermissions);
+        $canManageStorePackages = in_array(PermissionsConstants::MANAGE_STORE_PACKAGES, $userPermissions);
+        $canManageStorePerks = in_array(PermissionsConstants::MANAGE_STORE_PERKS, $userPermissions);
 
         $appUrl = defined('APP_URL') ? APP_URL : '';
 
         return [
+            'canViewDashboard' => $canViewDashboard,
             'canManageRoles' => $canManageRoles,
             'canViewLogs' => $canViewLogs,
             'canManageMessages' => $canManageMessages,
+            'canManageSubscriptions' => $canManageSubscriptions,
+            'canManageStorePackages' => $canManageStorePackages,
+            'canManageStorePerks' => $canManageStorePerks,
             'appUrl' => $appUrl
         ];
     }
@@ -496,7 +504,7 @@ class AdminViewService {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
         $userPerms = $_SESSION['user_permissions'] ?? [];
-        $canManageTiers = in_array(PermissionsConstants::MANAGE_ROLES_STRUCTURE, $userPerms) || in_array(PermissionsConstants::ACCESS_ADMIN_PANEL, $userPerms);
+        $canManageTiers = in_array(PermissionsConstants::MANAGE_SUBSCRIPTIONS, $userPerms);
 
         $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);

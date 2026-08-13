@@ -194,7 +194,7 @@ class AdminController extends BaseController {
 
     public function save_subscription($input) {
         try {
-            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::MANAGE_SUBSCRIPTIONS);
             $safeInput = [
                 'uuid' => $input['uuid'] ?? null,
                 'name' => $input['name'] ?? null,
@@ -210,7 +210,7 @@ class AdminController extends BaseController {
     }
     public function toggle_subscription_visibility($input) {
         try {
-            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::MANAGE_SUBSCRIPTIONS);
             $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->toggleSubscriptionVisibility($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -218,7 +218,7 @@ class AdminController extends BaseController {
 
     public function set_subscription_popular($input) {
         try {
-            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::MANAGE_SUBSCRIPTIONS);
             $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->setSubscriptionPopular($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -226,7 +226,7 @@ class AdminController extends BaseController {
 
     public function delete_subscription($input) {
         try {
-            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::MANAGE_SUBSCRIPTIONS);
             $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->deleteSubscription($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -234,7 +234,7 @@ class AdminController extends BaseController {
 
     public function save_store_package($input) {
         try {
-            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PACKAGES);
             $safeInput = [
                 'uuid' => $input['uuid'] ?? null,
                 'name' => $input['name'] ?? null,
@@ -255,7 +255,7 @@ class AdminController extends BaseController {
 
     public function toggle_store_package_visibility($input) {
         try {
-            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PACKAGES);
             $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->toggleStorePackageVisibility($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -263,7 +263,7 @@ class AdminController extends BaseController {
 
     public function set_store_package_popular($input) {
         try {
-            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PACKAGES);
             $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->setStorePackagePopular($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -271,7 +271,7 @@ class AdminController extends BaseController {
 
     public function delete_store_package($input) {
         try {
-            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PACKAGES);
             $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->deleteStorePackage($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -279,7 +279,7 @@ class AdminController extends BaseController {
 
     public function save_store_perk($input) {
         try {
-            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PERKS);
             $safeInput = [
                 'uuid' => $input['uuid'] ?? null,
                 'perk_id' => $input['perk_id'] ?? null,
@@ -295,7 +295,7 @@ class AdminController extends BaseController {
 
     public function toggle_store_perk_visibility($input) {
         try {
-            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PERKS);
             $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->toggleStorePerkVisibility($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -303,7 +303,7 @@ class AdminController extends BaseController {
 
     public function delete_store_perk($input) {
         try {
-            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PERKS);
             $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->deleteStorePerk($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -448,7 +448,7 @@ class AdminController extends BaseController {
 
     public function get_dashboard_metrics($input) {
         try {
-            $this->requirePermission(PermissionsConstants::ACCESS_ADMIN_PANEL);
+            $this->requirePermission(PermissionsConstants::VIEW_DASHBOARD);
             $safeInput = [
                 'start_date' => $input['start_date'] ?? null,
                 'end_date' => $input['end_date'] ?? null
@@ -460,6 +460,7 @@ class AdminController extends BaseController {
 
     public function get_messages() {
         try {
+            $this->requirePermission(PermissionsConstants::MANAGE_CONTENT);
             $page = (int)($this->request['page'] ?? 1);
             $limit = (int)($this->request['limit'] ?? 50);
             
@@ -473,7 +474,7 @@ class AdminController extends BaseController {
 
     public function update_message_visibility($input) {
         try {
-            $this->requirePermission(PermissionsConstants::VIEW_LOGS);
+            $this->requirePermission(PermissionsConstants::MANAGE_CONTENT);
             $data = [
                 'uuid' => $input['uuid'] ?? null,
                 'visibility' => $input['visibility'] ?? null,
@@ -487,7 +488,7 @@ class AdminController extends BaseController {
 
     public function get_message_reports($input) {
         try {
-            $this->requirePermission(PermissionsConstants::VIEW_LOGS);
+            $this->requirePermission(PermissionsConstants::MANAGE_CONTENT);
             $uuid = $input['uuid'] ?? $this->request['uuid'] ?? null;
             return $this->respond($this->adminServices->getMessageReports($uuid));
         }
@@ -496,7 +497,7 @@ class AdminController extends BaseController {
 
     public function update_report_status($input) {
         try {
-            $this->requirePermission(PermissionsConstants::VIEW_LOGS);
+            $this->requirePermission(PermissionsConstants::MANAGE_CONTENT);
             $data = [
                 'report_id' => $input['report_id'] ?? null,
                 'status' => $input['status'] ?? null

@@ -15,22 +15,22 @@ extract($dashboardData);
             </div>
             <div class="component-top-right">
                 
-                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageMessages ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/messages" data-tooltip="<?php echo __('admin_manage_messages'); ?>" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageMessages ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/messages" data-tooltip="<?php echo __('admin_manage_messages'); ?><?php echo !$canManageMessages ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageMessages ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">chat</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/subscriptions" data-tooltip="<?php echo __('admin_manage_subscriptions', [], 'Administrar Suscripciones'); ?>" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageSubscriptions ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/subscriptions" data-tooltip="<?php echo __('admin_manage_subscriptions', [], 'Administrar Suscripciones'); ?><?php echo !$canManageSubscriptions ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageSubscriptions ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">workspace_premium</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/store-packages" data-tooltip="Tienda de Monedas" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageStorePackages ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/store-packages" data-tooltip="Tienda de Monedas<?php echo !$canManageStorePackages ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageStorePackages ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">storefront</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/store-perks" data-tooltip="Tienda de Ventajas" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageStorePerks ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/store-perks" data-tooltip="Tienda de Ventajas<?php echo !$canManageStorePerks ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageStorePerks ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">shopping_bag</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageRoles ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/roles" data-tooltip="<?php echo __('btn_manage_roles'); ?>" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageRoles ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/roles" data-tooltip="<?php echo __('btn_manage_roles'); ?><?php echo !$canManageRoles ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageRoles ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">admin_panel_settings</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h40 <?php echo !$canViewLogs ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/logs" data-tooltip="<?php echo __('btn_view_logs'); ?>" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40 <?php echo !$canViewLogs ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/logs" data-tooltip="<?php echo __('btn_view_logs'); ?><?php echo !$canViewLogs ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canViewLogs ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">receipt_long</span>
                 </button>
 
@@ -38,7 +38,7 @@ extract($dashboardData);
         </div>
 
         <div class="component-bottom component-bottom--padded">
-            
+            <?php if ($canViewDashboard): ?>
             <div class="component-stat-grid">
                 <div class="component-item-card component-stat-card">
                     <div class="component-card__icon-container component-card__icon-container--bordered component-stat-card__icon">
@@ -207,6 +207,21 @@ extract($dashboardData);
                     </div>
                 </div>
             </div>
+            <?php else: ?>
+            <div class="component-message-layout" style="min-height: 360px; padding: 40px 20px;">
+                <div class="component-message-box">
+                    <div class="component-message-icon-wrapper">
+                        <span class="material-symbols-rounded component-message-icon">lock</span>
+                    </div>
+                    <h1 class="component-message-title">
+                        <?php echo __('no_permission_title', [], 'Acceso Denegado'); ?>
+                    </h1>
+                    <p class="component-message-desc">
+                        <?php echo __('admin_dashboard_metrics_locked_desc', [], 'Tu rol actual no dispone de permisos para visualizar el resumen analítico del sistema. Puedes utilizar los botones de la barra superior para gestionar las secciones asignadas a tu cuenta.'); ?>
+                    </p>
+                </div>
+            </div>
+            <?php endif; ?>
 
         </div> 
     </div>

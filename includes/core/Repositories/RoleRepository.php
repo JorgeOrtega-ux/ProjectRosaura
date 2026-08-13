@@ -124,7 +124,50 @@ class RoleRepository implements RoleRepositoryInterface {
         });
     }
 
+    public function ensureDefaultPermissionsExist(): void {
+        $defaults = [
+            ['name' => 'view_dashboard', 'description' => 'desc_view_dashboard', 'is_critical' => 0, 'roles' => [3, 4]],
+            ['name' => 'manage_subscriptions', 'description' => 'desc_manage_subscriptions', 'is_critical' => 0, 'roles' => [3, 4]],
+            ['name' => 'manage_store_packages', 'description' => 'desc_manage_store_packages', 'is_critical' => 0, 'roles' => [3, 4]],
+            ['name' => 'manage_store_perks', 'description' => 'desc_manage_store_perks', 'is_critical' => 0, 'roles' => [3, 4]],
+            ['name' => 'manage_content', 'description' => 'desc_manage_content', 'is_critical' => 0, 'roles' => [2, 3, 4]],
+        ];
+
+        try {
+            $tblPerms = DB::TBL_PERMISSIONS;
+            $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
+
+            $stmtCheck = $this->pdo->prepare("SELECT id FROM {$tblPerms} WHERE name = ? LIMIT 1");
+            $stmtInsert = $this->pdo->prepare("INSERT INTO {$tblPerms} (name, description, is_critical) VALUES (?, ?, ?)");
+            $stmtAssign = $this->pdo->prepare("INSERT IGNORE INTO {$tblRolePerms} (role_id, permission_id) VALUES (?, ?)");
+
+            $created = false;
+            foreach ($defaults as $perm) {
+                $stmtCheck->execute([$perm['name']]);
+                $permId = $stmtCheck->fetchColumn();
+                if (!$permId) {
+                    $stmtInsert->execute([$perm['name'], $perm['description'], $perm['is_critical']]);
+                    $permId = (int)$this->pdo->lastInsertId();
+                    $created = true;
+                }
+                if ($permId) {
+                    foreach ($perm['roles'] as $roleId) {
+                        $stmtAssign->execute([$roleId, $permId]);
+                    }
+                }
+            }
+
+            if ($created) {
+                $this->invalidateGlobalPermissionsCache();
+                $this->invalidateGlobalRolesCache();
+            }
+        } catch (\Throwable $e) {
+            Logger::error("Error seeding default permissions: " . $e->getMessage(), ['exception' => $e]);
+        }
+    }
+
     public function getAllPermissions(): array {
+        $this->ensureDefaultPermissionsExist();
         $cacheKey = CacheConstants::PREFIX_ALL_PERMISSIONS;
         $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
         if ($cached) return json_decode($cached, true);
@@ -203,6 +246,7 @@ class RoleRepository implements RoleRepositoryInterface {
     }
 
     public function getMergedPermissionsForUser(int $userId): array {
+        $this->ensureDefaultPermissionsExist();
         $cacheKey = CacheConstants::PREFIX_USER_PERMS . $userId;
         $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
         if ($cached) return json_decode($cached, true);

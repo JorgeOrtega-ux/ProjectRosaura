@@ -71,7 +71,7 @@ if ($isMaintenanceActive && !$isPrivileged) {
         }
         if (!$hasAccess) {
             $currentView = 'system/message.php';
-            $systemMessageType = '404';
+            $systemMessageType = 'no_permission';
         }
     }
 
