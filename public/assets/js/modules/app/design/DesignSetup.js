@@ -391,15 +391,6 @@ export const DesignSetup = {
                 ? Math.round(Date.now() - window.performance.timing.navigationStart)
                 : totalMs;
 
-            console.group('%c⚡ [Canvas Load Performance]', 'background: #0f172a; color: #00ffcc; font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 4px;');
-            console.log(`⏱️ Carga Total Navegación (Browser -> Listo): %c${navMs} ms%c (${(navMs / 1000).toFixed(2)} s)`, 'color: #00ffcc; font-weight: bold;', 'color: inherit;');
-            console.log(`🚀 Render Vista JS (DOM -> Carga): %c${totalMs} ms%c`, 'color: #38ef7d; font-weight: bold;', 'color: inherit;');
-            if (canvasData && canvasData.debug_timing) {
-                const apiMs = Math.round((canvasData.debug_timing.total || 0) * 1000);
-                const isCached = canvasData.debug_timing.cached ? 'SÍ (Redis HIT 🚀)' : 'NO (MySQL DB 🐢)';
-                console.log(`📦 Tiempo API (getCanvas): %c${apiMs} ms%c | Caché Redis: %c${isCached}%c`, 'color: #f1c40f; font-weight: bold;', 'color: inherit;', 'color: #00ffcc; font-weight: bold;', 'color: inherit;');
-            }
-            console.groupEnd();
         } catch (e) {}
     },
 

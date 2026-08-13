@@ -88,11 +88,11 @@ class CanvasAccessService {
                     $roleWeight = (int)$role['weight'];
                     if (!$isOwner) {
                         if ($roleWeight >= $requesterWeight) {
-                            return ['success' => false, 'message' => __('err_cannot_assign_high_role') ?: 'No puedes asignar roles con jerarquía igual o superior a la tuya.'];
+                            return ['success' => false, 'message' => __('err_cannot_assign_high_role')];
                         }
                     }
                     if ($roleWeight >= 100 && !$isOwner) {
-                        return ['success' => false, 'message' => __('err_role_protected') ?: 'El rol SuperAdministrator está protegido y solo puede ser asignado por el propietario del lienzo.'];
+                        return ['success' => false, 'message' => __('err_role_protected')];
                     }
                 }
             }

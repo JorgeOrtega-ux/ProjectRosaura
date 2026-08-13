@@ -199,10 +199,10 @@ class CanvasesCreateController {
                     if (textEl) {
                         const text = textEl.textContent.toLowerCase();
                         if (text.includes(query)) {
-                            link.style.display = '';
+                            link.classList.remove('u-hidden');
                             hasVisible = true;
                         } else {
-                            link.style.display = 'none';
+                            link.classList.add('u-hidden');
                         }
                     }
                 });

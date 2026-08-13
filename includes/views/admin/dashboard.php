@@ -208,7 +208,7 @@ extract($dashboardData);
                 </div>
             </div>
             <?php else: ?>
-            <div class="component-message-layout" style="min-height: 360px; padding: 40px 20px;">
+            <div class="component-message-layout">
                 <div class="component-message-box">
                     <div class="component-message-icon-wrapper">
                         <span class="material-symbols-rounded component-message-icon">lock</span>

@@ -206,7 +206,7 @@ export class PurchaseHistoryController {
                     this.activeTab = 'coins';
                     
                     const statusRow = this.container.querySelector('[data-ref="filter-status-row"]');
-                    if (statusRow) statusRow.style.display = 'none';
+                    if (statusRow) statusRow.classList.add('u-hidden');
 
                     if (this.coinItems.length === 0) {
                         this.loadCoinHistory();
@@ -217,7 +217,7 @@ export class PurchaseHistoryController {
                     this.activeTab = 'payments';
 
                     const statusRow = this.container.querySelector('[data-ref="filter-status-row"]');
-                    if (statusRow) statusRow.style.display = '';
+                    if (statusRow) statusRow.classList.remove('u-hidden');
 
                     if (val === 'payments_all') {
                         this.activeFilters.types = ['all'];

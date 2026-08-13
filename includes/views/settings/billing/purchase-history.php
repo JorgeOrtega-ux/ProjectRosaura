@@ -53,19 +53,19 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input type="radio" name="purchase_type_filter" class="filter-radio" data-filter-type="type" value="payments_all" checked></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('type_all_payments') ?: 'Todos los Pagos (Real)'; ?></span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('type_all_payments'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input type="radio" name="purchase_type_filter" class="filter-radio" data-filter-type="type" value="payments_subscription"></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('type_subscription') ?: 'Suscripciones (Real)'; ?></span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('type_subscription'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input type="radio" name="purchase_type_filter" class="filter-radio" data-filter-type="type" value="payments_coins"></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('type_coins') ?: 'Compras de Monedas (Real)'; ?></span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('type_coins'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input type="radio" name="purchase_type_filter" class="filter-radio" data-filter-type="type" value="coins_virtual"></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('tab_coins_virtual') ?: 'Monedas (Virtual)'; ?></span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('tab_coins_virtual'); ?></span></div>
                                     </label>
                                 </div>
                             </div>

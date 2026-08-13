@@ -125,7 +125,7 @@ export class BillingController {
         const renewalContainer = this.subscriptionArea.querySelector('[data-ref="sub-renewal-container"]');
         if (renewalContainer) {
             if (data.tier > 0) {
-                renewalContainer.style.display = 'block';
+                renewalContainer.classList.remove('u-hidden');
                 let renewText = cancelAtEnd ? (window.__('status_canceled')) : (window.__('status_active'));
                 const renewalDescEl = renewalContainer.querySelector('[data-ref="sub-renewal-desc"]');
                 if (renewalDescEl) {
@@ -146,7 +146,7 @@ export class BillingController {
                     }
                 }
             } else {
-                renewalContainer.style.display = 'none';
+                renewalContainer.classList.add('u-hidden');
             }
         }
 
@@ -177,8 +177,8 @@ export class BillingController {
 
         if (tokensContainer) {
             if (tokens.has_feature || tokens.max_tokens > 0) {
-                if (tokensDivider) tokensDivider.style.display = 'block';
-                tokensContainer.style.display = '';
+                if (tokensDivider) tokensDivider.classList.remove('u-hidden');
+                tokensContainer.classList.remove('u-hidden');
 
                 const usedTok = tokens.used_tokens || 0;
                 const maxTok = tokens.max_tokens || 5000;
@@ -211,8 +211,8 @@ export class BillingController {
                     tokensProgressFill.style.width = `${tokPercentage}%`;
                 }
             } else {
-                if (tokensDivider) tokensDivider.style.display = 'none';
-                tokensContainer.style.display = 'none';
+                if (tokensDivider) tokensDivider.classList.add('u-hidden');
+                tokensContainer.classList.add('u-hidden');
             }
         }
     }

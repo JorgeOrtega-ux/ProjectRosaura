@@ -364,29 +364,29 @@ export class CalendarSystem {
             dateDisplay = this.getFormattedDisplayDate(tempDateObj, hours, minutes).split(',')[0];
         }
 
-        let title = typeof window.__ === 'function' ? window.__('calendar_modal_title') : 'Programar fecha y hora';
-        let desc = typeof window.__ === 'function' ? window.__('calendar_modal_desc') : 'Selecciona una fecha y hora para programar la acción.';
+        let title = window.__('calendar_modal_title');
+        let desc = window.__('calendar_modal_desc');
 
         if (this.containerSelector && typeof this.containerSelector === 'string') {
             if (this.containerSelector.includes('Resize') || this.containerSelector.includes('resize')) {
-                title = (typeof window.__ === 'function' ? window.__('calendar_modal_title_resize') : 'Programar redimensión') || 'Programar redimensión';
-                desc = (typeof window.__ === 'function' ? window.__('calendar_modal_desc_resize') : 'Selecciona la fecha y hora en la que se aplicará el cambio de tamaño del lienzo.') || 'Selecciona la fecha y hora en la que se aplicará el cambio de tamaño del lienzo.';
+                title = window.__('calendar_modal_title_resize');
+                desc = window.__('calendar_modal_desc_resize');
             } else if (this.containerSelector.includes('Reset') || this.containerSelector.includes('moduleCalendarDate')) {
-                title = (typeof window.__ === 'function' ? window.__('calendar_modal_title_reset') : 'Programar reinicio') || 'Programar reinicio';
-                desc = (typeof window.__ === 'function' ? window.__('calendar_modal_desc_reset') : 'Selecciona la fecha y hora en la que se restablecerá el lienzo.') || 'Selecciona la fecha y hora en la que se restablecerá el lienzo.';
+                title = window.__('calendar_modal_title_reset');
+                desc = window.__('calendar_modal_desc_reset');
             } else if (this.containerSelector.includes('invite')) {
-                title = (typeof window.__ === 'function' ? window.__('calendar_modal_title_invite') : 'Expiración de invitación') || 'Expiración de invitación';
-                desc = (typeof window.__ === 'function' ? window.__('calendar_modal_desc_invite') : 'Selecciona la fecha y hora en la que caducará esta invitación.') || 'Selecciona la fecha y hora en la que caducará esta invitación.';
+                title = window.__('calendar_modal_title_invite');
+                desc = window.__('calendar_modal_desc_invite');
             } else if (this.containerSelector.includes('admin')) {
-                title = (typeof window.__ === 'function' ? window.__('calendar_modal_title_admin') : 'Establecer expiración de suspensión') || 'Establecer expiración de suspensión';
-                desc = (typeof window.__ === 'function' ? window.__('calendar_modal_desc_admin') : 'Selecciona la fecha y hora en la que finalizará la sanción del usuario.') || 'Selecciona la fecha y hora en la que finalizará la sanción del usuario.';
+                title = window.__('calendar_modal_title_admin');
+                desc = window.__('calendar_modal_desc_admin');
             }
         }
 
         const res = await window.modalSystem.show('calendarModal', {
-            title: title || 'Programar fecha y hora',
-            description: desc || 'Selecciona una fecha y hora para programar la acción.',
-            dateDisplay: dateDisplay || (typeof window.__ === 'function' ? window.__('lbl_select_date') : 'Seleccionar fecha') || 'Seleccionar fecha',
+            title: title,
+            description: desc,
+            dateDisplay: dateDisplay || window.__('lbl_select_date'),
             hours: hours,
             minutes: minutes,
             isoDate: isoDate

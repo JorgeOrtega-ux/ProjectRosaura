@@ -153,7 +153,7 @@ class AdminRolePermissionsController {
             const saveBtn = document.querySelector('[data-action="savePermissions"]');
             if (saveBtn) {
                 saveBtn.disabled = true;
-                saveBtn.style.display = 'none';
+                saveBtn.classList.add('u-hidden');
             }
             showMessage(_t('admin_role_glass_ceiling', 'Solo lectura. No tienes privilegios para editar este rol.'), 'warning');
         }

@@ -125,7 +125,7 @@ $isSystemRole = (isset($role['is_system']) && (int)$role['is_system'] === 1);
         <div class="component-wrapper">
             <div class="component-bottom">
                 <?php if ($isSystemRole): ?>
-                <div class="component-alert component-alert--warning active" style="margin-bottom: 16px;">
+                <div class="component-alert component-alert--warning active">
                     <div class="component-alert-icon">
                         <span class="material-symbols-rounded">info</span>
                     </div>
@@ -133,7 +133,7 @@ $isSystemRole = (isset($role['is_system']) && (int)$role['is_system'] === 1);
                 </div>
                 <?php endif; ?>
 
-                <div data-ref="permissions-container" class="component-list" style="display: flex; flex-direction: column; gap: 16px;">
+                <div data-ref="permissions-container" class="component-list">
                     <?php if (empty($allPermissions)): ?>
                         <div class="component-empty-state">
                             <span class="material-symbols-rounded empty-icon">lock</span>
@@ -170,7 +170,7 @@ $isSystemRole = (isset($role['is_system']) && (int)$role['is_system'] === 1);
                                                 $permDescTranslated = __('permissions.' . $cleanPermName . '.desc', [], $p['description'] ?? '');
                                             }
                                         ?>
-                                            <div class="component-group-item" style="padding-left: 24px; padding-right: 24px;">
+                                            <div class="component-group-item">
                                                 <div class="component-card__content">
                                                     <div class="component-card__text" data-perm-key="<?php echo htmlspecialchars($p['name']); ?>">
                                                         <h2 class="component-card__title" data-ref="perm-name"><?php echo htmlspecialchars($permNameTranslated); ?></h2>

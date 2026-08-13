@@ -23,80 +23,80 @@
 const SOUND_PROFILES = {
 
     orbital_cannon_1: {
-        file:        'orbital_cannon.mp3',
-        warnFile:    'orbital_cannon_warning.mp3',
+        file:        'orbital_cannon.ogg',
+        warnFile:    'orbital_cannon_warning.ogg',
         maxDuration: 7.0,   // explosion.duration 10s → dejamos sonar 7s
         throttleMs:  0,
     },
 
     atomic_bomb_1: {
-        file:        'atomic_bomb.mp3',
-        warnFile:    'atomic_bomb_warning.mp3',
+        file:        'atomic_bomb.ogg',
+        warnFile:    'atomic_bomb_warning.ogg',
         maxDuration: 7.0,   // explosion.duration 10s
         throttleMs:  0,
     },
 
     black_hole_1: {
-        file:        'black_hole.mp3',
-        warnFile:    'black_hole_warning.mp3',
+        file:        'black_hole.ogg',
+        warnFile:    'black_hole_warning.ogg',
         maxDuration: 7.0,   // explosion.duration 10s
         throttleMs:  0,
     },
 
     // multi_target — warnThrottleMs: solo 1 warning por ráfaga de N eventos
     meteor_shower_1: {
-        file:          'meteor_shower.mp3',
-        warnFile:      'meteor_shower_warning.mp3',
+        file:          'meteor_shower.ogg',
+        warnFile:      'meteor_shower_warning.ogg',
         maxDuration:   5.0,    // explosion.duration 4s + cola
         throttleMs:    7000,   // jitter_delay 5s → 1 explosión por ráfaga
         warnThrottleMs: 14000, // warning_seconds 12s → 1 warning total
     },
 
     cluster_bomb_1: {
-        file:          'cluster_bomb.mp3',
-        warnFile:      'cluster_bomb_warning.mp3',
+        file:          'cluster_bomb.ogg',
+        warnFile:      'cluster_bomb_warning.ogg',
         maxDuration:   5.0,    // explosion.duration 5s
         throttleMs:    7000,   // 5 objetivos → 1 explosión
         warnThrottleMs: 10000, // warning_seconds 8s → 1 warning
     },
 
     pixel_shield_1: {
-        file:        'pixel_shield.mp3',
+        file:        'pixel_shield.ogg',
         maxDuration: 2.0,
         throttleMs:  0,
     },
 
     pixel_missile_1: {
-        file:        'pixel_missile.mp3',
-        warnFile:    'pixel_missile_warning.mp3',
+        file:        'pixel_missile.ogg',
+        warnFile:    'pixel_missile_warning.ogg',
         maxDuration: 2.5,
         throttleMs:  300,
     },
 
     pixel_bomb_1: {
-        file:        'pixel_bomb.mp3',
-        warnFile:    'pixel_bomb_warning.mp3',
+        file:        'pixel_bomb.ogg',
+        warnFile:    'pixel_bomb_warning.ogg',
         maxDuration: 3.0,
         throttleMs:  0,
     },
 
     mines_1: {
-        file:        'mines.mp3',
+        file:        'mines.ogg',
         // warning_seconds: 0 → no necesita warnFile
         maxDuration: 2.0,
         throttleMs:  200,
     },
 
     supernova_blast: {
-        file:        'supernova_blast.mp3',
-        warnFile:    'supernova_blast_warning.mp3',
+        file:        'supernova_blast.ogg',
+        warnFile:    'supernova_blast_warning.ogg',
         maxDuration: 7.0,
         throttleMs:  0,
     },
 
     ion_strike: {
-        file:        'ion_strike.mp3',
-        warnFile:    'ion_strike_warning.mp3',
+        file:        'ion_strike.ogg',
+        warnFile:    'ion_strike_warning.ogg',
         maxDuration: 4.0,
         throttleMs:  300,
     },
@@ -283,7 +283,12 @@ export class SoundManager {
             return this.sampleCache.get(cacheKey);
         }
         try {
-            const res = await fetch(url);
+            let res = await fetch(url);
+            if (!res.ok && url.endsWith('.ogg')) {
+                res = await fetch(url.replace(/\.ogg$/, '.mp3'));
+            } else if (!res.ok && url.endsWith('.mp3')) {
+                res = await fetch(url.replace(/\.mp3$/, '.ogg'));
+            }
             if (!res.ok) return null;
 
             const arrayBuffer = await res.arrayBuffer();
@@ -379,7 +384,64 @@ export class SoundManager {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Warning sound (loop durante la cuenta regresiva)
+    // Helper: Bucle Infinito Seamless con Crossfade para cualquier MP3 y duración
+    // ─────────────────────────────────────────────────────────────────────────
+
+    _playSeamlessLoop(buf, durationSecs, { x = null, boardWidth = 4096, crossfadeDur = 0.6 } = {}) {
+        if (!this.ctx || !buf || durationSecs <= 0) return null;
+
+        const now          = this.ctx.currentTime;
+        const bufDur       = buf.duration;
+        const actualFade   = Math.min(crossfadeDur, bufDur * 0.4);
+        const loopStep     = Math.max(0.1, bufDur - actualFade);
+
+        const masterGain   = this.ctx.createGain();
+        masterGain.gain.setValueAtTime(0.01, now);
+        masterGain.gain.linearRampToValueAtTime(0.7, now + Math.min(1.0, durationSecs * 0.2));
+        masterGain.gain.setValueAtTime(0.7, now + Math.max(0, durationSecs - 0.5));
+        masterGain.gain.linearRampToValueAtTime(0.001, now + durationSecs);
+
+        const panner = this._createPanner(x, boardWidth);
+        masterGain.connect(panner ?? this.inputBus);
+
+        const sources = [];
+        let startTime = now;
+
+        while (startTime < now + durationSecs) {
+            const src  = this.ctx.createBufferSource();
+            const gain = this.ctx.createGain();
+            src.buffer = buf;
+
+            const remainingTotal = (now + durationSecs) - startTime;
+            const playDur        = Math.min(bufDur, remainingTotal);
+
+            if (startTime > now) {
+                gain.gain.setValueAtTime(0.001, startTime);
+                gain.gain.linearRampToValueAtTime(1.0, startTime + actualFade);
+            } else {
+                gain.gain.setValueAtTime(1.0, startTime);
+            }
+
+            if (startTime + bufDur < now + durationSecs) {
+                gain.gain.setValueAtTime(1.0, startTime + bufDur - actualFade);
+                gain.gain.linearRampToValueAtTime(0.001, startTime + bufDur);
+            }
+
+            src.connect(gain);
+            gain.connect(masterGain);
+
+            src.start(startTime);
+            src.stop(startTime + playDur);
+            sources.push(src);
+
+            startTime += loopStep;
+        }
+
+        return { sources, gainNode: masterGain };
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Warning sound (loop durante la cuenta regresiva con Crossfade Seamless)
     // ─────────────────────────────────────────────────────────────────────────
 
     async playWarningSound(perkId, durationSecs = 10, key = null) {
@@ -406,37 +468,32 @@ export class SoundManager {
         }
         if (!buf) return;
 
-        const now    = this.ctx.currentTime;
-        const source = this.ctx.createBufferSource();
-        source.buffer  = buf;
-        source.loop    = true;
-        source.loopEnd = Math.min(buf.duration, durationSecs);
+        const loopHandle = this._playSeamlessLoop(buf, durationSecs);
 
-        const gainNode = this.ctx.createGain();
-        gainNode.gain.setValueAtTime(0.01, now);
-        gainNode.gain.linearRampToValueAtTime(0.7,   now + Math.min(1.5, durationSecs * 0.2));
-        gainNode.gain.setValueAtTime(0.7,             now + durationSecs - 0.5);
-        gainNode.gain.linearRampToValueAtTime(0.001,  now + durationSecs);
-
-        source.connect(gainNode);
-        gainNode.connect(this.inputBus);
-        source.start(now);
-        source.stop(now + durationSecs);
-
-        if (key) this.activeLoops.set(key, { source, gainNode });
+        if (key && loopHandle) {
+            this.activeLoops.set(key, loopHandle);
+        }
     }
 
     stopWarningSound(key) {
         if (!this.activeLoops.has(key)) return;
-        const { source, gainNode } = this.activeLoops.get(key);
-        try {
-            if (this.ctx && gainNode) {
-                gainNode.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
-            }
-            if (source) {
-                setTimeout(() => { try { source.stop(); } catch (e) {} }, 110);
-            }
-        } catch (e) {}
+        const loopHandle = this.activeLoops.get(key);
+        if (loopHandle) {
+            const { sources, gainNode, source } = loopHandle;
+            try {
+                if (this.ctx && gainNode) {
+                    gainNode.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+                }
+                if (source) {
+                    setTimeout(() => { try { source.stop(); } catch (e) {} }, 110);
+                }
+                if (sources && Array.isArray(sources)) {
+                    setTimeout(() => {
+                        sources.forEach(s => { try { s.stop(); } catch (e) {} });
+                    }, 110);
+                }
+            } catch (e) {}
+        }
         this.activeLoops.delete(key);
     }
 

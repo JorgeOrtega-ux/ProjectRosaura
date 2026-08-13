@@ -259,7 +259,7 @@ class AppViewService {
                             $ownerTier = (int)($ownerData['subscription_tier'] ?? 0);
                         }
                     } else {
-                        $ownerUsername = __('system') ?: 'Sistema';
+                        $ownerUsername = __('system');
                     }
 
                     $planLimits = SubscriptionPlanConstants::getTierLimits($ownerTier);
