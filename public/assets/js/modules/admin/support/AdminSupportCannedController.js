@@ -16,6 +16,9 @@ export class AdminSupportCannedController {
     init() {
         this.container = document.querySelector('[data-ref="admin-support-canned-wrapper"]');
         this.abortController = new AbortController();
+        if (window.modalSystem) {
+            window.modalSystem.registerTemplates(AdminModalTemplates);
+        }
         this.bindEvents();
         this._loadCanned();
     }
@@ -131,7 +134,8 @@ export class AdminSupportCannedController {
     }
 
     _openModal(item = null) {
-        window.modalSystem.show(AdminModalTemplates.cannedResponseModal, {
+        if (!window.modalSystem) return;
+        window.modalSystem.show('cannedResponseModal', {
             item: item || {}
         });
     }

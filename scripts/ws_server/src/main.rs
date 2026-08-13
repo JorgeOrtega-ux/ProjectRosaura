@@ -54,9 +54,11 @@ async fn main() {
     tokio::spawn(helpers::admin_events_listener(app_state.clone()));
     tokio::spawn(helpers::sync_events_listener(app_state.clone()));
     tokio::spawn(helpers::sync_online_counts(app_state.clone()));
+    tokio::spawn(helpers::support_events_listener(app_state.clone()));
 
     let app = Router::new()
         .route("/canvas/:canvas_id", get(handlers::ws_handler))
+        .route("/support/:session_uuid", get(handlers::support_ws_handler))
         .with_state(app_state);
 
     info!("Starting Rust WebSocket server on ws://{}", addr);

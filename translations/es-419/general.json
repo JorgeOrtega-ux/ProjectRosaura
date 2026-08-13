@@ -1959,5 +1959,12 @@
     "email_support_reply_subject": "Respuesta de Soporte Técnico: {subject}",
     "role.supportagentl1": "Soporte Técnico - Nivel 1",
     "role.supportagentl2": "Soporte Técnico - Nivel 2",
-    "role.supportagentl3": "Soporte Técnico - Nivel 3"
+    "role.supportagentl3": "Soporte Técnico - Nivel 3",
+    "modal_reassign_chat_title": "Reasignar Conversación",
+    "modal_reassign_chat_desc": "Transfiere esta conversación activa a otro agente de soporte en línea.",
+    "btn_reassign_chat": "Reasignar",
+    "btn_confirm_reassign": "Confirmar Transferencia",
+    "admin_no_agents_to_reassign": "No hay otros agentes en línea disponibles.",
+    "lbl_user_is_typing": "El usuario está escribiendo...",
+    "lbl_select_agent": "Seleccionar agente de soporte"
 }

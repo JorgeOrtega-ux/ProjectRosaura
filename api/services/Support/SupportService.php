@@ -239,6 +239,17 @@ class SupportService {
 
             $queuePos = $this->supportRepo->getQueuePosition($sessionUuid, 'l1');
 
+            $this->publishSupportEvent('session_created', $sessionUuid, [
+                'session_uuid' => $sessionUuid,
+                'queue_position' => $queuePos,
+                'category' => $category,
+                'subject' => $subject,
+                'priority' => $priority,
+                'client_username' => $userName,
+                'initial_message' => $initialMessage,
+                'started_at' => date('Y-m-d H:i:s')
+            ]);
+
             return [
                 'success' => true,
                 'session_uuid' => $sessionUuid,
@@ -365,6 +376,11 @@ class SupportService {
             ];
         }
 
+        $this->publishSupportEvent('new_message', $sessionUuid, [
+            'message' => $created,
+            'session_uuid' => $sessionUuid
+        ]);
+
         return [
             'success' => true,
             'message_data' => $created
@@ -396,6 +412,11 @@ class SupportService {
             ];
         }
 
+        $this->publishSupportEvent('session_closed', $sessionUuid, [
+            'session_uuid' => $sessionUuid,
+            'closed_by' => 'user'
+        ]);
+
         return [
             'success' => true,
             'message' => __('msg_support_session_ended')
@@ -422,10 +443,35 @@ class SupportService {
             ];
         }
 
+        $this->publishSupportEvent('feedback_submitted', $sessionUuid, [
+            'session_uuid' => $sessionUuid,
+            'rating' => $rating
+        ]);
+
         return [
             'success' => true,
             'message' => __('msg_support_feedback_received')
         ];
+    }
+
+    private function publishSupportEvent(string $eventType, ?string $sessionUuid, array $data = []): void {
+        try {
+            if (class_exists(\App\Config\Database\RedisCache::class)) {
+                $redis = (new \App\Config\Database\RedisCache())->getClient();
+                if ($redis) {
+                    $payload = [
+                        'type' => 'support_event',
+                        'event' => $eventType,
+                        'session_uuid' => $sessionUuid,
+                        'data' => $data,
+                        'timestamp' => time()
+                    ];
+                    $redis->publish('support:events', json_encode($payload));
+                }
+            }
+        } catch (\Throwable $e) {
+            Logger::error("Failed to publish support event to Redis: " . $e->getMessage());
+        }
     }
 
     public function downloadTranscript(array $input): array {

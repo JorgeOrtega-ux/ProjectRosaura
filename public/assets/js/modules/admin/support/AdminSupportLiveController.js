@@ -1,4 +1,4 @@
-import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiRoutes, WsConfig } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { restoreButton, setButtonLoading, showMessage } from '../../../core/utils/uiUtils.js';
 import { AdminModalTemplates } from '../AdminModalTemplates.js';
@@ -14,30 +14,63 @@ export class AdminSupportLiveController {
         this.currentSessionUuid = null;
         this.isInternalNoteMode = false;
         this.cannedResponses = [];
+        this.onlineAgents = [];
+        
+        // WebSocket
+        this.ws = null;
+        this.wsReconnectTimeout = null;
+        this.wsHeartbeatInterval = null;
+        this.isIntentionalDisconnect = false;
+        this.typingTimeout = null;
 
         this._boundClick = this.handleClick.bind(this);
         this._boundKeydown = this.handleKeydown.bind(this);
+        this._boundInput = this.handleInput.bind(this);
     }
 
     async init() {
         this.container = document.querySelector('[data-ref="admin-support-live-wrapper"]');
         this.abortController = new AbortController();
+
+        if (window.modalSystem) {
+            window.modalSystem.registerTemplates(AdminModalTemplates);
+        }
+
         this.bindEvents();
         await this._loadAgentStatus();
         await this._loadCannedResponses();
         await this._loadQueues();
+        this._connectWebSocket();
         this._startPolling();
     }
 
     bindEvents() {
         document.body.addEventListener('click', this._boundClick);
         document.body.addEventListener('keydown', this._boundKeydown);
+        document.body.addEventListener('input', this._boundInput);
     }
 
     destroy() {
+        this.isIntentionalDisconnect = true;
+
         if (this.pollInterval) {
             clearInterval(this.pollInterval);
             this.pollInterval = null;
+        }
+
+        if (this.wsHeartbeatInterval) {
+            clearInterval(this.wsHeartbeatInterval);
+            this.wsHeartbeatInterval = null;
+        }
+
+        if (this.wsReconnectTimeout) {
+            clearTimeout(this.wsReconnectTimeout);
+            this.wsReconnectTimeout = null;
+        }
+
+        if (this.ws) {
+            this.ws.close();
+            this.ws = null;
         }
 
         if (this.abortController) {
@@ -47,6 +80,135 @@ export class AdminSupportLiveController {
 
         document.body.removeEventListener('click', this._boundClick);
         document.body.removeEventListener('keydown', this._boundKeydown);
+        document.body.removeEventListener('input', this._boundInput);
+    }
+
+    _connectWebSocket() {
+        if (this.isIntentionalDisconnect) return;
+
+        try {
+            const wsUrl = `${WsConfig.getBaseUrl()}/support/admin_console`;
+            this.ws = new WebSocket(wsUrl);
+
+            this.ws.onopen = () => {
+                this._startWsHeartbeat();
+            };
+
+            this.ws.onmessage = (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    this._handleWsEvent(data);
+                } catch (err) {}
+            };
+
+            this.ws.onclose = () => {
+                this._stopWsHeartbeat();
+                if (!this.isIntentionalDisconnect) {
+                    this.wsReconnectTimeout = setTimeout(() => {
+                        this._connectWebSocket();
+                    }, 3000);
+                }
+            };
+
+            this.ws.onerror = () => {};
+        } catch (err) {}
+    }
+
+    _startWsHeartbeat() {
+        this._stopWsHeartbeat();
+        this.wsHeartbeatInterval = setInterval(() => {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({ type: 'ping' }));
+            }
+        }, 20000);
+    }
+
+    _stopWsHeartbeat() {
+        if (this.wsHeartbeatInterval) {
+            clearInterval(this.wsHeartbeatInterval);
+            this.wsHeartbeatInterval = null;
+        }
+    }
+
+    _handleWsEvent(payload) {
+        if (!payload) return;
+
+        if (payload.type === 'support_event') {
+            const event = payload.event;
+            const sessionUuid = payload.session_uuid;
+
+            switch (event) {
+                case 'session_created':
+                    this._loadQueues();
+                    this._playNotificationSound();
+                    break;
+                case 'new_message':
+                case 'internal_note':
+                    if (this.currentSessionUuid && this.currentSessionUuid === sessionUuid) {
+                        this._loadMessages();
+                    }
+                    this._loadQueues();
+                    break;
+                case 'session_claimed':
+                case 'session_escalated':
+                case 'session_reassigned':
+                case 'session_closed':
+                    this._loadQueues();
+                    if (this.currentSessionUuid && this.currentSessionUuid === sessionUuid) {
+                        this._loadMessages();
+                    }
+                    break;
+                case 'agent_status_updated':
+                    this._loadQueues();
+                    break;
+                default:
+                    break;
+            }
+        } else if (payload.type === 'support_typing') {
+            if (this.currentSessionUuid && this.currentSessionUuid === payload.session_uuid) {
+                this._showTypingIndicator(payload.sender_type === 'user');
+            }
+        }
+    }
+
+    _sendWsTyping() {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN && this.currentSessionUuid) {
+            this.ws.send(JSON.stringify({
+                type: 'support_typing',
+                session_uuid: this.currentSessionUuid,
+                sender_type: 'agent'
+            }));
+        }
+    }
+
+    _showTypingIndicator(show) {
+        const indicator = document.querySelector('[data-ref="admin-support-typing-indicator"]');
+        if (!indicator) return;
+
+        if (show) {
+            indicator.classList.remove('disabled');
+            if (this.typingTimeout) clearTimeout(this.typingTimeout);
+            this.typingTimeout = setTimeout(() => {
+                indicator.classList.add('disabled');
+            }, 3000);
+        } else {
+            indicator.classList.add('disabled');
+        }
+    }
+
+    _playNotificationSound() {
+        try {
+            const audio = new Audio('/sounds/notification.mp3');
+            audio.volume = 0.4;
+            audio.play().catch(() => {});
+        } catch (e) {}
+    }
+
+    handleInput(e) {
+        const chatInput = e.target.closest('[data-ref="admin-support-chat-input"]');
+        if (chatInput) {
+            this._sendWsTyping();
+        }
     }
 
     handleKeydown(e) {
@@ -128,6 +290,27 @@ export class AdminSupportLiveController {
         if (submitEscalateBtn) {
             e.preventDefault();
             this._submitEscalate(submitEscalateBtn);
+            return;
+        }
+
+        const openReassignBtn = e.target.closest('[data-action="openReassignModal"]');
+        if (openReassignBtn) {
+            e.preventDefault();
+            this._openReassignModal();
+            return;
+        }
+
+        const selectReassignItem = e.target.closest('[data-action="selectReassignAgent"]');
+        if (selectReassignItem) {
+            e.preventDefault();
+            this._handleSelectReassignAgent(selectReassignItem);
+            return;
+        }
+
+        const submitReassignBtn = e.target.closest('[data-action="submitReassignChat"]');
+        if (submitReassignBtn) {
+            e.preventDefault();
+            this._submitReassign(submitReassignBtn);
             return;
         }
 
@@ -285,7 +468,7 @@ export class AdminSupportLiveController {
             if (this.currentSessionUuid) {
                 this._loadMessages();
             }
-        }, 3000);
+        }, 10000);
     }
 
     async _loadQueues() {
@@ -294,6 +477,7 @@ export class AdminSupportLiveController {
             if (res && res.success) {
                 const queues = res.queues || {};
                 const activeList = res.my_active_sessions || [];
+                this.onlineAgents = res.online_agents || [];
 
                 const b1 = document.querySelector('[data-ref="badge-queue-l1"]');
                 const b2 = document.querySelector('[data-ref="badge-queue-l2"]');
@@ -344,7 +528,9 @@ export class AdminSupportLiveController {
         list.forEach(item => {
             const isSelected = item.uuid === this.currentSessionUuid;
             const selectedClass = isSelected ? 'active' : '';
-            const priorityBadge = item.priority === 'urgent' ? '<span class="component-badge component-badge--danger">Urgente</span>' : (item.priority === 'high' ? '<span class="component-badge component-badge--warning">Alta</span>' : '');
+            const priorityBadge = item.priority === 'urgent'
+                ? '<span class="component-badge component-badge--danger">Urgente</span>'
+                : (item.priority === 'high' ? '<span class="component-badge component-badge--warning">Alta</span>' : '');
 
             if (isActiveTab) {
                 html += `
@@ -468,7 +654,7 @@ export class AdminSupportLiveController {
             nameEl.textContent = `${session.client_username || 'Guest'}${dept}`;
         }
         if (subjectEl) {
-            subjectEl.textContent = `${session.category} - ${session.subject}`;
+            subjectEl.textContent = `${session.category || 'general'} • ${session.subject || ''}`;
         }
     }
 
@@ -591,9 +777,9 @@ export class AdminSupportLiveController {
 
         if (input) {
             if (this.isInternalNoteMode) {
-                input.placeholder = window.__('placeholder_internal_note');
+                input.placeholder = window.__('placeholder_internal_note') || 'Escribir nota interna privada...';
             } else {
-                input.placeholder = window.__('placeholder_agent_chat_input');
+                input.placeholder = window.__('placeholder_agent_chat_input') || 'Escribe una respuesta para el usuario...';
             }
         }
     }
@@ -630,8 +816,8 @@ export class AdminSupportLiveController {
     }
 
     _openEscalateModal() {
-        if (!this.currentSessionUuid) return;
-        window.modalSystem.show(AdminModalTemplates.escalateChatModal, {
+        if (!this.currentSessionUuid || !window.modalSystem) return;
+        window.modalSystem.show('escalateChatModal', {
             sessionUuid: this.currentSessionUuid,
             currentLevel: this.currentSession ? this.currentSession.department_level : 'l1'
         });
@@ -690,7 +876,7 @@ export class AdminSupportLiveController {
             }, this.abortController ? this.abortController.signal : undefined);
 
             restoreButton(btn);
-            window.modalSystem.closeCurrent();
+            if (window.modalSystem) window.modalSystem.closeCurrent();
 
             if (res && res.success) {
                 showMessage(window.__('msg_support_escalated_successfully'), 'success');
@@ -707,9 +893,79 @@ export class AdminSupportLiveController {
         }
     }
 
+    _openReassignModal() {
+        if (!this.currentSessionUuid || !window.modalSystem) return;
+        window.modalSystem.show('reassignChatModal', {
+            sessionUuid: this.currentSessionUuid,
+            onlineAgents: this.onlineAgents
+        });
+    }
+
+    _handleSelectReassignAgent(item) {
+        const val = item.getAttribute('data-val');
+        const labelText = item.querySelector('.component-menu-link-text span')?.textContent || val;
+
+        const textEl = document.querySelector('[data-ref="reassign-agent-text"]');
+        if (textEl) {
+            textEl.textContent = labelText;
+            textEl.setAttribute('data-value', val);
+        }
+
+        const menuList = item.closest('.component-menu-list');
+        if (menuList) {
+            menuList.querySelectorAll('.component-menu-link').forEach(l => l.classList.remove('active'));
+            item.classList.add('active');
+        }
+
+        const dropdown = document.querySelector('[data-module="dropdownReassignAgent"]');
+        if (dropdown) {
+            dropdown.classList.remove('active');
+            dropdown.classList.add('disabled');
+        }
+    }
+
+    async _submitReassign(btn) {
+        const form = document.querySelector('[data-ref="admin-reassign-form"]');
+        if (!form || !btn || btn.classList.contains('disabled-interaction')) return;
+
+        const sessionUuid = form.getAttribute('data-session-uuid');
+        const agentText = document.querySelector('[data-ref="reassign-agent-text"]');
+        const toAgentId = agentText ? agentText.getAttribute('data-value') : null;
+
+        if (!toAgentId) {
+            showMessage(window.__('err_invalid_request'), 'error');
+            return;
+        }
+
+        setButtonLoading(btn);
+
+        try {
+            const res = await this.api.post(ApiRoutes.AdminSupport.ReassignSession, {
+                session_uuid: sessionUuid,
+                to_agent_id: toAgentId
+            }, this.abortController ? this.abortController.signal : undefined);
+
+            restoreButton(btn);
+            if (window.modalSystem) window.modalSystem.closeCurrent();
+
+            if (res && res.success) {
+                showMessage(window.__('msg_support_reassigned_successfully'), 'success');
+                this.currentSessionUuid = null;
+                this.currentSession = null;
+                await this._loadQueues();
+            } else {
+                showMessage(res && res.message ? res.message : window.__('err_support_reassign_failed'), 'error');
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            restoreButton(btn);
+            showMessage(window.__('err_support_reassign_failed'), 'error');
+        }
+    }
+
     _openCloseModal() {
-        if (!this.currentSessionUuid) return;
-        window.modalSystem.show(AdminModalTemplates.closeChatModal, {
+        if (!this.currentSessionUuid || !window.modalSystem) return;
+        window.modalSystem.show('closeChatModal', {
             sessionUuid: this.currentSessionUuid
         });
     }
@@ -731,7 +987,7 @@ export class AdminSupportLiveController {
             }, this.abortController ? this.abortController.signal : undefined);
 
             restoreButton(btn);
-            window.modalSystem.closeCurrent();
+            if (window.modalSystem) window.modalSystem.closeCurrent();
 
             if (res && res.success) {
                 showMessage(window.__('msg_support_session_ended'), 'success');

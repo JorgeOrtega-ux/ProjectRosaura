@@ -96,6 +96,12 @@ class AdminSupportService {
         $level = $this->getAgentLevel();
         $this->supportRepo->updateAgentStatus($agentId, $status, $level, $maxChats);
 
+        $this->publishSupportEvent('agent_status_updated', null, [
+            'agent_id' => $agentId,
+            'status' => $status,
+            'level' => $level
+        ]);
+
         return [
             'success' => true,
             'status' => $status,
@@ -166,7 +172,7 @@ class AdminSupportService {
         $agentUser = $this->userRepo->findById($agentId);
         $agentName = $agentUser['username'] ?? 'Support Agent';
 
-        $this->supportRepo->addMessage(
+        $joinMsg = $this->supportRepo->addMessage(
             $sessionUuid,
             'system',
             null,
@@ -175,6 +181,13 @@ class AdminSupportService {
             null,
             false
         );
+
+        $this->publishSupportEvent('session_claimed', $sessionUuid, [
+            'session_uuid' => $sessionUuid,
+            'agent_id' => $agentId,
+            'agent_name' => $agentName,
+            'system_message' => $joinMsg
+        ]);
 
         return [
             'success' => true,
@@ -215,7 +228,7 @@ class AdminSupportService {
         $agentName = $agentUser['username'] ?? 'Support Agent';
 
         if (!empty($internalNote)) {
-            $this->supportRepo->addMessage(
+            $noteMsg = $this->supportRepo->addMessage(
                 $sessionUuid,
                 'internal_note',
                 $agentId,
@@ -224,10 +237,15 @@ class AdminSupportService {
                 null,
                 true
             );
+
+            $this->publishSupportEvent('internal_note', $sessionUuid, [
+                'session_uuid' => $sessionUuid,
+                'message' => $noteMsg
+            ]);
         }
 
         $targetDept = $toLevel === 'l3' ? __('lbl_dept_l3') : __('lbl_dept_l2');
-        $this->supportRepo->addMessage(
+        $escMsg = $this->supportRepo->addMessage(
             $sessionUuid,
             'system',
             null,
@@ -236,6 +254,13 @@ class AdminSupportService {
             null,
             false
         );
+
+        $this->publishSupportEvent('session_escalated', $sessionUuid, [
+            'session_uuid' => $sessionUuid,
+            'to_level' => $toLevel,
+            'reason' => $reason,
+            'system_message' => $escMsg
+        ]);
 
         return [
             'success' => true,
@@ -264,7 +289,7 @@ class AdminSupportService {
         $targetUser = $this->userRepo->findById($toAgentId);
         $targetName = $targetUser['username'] ?? 'Support Agent';
 
-        $this->supportRepo->addMessage(
+        $reassignMsg = $this->supportRepo->addMessage(
             $sessionUuid,
             'system',
             null,
@@ -273,6 +298,13 @@ class AdminSupportService {
             null,
             false
         );
+
+        $this->publishSupportEvent('session_reassigned', $sessionUuid, [
+            'session_uuid' => $sessionUuid,
+            'to_agent_id' => $toAgentId,
+            'to_agent_name' => $targetName,
+            'system_message' => $reassignMsg
+        ]);
 
         return [
             'success' => true,
@@ -311,6 +343,11 @@ class AdminSupportService {
             return ['success' => false, 'message' => __('err_support_message_send_failed')];
         }
 
+        $this->publishSupportEvent('new_message', $sessionUuid, [
+            'message' => $created,
+            'session_uuid' => $sessionUuid
+        ]);
+
         return [
             'success' => true,
             'message_data' => $created
@@ -347,6 +384,11 @@ class AdminSupportService {
             return ['success' => false, 'message' => __('err_support_message_send_failed')];
         }
 
+        $this->publishSupportEvent('internal_note', $sessionUuid, [
+            'message' => $created,
+            'session_uuid' => $sessionUuid
+        ]);
+
         return [
             'success' => true,
             'message_data' => $created
@@ -371,7 +413,7 @@ class AdminSupportService {
             return ['success' => false, 'message' => __('err_support_close_failed')];
         }
 
-        $this->supportRepo->addMessage(
+        $closeMsg = $this->supportRepo->addMessage(
             $sessionUuid,
             'system',
             null,
@@ -381,10 +423,37 @@ class AdminSupportService {
             false
         );
 
+        $this->publishSupportEvent('session_closed', $sessionUuid, [
+            'session_uuid' => $sessionUuid,
+            'closed_by' => 'agent',
+            'summary' => $summary,
+            'system_message' => $closeMsg
+        ]);
+
         return [
             'success' => true,
             'message' => __('msg_support_session_ended')
         ];
+    }
+
+    private function publishSupportEvent(string $eventType, ?string $sessionUuid, array $data = []): void {
+        try {
+            if (class_exists(\App\Config\Database\RedisCache::class)) {
+                $redis = (new \App\Config\Database\RedisCache())->getClient();
+                if ($redis) {
+                    $payload = [
+                        'type' => 'support_event',
+                        'event' => $eventType,
+                        'session_uuid' => $sessionUuid,
+                        'data' => $data,
+                        'timestamp' => time()
+                    ];
+                    $redis->publish('support:events', json_encode($payload));
+                }
+            }
+        } catch (\Throwable $e) {
+            Logger::error("Failed to publish admin support event to Redis: " . $e->getMessage());
+        }
     }
 
     public function getCannedResponses(array $input): array {

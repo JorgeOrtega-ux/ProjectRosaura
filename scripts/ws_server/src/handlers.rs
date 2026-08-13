@@ -375,3 +375,125 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
     
     state.owner_conns.remove(&connection_id);
 }
+
+pub async fn support_ws_handler(
+    ws: WebSocketUpgrade,
+    Path(session_uuid): Path<String>,
+    Query(params): Query<HashMap<String, String>>,
+    State(state): State<AppState>,
+) -> Response {
+    let client_id = params.get("client_id").cloned().unwrap_or_else(|| Uuid::new_v4().to_string());
+    let is_admin = session_uuid == "admin_console";
+
+    ws.on_upgrade(move |socket| handle_support_socket(socket, session_uuid, client_id, is_admin, state))
+}
+
+async fn handle_support_socket(
+    socket: WebSocket,
+    session_uuid: String,
+    _client_id: String,
+    is_admin: bool,
+    state: AppState,
+) {
+    let connection_id = Uuid::new_v4().to_string();
+
+    let (mut sender, mut receiver) = socket.split();
+    let (tx, mut rx) = mpsc::channel::<OutboundMessage>(100);
+    state.tx_channels.insert(connection_id.clone(), tx.clone());
+
+    if is_admin {
+        state.admin_support_conns.insert(connection_id.clone());
+        info!("[SupportWS] Admin Live Console connected (ID: {}). Total admin conns: {}", connection_id, state.admin_support_conns.len());
+        let welcome = serde_json::json!({
+            "type": "support_connected",
+            "role": "admin",
+            "connection_id": &connection_id
+        }).to_string();
+        let _ = tx.send(OutboundMessage::Text { payload: welcome, exclude_connection: None }).await;
+    } else {
+        state.support_rooms.entry(session_uuid.clone()).or_default().insert(connection_id.clone());
+        info!("[SupportWS] Client connected to session '{}' (ID: {}).", session_uuid, connection_id);
+        let welcome = serde_json::json!({
+            "type": "support_connected",
+            "role": "session",
+            "session_uuid": &session_uuid,
+            "connection_id": &connection_id
+        }).to_string();
+        let _ = tx.send(OutboundMessage::Text { payload: welcome, exclude_connection: None }).await;
+    }
+
+    let mut send_task = tokio::spawn(async move {
+        while let Some(msg) = rx.recv().await {
+            match msg {
+                OutboundMessage::Close => {
+                    let _ = sender.send(Message::Close(None)).await;
+                    break;
+                }
+                OutboundMessage::Text { payload, .. } => {
+                    if sender.send(Message::Text(payload)).await.is_err() {
+                        break;
+                    }
+                }
+                OutboundMessage::Binary { payload, .. } => {
+                    if sender.send(Message::Binary(payload)).await.is_err() {
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
+    let state_clone = state.clone();
+    let session_uuid_clone = session_uuid.clone();
+    let connection_id_clone = connection_id.clone();
+
+    let mut recv_task = tokio::spawn(async move {
+        while let Some(Ok(msg)) = receiver.next().await {
+            match msg {
+                Message::Text(text) => {
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(&text) {
+                        let msg_type = val.get("type").and_then(|v| v.as_str()).unwrap_or("");
+                        match msg_type {
+                            "ping" => {
+                                if let Some(tx_self) = state_clone.tx_channels.get(&connection_id_clone) {
+                                    let pong = serde_json::json!({"type": "pong"}).to_string();
+                                    let _ = tx_self.send(OutboundMessage::Text { payload: pong, exclude_connection: None }).await;
+                                }
+                            }
+                            "support_typing" => {
+                                // Relay typing status to other clients in session and admin
+                                if !is_admin {
+                                    helpers::broadcast_to_admin_support(&state_clone, &text, None).await;
+                                    helpers::broadcast_to_support_session(&state_clone, &session_uuid_clone, &text, Some(&connection_id_clone)).await;
+                                } else {
+                                    if let Some(target_session) = val.get("session_uuid").and_then(|v| v.as_str()) {
+                                        helpers::broadcast_to_support_session(&state_clone, target_session, &text, None).await;
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    });
+
+    tokio::select! {
+        _ = (&mut send_task) => recv_task.abort(),
+        _ = (&mut recv_task) => send_task.abort(),
+    }
+
+    // Cleanup on disconnect
+    if is_admin {
+        state.admin_support_conns.remove(&connection_id);
+        info!("[SupportWS] Admin Live Console disconnected (ID: {}). Remaining: {}", connection_id, state.admin_support_conns.len());
+    } else {
+        if let Some(mut room) = state.support_rooms.get_mut(&session_uuid) {
+            room.remove(&connection_id);
+        }
+        info!("[SupportWS] Client disconnected from session '{}' (ID: {}).", session_uuid, connection_id);
+    }
+    state.tx_channels.remove(&connection_id);
+}

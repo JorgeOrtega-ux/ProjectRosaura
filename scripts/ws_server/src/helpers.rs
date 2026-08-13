@@ -326,3 +326,84 @@ pub async fn sync_online_counts(state: AppState) {
 pub fn is_guest(uid_str: &str) -> bool {
     uid_str.is_empty() || uid_str == "guest"
 }
+
+pub async fn broadcast_to_support_session(state: &AppState, session_uuid: &str, msg: &str, exclude_conn_id: Option<&str>) {
+    if let Some(room) = state.support_rooms.get(session_uuid) {
+        for conn_id in room.iter() {
+            if Some(conn_id.as_str()) != exclude_conn_id {
+                if let Some(tx) = state.tx_channels.get(conn_id.as_str()) {
+                    let _ = tx.send(OutboundMessage::Text {
+                        payload: msg.to_string(),
+                        exclude_connection: None,
+                    }).await;
+                }
+            }
+        }
+    }
+}
+
+pub async fn broadcast_to_admin_support(state: &AppState, msg: &str, exclude_conn_id: Option<&str>) {
+    for conn_id in state.admin_support_conns.iter() {
+        if Some(conn_id.as_str()) != exclude_conn_id {
+            if let Some(tx) = state.tx_channels.get(conn_id.as_str()) {
+                let _ = tx.send(OutboundMessage::Text {
+                    payload: msg.to_string(),
+                    exclude_connection: None,
+                }).await;
+            }
+        }
+    }
+}
+
+pub async fn support_events_listener(state: AppState) {
+    let redis_url = format!(
+        "redis://:{}@{}:{}",
+        std::env::var("REDIS_PASS").unwrap_or_default(),
+        std::env::var("REDIS_HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
+        std::env::var("REDIS_PORT").unwrap_or_else(|_| "6379".to_string())
+    );
+    let client = match deadpool_redis::redis::Client::open(redis_url) {
+        Ok(c) => c,
+        Err(e) => {
+            error!("Failed to open Redis client for support_events_listener: {}", e);
+            return;
+        }
+    };
+
+    loop {
+        let mut pubsub = match client.get_async_pubsub().await {
+            Ok(c) => c,
+            Err(e) => {
+                error!("Pubsub error in support_events_listener (retrying in 2s): {}", e);
+                sleep(Duration::from_secs(2)).await;
+                continue;
+            }
+        };
+
+        if let Err(e) = pubsub.subscribe("support:events").await {
+            error!("Failed to subscribe to support:events (retrying in 2s): {}", e);
+            sleep(Duration::from_secs(2)).await;
+            continue;
+        }
+        info!("WS Server listening for support technical events on 'support:events'");
+
+        let mut stream = pubsub.on_message();
+        while let Some(msg) = stream.next().await {
+            if let Ok(payload) = msg.get_payload::<String>() {
+                if let Ok(event) = serde_json::from_str::<serde_json::Value>(&payload) {
+                    let session_uuid_opt = event.get("session_uuid").and_then(|v| v.as_str());
+
+                    // If it belongs to a specific session, broadcast to that session's clients
+                    if let Some(session_uuid) = session_uuid_opt {
+                        broadcast_to_support_session(&state, session_uuid, &payload, None).await;
+                    }
+
+                    // Always forward support events to admin live consoles
+                    broadcast_to_admin_support(&state, &payload, None).await;
+                }
+            }
+        }
+        warn!("Support events stream closed, reconnecting in 2s...");
+        sleep(Duration::from_secs(2)).await;
+    }
+}

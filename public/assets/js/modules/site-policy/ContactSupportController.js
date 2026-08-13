@@ -1,4 +1,4 @@
-import { ApiRoutes } from '../../core/api/ApiRoutes.js';
+import { ApiRoutes, WsConfig } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { restoreButton, setButtonLoading, showMessage } from '../../core/utils/uiUtils.js';
 
@@ -12,8 +12,16 @@ export class ContactSupportController {
         this.activeSessionUuid = null;
         this.currentRating = 5;
 
+        // WebSocket
+        this.ws = null;
+        this.wsReconnectTimeout = null;
+        this.wsHeartbeatInterval = null;
+        this.isIntentionalDisconnect = false;
+        this.typingTimeout = null;
+
         this._boundClick = this.handleClick.bind(this);
         this._boundKeydown = this.handleKeydown.bind(this);
+        this._boundInput = this.handleInput.bind(this);
     }
 
     init() {
@@ -27,12 +35,30 @@ export class ContactSupportController {
     bindEvents() {
         document.body.addEventListener('click', this._boundClick);
         document.body.addEventListener('keydown', this._boundKeydown);
+        document.body.addEventListener('input', this._boundInput);
     }
 
     destroy() {
+        this.isIntentionalDisconnect = true;
+
         if (this.pollInterval) {
             clearInterval(this.pollInterval);
             this.pollInterval = null;
+        }
+
+        if (this.wsHeartbeatInterval) {
+            clearInterval(this.wsHeartbeatInterval);
+            this.wsHeartbeatInterval = null;
+        }
+
+        if (this.wsReconnectTimeout) {
+            clearTimeout(this.wsReconnectTimeout);
+            this.wsReconnectTimeout = null;
+        }
+
+        if (this.ws) {
+            this.ws.close();
+            this.ws = null;
         }
 
         if (this.abortController) {
@@ -42,9 +68,153 @@ export class ContactSupportController {
 
         document.body.removeEventListener('click', this._boundClick);
         document.body.removeEventListener('keydown', this._boundKeydown);
+        document.body.removeEventListener('input', this._boundInput);
 
         this._resetTurnstile();
         this.turnstileWidgetId = undefined;
+    }
+
+    _connectWebSocket(sessionUuid) {
+        if (!sessionUuid || this.isIntentionalDisconnect) return;
+
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            return;
+        }
+
+        try {
+            const wsUrl = `${WsConfig.getBaseUrl()}/support/${sessionUuid}`;
+            this.ws = new WebSocket(wsUrl);
+
+            this.ws.onopen = () => {
+                this._startWsHeartbeat();
+            };
+
+            this.ws.onmessage = (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    this._handleWsEvent(data);
+                } catch (err) {}
+            };
+
+            this.ws.onclose = () => {
+                this._stopWsHeartbeat();
+                if (!this.isIntentionalDisconnect && this.activeSessionUuid) {
+                    this.wsReconnectTimeout = setTimeout(() => {
+                        this._connectWebSocket(this.activeSessionUuid);
+                    }, 3000);
+                }
+            };
+
+            this.ws.onerror = () => {};
+        } catch (err) {}
+    }
+
+    _startWsHeartbeat() {
+        this._stopWsHeartbeat();
+        this.wsHeartbeatInterval = setInterval(() => {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({ type: 'ping' }));
+            }
+        }, 20000);
+    }
+
+    _stopWsHeartbeat() {
+        if (this.wsHeartbeatInterval) {
+            clearInterval(this.wsHeartbeatInterval);
+            this.wsHeartbeatInterval = null;
+        }
+    }
+
+    _handleWsEvent(payload) {
+        if (!payload) return;
+
+        if (payload.type === 'support_event') {
+            const event = payload.event;
+            const sessionUuid = payload.session_uuid;
+
+            if (sessionUuid && sessionUuid !== this.activeSessionUuid) return;
+
+            switch (event) {
+                case 'new_message':
+                    this._loadMessages();
+                    if (payload.data && payload.data.message && payload.data.message.sender_type === 'agent') {
+                        this._playNotificationSound();
+                    }
+                    break;
+                case 'session_claimed':
+                    this._showState('room');
+                    if (payload.data && payload.data.agent_name) {
+                        const nameEl = document.querySelector('[data-ref="support-agent-name-display"]');
+                        if (nameEl) nameEl.textContent = payload.data.agent_name;
+                    }
+                    this._loadMessages();
+                    this._playNotificationSound();
+                    break;
+                case 'session_escalated':
+                    this._loadMessages();
+                    break;
+                case 'session_reassigned':
+                    if (payload.data && payload.data.to_agent_name) {
+                        const nameEl = document.querySelector('[data-ref="support-agent-name-display"]');
+                        if (nameEl) nameEl.textContent = payload.data.to_agent_name;
+                    }
+                    this._loadMessages();
+                    break;
+                case 'session_closed':
+                    if (this.pollInterval) {
+                        clearInterval(this.pollInterval);
+                        this.pollInterval = null;
+                    }
+                    this._showState('feedback');
+                    break;
+                default:
+                    break;
+            }
+        } else if (payload.type === 'support_typing') {
+            if (payload.sender_type === 'agent') {
+                this._showTypingIndicator(true);
+            }
+        }
+    }
+
+    _sendWsTyping() {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN && this.activeSessionUuid) {
+            this.ws.send(JSON.stringify({
+                type: 'support_typing',
+                session_uuid: this.activeSessionUuid,
+                sender_type: 'user'
+            }));
+        }
+    }
+
+    _showTypingIndicator(show) {
+        const indicator = document.querySelector('[data-ref="support-typing-indicator"]');
+        if (!indicator) return;
+
+        if (show) {
+            indicator.classList.remove('disabled');
+            if (this.typingTimeout) clearTimeout(this.typingTimeout);
+            this.typingTimeout = setTimeout(() => {
+                indicator.classList.add('disabled');
+            }, 3000);
+        } else {
+            indicator.classList.add('disabled');
+        }
+    }
+
+    _playNotificationSound() {
+        try {
+            const audio = new Audio('/sounds/notification.mp3');
+            audio.volume = 0.4;
+            audio.play().catch(() => {});
+        } catch (e) {}
+    }
+
+    handleInput(e) {
+        const chatInput = e.target.closest('[data-ref="support-chat-input-text"]');
+        if (chatInput) {
+            this._sendWsTyping();
+        }
     }
 
     handleKeydown(e) {
@@ -141,28 +311,17 @@ export class ContactSupportController {
 
     _handleCategorySelect(item) {
         const val = item.getAttribute('data-val');
-        const icon = item.getAttribute('data-icon');
-        const labelEl = item.querySelector('.component-menu-link-text span');
-        const labelText = labelEl ? labelEl.textContent.trim() : val;
+        const text = item.querySelector('.component-menu-link-text span')?.textContent || val;
 
         const textEl = document.querySelector('[data-ref="support-category-text"]');
-        const iconEl = document.querySelector('[data-ref="support-category-icon"]');
-
         if (textEl) {
-            textEl.textContent = labelText;
+            textEl.textContent = text;
             textEl.setAttribute('data-value', val);
-        }
-
-        if (iconEl) {
-            iconEl.className = `material-symbols-rounded msr-${icon}`;
-            iconEl.textContent = icon;
         }
 
         const menuList = item.closest('.component-menu-list');
         if (menuList) {
-            menuList.querySelectorAll('.component-menu-link').forEach(link => {
-                link.classList.remove('active');
-            });
+            menuList.querySelectorAll('.component-menu-link').forEach(l => l.classList.remove('active'));
             item.classList.add('active');
         }
 
@@ -175,28 +334,17 @@ export class ContactSupportController {
 
     _handleLiveCategorySelect(item) {
         const val = item.getAttribute('data-val');
-        const icon = item.getAttribute('data-icon');
-        const labelEl = item.querySelector('.component-menu-link-text span');
-        const labelText = labelEl ? labelEl.textContent.trim() : val;
+        const text = item.querySelector('.component-menu-link-text span')?.textContent || val;
 
         const textEl = document.querySelector('[data-ref="support-live-cat-text"]');
-        const iconEl = document.querySelector('[data-ref="support-live-cat-icon"]');
-
         if (textEl) {
-            textEl.textContent = labelText;
+            textEl.textContent = text;
             textEl.setAttribute('data-value', val);
-        }
-
-        if (iconEl) {
-            iconEl.className = `material-symbols-rounded msr-${icon}`;
-            iconEl.textContent = icon;
         }
 
         const menuList = item.closest('.component-menu-list');
         if (menuList) {
-            menuList.querySelectorAll('.component-menu-link').forEach(link => {
-                link.classList.remove('active');
-            });
+            menuList.querySelectorAll('.component-menu-link').forEach(l => l.classList.remove('active'));
             item.classList.add('active');
         }
 
@@ -241,6 +389,8 @@ export class ContactSupportController {
 
                 if (res.active_session) {
                     this.activeSessionUuid = res.active_session.uuid;
+                    this._connectWebSocket(this.activeSessionUuid);
+
                     if (res.active_session.status === 'waiting_in_queue' || res.active_session.status === 'escalated') {
                         this._showState('queue');
                         const qNum = document.querySelector('[data-ref="support-queue-position-number"]');
@@ -330,6 +480,7 @@ export class ContactSupportController {
 
             if (res && res.success) {
                 this.activeSessionUuid = res.session_uuid;
+                this._connectWebSocket(this.activeSessionUuid);
                 this._showState('queue');
                 const qNum = document.querySelector('[data-ref="support-queue-position-number"]');
                 if (qNum) qNum.textContent = `#${res.queue_position || 1}`;
@@ -348,7 +499,7 @@ export class ContactSupportController {
         if (this.pollInterval) clearInterval(this.pollInterval);
         this.pollInterval = setInterval(() => {
             this._pollSessionStatus();
-        }, 3000);
+        }, 8000); // Slower interval as fallback because WebSockets deliver instantly
     }
 
     async _pollSessionStatus() {

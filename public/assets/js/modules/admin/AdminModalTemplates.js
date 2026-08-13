@@ -201,6 +201,83 @@ export const AdminModalTemplates = {
             `;
         }
     },
+    reassignChatModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const sessionUuid = data.sessionUuid || '';
+            const onlineAgents = data.onlineAgents || [];
+
+            let agentsHtml = '';
+            if (onlineAgents.length === 0) {
+                agentsHtml = `
+                    <div class="component-empty-state component-p-2">
+                        <p class="component-empty-state-text">${__('admin_no_agents_to_reassign') || 'No hay otros agentes en línea disponibles.'}</p>
+                    </div>
+                `;
+            } else {
+                onlineAgents.forEach((agent, index) => {
+                    const activeClass = index === 0 ? 'active' : '';
+                    agentsHtml += `
+                        <div class="component-menu-link ${activeClass}" data-action="selectReassignAgent" data-val="${agent.id}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">support_agent</span></div>
+                            <div class="component-menu-link-text">
+                                <span>${agent.username || 'Agent'} (${agent.department_level ? agent.department_level.toUpperCase() : 'L1'})</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            const firstAgent = onlineAgents[0];
+            const defaultText = firstAgent ? `${firstAgent.username} (${(firstAgent.department_level || 'L1').toUpperCase()})` : (__('lbl_select_agent') || 'Seleccionar agente');
+            const defaultValue = firstAgent ? firstAgent.id : '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">swap_horiz</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('modal_reassign_chat_title') || 'Reasignar Conversación'}</h2>
+                        <p class="component-modal-desc">${__('modal_reassign_chat_desc') || 'Transfiere esta conversación activa a otro agente de soporte en línea.'}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body" data-ref="admin-reassign-form" data-session-uuid="${sessionUuid}">
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <span class="component-stat-card__title">${__('lbl_select_agent') || 'Agente de Destino'}</span>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownReassignAgent">
+                                    <span class="material-symbols-rounded">support_agent</span>
+                                    <span class="component-dropdown-text" data-ref="reassign-agent-text" data-value="${defaultValue}">${defaultText}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownReassignAgent">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            ${agentsHtml}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--dark ${onlineAgents.length === 0 ? 'disabled-interaction' : ''}" data-action="submitReassignChat">${__('btn_confirm_reassign') || 'Confirmar Transferencia'}</button>
+                </div>
+            `;
+        }
+    },
     cannedResponseModal: {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);

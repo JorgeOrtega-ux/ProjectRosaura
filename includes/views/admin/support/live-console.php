@@ -64,12 +64,13 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
 
         <div class="component-bottom component-bottom--support-console">
             
+            <!-- COLUMNA 1: COLAS DE ESPERA Y CHATS ACTIVOS -->
             <div class="admin-support-column admin-support-column--queues">
                 <div class="admin-support-column-header">
                     <h2 class="component-top-title"><?php echo __('admin_support_queues_title'); ?></h2>
                 </div>
                 
-                <div class="component-pill-bar component-mb-2">
+                <div class="component-pill-bar component-p-2">
                     <button class="component-pill-button active" data-action="switchQueueTab" data-tab="l1"><?php echo __('lbl_dept_l1'); ?> <span class="component-badge" data-ref="badge-queue-l1">0</span></button>
                     <button class="component-pill-button" data-action="switchQueueTab" data-tab="l2"><?php echo __('lbl_dept_l2'); ?> <span class="component-badge" data-ref="badge-queue-l2">0</span></button>
                     <button class="component-pill-button" data-action="switchQueueTab" data-tab="l3"><?php echo __('lbl_dept_l3'); ?> <span class="component-badge" data-ref="badge-queue-l3">0</span></button>
@@ -84,6 +85,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                 </div>
             </div>
 
+            <!-- COLUMNA 2: SALA DE CHAT EN VIVO -->
             <div class="admin-support-column admin-support-column--chat">
                 <div class="admin-support-chat-header" data-ref="admin-support-chat-header">
                     <div class="component-card__content">
@@ -96,10 +98,18 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                         </div>
                     </div>
                     <div class="component-card__actions disabled" data-ref="admin-chat-top-actions">
+                        <?php if ($canEscalate): ?>
                         <button class="component-button component-button--h34" data-action="openEscalateModal" type="button">
                             <span class="material-symbols-rounded">forward</span>
                             <span><?php echo __('btn_escalate_chat'); ?></span>
                         </button>
+                        <?php endif; ?>
+                        <?php if ($canReassign): ?>
+                        <button class="component-button component-button--h34" data-action="openReassignModal" type="button">
+                            <span class="material-symbols-rounded">swap_horiz</span>
+                            <span><?php echo __('btn_reassign_chat') ?? 'Reasignar'; ?></span>
+                        </button>
+                        <?php endif; ?>
                         <button class="component-button component-button--dark component-button--h34" data-action="openCloseChatModal" type="button">
                             <span class="material-symbols-rounded">check_circle</span>
                             <span><?php echo __('btn_resolve_chat'); ?></span>
@@ -114,8 +124,13 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                     </div>
                 </div>
 
+                <div class="component-chat-typing-indicator disabled" data-ref="admin-support-typing-indicator">
+                    <span class="material-symbols-rounded">edit_note</span>
+                    <span><?php echo __('lbl_user_is_typing') ?? 'El usuario está escribiendo...'; ?></span>
+                </div>
+
                 <div class="admin-support-chat-footer disabled" data-ref="admin-support-chat-footer">
-                    <div class="admin-support-toolbar component-mb-1">
+                    <div class="admin-support-toolbar">
                         <div class="component-dropdown-wrapper">
                             <div class="component-dropdown-trigger component-dropdown-trigger--small" data-action="toggleModule" data-target="adminCannedResponsesDropdown">
                                 <span class="material-symbols-rounded">quickreply</span>
@@ -146,6 +161,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                 </div>
             </div>
 
+            <!-- COLUMNA 3: DETALLES DEL USUARIO Y SESIÓN -->
             <div class="admin-support-column admin-support-column--sidebar">
                 <div class="admin-support-column-header">
                     <h2 class="component-top-title"><?php echo __('admin_user_profile_title'); ?></h2>
