@@ -17,6 +17,7 @@ interface RoleRepositoryInterface {
 
     public function syncUserRoles(int $userId, array $roleIds, int $executorWeight): bool;
     public function getUserRoles(int $userId): array;
+    public function ensureUserHasDefaultRole(int $userId): bool;
     public function getMergedPermissionsForUser(int $userId): array;
     public function getHighestPriorityRole(int $userId): ?array;
     public function invalidateGlobalRolesCache(): void;

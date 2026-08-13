@@ -158,6 +158,30 @@ class AppViewService {
 
      */
     public function getCanvasDesignData(?string $canvasUuid, bool $isSnapshot = false): array {
+        if (empty($canvasUuid)) {
+            return [];
+        }
+
+        global $sessionManager;
+        $session = $sessionManager ?? null;
+        $activeAccountId = ($session && method_exists($session, 'isLoggedIn') && $session->isLoggedIn()) ? $session->getActiveAccountId() : null;
+
+        $cacheKey = "canvas:view_data:{$canvasUuid}:u:" . ($activeAccountId ?? 0) . ($isSnapshot ? ':snap' : '');
+        $redis = null;
+        try {
+            if (class_exists(\App\Config\Database\RedisCache::class)) {
+                $redisInstance = new \App\Config\Database\RedisCache();
+                $redis = $redisInstance->getClient();
+                if ($redis) {
+                    $cached = $redis->get($cacheKey);
+                    if ($cached) {
+                        $cachedData = json_decode($cached, true);
+                        if (is_array($cachedData)) return $cachedData;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
         $canvasIntId = 0; 
         $canvasName = '';
         $canvasSize = '64'; 
@@ -388,7 +412,7 @@ class AppViewService {
             }
         }
 
-        return [
+        $designData = [
             'canvasIntId' => $canvasIntId,
             'canvasUuid' => $canvasUuid,
             'canvasName' => $canvasName,
@@ -435,5 +459,13 @@ class AppViewService {
             'maxImages' => $maxImages ?? 4,
             'maxUploadMB' => $maxUploadMB ?? 10
         ];
+
+        if (isset($redis) && $redis && !empty($canvasIntId)) {
+            try {
+                $redis->setex($cacheKey, \App\Core\System\CacheConstants::TTL_THIRTY_DAYS, json_encode($designData));
+            } catch (\Throwable $e) {}
+        }
+
+        return $designData;
     }
 }

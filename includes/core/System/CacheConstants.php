@@ -91,5 +91,6 @@ class CacheConstants {
     public const TTL_ONE_HOUR     = 3600;
     public const TTL_ONE_DAY      = 86400;
     public const TTL_ONE_WEEK     = 604800;
+    public const TTL_THIRTY_DAYS  = 2592000;
 }
 ?>

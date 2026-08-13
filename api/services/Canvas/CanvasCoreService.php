@@ -451,7 +451,7 @@ class CanvasCoreService {
             $result = ['success' => true, 'data' => $canvas, 'debug_timing' => ['total' => $tEnd - $t0, 'check_perms' => isset($t1) ? ($t1 - $t0) : null, 'redis_init' => isset($t2) ? ($t2 - $t1) : null]];
             if ($redis) {
                 try {
-                    $redis->setex($cacheKey, 30, json_encode($result)); // Cacheamos por 30 segundos
+                    $redis->setex($cacheKey, CacheConstants::TTL_THIRTY_DAYS, json_encode($result)); // Cache permanente (invalidado al editar)
                     error_log("[DEBUG getCanvas] Saved metadata cache for key: $cacheKey");
                 } catch (\Throwable $e) {
                     error_log("[DEBUG getCanvas] Exception saving cache: " . $e->getMessage());
@@ -1184,6 +1184,12 @@ LUA;
 
                 if (!$stateRaw) {
                     $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
+                    if ($stateRaw && class_exists(RedisCache::class)) {
+                        try {
+                            $r = (new RedisCache())->getClient();
+                            if ($r) $r->set($redisKey, $stateRaw);
+                        } catch (\Throwable $e) {}
+                    }
                 }
 
                 if (!$stateRaw) {

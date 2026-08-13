@@ -17,11 +17,13 @@ use Exception;
 
 class UserRepository implements UserRepositoryInterface {
     private $pdo;
+    private DatabaseManager $dbManager;
     private $roleRepository;
     private $redisClient;
     private CacheInvalidator $cacheInvalidator;
 
     public function __construct(DatabaseManager $db, RoleRepositoryInterface $roleRepository, RedisCache $redisCache = null) {
+        $this->dbManager = $db;
         $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
         $this->roleRepository = $roleRepository;
         $this->redisClient = $redisCache ? $redisCache->getClient() : null;
@@ -414,16 +416,131 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     public function deleteUserHard(int $userId): bool {
-        $tblUsers = DB::TBL_USERS;
+        if ($userId <= 0) return false;
+
+        $user = $this->findById($userId);
+        if (!$user) return false;
+
+        $uuid = $user['uuid'] ?? null;
+        $profilePic = $user['profile_picture'] ?? null;
+        $rootPath = defined('ROOT_PATH') ? ROOT_PATH : dirname(__DIR__, 3);
+
         try {
-            $stmt = $this->pdo->prepare("DELETE FROM {$tblUsers} WHERE id = ?");
-            $res = $stmt->execute([$userId]);
-            if ($res) {
-                $this->cacheInvalidator->user($userId);
+            // 1. Files Cleanup
+            if ($profilePic && strpos($profilePic, 'fallbacks/avatar-default.png') === false) {
+                $picRelative = ltrim(str_replace('public/storage/', 'storage/public/', $profilePic), '/');
+                $picPath = $rootPath . '/' . $picRelative;
+                if (file_exists($picPath) && is_file($picPath)) {
+                    @unlink($picPath);
+                }
             }
+            if ($uuid) {
+                $orphanDefault = $rootPath . "/storage/public/profilePictures/default/{$uuid}.png";
+                if (file_exists($orphanDefault) && is_file($orphanDefault)) {
+                    @unlink($orphanDefault);
+                }
+            }
+
+            // 2. Clean db_canvases
+            $pdoCanvases = $this->dbManager->getConnection(DB::CONN_CANVASES);
+            if ($pdoCanvases) {
+                // Remove user template physical files
+                $stmtTmpl = $pdoCanvases->prepare("SELECT file_path FROM " . DB::TBL_USER_TEMPLATES . " WHERE user_id = ?");
+                $stmtTmpl->execute([$userId]);
+                $templates = $stmtTmpl->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($templates as $tmpl) {
+                    if (!empty($tmpl['file_path'])) {
+                        $fullTmplPath = $rootPath . '/' . ltrim($tmpl['file_path'], '/');
+                        if (file_exists($fullTmplPath) && is_file($fullTmplPath)) {
+                            @unlink($fullTmplPath);
+                        }
+                    }
+                }
+
+                // Fetch affected canvases to recalculate members_count and favorites_count
+                $stmtAftCan = $pdoCanvases->prepare("SELECT DISTINCT canvas_id FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE user_id = ?");
+                $stmtAftCan->execute([$userId]);
+                $affectedMemberCanvasIds = $stmtAftCan->fetchAll(PDO::FETCH_COLUMN);
+
+                $stmtAftFav = $pdoCanvases->prepare("SELECT DISTINCT canvas_id FROM " . DB::TBL_CANVAS_FAVORITES . " WHERE user_id = ?");
+                $stmtAftFav->execute([$userId]);
+                $affectedFavCanvasIds = $stmtAftFav->fetchAll(PDO::FETCH_COLUMN);
+
+                $pdoCanvases->beginTransaction();
+
+                // Purge db_canvases tables
+                $pdoCanvases->prepare("DELETE FROM " . DB::TBL_USER_TEMPLATES . " WHERE user_id = ?")->execute([$userId]);
+                $pdoCanvases->prepare("DELETE FROM " . DB::TBL_CANVAS_SNAPSHOTS_LIKES . " WHERE user_id = ?")->execute([$userId]);
+                $pdoCanvases->prepare("DELETE FROM " . DB::TBL_CANVAS_CHAT_REPORTS . " WHERE reporter_user_id = ?")->execute([$userId]);
+
+                if ($uuid) {
+                    $pdoCanvases->prepare("DELETE FROM canvas_sanctions WHERE user_id = ? OR restricted_by = ? OR user_id = ? OR restricted_by = ?")
+                               ->execute([(string)$userId, (string)$userId, $uuid, $uuid]);
+                } else {
+                    $pdoCanvases->prepare("DELETE FROM canvas_sanctions WHERE user_id = ? OR restricted_by = ?")
+                               ->execute([(string)$userId, (string)$userId]);
+                }
+
+                $pdoCanvases->prepare("DELETE FROM " . DB::TBL_CANVAS_FAVORITES . " WHERE user_id = ?")->execute([$userId]);
+                $pdoCanvases->prepare("DELETE FROM " . DB::TBL_CANVAS_ACCESS_REQUESTS . " WHERE user_id = ?")->execute([$userId]);
+                $pdoCanvases->prepare("DELETE FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE user_id = ?")->execute([$userId]);
+                $pdoCanvases->prepare("DELETE FROM " . DB::TBL_CANVAS_USER_ROLES . " WHERE user_id = ?")->execute([$userId]);
+                $pdoCanvases->prepare("DELETE FROM " . DB::TBL_CANVAS_INVITES . " WHERE created_by = ?")->execute([$userId]);
+                $pdoCanvases->prepare("DELETE FROM " . DB::TBL_CANVASES . " WHERE owner_id = ?")->execute([$userId]);
+
+                // Sync counter columns in canvases
+                if (!empty($affectedMemberCanvasIds)) {
+                    $placeholders = implode(',', array_fill(0, count($affectedMemberCanvasIds), '?'));
+                    $pdoCanvases->prepare("UPDATE " . DB::TBL_CANVASES . " c SET members_count = (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " cm WHERE cm.canvas_id = c.id) WHERE c.id IN ({$placeholders})")->execute($affectedMemberCanvasIds);
+                }
+                if (!empty($affectedFavCanvasIds)) {
+                    $placeholders = implode(',', array_fill(0, count($affectedFavCanvasIds), '?'));
+                    $pdoCanvases->prepare("UPDATE " . DB::TBL_CANVASES . " c SET favorites_count = (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_FAVORITES . " cf WHERE cf.canvas_id = c.id) WHERE c.id IN ({$placeholders})")->execute($affectedFavCanvasIds);
+                }
+
+                $pdoCanvases->commit();
+            }
+
+            // 3. Clean db_identity
+            $this->pdo->beginTransaction();
+
+            // Anonymize financial records
+            $this->pdo->prepare("UPDATE " . DB::TBL_SUBSCRIPTIONS . " SET user_id = NULL WHERE user_id = ?")->execute([$userId]);
+            $this->pdo->prepare("UPDATE " . DB::TBL_PAYMENT_HISTORY . " SET user_id = NULL WHERE user_id = ?")->execute([$userId]);
+            $this->pdo->prepare("UPDATE store_purchases SET user_id = NULL WHERE user_id = ?")->execute([$userId]);
+
+            // Delete non-financial user records
+            $identityTables = [
+                'user_perks', 'user_perk_balances', 'custom_palettes', 'user_flags',
+                'user_preferences', 'user_restrictions', 'auth_tokens',
+                'user_roles', 'user_coin_transactions'
+            ];
+            foreach ($identityTables as $table) {
+                try {
+                    $this->pdo->prepare("DELETE FROM {$table} WHERE user_id = ?")->execute([$userId]);
+                } catch (\Throwable $e) {}
+            }
+
+            try {
+                $this->pdo->prepare("UPDATE moderation_logs SET admin_id = NULL WHERE admin_id = ?")->execute([$userId]);
+                $this->pdo->prepare("DELETE FROM moderation_logs WHERE user_id = ?")->execute([$userId]);
+            } catch (\Throwable $e) {}
+
+            $stmtDeleteUser = $this->pdo->prepare("DELETE FROM " . DB::TBL_USERS . " WHERE id = ?");
+            $res = $stmtDeleteUser->execute([$userId]);
+
+            $this->pdo->commit();
+
+            if ($res) {
+                $this->cacheInvalidator->user($userId, $uuid);
+            }
+
             return $res;
-        } catch (PDOException $e) {
-            Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
+        } catch (\Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            Logger::error("Error in deleteUserHard", ['user_id' => $userId, 'error' => $e->getMessage()]);
             return false;
         }
     }

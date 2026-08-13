@@ -305,12 +305,23 @@ def process_deletion(payload):
                 cursor_can.execute("DELETE FROM canvas_sanctions WHERE user_id = %s OR restricted_by = %s OR user_id = %s OR restricted_by = %s", (str(user_id), str(user_id), uuid_str, uuid_str))
             else:
                 cursor_can.execute("DELETE FROM canvas_sanctions WHERE user_id = %s OR restricted_by = %s", (str(user_id), str(user_id)))
+            # Fetch affected canvases to recalculate members_count and favorites_count
+            cursor_can.execute("SELECT DISTINCT canvas_id FROM canvas_members WHERE user_id = %s", (user_id,))
+            aff_members = [r['canvas_id'] for r in cursor_can.fetchall() if r.get('canvas_id')]
+            cursor_can.execute("SELECT DISTINCT canvas_id FROM canvas_favorites WHERE user_id = %s", (user_id,))
+            aff_favs = [r['canvas_id'] for r in cursor_can.fetchall() if r.get('canvas_id')]
+
             cursor_can.execute("DELETE FROM canvas_favorites WHERE user_id = %s", (user_id,))
             cursor_can.execute("DELETE FROM canvas_access_requests WHERE user_id = %s", (user_id,))
             cursor_can.execute("DELETE FROM canvas_members WHERE user_id = %s", (user_id,))
             cursor_can.execute("DELETE FROM canvas_user_roles WHERE user_id = %s", (user_id,))
             cursor_can.execute("DELETE FROM canvas_invites WHERE created_by = %s", (user_id,))
             cursor_can.execute("DELETE FROM canvases WHERE owner_id = %s", (user_id,))
+
+            for cid in aff_members:
+                cursor_can.execute("UPDATE canvases SET members_count = (SELECT COUNT(*) FROM canvas_members WHERE canvas_id = %s) WHERE id = %s", (cid, cid))
+            for cid in aff_favs:
+                cursor_can.execute("UPDATE canvases SET favorites_count = (SELECT COUNT(*) FROM canvas_favorites WHERE canvas_id = %s) WHERE id = %s", (cid, cid))
             
             conn_can.commit()
             Logger.info(f"db_canvases user data successfully purged for User ID: {user_id}")

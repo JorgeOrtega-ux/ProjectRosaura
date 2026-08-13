@@ -561,7 +561,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $final = $result ? $this->appendSnapshotUrl($result) : null;
         
         if ($final && $this->redisClient) {
-            $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($final));
+            $this->redisClient->setex($cacheKey, CacheConstants::TTL_THIRTY_DAYS, json_encode($final));
         }
         
         return $final;
@@ -1017,11 +1017,27 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getCanvasByUuid(string $uuid): ?array {
+        $cacheKey = CacheConstants::PREFIX_CANVAS_DETAIL . 'uuid:' . $uuid;
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached) return json_decode($cached, true);
+            } catch (\Throwable $e) {}
+        }
+
         $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':uuid' => $uuid]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ?: null;
+        $final = $result ? $this->appendSnapshotUrl($result) : null;
+
+        if ($final && $this->redisClient) {
+            try {
+                $this->redisClient->setex($cacheKey, CacheConstants::TTL_THIRTY_DAYS, json_encode($final));
+            } catch (\Throwable $e) {}
+        }
+
+        return $final;
     }
 
     public function deleteCanvasByUuid(string $uuid): bool {
@@ -1111,6 +1127,14 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getSnapshot(int $canvasId): ?string {
+        $redisKey = "canvas:{$canvasId}:state";
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($redisKey);
+                if ($cached) return $cached;
+            } catch (\Throwable $e) {}
+        }
+
         $sql = "SELECT s3_key, snapshot_data FROM " . DB::TBL_CANVAS_SNAPSHOTS . " WHERE canvas_id = :canvas_id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
@@ -1120,6 +1144,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             return null;
         }
 
+        $data = null;
         if (!empty($row['s3_key'])) {
             try {
                 $s3 = \App\Core\Helpers\Utils::getS3Client();
@@ -1129,13 +1154,23 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     'Key'    => $row['s3_key']
                 ]);
                 $body = (string)$result['Body'];
-                return $body ? @gzuncompress($body) : null;
+                $data = $body ? @gzuncompress($body) : null;
             } catch (\Throwable $e) {
                 Logger::error("Failed to fetch active snapshot from S3 for canvas {$canvasId}: " . $e->getMessage());
             }
         }
 
-        return !empty($row['snapshot_data']) ? @gzuncompress($row['snapshot_data']) : null;
+        if ($data === null && !empty($row['snapshot_data'])) {
+            $data = @gzuncompress($row['snapshot_data']);
+        }
+
+        if ($data !== null && $this->redisClient) {
+            try {
+                $this->redisClient->set($redisKey, $data);
+            } catch (\Throwable $e) {}
+        }
+
+        return $data;
     }
 
     public function saveSnapshot(int $canvasId, string $snapshotData): bool {

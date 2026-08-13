@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   INDEX `idx_owner_canvases` (`owner_id`),
   INDEX `idx_canvases_privacy` (`privacy`),
   INDEX `idx_canvases_feed_opt` (`is_subscription_locked`, `privacy`, `created_at`),
+  INDEX `idx_canvases_popular` (`favorites_count` DESC, `created_at` DESC),
   INDEX `idx_canvases_tags` ((CAST(tags AS CHAR(32) ARRAY)))
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
@@ -47,6 +48,7 @@ CREATE TABLE IF NOT EXISTS `canvas_protections` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   INDEX `idx_cp_canvas` (`canvas_id`),
+  INDEX `idx_cp_canvas_expires` (`canvas_id`, `expires_at`),
   CONSTRAINT `fk_cp_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
@@ -262,7 +264,8 @@ CREATE TABLE IF NOT EXISTS `canvas_chat_messages` (
     INDEX (`created_at`),
     INDEX `idx_chat_canvas_vis_id` (`canvas_id`, `visibility`, `id` DESC),
     INDEX `idx_chat_user` (`user_id`),
-    INDEX `idx_canvas_id_desc` (`canvas_id`, `id` DESC)
+    INDEX `idx_canvas_id_desc` (`canvas_id`, `id` DESC),
+    CONSTRAINT `fk_ccm_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `canvas_sanctions` (
@@ -291,6 +294,7 @@ CREATE TABLE IF NOT EXISTS `canvas_chat_reports` (
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX (`message_id`),
   INDEX (`reporter_user_id`),
-  INDEX (`created_at`)
+  INDEX (`created_at`),
+  INDEX `idx_reports_status_date` (`status`, `created_at` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

@@ -92,46 +92,75 @@ if ($isDesignRoute) {
 
         // Comprobamos si es un UUID válido (36 caracteres)
         if ($canvasUuid && strlen($canvasUuid) === 36) {
-            global $container;
-            if ($container) {
-                $canvasRepo = $container->get(\App\Core\Interfaces\CanvasRepositoryInterface::class);
-                $canvasService = $container->get(\App\Api\Services\Canvas\CanvasCoreService::class);
-            } else {
-                $canvasRepo = new \App\Core\Repositories\CanvasRepository();
-                $canvasService = new \App\Api\Services\Canvas\CanvasCoreService();
-            }
-
-            $canvasObjFromDb = $canvasRepo->getCanvasByUuid($canvasUuid);
-            if ($canvasObjFromDb) {
-                $canvasId = (int)$canvasObjFromDb['id'];
-                $activeAccountId = $_SESSION['active_account'] ?? null;
-                $canvasRes = $canvasService->getCanvas($activeAccountId ? (int)$activeAccountId : null, $canvasId);
-
-                if ($canvasRes && $canvasRes['success']) {
-                    $initialCanvasDataJson = json_encode($canvasRes);
-                    $canvasObj = $canvasRes['data'];
-                    $boardW = (int)$canvasObj['width'];
-                    $boardH = (int)$canvasObj['height'];
-
-                    // Calculamos el centro geométrico del lienzo
-                    $centerX = (int)($boardW / 2);
-                    $centerY = (int)($boardH / 2);
-                    $chunkSize = 512;
-                    $cx = (int)($centerX / $chunkSize);
-                    $cy = (int)($centerY / $chunkSize);
-
-                    // Chunks centrales iniciales (colchón de 3x3 chunks en el centro para cubrir la pantalla al entrar)
-                    $initialChunks = [];
-                    for ($x = max(0, $cx - 1); $x <= min(ceil($boardW / $chunkSize) - 1, $cx + 1); $x++) {
-                        for ($y = max(0, $cy - 1); $y <= min(ceil($boardH / $chunkSize) - 1, $cy + 1); $y++) {
-                            $initialChunks[] = "{$x},{$y}";
+            $activeAccountId = $_SESSION['active_account'] ?? 0;
+            $layoutCacheKey = "canvas:layout_preload:{$canvasUuid}:u:{$activeAccountId}";
+            $redis = null;
+            try {
+                if (class_exists(\App\Config\Database\RedisCache::class)) {
+                    $redis = (new \App\Config\Database\RedisCache())->getClient();
+                    if ($redis) {
+                        $cachedPreload = $redis->get($layoutCacheKey);
+                        if ($cachedPreload) {
+                            $decodedPreload = json_decode($cachedPreload, true);
+                            if (is_array($decodedPreload)) {
+                                $initialCanvasDataJson = $decodedPreload['initialCanvasDataJson'] ?? 'null';
+                                $preloadedChunksJson = $decodedPreload['preloadedChunksJson'] ?? '{}';
+                            }
                         }
                     }
+                }
+            } catch (\Throwable $e) {}
 
-                    if (!empty($initialChunks)) {
-                        $chunksResult = $canvasService->getCanvasChunks($canvasId, $initialChunks);
-                        if ($chunksResult && !empty($chunksResult['chunks'])) {
-                            $preloadedChunksJson = json_encode($chunksResult['chunks']);
+            if ($initialCanvasDataJson === 'null') {
+                global $container;
+                if ($container) {
+                    $canvasRepo = $container->get(\App\Core\Interfaces\CanvasRepositoryInterface::class);
+                    $canvasService = $container->get(\App\Api\Services\Canvas\CanvasCoreService::class);
+                } else {
+                    $canvasRepo = new \App\Core\Repositories\CanvasRepository();
+                    $canvasService = new \App\Api\Services\Canvas\CanvasCoreService();
+                }
+
+                $canvasObjFromDb = $canvasRepo->getCanvasByUuid($canvasUuid);
+                if ($canvasObjFromDb) {
+                    $canvasId = (int)$canvasObjFromDb['id'];
+                    $canvasRes = $canvasService->getCanvas($activeAccountId ? (int)$activeAccountId : null, $canvasId);
+
+                    if ($canvasRes && $canvasRes['success']) {
+                        $initialCanvasDataJson = json_encode($canvasRes);
+                        $canvasObj = $canvasRes['data'];
+                        $boardW = (int)$canvasObj['width'];
+                        $boardH = (int)$canvasObj['height'];
+
+                        // Calculamos el centro geométrico del lienzo
+                        $centerX = (int)($boardW / 2);
+                        $centerY = (int)($boardH / 2);
+                        $chunkSize = 512;
+                        $cx = (int)($centerX / $chunkSize);
+                        $cy = (int)($centerY / $chunkSize);
+
+                        // Chunks centrales iniciales (colchón de 3x3 chunks en el centro para cubrir la pantalla al entrar)
+                        $initialChunks = [];
+                        for ($x = max(0, $cx - 1); $x <= min(ceil($boardW / $chunkSize) - 1, $cx + 1); $x++) {
+                            for ($y = max(0, $cy - 1); $y <= min(ceil($boardH / $chunkSize) - 1, $cy + 1); $y++) {
+                                $initialChunks[] = "{$x},{$y}";
+                            }
+                        }
+
+                        if (!empty($initialChunks)) {
+                            $chunksResult = $canvasService->getCanvasChunks($canvasId, $initialChunks);
+                            if ($chunksResult && !empty($chunksResult['chunks'])) {
+                                $preloadedChunksJson = json_encode($chunksResult['chunks']);
+                            }
+                        }
+
+                        if ($redis) {
+                            try {
+                                $redis->setex($layoutCacheKey, \App\Core\System\CacheConstants::TTL_THIRTY_DAYS, json_encode([
+                                    'initialCanvasDataJson' => $initialCanvasDataJson,
+                                    'preloadedChunksJson' => $preloadedChunksJson
+                                ]));
+                            } catch (\Throwable $e) {}
                         }
                     }
                 }

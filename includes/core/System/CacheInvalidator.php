@@ -103,12 +103,42 @@ class CacheInvalidator {
             $this->redis->del(CacheConstants::PREFIX_CANVAS_DETAIL . $canvasId);
             $this->redis->del(CacheConstants::PREFIX_CANVAS_RESET_SETTINGS . $canvasId);
             $this->redis->del(CacheConstants::PREFIX_CANVAS_RESIZE_SETTINGS . $canvasId);
+            $this->redis->del("canvas:{$canvasId}:config");
+
+            // Invalida detalle por UUID
+            $uuidKeys = $this->redis->keys(CacheConstants::PREFIX_CANVAS_DETAIL . 'uuid:*');
+            if (!empty($uuidKeys)) {
+                $this->redis->del($uuidKeys);
+            }
+
+            // Invalida vistas PHP iniciales y preloads de layout
+            $viewKeys = $this->redis->keys('canvas:view_data:*');
+            if (!empty($viewKeys)) {
+                $this->redis->del($viewKeys);
+            }
+            $preloadKeys = $this->redis->keys('canvas:layout_preload:*');
+            if (!empty($preloadKeys)) {
+                $this->redis->del($preloadKeys);
+            }
+
+            // Invalida todas las respuestas de getCanvas cacheadas por usuario para este lienzo
+            $metaPattern = CacheConstants::PREFIX_CANVAS_META . $canvasId . CacheConstants::SUFFIX_CANVAS_META_USER . '*';
+            $metaKeys = $this->redis->keys($metaPattern);
+            if (!empty($metaKeys)) {
+                $this->redis->del($metaKeys);
+            }
 
             // Primeras páginas de listados públicos
             foreach (['newest', 'oldest', 'members'] as $sort) {
                 foreach ([20, 50] as $lim) {
                     $this->redis->del(CacheConstants::PREFIX_CANVAS_PUBLIC_PAGE . "{$sort}:{$lim}:0");
                 }
+            }
+
+            // Feeds públicos/home
+            $homeKeys = $this->redis->keys(CacheConstants::PREFIX_CANVAS_HOME_FEED . '*');
+            if (!empty($homeKeys)) {
+                $this->redis->del($homeKeys);
             }
         } catch (\Throwable $e) {}
     }

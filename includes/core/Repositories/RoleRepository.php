@@ -218,6 +218,25 @@ class RoleRepository implements RoleRepositoryInterface {
         return array_values(array_intersect($ids, $validIds));
     }
 
+    public function ensureUserHasDefaultRole(int $userId): bool {
+        if ($userId <= 0) return false;
+        $tblUsers = DB::TBL_USERS;
+        $tblUserRoles = DB::TBL_USER_ROLES;
+        try {
+            $stmtUser = $this->pdo->prepare("SELECT id FROM {$tblUsers} WHERE id = ? LIMIT 1");
+            $stmtUser->execute([$userId]);
+            if ($stmtUser->fetch()) {
+                $stmtInsert = $this->pdo->prepare("INSERT IGNORE INTO {$tblUserRoles} (user_id, role_id) VALUES (?, ?)");
+                $stmtInsert->execute([$userId, SecurityConstants::DEFAULT_USER_ROLE_ID]);
+                $this->cacheInvalidator->userRoles($userId);
+                return true;
+            }
+        } catch (\Throwable $e) {
+            Logger::error("Error in ensureUserHasDefaultRole", ['user_id' => $userId, 'error' => $e->getMessage()]);
+        }
+        return false;
+    }
+
     public function getUserRoles(int $userId): array {
         $cacheKey = CacheConstants::PREFIX_USER_ROLES . $userId;
         $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
@@ -239,6 +258,13 @@ class RoleRepository implements RoleRepositoryInterface {
             ");
             $stmt->execute([$userId]);
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($data)) {
+                if ($this->ensureUserHasDefaultRole($userId)) {
+                    $stmt->execute([$userId]);
+                    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                }
+            }
 
             if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
             return $data;
@@ -268,6 +294,13 @@ class RoleRepository implements RoleRepositoryInterface {
             ");
             $stmt->execute([$userId]);
             $data = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            if (empty($data)) {
+                if ($this->ensureUserHasDefaultRole($userId)) {
+                    $stmt->execute([$userId]);
+                    $data = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                }
+            }
 
             if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
             return $data;

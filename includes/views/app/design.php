@@ -14,6 +14,7 @@ if ($designData['isBanned']) {
 
 extract($designData);
 ?>
+<script>window.__CANVAS_VIEW_START__ = performance.now();</script>
 <div class="view-content">
     
     <?php 

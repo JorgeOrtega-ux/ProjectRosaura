@@ -537,6 +537,9 @@ class SettingsServices
             Utils::invalidateUserSessions($this->sessionManager, $userId, true);
             $this->sessionManager->removeAccount($userId);
 
+            // Synchronous Instant Eradication across all DBs & Filesystem
+            $deleted = $this->userRepository->deleteUserHard($userId);
+
             try {
                 $redisCache = new \App\Config\Database\RedisCache();
                 $redisClient = $redisCache->getClient();
@@ -553,7 +556,11 @@ class SettingsServices
                 Logger::error("Failed pushing instant deletion to Redis queue", ['user_id' => $userId, 'error' => $e->getMessage()]);
             }
 
-            return ['success' => true, 'message' => __('settings.account_deleted_success')];
+            if ($deleted) {
+                return ['success' => true, 'message' => __('settings.account_deleted_success')];
+            } else {
+                return ['success' => false, 'message' => __('error.update_failed')];
+            }
         }
         
         return ['success' => false, 'message' => __('auth.incorrect_password')];

@@ -168,7 +168,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `google_id` (`google_id`),
   INDEX `idx_users_deletion_scheduled` (`deletion_scheduled_at`),
   INDEX `idx_users_tier` (`subscription_tier`),
-  INDEX `idx_users_created_at` (`created_at`)
+  INDEX `idx_users_created_at` (`created_at`),
+  INDEX `idx_users_stripe_customer` (`stripe_customer_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `user_roles` (
@@ -227,7 +228,7 @@ CREATE TABLE IF NOT EXISTS `custom_palettes` (
     `colors` JSON NOT NULL,
     `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `unique_palette_key` (`palette_key`),
+    UNIQUE KEY `idx_user_palette` (`user_id`, `palette_key`),
     KEY `idx_user_id` (`user_id`),
     CONSTRAINT `fk_custom_palettes_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

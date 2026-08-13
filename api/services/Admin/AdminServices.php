@@ -503,13 +503,17 @@ class AdminServices {
                 Utils::invalidateUserSessions($this->sessionManager, $targetId, true);
                 $this->tokenRepository->deleteAllByUserId($targetId);
 
+                $this->userRepository->deleteUserHard($targetId);
+
                 $payload = json_encode([
                     'user_id' => $targetId,
                     'email' => $user['email'],
                     'username' => $user['username'],
                     'reason' => $deletedReason
                 ]);
-                $redisClient->rpush(CacheConstants::QUEUE_ACCOUNT_DELETION, [$payload]);
+                if ($redisClient) {
+                    $redisClient->rpush(CacheConstants::QUEUE_ACCOUNT_DELETION, [$payload]);
+                }
                 
                 $logPayload = json_encode(['event' => 'admin_bulk_delete_user', 'admin_user' => $currentUserId]);
                 $this->moderationRepository->logAction($targetId, $currentUserId, ModerationConstants::ACTION_DELETED, $logPayload, null, null);
