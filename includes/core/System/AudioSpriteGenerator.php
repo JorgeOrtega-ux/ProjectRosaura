@@ -17,13 +17,34 @@ class AudioSpriteGenerator {
             return ['success' => false, 'message' => 'Directory not found'];
         }
 
-        $mp3Files = glob($soundsDir . '*.mp3');
+        $audioFiles = array_merge(glob($soundsDir . '*.ogg'), glob($soundsDir . '*.mp3'));
         $spriteMap = [];
         $combinedMp3Data = '';
         $currentOffset = 0.0;
 
         // Mapeo de perfiles conocidos
         $profiles = [
+            'orbital_cannon.ogg'         => 'orbital_cannon_1',
+            'orbital_cannon_warning.ogg' => 'orbital_cannon_1_warn',
+            'atomic_bomb.ogg'            => 'atomic_bomb_1',
+            'atomic_bomb_warning.ogg'    => 'atomic_bomb_1_warn',
+            'black_hole.ogg'             => 'black_hole_1',
+            'black_hole_warning.ogg'     => 'black_hole_1_warn',
+            'meteor_shower.ogg'          => 'meteor_shower_1',
+            'meteor_shower_warning.ogg'  => 'meteor_shower_1_warn',
+            'cluster_bomb.ogg'           => 'cluster_bomb_1',
+            'cluster_bomb_warning.ogg'   => 'cluster_bomb_1_warn',
+            'pixel_shield.ogg'           => 'pixel_shield_1',
+            'pixel_missile.ogg'          => 'pixel_missile_1',
+            'pixel_missile_warning.ogg'  => 'pixel_missile_1_warn',
+            'pixel_missile_impact.ogg'   => 'pixel_missile_impact',
+            'pixel_bomb.ogg'             => 'pixel_bomb_1',
+            'pixel_bomb_warning.ogg'     => 'pixel_bomb_1_warn',
+            'mines.ogg'                  => 'mines_1',
+            'supernova_blast.ogg'        => 'supernova_blast',
+            'supernova_blast_warning.ogg'=> 'supernova_blast_warn',
+            'ion_strike.ogg'             => 'ion_strike',
+            'ion_strike_warning.ogg'     => 'ion_strike_warn',
             'orbital_cannon.mp3'         => 'orbital_cannon_1',
             'orbital_cannon_warning.mp3' => 'orbital_cannon_1_warn',
             'atomic_bomb.mp3'            => 'atomic_bomb_1',
@@ -47,7 +68,7 @@ class AudioSpriteGenerator {
             'ion_strike_warning.mp3'     => 'ion_strike_warn',
         ];
 
-        foreach ($mp3Files as $filePath) {
+        foreach ($audioFiles as $filePath) {
             $filename = basename($filePath);
             if ($filename === 'sounds_sprite.mp3') continue;
 

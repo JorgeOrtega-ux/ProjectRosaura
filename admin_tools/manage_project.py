@@ -376,156 +376,6 @@ def search_in_file(filepath, search_target):
         pass
     return results
 
-def handle_draw_image():
-    from PIL import Image
-    import redis
-    import mysql.connector
-
-    print(f"\n{Colors.HEADER}{Colors.BOLD}Dibujar Imagen en Lienzo (True Color RGBA a Redis){Colors.ENDC}")
-    
-    image_path = input("Ruta de la imagen a dibujar: ").strip()
-    if not os.path.exists(image_path):
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        alt_path = os.path.join(project_root, image_path)
-        if os.path.exists(alt_path):
-            image_path = alt_path
-        else:
-            print(f"{Colors.FAIL}La ruta de la imagen no existe.{Colors.ENDC}")
-            return
-        
-    try:
-        canvas_id = int(input("ID del lienzo: ").strip())
-    except ValueError:
-        print(f"{Colors.FAIL}ID de lienzo no válido.{Colors.ENDC}")
-        return
-        
-    try:
-        x_str = input("Posición X inicial (por defecto 0): ").strip()
-        start_x = int(x_str) if x_str else 0
-        y_str = input("Posición Y inicial (por defecto 0): ").strip()
-        start_y = int(y_str) if y_str else 0
-    except ValueError:
-        print(f"{Colors.FAIL}Coordenadas no válidas.{Colors.ENDC}")
-        return
-
-    try:
-        w_str = input("Ancho final (opcional, ENTER para omitir): ").strip()
-        resize_w = int(w_str) if w_str else 0
-        h_str = input("Alto final (opcional, ENTER para omitir): ").strip()
-        resize_h = int(h_str) if h_str else 0
-    except ValueError:
-        print(f"{Colors.FAIL}Dimensiones no válidas.{Colors.ENDC}")
-        return
-
-    try:
-        angle_str = input("Ángulo de rotación (opcional, ENTER para omitir): ").strip()
-        angle = float(angle_str) if angle_str else 0
-    except ValueError:
-        print(f"{Colors.FAIL}Ángulo no válido.{Colors.ENDC}")
-        return
-
-    # DB Connection
-    DB_HOST = os.getenv("DB_HOST")
-    DB_PORT = int(os.getenv("DB_PORT") or 3306)
-    DB_USER = os.getenv("DB_USER")
-    DB_PASS = os.getenv("DB_PASS")
-    DB_NAME = os.getenv("DB_CANVASES_NAME")
-
-    print("[*] Conectando a MySQL para obtener información del lienzo...")
-    try:
-        db = mysql.connector.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASS, database=DB_NAME)
-        cursor = db.cursor(dictionary=True)
-    except Exception as e:
-        print(f"{Colors.FAIL}[!] Error de conexión a MySQL: {e}{Colors.ENDC}")
-        return
-
-    cursor.execute("SELECT size FROM canvases WHERE id = %s", (canvas_id,))
-    canvas_row = cursor.fetchone()
-    if not canvas_row:
-        print(f"{Colors.FAIL}[!] El lienzo con ID {canvas_id} no existe.{Colors.ENDC}")
-        db.close()
-        return
-
-    size_str = canvas_row.get('size', '100x100')
-    db.close()
-
-    try:
-        width, height = map(int, size_str.split('x'))
-    except Exception:
-        width, height = 100, 100
-    print(f"[*] Tamaño del lienzo ID {canvas_id}: {width}x{height}.")
-
-    try:
-        img = Image.open(image_path).convert("RGBA")
-    except Exception as e:
-        print(f"{Colors.FAIL}[!] Error al abrir la imagen: {e}{Colors.ENDC}")
-        return
-
-    if resize_w > 0 and resize_h > 0:
-        img = img.resize((resize_w, resize_h), Image.Resampling.LANCZOS)
-        
-    if angle != 0:
-        img = img.rotate(-angle, expand=True, resample=Image.Resampling.BICUBIC)
-        new_w, new_h = img.size
-        cx = start_x + (resize_w / 2.0 if resize_w > 0 else img.width / 2.0)
-        cy = start_y + (resize_h / 2.0 if resize_h > 0 else img.height / 2.0)
-        start_x = int(cx - new_w / 2.0)
-        start_y = int(cy - new_h / 2.0)
-
-    img_width, img_height = img.size
-    print(f"[*] Imagen procesada: {img_width}x{img_height}")
-
-    # Redis Connection
-    REDIS_HOST = os.getenv("REDIS_HOST")
-    REDIS_PORT = int(os.getenv("REDIS_PORT") or 6379)
-    REDIS_PASS = os.getenv("REDIS_PASS")
-    
-    print("[*] Conectando a Redis...")
-    try:
-        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS, db=0)
-        r.ping()
-    except Exception as e:
-        print(f"{Colors.FAIL}[!] No se pudo conectar a Redis: {e}{Colors.ENDC}")
-        return
-
-    state_key = f"canvas:{canvas_id}:state"
-    raw_state = r.get(state_key)
-    
-    expected_size = width * height * 4
-    if not raw_state or len(raw_state) != expected_size:
-        print(f"[*] El estado en Redis no existe o su tamaño ({len(raw_state) if raw_state else 0} bytes) no coincide con {expected_size} bytes (4-byte RGBA). Inicializando de cero...")
-        raw_state = b'\x00\x00\x00\x00' * (width * height)
-
-    state = bytearray(raw_state)
-    original_pixels = img.load()
-    changed = 0
-
-    print("[*] Inyectando colores RGBA absolutos al buffer...")
-    for iy in range(img_height):
-        for ix in range(img_width):
-            cx = start_x + ix
-            cy = start_y + iy
-            
-            if cx < 0 or cx >= width or cy < 0 or cy >= height:
-                continue
-
-            orig_rgba = original_pixels[ix, iy]
-            if orig_rgba[3] < 128:
-                continue
-
-            offset = ((cy * width) + cx) * 4
-            if offset + 3 < len(state):
-                state[offset] = orig_rgba[0]
-                state[offset+1] = orig_rgba[1]
-                state[offset+2] = orig_rgba[2]
-                state[offset+3] = 255
-                changed += 1
-
-    print(f"[*] Guardando estado en Redis ({changed} píxeles nuevos)...")
-    r.set(state_key, bytes(state))
-    r.sadd("canvases:dirty_states", canvas_id)
-    print(f"{Colors.GREEN}✅ Completado con éxito! ({changed} píxeles modificados){Colors.ENDC}")
-
 def get_files_to_scan(target_path):
     """Genera una lista de todos los archivos válidos para escanear"""
     files_to_scan = []
@@ -547,10 +397,9 @@ def main():
     print("3 - Identificar código de depuración (console.log, var_dump, etc.)")
     print("4 - Generar Sprite de Iconos SVG")
     print("5 - Escanear claves de traducción (_t y __) y comprobar JSONs")
-    print("6 - Dibujar una imagen en un lienzo (Inyectar a Redis)")
-    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4, 5 o 6: {Colors.ENDC}").strip()
+    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4 o 5: {Colors.ENDC}").strip()
 
-    if choice not in ('1', '2', '3', '4', '5', '6'):
+    if choice not in ('1', '2', '3', '4', '5'):
         print(f"{Colors.FAIL}Opción no válida. Saliendo.{Colors.ENDC}")
         return
 
@@ -565,10 +414,6 @@ def main():
     if choice == '5':
         from i18n import i18n_scanner
         i18n_scanner.run_scanner(target_path, script_dir)
-        return
-
-    if choice == '6':
-        handle_draw_image()
         return
 
     if choice == '1':

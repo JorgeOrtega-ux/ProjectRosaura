@@ -64,5 +64,10 @@ storage/private/backups/*.gz
 /admin_tools/reports/
 /admin_tools/data/
 
+# Python cache & compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
 # Carpeta de sonidos (archivos de audio pesados)
 /sounds/
