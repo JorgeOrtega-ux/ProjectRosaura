@@ -234,9 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     targetInstance = window.loadedControllers[className];
                 }
 
-                if (window.activeControllerInstance && 
-                    window.activeControllerInstance !== targetInstance && 
-                    typeof window.activeControllerInstance.destroy === 'function') {
+                if (window.activeControllerInstance && typeof window.activeControllerInstance.destroy === 'function') {
                     window.activeControllerInstance.destroy();
                 }
 
@@ -294,6 +292,22 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         showWelcomeFlow();
     }, 500);
+
+    function syncSupportFloatingButton() {
+        const fab = document.querySelector('[data-ref="floating-support-btn"]');
+        if (!fab) return;
+        const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
+        const isModuleOpen = moduleEl && !moduleEl.classList.contains('disabled');
+        const savedSession = localStorage.getItem('pr_active_support_session');
+        if (savedSession && !isModuleOpen) {
+            fab.classList.remove('disabled');
+        } else {
+            fab.classList.add('disabled');
+        }
+    }
+
+    syncSupportFloatingButton();
+    window.addEventListener('viewLoaded', syncSupportFloatingButton);
 
     window.dispatchEvent(new CustomEvent('viewLoaded', { 
         detail: { 

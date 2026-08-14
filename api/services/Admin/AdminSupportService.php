@@ -267,6 +267,9 @@ class AdminSupportService {
         $this->publishSupportEvent('session_escalated', $sessionUuid, [
             'session_uuid' => $sessionUuid,
             'to_level' => $toLevel,
+            'to_dept' => $targetDept,
+            'from_level' => $session['department_level'] ?? 'l1',
+            'client_username' => $session['client_username'] ?? 'Guest',
             'reason' => $reason,
             'system_message' => $escMsg
         ]);
@@ -295,6 +298,7 @@ class AdminSupportService {
             return ['success' => false, 'message' => __('err_support_reassign_failed')];
         }
 
+        $session = $this->supportRepo->findByUuid($sessionUuid);
         $targetUser = $this->userRepo->findById($toAgentId);
         $targetName = $targetUser['username'] ?? 'Support Agent';
 
@@ -312,6 +316,7 @@ class AdminSupportService {
             'session_uuid' => $sessionUuid,
             'to_agent_id' => $toAgentId,
             'to_agent_name' => $targetName,
+            'client_username' => $session['client_username'] ?? 'Guest',
             'system_message' => $reassignMsg
         ]);
 
@@ -463,6 +468,47 @@ class AdminSupportService {
         } catch (\Throwable $e) {
             Logger::error("Failed to publish admin support event to Redis: " . $e->getMessage());
         }
+    }
+
+    public function getSessionMessages(array $input): array {
+        $agentId = $this->getCurrentAgentId();
+        if (!$agentId || !$this->hasPermission(PC::ACCESS_SUPPORT_PANEL)) {
+            return ['success' => false, 'message' => __('err_unauthorized')];
+        }
+
+        $sessionUuid = trim($input['session_uuid'] ?? '');
+        if (empty($sessionUuid)) {
+            return ['success' => false, 'message' => __('err_invalid_request')];
+        }
+
+        $session = $this->supportRepo->findSessionByUuid($sessionUuid);
+        if (!$session) {
+            return ['success' => false, 'message' => __('err_support_session_not_found')];
+        }
+
+        $messages = $this->supportRepo->getSessionMessages($sessionUuid, true);
+
+        return [
+            'success' => true,
+            'session' => [
+                'uuid' => $session['uuid'],
+                'status' => $session['status'],
+                'department_level' => $session['department_level'],
+                'category' => $session['category'],
+                'priority' => $session['priority'] ?? 'medium',
+                'subject' => $session['subject'],
+                'client_username' => $session['client_username'] ?? 'Guest',
+                'client_avatar' => $session['client_avatar'] ?? null,
+                'client_email' => $session['client_email'] ?? null,
+                'client_role_color' => $session['client_role_color'] ?? null,
+                'client_tier' => $session['client_tier'] ?? null,
+                'agent_name' => $session['agent_username'] ?? null,
+                'agent_avatar' => $session['agent_avatar'] ?? null,
+                'started_at' => $session['started_at'],
+                'user_rating' => $session['user_rating'] ? (int)$session['user_rating'] : null
+            ],
+            'messages' => $messages
+        ];
     }
 
     public function getCannedResponses(array $input): array {

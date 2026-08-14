@@ -1,6 +1,6 @@
 import { ApiRoutes, WsConfig } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { restoreButton, setButtonLoading, showMessage } from '../../../core/utils/uiUtils.js';
+import { renderSkeleton, restoreButton, setButtonLoading, showMessage } from '../../../core/utils/uiUtils.js';
 import { AdminModalTemplates } from '../AdminModalTemplates.js';
 
 export class AdminSupportLiveController {
@@ -15,8 +15,9 @@ export class AdminSupportLiveController {
         this.isInternalNoteMode = false;
         this.cannedResponses = [];
         this.onlineAgents = [];
-        
-        // WebSocket
+        this.lastQueues = null;
+        this.lastActiveList = null;
+
         this.ws = null;
         this.wsReconnectTimeout = null;
         this.wsHeartbeatInterval = null;
@@ -31,15 +32,36 @@ export class AdminSupportLiveController {
     async init() {
         this.container = document.querySelector('[data-ref="admin-support-live-wrapper"]');
         this.abortController = new AbortController();
+        this.isIntentionalDisconnect = false;
+        this.activeTab = 'l1';
+
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        const cIndex = pathParts.indexOf('c');
+        if (cIndex !== -1 && pathParts[cIndex + 1]) {
+            this.currentSessionUuid = pathParts[cIndex + 1];
+        } else {
+            const urlParams = new URLSearchParams(window.location.search);
+            const chatParam = urlParams.get('chat');
+            if (chatParam) {
+                this.currentSessionUuid = chatParam;
+            }
+        }
 
         if (window.modalSystem) {
             window.modalSystem.registerTemplates(AdminModalTemplates);
         }
 
         this.bindEvents();
+        this._syncActiveTabUI();
+        this._requestNotificationPermission();
         await this._loadAgentStatus();
         await this._loadCannedResponses();
         await this._loadQueues();
+
+        if (this.currentSessionUuid) {
+            await this._selectSession(this.currentSessionUuid);
+        }
+
         this._connectWebSocket();
         this._startPolling();
     }
@@ -136,13 +158,60 @@ export class AdminSupportLiveController {
         if (payload.type === 'support_event') {
             const event = payload.event;
             const sessionUuid = payload.session_uuid;
+            const eventData = payload.data || {};
 
             switch (event) {
-                case 'session_created':
+                case 'session_created': {
+                    const clientName = eventData.client_username || 'Guest';
+                    this._playSound('incoming');
+                    showMessage(window.__('notif_new_chat_incoming', { user: clientName }), 'info');
+                    this._showBrowserNotification(window.__('title_support_live'), window.__('notif_new_chat_incoming', { user: clientName }));
                     this._loadQueues();
-                    this._playNotificationSound();
                     break;
-                case 'new_message':
+                }
+                case 'session_escalated': {
+                    const clientName = eventData.client_username || 'Usuario';
+                    const targetDept = eventData.to_dept || (eventData.to_level ? eventData.to_level.toUpperCase() : 'Nivel Superior');
+                    this._playSound('escalated');
+                    showMessage(window.__('notif_chat_escalated', { dept: targetDept, user: clientName }), 'info');
+                    this._showBrowserNotification(window.__('title_support_live'), window.__('notif_chat_escalated', { dept: targetDept, user: clientName }));
+                    if (this.currentSessionUuid && this.currentSessionUuid === sessionUuid) {
+                        this._resetChatView();
+                    }
+                    this._loadQueues();
+                    break;
+                }
+                case 'session_reassigned': {
+                    const clientName = eventData.client_username || 'Usuario';
+                    const targetAgent = eventData.to_agent_name || 'Agente';
+                    this._playSound('transferred');
+                    showMessage(window.__('notif_chat_reassigned', { agent: targetAgent, user: clientName }), 'info');
+                    this._showBrowserNotification(window.__('title_support_live'), window.__('notif_chat_reassigned', { agent: targetAgent, user: clientName }));
+                    if (this.currentSessionUuid && this.currentSessionUuid === sessionUuid) {
+                        this._resetChatView();
+                    }
+                    this._loadQueues();
+                    break;
+                }
+                case 'new_message': {
+                    const isFromUser = eventData.sender_type === 'user' || (eventData.message && eventData.message.sender_type === 'user');
+                    const senderName = eventData.sender_name || (eventData.message && eventData.message.sender_name) || 'Usuario';
+
+                    if (this.currentSessionUuid && this.currentSessionUuid === sessionUuid) {
+                        this._loadMessages();
+                        if (isFromUser) {
+                            this._playSound('message');
+                        }
+                    } else {
+                        if (isFromUser) {
+                            this._playSound('message');
+                            showMessage(window.__('notif_new_message_received', { user: senderName }), 'info');
+                            this._showBrowserNotification(window.__('title_support_live'), window.__('notif_new_message_received', { user: senderName }));
+                        }
+                    }
+                    this._loadQueues();
+                    break;
+                }
                 case 'internal_note':
                     if (this.currentSessionUuid && this.currentSessionUuid === sessionUuid) {
                         this._loadMessages();
@@ -152,10 +221,9 @@ export class AdminSupportLiveController {
                 case 'session_claimed':
                     this._loadQueues();
                     break;
-                case 'session_escalated':
-                case 'session_reassigned':
                 case 'session_closed':
                     if (this.currentSessionUuid && this.currentSessionUuid === sessionUuid) {
+                        this._playSound('resolved');
                         this._resetChatView();
                     }
                     this._loadQueues();
@@ -198,11 +266,39 @@ export class AdminSupportLiveController {
         }
     }
 
-    _playNotificationSound() {
+    _playSound(type = 'incoming') {
         try {
-            const audio = new Audio('/sounds/notification.mp3');
-            audio.volume = 0.4;
+            const soundMap = {
+                incoming: '/public/assets/sounds/support/chat_incoming.mp3',
+                escalated: '/public/assets/sounds/support/chat_escalated.mp3',
+                transferred: '/public/assets/sounds/support/chat_transferred.mp3',
+                message: '/public/assets/sounds/support/chat_message.mp3',
+                resolved: '/public/assets/sounds/support/chat_resolved.mp3',
+                notification: '/public/assets/sounds/support/chat_incoming.mp3'
+            };
+            const src = soundMap[type] || soundMap.incoming;
+            const audio = new Audio(src);
+            audio.volume = 0.5;
             audio.play().catch(() => {});
+        } catch (e) {}
+    }
+
+    _requestNotificationPermission() {
+        try {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().catch(() => {});
+            }
+        } catch (e) {}
+    }
+
+    _showBrowserNotification(title, body) {
+        try {
+            if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+                new Notification(title, {
+                    body: body,
+                    icon: '/public/assets/img/logo/logo.png'
+                });
+            }
         } catch (e) {}
     }
 
@@ -338,21 +434,29 @@ export class AdminSupportLiveController {
         }
     }
 
-    _handleSwitchTab(btn) {
+    _syncActiveTabUI() {
+        const allTabs = document.querySelectorAll('[data-action="switchQueueTab"]');
+        allTabs.forEach(btn => {
+            if (btn.getAttribute('data-tab') === this.activeTab) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    async _handleSwitchTab(btn) {
         const tab = btn.getAttribute('data-tab');
         if (!tab) return;
         this.activeTab = tab;
+        this._syncActiveTabUI();
 
-        const allTabs = document.querySelectorAll('[data-action="switchQueueTab"]');
-        allTabs.forEach(b => {
-            if (b === btn) {
-                b.classList.add('active');
-            } else {
-                b.classList.remove('active');
-            }
-        });
+        const container = document.querySelector('[data-ref="admin-support-queue-container"]');
+        if (container) {
+            renderSkeleton(container, 'supportQueueSkeleton');
+        }
 
-        this._loadQueues();
+        await this._loadQueues();
     }
 
     async _loadAgentStatus() {
@@ -494,7 +598,7 @@ export class AdminSupportLiveController {
             if (this.currentSessionUuid) {
                 this._loadMessages();
             }
-        }, 10000);
+        }, 8000);
     }
 
     async _loadQueues() {
@@ -518,9 +622,11 @@ export class AdminSupportLiveController {
                 if (b3) b3.textContent = (queues.l3 || []).length;
                 if (bAct) bAct.textContent = activeList.length;
 
+                this._syncActiveTabUI();
+
                 if (this.currentSessionUuid) {
                     const isStillActive = activeList.some(s => s.uuid === this.currentSessionUuid);
-                    if (!isStillActive) {
+                    if (!isStillActive && this.activeTab === 'active') {
                         this._resetChatView();
                     }
                 }
@@ -554,7 +660,7 @@ export class AdminSupportLiveController {
             container.innerHTML = `
                 <div class="component-empty-state">
                     <span class="material-symbols-rounded component-empty-state-icon">inbox</span>
-                    <h3 class="component-card__title">${window.__('admin_no_chats_in_queue')}</h3>
+                    <h3 class="component-card__title">${window.__('lbl_no_chats_in_queue')}</h3>
                 </div>
             `;
             return;
@@ -565,8 +671,8 @@ export class AdminSupportLiveController {
             const isSelected = item.uuid === this.currentSessionUuid;
             const selectedClass = isSelected ? 'active' : '';
             const priorityBadge = item.priority === 'urgent'
-                ? '<span class="component-badge component-badge--danger">Urgente</span>'
-                : (item.priority === 'high' ? '<span class="component-badge component-badge--warning">Alta</span>' : '');
+                ? `<span class="component-badge component-badge--danger">${window.__('lbl_priority_urgent')}</span>`
+                : (item.priority === 'high' ? `<span class="component-badge component-badge--warning">${window.__('lbl_priority_high')}</span>` : '');
             const avatarHtml = this._renderAvatarHtml(item.client_avatar, item.client_username, item.client_role_color, 'component-avatar--static-sm');
 
             if (isActiveTab) {
@@ -683,14 +789,7 @@ export class AdminSupportLiveController {
             if (res && res.success) {
                 showMessage(window.__('msg_support_chat_claimed'), 'success');
                 this.activeTab = 'active';
-                const allTabs = document.querySelectorAll('[data-action="switchQueueTab"]');
-                allTabs.forEach(b => {
-                    if (b.getAttribute('data-tab') === 'active') {
-                        b.classList.add('active');
-                    } else {
-                        b.classList.remove('active');
-                    }
-                });
+                this._syncActiveTabUI();
                 await this._loadQueues();
                 this._selectSession(uuid);
             } else {
@@ -704,11 +803,19 @@ export class AdminSupportLiveController {
     }
 
     async _selectSession(uuid) {
+        if (!uuid) return;
         this.currentSessionUuid = uuid;
+
+        const targetPath = `/admin/support/live-console/c/${uuid}`;
+        if (window.location.pathname !== targetPath) {
+            window.history.replaceState(null, '', targetPath);
+        }
+
         const consoleEl = document.querySelector('.component-bottom--console');
         if (consoleEl) {
             consoleEl.classList.add('component-bottom--mobile-chat-active');
         }
+
         const allItems = document.querySelectorAll('[data-action="selectActiveChat"]');
         allItems.forEach(item => {
             if (item.getAttribute('data-uuid') === uuid) {
@@ -717,19 +824,31 @@ export class AdminSupportLiveController {
                 item.classList.remove('active');
             }
         });
+
         await this._loadMessages();
     }
 
     async _loadMessages() {
         if (!this.currentSessionUuid) return;
 
+        const messagesContainer = document.querySelector('[data-ref="admin-support-messages-list"]');
+        if (messagesContainer && (!this.currentSession || this.currentSession.uuid !== this.currentSessionUuid)) {
+            renderSkeleton(messagesContainer, 'chatSkeleton');
+        }
+
         try {
-            const res = await this.api.post(ApiRoutes.Support.GetSessionMessages, {
+            const res = await this.api.post(ApiRoutes.AdminSupport.GetSessionMessages, {
                 session_uuid: this.currentSessionUuid
             }, this.abortController ? this.abortController.signal : undefined);
 
-            if (res && res.success) {
+            if (res && res.success && res.session) {
                 this.currentSession = res.session;
+
+                const header = document.querySelector('[data-ref="admin-support-chat-header"]');
+                if (header) {
+                    header.classList.remove('disabled');
+                }
+
                 this._renderActiveChatHeader(res.session);
                 this._renderMessages(res.messages || []);
                 this._renderClientSidebar(res.session);
@@ -746,6 +865,8 @@ export class AdminSupportLiveController {
     }
 
     _renderActiveChatHeader(session) {
+        if (!session) return;
+
         const nameEl = document.querySelector('[data-ref="current-chat-client-name"]');
         const subjectEl = document.querySelector('[data-ref="current-chat-client-subject"]');
         const avatarContainer = document.querySelector('[data-ref="current-chat-client-avatar-container"]');
@@ -770,7 +891,7 @@ export class AdminSupportLiveController {
 
     _renderClientSidebar(session) {
         const container = document.querySelector('[data-ref="admin-support-client-info"]');
-        if (!container) return;
+        if (!container || !session) return;
 
         const avatarHtml = this._renderAvatarHtml(session.client_avatar, session.client_username, session.client_role_color, 'component-avatar--40');
 
@@ -1127,6 +1248,11 @@ export class AdminSupportLiveController {
         this.currentSessionUuid = null;
         this.currentSession = null;
 
+        if (window.location.pathname !== '/admin/support/live-console') {
+            window.history.replaceState(null, '', '/admin/support/live-console');
+        }
+
+        const header = document.querySelector('[data-ref="admin-support-chat-header"]');
         const nameEl = document.querySelector('[data-ref="current-chat-client-name"]');
         const subjectEl = document.querySelector('[data-ref="current-chat-client-subject"]');
         const avatarContainer = document.querySelector('[data-ref="current-chat-client-avatar-container"]');
@@ -1137,12 +1263,13 @@ export class AdminSupportLiveController {
         const chatInput = document.querySelector('[data-ref="admin-support-chat-input"]');
         const typingIndicator = document.querySelector('[data-ref="admin-support-typing-indicator"]');
 
+        if (header) header.classList.add('disabled');
         if (chatInput) chatInput.value = '';
         if (typingIndicator) typingIndicator.classList.add('disabled');
-        if (nameEl) nameEl.textContent = window.__('admin_select_chat_to_attend');
-        if (subjectEl) subjectEl.textContent = window.__('admin_no_active_chat_selected');
+        if (nameEl) nameEl.textContent = window.__('lbl_select_chat_to_attend');
+        if (subjectEl) subjectEl.textContent = window.__('lbl_no_active_chat_selected');
         if (avatarContainer) {
-            const fallback = window.APP_URL ? `${window.APP_URL}/public/assets/images/defaults/avatar_default.webp` : '/public/assets/images/defaults/avatar_default.webp';
+            const fallback = '/public/assets/img/fallbacks/avatar-default.png';
             avatarContainer.innerHTML = `
                 <div class="component-button--profile component-avatar--static-sm">
                     <img class="avatar-image" src="${fallback}" alt="Guest">
@@ -1152,9 +1279,9 @@ export class AdminSupportLiveController {
         if (messagesContainer) {
             messagesContainer.innerHTML = `
                 <div class="component-empty-state">
-                    <span class="material-symbols-rounded component-empty-state-icon">forum</span>
-                    <h3 class="component-card__title">${window.__('admin_select_chat_to_attend')}</h3>
-                    <p class="component-card__description">${window.__('admin_no_active_chat_selected')}</p>
+                    <span class="material-symbols-rounded component-empty-state-icon">chat_bubble_outline</span>
+                    <h3 class="component-card__title">${window.__('lbl_select_chat_prompt')}</h3>
+                    <p class="component-card__description">${window.__('lbl_no_active_chat_selected')}</p>
                 </div>
             `;
         }
@@ -1165,7 +1292,7 @@ export class AdminSupportLiveController {
                 <div class="component-card--grouped">
                     <div class="component-empty-state">
                         <span class="material-symbols-rounded component-empty-state-icon">account_circle</span>
-                        <h3 class="component-card__title">${window.__('admin_no_user_selected')}</h3>
+                        <h3 class="component-card__title">${window.__('lbl_no_user_selected')}</h3>
                     </div>
                 </div>
             `;

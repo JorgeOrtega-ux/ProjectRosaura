@@ -3,7 +3,7 @@
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('admin_manage_tickets_title'); ?></h1>
+                <h1 class="component-top-title"><?php echo __('title_tickets'); ?></h1>
             </div>
             
             <div class="component-top-right">
@@ -45,7 +45,7 @@
                     </div>
                 </div>
 
-                <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/support/live-console" data-tooltip="<?php echo __('admin_support_live_title'); ?>" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/support/live-console" data-tooltip="<?php echo __('title_support_live'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">support_agent</span>
                 </button>
                 

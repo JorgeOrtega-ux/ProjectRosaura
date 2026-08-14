@@ -87,6 +87,8 @@ export const RouteModulesMap = {
     '/admin/logs/viewer': { path: './modules/admin/logs/AdminLogsViewerController.js', className: 'AdminLogsViewerController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/support': { path: './modules/admin/support/AdminSupportLiveController.js', className: 'AdminSupportLiveController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
     '/admin/support/live-console': { path: './modules/admin/support/AdminSupportLiveController.js', className: 'AdminSupportLiveController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
+    '/admin/support/live-console/c/:uuid': { path: './modules/admin/support/AdminSupportLiveController.js', className: 'AdminSupportLiveController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
+    '/admin/support/c/:uuid': { path: './modules/admin/support/AdminSupportLiveController.js', className: 'AdminSupportLiveController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
     '/admin/support/tickets': { path: './modules/admin/support/AdminSupportTicketsController.js', className: 'AdminSupportTicketsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/support/ticket/:uuid': { path: './modules/admin/support/AdminSupportTicketDetailController.js', className: 'AdminSupportTicketDetailController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/support/canned-responses': { path: './modules/admin/support/AdminSupportCannedController.js', className: 'AdminSupportCannedController', requiresAdminLang: true, skeletonType: 'layout-table' },

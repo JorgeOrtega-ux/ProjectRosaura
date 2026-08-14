@@ -423,7 +423,10 @@ class SupportService {
 
         $this->publishSupportEvent('new_message', $sessionUuid, [
             'message' => $created,
-            'session_uuid' => $sessionUuid
+            'session_uuid' => $sessionUuid,
+            'sender_type' => 'user',
+            'sender_name' => $userName,
+            'text' => $messageText
         ]);
 
         return [

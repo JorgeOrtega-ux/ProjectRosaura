@@ -64,6 +64,10 @@
     "lbl_priority": "Priority",
     "lbl_date": "Date",
     "lbl_agent_status": "Agent status",
-    "btn_back_to_queues": "Back to queues"
+    "btn_back_to_queues": "Back to queues",
+    "btn_create_ticket": "Send Ticket",
+    "btn_next": "Next",
+    "btn_back": "Back",
+    "support_btn_leave_queue": "Leave queue"
 }
 

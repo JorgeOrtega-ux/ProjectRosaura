@@ -337,6 +337,13 @@ export class MainController {
                 );
             }
 
+            else if (action === 'openFloatingSupportChat') {
+                e.preventDefault();
+                this.moduleManager.toggleMenuInModule('moduleSupportChat', 'menu-support-chat');
+                const fab = document.querySelector('[data-ref="floating-support-btn"]');
+                if (fab) fab.classList.add('disabled');
+            }
+
             else if (action === 'toggleMobileSearch') this.toggleMobileSearch();
             else if (action === 'submitLogout') { e.preventDefault(); this.accountManager.handleLogout(btn); }
             else if (action === 'switchAccount') { e.preventDefault(); this.accountManager.handleSwitchAccount(btn.getAttribute('data-id'), btn); }

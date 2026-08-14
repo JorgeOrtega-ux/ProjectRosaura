@@ -122,6 +122,7 @@ export const ApiRoutes = {
         GetAgentStatus: 'admin.support.get_agent_status',
         UpdateAgentStatus: 'admin.support.update_agent_status',
         GetLiveQueues: 'admin.support.get_live_queues',
+        GetSessionMessages: 'admin.support.get_session_messages',
         ClaimSession: 'admin.support.claim_session',
         EscalateSession: 'admin.support.escalate_session',
         ReassignSession: 'admin.support.reassign_session',

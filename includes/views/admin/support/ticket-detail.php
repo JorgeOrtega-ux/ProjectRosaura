@@ -1,7 +1,7 @@
 <div class="view-content" data-ref="admin-ticket-detail-wrapper">
     <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title" data-ref="ticket-detail-title"><?php echo __('admin_ticket_detail_title'); ?></h1>
+            <h1 class="component-top-title" data-ref="ticket-detail-title"><?php echo __('title_ticket_detail'); ?></h1>
         </div>
         <div class="component-top-right">
             <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
@@ -85,8 +85,8 @@
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('admin_reply_ticket_heading'); ?></h2>
-                                <p class="component-card__description"><?php echo __('admin_reply_ticket_desc'); ?></p>
+                                <h2 class="component-card__title"><?php echo __('lbl_reply_ticket_heading'); ?></h2>
+                                <p class="component-card__description"><?php echo __('lbl_reply_ticket_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--stretch component-mt-2">

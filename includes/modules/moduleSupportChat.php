@@ -1,5 +1,5 @@
 <div class="component-module component-module--sidebar component-module--sidebar-responsive component-module--sidebar-right disabled" data-module="moduleSupportChat">
-    <div class="component-menu component-menu--w335 component-menu--chat component-menu--h-full component-menu--no-padding disabled" data-ref="menu-support-chat">
+    <div class="component-menu component-menu--w335 component-menu--chat component-menu--h-full component-menu--no-padding active" data-ref="menu-support-chat">
         <div class="pill-container"><div class="drag-handle"></div></div>
         
         <div class="component-menu-header">
@@ -8,110 +8,11 @@
                     <span class="material-symbols-rounded">support_agent</span>
                     <span class="component-menu-header-title"><?php echo __('support_livechat_title'); ?></span>
                 </div>
-                <div class="component-menu-header-actions">
-                    <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleSupportChat" data-menu-target="menu-support-chat" data-tooltip="<?php echo __('btn_close'); ?>" data-position="bottom" type="button">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
-                </div>
             </div>
         </div>
         
-        <!-- ESTADO 1: FORMULARIO INICIAL DE CHAT -->
-        <div class="component-menu-section-parent" data-ref="support-state-preform">
-            <div class="component-menu-list component-p-3">
-                <div class="component-card--grouped component-mb-3">
-                    <div class="component-group-item">
-                        <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">forum</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h3 class="component-card__title"><?php echo __('support_chat_ready_heading'); ?></h3>
-                                <p class="component-card__description" data-ref="support-agents-status-text"><?php echo __('support_chat_agents_checking'); ?></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="component-group-item component-group-item--stacked component-mb-3">
-                    <div class="component-card__content">
-                        <div class="component-card__text">
-                            <span class="component-stat-card__title"><?php echo __('support_category_label'); ?></span>
-                        </div>
-                    </div>
-                    <div class="component-card__actions component-card__actions--stretch">
-                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="supportLiveModuleCategory">
-                                <span class="material-symbols-rounded" data-ref="support-live-cat-icon">bug_report</span>
-                                <span class="component-dropdown-text" data-ref="support-live-cat-text" data-value="technical"><?php echo __('support_cat_technical'); ?></span>
-                                <span class="material-symbols-rounded">expand_more</span>
-                            </div>
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="supportLiveModuleCategory">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list">
-                                        <div class="component-menu-link active" data-action="selectLiveSupportCategory" data-val="technical" data-icon="bug_report">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">bug_report</span></div>
-                                            <div class="component-menu-link-text"><span><?php echo __('support_cat_technical'); ?></span></div>
-                                        </div>
-                                        <div class="component-menu-link" data-action="selectLiveSupportCategory" data-val="account" data-icon="lock">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
-                                            <div class="component-menu-link-text"><span><?php echo __('support_cat_account'); ?></span></div>
-                                        </div>
-                                        <div class="component-menu-link" data-action="selectLiveSupportCategory" data-val="billing" data-icon="payments">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">payments</span></div>
-                                            <div class="component-menu-link-text"><span><?php echo __('support_cat_billing'); ?></span></div>
-                                        </div>
-                                        <div class="component-menu-link" data-action="selectLiveSupportCategory" data-val="policy" data-icon="gavel">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
-                                            <div class="component-menu-link-text"><span><?php echo __('support_cat_policy'); ?></span></div>
-                                        </div>
-                                        <div class="component-menu-link" data-action="selectLiveSupportCategory" data-val="other" data-icon="help">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">help</span></div>
-                                            <div class="component-menu-link-text"><span><?php echo __('support_cat_other'); ?></span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="component-group-item component-group-item--stacked component-mb-3">
-                    <div class="component-card__content">
-                        <div class="component-card__text">
-                            <span class="component-stat-card__title"><?php echo __('lbl_support_subject'); ?></span>
-                        </div>
-                    </div>
-                    <div class="component-card__actions component-card__actions--stretch">
-                        <div class="component-input-group component-input-group--h34">
-                            <input class="component-input-field component-input-field--simple" data-ref="support-live-subject" type="text" placeholder="<?php echo __('placeholder_support_subject'); ?>" maxlength="200" autocomplete="off">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="component-group-item component-group-item--stacked component-mb-3">
-                    <div class="component-card__content">
-                        <div class="component-card__text">
-                            <span class="component-stat-card__title"><?php echo __('lbl_support_message'); ?></span>
-                        </div>
-                    </div>
-                    <div class="component-card__actions component-card__actions--stretch">
-                        <textarea class="component-input-field" data-ref="support-live-message" placeholder="<?php echo __('placeholder_support_message'); ?>" rows="4" maxlength="3000"></textarea>
-                    </div>
-                </div>
-
-                <div class="component-empty-state-actions component-mt-3">
-                    <button class="component-button component-button--dark component-button--h40 component-button--full" data-action="startLiveSupportChat" type="button">
-                        <span class="material-symbols-rounded">send</span>
-                        <span><?php echo __('support_btn_start_chat'); ?></span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ESTADO 2: COLA DE ESPERA -->
-        <div class="component-menu-section-parent disabled" data-ref="support-state-queue">
+        <!-- ESTADO 1: COLA DE ESPERA -->
+        <div class="component-menu-section-parent" data-ref="support-state-queue">
             <div class="component-menu-center component-p-3">
                 <div class="component-empty-state">
                     <div class="component-queue-pulse-icon">
@@ -135,9 +36,9 @@
                     </div>
 
                     <div class="component-empty-state-actions">
-                        <button class="component-button component-button--h40" data-action="focusSupportEmailForm" type="button">
-                            <span class="material-symbols-rounded">mail</span>
-                            <span><?php echo __('support_btn_switch_to_email'); ?></span>
+                        <button class="component-button component-button--h40" data-action="leaveSupportQueue" type="button">
+                            <span class="material-symbols-rounded">close</span>
+                            <span><?php echo __('support_btn_leave_queue'); ?></span>
                         </button>
                     </div>
                 </div>
@@ -149,16 +50,18 @@
             <!-- Barra superior del agente -->
             <div class="component-support-room-agent-bar">
                 <div class="component-card__content">
-                    <div class="component-card__icon-container component-card__icon-container--bordered" data-ref="support-agent-avatar-box">
-                        <span class="material-symbols-rounded">support_agent</span>
+                    <div data-ref="support-agent-avatar-container">
+                        <div class="component-button--profile component-avatar--static-sm">
+                            <img class="avatar-image" data-ref="support-agent-avatar-img" src="/public/assets/img/fallbacks/avatar-default.png" alt="Agent">
+                        </div>
                     </div>
                     <div class="component-card__text">
-                        <h4 class="component-card__title" data-ref="support-agent-name-display"><?php echo __('support_agent_assigned'); ?></h4>
-                        <span class="component-badge component-badge--primary" data-ref="support-agent-level-display"><?php echo __('lbl_dept_l1'); ?></span>
+                        <h2 class="component-card__title" data-ref="support-agent-name-display"><?php echo __('support_agent_assigned'); ?></h2>
+                        <p class="component-card__description" data-ref="support-agent-level-display"><?php echo __('lbl_dept_l1'); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions">
-                    <button class="component-button component-button--icon component-button--h32" data-action="endSupportChatSession" data-tooltip="<?php echo __('btn_end_chat'); ?>" data-position="bottom" type="button">
+                    <button class="component-button component-button--icon component-button--h40" data-action="endSupportChatSession" data-tooltip="<?php echo __('btn_end_chat'); ?>" data-position="bottom" type="button">
                         <span class="material-symbols-rounded text-danger">call_end</span>
                     </button>
                 </div>
@@ -178,8 +81,31 @@
             <div class="component-menu-bottom component-chat-input-area" data-ref="support-chat-room-footer">
                 <div class="component-search component-search--w-auto">
                     <div class="component-search-input">
-                        <input class="component-input-field" data-ref="support-chat-input-text" type="text" placeholder="<?php echo __('placeholder_chat_message'); ?>" maxlength="1500" autocomplete="off">
-                        <button class="component-chat-send-btn" data-action="sendSupportChatMessage" data-ref="support-btn-send" type="button">
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
+                            <button class="component-chat-attach-btn" data-action="toggleModule" data-target="support-attach-menu" data-tooltip="<?php echo __('chat_attach_photos'); ?>" data-position="top" type="button">
+                                <span class="material-symbols-rounded">add</span>
+                            </button>
+                            <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-right component-module--dropdown-fixed chat-dropdown-module disabled" data-module="support-attach-menu">
+                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-ref="menuSupportAttachOptions">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list component-menu-list--scrollable">
+                                        <div class="component-menu-link" data-action="triggerSupportChatAttach">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">attach_file</span>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span><?php echo __('chat_attach_photos'); ?></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input id="support-chat-file-input" class="disabled" type="file" multiple accept="image/jpeg, image/png, image/webp, image/gif">
+
+                        <input data-ref="support-chat-input-text" type="text" placeholder="<?php echo __('placeholder_chat_message'); ?>" maxlength="1500" autocomplete="off">
+                        <button class="component-chat-send-btn" data-action="sendSupportChatMessage" data-ref="support-btn-send" data-tooltip="<?php echo __('btn_send'); ?>" data-position="top" type="button">
                             <span class="material-symbols-rounded">send</span>
                         </button>
                     </div>
@@ -239,3 +165,7 @@
 
     </div>
 </div>
+
+<button class="component-button component-button--dark component-button--icon component-button--h40 component-fab-support disabled" data-action="openFloatingSupportChat" data-ref="floating-support-btn" data-tooltip="<?php echo __('support_livechat_title'); ?>" data-position="left" type="button">
+    <span class="material-symbols-rounded">support_agent</span>
+</button>

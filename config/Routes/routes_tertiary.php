@@ -747,6 +747,22 @@ return [
             ],
         ],
     ],
+    'admin.support.get_session_messages' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'getSessionMessages',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_get_msgs',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'admin.support.send_message' => [
         'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
         'action' => 'sendAgentMessage',

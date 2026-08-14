@@ -63,6 +63,10 @@
     "lbl_status": "Estado",
     "lbl_priority": "Prioridad",
     "lbl_date": "Fecha",
-    "btn_back_to_queues": "Volver a colas de espera"
+    "btn_back_to_queues": "Volver a colas de espera",
+    "btn_create_ticket": "Enviar Ticket",
+    "btn_next": "Siguiente",
+    "btn_back": "Atrás",
+    "support_btn_leave_queue": "Salir de la fila"
 }
 

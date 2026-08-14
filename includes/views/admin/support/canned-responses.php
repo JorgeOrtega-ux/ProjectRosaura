@@ -3,7 +3,7 @@
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('admin_canned_responses'); ?></h1>
+                <h1 class="component-top-title"><?php echo __('lbl_canned_responses'); ?></h1>
             </div>
             <div class="component-top-right">
                 <button class="component-button component-button--icon component-button--h40" data-action="toggleSearch" data-ref="btn-toggle-search" data-tooltip="<?php echo __('btn_search'); ?>" data-position="bottom">
@@ -12,7 +12,7 @@
                 <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="openCreateCannedModal" data-tooltip="<?php echo __('btn_new_canned_response'); ?>" data-position="bottom" type="button">
                     <span class="material-symbols-rounded">add</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/support/live-console" data-tooltip="<?php echo __('admin_support_live_title'); ?>" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/support/live-console" data-tooltip="<?php echo __('title_support_live'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">support_agent</span>
                 </button>
                 <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/dashboard" data-tooltip="<?php echo __('btn_back_to_dashboard'); ?>" data-position="bottom">

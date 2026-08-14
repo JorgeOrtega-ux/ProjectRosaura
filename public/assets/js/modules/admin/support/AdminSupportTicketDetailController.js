@@ -95,7 +95,7 @@ export class AdminSupportTicketDetailController {
         const statusText = document.querySelector('[data-ref="ticket-status-text"]');
 
         if (titleEl) {
-            titleEl.textContent = `${window.__('admin_ticket_detail_title')} #${ticket.uuid.substring(0, 8)}`;
+            titleEl.textContent = `${window.__('title_ticket_detail')} #${ticket.uuid.substring(0, 8)}`;
         }
 
         if (subjectEl) {

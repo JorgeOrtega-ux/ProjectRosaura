@@ -140,6 +140,14 @@ class AdminSupportController extends BaseController {
         }
     }
 
+    public function getSessionMessages($input) {
+        try {
+            return $this->respond($this->supportService->getSessionMessages($input));
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function getSupportMetrics($input) {
         try {
             return $this->respond($this->supportService->getSupportMetrics());

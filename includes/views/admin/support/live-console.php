@@ -13,7 +13,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('admin_support_live_title'); ?></h1>
+                <h1 class="component-top-title"><?php echo __('title_support_live'); ?></h1>
             </div>
             <div class="component-top-right">
                 <div class="component-dropdown-wrapper">
@@ -41,21 +41,21 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                                 <?php if ($canManageTickets): ?>
                                 <div class="component-menu-link" data-nav="<?php echo APP_URL; ?>/admin/support/tickets">
                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">mail</span></div>
-                                    <div class="component-menu-link-text"><span><?php echo __('admin_manage_tickets'); ?></span></div>
+                                    <div class="component-menu-link-text"><span><?php echo __('lbl_manage_tickets'); ?></span></div>
                                 </div>
                                 <?php endif; ?>
 
                                 <?php if ($canManageCanned): ?>
                                 <div class="component-menu-link" data-nav="<?php echo APP_URL; ?>/admin/support/canned-responses">
                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">quickreply</span></div>
-                                    <div class="component-menu-link-text"><span><?php echo __('admin_canned_responses'); ?></span></div>
+                                    <div class="component-menu-link-text"><span><?php echo __('lbl_canned_responses'); ?></span></div>
                                 </div>
                                 <?php endif; ?>
 
                                 <?php if ($canViewMetrics): ?>
                                 <div class="component-menu-link" data-nav="<?php echo APP_URL; ?>/admin/support/metrics">
                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">analytics</span></div>
-                                    <div class="component-menu-link-text"><span><?php echo __('admin_support_metrics'); ?></span></div>
+                                    <div class="component-menu-link-text"><span><?php echo __('lbl_support_metrics'); ?></span></div>
                                 </div>
                                 <?php endif; ?>
                             </div>
@@ -121,16 +121,26 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                 </div>
 
                 <div class="component-card-list component-card-list--scrollable" data-ref="admin-support-queue-container">
-                    <div class="component-empty-state">
-                        <span class="material-symbols-rounded component-empty-state-icon">inbox</span>
-                        <h3 class="component-card__title"><?php echo __('admin_no_chats_in_queue'); ?></h3>
+                    <?php for ($i = 0; $i < 5; $i++): ?>
+                    <div class="component-group-item">
+                        <div class="component-card__content">
+                            <div class="component-skeleton component-skeleton--avatar-sm"></div>
+                            <div class="component-card__text">
+                                <div class="component-skeleton component-skeleton--title-sm"></div>
+                                <div class="component-skeleton component-skeleton--desc-sm"></div>
+                            </div>
+                        </div>
+                        <div class="component-card__actions">
+                            <div class="component-skeleton component-skeleton--btn-sm"></div>
+                        </div>
                     </div>
+                    <?php endfor; ?>
                 </div>
             </div>
 
             <!-- COLUMNA 2: SALA DE CHAT EN VIVO -->
             <div class="component-column-box component-column-box--chat" data-ref="support-column-chat">
-                <div class="component-chat-header" data-ref="admin-support-chat-header">
+                <div class="component-chat-header disabled" data-ref="admin-support-chat-header">
                     <div class="component-mobile-back-box">
                         <button class="component-button component-button--icon component-button--h34" data-action="backToQueuesMobile" data-tooltip="<?php echo __('btn_back_to_queues'); ?>" data-position="bottom" type="button">
                             <span class="material-symbols-rounded">arrow_back</span>
@@ -144,8 +154,8 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                             </div>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title" data-ref="current-chat-client-name"><?php echo __('admin_select_chat_to_attend'); ?></h2>
-                            <p class="component-card__description" data-ref="current-chat-client-subject"><?php echo __('admin_no_active_chat_selected'); ?></p>
+                            <h2 class="component-card__title" data-ref="current-chat-client-name"><?php echo __('lbl_select_chat_to_attend'); ?></h2>
+                            <p class="component-card__description" data-ref="current-chat-client-subject"><?php echo __('lbl_no_active_chat_selected'); ?></p>
                         </div>
                     </div>
                     
@@ -162,7 +172,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                                             <span class="material-symbols-rounded">info</span>
                                         </div>
                                         <div class="component-menu-link-text">
-                                            <span><?php echo __('admin_user_profile_title'); ?></span>
+                                            <span><?php echo __('lbl_user_profile_title'); ?></span>
                                         </div>
                                     </div>
                                     <?php if ($canEscalate): ?>
@@ -203,7 +213,8 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                 <div class="component-chat-messages" data-ref="admin-support-messages-list">
                     <div class="component-empty-state">
                         <span class="material-symbols-rounded component-empty-state-icon">chat_bubble_outline</span>
-                        <h3 class="component-card__title"><?php echo __('admin_select_chat_prompt'); ?></h3>
+                        <h3 class="component-card__title"><?php echo __('lbl_select_chat_prompt'); ?></h3>
+                        <p class="component-card__description"><?php echo __('lbl_no_active_chat_selected'); ?></p>
                     </div>
                 </div>
 
@@ -232,7 +243,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                                 <span class="material-symbols-rounded msr-sticky_note_2">sticky_note_2</span>
                             </button>
 
-                            <input class="component-input-field" data-ref="admin-support-chat-input" type="text" placeholder="<?php echo __('placeholder_agent_chat_input'); ?>" maxlength="2000" autocomplete="off">
+                            <input data-ref="admin-support-chat-input" type="text" placeholder="<?php echo __('placeholder_agent_chat_input'); ?>" maxlength="2000" autocomplete="off">
 
                             <button class="component-chat-send-btn active" data-action="sendAdminChatMessage" data-ref="admin-chat-btn-send" data-tooltip="<?php echo __('btn_send'); ?>" data-position="top" type="button">
                                 <span class="material-symbols-rounded">send</span>
@@ -255,7 +266,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                 <div class="component-menu-header-box">
                     <div class="chat-header-title-box">
                         <span class="material-symbols-rounded">person</span>
-                        <span class="component-menu-header-title"><?php echo __('admin_user_profile_title'); ?></span>
+                        <span class="component-menu-header-title"><?php echo __('lbl_user_profile_title'); ?></span>
                     </div>
                     <div class="component-menu-header-actions">
                         <button class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="moduleSupportClientInfo" data-tooltip="<?php echo __('btn_close'); ?>" data-position="bottom" type="button">
@@ -268,7 +279,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
             <div class="component-menu-section-parent component-p-3" data-ref="admin-support-client-info">
                 <div class="component-empty-state">
                     <span class="material-symbols-rounded component-empty-state-icon">account_circle</span>
-                    <h3 class="component-card__title"><?php echo __('admin_no_user_selected'); ?></h3>
+                    <h3 class="component-card__title"><?php echo __('lbl_no_user_selected'); ?></h3>
                 </div>
             </div>
         </div>

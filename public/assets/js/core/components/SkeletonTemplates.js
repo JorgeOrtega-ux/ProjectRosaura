@@ -25,6 +25,9 @@ export const SkeletonTemplates = {
                 return this.policySkeleton();
             case 'chatSkeleton':
                 return this.chatSkeleton();
+            case 'supportQueueSkeleton':
+            case 'supportQueues':
+                return this.supportQueueSkeleton();
             case 'layout-design':
                 return this.designSkeleton();
             case 'detailsSkeleton':
@@ -457,6 +460,26 @@ export const SkeletonTemplates = {
                 </div>
             </div>
         </div>`;
+    },
+
+    supportQueueSkeleton(count = 5) {
+        let items = '';
+        for (let i = 0; i < count; i++) {
+            items += `
+            <div class="component-group-item">
+                <div class="component-card__content">
+                    <div class="component-skeleton component-skeleton--avatar-sm"></div>
+                    <div class="component-card__text">
+                        <div class="component-skeleton component-skeleton--title-sm"></div>
+                        <div class="component-skeleton component-skeleton--desc-sm"></div>
+                    </div>
+                </div>
+                <div class="component-card__actions">
+                    <div class="component-skeleton component-skeleton--btn-sm"></div>
+                </div>
+            </div>`;
+        }
+        return items;
     },
 
     designSkeleton() {

@@ -197,7 +197,7 @@ export const AdminModalTemplates = {
             if (onlineAgents.length === 0) {
                 agentsHtml = `
                     <div class="component-empty-state component-p-2">
-                        <p class="component-empty-state-text">${__('admin_no_agents_to_reassign')}</p>
+                        <p class="component-empty-state-text">${__('lbl_no_agents_to_reassign')}</p>
                     </div>
                 `;
             } else {

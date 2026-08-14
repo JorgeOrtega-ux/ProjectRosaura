@@ -18,6 +18,7 @@ export class ContactSupportController {
         this.wsHeartbeatInterval = null;
         this.isIntentionalDisconnect = false;
         this.typingTimeout = null;
+        this._moduleObserver = null;
 
         this._boundClick = this.handleClick.bind(this);
         this._boundKeydown = this.handleKeydown.bind(this);
@@ -28,14 +29,22 @@ export class ContactSupportController {
         this.container = document.querySelector('[data-ref="contact-support-wrapper"]');
         this.abortController = new AbortController();
         this.bindEvents();
+        this._setupModuleObserver();
         this._renderTurnstile();
         this._checkLiveChatStatus();
     }
 
     bindEvents() {
+        this.unbindEvents();
         document.body.addEventListener('click', this._boundClick);
         document.body.addEventListener('keydown', this._boundKeydown);
         document.body.addEventListener('input', this._boundInput);
+    }
+
+    unbindEvents() {
+        document.body.removeEventListener('click', this._boundClick);
+        document.body.removeEventListener('keydown', this._boundKeydown);
+        document.body.removeEventListener('input', this._boundInput);
     }
 
     destroy() {
@@ -66,9 +75,12 @@ export class ContactSupportController {
             this.abortController = null;
         }
 
-        document.body.removeEventListener('click', this._boundClick);
-        document.body.removeEventListener('keydown', this._boundKeydown);
-        document.body.removeEventListener('input', this._boundInput);
+        this.unbindEvents();
+
+        if (this._moduleObserver) {
+            this._moduleObserver.disconnect();
+            this._moduleObserver = null;
+        }
 
         this._resetTurnstile();
         this.turnstileWidgetId = undefined;
@@ -204,8 +216,8 @@ export class ContactSupportController {
 
     _playNotificationSound() {
         try {
-            const audio = new Audio('/sounds/notification.mp3');
-            audio.volume = 0.4;
+            const audio = new Audio('/public/assets/sounds/support/chat_message.mp3');
+            audio.volume = 0.45;
             audio.play().catch(() => {});
         } catch (e) {}
     }
@@ -238,24 +250,178 @@ export class ContactSupportController {
             }
         }
 
-        const categoryItem = e.target.closest('[data-action="selectSupportCategory"]');
-        if (categoryItem) {
+        const openTicketModalBtn = e.target.closest('[data-action="openCreateTicketModal"]');
+        if (openTicketModalBtn) {
             e.preventDefault();
-            this._handleCategorySelect(categoryItem);
+            if (window.modalSystem) {
+                window.modalSystem.show('createSupportTicketModal');
+                setTimeout(() => {
+                    this._renderTurnstile();
+                }, 100);
+            }
             return;
         }
 
-        const liveCategoryItem = e.target.closest('[data-action="selectLiveSupportCategory"]');
-        if (liveCategoryItem) {
+        const openLiveChatModalBtn = e.target.closest('[data-action="openStartLiveChatModal"]');
+        if (openLiveChatModalBtn) {
             e.preventDefault();
-            this._handleLiveCategorySelect(liveCategoryItem);
+            if (this.activeSessionUuid) {
+                const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
+                if (moduleEl && window.appInstance?.moduleManager) {
+                    window.appInstance.moduleManager.open(moduleEl);
+                }
+            } else {
+                if (window.modalSystem) {
+                    window.modalSystem.show('startLiveSupportChatModal');
+                }
+            }
             return;
         }
 
-        const submitBtn = e.target.closest('[data-action="submitSupportTicket"]');
-        if (submitBtn) {
+        const selectModalCatItem = e.target.closest('[data-action="selectModalTicketCategory"]');
+        if (selectModalCatItem) {
             e.preventDefault();
-            this._submitTicket(submitBtn);
+            const val = selectModalCatItem.getAttribute('data-val');
+            const text = selectModalCatItem.querySelector('.component-menu-link-text span')?.textContent || val;
+            const icon = selectModalCatItem.getAttribute('data-icon') || 'bug_report';
+
+            const catTextEl = document.querySelector('[data-ref="modal_ticket_cat_text"]');
+            if (catTextEl) catTextEl.textContent = text;
+
+            const catIconEl = document.querySelector('[data-ref="modal_ticket_cat_icon"]');
+            if (catIconEl) catIconEl.textContent = icon;
+
+            const hiddenCat = document.querySelector('[data-ref="modal_ticket_category"]');
+            if (hiddenCat) hiddenCat.value = val;
+
+            const menuList = selectModalCatItem.closest('.component-menu-list');
+            if (menuList) {
+                menuList.querySelectorAll('.component-menu-link').forEach(l => l.classList.remove('active'));
+                selectModalCatItem.classList.add('active');
+            }
+
+            const dropdown = document.querySelector('[data-module="moduleSupportTicketCategory"]');
+            if (dropdown) {
+                dropdown.classList.remove('active');
+                dropdown.classList.add('disabled');
+            }
+            return;
+        }
+
+        const selectModalLiveCatItem = e.target.closest('[data-action="selectModalLiveCategory"]');
+        if (selectModalLiveCatItem) {
+            e.preventDefault();
+            const val = selectModalLiveCatItem.getAttribute('data-val');
+            const text = selectModalLiveCatItem.querySelector('.component-menu-link-text span')?.textContent || val;
+            const icon = selectModalLiveCatItem.getAttribute('data-icon') || 'bug_report';
+
+            const catTextEl = document.querySelector('[data-ref="modal_live_cat_text"]');
+            if (catTextEl) catTextEl.textContent = text;
+
+            const catIconEl = document.querySelector('[data-ref="modal_live_cat_icon"]');
+            if (catIconEl) catIconEl.textContent = icon;
+
+            const hiddenCat = document.querySelector('[data-ref="modal_live_category"]');
+            if (hiddenCat) hiddenCat.value = val;
+
+            const menuList = selectModalLiveCatItem.closest('.component-menu-list');
+            if (menuList) {
+                menuList.querySelectorAll('.component-menu-link').forEach(l => l.classList.remove('active'));
+                selectModalLiveCatItem.classList.add('active');
+            }
+
+            const dropdown = document.querySelector('[data-module="moduleLiveChatCategory"]');
+            if (dropdown) {
+                dropdown.classList.remove('active');
+                dropdown.classList.add('disabled');
+            }
+            return;
+        }
+
+        const nextStepBtn = e.target.closest('[data-action="modalNextTicketStep"]');
+        if (nextStepBtn) {
+            e.preventDefault();
+            const targetStep = nextStepBtn.getAttribute('data-next');
+            const currentCard = nextStepBtn.closest('.component-modal-step');
+            
+            if (currentCard && currentCard.getAttribute('data-ref') === 'step-2-subject') {
+                const subjectInput = document.querySelector('[data-ref="modal_ticket_subject"], [data-ref="modal_live_subject"]');
+                const subjectVal = subjectInput ? subjectInput.value.trim() : '';
+                if (!subjectVal || subjectVal.length < 3) {
+                    showMessage(window.__('err_support_invalid_subject'), 'error');
+                    if (subjectInput) subjectInput.focus();
+                    return;
+                }
+            }
+
+            if (currentCard) {
+                currentCard.classList.remove('active');
+                currentCard.classList.add('disabled');
+            }
+
+            const nextCard = document.querySelector(`[data-ref="${targetStep}"]`);
+            if (nextCard) {
+                nextCard.classList.remove('disabled');
+                nextCard.classList.add('active');
+                if (targetStep === 'step-2-subject') {
+                    const subj = nextCard.querySelector('[data-ref="modal_ticket_subject"], [data-ref="modal_live_subject"]');
+                    if (subj) setTimeout(() => subj.focus(), 150);
+                } else if (targetStep === 'step-3-message') {
+                    const msg = nextCard.querySelector('[data-ref="modal_ticket_message"], [data-ref="modal_live_message"]');
+                    if (msg) setTimeout(() => msg.focus(), 150);
+                    this._renderTurnstile();
+                }
+            }
+            return;
+        }
+
+        const prevStepBtn = e.target.closest('[data-action="modalPrevTicketStep"]');
+        if (prevStepBtn) {
+            e.preventDefault();
+            const targetStep = prevStepBtn.getAttribute('data-prev');
+            const currentCard = prevStepBtn.closest('.component-modal-step');
+            if (currentCard) {
+                currentCard.classList.remove('active');
+                currentCard.classList.add('disabled');
+            }
+            const prevCard = document.querySelector(`[data-ref="${targetStep}"]`);
+            if (prevCard) {
+                prevCard.classList.remove('disabled');
+                prevCard.classList.add('active');
+            }
+            return;
+        }
+
+        const leaveQueueBtn = e.target.closest('[data-action="leaveSupportQueue"]');
+        if (leaveQueueBtn) {
+            e.preventDefault();
+            this._leaveQueue();
+            return;
+        }
+
+        const submitModalTicketBtn = e.target.closest('[data-action="submitModalSupportTicket"]');
+        if (submitModalTicketBtn) {
+            e.preventDefault();
+            this._submitModalTicket(submitModalTicketBtn);
+            return;
+        }
+
+        const submitLiveChatModalBtn = e.target.closest('[data-action="submitStartLiveChatModal"]');
+        if (submitLiveChatModalBtn) {
+            e.preventDefault();
+            this._submitStartLiveChatModal(submitLiveChatModalBtn);
+            return;
+        }
+
+        const triggerAttachBtn = e.target.closest('[data-action="triggerSupportChatAttach"]');
+        if (triggerAttachBtn) {
+            e.preventDefault();
+            const fileInput = document.getElementById('support-chat-file-input');
+            if (fileInput) fileInput.click();
+            const dropdown = document.querySelector('[data-module="support-attach-menu"]');
+            if (dropdown && window.appInstance?.moduleManager) {
+                window.appInstance.moduleManager.close(dropdown);
+            }
             return;
         }
 
@@ -294,6 +460,31 @@ export class ContactSupportController {
             return;
         }
 
+        const toggleDropdownBtn = e.target.closest('[data-action="toggleDropdown"]');
+        if (toggleDropdownBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const targetId = toggleDropdownBtn.getAttribute('data-target');
+            const dropdown = document.querySelector(`[data-module="${targetId}"]`);
+            if (dropdown) {
+                const isCurrentlyActive = !dropdown.classList.contains('disabled');
+                document.querySelectorAll('.chat-dropdown-module:not(.disabled), [data-module="moduleSupportTicketCategory"]:not(.disabled)').forEach(d => {
+                    d.classList.remove('active');
+                    d.classList.add('disabled');
+                });
+                if (!isCurrentlyActive) {
+                    dropdown.classList.remove('disabled');
+                    dropdown.classList.add('active');
+                    const innerMenu = dropdown.querySelector('.component-menu');
+                    if (innerMenu) {
+                        innerMenu.classList.remove('disabled');
+                        innerMenu.classList.add('active');
+                    }
+                }
+            }
+            return;
+        }
+
         const downloadBtn = e.target.closest('[data-action="downloadSupportTranscript"]');
         if (downloadBtn) {
             e.preventDefault();
@@ -301,73 +492,11 @@ export class ContactSupportController {
             return;
         }
 
-        const focusBtn = e.target.closest('[data-action="focusSupportEmailForm"]');
-        if (focusBtn) {
-            e.preventDefault();
-            this._focusEmailForm();
-            return;
-        }
-    }
-
-    _handleCategorySelect(item) {
-        const val = item.getAttribute('data-val');
-        const text = item.querySelector('.component-menu-link-text span')?.textContent || val;
-
-        const textEl = document.querySelector('[data-ref="support-category-text"]');
-        if (textEl) {
-            textEl.textContent = text;
-            textEl.setAttribute('data-value', val);
-        }
-
-        const menuList = item.closest('.component-menu-list');
-        if (menuList) {
-            menuList.querySelectorAll('.component-menu-link').forEach(l => l.classList.remove('active'));
-            item.classList.add('active');
-        }
-
-        const dropdownModule = document.querySelector('[data-module="supportModuleCategory"]');
-        if (dropdownModule) {
-            dropdownModule.classList.remove('active');
-            dropdownModule.classList.add('disabled');
-        }
-    }
-
-    _handleLiveCategorySelect(item) {
-        const val = item.getAttribute('data-val');
-        const text = item.querySelector('.component-menu-link-text span')?.textContent || val;
-
-        const textEl = document.querySelector('[data-ref="support-live-cat-text"]');
-        if (textEl) {
-            textEl.textContent = text;
-            textEl.setAttribute('data-value', val);
-        }
-
-        const menuList = item.closest('.component-menu-list');
-        if (menuList) {
-            menuList.querySelectorAll('.component-menu-link').forEach(l => l.classList.remove('active'));
-            item.classList.add('active');
-        }
-
-        const dropdownModule = document.querySelector('[data-module="supportLiveModuleCategory"]');
-        if (dropdownModule) {
-            dropdownModule.classList.remove('active');
-            dropdownModule.classList.add('disabled');
-        }
-    }
-
-    _focusEmailForm() {
-        const liveChatModule = document.querySelector('[data-module="moduleSupportChat"]');
-        if (liveChatModule) {
-            liveChatModule.classList.remove('active');
-            liveChatModule.classList.add('disabled');
-        }
-
-        const subjectInput = document.querySelector('[data-ref="support-subject"]');
-        if (subjectInput) {
-            subjectInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(() => {
-                subjectInput.focus();
-            }, 300);
+        if (!e.target.closest('.component-dropdown-wrapper')) {
+            document.querySelectorAll('.chat-dropdown-module:not(.disabled), [data-module="moduleSupportTicketCategory"]:not(.disabled)').forEach(d => {
+                d.classList.remove('active');
+                d.classList.add('disabled');
+            });
         }
     }
 
@@ -442,16 +571,80 @@ export class ContactSupportController {
                 footer.classList.add('disabled');
             }
         }
+
+        if (stateName === 'queue' || stateName === 'room') {
+            if (this.activeSessionUuid) {
+                localStorage.setItem('pr_active_support_session', JSON.stringify({
+                    uuid: this.activeSessionUuid,
+                    status: stateName
+                }));
+            }
+        } else if (stateName === 'preform' || stateName === 'offline' || stateName === 'feedback') {
+            localStorage.removeItem('pr_active_support_session');
+        }
+        this._updateFloatingButtonVisibility();
     }
 
-    async _startLiveChat(btn) {
+    _setupModuleObserver() {
+        const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
+        if (!moduleEl) return;
+
+        if (this._moduleObserver) {
+            this._moduleObserver.disconnect();
+        }
+
+        this._moduleObserver = new MutationObserver(() => {
+            this._updateFloatingButtonVisibility();
+        });
+
+        this._moduleObserver.observe(moduleEl, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+    }
+
+    _updateFloatingButtonVisibility() {
+        const fab = document.querySelector('[data-ref="floating-support-btn"]');
+        if (!fab) return;
+
+        const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
+        const isModuleOpen = moduleEl && !moduleEl.classList.contains('disabled');
+        const savedSession = localStorage.getItem('pr_active_support_session');
+        const hasActiveSession = !!(this.activeSessionUuid || savedSession);
+
+        if (hasActiveSession && !isModuleOpen) {
+            fab.classList.remove('disabled');
+        } else {
+            fab.classList.add('disabled');
+        }
+    }
+
+    _openSupportModule() {
+        if (window.appInstance && window.appInstance.moduleManager) {
+            window.appInstance.moduleManager.toggleMenuInModule('moduleSupportChat', 'menu-support-chat');
+        } else {
+            const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
+            if (moduleEl) {
+                moduleEl.classList.remove('disabled');
+                moduleEl.classList.add('active');
+                const menu = moduleEl.querySelector('[data-ref="menu-support-chat"]');
+                if (menu) {
+                    menu.classList.remove('disabled');
+                    menu.classList.add('active');
+                }
+            }
+        }
+        this._updateFloatingButtonVisibility();
+    }
+
+    async _submitStartLiveChatModal(btn) {
         if (!btn || btn.classList.contains('disabled-interaction')) return;
 
-        const subjectInput = document.querySelector('[data-ref="support-live-subject"]');
-        const messageInput = document.querySelector('[data-ref="support-live-message"]');
-        const categoryText = document.querySelector('[data-ref="support-live-cat-text"]');
+        const subjectInput = document.querySelector('[data-ref="modal_live_subject"]');
+        const messageInput = document.querySelector('[data-ref="modal_live_message"]');
+        const categoryInput = document.querySelector('[data-ref="modal_live_category"]');
 
-        const category = categoryText ? categoryText.getAttribute('data-value') : 'general';
+        const category = categoryInput ? categoryInput.value : 'technical';
         const subject = subjectInput ? subjectInput.value.trim() : '';
         const initialMessage = messageInput ? messageInput.value.trim() : '';
 
@@ -482,11 +675,24 @@ export class ContactSupportController {
 
             if (res && res.success) {
                 this.activeSessionUuid = res.session_uuid;
+                if (window.modalSystem) {
+                    window.modalSystem.close();
+                }
+
                 this._connectWebSocket(this.activeSessionUuid);
                 this._showState('queue');
                 const qNum = document.querySelector('[data-ref="support-queue-position-number"]');
                 if (qNum) qNum.textContent = `#${res.queue_position || 1}`;
                 this._startPolling();
+
+                const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
+                if (moduleEl && window.appInstance?.moduleManager) {
+                    window.appInstance.moduleManager.open(moduleEl);
+                } else if (moduleEl) {
+                    moduleEl.classList.remove('disabled');
+                    moduleEl.classList.add('active');
+                }
+                this._updateFloatingButtonVisibility();
             } else {
                 showMessage(res && res.message ? res.message : window.__('err_support_chat_start_failed'), 'error');
             }
@@ -501,7 +707,7 @@ export class ContactSupportController {
         if (this.pollInterval) clearInterval(this.pollInterval);
         this.pollInterval = setInterval(() => {
             this._pollSessionStatus();
-        }, 8000); // Slower interval as fallback because WebSockets deliver instantly
+        }, 8000);
     }
 
     async _pollSessionStatus() {
@@ -551,10 +757,68 @@ export class ContactSupportController {
         }
     }
 
+    _parseRoleColor(colorRaw) {
+        if (!colorRaw) return 'transparent';
+        try {
+            let colorData = colorRaw;
+            if (typeof colorRaw === 'string') {
+                const trimmed = colorRaw.trim();
+                if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                    colorData = JSON.parse(trimmed);
+                } else {
+                    return colorRaw;
+                }
+            }
+            if (colorData && typeof colorData === 'object') {
+                if (colorData.type === 'solid') {
+                    const firstColor = (colorData.colors && colorData.colors[0]);
+                    return (typeof firstColor === 'string' ? firstColor : firstColor?.hex) || '#808080';
+                }
+                if (colorData.type === 'linear') {
+                    const angle = colorData.angle || '90';
+                    const colors = Array.isArray(colorData.colors) ? colorData.colors : [];
+                    const stops = colors.map((c, i, arr) => {
+                        const hex = typeof c === 'string' ? c : (c.hex || '#000');
+                        const p = (typeof c === 'object' && c.percentage !== undefined) ? c.percentage : Math.floor((i / (arr.length - 1 || 1)) * 100);
+                        return `${hex} ${p}%`;
+                    }).join(', ');
+                    return `linear-gradient(${angle}deg, ${stops})`;
+                }
+                if (colorData.type === 'conic') {
+                    const angle = colorData.angle || '0';
+                    const colors = Array.isArray(colorData.colors) ? colorData.colors : [];
+                    const stops = colors.map((c, i, arr) => {
+                        const hex = typeof c === 'string' ? c : (c.hex || '#000');
+                        const p = (typeof c === 'object' && c.percentage !== undefined) ? c.percentage : Math.floor((i / (arr.length || 1)) * 100);
+                        return `${hex} ${p}%`;
+                    }).join(', ');
+                    return `conic-gradient(from ${angle}deg, ${stops})`;
+                }
+            }
+        } catch (e) {}
+        return 'transparent';
+    }
+
+    _renderAvatarHtml(avatarUrl, username, roleColorRaw, sizeClass = 'component-avatar--static-sm') {
+        const roleCss = this._parseRoleColor(roleColorRaw);
+        const hasRole = roleCss && roleCss !== 'transparent';
+        const dynamicClass = hasRole ? 'role-dynamic' : '';
+        const styleAttr = hasRole ? `style="--active-role-bg: ${this._escapeHtml(roleCss)};"` : '';
+        const dataAttr = hasRole ? `data-role-bg="${this._escapeHtml(roleCss)}"` : '';
+        const fallback = '/public/assets/img/fallbacks/avatar-default.png';
+        const src = avatarUrl ? this._escapeHtml(avatarUrl) : fallback;
+
+        return `
+            <div class="component-button--profile ${dynamicClass} ${sizeClass}" ${dataAttr} ${styleAttr}>
+                <img class="avatar-image" src="${src}" alt="${this._escapeHtml(username || 'Agent')}" onerror="this.src='${fallback}'">
+            </div>
+        `;
+    }
+
     _updateAgentDisplay(session) {
         const nameEl = document.querySelector('[data-ref="support-agent-name-display"]');
         const levelEl = document.querySelector('[data-ref="support-agent-level-display"]');
-        const avatarBox = document.querySelector('[data-ref="support-agent-avatar-box"]');
+        const avatarContainer = document.querySelector('[data-ref="support-agent-avatar-container"]');
 
         if (nameEl) {
             nameEl.textContent = session.agent_name || window.__('support_agent_assigned');
@@ -562,11 +826,20 @@ export class ContactSupportController {
 
         if (levelEl) {
             const deptKey = session.department_level === 'l3' ? 'lbl_dept_l3' : (session.department_level === 'l2' ? 'lbl_dept_l2' : 'lbl_dept_l1');
-            levelEl.textContent = window.__(deptKey);
+            const cat = session.category || 'general';
+            const langCode = (session.language || 'es-419').toLowerCase();
+            const langName = langCode.startsWith('en') ? window.__('lbl_lang_en') : window.__('lbl_lang_es');
+            levelEl.textContent = `${window.__(deptKey)} • ${cat} • ${langName}`;
         }
 
-        if (avatarBox && session.agent_avatar) {
-            avatarBox.innerHTML = `<img class="chat-message-avatar-img" src="${session.agent_avatar}" alt="${session.agent_name || 'Agent'}">`;
+        if (avatarContainer) {
+            avatarContainer.innerHTML = this._renderAvatarHtml(session.agent_avatar, session.agent_name, session.agent_role_color, 'component-avatar--static-sm');
+        }
+
+        if (window.applyRoleDynamicColors) {
+            try {
+                window.applyRoleDynamicColors();
+            } catch (e) {}
         }
     }
 
@@ -652,6 +925,41 @@ export class ContactSupportController {
         }
     }
 
+    async _leaveQueue() {
+        if (this.activeSessionUuid) {
+            try {
+                await this.api.post(ApiRoutes.Support.EndLiveSession, {
+                    session_uuid: this.activeSessionUuid
+                }, this.abortController ? this.abortController.signal : undefined);
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+            }
+        }
+
+        if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+        }
+
+        this.activeSessionUuid = null;
+        if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+        }
+
+        localStorage.removeItem('pr_active_support_session');
+
+        const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
+        if (moduleEl && window.appInstance?.moduleManager) {
+            window.appInstance.moduleManager.close(moduleEl);
+        } else if (moduleEl) {
+            moduleEl.classList.remove('active');
+            moduleEl.classList.add('disabled');
+        }
+
+        this._updateFloatingButtonVisibility();
+    }
+
     _handleRatingSelect(btn) {
         const rating = parseInt(btn.getAttribute('data-rating') || '5', 10);
         this.currentRating = rating;
@@ -691,9 +999,17 @@ export class ContactSupportController {
             if (res && res.success) {
                 showMessage(window.__('msg_support_feedback_received'), 'success');
                 this.activeSessionUuid = null;
+                localStorage.removeItem('pr_active_support_session');
                 setTimeout(() => {
-                    this._showState('preform');
-                }, 1500);
+                    const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
+                    if (moduleEl && window.appInstance?.moduleManager) {
+                        window.appInstance.moduleManager.close(moduleEl);
+                    } else if (moduleEl) {
+                        moduleEl.classList.remove('active');
+                        moduleEl.classList.add('disabled');
+                    }
+                    this._updateFloatingButtonVisibility();
+                }, 1000);
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
@@ -791,6 +1107,71 @@ export class ContactSupportController {
         }
     }
 
+    async _submitModalTicket(btn) {
+        if (!btn || btn.classList.contains('disabled-interaction')) return;
+
+        const categoryInput = document.querySelector('[data-ref="modal_ticket_category"]');
+        const subjectInput = document.querySelector('[data-ref="modal_ticket_subject"]');
+        const messageInput = document.querySelector('[data-ref="modal_ticket_message"]');
+
+        const category = categoryInput ? categoryInput.value : 'technical';
+        const subject = subjectInput ? subjectInput.value.trim() : '';
+        const message = messageInput ? messageInput.value.trim() : '';
+
+        if (!subject || subject.length < 4) {
+            showMessage(window.__('err_support_invalid_subject'), 'error');
+            return;
+        }
+
+        if (!message || message.length < 15) {
+            showMessage(window.__('err_support_invalid_message'), 'error');
+            if (messageInput) messageInput.focus();
+            return;
+        }
+
+        setButtonLoading(btn);
+
+        try {
+            const turnstileToken = await this._getTurnstileToken();
+
+            const payload = {
+                category: category,
+                subject: subject,
+                message: message,
+                turnstile_token: turnstileToken,
+                'cf-turnstile-response': turnstileToken
+            };
+
+            const response = await this.api.post(
+                ApiRoutes.Support.Submit,
+                payload,
+                this.abortController ? this.abortController.signal : undefined
+            );
+
+            restoreButton(btn);
+            this._resetTurnstile();
+
+            if (response && response.success) {
+                const ticketUuid = response.ticket_uuid || '';
+                const successMsg = window.__('msg_support_ticket_created', { uuid: ticketUuid });
+
+                showMessage(successMsg, 'success');
+
+                if (window.modalSystem) {
+                    window.modalSystem.close();
+                }
+            } else {
+                const errMsg = response && response.message ? response.message : window.__('err_support_submission_failed');
+                showMessage(errMsg, 'error');
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            restoreButton(btn);
+            this._resetTurnstile();
+            showMessage(window.__('err_support_submission_failed'), 'error');
+        }
+    }
+
     _resetTurnstile() {
         if (typeof turnstile !== 'undefined' && this.turnstileWidgetId !== undefined) {
             try {
@@ -802,7 +1183,7 @@ export class ContactSupportController {
     _renderTurnstile() {
         if (typeof turnstile === 'undefined') return;
 
-        const turnstileElements = document.querySelectorAll('[data-ref="turnstile-container"]');
+        const turnstileElements = document.querySelectorAll('[data-ref="turnstile-container"], [data-ref="modal-turnstile-container"]');
         turnstileElements.forEach(el => {
             if (el.innerHTML.trim() === '') {
                 try {

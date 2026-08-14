@@ -2057,5 +2057,200 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+
+    createSupportTicketModal: {
+        build: () => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                
+                <div class="component-modal-step active" data-ref="step-1-category">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('support_category_label')}</h2>
+                        <p class="component-modal-desc">${__('support_category_desc')}</p>
+                    </div>
+                    
+                    <div class="component-modal-body">
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleDropdown" data-target="moduleSupportTicketCategory">
+                                <div class="component-dropdown-trigger-title">
+                                    <span class="material-symbols-rounded" data-ref="modal_ticket_cat_icon">bug_report</span>
+                                    <span class="component-dropdown-text" data-ref="modal_ticket_cat_text">${__('support_cat_technical')}</span>
+                                </div>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+
+                            <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--dropdown-full component-module--spaced disabled" data-module="moduleSupportTicketCategory">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding active" data-ref="menuSupportTicketCategory">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                        <div class="component-menu-link active" data-action="selectModalTicketCategory" data-val="technical" data-icon="bug_report">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">bug_report</span></div>
+                                            <div class="component-menu-link-text"><span>${__('support_cat_technical')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectModalTicketCategory" data-val="account" data-icon="lock">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
+                                            <div class="component-menu-link-text"><span>${__('support_cat_account')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectModalTicketCategory" data-val="billing" data-icon="payments">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">payments</span></div>
+                                            <div class="component-menu-link-text"><span>${__('support_cat_billing')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectModalTicketCategory" data-val="policy" data-icon="gavel">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
+                                            <div class="component-menu-link-text"><span>${__('support_cat_policy')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectModalTicketCategory" data-val="other" data-icon="help">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">help</span></div>
+                                            <div class="component-menu-link-text"><span>${__('support_cat_other')}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" data-ref="modal_ticket_category" value="technical">
+                    </div>
+                    
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                        <button class="component-button component-button--dark component-button--h40" data-action="modalNextTicketStep" data-next="step-2-subject">${__('btn_next')}</button>
+                    </div>
+                </div>
+
+                <div class="component-modal-step disabled" data-ref="step-2-subject">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('lbl_support_subject')}</h2>
+                        <p class="component-modal-desc">${__('support_subject_desc')}</p>
+                    </div>
+                    
+                    <div class="component-modal-body">
+                        <div class="component-input-group">
+                            <input class="component-input-field" data-ref="modal_ticket_subject" type="text" placeholder=" " maxlength="200" autocomplete="off" required>
+                            <label class="component-input-label">${__('lbl_support_subject')}</label>
+                        </div>
+                    </div>
+                    
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-action="modalPrevTicketStep" data-prev="step-1-category">${__('btn_back')}</button>
+                        <button class="component-button component-button--dark component-button--h40" data-action="modalNextTicketStep" data-next="step-3-message">${__('btn_next')}</button>
+                    </div>
+                </div>
+
+                <div class="component-modal-step disabled" data-ref="step-3-message">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('lbl_support_message')}</h2>
+                        <p class="component-modal-desc">${__('support_message_desc')}</p>
+                    </div>
+                    
+                    <div class="component-modal-body">
+                        <textarea class="component-input-field" data-ref="modal_ticket_message" placeholder="${__('placeholder_support_message')}" rows="5" maxlength="5000"></textarea>
+                        <div class="disabled" data-ref="modal-turnstile-container" data-action="contact_support"></div>
+                    </div>
+                    
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-action="modalPrevTicketStep" data-prev="step-2-subject">${__('btn_back')}</button>
+                        <button class="component-button component-button--dark component-button--h40" data-action="submitModalSupportTicket">${__('btn_submit_support_ticket')}</button>
+                    </div>
+                </div>
+            `;
+        }
+    },
+
+    startLiveSupportChatModal: {
+        build: () => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                
+                <div class="component-modal-step active" data-ref="step-1-category">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('support_category_label')}</h2>
+                        <p class="component-modal-desc">${__('support_category_desc')}</p>
+                    </div>
+                    
+                    <div class="component-modal-body">
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleDropdown" data-target="moduleLiveChatCategory">
+                                <div class="component-dropdown-trigger-title">
+                                    <span class="material-symbols-rounded" data-ref="modal_live_cat_icon">bug_report</span>
+                                    <span class="component-dropdown-text" data-ref="modal_live_cat_text">${__('support_cat_technical')}</span>
+                                </div>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+
+                            <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--dropdown-full component-module--spaced disabled" data-module="moduleLiveChatCategory">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding active" data-ref="menuLiveChatCategory">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                        <div class="component-menu-link active" data-action="selectModalLiveCategory" data-val="technical" data-icon="bug_report">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">bug_report</span></div>
+                                            <div class="component-menu-link-text"><span>${__('support_cat_technical')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectModalLiveCategory" data-val="account" data-icon="lock">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
+                                            <div class="component-menu-link-text"><span>${__('support_cat_account')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectModalLiveCategory" data-val="billing" data-icon="payments">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">payments</span></div>
+                                            <div class="component-menu-link-text"><span>${__('support_cat_billing')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectModalLiveCategory" data-val="policy" data-icon="gavel">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
+                                            <div class="component-menu-link-text"><span>${__('support_cat_policy')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectModalLiveCategory" data-val="other" data-icon="help">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">help</span></div>
+                                            <div class="component-menu-link-text"><span>${__('support_cat_other')}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" data-ref="modal_live_category" value="technical">
+                    </div>
+                    
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                        <button class="component-button component-button--dark component-button--h40" data-action="modalNextTicketStep" data-next="step-2-subject">${__('btn_next')}</button>
+                    </div>
+                </div>
+
+                <div class="component-modal-step disabled" data-ref="step-2-subject">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('lbl_support_subject')}</h2>
+                        <p class="component-modal-desc">${__('support_subject_desc')}</p>
+                    </div>
+                    
+                    <div class="component-modal-body">
+                        <div class="component-input-group">
+                            <input class="component-input-field" data-ref="modal_live_subject" type="text" placeholder=" " maxlength="200" autocomplete="off" required>
+                            <label class="component-input-label">${__('lbl_support_subject')}</label>
+                        </div>
+                    </div>
+                    
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-action="modalPrevTicketStep" data-prev="step-1-category">${__('btn_back')}</button>
+                        <button class="component-button component-button--dark component-button--h40" data-action="modalNextTicketStep" data-next="step-3-message">${__('btn_next')}</button>
+                    </div>
+                </div>
+
+                <div class="component-modal-step disabled" data-ref="step-3-message">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('lbl_support_message')}</h2>
+                        <p class="component-modal-desc">${__('support_message_desc')}</p>
+                    </div>
+                    
+                    <div class="component-modal-body">
+                        <textarea class="component-input-field" data-ref="modal_live_message" placeholder="${__('placeholder_support_message')}" rows="5" maxlength="3000"></textarea>
+                    </div>
+                    
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-action="modalPrevTicketStep" data-prev="step-2-subject">${__('btn_back')}</button>
+                        <button class="component-button component-button--dark component-button--h40" data-action="submitStartLiveChatModal">${__('support_btn_start_chat')}</button>
+                    </div>
+                </div>
+            `;
+        }
     }
 };
