@@ -205,13 +205,13 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                     $roleNamesArray = explode(',', $roleNamesStr);
                                     
                                     $subColorRaw = !empty($user['subscription_color']) ? $user['subscription_color'] : '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}';
-                                    $roleColorCSS = '#808080';
+                                    $subColorCSS = '#808080';
 
                                     $parsedColor = json_decode($subColorRaw, true);
                                     if (json_last_error() === JSON_ERROR_NONE && is_array($parsedColor) && isset($parsedColor['type'])) {
                                         if ($parsedColor['type'] === 'solid' && !empty($parsedColor['colors'][0])) {
                                             $firstColor = $parsedColor['colors'][0];
-                                            $roleColorCSS = is_array($firstColor) ? ($firstColor['hex'] ?? '#808080') : $firstColor;
+                                            $subColorCSS = is_array($firstColor) ? ($firstColor['hex'] ?? '#808080') : $firstColor;
                                         } elseif ($parsedColor['type'] === 'gradient' && !empty($parsedColor['colors'])) {
                                             $angle = isset($parsedColor['angle']) ? $parsedColor['angle'] : 0;
                                             $stops = [];
@@ -222,18 +222,18 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                                 $stops[] = "{$hex} {$prev}% {$end}%";
                                                 $prev = $end;
                                             }
-                                            $roleColorCSS = "conic-gradient(from {$angle}deg, " . implode(', ', $stops) . ")";
+                                            $subColorCSS = "conic-gradient(from {$angle}deg, " . implode(', ', $stops) . ")";
                                         }
                                     } else {
-                                        $roleColorCSS = $subColorRaw;
+                                        $subColorCSS = $subColorRaw;
                                     }
                                 ?>
                                 <tr class="component-table-row" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-user-uuid="<?php echo htmlspecialchars($user['uuid']); ?>" data-roles-ids="<?php echo htmlspecialchars($roleIds); ?>" data-status="<?php echo htmlspecialchars($dataStatus); ?>">
                                     <td>
                                         <div class="td-user-info">
-                                            <div class="component-button--profile role-dynamic component-avatar--static-sm" 
-                                                 data-role-bg="<?php echo htmlspecialchars($roleColorCSS); ?>"
-                                                 style="--active-role-bg: <?php echo htmlspecialchars($roleColorCSS); ?>;">
+                                            <div class="component-button--profile subscription-dynamic component-avatar--static-sm" 
+                                                 data-sub-bg="<?php echo htmlspecialchars($subColorCSS); ?>"
+                                                 style="--active-subscription-bg: <?php echo htmlspecialchars($subColorCSS); ?>;">
                                                 <img src="<?php echo $appUrl . '/' . htmlspecialchars($validUserPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                                                      class="image-lazy-fade"
                                                      onload="this.classList.add('image-loaded')"

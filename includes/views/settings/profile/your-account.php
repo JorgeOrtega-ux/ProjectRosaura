@@ -22,9 +22,9 @@ extract($accountData);
             <div class="component-card--grouped">
                 <div class="component-group-item">
                     <div class="component-card__content">
-                        <div class="component-avatar role-dynamic" 
-                             data-role-bg="<?php echo $activeRoleBg; ?>" 
-                             style="--active-role-bg: <?php echo $activeRoleBg; ?>;"
+                        <div class="component-avatar subscription-dynamic" 
+                             data-sub-bg="<?php echo $activeSubBg; ?>" 
+                             style="--active-subscription-bg: <?php echo $activeSubBg; ?>;"
                              data-ref="profile-avatar-container">
                             <img src="<?php echo htmlspecialchars($formattedAvatar); ?>" 
                                  alt="<?php echo __('alt_avatar'); ?>" 

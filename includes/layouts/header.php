@@ -40,12 +40,12 @@ $canManageCanvases = in_array('manage_canvases', $userPermissions);
 $canJoinCanvas = in_array('join_canvas', $userPermissions);
 $hasCanvasAccess = $canCreateCanvas || $canManageCanvases || $canJoinCanvas;
 
-$activeRoleBg = 'var(--text-muted)';
+$activeSubBg = 'var(--text-muted)';
 if ($isLoggedIn) {
     $colorData = json_decode($subscriptionColorRaw, true);
     if (json_last_error() === JSON_ERROR_NONE && is_array($colorData)) {
         $firstColorObj = $colorData['colors'][0] ?? null;
-        $activeRoleBg = is_string($firstColorObj) ? htmlspecialchars($firstColorObj) : htmlspecialchars($firstColorObj['hex'] ?? 'var(--text-muted)');
+        $activeSubBg = is_string($firstColorObj) ? htmlspecialchars($firstColorObj) : htmlspecialchars($firstColorObj['hex'] ?? 'var(--text-muted)');
 
         if (($colorData['type'] ?? 'solid') === 'gradient' && count($colorData['colors']) > 1) {
             $angle = (int)($colorData['angle'] ?? 0);
@@ -60,10 +60,10 @@ if ($isLoggedIn) {
                 $stopsArray[] = "{$hex} {$prevStop}% {$endStop}%";
                 $prevStop = $endStop;
             }
-            $activeRoleBg = "conic-gradient(from {$angle}deg, " . implode(', ', $stopsArray) . ")";
+            $activeSubBg = "conic-gradient(from {$angle}deg, " . implode(', ', $stopsArray) . ")";
         }
     } else {
-        $activeRoleBg = htmlspecialchars($subscriptionColorRaw);
+        $activeSubBg = htmlspecialchars($subscriptionColorRaw);
     }
 }
 ?>
@@ -122,9 +122,9 @@ if ($isLoggedIn) {
                     <span class="material-symbols-rounded">more_vert</span>
                 </button>
             <?php else: ?>
-                <button class="component-button component-button--profile role-dynamic" 
-                        data-role-bg="<?php echo $activeRoleBg; ?>"
-                        style="--active-role-bg: <?php echo $activeRoleBg; ?>;"
+                <button class="component-button component-button--profile subscription-dynamic" 
+                        data-sub-bg="<?php echo $activeSubBg; ?>"
+                        style="--active-subscription-bg: <?php echo $activeSubBg; ?>;"
                         data-action="toggleModule" 
                         data-target="moduleMainOptions" 
                         data-tooltip="<?php echo __('tooltip_options_account'); ?>" 

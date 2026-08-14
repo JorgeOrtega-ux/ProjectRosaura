@@ -136,8 +136,8 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
                                         case 'profile_preferences': $actionIcon = 'tune'; $actionText = __('action_profile_preferences'); $logCategory = 'profile'; break;
                                     }
 
-                                    $roleColorJson = $log['admin_role_color'] ?? '{"type":"solid","colors":["#808080"]}';
-                                    $colorData = json_decode($roleColorJson, true);
+                                    $subColorJson = $log['admin_subscription_color'] ?? ($log['admin_role_color'] ?? '{"type":"solid","colors":["#808080"]}');
+                                    $colorData = json_decode($subColorJson, true);
                                     $activeBgCss = '#808080';
                                     
                                     if (is_array($colorData) && !empty($colorData['colors'])) {
@@ -218,9 +218,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
                                     </td>
                                     <td>
                                         <div class="td-user-info">
-                                            <div class="component-button--profile role-dynamic component-avatar--static-sm"
-                                                 data-role-bg="<?php echo htmlspecialchars($activeBgCss); ?>"
-                                                 style="--active-role-bg: <?php echo htmlspecialchars($activeBgCss); ?>;">
+                                            <div class="component-button--profile subscription-dynamic component-avatar--static-sm"
+                                                 data-sub-bg="<?php echo htmlspecialchars($activeBgCss); ?>"
+                                                 style="--active-subscription-bg: <?php echo htmlspecialchars($activeBgCss); ?>;">
                                                 <img src="<?php echo htmlspecialchars($adminPic); ?>" alt="<?php echo __('alt_avatar'); ?>"
                                                      class="image-lazy-fade"
                                                      onload="this.classList.add('image-loaded')"

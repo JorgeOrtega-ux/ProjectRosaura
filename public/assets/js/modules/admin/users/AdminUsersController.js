@@ -185,7 +185,7 @@ class AdminUsersController {
             this.resetViewState();
             this.updateFilterButtonsState();
             this.translateRolesInTable();
-            if (typeof window.applyRoleDynamicColors === 'function') window.applyRoleDynamicColors();
+            if (typeof window.applySubscriptionDynamicColors === 'function') window.applySubscriptionDynamicColors();
         } catch (error) {
             if (error.name === 'AbortError') return;
             if (window.spaRouter) window.spaRouter.navigate(url);

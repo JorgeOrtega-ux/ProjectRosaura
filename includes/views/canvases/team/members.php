@@ -92,12 +92,12 @@ extract($membersData);
                                     $username = !empty($uInfo['username']) ? $uInfo['username'] : __('lbl_user') . ' #' . $member['user_id'];
                                     $avatar = !empty($uInfo['profile_picture']) ? $uInfo['profile_picture'] : $appUrl . '/public/avatar/Um9zYXVyYVVzZXI6VQ';
                                     $userUuidStr = !empty($uInfo['uuid']) ? $uInfo['uuid'] : '';
-                                    $roleColor = !empty($uInfo['role_bg']) ? $uInfo['role_bg'] : 'var(--text-muted)';
+                                    $subColor = !empty($uInfo['sub_bg']) ? $uInfo['sub_bg'] : 'var(--text-muted)';
                                 ?>
                                 <tr class="component-table-row" data-action="selectMember" data-member-id="<?php echo htmlspecialchars($member['user_id']); ?>" data-member-uuid="<?php echo htmlspecialchars($userUuidStr); ?>">
                                     <td>
                                         <div class="td-user-info">
-                                            <div class="component-button--profile role-dynamic component-avatar--static-sm" data-role-bg="<?php echo $roleColor; ?>" style="--active-role-bg: <?php echo $roleColor; ?>;">
+                                            <div class="component-button--profile subscription-dynamic component-avatar--static-sm" data-sub-bg="<?php echo $subColor; ?>" style="--active-subscription-bg: <?php echo $subColor; ?>;">
                                                 <img src="<?php echo htmlspecialchars($avatar); ?>" alt="alt_avatar"
                                                      class="image-lazy-fade"
                                                      onload="this.classList.add('image-loaded')"

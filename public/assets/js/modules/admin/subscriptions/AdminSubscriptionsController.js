@@ -59,7 +59,7 @@ class AdminSubscriptionsController extends BaseListController {
             window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
             this.updateFilterButtonsState();
             this.deselectAll();
-            if (typeof window.applyRoleDynamicColors === 'function') window.applyRoleDynamicColors();
+            if (typeof window.applySubscriptionDynamicColors === 'function') window.applySubscriptionDynamicColors();
         } catch (error) {
             if (error.name === 'AbortError') return;
             if (window.spaRouter) window.spaRouter.navigate(url);

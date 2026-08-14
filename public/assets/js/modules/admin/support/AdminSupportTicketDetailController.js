@@ -117,11 +117,11 @@ export class AdminSupportTicketDetailController {
 
         const avatarWrapper = document.querySelector('[data-ref="ticket-user-avatar-wrapper"]');
         if (avatarWrapper && ticket.subscription_color) {
-            const roleCss = this._parseRoleColor(ticket.subscription_color);
-            if (roleCss && roleCss !== 'transparent') {
-                avatarWrapper.className = 'component-button--profile role-dynamic component-avatar--static-md';
-                avatarWrapper.setAttribute('data-role-bg', roleCss);
-                avatarWrapper.style.setProperty('--active-role-bg', roleCss);
+            const subCss = this._parseSubscriptionColor(ticket.subscription_color);
+            if (subCss && subCss !== 'transparent') {
+                avatarWrapper.className = 'component-button--profile subscription-dynamic component-avatar--static-md';
+                avatarWrapper.setAttribute('data-sub-bg', subCss);
+                avatarWrapper.style.setProperty('--active-subscription-bg', subCss);
             }
         }
 
@@ -265,7 +265,7 @@ export class AdminSupportTicketDetailController {
         }
     }
 
-    _parseRoleColor(colorRaw) {
+    _parseSubscriptionColor(colorRaw) {
         if (!colorRaw) return 'transparent';
         try {
             let colorData = colorRaw;

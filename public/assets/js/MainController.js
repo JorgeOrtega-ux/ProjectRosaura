@@ -139,10 +139,10 @@ export class MainController {
                     }
                 }
 
-                // 3. Update role dynamic borders
+                // 3. Update subscription dynamic borders
                 const subColorObj = e.detail.color || tierColor;
                 if (subColorObj) {
-                    const parseRoleColor = (colorData) => {
+                    const parseSubscriptionColor = (colorData) => {
                         if (!colorData) return 'var(--text-muted)';
                         if (typeof colorData === 'string') {
                             try {
@@ -153,7 +153,7 @@ export class MainController {
                         }
                         if (colorData && typeof colorData === 'object' && Array.isArray(colorData.colors)) {
                             const firstColorObj = colorData.colors[0];
-                            let activeRoleBg = typeof firstColorObj === 'string' ? firstColorObj : (firstColorObj.hex || 'var(--text-muted)');
+                            let activeSubBg = typeof firstColorObj === 'string' ? firstColorObj : (firstColorObj.hex || 'var(--text-muted)');
                             
                             if (colorData.type === 'gradient' && colorData.colors.length > 1) {
                                 const angle = parseInt(colorData.angle || 0, 10);
@@ -170,17 +170,17 @@ export class MainController {
                                     stopsArray.push(`${hex} ${prevStop}% ${endStop}%`);
                                     prevStop = endStop;
                                 });
-                                activeRoleBg = `conic-gradient(from ${angle}deg, ${stopsArray.join(', ')})`;
+                                activeSubBg = `conic-gradient(from ${angle}deg, ${stopsArray.join(', ')})`;
                             }
-                            return activeRoleBg;
+                            return activeSubBg;
                         }
                         return 'var(--text-muted)';
                     };
 
-                    const cssValue = parseRoleColor(subColorObj);
-                    document.querySelectorAll('.role-dynamic').forEach(el => {
-                        el.setAttribute('data-role-bg', cssValue);
-                        el.style.setProperty('--active-role-bg', cssValue);
+                    const cssValue = parseSubscriptionColor(subColorObj);
+                    document.querySelectorAll('.subscription-dynamic').forEach(el => {
+                        el.setAttribute('data-sub-bg', cssValue);
+                        el.style.setProperty('--active-subscription-bg', cssValue);
                     });
                 }
             }

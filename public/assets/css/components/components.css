@@ -723,9 +723,9 @@ html.dark-theme .component-top.shadow {
     transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.component-button--profile.role-dynamic::before {
+.component-button--profile.subscription-dynamic::before {
     border: none;
-    background: var(--active-role-bg, transparent);
+    background: var(--active-subscription-bg, transparent);
     padding: 2px;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
@@ -1532,9 +1532,9 @@ textarea.component-input-field::placeholder {
     z-index: 1;
 }
 
-.component-avatar.role-dynamic::before {
+.component-avatar.subscription-dynamic::before {
     border: none;
-    background: var(--active-role-bg, transparent);
+    background: var(--active-subscription-bg, transparent);
     padding: 2px;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;

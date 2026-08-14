@@ -98,7 +98,7 @@ $predefinedSuspension = [
                                     $avatarUrl = $appUrl . '/' . ltrim($validAvatarPath, '/');
 
                                     $userUuidStr = !empty($uInfo['uuid']) ? $uInfo['uuid'] : '';
-                                    $roleColor = !empty($uInfo['role_bg']) ? $uInfo['role_bg'] : 'var(--text-muted)';
+                                    $subColor = !empty($uInfo['sub_bg']) ? $uInfo['sub_bg'] : 'var(--text-muted)';
                                     $isMember = $item['is_member'];
                                     $restrictions = $item['restrictions'] ?? [];
                                 ?>
@@ -115,9 +115,9 @@ $predefinedSuspension = [
                                         data-end-date="">
                                         <td>
                                             <div class="td-user-info">
-                                                <div class="component-button--profile role-dynamic component-avatar--static-sm" 
-                                                     data-role-bg="<?php echo htmlspecialchars($roleColor); ?>"
-                                                     style="--active-role-bg: <?php echo htmlspecialchars($roleColor); ?>;">
+                                                <div class="component-button--profile subscription-dynamic component-avatar--static-sm" 
+                                                     data-sub-bg="<?php echo htmlspecialchars($subColor); ?>"
+                                                     style="--active-subscription-bg: <?php echo htmlspecialchars($subColor); ?>;">
                                                     <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="<?php echo __('alt_avatar'); ?>"
                                                          class="image-lazy-fade"
                                                          onload="this.classList.add('image-loaded')"
@@ -171,9 +171,9 @@ $predefinedSuspension = [
                                             data-end-date="<?php echo htmlspecialchars($restr['end_date'] ?? ''); ?>">
                                             <td>
                                                 <div class="td-user-info">
-                                                    <div class="component-button--profile role-dynamic component-avatar--static-sm" 
-                                                         data-role-bg="<?php echo htmlspecialchars($roleColor); ?>"
-                                                         style="--active-role-bg: <?php echo htmlspecialchars($roleColor); ?>;">
+                                                    <div class="component-button--profile subscription-dynamic component-avatar--static-sm" 
+                                                         data-sub-bg="<?php echo htmlspecialchars($subColor); ?>"
+                                                         style="--active-subscription-bg: <?php echo htmlspecialchars($subColor); ?>;">
                                                         <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="<?php echo __('alt_avatar'); ?>"
                                                              class="image-lazy-fade"
                                                              onload="this.classList.add('image-loaded')"

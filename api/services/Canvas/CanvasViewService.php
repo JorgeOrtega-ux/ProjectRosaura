@@ -475,7 +475,7 @@ class CanvasViewService {
                 $stmtUsers->execute($userIds);
 
                 while ($row = $stmtUsers->fetch(\PDO::FETCH_ASSOC)) {
-                    $row['role_bg'] = self::parseSubscriptionColor($row['subscription_color'] ?? null);
+                    $row['sub_bg'] = self::parseSubscriptionColor($row['subscription_color'] ?? null);
                     $userDetails[$row['id']] = $row;
                 }
             } catch (\Throwable $e) {
@@ -544,7 +544,7 @@ class CanvasViewService {
         }
 
         $firstColorObj = $colorData['colors'][0] ?? null;
-        $activeRoleBg = is_string($firstColorObj) ? htmlspecialchars($firstColorObj) : htmlspecialchars($firstColorObj['hex'] ?? 'var(--text-muted)');
+        $activeSubBg = is_string($firstColorObj) ? htmlspecialchars($firstColorObj) : htmlspecialchars($firstColorObj['hex'] ?? 'var(--text-muted)');
 
         if (($colorData['type'] ?? 'solid') === 'gradient' && count($colorData['colors']) > 1) {
             $angle = (int)($colorData['angle'] ?? 0);
@@ -562,9 +562,9 @@ class CanvasViewService {
                 $stopsArray[] = "{$hex} {$prevStop}% {$endStop}%";
                 $prevStop = $endStop;
             }
-            $activeRoleBg = "conic-gradient(from {$angle}deg, " . implode(', ', $stopsArray) . ")";
+            $activeSubBg = "conic-gradient(from {$angle}deg, " . implode(', ', $stopsArray) . ")";
         }
-        return $activeRoleBg;
+        return $activeSubBg;
     }
 
     /**
@@ -1662,7 +1662,7 @@ class CanvasViewService {
                 ");
                 $stmtUsers->execute($pageUserIds);
                 while ($row = $stmtUsers->fetch(\PDO::FETCH_ASSOC)) {
-                    $row['role_bg'] = self::parseSubscriptionColor($row['subscription_color'] ?? null);
+                    $row['sub_bg'] = self::parseSubscriptionColor($row['subscription_color'] ?? null);
                     $userDetails[$row['id']] = $row;
                 }
             }

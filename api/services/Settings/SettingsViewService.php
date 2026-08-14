@@ -28,7 +28,7 @@ class SettingsViewService {
         $userEmail = $_SESSION['user_email'] ?? '';
         $userRoleName = $_SESSION['user_role_name'] ?? __('user');
         $subscriptionColorRaw = $_SESSION['subscription_color'] ?? '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
-        $activeRoleBg = 'var(--text-muted)';
+        $activeSubBg = 'var(--text-muted)';
 
         if ($isLoggedIn) {
             $colorData = json_decode($subscriptionColorRaw, true);
@@ -37,7 +37,7 @@ class SettingsViewService {
             }
 
             $firstColorObj = $colorData['colors'][0] ?? null;
-            $activeRoleBg = is_string($firstColorObj) ? htmlspecialchars($firstColorObj) : htmlspecialchars($firstColorObj['hex'] ?? 'var(--text-muted)');
+            $activeSubBg = is_string($firstColorObj) ? htmlspecialchars($firstColorObj) : htmlspecialchars($firstColorObj['hex'] ?? 'var(--text-muted)');
 
             if (($colorData['type'] ?? 'solid') === 'gradient' && count($colorData['colors']) > 1) {
                 $angle = (int)($colorData['angle'] ?? 0);
@@ -55,7 +55,7 @@ class SettingsViewService {
                     $stopsArray[] = "{$hex} {$prevStop}% {$endStop}%";
                     $prevStop = $endStop;
                 }
-                $activeRoleBg = "conic-gradient(from {$angle}deg, " . implode(', ', $stopsArray) . ")";
+                $activeSubBg = "conic-gradient(from {$angle}deg, " . implode(', ', $stopsArray) . ")";
             }
         }
 
@@ -107,7 +107,7 @@ class SettingsViewService {
             'userName' => $userName,
             'userEmail' => $userEmail,
             'userRoleName' => $userRoleName,
-            'activeRoleBg' => $activeRoleBg,
+            'activeSubBg' => $activeSubBg,
             'userPic' => $userPic,
             'formattedAvatar' => $formattedAvatar,
             'isDefaultAvatar' => $isDefaultAvatar,

@@ -183,7 +183,7 @@ export class AdminSupportTicketsController {
         }
     }
 
-    _parseRoleColor(colorRaw) {
+    _parseSubscriptionColor(colorRaw) {
         if (!colorRaw) return 'transparent';
         try {
             let colorData = colorRaw;
@@ -277,11 +277,11 @@ export class AdminSupportTicketsController {
                 </div>
             `;
 
-            const roleCss = this._parseRoleColor(t.subscription_color);
-            const hasRole = roleCss && roleCss !== 'transparent';
-            const dynamicClass = hasRole ? 'role-dynamic' : '';
-            const styleAttr = hasRole ? `style="--active-role-bg: ${this._escapeHtml(roleCss)};"` : '';
-            const dataAttr = hasRole ? `data-role-bg="${this._escapeHtml(roleCss)}"` : '';
+            const subCss = this._parseSubscriptionColor(t.subscription_color);
+            const hasSub = subCss && subCss !== 'transparent';
+            const dynamicClass = hasSub ? 'subscription-dynamic' : '';
+            const styleAttr = hasSub ? `style="--active-subscription-bg: ${this._escapeHtml(subCss)};"` : '';
+            const dataAttr = hasSub ? `data-sub-bg="${this._escapeHtml(subCss)}"` : '';
 
             let avatarSrc = '/public/assets/img/fallbacks/avatar-default.png';
             if (t.profile_picture) {
@@ -330,9 +330,9 @@ export class AdminSupportTicketsController {
 
         tbody.innerHTML = html;
 
-        if (window.applyRoleDynamicColors) {
+        if (window.applySubscriptionDynamicColors) {
             try {
-                window.applyRoleDynamicColors();
+                window.applySubscriptionDynamicColors();
             } catch (e) {}
         }
     }

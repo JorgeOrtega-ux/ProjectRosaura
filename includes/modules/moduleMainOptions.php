@@ -8,12 +8,12 @@ $userPermissions = $_SESSION['user_permissions'] ?? [];
 $isAdmin = in_array('access_admin_panel', $userPermissions);
 $settingsLink = $isLoggedIn ? APP_URL . '/settings/your-account' : APP_URL . '/settings/guest';
 
-$parseRoleColor = function($roleColorRaw) {
+$parseSubscriptionColor = function($subColorRaw) {
     $defaultBg = 'transparent';
-    if (empty($roleColorRaw)) return $defaultBg;
-    $colorData = json_decode($roleColorRaw, true);
+    if (empty($subColorRaw)) return $defaultBg;
+    $colorData = json_decode($subColorRaw, true);
     if (json_last_error() !== JSON_ERROR_NONE || !is_array($colorData)) {
-        return htmlspecialchars($roleColorRaw);
+        return htmlspecialchars($subColorRaw);
     }
     $firstColorObj = $colorData['colors'][0] ?? null;
     $bg = is_string($firstColorObj) ? $firstColorObj : ($firstColorObj['hex'] ?? $defaultBg);
@@ -52,10 +52,10 @@ $parseRoleColor = function($roleColorRaw) {
                     $activeAccPic = \App\Core\Helpers\Utils::getValidImage($activeAcc['user_pic'] ?? '', 'avatar');
                 ?>
                 <div class="component-menu-link component-menu-link--bordered component-account-item" data-action="showSubMenu" data-menu-target="account-switcher">
-                    <?php $activeAccColor = $parseRoleColor($activeAcc['subscription_color'] ?? ''); ?>
-                    <div class="component-avatar component-avatar--36 role-dynamic" 
-                         data-role-bg="<?php echo $activeAccColor; ?>"
-                         style="--active-role-bg: <?php echo $activeAccColor; ?>;">
+                    <?php $activeAccColor = $parseSubscriptionColor($activeAcc['subscription_color'] ?? ''); ?>
+                    <div class="component-avatar component-avatar--36 subscription-dynamic" 
+                         data-sub-bg="<?php echo $activeAccColor; ?>"
+                         style="--active-subscription-bg: <?php echo $activeAccColor; ?>;">
                         <img src="<?php echo htmlspecialchars($activeAccPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                              class="image-lazy-fade"
                              onload="this.classList.add('image-loaded')"
@@ -150,10 +150,10 @@ $parseRoleColor = function($roleColorRaw) {
                 $accPic = \App\Core\Helpers\Utils::getValidImage($acc['user_pic'] ?? '', 'avatar');
                 ?>
                 <div class="component-menu-link component-menu-link--bordered component-account-item <?php echo $isActive ? 'active' : ''; ?>" <?php if(!$isActive) echo 'data-action="switchAccount" data-id="'.$id.'"'; ?>>
-                    <?php $accColor = $parseRoleColor($acc['subscription_color'] ?? ''); ?>
-                    <div class="component-avatar component-avatar--36 role-dynamic" 
-                         data-role-bg="<?php echo $accColor; ?>"
-                         style="--active-role-bg: <?php echo $accColor; ?>;">
+                    <?php $accColor = $parseSubscriptionColor($acc['subscription_color'] ?? ''); ?>
+                    <div class="component-avatar component-avatar--36 subscription-dynamic" 
+                         data-sub-bg="<?php echo $accColor; ?>"
+                         style="--active-subscription-bg: <?php echo $accColor; ?>;">
                         <img src="<?php echo htmlspecialchars($accPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                              class="image-lazy-fade"
                              onload="this.classList.add('image-loaded')"

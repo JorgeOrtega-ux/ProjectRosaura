@@ -738,7 +738,7 @@ export class AdminSupportLiveController {
             const priorityBadge = item.priority === 'urgent'
                 ? `<span class="component-badge component-badge--danger">${window.__('lbl_priority_urgent')}</span>`
                 : (item.priority === 'high' ? `<span class="component-badge component-badge--warning">${window.__('lbl_priority_high')}</span>` : '');
-            const avatarHtml = this._renderAvatarHtml(item.client_avatar, item.client_username, item.client_role_color, 'component-avatar--static-sm');
+            const avatarHtml = this._renderAvatarHtml(item.client_avatar, item.client_username, item.client_subscription_color, 'component-avatar--static-sm');
 
             if (isActiveTab) {
                 html += `
@@ -773,14 +773,14 @@ export class AdminSupportLiveController {
         });
 
         container.innerHTML = html;
-        if (window.applyRoleDynamicColors) {
+        if (window.applySubscriptionDynamicColors) {
             try {
-                window.applyRoleDynamicColors();
+                window.applySubscriptionDynamicColors();
             } catch (e) {}
         }
     }
 
-    _parseRoleColor(colorRaw) {
+    _parseSubscriptionColor(colorRaw) {
         if (!colorRaw) return 'transparent';
         try {
             let colorData = colorRaw;
@@ -822,12 +822,12 @@ export class AdminSupportLiveController {
         return 'transparent';
     }
 
-    _renderAvatarHtml(avatarUrl, username, roleColorRaw, sizeClass = 'component-avatar--static-sm') {
-        const roleCss = this._parseRoleColor(roleColorRaw);
-        const hasRole = roleCss && roleCss !== 'transparent';
-        const dynamicClass = hasRole ? 'role-dynamic' : '';
-        const styleAttr = hasRole ? `style="--active-role-bg: ${this._escapeHtml(roleCss)};"` : '';
-        const dataAttr = hasRole ? `data-role-bg="${this._escapeHtml(roleCss)}"` : '';
+    _renderAvatarHtml(avatarUrl, username, subColorRaw, sizeClass = 'component-avatar--static-sm') {
+        const subCss = this._parseSubscriptionColor(subColorRaw);
+        const hasSub = subCss && subCss !== 'transparent';
+        const dynamicClass = hasSub ? 'subscription-dynamic' : '';
+        const styleAttr = hasSub ? `style="--active-subscription-bg: ${this._escapeHtml(subCss)};"` : '';
+        const dataAttr = hasSub ? `data-sub-bg="${this._escapeHtml(subCss)}"` : '';
         const fallback = '/public/assets/img/fallbacks/avatar-default.png';
         const src = avatarUrl ? this._escapeHtml(avatarUrl) : fallback;
 
@@ -957,9 +957,9 @@ export class AdminSupportLiveController {
             subjectEl.textContent = `${session.category || 'general'} • ${clientName} • ${langName}`;
         }
         if (avatarContainer) {
-            avatarContainer.innerHTML = this._renderAvatarHtml(session.client_avatar, session.client_username, session.client_role_color, 'component-avatar--static-sm');
+            avatarContainer.innerHTML = this._renderAvatarHtml(session.client_avatar, session.client_username, session.client_subscription_color, 'component-avatar--static-sm');
         }
-        if (window.applyRoleDynamicColors) window.applyRoleDynamicColors();
+        if (window.applySubscriptionDynamicColors) window.applySubscriptionDynamicColors();
 
         this._loadCannedResponses(session.language);
     }
@@ -1071,7 +1071,7 @@ export class AdminSupportLiveController {
                 </div>
             `;
 
-            if (window.applyRoleDynamicColors) window.applyRoleDynamicColors();
+            if (window.applySubscriptionDynamicColors) window.applySubscriptionDynamicColors();
         } catch (e) {
             Logger.error("Failed to render client sidebar: " + e.message);
         }

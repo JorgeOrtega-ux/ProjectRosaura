@@ -200,12 +200,14 @@ class SupportRepository implements SupportRepositoryInterface {
             $stmt = $this->pdo->prepare("
                 SELECT scs.*, 
                        u.username AS client_username, u.email AS client_email, u.profile_picture AS client_avatar, u.subscription_tier AS client_tier,
-                       st.color AS client_role_color,
-                       a.username AS agent_username, a.email AS agent_email, a.profile_picture AS agent_avatar
+                       st.color AS client_subscription_color,
+                       a.username AS agent_username, a.email AS agent_email, a.profile_picture AS agent_avatar,
+                       ast.color AS agent_subscription_color
                 FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
                 LEFT JOIN " . DB::TBL_USERS . " u ON scs.user_id = u.id
                 LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 LEFT JOIN " . DB::TBL_USERS . " a ON scs.assigned_agent_id = a.id
+                LEFT JOIN subscription_tiers ast ON a.subscription_tier = ast.tier_level
                 WHERE scs.uuid = :uuid
                 LIMIT 1
             ");
@@ -241,9 +243,11 @@ class SupportRepository implements SupportRepositoryInterface {
         try {
             $stmt = $this->pdo->prepare("
                 SELECT scs.*, 
-                       a.username AS agent_username, a.email AS agent_email, a.profile_picture AS agent_avatar
+                       a.username AS agent_username, a.email AS agent_email, a.profile_picture AS agent_avatar,
+                       ast.color AS agent_subscription_color
                 FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
                 LEFT JOIN " . DB::TBL_USERS . " a ON scs.assigned_agent_id = a.id
+                LEFT JOIN subscription_tiers ast ON a.subscription_tier = ast.tier_level
                 WHERE scs.user_id = :user_id AND scs.status IN ('waiting_in_queue', 'active', 'escalated')
                 ORDER BY scs.created_at DESC
                 LIMIT 1
@@ -303,7 +307,7 @@ class SupportRepository implements SupportRepositoryInterface {
             $sql = "
                 SELECT scs.*, 
                        u.username AS client_username, u.email AS client_email, u.profile_picture AS client_avatar, u.subscription_tier AS client_tier,
-                       st.color AS client_role_color
+                       st.color AS client_subscription_color
                 FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
                 LEFT JOIN " . DB::TBL_USERS . " u ON scs.user_id = u.id
                 LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
@@ -337,7 +341,7 @@ class SupportRepository implements SupportRepositoryInterface {
             $stmt = $this->pdo->prepare("
                 SELECT scs.*, 
                        u.username AS client_username, u.email AS client_email, u.profile_picture AS client_avatar, u.subscription_tier AS client_tier,
-                       st.color AS client_role_color
+                       st.color AS client_subscription_color
                 FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
                 LEFT JOIN " . DB::TBL_USERS . " u ON scs.user_id = u.id
                 LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level

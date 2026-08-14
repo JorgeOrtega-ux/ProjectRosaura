@@ -808,7 +808,7 @@ export class ContactSupportController {
         }
     }
 
-    _parseRoleColor(colorRaw) {
+    _parseSubscriptionColor(colorRaw) {
         if (!colorRaw) return 'transparent';
         try {
             let colorData = colorRaw;
@@ -850,12 +850,12 @@ export class ContactSupportController {
         return 'transparent';
     }
 
-    _renderAvatarHtml(avatarUrl, username, roleColorRaw, sizeClass = 'component-avatar--static-sm') {
-        const roleCss = this._parseRoleColor(roleColorRaw);
-        const hasRole = roleCss && roleCss !== 'transparent';
-        const dynamicClass = hasRole ? 'role-dynamic' : '';
-        const styleAttr = hasRole ? `style="--active-role-bg: ${this._escapeHtml(roleCss)};"` : '';
-        const dataAttr = hasRole ? `data-role-bg="${this._escapeHtml(roleCss)}"` : '';
+    _renderAvatarHtml(avatarUrl, username, subColorRaw, sizeClass = 'component-avatar--static-sm') {
+        const subCss = this._parseSubscriptionColor(subColorRaw);
+        const hasSub = subCss && subCss !== 'transparent';
+        const dynamicClass = hasSub ? 'subscription-dynamic' : '';
+        const styleAttr = hasSub ? `style="--active-subscription-bg: ${this._escapeHtml(subCss)};"` : '';
+        const dataAttr = hasSub ? `data-sub-bg="${this._escapeHtml(subCss)}"` : '';
         const fallback = '/public/assets/img/fallbacks/avatar-default.png';
         const src = avatarUrl ? this._escapeHtml(avatarUrl) : fallback;
 
@@ -884,12 +884,12 @@ export class ContactSupportController {
         }
 
         if (avatarContainer) {
-            avatarContainer.innerHTML = this._renderAvatarHtml(session.agent_avatar, session.agent_name, session.agent_role_color, 'component-avatar--static-sm');
+            avatarContainer.innerHTML = this._renderAvatarHtml(session.agent_avatar, session.agent_name, session.agent_subscription_color, 'component-avatar--static-sm');
         }
 
-        if (window.applyRoleDynamicColors) {
+        if (window.applySubscriptionDynamicColors) {
             try {
-                window.applyRoleDynamicColors();
+                window.applySubscriptionDynamicColors();
             } catch (e) {}
         }
     }

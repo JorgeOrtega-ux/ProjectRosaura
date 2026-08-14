@@ -520,10 +520,11 @@ class AdminSupportService {
                 'client_username' => $session['client_username'] ?? 'Guest',
                 'client_avatar' => $session['client_avatar'] ?? null,
                 'client_email' => $session['client_email'] ?? null,
-                'client_role_color' => $session['client_role_color'] ?? null,
+                'client_subscription_color' => $session['client_subscription_color'] ?? null,
                 'client_tier' => $session['client_tier'] ?? null,
                 'agent_name' => $session['agent_username'] ?? null,
                 'agent_avatar' => $session['agent_avatar'] ?? null,
+                'agent_subscription_color' => $session['agent_subscription_color'] ?? null,
                 'started_at' => $session['started_at'],
                 'user_rating' => $session['user_rating'] ? (int)$session['user_rating'] : null
             ],

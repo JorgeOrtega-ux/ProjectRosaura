@@ -135,9 +135,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                             data-tier-level="<?php echo (int)$tier['tier_level']; ?>">
                             <td>
                                 <div class="td-user-info">
-                                     <div class="component-button--profile role-dynamic component-avatar--static-sm" 
-                                          data-role-bg="<?php echo htmlspecialchars($cssColorValue); ?>"
-                                          style="--active-role-bg: <?php echo htmlspecialchars($cssColorValue); ?>;">
+                                     <div class="component-button--profile subscription-dynamic component-avatar--static-sm" 
+                                          data-sub-bg="<?php echo htmlspecialchars($cssColorValue); ?>"
+                                          style="--active-subscription-bg: <?php echo htmlspecialchars($cssColorValue); ?>;">
                                         <img src="/public/assets/img/fallbacks/avatar-default.png" alt="Suscripción"
                                              class="image-lazy-fade"
                                              onload="this.classList.add('image-loaded')">

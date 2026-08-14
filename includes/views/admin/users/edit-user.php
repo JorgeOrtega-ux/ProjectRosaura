@@ -13,7 +13,7 @@ if (!empty($editUserData['redirect'])) {
 
 extract($editUserData);
 
-$activeRoleBg = $roleBgCss ?? 'var(--text-muted)';
+$activeSubBg = $subscriptionBgCss ?? 'var(--text-muted)';
 
 $formattedAvatar = (!empty($user['profile_picture']) && strpos($user['profile_picture'], 'http') !== 0) 
     ? (defined('APP_URL') ? APP_URL : '') . '/' . ltrim($user['profile_picture'], '/') 
@@ -61,10 +61,10 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                 <div class="component-card--grouped admin-edit-group">
                     <div class="component-group-item">
                          <div class="component-card__content">
-                            <div class="component-avatar role-dynamic" 
+                            <div class="component-avatar subscription-dynamic" 
                                  data-ref="admin-profile-avatar-container" 
-                                 data-role-bg="<?php echo htmlspecialchars($activeRoleBg); ?>"
-                                 style="--active-role-bg: <?php echo htmlspecialchars($activeRoleBg); ?>;">
+                                 data-sub-bg="<?php echo htmlspecialchars($activeSubBg); ?>"
+                                 style="--active-subscription-bg: <?php echo htmlspecialchars($activeSubBg); ?>;">
                                 <img src="<?php echo htmlspecialchars($formattedAvatar); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                                      class="image-lazy-fade"
                                      onload="this.classList.add('image-loaded')"

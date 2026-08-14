@@ -127,15 +127,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     window.telemetryTracker.init();
 
-    const applyRoleDynamicColors = () => {
-        document.querySelectorAll('.role-dynamic[data-role-bg]').forEach(el => {
-            el.style.setProperty('--active-role-bg', el.dataset.roleBg);
+    const applySubscriptionDynamicColors = () => {
+        document.querySelectorAll('.subscription-dynamic[data-sub-bg]').forEach(el => {
+            el.style.setProperty('--active-subscription-bg', el.dataset.subBg);
         });
     };
 
-    applyRoleDynamicColors();
+    applySubscriptionDynamicColors();
 
-    window.applyRoleDynamicColors = applyRoleDynamicColors;
+    window.applySubscriptionDynamicColors = applySubscriptionDynamicColors;
 
     let _searchCooldown = false;
     document.body.addEventListener('keydown', (e) => {
@@ -165,8 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
             window.telemetryTracker.trackPageview(cleanUrl, loadTimeMs);
         }
 
-        if (window.applyRoleDynamicColors) {
-            window.applyRoleDynamicColors();
+        if (window.applySubscriptionDynamicColors) {
+            window.applySubscriptionDynamicColors();
         }
 
         checkAndShowPromoNotice();

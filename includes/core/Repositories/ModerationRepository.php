@@ -102,9 +102,11 @@ class ModerationRepository implements ModerationRepositoryInterface {
                         u.username as admin_username,
                         u.profile_picture as admin_profile_picture,
                         admin_roles.top_role_name as admin_role,
+                        st.color as admin_subscription_color,
                         admin_roles.top_role_color as admin_role_color
                     FROM {$tblModLogs} ml
                     LEFT JOIN {$tblUsers} u ON ml.admin_id = u.id
+                    LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                     LEFT JOIN (
                         SELECT ur_top.user_id,
                                SUBSTRING_INDEX(GROUP_CONCAT(r_top.name ORDER BY r_top.weight DESC), ',', 1) as top_role_name,
@@ -181,6 +183,7 @@ class ModerationRepository implements ModerationRepositoryInterface {
                         'admin_username' => 'user_action',
                         'admin_profile_picture' => $profilePic,
                         'admin_role' => 'user',
+                        'admin_subscription_color' => '{"type":"solid","colors":["#808080"]}',
                         'admin_role_color' => '{"type":"solid","colors":["#808080"]}'
                     ];
                 }

@@ -270,7 +270,7 @@ class AdminViewService {
                         $uRow['role_ids'] = null;
                         $uRow['role_names'] = null;
                     }
-                    $uRow['role_bg'] = self::parseSubscriptionColor($uRow['subscription_color'] ?? null);
+                    $uRow['sub_bg'] = self::parseSubscriptionColor($uRow['subscription_color'] ?? null);
                 }
                 unset($uRow);
             }
@@ -327,8 +327,8 @@ class AdminViewService {
         $targetUserId = (int)$user['id'];
         $prefs = $prefsManager->ensureDefaultPreferences($targetUserId);
 
-        $roleColorRaw = $user['subscription_color'] ?? ($user['role_color'] ?? '');
-        $roleBgCss = self::parseSubscriptionColor($roleColorRaw);
+        $subColorRaw = $user['subscription_color'] ?? '';
+        $subscriptionBgCss = self::parseSubscriptionColor($subColorRaw);
 
         return [
             'redirect' => null,
@@ -338,7 +338,7 @@ class AdminViewService {
             'prefs' => $prefs,
             'maxAvatarSize' => $maxAvatarSize,
             'isSuperAdmin' => $isSuperAdmin,
-            'roleBgCss' => $roleBgCss,
+            'subscriptionBgCss' => $subscriptionBgCss,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
     }
@@ -549,8 +549,8 @@ class AdminViewService {
             Logger::error("getUserPurchasesData error: " . $e->getMessage(), ['exception' => $e]);
         }
 
-        $roleColorRaw = $targetUser['subscription_color'] ?? ($targetUser['role_color'] ?? '');
-        $roleBgCss = self::parseSubscriptionColor($roleColorRaw);
+        $subColorRaw = $targetUser['subscription_color'] ?? '';
+        $subscriptionBgCss = self::parseSubscriptionColor($subColorRaw);
 
         return [
             'redirect' => null,
@@ -558,7 +558,7 @@ class AdminViewService {
             'targetUserId' => $targetUserId,
             'targetUserUuid' => $targetUserUuid,
             'history' => $history,
-            'roleBgCss' => $roleBgCss,
+            'subscriptionBgCss' => $subscriptionBgCss,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
     }

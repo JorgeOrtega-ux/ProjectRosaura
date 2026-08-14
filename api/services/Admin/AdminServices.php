@@ -214,6 +214,8 @@ class AdminServices {
                 'roles' => $assignedRoles, 
                 'role_name' => $user['role_name'] ?? SecurityConstants::DEFAULT_ROLE_NAME,
                 'role_color' => $user['role_color'] ?? SecurityConstants::DEFAULT_ROLE_COLOR,
+                'subscription_tier' => (int)($user['subscription_tier'] ?? 0),
+                'subscription_color' => $user['subscription_color'] ?? SecurityConstants::DEFAULT_ROLE_COLOR,
                 'user_status' => $isDeleted,
                 'deleted_by' => $user['deleted_by'] ?? null,
                 'deleted_reason' => $user['deleted_reason'] ?? null,

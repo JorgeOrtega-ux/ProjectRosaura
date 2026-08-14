@@ -65,8 +65,8 @@ class AdminUserEditController {
         } else {
             this.isDefaultAvatar = false;
         }
-        if (typeof window.applyRoleDynamicColors === 'function') {
-            window.applyRoleDynamicColors();
+        if (typeof window.applySubscriptionDynamicColors === 'function') {
+            window.applySubscriptionDynamicColors();
         }
     }
     handleClick(e) {
@@ -388,34 +388,24 @@ class AdminUserEditController {
         if (result.success) {
             showMessage(result.message, 'success');
             const dispRole = document.querySelector('[data-ref="admin-display-role"]');
-            const avatarContainer = document.querySelector('[data-ref="admin-profile-avatar-container"]');
             const selectedOption = selectEl.options[selectEl.selectedIndex];
             if (selectedOption) {
                 const rawName = selectedOption.getAttribute('data-raw-name');
                 const rawColor = selectedOption.getAttribute('data-raw-color');
                 if (dispRole) {
                     dispRole.textContent = rawName;
-                }
-                if (avatarContainer && rawColor) {
-                    try {
-                        let parsedColor = JSON.parse(rawColor);
-                        if (parsedColor.type === 'solid') {
-                            let hex = typeof parsedColor.colors[0] === 'string' ? parsedColor.colors[0] : parsedColor.colors[0].hex;
-                            avatarContainer.style.setProperty('--active-role-bg', hex);
-                            dispRole.style.color = hex;
-                        } else if (parsedColor.type === 'gradient') {
-                            const angle = parsedColor.angle || 0;
-                            const stops = parsedColor.colors.map(c => {
-                                let h = typeof c === 'string' ? c : c.hex;
-                                let stop = c.stop !== undefined ? c.stop : c.percentage;
-                                return `${h} ${stop}%`;
-                            }).join(', ');
-                            avatarContainer.style.setProperty('--active-role-bg', `conic-gradient(from ${angle}deg, ${stops})`);
-                            dispRole.style.color = typeof parsedColor.colors[0] === 'string' ? parsedColor.colors[0] : parsedColor.colors[0].hex;
+                    if (rawColor) {
+                        try {
+                            let parsedColor = JSON.parse(rawColor);
+                            if (parsedColor.type === 'solid') {
+                                let hex = typeof parsedColor.colors[0] === 'string' ? parsedColor.colors[0] : parsedColor.colors[0].hex;
+                                dispRole.style.color = hex;
+                            } else if (parsedColor.type === 'gradient') {
+                                dispRole.style.color = typeof parsedColor.colors[0] === 'string' ? parsedColor.colors[0] : parsedColor.colors[0].hex;
+                            }
+                        } catch (e) {
+                            dispRole.style.color = rawColor;
                         }
-                    } catch (e) {
-                        avatarContainer.style.setProperty('--active-role-bg', rawColor);
-                        dispRole.style.color = rawColor;
                     }
                 }
             }
