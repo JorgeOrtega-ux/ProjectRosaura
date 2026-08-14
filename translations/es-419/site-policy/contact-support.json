@@ -36,7 +36,7 @@
     "support_chat_agents_checking": "Comprobando disponibilidad de agentes...",
     "support_btn_start_chat": "Iniciar Chat en Vivo",
     "support_queue_heading": "Estás en la fila de espera",
-    "support_queue_desc": "Uno de nuestros agentes atenderá tu sesión en un momento. Por favor no cierres esta ventana.",
+    "support_queue_desc": "Uno de nuestros agentes atenderá tu sesión en breve. Tu posición actual en la fila es:",
     "support_queue_position_label": "Posición en la cola",
     "support_agent_assigned": "Agente Asignado",
     "support_agent_typing": "El agente está escribiendo...",

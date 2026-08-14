@@ -307,6 +307,11 @@ export class AdminSupportLiveController {
         if (chatInput) {
             this._sendWsTyping();
         }
+
+        const cannedSearchInput = e.target.closest('[data-ref="admin-canned-search"]');
+        if (cannedSearchInput) {
+            this._renderCannedDropdown(cannedSearchInput.value.trim().toLowerCase());
+        }
     }
 
     handleKeydown(e) {
@@ -542,6 +547,8 @@ export class AdminSupportLiveController {
                 payload.language = language;
             } else if (this.currentSession && this.currentSession.language) {
                 payload.language = this.currentSession.language;
+            } else {
+                payload.language = document.documentElement.lang || 'es-419';
             }
             const res = await this.api.post(ApiRoutes.AdminSupport.GetCannedResponses, payload, this.abortController ? this.abortController.signal : undefined);
             if (res && res.success) {
@@ -553,19 +560,36 @@ export class AdminSupportLiveController {
         }
     }
 
-    _renderCannedDropdown() {
+    _renderCannedDropdown(filterQuery = '') {
         const container = document.querySelector('[data-ref="admin-canned-list-menu"]');
+        const emptyEl = document.querySelector('[data-ref="admin-canned-empty"]');
         if (!container) return;
 
-        if (this.cannedResponses.length === 0) {
-            container.innerHTML = `<div class="component-p-2 text-muted"><span>${window.__('lbl_no_canned_found')}</span></div>`;
+        let filtered = this.cannedResponses;
+        if (filterQuery) {
+            filtered = this.cannedResponses.filter(item => {
+                const s = (item.shortcut || '').toLowerCase();
+                const t = (item.title || '').toLowerCase();
+                const c = (item.content || '').toLowerCase();
+                return s.includes(filterQuery) || t.includes(filterQuery) || c.includes(filterQuery);
+            });
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = '';
+            if (emptyEl) emptyEl.classList.remove('disabled');
             return;
         }
 
+        if (emptyEl) emptyEl.classList.add('disabled');
+
         let html = '';
-        this.cannedResponses.forEach(item => {
+        filtered.forEach(item => {
             html += `
                 <div class="component-menu-link" data-action="insertCannedResponse" data-content="${this._escapeHtml(item.content)}">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">quickreply</span>
+                    </div>
                     <div class="component-menu-link-text">
                         <span>/${this._escapeHtml(item.shortcut)} - ${this._escapeHtml(item.title)}</span>
                     </div>

@@ -114,8 +114,27 @@ export class AdminSupportTicketDetailController {
             userEmailEl.textContent = ticket.email || '';
         }
 
+        const avatarWrapper = document.querySelector('[data-ref="ticket-user-avatar-wrapper"]');
+        if (avatarWrapper && ticket.subscription_color) {
+            const roleCss = this._parseRoleColor(ticket.subscription_color);
+            if (roleCss && roleCss !== 'transparent') {
+                avatarWrapper.className = 'component-button--profile role-dynamic component-avatar--static-md';
+                avatarWrapper.setAttribute('data-role-bg', roleCss);
+                avatarWrapper.style.setProperty('--active-role-bg', roleCss);
+            }
+        }
+
         if (avatarEl) {
-            avatarEl.src = ticket.avatar ? (appUrl + ticket.avatar) : (appUrl + '/public/assets/images/defaults/avatar_default.webp');
+            const pic = ticket.profile_picture || ticket.avatar;
+            if (pic) {
+                avatarEl.src = pic.startsWith('http') ? pic : `${appUrl}/${pic.replace(/^\/+/, '')}`;
+            } else {
+                avatarEl.src = `${appUrl}/public/assets/img/fallbacks/avatar-default.png`;
+            }
+            avatarEl.onerror = () => {
+                avatarEl.onerror = null;
+                avatarEl.src = `${appUrl}/public/assets/img/fallbacks/avatar-default.png`;
+            };
         }
 
         if (catBadge) {
@@ -216,6 +235,48 @@ export class AdminSupportTicketDetailController {
             restoreButton(btn);
             showMessage(window.__('err_generic'), 'error');
         }
+    }
+
+    _parseRoleColor(colorRaw) {
+        if (!colorRaw) return 'transparent';
+        try {
+            let colorData = colorRaw;
+            if (typeof colorRaw === 'string') {
+                const trimmed = colorRaw.trim();
+                if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                    colorData = JSON.parse(trimmed);
+                } else {
+                    return colorRaw;
+                }
+            }
+            if (colorData && typeof colorData === 'object') {
+                if (colorData.type === 'solid') {
+                    const firstColor = (colorData.colors && colorData.colors[0]);
+                    return (typeof firstColor === 'string' ? firstColor : firstColor?.hex) || '#808080';
+                }
+                if (colorData.type === 'linear') {
+                    const angle = colorData.angle || '90';
+                    const colors = Array.isArray(colorData.colors) ? colorData.colors : [];
+                    const stops = colors.map((c, i, arr) => {
+                        const hex = typeof c === 'string' ? c : (c.hex || '#000');
+                        const p = (typeof c === 'object' && c.percentage !== undefined) ? c.percentage : Math.floor((i / (arr.length - 1 || 1)) * 100);
+                        return `${hex} ${p}%`;
+                    }).join(', ');
+                    return `linear-gradient(${angle}deg, ${stops})`;
+                }
+                if (colorData.type === 'conic') {
+                    const angle = colorData.angle || '0';
+                    const colors = Array.isArray(colorData.colors) ? colorData.colors : [];
+                    const stops = colors.map((c, i, arr) => {
+                        const hex = typeof c === 'string' ? c : (c.hex || '#000');
+                        const p = (typeof c === 'object' && c.percentage !== undefined) ? c.percentage : Math.floor((i / (arr.length || 1)) * 100);
+                        return `${hex} ${p}%`;
+                    }).join(', ');
+                    return `conic-gradient(from ${angle}deg, ${stops})`;
+                }
+            }
+        } catch (e) {}
+        return 'transparent';
     }
 
     _escapeHtml(str) {

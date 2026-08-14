@@ -2252,5 +2252,42 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+
+    supportCsatModal: {
+        build: () => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-step active">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('support_csat_heading')}</h2>
+                        <p class="component-modal-desc">${__('support_csat_desc')}</p>
+                    </div>
+                    
+                    <div class="component-modal-body">
+                        <div class="component-rating-selector component-mb-3" data-ref="modal_csat_stars" data-value="5">
+                            <button class="component-star-btn active" data-action="setCsatRating" data-rating="1" type="button"><span class="material-symbols-rounded">star</span></button>
+                            <button class="component-star-btn active" data-action="setCsatRating" data-rating="2" type="button"><span class="material-symbols-rounded">star</span></button>
+                            <button class="component-star-btn active" data-action="setCsatRating" data-rating="3" type="button"><span class="material-symbols-rounded">star</span></button>
+                            <button class="component-star-btn active" data-action="setCsatRating" data-rating="4" type="button"><span class="material-symbols-rounded">star</span></button>
+                            <button class="component-star-btn active" data-action="setCsatRating" data-rating="5" type="button"><span class="material-symbols-rounded">star</span></button>
+                        </div>
+
+                        <textarea class="component-input-field" data-ref="modal_csat_comment" placeholder="${__('placeholder_support_feedback')}" rows="3" maxlength="1000"></textarea>
+                    </div>
+                    
+                    <div class="component-modal-actions component-modal-actions--stack">
+                        <button class="component-button component-button--dark component-button--h40 component-button--full" data-action="submitModalCsatFeedback" type="button">
+                            <span>${__('btn_submit_feedback')}</span>
+                        </button>
+                        <button class="component-button component-button--h40 component-button--full" data-action="downloadSupportTranscript" type="button">
+                            <span class="material-symbols-rounded">download</span>
+                            <span>${__('btn_download_transcript')}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
     }
 };

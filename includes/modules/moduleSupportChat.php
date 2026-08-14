@@ -12,28 +12,12 @@
         </div>
         
         <!-- ESTADO 1: COLA DE ESPERA -->
-        <div class="component-menu-section-parent" data-ref="support-state-queue">
+        <div class="component-menu-section-parent disabled" data-ref="support-state-queue">
             <div class="component-menu-center component-p-3">
                 <div class="component-empty-state">
-                    <div class="component-queue-pulse-icon">
-                        <span class="material-symbols-rounded component-empty-state-icon">hourglass_top</span>
-                    </div>
+                    <span class="material-symbols-rounded component-empty-state-icon">hourglass_top</span>
                     <h3 class="component-card__title"><?php echo __('support_queue_heading'); ?></h3>
-                    <p class="component-empty-state-text"><?php echo __('support_queue_desc'); ?></p>
-                    
-                    <div class="component-card--grouped component-mb-3 component-w-full">
-                        <div class="component-group-item">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">people</span>
-                            </div>
-                            <div class="component-card__content">
-                                <div class="component-card__text">
-                                    <span class="component-stat-card__title"><?php echo __('support_queue_position_label'); ?></span>
-                                    <h3 class="component-card__title text-primary" data-ref="support-queue-position-number">#1</h3>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <p class="component-empty-state-text"><?php echo __('support_queue_desc'); ?> <span data-ref="support-queue-position-number">#1</span></p>
 
                     <div class="component-empty-state-actions">
                         <button class="component-button component-button--h40" data-action="leaveSupportQueue" type="button">
@@ -113,40 +97,7 @@
             </div>
         </div>
 
-        <!-- ESTADO 4: CALIFICACIÓN CSAT -->
-        <div class="component-menu-section-parent disabled" data-ref="support-state-feedback">
-            <div class="component-menu-center component-p-3">
-                <div class="component-empty-state">
-                    <span class="material-symbols-rounded component-empty-state-icon">rate_review</span>
-                    <h3 class="component-card__title"><?php echo __('support_csat_heading'); ?></h3>
-                    <p class="component-empty-state-text"><?php echo __('support_csat_desc'); ?></p>
-                    
-                    <div class="component-rating-selector component-mb-3" data-ref="support-csat-stars" data-value="5">
-                        <button class="component-star-btn active" data-action="setCsatRating" data-rating="1" type="button"><span class="material-symbols-rounded">star</span></button>
-                        <button class="component-star-btn active" data-action="setCsatRating" data-rating="2" type="button"><span class="material-symbols-rounded">star</span></button>
-                        <button class="component-star-btn active" data-action="setCsatRating" data-rating="3" type="button"><span class="material-symbols-rounded">star</span></button>
-                        <button class="component-star-btn active" data-action="setCsatRating" data-rating="4" type="button"><span class="material-symbols-rounded">star</span></button>
-                        <button class="component-star-btn active" data-action="setCsatRating" data-rating="5" type="button"><span class="material-symbols-rounded">star</span></button>
-                    </div>
-
-                    <div class="component-group-item component-group-item--stacked component-mb-3 component-w-full">
-                        <textarea class="component-input-field" data-ref="support-csat-comment" placeholder="<?php echo __('placeholder_support_feedback'); ?>" rows="3" maxlength="1000"></textarea>
-                    </div>
-
-                    <div class="component-empty-state-actions">
-                        <button class="component-button component-button--dark component-button--h40 component-button--full" data-action="submitSupportFeedback" type="button">
-                            <span><?php echo __('btn_submit_feedback'); ?></span>
-                        </button>
-                        <button class="component-button component-button--h40 component-button--full" data-action="downloadSupportTranscript" type="button">
-                            <span class="material-symbols-rounded">download</span>
-                            <span><?php echo __('btn_download_transcript'); ?></span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ESTADO 5: FUERA DE LÍNEA -->
+        <!-- ESTADO 4: FUERA DE LÍNEA -->
         <div class="component-menu-section-parent disabled" data-ref="support-state-offline">
             <div class="component-menu-center component-p-3">
                 <div class="component-empty-state">

@@ -36,7 +36,7 @@
     "support_chat_agents_checking": "Checking agent availability...",
     "support_btn_start_chat": "Start Live Chat",
     "support_queue_heading": "You are in the waiting queue",
-    "support_queue_desc": "One of our agents will assist your session shortly. Please do not close this window.",
+    "support_queue_desc": "One of our agents will assist your session shortly. Your current queue position is:",
     "support_queue_position_label": "Queue position",
     "support_agent_assigned": "Assigned Agent",
     "support_agent_typing": "Agent is typing...",

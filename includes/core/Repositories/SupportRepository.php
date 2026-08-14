@@ -58,9 +58,10 @@ class SupportRepository implements SupportRepositoryInterface {
     public function findByUuid(string $uuid): ?array {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT st.*, u.username, u.email 
+                SELECT st.*, u.username, u.email, u.profile_picture, u.uuid AS user_uuid, tiers.color AS subscription_color
                 FROM " . DB::TBL_SUPPORT_TICKETS . " st
                 JOIN " . DB::TBL_USERS . " u ON st.user_id = u.id
+                LEFT JOIN subscription_tiers tiers ON u.subscription_tier = tiers.tier_level
                 WHERE st.uuid = :uuid
                 LIMIT 1
             ");
@@ -88,7 +89,7 @@ class SupportRepository implements SupportRepositoryInterface {
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (PDOException $e) {
-            Logger::database("Failed to fetch user support tickets: " . $e->getMessage(), 'error');
+            Logger::database("Failed to fetch user tickets: " . $e->getMessage(), 'error');
             return [];
         }
     }
@@ -96,9 +97,10 @@ class SupportRepository implements SupportRepositoryInterface {
     public function getAllTickets(array $filters = [], int $limit = 50, int $offset = 0): array {
         try {
             $sql = "
-                SELECT st.*, u.username, u.email 
+                SELECT st.*, u.username, u.email, u.profile_picture, u.uuid AS user_uuid, tiers.color AS subscription_color
                 FROM " . DB::TBL_SUPPORT_TICKETS . " st
                 LEFT JOIN " . DB::TBL_USERS . " u ON st.user_id = u.id
+                LEFT JOIN subscription_tiers tiers ON u.subscription_tier = tiers.tier_level
                 WHERE 1=1
             ";
             $params = [];
@@ -830,8 +832,10 @@ class SupportRepository implements SupportRepositoryInterface {
             }
 
             if (!empty($language)) {
-                $where[] = "(scr.language = :language OR scr.language IS NULL)";
+                $baseLang = explode('-', $language)[0];
+                $where[] = "(scr.language = :language OR scr.language = :baseLang)";
                 $params[':language'] = $language;
+                $params[':baseLang'] = $baseLang;
             }
 
             if (!empty($where)) {

@@ -10,9 +10,9 @@ export class ContactSupportController {
         this.turnstileWidgetId = undefined;
         this.pollInterval = null;
         this.activeSessionUuid = null;
+        this.csatSessionUuid = null;
         this.currentRating = 5;
 
-        // WebSocket
         this.ws = null;
         this.wsReconnectTimeout = null;
         this.wsHeartbeatInterval = null;
@@ -30,6 +30,7 @@ export class ContactSupportController {
         this.abortController = new AbortController();
         this.bindEvents();
         this._setupModuleObserver();
+        this._restoreActiveSession();
         this._renderTurnstile();
         this._checkLiveChatStatus();
     }
@@ -137,6 +138,31 @@ export class ContactSupportController {
         }
     }
 
+    _restoreActiveSession() {
+        try {
+            const raw = localStorage.getItem('pr_active_support_session');
+            if (!raw) return;
+            const data = JSON.parse(raw);
+            const uuid = data.session_uuid || data.uuid;
+            if (!uuid) return;
+
+            this.activeSessionUuid = uuid;
+            const status = data.status || 'queue';
+
+            if (status === 'queue' || status === 'waiting' || status === 'waiting_in_queue') {
+                this._showState('queue');
+                this._connectWebSocket(uuid);
+                this._startPolling();
+            } else if (status === 'room' || status === 'active' || status === 'in_progress') {
+                this._showState('room');
+                this._connectWebSocket(uuid);
+                this._loadMessages();
+                this._startPolling();
+            }
+            this._updateFloatingButtonVisibility();
+        } catch (e) {}
+    }
+
     _handleWsEvent(payload) {
         if (!payload) return;
 
@@ -173,11 +199,10 @@ export class ContactSupportController {
                     this._loadMessages();
                     break;
                 case 'session_closed':
-                    if (this.pollInterval) {
-                        clearInterval(this.pollInterval);
-                        this.pollInterval = null;
+                    this._cleanupEndedSession();
+                    if (window.modalSystem) {
+                        window.modalSystem.show('supportCsatModal');
                     }
-                    this._showState('feedback');
                     break;
                 default:
                     break;
@@ -468,20 +493,22 @@ export class ContactSupportController {
             const dropdown = document.querySelector(`[data-module="${targetId}"]`);
             if (dropdown) {
                 const isCurrentlyActive = !dropdown.classList.contains('disabled');
-                document.querySelectorAll('.chat-dropdown-module:not(.disabled), [data-module="moduleSupportTicketCategory"]:not(.disabled)').forEach(d => {
+                document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(d => {
                     d.classList.remove('active');
                     d.classList.add('disabled');
                 });
                 if (!isCurrentlyActive) {
                     dropdown.classList.remove('disabled');
                     dropdown.classList.add('active');
-                    const innerMenu = dropdown.querySelector('.component-menu');
-                    if (innerMenu) {
-                        innerMenu.classList.remove('disabled');
-                        innerMenu.classList.add('active');
-                    }
                 }
             }
+            return;
+        }
+
+        const submitModalCsatBtn = e.target.closest('[data-action="submitModalCsatFeedback"]');
+        if (submitModalCsatBtn) {
+            e.preventDefault();
+            this._submitModalCsatFeedback(submitModalCsatBtn);
             return;
         }
 
@@ -493,7 +520,7 @@ export class ContactSupportController {
         }
 
         if (!e.target.closest('.component-dropdown-wrapper')) {
-            document.querySelectorAll('.chat-dropdown-module:not(.disabled), [data-module="moduleSupportTicketCategory"]:not(.disabled)').forEach(d => {
+            document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(d => {
                 d.classList.remove('active');
                 d.classList.add('disabled');
             });
@@ -525,7 +552,7 @@ export class ContactSupportController {
                         const qNum = document.querySelector('[data-ref="support-queue-position-number"]');
                         if (qNum) qNum.textContent = `#${res.active_session.queue_position || 1}`;
                         this._startPolling();
-                    } else if (res.active_session.status === 'active') {
+                    } else if (res.active_session.status === 'active' || res.active_session.status === 'in_progress') {
                         this._showState('room');
                         this._updateAgentDisplay(res.active_session);
                         this._startPolling();
@@ -534,7 +561,9 @@ export class ContactSupportController {
                 } else if (!res.is_online) {
                     this._showState('offline');
                 } else {
-                    this._showState('preform');
+                    if (!this.activeSessionUuid) {
+                        this._showState(null);
+                    }
                 }
             }
         } catch (error) {
@@ -544,10 +573,8 @@ export class ContactSupportController {
 
     _showState(stateName) {
         const states = {
-            preform: document.querySelector('[data-ref="support-state-preform"]'),
             queue: document.querySelector('[data-ref="support-state-queue"]'),
             room: document.querySelector('[data-ref="support-state-room"]'),
-            feedback: document.querySelector('[data-ref="support-state-feedback"]'),
             offline: document.querySelector('[data-ref="support-state-offline"]')
         };
 
@@ -575,7 +602,7 @@ export class ContactSupportController {
         if (stateName === 'queue' || stateName === 'room') {
             if (this.activeSessionUuid) {
                 localStorage.setItem('pr_active_support_session', JSON.stringify({
-                    uuid: this.activeSessionUuid,
+                    session_uuid: this.activeSessionUuid,
                     status: stateName
                 }));
             }
@@ -676,7 +703,7 @@ export class ContactSupportController {
             if (res && res.success) {
                 this.activeSessionUuid = res.session_uuid;
                 if (window.modalSystem) {
-                    window.modalSystem.close();
+                    window.modalSystem.closeCurrent();
                 }
 
                 this._connectWebSocket(this.activeSessionUuid);
@@ -729,11 +756,10 @@ export class ContactSupportController {
                     this._updateAgentDisplay(session);
                     this._renderMessages(res.messages);
                 } else if (session.status === 'closed') {
-                    if (this.pollInterval) {
-                        clearInterval(this.pollInterval);
-                        this.pollInterval = null;
+                    this._cleanupEndedSession();
+                    if (window.modalSystem) {
+                        window.modalSystem.show('supportCsatModal');
                     }
-                    this._showState('feedback');
                 }
             }
         } catch (error) {
@@ -908,21 +934,56 @@ export class ContactSupportController {
     async _endLiveChatSession() {
         if (!this.activeSessionUuid) return;
 
+        const currentUuid = this.activeSessionUuid;
         try {
-            const res = await this.api.post(ApiRoutes.Support.EndLiveSession, {
-                session_uuid: this.activeSessionUuid
+            await this.api.post(ApiRoutes.Support.EndLiveSession, {
+                session_uuid: currentUuid
             }, this.abortController ? this.abortController.signal : undefined);
-
-            if (res && res.success) {
-                if (this.pollInterval) {
-                    clearInterval(this.pollInterval);
-                    this.pollInterval = null;
-                }
-                this._showState('feedback');
-            }
         } catch (error) {
             if (error.name === 'AbortError') return;
         }
+
+        this._cleanupEndedSession();
+
+        if (window.modalSystem) {
+            window.modalSystem.show('supportCsatModal');
+        }
+    }
+
+    _cleanupEndedSession() {
+        this.csatSessionUuid = this.activeSessionUuid;
+        this.activeSessionUuid = null;
+        localStorage.removeItem('pr_active_support_session');
+
+        if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+        }
+
+        if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+        }
+
+        const msgContainer = document.querySelector('[data-ref="support-chat-messages-list"]');
+        if (msgContainer) msgContainer.innerHTML = '';
+
+        const input = document.querySelector('[data-ref="support-chat-input-text"]');
+        if (input) input.value = '';
+
+        const typingIndicator = document.querySelector('[data-ref="support-typing-indicator"]');
+        if (typingIndicator) typingIndicator.classList.add('disabled');
+
+        const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
+        if (moduleEl && window.appInstance?.moduleManager) {
+            window.appInstance.moduleManager.close(moduleEl);
+        } else if (moduleEl) {
+            moduleEl.classList.remove('active');
+            moduleEl.classList.add('disabled');
+        }
+
+        this._showState(null);
+        this._updateFloatingButtonVisibility();
     }
 
     async _leaveQueue() {
@@ -936,38 +997,17 @@ export class ContactSupportController {
             }
         }
 
-        if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-            this.pollInterval = null;
-        }
-
-        this.activeSessionUuid = null;
-        if (this.ws) {
-            this.ws.close();
-            this.ws = null;
-        }
-
-        localStorage.removeItem('pr_active_support_session');
-
-        const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
-        if (moduleEl && window.appInstance?.moduleManager) {
-            window.appInstance.moduleManager.close(moduleEl);
-        } else if (moduleEl) {
-            moduleEl.classList.remove('active');
-            moduleEl.classList.add('disabled');
-        }
-
-        this._updateFloatingButtonVisibility();
+        this._cleanupEndedSession();
     }
 
     _handleRatingSelect(btn) {
         const rating = parseInt(btn.getAttribute('data-rating') || '5', 10);
         this.currentRating = rating;
 
-        const ratingContainer = document.querySelector('[data-ref="support-csat-stars"]');
-        if (ratingContainer) {
-            ratingContainer.setAttribute('data-value', rating.toString());
-            const allBtns = ratingContainer.querySelectorAll('[data-action="setCsatRating"]');
+        const ratingContainers = document.querySelectorAll('[data-ref="modal_csat_stars"], [data-ref="support-csat-stars"]');
+        ratingContainers.forEach(container => {
+            container.setAttribute('data-value', rating.toString());
+            const allBtns = container.querySelectorAll('[data-action="setCsatRating"]');
             allBtns.forEach(b => {
                 const r = parseInt(b.getAttribute('data-rating') || '0', 10);
                 if (r <= rating) {
@@ -976,20 +1016,21 @@ export class ContactSupportController {
                     b.classList.remove('active');
                 }
             });
-        }
+        });
     }
 
-    async _submitCsatFeedback(btn) {
-        if (!this.activeSessionUuid || !btn || btn.classList.contains('disabled-interaction')) return;
+    async _submitModalCsatFeedback(btn) {
+        const targetUuid = this.csatSessionUuid || this.activeSessionUuid;
+        if (!targetUuid || !btn || btn.classList.contains('disabled-interaction')) return;
 
-        const commentInput = document.querySelector('[data-ref="support-csat-comment"]');
+        const commentInput = document.querySelector('[data-ref="modal_csat_comment"], [data-ref="support-csat-comment"]');
         const feedback = commentInput ? commentInput.value.trim() : '';
 
         setButtonLoading(btn);
 
         try {
             const res = await this.api.post(ApiRoutes.Support.SubmitFeedback, {
-                session_uuid: this.activeSessionUuid,
+                session_uuid: targetUuid,
                 rating: this.currentRating,
                 feedback: feedback
             }, this.abortController ? this.abortController.signal : undefined);
@@ -998,18 +1039,15 @@ export class ContactSupportController {
 
             if (res && res.success) {
                 showMessage(window.__('msg_support_feedback_received'), 'success');
+                this.csatSessionUuid = null;
                 this.activeSessionUuid = null;
                 localStorage.removeItem('pr_active_support_session');
-                setTimeout(() => {
-                    const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
-                    if (moduleEl && window.appInstance?.moduleManager) {
-                        window.appInstance.moduleManager.close(moduleEl);
-                    } else if (moduleEl) {
-                        moduleEl.classList.remove('active');
-                        moduleEl.classList.add('disabled');
-                    }
-                    this._updateFloatingButtonVisibility();
-                }, 1000);
+                if (window.modalSystem) {
+                    window.modalSystem.closeCurrent();
+                }
+                this._updateFloatingButtonVisibility();
+            } else {
+                showMessage(res && res.message ? res.message : window.__('err_support_feedback_failed'), 'error');
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
@@ -1018,12 +1056,17 @@ export class ContactSupportController {
         }
     }
 
+    async _submitCsatFeedback(btn) {
+        return this._submitModalCsatFeedback(btn);
+    }
+
     async _downloadTranscript() {
-        if (!this.activeSessionUuid) return;
+        const targetUuid = this.csatSessionUuid || this.activeSessionUuid;
+        if (!targetUuid) return;
 
         try {
             const res = await this.api.post(ApiRoutes.Support.DownloadTranscript, {
-                session_uuid: this.activeSessionUuid
+                session_uuid: targetUuid
             }, this.abortController ? this.abortController.signal : undefined);
 
             if (res && res.success && res.content) {
@@ -1158,7 +1201,7 @@ export class ContactSupportController {
                 showMessage(successMsg, 'success');
 
                 if (window.modalSystem) {
-                    window.modalSystem.close();
+                    window.modalSystem.closeCurrent();
                 }
             } else {
                 const errMsg = response && response.message ? response.message : window.__('err_support_submission_failed');

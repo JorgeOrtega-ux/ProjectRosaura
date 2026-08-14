@@ -326,18 +326,54 @@ export const AdminModalTemplates = {
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
                             <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCannedLang">
                                 <span class="material-symbols-rounded">translate</span>
-                                <span class="component-dropdown-text" data-ref="canned-lang-text" data-value="${item.language || 'es-419'}">${item.language === 'en' ? __('lbl_lang_en') : __('lbl_lang_es')}</span>
+                                <span class="component-dropdown-text" data-ref="canned-lang-text" data-value="${item.language || 'es-419'}">${
+                                    item.language === 'en-GB' ? 'English (United Kingdom)' :
+                                    item.language === 'en-US' ? 'English (United States)' :
+                                    item.language === 'en' ? 'English (United States)' :
+                                    item.language === 'fr-FR' ? 'Français (France)' :
+                                    item.language === 'de-DE' ? 'Deutsch (Deutschland)' :
+                                    item.language === 'it-IT' ? 'Italiano (Italia)' :
+                                    item.language === 'es-MX' ? 'Español (México)' :
+                                    item.language === 'es-ES' ? 'Español (España)' :
+                                    item.language === 'pt-BR' ? 'Português (Brasil)' :
+                                    item.language === 'pt-PT' ? 'Português (Portugal)' :
+                                    'Español (Latinoamérica)'
+                                }</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
                             <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownCannedLang">
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list">
+                                    <div class="component-menu-list component-menu-list--scrollable">
                                         <div class="component-menu-link ${(!item.language || item.language === 'es-419') ? 'active' : ''}" data-action="selectCannedLang" data-val="es-419">
-                                            <div class="component-menu-link-text"><span>${__('lbl_lang_es')}</span></div>
+                                            <div class="component-menu-link-text"><span>Español (Latinoamérica)</span></div>
                                         </div>
-                                        <div class="component-menu-link ${item.language === 'en' ? 'active' : ''}" data-action="selectCannedLang" data-val="en">
-                                            <div class="component-menu-link-text"><span>${__('lbl_lang_en')}</span></div>
+                                        <div class="component-menu-link ${item.language === 'es-MX' ? 'active' : ''}" data-action="selectCannedLang" data-val="es-MX">
+                                            <div class="component-menu-link-text"><span>Español (México)</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${item.language === 'es-ES' ? 'active' : ''}" data-action="selectCannedLang" data-val="es-ES">
+                                            <div class="component-menu-link-text"><span>Español (España)</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${(item.language === 'en-US' || item.language === 'en') ? 'active' : ''}" data-action="selectCannedLang" data-val="en-US">
+                                            <div class="component-menu-link-text"><span>English (United States)</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${item.language === 'en-GB' ? 'active' : ''}" data-action="selectCannedLang" data-val="en-GB">
+                                            <div class="component-menu-link-text"><span>English (United Kingdom)</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${item.language === 'fr-FR' ? 'active' : ''}" data-action="selectCannedLang" data-val="fr-FR">
+                                            <div class="component-menu-link-text"><span>Français (France)</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${item.language === 'de-DE' ? 'active' : ''}" data-action="selectCannedLang" data-val="de-DE">
+                                            <div class="component-menu-link-text"><span>Deutsch (Deutschland)</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${item.language === 'it-IT' ? 'active' : ''}" data-action="selectCannedLang" data-val="it-IT">
+                                            <div class="component-menu-link-text"><span>Italiano (Italia)</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${item.language === 'pt-BR' ? 'active' : ''}" data-action="selectCannedLang" data-val="pt-BR">
+                                            <div class="component-menu-link-text"><span>Português (Brasil)</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${item.language === 'pt-PT' ? 'active' : ''}" data-action="selectCannedLang" data-val="pt-PT">
+                                            <div class="component-menu-link-text"><span>Português (Portugal)</span></div>
                                         </div>
                                     </div>
                                 </div>

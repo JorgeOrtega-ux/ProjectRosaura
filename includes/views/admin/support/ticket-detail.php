@@ -50,7 +50,7 @@
                     <div class="component-group-item">
                         <div class="component-card__content">
                             <div class="component-avatar" data-ref="ticket-user-avatar-wrapper">
-                                <img src="<?php echo APP_URL; ?>/public/assets/images/defaults/avatar_default.webp" alt="Avatar" data-ref="ticket-user-avatar">
+                                <img class="avatar-image" data-ref="ticket-user-avatar" src="<?php echo APP_URL; ?>/public/assets/img/fallbacks/avatar-default.png" alt="Avatar">
                             </div>
                             <div class="component-card__text">
                                 <h2 class="component-card__title" data-ref="ticket-user-name">--</h2>

@@ -16,14 +16,14 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                 <h1 class="component-top-title"><?php echo __('title_support_live'); ?></h1>
             </div>
             <div class="component-top-right">
-                <div class="component-dropdown-wrapper">
+                <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="adminSupportTopMoreDropdown" data-tooltip="<?php echo __('btn_options'); ?>" data-position="bottom" type="button">
                         <span class="material-symbols-rounded">more_vert</span>
                     </button>
-                    <div class="component-module component-module--dropdown component-module--dropdown-right disabled" data-module="adminSupportTopMoreDropdown">
-                        <div class="component-menu component-menu--w240 component-menu--h-auto active" data-menu="support-top-main-menu">
+                    <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--spaced disabled" data-module="adminSupportTopMoreDropdown">
+                        <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="support-top-main-menu">
                             <div class="pill-container"><div class="drag-handle"></div></div>
-                            <div class="component-menu-list">
+                            <div class="component-menu-list component-menu-list--scrollable">
                                 <div class="component-menu-link" data-action="showSubMenu" data-menu-target="support-top-status-menu">
                                     <div class="component-menu-link-icon">
                                         <span class="material-symbols-rounded status-offline" data-ref="agent-status-indicator-icon">fiber_manual_record</span>
@@ -61,7 +61,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                             </div>
                         </div>
 
-                        <div class="component-menu component-menu--w240 component-menu--h-auto disabled" data-menu="support-top-status-menu">
+                        <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" data-menu="support-top-status-menu">
                             <div class="pill-container"><div class="drag-handle"></div></div>
                             <div class="component-menu-header">
                                 <div class="component-menu-header-box">
@@ -71,7 +71,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                                     <span class="component-menu-header-title"><?php echo __('lbl_agent_status'); ?></span>
                                 </div>
                             </div>
-                            <div class="component-menu-list">
+                            <div class="component-menu-list component-menu-list--scrollable">
                                 <div class="component-menu-link" data-action="changeAgentStatus" data-val="online">
                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded status-online">check_circle</span></div>
                                     <div class="component-menu-link-text"><span><?php echo __('lbl_agent_status_online'); ?></span></div>
@@ -163,10 +163,10 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                         <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="adminChatMoreDropdown" data-tooltip="<?php echo __('btn_options'); ?>" data-position="bottom" type="button">
                             <span class="material-symbols-rounded">more_vert</span>
                         </button>
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminChatMoreDropdown">
-                            <div class="component-menu component-menu--w200 component-menu--h-auto">
+                        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--spaced disabled" data-module="adminChatMoreDropdown">
+                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="admin-chat-more-menu">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list">
+                                <div class="component-menu-list component-menu-list--scrollable">
                                     <div class="component-menu-link" data-action="toggleModule" data-target="moduleSupportClientInfo">
                                         <div class="component-menu-link-icon">
                                             <span class="material-symbols-rounded">info</span>
@@ -230,10 +230,26 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                                 <button class="component-chat-attach-btn" data-action="toggleModule" data-target="adminCannedResponsesDropdown" data-tooltip="<?php echo __('lbl_quick_canned'); ?>" data-position="top" type="button">
                                     <span class="material-symbols-rounded">quickreply</span>
                                 </button>
-                                <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-right component-module--dropdown-fixed disabled" data-module="adminCannedResponsesDropdown">
-                                    <div class="component-menu component-menu--w320 component-menu--h-auto">
+                                <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-left component-module--dropdown-fixed disabled" data-module="adminCannedResponsesDropdown">
+                                    <div class="component-menu component-menu--w320 component-menu--h-auto component-menu--no-padding component-menu--limited active" data-ref="menuCannedResponses">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-header">
+                                            <div class="component-search component-search--full component-search--h36">
+                                                <div class="component-search-icon">
+                                                    <span class="material-symbols-rounded">search</span>
+                                                </div>
+                                                <div class="component-search-input">
+                                                    <input type="text" data-ref="admin-canned-search" placeholder="<?php echo __('search_canned_responses', [], 'Buscar respuestas rápidas...'); ?>" autocomplete="off">
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="component-menu-list component-menu-list--scrollable" data-ref="admin-canned-list-menu">
+                                        </div>
+                                        <div class="component-menu-empty disabled" data-ref="admin-canned-empty">
+                                            <div class="component-menu-link disabled-interaction">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('no_results_found'); ?></span></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

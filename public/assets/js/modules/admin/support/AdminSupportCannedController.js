@@ -10,6 +10,7 @@ export class AdminSupportCannedController {
         this.abortController = null;
         this.items = [];
         this.searchQuery = '';
+        this.selectedUuid = null;
 
         this._boundClick = this.handleClick.bind(this);
         this._boundInput = this.handleInput.bind(this);
@@ -42,6 +43,7 @@ export class AdminSupportCannedController {
             this.container.removeEventListener('input', this._boundInput);
         }
         document.body.removeEventListener('click', this._boundClick);
+        this.selectedUuid = null;
     }
 
     handleInput(e) {
@@ -77,20 +79,45 @@ export class AdminSupportCannedController {
             return;
         }
 
-        const editBtn = e.target.closest('[data-action="editCannedResponse"]');
-        if (editBtn) {
+        const selectRow = e.target.closest('[data-action="selectCannedRow"]');
+        if (selectRow && !e.target.closest('button') && !e.target.closest('a')) {
             e.preventDefault();
-            const uuid = editBtn.getAttribute('data-uuid');
-            const item = this.items.find(i => i.uuid === uuid);
-            if (item) this._openModal(item);
+            const uuid = selectRow.getAttribute('data-uuid');
+            if (this.selectedUuid === uuid) {
+                this.selectedUuid = null;
+            } else {
+                this.selectedUuid = uuid;
+            }
+            this._updateSelectionUI();
+            this._renderList();
             return;
         }
 
-        const delBtn = e.target.closest('[data-action="deleteCannedResponse"]');
-        if (delBtn) {
+        const editSelectedBtn = e.target.closest('[data-action="editSelectedCanned"]');
+        if (editSelectedBtn) {
             e.preventDefault();
-            const uuid = delBtn.getAttribute('data-uuid');
-            if (uuid) this._deleteCanned(uuid, delBtn);
+            if (this.selectedUuid) {
+                const item = this.items.find(i => i.uuid === this.selectedUuid);
+                if (item) this._openModal(item);
+            }
+            return;
+        }
+
+        const deleteSelectedBtn = e.target.closest('[data-action="deleteSelectedCanned"]');
+        if (deleteSelectedBtn) {
+            e.preventDefault();
+            if (this.selectedUuid) {
+                this._deleteCanned(this.selectedUuid, deleteSelectedBtn);
+            }
+            return;
+        }
+
+        const deselectBtn = e.target.closest('[data-action="deselectCanned"]');
+        if (deselectBtn) {
+            e.preventDefault();
+            this.selectedUuid = null;
+            this._updateSelectionUI();
+            this._renderList();
             return;
         }
 
@@ -113,6 +140,31 @@ export class AdminSupportCannedController {
             e.preventDefault();
             this._submitCannedForm(submitBtn);
             return;
+        }
+    }
+
+    _updateSelectionUI() {
+        const selectionActions = document.querySelector('[data-ref="header-selection-actions"]');
+        const defaultActions = document.querySelector('[data-ref="header-default-actions"]');
+
+        if (this.selectedUuid) {
+            if (selectionActions) {
+                selectionActions.classList.remove('disabled');
+                selectionActions.classList.add('active');
+            }
+            if (defaultActions) {
+                defaultActions.classList.remove('active');
+                defaultActions.classList.add('disabled');
+            }
+        } else {
+            if (selectionActions) {
+                selectionActions.classList.remove('active');
+                selectionActions.classList.add('disabled');
+            }
+            if (defaultActions) {
+                defaultActions.classList.remove('disabled');
+                defaultActions.classList.add('active');
+            }
         }
     }
 
@@ -144,7 +196,7 @@ export class AdminSupportCannedController {
         if (filtered.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6">
+                    <td colspan="5">
                         <div class="component-empty-state component-p-4">
                             <span class="material-symbols-rounded component-empty-state-icon">quickreply</span>
                             <h3 class="component-card__title">${window.__('lbl_no_canned_found')}</h3>
@@ -155,15 +207,30 @@ export class AdminSupportCannedController {
             return;
         }
 
+        const langMap = {
+            'es-419': 'Español (Latinoamérica)',
+            'es-MX': 'Español (México)',
+            'es-ES': 'Español (España)',
+            'en-US': 'English (United States)',
+            'en-GB': 'English (United Kingdom)',
+            'en': 'English (United States)',
+            'fr-FR': 'Français (France)',
+            'de-DE': 'Deutsch (Deutschland)',
+            'it-IT': 'Italiano (Italia)',
+            'pt-BR': 'Português (Brasil)',
+            'pt-PT': 'Português (Portugal)'
+        };
+
         let html = '';
         filtered.forEach(item => {
+            const isSelected = item.uuid === this.selectedUuid;
             const minLevelBadge = `<span class="component-badge component-badge--sm">${item.min_level ? item.min_level.toUpperCase() : 'L1'}</span>`;
-            const langLabel = item.language === 'en' ? window.__('lbl_lang_en') : window.__('lbl_lang_es');
-            const langBadge = `<span class="component-badge component-badge--sm">${langLabel}</span>`;
+            const langName = langMap[item.language] || item.language || 'Español';
+            const langBadge = `<span class="component-badge component-badge--sm">${this._escapeHtml(langName)}</span>`;
             const snippet = item.content && item.content.length > 90 ? item.content.substring(0, 90) + '...' : (item.content || '');
 
             html += `
-                <tr class="component-table-row">
+                <tr class="component-table-row component-table-row--clickable ${isSelected ? 'selected' : ''}" data-action="selectCannedRow" data-uuid="${item.uuid}">
                     <td>
                         <span class="component-badge component-badge--primary font-mono">/${this._escapeHtml(item.shortcut)}</span>
                     </td>
@@ -175,16 +242,6 @@ export class AdminSupportCannedController {
                     </td>
                     <td>${minLevelBadge}</td>
                     <td>${langBadge}</td>
-                    <td class="text-right">
-                        <div class="component-table-actions">
-                            <button class="component-button component-button--icon component-button--h28" data-action="editCannedResponse" data-uuid="${item.uuid}" type="button">
-                                <span class="material-symbols-rounded">edit</span>
-                            </button>
-                            <button class="component-button component-button--icon component-button--h28 component-button--danger" data-action="deleteCannedResponse" data-uuid="${item.uuid}" type="button">
-                                <span class="material-symbols-rounded">delete</span>
-                            </button>
-                        </div>
-                    </td>
                 </tr>
             `;
         });
@@ -285,6 +342,8 @@ export class AdminSupportCannedController {
 
             if (res && res.success) {
                 showMessage(window.__('msg_support_canned_saved'), 'success');
+                this.selectedUuid = null;
+                this._updateSelectionUI();
                 this._loadCanned();
             } else {
                 showMessage(res && res.message ? res.message : window.__('err_generic'), 'error');
@@ -308,6 +367,8 @@ export class AdminSupportCannedController {
 
             if (res && res.success) {
                 showMessage(window.__('msg_support_canned_deleted'), 'success');
+                this.selectedUuid = null;
+                this._updateSelectionUI();
                 this._loadCanned();
             } else {
                 showMessage(res && res.message ? res.message : window.__('err_generic'), 'error');
