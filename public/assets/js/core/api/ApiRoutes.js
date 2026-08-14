@@ -15,8 +15,7 @@ export const ApiRoutes = {
         GetSessionMessages: 'support.get_session_messages',
         SendMessage: 'support.send_message',
         EndLiveSession: 'support.end_live_session',
-        SubmitFeedback: 'support.submit_feedback',
-        DownloadTranscript: 'support.download_transcript'
+        SubmitFeedback: 'support.submit_feedback'
     },
     Auth: {
         Login: 'auth.login',

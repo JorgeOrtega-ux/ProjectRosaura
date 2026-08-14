@@ -386,12 +386,72 @@ class SupportService {
         ];
     }
 
+    private function processUploadedImages(string $sessionUuid, array $input): array {
+        $uploadedUrls = [];
+        $files = $input['_files'] ?? $_FILES;
+
+        if (empty($files)) {
+            return [];
+        }
+
+        $fileData = null;
+        if (isset($files['images'])) {
+            $fileData = $files['images'];
+        } elseif (isset($files['image'])) {
+            $fileData = $files['image'];
+        } elseif (isset($files['file'])) {
+            $fileData = $files['file'];
+        }
+
+        if (!$fileData) {
+            return [];
+        }
+
+        $uploadDir = 'support/' . $sessionUuid . '/chat/';
+        $maxImages = 5;
+        $maxSizeMb = 10;
+
+        if (is_array($fileData['name'])) {
+            $count = min(count($fileData['name']), $maxImages);
+            for ($i = 0; $i < $count; $i++) {
+                if (empty($fileData['name'][$i])) continue;
+                if (($fileData['error'][$i] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                    $singleFile = [
+                        'name' => $fileData['name'][$i],
+                        'type' => $fileData['type'][$i] ?? '',
+                        'tmp_name' => $fileData['tmp_name'][$i],
+                        'error' => $fileData['error'][$i],
+                        'size' => $fileData['size'][$i] ?? 0
+                    ];
+
+                    $uploadResult = Utils::uploadAndSanitizeImage($singleFile, $uploadDir, $maxSizeMb);
+                    if (!empty($uploadResult['success']) && !empty($uploadResult['file_name'])) {
+                        $uploadedUrls[] = Utils::getS3PublicUrl($uploadDir . $uploadResult['file_name']);
+                    }
+                }
+            }
+        } else {
+            if (($fileData['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                $uploadResult = Utils::uploadAndSanitizeImage($fileData, $uploadDir, $maxSizeMb);
+                if (!empty($uploadResult['success']) && !empty($uploadResult['file_name'])) {
+                    $uploadedUrls[] = Utils::getS3PublicUrl($uploadDir . $uploadResult['file_name']);
+                }
+            }
+        }
+
+        return $uploadedUrls;
+    }
+
     public function sendMessage(array $input): array {
         $sessionUuid = trim($input['session_uuid'] ?? '');
         $message = trim($input['message'] ?? '');
-        $attachments = isset($input['attachments']) && is_array($input['attachments']) ? $input['attachments'] : null;
 
-        if (empty($sessionUuid) || empty($message)) {
+        $uploadedAttachments = $this->processUploadedImages($sessionUuid, $input);
+        $existingAttachments = isset($input['attachments']) && is_array($input['attachments']) ? $input['attachments'] : [];
+        $allAttachments = array_merge($existingAttachments, $uploadedAttachments);
+        $attachments = !empty($allAttachments) ? $allAttachments : null;
+
+        if (empty($sessionUuid) || (empty($message) && empty($attachments))) {
             return [
                 'success' => false,
                 'message' => __('err_support_invalid_message')
@@ -451,7 +511,8 @@ class SupportService {
             'session_uuid' => $sessionUuid,
             'sender_type' => 'user',
             'sender_name' => $userName,
-            'text' => $message
+            'text' => $message,
+            'attachments' => $attachments
         ]);
 
         return [
@@ -567,56 +628,5 @@ class SupportService {
         } catch (\Throwable $e) {
             Logger::error("Failed to publish support event to Redis: " . $e->getMessage());
         }
-    }
-
-    public function downloadTranscript(array $input): array {
-        $sessionUuid = trim($input['session_uuid'] ?? '');
-        if (empty($sessionUuid)) {
-            return [
-                'success' => false,
-                'message' => __('err_invalid_request')
-            ];
-        }
-
-        $session = $this->supportRepo->findSessionByUuid($sessionUuid);
-        if (!$session) {
-            return [
-                'success' => false,
-                'message' => __('err_support_session_not_found')
-            ];
-        }
-
-        if (!$this->canAccessSupportSession($session)) {
-            return [
-                'success' => false,
-                'message' => __('err_unauthorized')
-            ];
-        }
-
-        $messages = $this->supportRepo->getSessionMessages($sessionUuid, false);
-
-        $lines = [];
-        $lines[] = "=== ROSAURA SUPPORT CHAT TRANSCRIPT ===";
-        $lines[] = "Session ID: " . $session['uuid'];
-        $lines[] = "Subject: " . $session['subject'];
-        $lines[] = "Category: " . $session['category'];
-        $lines[] = "Started: " . $session['started_at'];
-        $lines[] = "Closed: " . ($session['closed_at'] ?? 'N/A');
-        $lines[] = "----------------------------------------\n";
-
-        foreach ($messages as $msg) {
-            $sender = $msg['sender_name'] . ' (' . strtoupper($msg['sender_type']) . ')';
-            $time = $msg['created_at'];
-            $text = $msg['message'];
-            $lines[] = "[$time] $sender:\n$text\n";
-        }
-
-        $content = implode("\n", $lines);
-
-        return [
-            'success' => true,
-            'filename' => 'support_transcript_' . substr($sessionUuid, 0, 8) . '.txt',
-            'content' => $content
-        ];
     }
 }

@@ -2281,10 +2281,6 @@ export const ModalTemplates = {
                         <button class="component-button component-button--dark component-button--h40 component-button--full" data-action="submitModalCsatFeedback" type="button">
                             <span>${__('btn_submit_feedback')}</span>
                         </button>
-                        <button class="component-button component-button--h40 component-button--full" data-action="downloadSupportTranscript" type="button">
-                            <span class="material-symbols-rounded">download</span>
-                            <span>${__('btn_download_transcript')}</span>
-                        </button>
                     </div>
                 </div>
             `;

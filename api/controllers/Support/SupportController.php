@@ -67,12 +67,4 @@ class SupportController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
-
-    public function downloadTranscript($input) {
-        try {
-            return $this->respond($this->supportService->downloadTranscript($input));
-        } catch (\Throwable $e) {
-            return $this->handleException($e, __FUNCTION__);
-        }
-    }
 }

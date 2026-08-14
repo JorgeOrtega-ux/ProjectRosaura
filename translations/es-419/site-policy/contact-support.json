@@ -50,6 +50,7 @@
     "msg_support_feedback_received": "¡Gracias por tus comentarios! Nos ayudan a mejorar.",
     "err_support_chat_start_failed": "No fue posible iniciar la sesión de chat. Intenta de nuevo más tarde.",
     "err_support_feedback_failed": "Error al registrar tu calificación.",
+    "err_support_max_images_exceeded": "Máximo 5 imágenes permitidas por mensaje.",
     "err_support_message_send_failed": "No se pudo enviar el mensaje.",
     "msg_support_ticket_created": "¡Tu solicitud de soporte ha sido enviada con éxito! Referencia del ticket: {uuid}",
     "err_support_login_required": "Debes iniciar sesión para contactar con soporte.",

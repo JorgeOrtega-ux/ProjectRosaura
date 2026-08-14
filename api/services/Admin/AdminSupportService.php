@@ -345,6 +345,62 @@ class AdminSupportService {
         ];
     }
 
+    private function processUploadedImages(string $sessionUuid, array $input): array {
+        $uploadedUrls = [];
+        $files = $input['_files'] ?? $_FILES;
+
+        if (empty($files)) {
+            return [];
+        }
+
+        $fileData = null;
+        if (isset($files['images'])) {
+            $fileData = $files['images'];
+        } elseif (isset($files['image'])) {
+            $fileData = $files['image'];
+        } elseif (isset($files['file'])) {
+            $fileData = $files['file'];
+        }
+
+        if (!$fileData) {
+            return [];
+        }
+
+        $uploadDir = 'support/' . $sessionUuid . '/chat/';
+        $maxImages = 5;
+        $maxSizeMb = 10;
+
+        if (is_array($fileData['name'])) {
+            $count = min(count($fileData['name']), $maxImages);
+            for ($i = 0; $i < $count; $i++) {
+                if (empty($fileData['name'][$i])) continue;
+                if (($fileData['error'][$i] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                    $singleFile = [
+                        'name' => $fileData['name'][$i],
+                        'type' => $fileData['type'][$i] ?? '',
+                        'tmp_name' => $fileData['tmp_name'][$i],
+                        'error' => $fileData['error'][$i],
+                        'size' => $fileData['size'][$i] ?? 0
+                    ];
+
+                    $uploadResult = Utils::uploadAndSanitizeImage($singleFile, $uploadDir, $maxSizeMb);
+                    if (!empty($uploadResult['success']) && !empty($uploadResult['file_name'])) {
+                        $uploadedUrls[] = Utils::getS3PublicUrl($uploadDir . $uploadResult['file_name']);
+                    }
+                }
+            }
+        } else {
+            if (($fileData['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                $uploadResult = Utils::uploadAndSanitizeImage($fileData, $uploadDir, $maxSizeMb);
+                if (!empty($uploadResult['success']) && !empty($uploadResult['file_name'])) {
+                    $uploadedUrls[] = Utils::getS3PublicUrl($uploadDir . $uploadResult['file_name']);
+                }
+            }
+        }
+
+        return $uploadedUrls;
+    }
+
     public function sendAgentMessage(array $input): array {
         $agentId = $this->getCurrentAgentId();
         if (!$agentId || !$this->hasPermission(PC::ACCESS_SUPPORT_PANEL)) {
@@ -353,9 +409,13 @@ class AdminSupportService {
 
         $sessionUuid = trim($input['session_uuid'] ?? '');
         $message = trim($input['message'] ?? '');
-        $attachments = isset($input['attachments']) && is_array($input['attachments']) ? $input['attachments'] : null;
 
-        if (empty($sessionUuid) || empty($message)) {
+        $uploadedAttachments = $this->processUploadedImages($sessionUuid, $input);
+        $existingAttachments = isset($input['attachments']) && is_array($input['attachments']) ? $input['attachments'] : [];
+        $allAttachments = array_merge($existingAttachments, $uploadedAttachments);
+        $attachments = !empty($allAttachments) ? $allAttachments : null;
+
+        if (empty($sessionUuid) || (empty($message) && empty($attachments))) {
             return ['success' => false, 'message' => __('err_support_invalid_message')];
         }
 
@@ -378,7 +438,11 @@ class AdminSupportService {
 
         $this->publishSupportEvent('new_message', $sessionUuid, [
             'message' => $created,
-            'session_uuid' => $sessionUuid
+            'session_uuid' => $sessionUuid,
+            'sender_type' => 'agent',
+            'sender_name' => $agentName,
+            'text' => $message,
+            'attachments' => $attachments
         ]);
 
         return [

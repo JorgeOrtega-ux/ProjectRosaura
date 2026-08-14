@@ -1,6 +1,7 @@
 import { ApiRoutes, WsConfig } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { restoreButton, setButtonLoading, showMessage } from '../../core/utils/uiUtils.js';
+import { ImageViewerSystem } from '../../core/components/ImageViewerSystem.js';
 
 export class ContactSupportController {
     constructor() {
@@ -11,6 +12,7 @@ export class ContactSupportController {
         this.activeSessionUuid = null;
         this.csatSessionUuid = null;
         this.currentRating = 5;
+        this.selectedFiles = [];
 
         this.ws = null;
         this.wsReconnectTimeout = null;
@@ -25,6 +27,8 @@ export class ContactSupportController {
         this._boundClick = this.handleClick.bind(this);
         this._boundKeydown = this.handleKeydown.bind(this);
         this._boundInput = this.handleInput.bind(this);
+        this._boundChange = this.handleChange.bind(this);
+        this._boundPaste = this.handlePaste.bind(this);
     }
 
     init() {
@@ -42,12 +46,16 @@ export class ContactSupportController {
         document.body.addEventListener('click', this._boundClick);
         document.body.addEventListener('keydown', this._boundKeydown);
         document.body.addEventListener('input', this._boundInput);
+        document.body.addEventListener('change', this._boundChange);
+        document.body.addEventListener('paste', this._boundPaste);
     }
 
     unbindEvents() {
         document.body.removeEventListener('click', this._boundClick);
         document.body.removeEventListener('keydown', this._boundKeydown);
         document.body.removeEventListener('input', this._boundInput);
+        document.body.removeEventListener('change', this._boundChange);
+        document.body.removeEventListener('paste', this._boundPaste);
     }
 
     destroy() {
@@ -547,10 +555,34 @@ export class ContactSupportController {
             return;
         }
 
-        const downloadBtn = e.target.closest('[data-action="downloadSupportTranscript"]');
-        if (downloadBtn) {
+        const triggerAttach = e.target.closest('[data-action="triggerSupportChatAttach"]');
+        if (triggerAttach) {
             e.preventDefault();
-            this._downloadTranscript();
+            const fileInput = document.getElementById('support-chat-file-input');
+            if (fileInput) fileInput.click();
+            const dropdown = triggerAttach.closest('.chat-dropdown-module');
+            if (dropdown) {
+                dropdown.classList.remove('active');
+                dropdown.classList.add('disabled');
+            }
+            return;
+        }
+
+        const removeAttachBtn = e.target.closest('[data-action="removeSupportChatAttachment"]');
+        if (removeAttachBtn) {
+            e.preventDefault();
+            const index = parseInt(removeAttachBtn.getAttribute('data-index') || '0', 10);
+            this._removeAttachment(index);
+            return;
+        }
+
+        const viewImageItem = e.target.closest('[data-action="viewSupportChatImage"]');
+        if (viewImageItem) {
+            e.preventDefault();
+            const url = viewImageItem.getAttribute('data-image-url') || viewImageItem.querySelector('img')?.src;
+            if (url) {
+                ImageViewerSystem.show(url);
+            }
             return;
         }
 
@@ -559,6 +591,104 @@ export class ContactSupportController {
                 d.classList.remove('active');
                 d.classList.add('disabled');
             });
+        }
+    }
+
+    handleChange(e) {
+        if (e.target && e.target.id === 'support-chat-file-input') {
+            if (e.target.files && e.target.files.length > 0) {
+                this._handleFileSelection(e.target.files);
+            }
+            e.target.value = '';
+        }
+    }
+
+    handlePaste(e) {
+        const input = document.querySelector('[data-ref="support-chat-input-text"]');
+        if (!input || document.activeElement !== input) return;
+
+        if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
+            const imageFiles = Array.from(e.clipboardData.files).filter(f => f.type.startsWith('image/'));
+            if (imageFiles.length > 0) {
+                e.preventDefault();
+                this._handleFileSelection(imageFiles);
+            }
+        }
+    }
+
+    _handleFileSelection(files) {
+        const maxFiles = 5;
+        const maxMb = 10;
+        const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (this.selectedFiles.length >= maxFiles) {
+                showMessage(window.__('err_support_max_images_exceeded', [], 'Máximo 5 imágenes permitidas'), 'warning');
+                break;
+            }
+            if (!allowed.includes(file.type)) {
+                showMessage(window.__('upload.invalid_format', [], 'Formato de imagen no permitido'), 'error');
+                continue;
+            }
+            if (file.size > maxMb * 1024 * 1024) {
+                showMessage(window.__('upload.size_exceeded', [], 'La imagen supera los 10MB'), 'error');
+                continue;
+            }
+            this.selectedFiles.push(file);
+        }
+
+        this._renderAttachmentPreviews();
+    }
+
+    _renderAttachmentPreviews() {
+        const previewContainer = document.querySelector('[data-ref="support-chat-attachments-preview"]');
+        if (!previewContainer) return;
+
+        if (this.selectedFiles.length === 0) {
+            previewContainer.innerHTML = '';
+            previewContainer.classList.remove('active');
+            previewContainer.classList.add('disabled');
+            return;
+        }
+
+        previewContainer.classList.remove('disabled');
+        previewContainer.classList.add('active');
+        previewContainer.innerHTML = '';
+
+        this.selectedFiles.forEach((file, index) => {
+            const card = document.createElement('div');
+            card.className = 'chat-attachment-preview-card component-skeleton';
+
+            const img = document.createElement('img');
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.2s ease';
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                img.src = e.target.result;
+                card.classList.remove('component-skeleton');
+                img.style.opacity = '1';
+            };
+            reader.readAsDataURL(file);
+
+            const btn = document.createElement('button');
+            btn.className = 'remove-btn';
+            btn.type = 'button';
+            btn.setAttribute('data-action', 'removeSupportChatAttachment');
+            btn.setAttribute('data-index', index.toString());
+            btn.innerHTML = '<span class="material-symbols-rounded">close</span>';
+
+            card.appendChild(img);
+            card.appendChild(btn);
+            previewContainer.appendChild(card);
+        });
+    }
+
+    _removeAttachment(index) {
+        if (index >= 0 && index < this.selectedFiles.length) {
+            this.selectedFiles.splice(index, 1);
+            this._renderAttachmentPreviews();
         }
     }
 
@@ -902,6 +1032,33 @@ export class ContactSupportController {
                 return;
             }
 
+            let attachmentsHtml = '';
+            if (msg.attachments && Array.isArray(msg.attachments) && msg.attachments.length > 0) {
+                const count = msg.attachments.length;
+                let gridClass = 'chat-attachment-grid-more';
+                if (count === 1) gridClass = 'chat-attachment-grid-1';
+                else if (count === 2) gridClass = 'chat-attachment-grid-2';
+                else if (count === 3) gridClass = 'chat-attachment-grid-3';
+                else if (count === 4) gridClass = 'chat-attachment-grid-4';
+
+                attachmentsHtml = `<div class="chat-message-attachments ${gridClass}">`;
+                const displayCount = Math.min(count, 4);
+                for (let i = 0; i < displayCount; i++) {
+                    const url = msg.attachments[i];
+                    let overlay = '';
+                    if (i === 3 && count > 4) {
+                        overlay = `<div class="chat-attachment-item-overlay">+${count - 4}</div>`;
+                    }
+                    attachmentsHtml += `
+                        <div class="chat-attachment-item" data-action="viewSupportChatImage" data-image-url="${this._escapeHtml(url)}">
+                            <img src="${this._escapeHtml(url)}" alt="Attachment" loading="lazy" />
+                            ${overlay}
+                        </div>
+                    `;
+                }
+                attachmentsHtml += `</div>`;
+            }
+
             if (msg.sender_type === 'system') {
                 html += `
                     <div class="chat-message chat-message--status">
@@ -909,11 +1066,15 @@ export class ContactSupportController {
                             <span class="material-symbols-rounded">info</span>
                             <span>${this._escapeHtml(msg.message)}</span>
                         </div>
+                        ${attachmentsHtml}
                     </div>
                 `;
             } else {
                 const isMine = msg.sender_type === 'user';
                 const senderClass = isMine ? 'chat-message--mine' : '';
+                const msgTextHtml = msg.message && msg.message.trim().length > 0
+                    ? `<div class="chat-message-text">${this._escapeHtml(msg.message)}</div>`
+                    : '';
                 html += `
                     <div class="chat-message ${senderClass}">
                         <div class="chat-message-bubble">
@@ -921,7 +1082,8 @@ export class ContactSupportController {
                                 <span class="chat-message-username">${this._escapeHtml(msg.sender_name)}</span>
                                 <span class="chat-message-time">${msg.created_at || ''}</span>
                             </div>
-                            <div class="chat-message-text">${this._escapeHtml(msg.message)}</div>
+                            ${msgTextHtml}
+                            ${attachmentsHtml}
                         </div>
                     </div>
                 `;
@@ -934,18 +1096,35 @@ export class ContactSupportController {
 
     async _sendChatMessage() {
         const input = document.querySelector('[data-ref="support-chat-input-text"]');
-        if (!input || !this.activeSessionUuid) return;
+        if (!this.activeSessionUuid) return;
 
-        const text = input.value.trim();
-        if (!text) return;
+        const text = input ? input.value.trim() : '';
+        const hasFiles = this.selectedFiles && this.selectedFiles.length > 0;
 
-        input.value = '';
+        if (!text && !hasFiles) return;
+
+        const filesToSend = [...this.selectedFiles];
+        this.selectedFiles = [];
+        this._renderAttachmentPreviews();
+
+        if (input) input.value = '';
 
         try {
-            const res = await this.api.post(ApiRoutes.Support.SendMessage, {
-                session_uuid: this.activeSessionUuid,
-                message: text
-            }, this.abortController ? this.abortController.signal : undefined);
+            let res;
+            if (hasFiles) {
+                const formData = new FormData();
+                formData.append('session_uuid', this.activeSessionUuid);
+                formData.append('message', text);
+                filesToSend.forEach(file => {
+                    formData.append('images[]', file);
+                });
+                res = await this.api.postForm(ApiRoutes.Support.SendMessage, formData, this.abortController ? this.abortController.signal : undefined);
+            } else {
+                res = await this.api.post(ApiRoutes.Support.SendMessage, {
+                    session_uuid: this.activeSessionUuid,
+                    message: text
+                }, this.abortController ? this.abortController.signal : undefined);
+            }
 
             if (res && res.success) {
                 this._loadMessages();
@@ -980,6 +1159,8 @@ export class ContactSupportController {
     _cleanupEndedSession() {
         this.csatSessionUuid = this.activeSessionUuid;
         this.activeSessionUuid = null;
+        this.selectedFiles = [];
+        this._renderAttachmentPreviews();
         localStorage.removeItem('pr_active_support_session');
 
         if (this.ws) {
@@ -1080,31 +1261,6 @@ export class ContactSupportController {
 
     async _submitCsatFeedback(btn) {
         return this._submitModalCsatFeedback(btn);
-    }
-
-    async _downloadTranscript() {
-        const targetUuid = this.csatSessionUuid || this.activeSessionUuid;
-        if (!targetUuid) return;
-
-        try {
-            const res = await this.api.post(ApiRoutes.Support.DownloadTranscript, {
-                session_uuid: targetUuid
-            }, this.abortController ? this.abortController.signal : undefined);
-
-            if (res && res.success && res.content) {
-                const blob = new Blob([res.content], { type: 'text/plain;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = res.filename || 'support_transcript.txt';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }
-        } catch (error) {
-            if (error.name === 'AbortError') return;
-        }
     }
 
     async _submitTicket(btn) {

@@ -223,7 +223,7 @@ class SupportRepository implements SupportRepositoryInterface {
     public function getSessionsByUser(int $userId, int $limit = 5): array {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT scs.id, scs.uuid, scs.category, scs.priority, scs.status, scs.created_at, scs.ended_at
+                SELECT scs.id, scs.uuid, scs.category, scs.priority, scs.status, scs.created_at, scs.closed_at
                 FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
                 WHERE scs.user_id = :user_id
                 ORDER BY scs.created_at DESC

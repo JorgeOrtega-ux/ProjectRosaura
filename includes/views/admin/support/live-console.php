@@ -259,6 +259,7 @@ if (!empty($chatUuid)) {
                 </div>
 
                 <div class="component-chat-footer disabled" data-ref="admin-support-chat-footer">
+                    <div class="chat-attachments-preview-container disabled" data-ref="admin-support-chat-attachments-preview"></div>
                     <div class="component-search component-search--full component-search--radius-50">
                         <div class="component-search-input">
                             <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
@@ -289,6 +290,11 @@ if (!empty($chatUuid)) {
                                     </div>
                                 </div>
                             </div>
+
+                            <button class="component-button component-button--icon component-button--h32" data-action="triggerAdminChatAttach" data-tooltip="<?php echo __('chat_attach_photos', [], 'Adjuntar imágenes'); ?>" data-position="top" type="button">
+                                <span class="material-symbols-rounded">attach_file</span>
+                            </button>
+                            <input id="admin-support-chat-file-input" class="disabled" type="file" multiple accept="image/jpeg, image/png, image/webp, image/gif">
 
                             <button class="component-button component-button--icon component-button--h32" data-action="toggleInternalNoteMode" data-ref="btn-toggle-internal-note" data-tooltip="<?php echo __('tooltip_toggle_internal_note'); ?>" data-position="top" type="button">
                                 <span class="material-symbols-rounded msr-sticky_note_2">sticky_note_2</span>

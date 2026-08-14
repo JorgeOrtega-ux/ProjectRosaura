@@ -115,22 +115,6 @@ return [
             ],
         ],
     ],
-    'support.download_transcript' => [
-        'controller' => 'App\\Api\\Controllers\\Support\\SupportController',
-        'action' => 'downloadTranscript',
-        'middleware' => [
-            [
-                'type' => 'Telemetry',
-            ],
-            [
-                'type' => 'RateLimit',
-                'key' => 'support_transcript',
-                'max' => 20,
-                'time' => 5,
-                'identifier' => 'ip',
-            ],
-        ],
-    ],
     'chat.history' => [
         'controller' => 'App\\Api\\Controllers\\Chat\\ChatController',
         'action' => 'history',

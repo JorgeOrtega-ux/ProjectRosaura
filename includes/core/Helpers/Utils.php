@@ -443,11 +443,15 @@ class Utils {
         $mime = finfo_file($finfo, $file['tmp_name']);
         finfo_close($finfo);
 
-        if ($mime !== 'image/png' && $mime !== 'image/jpeg') {
+        if ($mime !== 'image/png' && $mime !== 'image/jpeg' && $mime !== 'image/webp') {
             return ['success' => false, 'message_key' => 'upload.invalid_format'];
         }
 
-        $fileName = self::generateUUID() . (($mime === 'image/png') ? '.png' : '.jpg');
+        $extension = '.jpg';
+        if ($mime === 'image/png') $extension = '.png';
+        elseif ($mime === 'image/webp') $extension = '.webp';
+
+        $fileName = self::generateUUID() . $extension;
         $imageRecreated = false;
         $imageContent = null;
 
@@ -478,6 +482,23 @@ class Utils {
                 }
             } catch (\Throwable $e) {
                 \App\Core\System\Logger::error('Image processing failed', ['format' => 'jpeg', 'exception' => $e->getMessage()]);
+            }
+        } elseif ($mime === 'image/webp' && function_exists('imagecreatefromwebp')) {
+            try {
+                $sourceImage = imagecreatefromwebp($file['tmp_name']);
+                if ($sourceImage !== false) {
+                    imagealphablending($sourceImage, false);
+                    imagesavealpha($sourceImage, true);
+                    ob_start();
+                    if (function_exists('imagewebp')) {
+                        imagewebp($sourceImage, null, 90);
+                    }
+                    $imageContent = ob_get_clean();
+                    imagedestroy($sourceImage);
+                    $imageRecreated = true;
+                }
+            } catch (\Throwable $e) {
+                \App\Core\System\Logger::error('Image processing failed', ['format' => 'webp', 'exception' => $e->getMessage()]);
             }
         }
 

@@ -89,6 +89,7 @@
             
             <!-- Barra de entrada de texto -->
             <div class="component-menu-bottom component-chat-input-area" data-ref="support-chat-room-footer">
+                <div class="chat-attachments-preview-container disabled" data-ref="support-chat-attachments-preview"></div>
                 <div class="component-search component-search--w-auto">
                     <div class="component-search-input">
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
