@@ -242,16 +242,16 @@ export class MainController {
         this.toastSystem.show(message, type);
     }
 
-    toggleModule(moduleName) {
-        this.moduleManager.toggle(moduleName);
+    toggleModule(moduleName, triggerEl = null) {
+        this.moduleManager.toggle(moduleName, triggerEl);
     }
 
     closeModule(moduleEl) {
         this.moduleManager.close(moduleEl);
     }
 
-    closeAllModules() {
-        this.moduleManager.closeAllModules();
+    closeAllModules(except = null) {
+        this.moduleManager.closeAllModules(except);
     }
 
     markBottomSheets() {
@@ -327,7 +327,10 @@ export class MainController {
         
         if (btn) {
             const action = btn.getAttribute('data-action');
-            if (action === 'toggleModule') this.toggleModule(btn.getAttribute('data-target'));
+            if (action === 'toggleModule') {
+                this.toggleModule(btn.getAttribute('data-target'), btn);
+                return;
+            }
 
             else if (action === 'toggleMenuInModule') {
                 e.preventDefault();
@@ -335,6 +338,7 @@ export class MainController {
                     btn.getAttribute('data-module-target'),
                     btn.getAttribute('data-menu-target')
                 );
+                return;
             }
 
             else if (action === 'openFloatingSupportChat') {
@@ -342,6 +346,26 @@ export class MainController {
                 this.moduleManager.toggleMenuInModule('moduleSupportChat', 'menu-support-chat');
                 const fab = document.querySelector('[data-ref="floating-support-btn"]');
                 if (fab) fab.classList.add('disabled');
+                return;
+            }
+
+            else if (action === 'openFilterSubMenu' || action === 'openSubMenu') {
+                e.preventDefault();
+                const targetRef = btn.getAttribute('data-target');
+                const module = btn.closest('.component-module');
+                if (module && targetRef) {
+                    this.moduleManager.showSubMenuInModule(module, targetRef);
+                }
+                return;
+            }
+
+            else if (action === 'backToMainFilters' || action === 'menuGoBack' || action === 'backToMainMenu') {
+                e.preventDefault();
+                const module = btn.closest('.component-module');
+                if (module) {
+                    this.moduleManager.resetToMainMenu(module);
+                }
+                return;
             }
 
             else if (action === 'toggleMobileSearch') this.toggleMobileSearch();
@@ -365,7 +389,12 @@ export class MainController {
             else if (action === 'toggleEditState') this.toggleEditState(btn.getAttribute('data-target'));
             else if (action === 'setPref') {
                 this.savePreference(btn.getAttribute('data-key'), btn.getAttribute('data-value'));
-                this.closeAllModules();
+                const parentMod = btn.closest('.component-module');
+                if (parentMod && parentMod.classList.contains('component-module--dropdown')) {
+                    this.closeModule(parentMod);
+                } else {
+                    this.closeAllModules();
+                }
             }
             return;
         }

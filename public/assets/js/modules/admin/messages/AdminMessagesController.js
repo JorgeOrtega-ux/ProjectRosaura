@@ -45,7 +45,6 @@ class AdminMessagesController {
         if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
         if (backToMainFiltersBtn) {
             e.preventDefault();
-            e.stopPropagation();
             this.backToMainFilters();
         }
 

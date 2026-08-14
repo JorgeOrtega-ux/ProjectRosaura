@@ -340,39 +340,6 @@ export class DesignChat {
             });
 
             document.addEventListener('click', (e) => {
-                const toggleBtn = e.target.closest('[data-action="toggleChatDropdown"]');
-                if (toggleBtn) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    const targetId = toggleBtn.getAttribute('data-target');
-                    const dropdown = document.querySelector(`[data-module="${targetId}"]`);
-                    
-                    if (dropdown) {
-                        document.querySelectorAll('.chat-dropdown-module').forEach(el => {
-                            if (el !== dropdown) {
-                                el.classList.add('disabled');
-                                el.classList.remove('active');
-                            }
-                        });
-                        
-                        if (dropdown.classList.contains('disabled')) {
-                            dropdown.classList.remove('disabled');
-                            dropdown.classList.add('active');
-
-                            const innerMenu = dropdown.querySelector('.component-menu');
-                            if (innerMenu) {
-                                innerMenu.classList.remove('disabled');
-                                innerMenu.classList.add('active');
-                            }
-                        } else {
-                            dropdown.classList.add('disabled');
-                            dropdown.classList.remove('active');
-                        }
-                    }
-                }
-            });
-
-            document.addEventListener('click', (e) => {
                 const attachmentItem = e.target.closest('[data-action="openChatImageViewer"]');
                 if (attachmentItem) {
                     const msgId = attachmentItem.getAttribute('data-message-id');

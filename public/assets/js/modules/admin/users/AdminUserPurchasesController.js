@@ -95,65 +95,8 @@ class AdminUserPurchasesController {
         const deselectBtn = e.target.closest('[data-action="deselectPurchase"]');
         const downloadReceiptBtn = e.target.closest('[data-action="downloadReceipt"]');
         
-        const toggleModuleBtn = e.target.closest('[data-action="toggleModule"]');
-        const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
-        const backToMainBtn = e.target.closest('[data-action="backToMainFilters"]');
-        
         const prevPageBtn = e.target.closest('[data-action="prevPage"]');
         const nextPageBtn = e.target.closest('[data-action="nextPage"]');
-
-        if (toggleModuleBtn) {
-            e.stopPropagation();
-            const targetModuleName = toggleModuleBtn.getAttribute('data-target');
-            if (window.appInstance && typeof window.appInstance.toggleModule === 'function') {
-                window.appInstance.toggleModule(targetModuleName);
-            } else {
-                const module = this.container.querySelector(`[data-module="${targetModuleName}"]`);
-                if (module) {
-                    if (module.classList.contains('active')) {
-                        module.classList.replace('active', 'disabled');
-                    } else {
-                        module.classList.replace('disabled', 'active');
-                    }
-                }
-            }
-            return;
-        }
-
-        if (openSubMenuBtn) {
-            e.stopPropagation();
-            const targetMenuRef = openSubMenuBtn.getAttribute('data-target');
-            const dropdownModule = openSubMenuBtn.closest('.component-module--dropdown');
-            if (dropdownModule) {
-                dropdownModule.querySelectorAll('.component-menu').forEach(m => {
-                    m.classList.remove('active');
-                    m.classList.add('disabled');
-                });
-                const subMenu = dropdownModule.querySelector(`[data-ref="${targetMenuRef}"]`);
-                if (subMenu) {
-                    subMenu.classList.remove('disabled');
-                    subMenu.classList.add('active');
-                }
-            }
-            return;
-        }
-
-        if (backToMainBtn) {
-            e.stopPropagation();
-            const dropdownModule = backToMainBtn.closest('.component-module--dropdown');
-            if (dropdownModule) {
-                dropdownModule.querySelectorAll('.component-menu').forEach(m => {
-                    m.classList.remove('active');
-                    m.classList.add('disabled');
-                });
-                const mainMenu = dropdownModule.querySelector('[data-ref="menuMainFilters"]');
-                if (mainMenu) {
-                    mainMenu.classList.remove('disabled');
-                    mainMenu.classList.add('active');
-                }
-            }
-            return;
-        }
 
         if (prevPageBtn && !prevPageBtn.classList.contains('disabled-interaction')) {
             if (this.currentPage > 1) {
@@ -184,17 +127,6 @@ class AdminUserPurchasesController {
         if (downloadReceiptBtn && !downloadReceiptBtn.classList.contains('disabled-interaction')) {
             this.downloadSelectedDocument(downloadReceiptBtn);
             return;
-        }
-
-        if (!e.target.closest('.component-dropdown-wrapper')) {
-            const dropdownModules = this.container.querySelectorAll('[data-module="modulePurchaseFilters"]');
-            dropdownModules.forEach(m => {
-                if (window.appInstance && typeof window.appInstance.closeModule === 'function') {
-                    window.appInstance.closeModule(m);
-                } else {
-                    m.classList.replace('active', 'disabled');
-                }
-            });
         }
     }
 

@@ -1,6 +1,6 @@
 /**
- * ModuleManager — Gestiona los dropdowns, bottom sheets, y drag-to-close mobile.
- * Extrae la lógica de módulos y gesture handling de MainController.
+ * ModuleManager — Gestiona los dropdowns, sidebars, bottom sheets, navegación de submenús y drag-to-close mobile.
+ * Unifica el ciclo de vida y la jerarquía de módulos (.component-module).
  */
 export class ModuleManager {
     constructor(config = {}) {
@@ -65,17 +65,81 @@ export class ModuleManager {
         }
     }
 
-    // ─── Module open/close ────────────────────────────────────────────────────
+    // ─── Module Resolution ────────────────────────────────────────────────────
 
-    toggle(moduleName) {
-        const moduleEl = document.querySelector(`[data-module="${moduleName}"]`);
-        if (!moduleEl) return;
-        const isCurrentlyActive = !moduleEl.classList.contains('disabled');
-        if (!this.config.allowMultipleModules && !isCurrentlyActive) this.closeAllModules();
-        isCurrentlyActive ? this.close(moduleEl) : this.open(moduleEl);
+    /**
+     * Resuelve el elemento del módulo buscando contextualmente cerca del trigger antes de buscar globalmente.
+     * @param {string|Element} moduleTarget 
+     * @param {Element|null} triggerEl 
+     * @returns {Element|null}
+     */
+    resolveModule(moduleTarget, triggerEl = null) {
+        if (!moduleTarget) return null;
+        if (moduleTarget instanceof Element) return moduleTarget;
+
+        if (triggerEl && triggerEl instanceof Element) {
+            const dropdownWrapper = triggerEl.closest('.component-dropdown-wrapper');
+            if (dropdownWrapper) {
+                const localMod = dropdownWrapper.querySelector(`[data-module="${moduleTarget}"]`);
+                if (localMod) return localMod;
+            }
+
+            const modalBox = triggerEl.closest('.component-modal-box, .component-modal-wrapper');
+            if (modalBox) {
+                const modalMod = modalBox.querySelector(`[data-module="${moduleTarget}"]`);
+                if (modalMod) return modalMod;
+            }
+
+            const parentMod = triggerEl.closest('.component-module');
+            if (parentMod) {
+                const childMod = parentMod.querySelector(`[data-module="${moduleTarget}"]`);
+                if (childMod) return childMod;
+            }
+
+            if (triggerEl.parentElement) {
+                const siblingMod = triggerEl.parentElement.querySelector(`[data-module="${moduleTarget}"]`);
+                if (siblingMod) return siblingMod;
+            }
+        }
+
+        return document.querySelector(`[data-module="${moduleTarget}"]`);
     }
 
-    open(module) {
+    // ─── Module open/close (Hierarchy-Aware) ──────────────────────────────────
+
+    toggle(moduleTarget, triggerEl = null) {
+        const moduleEl = this.resolveModule(moduleTarget, triggerEl);
+        if (!moduleEl) return;
+
+        const isCurrentlyActive = !moduleEl.classList.contains('disabled');
+        if (isCurrentlyActive) {
+            this.close(moduleEl);
+            return;
+        }
+
+        // Obtener la cadena de ancestros directos (.component-module) para no cerrarlos nunca
+        const ancestors = [];
+        let parent = moduleEl.parentElement;
+        while (parent) {
+            if (parent.classList && parent.classList.contains('component-module')) {
+                ancestors.push(parent);
+            }
+            parent = parent.parentElement;
+        }
+
+        // Cerrar otros módulos activos que no sean ancestros ni el módulo actual
+        const activeModules = document.querySelectorAll('.component-module:not(.disabled)');
+        activeModules.forEach(activeMod => {
+            if (activeMod === moduleEl) return;
+            if (ancestors.includes(activeMod)) return; // Conservar sidebar/padre activo
+            if (activeMod.contains(moduleEl)) return;
+            this.close(activeMod);
+        });
+
+        this.open(moduleEl, triggerEl);
+    }
+
+    open(module, triggerEl = null) {
         const mainMenu    = module.querySelector('[data-menu="main-options"]');
         const accountMenu = module.querySelector('[data-menu="account-switcher"]');
 
@@ -86,12 +150,30 @@ export class ModuleManager {
             accountMenu.classList.add('disabled');
         }
 
-        module.classList.replace('disabled', 'active');
+        // Asegurar que al menos un menú interno esté activo si no hay ninguno
+        const activeInnerMenu = module.querySelector('.component-menu.active:not(.disabled)');
+        if (!activeInnerMenu) {
+            const defaultMenu = module.querySelector('.component-menu[data-menu="main-options"]')
+                             || module.querySelector('.component-menu[data-ref="menuMainFilters"]')
+                             || module.querySelector('.component-menu:not(.disabled)')
+                             || module.querySelector('.component-menu');
+            if (defaultMenu) {
+                defaultMenu.classList.remove('disabled');
+                defaultMenu.classList.add('active');
+            }
+        }
+
+        module.classList.remove('disabled');
+        module.classList.add('active');
     }
 
     close(module) {
-        module.classList.replace('active', 'disabled');
+        module.classList.remove('active');
+        module.classList.add('disabled');
         module.querySelectorAll('.component-menu').forEach(p => p.removeAttribute('style'));
+
+        // Cerrar recursivamente cualquier submódulo hijo
+        module.querySelectorAll('.component-module:not(.disabled)').forEach(child => this.close(child));
 
         // Reset internal menu pages to main
         const mainPage = module.querySelector('[data-menu-page="main"]');
@@ -100,14 +182,38 @@ export class ModuleManager {
             mainPage.classList.add('active');
         }
 
+        // Reset submenús a menú principal si existen
+        const mainFilters = module.querySelector('[data-ref="menuMainFilters"], [data-menu="main-options"], [data-ref="menu-main"]');
+        if (mainFilters) {
+            module.querySelectorAll('.component-menu').forEach(m => {
+                if (m !== mainFilters) {
+                    m.classList.remove('active');
+                    m.classList.add('disabled');
+                }
+            });
+            mainFilters.classList.remove('disabled');
+            mainFilters.classList.add('active');
+        }
+
         // Remove dynamic card dropdowns from DOM after close animation
-        if (module.dataset.module?.startsWith('snapshot-menu-') || module.closest('.component-gallery-actions-wrapper')) {
-            setTimeout(() => module.remove(), 250);
+        if (module.dataset.module?.startsWith('snapshot-menu-') || module.closest('.component-gallery-actions-wrapper') || module.classList.contains('dynamic-card-module')) {
+            setTimeout(() => {
+                if (module.parentNode && module.classList.contains('disabled')) {
+                    module.remove();
+                }
+            }, 250);
         }
     }
 
-    closeAllModules() {
-        document.querySelectorAll('.component-module:not(.disabled)').forEach(m => this.close(m));
+    closeAllModules(except = null) {
+        const activeModules = document.querySelectorAll('.component-module:not(.disabled)');
+        activeModules.forEach(m => {
+            if (except) {
+                if (Array.isArray(except) && except.includes(m)) return;
+                if (except === m || (except instanceof Element && except.contains(m))) return;
+            }
+            this.close(m);
+        });
     }
 
     /**
@@ -120,19 +226,32 @@ export class ModuleManager {
     }
 
     /**
-     * Cierra el módulo si el click fue fuera de sus paneles.
-     * Llamar desde el handler global de click del orquestador.
+     * Cierra módulos cuando el click fue fuera de ellos de forma jerárquica y precisa.
      * @param {MouseEvent} e
      */
     handleOutsideClick(e) {
+        if (this.dragState.isDragging) return;
+
         const activeModules = document.querySelectorAll('.component-module:not(.disabled)');
+        if (activeModules.length === 0) return;
+
         activeModules.forEach(module => {
-            if (this.dragState.isDragging) return;
-            let clickedInside = false;
-            module.querySelectorAll('.component-menu').forEach(panel => {
-                if (panel.contains(e.target)) clickedInside = true;
-            });
-            if (!clickedInside) this.close(module);
+            // 1. Click directo dentro del módulo (paneles, contenido, inputs, scrollbar, etc.)
+            if (module.contains(e.target)) return;
+
+            // 2. Click sobre el trigger que conmuta este módulo
+            const moduleName = module.getAttribute('data-module');
+            if (moduleName) {
+                const trigger = e.target.closest(`[data-action="toggleModule"][data-target="${moduleName}"], [data-target="${moduleName}"]`);
+                if (trigger) return;
+            }
+
+            // 3. Click dentro del dropdown wrapper que engloba trigger y módulo
+            const wrapper = module.closest('.component-dropdown-wrapper');
+            if (wrapper && wrapper.contains(e.target)) return;
+
+            // El click fue efectivamente fuera de este módulo -> cerrar
+            this.close(module);
         });
     }
 
@@ -143,6 +262,34 @@ export class ModuleManager {
         if (currentMenu && targetMenu) {
             currentMenu.classList.replace('active', 'disabled');
             targetMenu.classList.replace('disabled', 'active');
+        }
+    }
+
+    showSubMenuInModule(module, targetMenuName) {
+        if (!module) return;
+        const targetMenu = module.querySelector(`[data-ref="${targetMenuName}"], [data-menu="${targetMenuName}"]`);
+        if (targetMenu) {
+            module.querySelectorAll('.component-menu').forEach(m => {
+                m.classList.remove('active');
+                m.classList.add('disabled');
+            });
+            targetMenu.classList.remove('disabled');
+            targetMenu.classList.add('active');
+        }
+    }
+
+    resetToMainMenu(module) {
+        if (!module) return;
+        const mainFilters = module.querySelector('[data-ref="menuMainFilters"], [data-menu="main-options"], [data-ref="menu-main"]');
+        if (mainFilters) {
+            module.querySelectorAll('.component-menu').forEach(m => {
+                if (m !== mainFilters) {
+                    m.classList.remove('active');
+                    m.classList.add('disabled');
+                }
+            });
+            mainFilters.classList.remove('disabled');
+            mainFilters.classList.add('active');
         }
     }
 

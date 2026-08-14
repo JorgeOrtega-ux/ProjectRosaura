@@ -80,7 +80,6 @@ class AdminUsersController {
         if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
         if (backToMainFiltersBtn) {
             e.preventDefault();
-            e.stopPropagation();
             this.backToMainFilters();
         }
         if (selectTargetRow && !e.target.closest('button') && !e.target.closest('.component-dropdown-wrapper')) {

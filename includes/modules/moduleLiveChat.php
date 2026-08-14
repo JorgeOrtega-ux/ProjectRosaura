@@ -20,7 +20,7 @@ $maxMB = $maxUploadMB ?? 10;
                 <div class="chat-active-only">
                     <?php if (isset($isOwner) && $isOwner): ?>
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
-                        <button class="component-button component-button--icon component-button--h32" data-action="toggleChatDropdown" data-target="chat-options-menu">
+                        <button class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="chat-options-menu">
                             <span class="material-symbols-rounded">more_vert</span>
                         </button>
                         <div class="component-module component-module--dropdown component-module--dropdown-bottom component-module--dropdown-right chat-dropdown-module disabled" data-module="chat-options-menu">
@@ -70,7 +70,7 @@ $maxMB = $maxUploadMB ?? 10;
                     <div class="component-search-input <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled-interaction' : ''; ?>">
                         
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
-                            <button class="component-chat-attach-btn" data-action="toggleChatDropdown" data-target="chat-attach-menu" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
+                            <button class="component-chat-attach-btn" data-action="toggleModule" data-target="chat-attach-menu" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
                                 <span class="material-symbols-rounded">add</span>
                             </button>
                             <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-right component-module--dropdown-fixed chat-dropdown-module disabled" data-module="chat-attach-menu">

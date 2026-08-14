@@ -108,7 +108,6 @@ class AdminLogsController {
         if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
         if (backToMainFiltersBtn) {
             e.preventDefault();
-            e.stopPropagation();
             this.backToMainFilters();
         }
         if (selectTarget && !e.target.closest('button') && !e.target.closest('.component-dropdown-wrapper')) {

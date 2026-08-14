@@ -301,6 +301,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         
 
         window.APP_USER = {
+            id: <?php echo isset($_SESSION['active_account']) ? json_encode((string)$_SESSION['active_account']) : 'null'; ?>,
             subscription_tier: <?php echo $subscriptionTier; ?>,
             is_google: <?php echo $isGoogleUser ? 'true' : 'false'; ?>,
             email: <?php echo json_encode($userEmail); ?>

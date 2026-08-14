@@ -308,7 +308,7 @@ export class ContactSupportController {
         const openLiveChatModalBtn = e.target.closest('[data-action="openStartLiveChatModal"]');
         if (openLiveChatModalBtn) {
             e.preventDefault();
-            const isUserLoggedIn = !!(window.APP_USER && window.APP_USER.id);
+            const isUserLoggedIn = !!(window.activeUserId || (window.APP_USER && window.APP_USER.id));
             if (!isUserLoggedIn) {
                 const loginUrl = window.APP_CONFIG?.APP_URL ? `${window.APP_CONFIG.APP_URL}/login` : '/login';
                 if (window.spaRouter) {
@@ -343,7 +343,7 @@ export class ContactSupportController {
             e.preventDefault();
             if (window.modalSystem) {
                 window.modalSystem.closeCurrent();
-                const isUserLoggedIn = !!(window.APP_USER && window.APP_USER.id);
+                const isUserLoggedIn = !!(window.activeUserId || (window.APP_USER && window.APP_USER.id));
                 if (isUserLoggedIn) {
                     setTimeout(() => {
                         window.modalSystem.show('createSupportTicketModal');
