@@ -1,6 +1,7 @@
 {
     "route_admin_dashboard": "Panel de control",
     "route_admin_users": "Gestionar usuarios",
+    "route_admin_user_purchases": "Compras del usuario",
     "route_admin_edit_user": "Editar cuenta de usuario",
     "route_admin_edit_role": "Editar rol de usuario",
     "route_admin_edit_status": "Editar estado de usuario",
@@ -113,6 +114,8 @@
     "tooltip_manage_account": "Gestionar cuenta",
     "tooltip_manage_role": "Gestionar rol",
     "tooltip_manage_status": "Gestionar estado",
+    "tooltip_manage_purchases": "Gestionar compras",
+    "admin_user_purchases_title": "Historial de compras",
     "search_user_placeholder": "Buscar usuario...",
     "empty_search_users": "No hay usuarios que coincidan con la búsqueda.",
     "empty_users_system": "El sistema no tiene usuarios registrados.",

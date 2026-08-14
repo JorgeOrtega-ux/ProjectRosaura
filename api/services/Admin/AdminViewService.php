@@ -136,6 +136,7 @@ class AdminViewService {
         $canDeleteUsers = in_array(PermissionsConstants::DELETE_USERS, $userPerms) || $isSuperAdmin;
         $canModerateUsers = count(array_intersect([PermissionsConstants::MODERATE_USERS, PermissionsConstants::DELETE_USERS], $userPerms)) > 0;
         $canViewKardex = in_array(PermissionsConstants::VIEW_KARDEX, $userPerms);
+        $canViewUserPurchases = in_array(PermissionsConstants::VIEW_USER_PURCHASES, $userPerms);
 
         $limit = 25;
         if ($page < 1) $page = 1;
@@ -286,6 +287,7 @@ class AdminViewService {
             'canDeleteUsers' => $canDeleteUsers,
             'canModerateUsers' => $canModerateUsers,
             'canViewKardex' => $canViewKardex,
+            'canViewUserPurchases' => $canViewUserPurchases,
             'isSuperAdmin' => $isSuperAdmin,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
@@ -511,9 +513,50 @@ class AdminViewService {
         ];
     }
 
-    /**
+    public function getUserPurchasesData(?string $targetUserUuid, int $page = 1): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
 
-     */
+        if (empty($targetUserUuid)) {
+            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/users"];
+        }
+
+        $db = $this->dbManager;
+        $redis = new RedisCache();
+        $roleRepo = new RoleRepository($db, $redis);
+        $userRepo = new UserRepository($db, $roleRepo);
+        $targetUser = $userRepo->findByUuid($targetUserUuid);
+
+        if (!$targetUser) {
+            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/users"];
+        }
+
+        $targetUserId = (int)$targetUser['id'];
+
+        $history = [];
+        try {
+            global $container;
+            if (isset($container) && $container instanceof \App\Core\Container) {
+                $stripeServices = $container->get(\App\Api\Services\Stripe\StripeServices::class);
+                $history = $stripeServices->getPaymentHistoryForUser($targetUserId, ['limit' => 100, 'offset' => 0]);
+            }
+        } catch (\Throwable $e) {
+            Logger::error("getUserPurchasesData error: " . $e->getMessage(), ['exception' => $e]);
+        }
+
+        $roleColorRaw = $targetUser['subscription_color'] ?? ($targetUser['role_color'] ?? '');
+        $roleBgCss = self::parseSubscriptionColor($roleColorRaw);
+
+        return [
+            'redirect' => null,
+            'targetUser' => $targetUser,
+            'targetUserId' => $targetUserId,
+            'targetUserUuid' => $targetUserUuid,
+            'history' => $history,
+            'roleBgCss' => $roleBgCss,
+            'appUrl' => defined('APP_URL') ? APP_URL : ''
+        ];
+    }
+
     public function getManageSubscriptionsData(?string $searchQuery, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 

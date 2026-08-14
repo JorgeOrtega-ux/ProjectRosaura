@@ -25,7 +25,7 @@ $categories = [
     'users' => [
         'title' => __('perm_cat_users', [], 'Usuarios'),
         'icon' => 'group',
-        'perms' => ['view_users', 'edit_users', 'moderate_users', 'delete_users', 'view_kardex', 'manage_kardex']
+        'perms' => ['view_users', 'edit_users', 'moderate_users', 'delete_users', 'view_kardex', 'manage_kardex', 'view_user_purchases']
     ],
     'roles' => [
         'title' => __('perm_cat_roles', [], 'Roles'),

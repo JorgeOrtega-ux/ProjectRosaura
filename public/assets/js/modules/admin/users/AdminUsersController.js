@@ -73,6 +73,7 @@ class AdminUsersController {
         const editRoleBtn = e.target.closest('[data-action="editSelectedUserRole"]');
         const editStatusBtn = e.target.closest('[data-action="editSelectedUserStatus"]');
         const viewHistoryBtn = e.target.closest('[data-action="viewUserHistory"]');
+        const viewPurchasesBtn = e.target.closest('[data-action="viewUserPurchases"]');
         const deleteUsersBtn = e.target.closest('[data-action="deleteSelectedUsers"]');
         if (searchBtn) this.toggleSearchToolbar();
         if (toggleFiltersBtn) this.toggleFiltersModule();
@@ -90,6 +91,7 @@ class AdminUsersController {
         if (editRoleBtn && !editRoleBtn.classList.contains('disabled-interaction')) this.editSelectedUserRole(editRoleBtn);
         if (editStatusBtn && !editStatusBtn.classList.contains('disabled-interaction')) this.editSelectedUserStatus();
         if (viewHistoryBtn && !viewHistoryBtn.classList.contains('disabled-interaction')) this.viewSelectedUserHistory();
+        if (viewPurchasesBtn && !viewPurchasesBtn.classList.contains('disabled-interaction')) this.viewSelectedUserPurchases();
         if (deleteUsersBtn && !deleteUsersBtn.classList.contains('disabled-interaction')) this.deleteSelectedUsers(deleteUsersBtn);
         const submitMultipleRolesUpdateBtn = e.target.closest('[data-action="submitMultipleRolesUpdate"]');
         if (submitMultipleRolesUpdateBtn) {
@@ -241,6 +243,14 @@ class AdminUsersController {
         if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/user-activity/${uuid}`);
         else window.location.href = `${this.basePath}/admin/user-activity/${uuid}`;
     }
+    viewSelectedUserPurchases() {
+        if (this.selectedUserIds.size !== 1) return;
+        const id = Array.from(this.selectedUserIds)[0];
+        const row = document.querySelector(`tr[data-user-id="${id}"]`);
+        const uuid = row ? row.getAttribute('data-user-uuid') : id;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/user-purchases/${uuid}`);
+        else window.location.href = `${this.basePath}/admin/user-purchases/${uuid}`;
+    }
     async deleteSelectedUsers(btn) {
         if (this.selectedUserIds.size === 0) return;
         const resultDialog = await window.modalSystem.show('verifyPasswordDeleteUsers', {
@@ -338,15 +348,16 @@ class AdminUsersController {
         const btnEditRole = document.querySelector('[data-action="editSelectedUserRole"]');
         const btnEditStatus = document.querySelector('[data-action="editSelectedUserStatus"]');
         const btnHistory = document.querySelector('[data-action="viewUserHistory"]');
+        const btnPurchases = document.querySelector('[data-action="viewUserPurchases"]');
         if (this.selectedUserIds.size > 0) {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
             if (this.selectedUserIds.size > 1) {
-                [btnEditAccount, btnEditRole, btnEditStatus, btnHistory].forEach(btn => {
+                [btnEditAccount, btnEditRole, btnEditStatus, btnHistory, btnPurchases].forEach(btn => {
                     if (btn) btn.classList.add('disabled-interaction');
                 });
             } else {
-                [btnEditAccount, btnEditRole, btnEditStatus, btnHistory].forEach(btn => {
+                [btnEditAccount, btnEditRole, btnEditStatus, btnHistory, btnPurchases].forEach(btn => {
                     if (btn && !btn.hasAttribute('data-permission-denied')) {
                         btn.classList.remove('disabled-interaction');
                     }

@@ -68,6 +68,8 @@ export const ApiRoutes = {
         UpdatePreference: 'admin.update_preference',
         UpdateRole: 'admin.update_role',
         GetUserRoles: 'admin.get_user_roles',
+        GetUserPurchases: 'admin.get_user_purchases',
+        GetUserCoinTransactions: 'admin.get_user_coin_transactions',
 
         SendPasswordReset: 'admin.send_password_reset',
         UnlockRateLimit: 'admin.unlock_rate_limit',

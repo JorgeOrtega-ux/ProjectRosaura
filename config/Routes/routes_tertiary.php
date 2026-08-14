@@ -115,6 +115,38 @@ return [
             ],
         ],
     ],
+    'admin.get_user_purchases' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'get_user_purchases',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_get_user_purchases',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.get_user_coin_transactions' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'get_user_coin_transactions',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_get_user_coin_transactions',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'admin.update_avatar' => [
         'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
         'action' => 'update_avatar',

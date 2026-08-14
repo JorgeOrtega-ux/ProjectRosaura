@@ -40,6 +40,32 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
+    public function get_user_purchases($input) {
+        try { 
+            $this->requirePermission(PermissionsConstants::VIEW_USER_PURCHASES);
+            $safeInput = [
+                'target_user_id' => $input['target_user_id'] ?? null,
+                'target_user_uuid' => $input['target_user_uuid'] ?? null
+            ];
+            return $this->respond($this->adminServices->getUserPurchases($safeInput)); 
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function get_user_coin_transactions($input) {
+        try { 
+            $this->requirePermission(PermissionsConstants::VIEW_USER_PURCHASES);
+            $safeInput = [
+                'target_user_id' => $input['target_user_id'] ?? null,
+                'target_user_uuid' => $input['target_user_uuid'] ?? null,
+                'limit' => $input['limit'] ?? 100,
+                'offset' => $input['offset'] ?? 0
+            ];
+            return $this->respond($this->adminServices->getUserCoinTransactions($safeInput)); 
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
     public function update_avatar($input) {
         try { 
             $this->requirePermission(PermissionsConstants::EDIT_USERS);

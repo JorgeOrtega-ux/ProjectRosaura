@@ -47,6 +47,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                         <span class="material-symbols-rounded">history</span>
                     </button>
 
+                    <button class="component-button component-button--icon component-button--h40 <?php echo !$canViewUserPurchases ? 'disabled-interaction' : ''; ?>" data-action="viewUserPurchases" data-tooltip="<?php echo __('tooltip_manage_purchases'); ?><?php echo !$canViewUserPurchases ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canViewUserPurchases ? 'data-permission-denied="true" disabled' : ''; ?>>
+                        <span class="material-symbols-rounded">shopping_bag</span>
+                    </button>
+
                     <button class="component-button component-button--icon component-button--h40 component-button--danger <?php echo !$canDeleteUsers ? 'disabled-interaction' : ''; ?>" data-action="deleteSelectedUsers" data-tooltip="<?php echo __('tooltip_delete_users'); ?><?php echo !$canDeleteUsers ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canDeleteUsers ? 'data-permission-denied="true" disabled' : ''; ?>>
                         <span class="material-symbols-rounded">delete</span>
                     </button>

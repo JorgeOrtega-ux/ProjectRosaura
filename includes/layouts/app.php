@@ -57,6 +57,7 @@ $routeTitles = [
     '/admin/user-profile' => __('route_admin_edit_user'),
     '/admin/edit-role' => __('route_admin_edit_role'),
     '/admin/user-moderation' => __('route_admin_edit_status'),
+    '/admin/user-purchases' => __('route_admin_user_purchases'),
     '/admin/backups' => __('route_admin_backups'),
     '/admin/backup-schedule' => __('route_admin_backups_automation'),
     '/admin/system-settings' => __('route_admin_server'),

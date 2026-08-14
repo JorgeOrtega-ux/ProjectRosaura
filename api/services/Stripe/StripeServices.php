@@ -796,8 +796,15 @@ class StripeServices {
         }
 
         $userId = $this->sessionManager->getActiveAccountId();
+        $history = $this->getPaymentHistoryForUser($userId, $input);
 
-        // Try to read from Redis cache
+        return [
+            'success' => true,
+            'data' => $history
+        ];
+    }
+
+    public function getPaymentHistoryForUser(int $userId, array $options = []): array {
         $redisClient = null;
         $cacheKey = \App\Core\System\CacheConstants::PREFIX_USER_PAYMENT_HISTORY . $userId;
         try {
@@ -808,22 +815,18 @@ class StripeServices {
                 if ($cached !== null && $cached !== false) {
                     $cachedData = json_decode($cached, true);
                     if (is_array($cachedData)) {
-                        return [
-                            'success' => true,
-                            'data' => $cachedData
-                        ];
+                        return $cachedData;
                     }
                 }
             }
         } catch (\Exception $e) {
-            // Fallback: proceed without cache
         }
 
         $stripeCustomerId = $this->subscriptionRepo->getStripeCustomerIdByUserId($userId);
         $history = [];
         
-        $fetchLimit = isset($input['limit']) ? min((int) $input['limit'], 100) : 100;
-        $offset = isset($input['offset']) ? (int) $input['offset'] : 0;
+        $fetchLimit = isset($options['limit']) ? min((int) $options['limit'], 100) : 100;
+        $offset = isset($options['offset']) ? (int) $options['offset'] : 0;
         
         if ($stripeCustomerId) {
             try {
@@ -867,14 +870,10 @@ class StripeServices {
             try {
                 $redisClient->setex($cacheKey, \App\Core\System\CacheConstants::TTL_ONE_HOUR, json_encode($history));
             } catch (\Exception $e) {
-                // Ignore cache write errors
             }
         }
 
-        return [
-            'success' => true,
-            'data' => $history
-        ];
+        return $history;
     }
 
     private function getStripePdfUrl(string $id): ?string {

@@ -10,6 +10,7 @@ class PermissionsConstants {
     public const MODERATE_USERS = 'moderate_users';
     public const VIEW_KARDEX = 'view_kardex';
     public const MANAGE_KARDEX = 'manage_kardex';
+    public const VIEW_USER_PURCHASES = 'view_user_purchases';
     public const VIEW_ROLES = 'view_roles';
     public const MANAGE_ROLES_STRUCTURE = 'manage_roles_structure';
     public const ASSIGN_ROLES = 'assign_roles';

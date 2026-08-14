@@ -227,6 +227,62 @@ class AdminServices {
         ];
     }
 
+    public function getUserPurchases($data) {
+        if (!$this->hasPermission(PermissionsConstants::VIEW_USER_PURCHASES)) {
+            return ['success' => false, 'message' => __('error.unauthorized')];
+        }
+
+        $targetUserUuid = $data['target_user_uuid'] ?? null;
+        $targetUserId = (int)($data['target_user_id'] ?? 0);
+
+        if (!$targetUserId && $targetUserUuid) {
+            $user = $this->userRepository->findByUuid($targetUserUuid);
+            if ($user) $targetUserId = (int)$user['id'];
+        }
+
+        if (!$targetUserId) {
+            return ['success' => false, 'message' => __('admin.user_not_found')];
+        }
+
+        global $container;
+        if (isset($container) && $container instanceof \App\Core\Container) {
+            $stripeServices = $container->get(\App\Api\Services\Stripe\StripeServices::class);
+            $history = $stripeServices->getPaymentHistoryForUser($targetUserId, ['limit' => 100, 'offset' => 0]);
+            return ['success' => true, 'data' => $history];
+        }
+
+        return ['success' => false, 'message' => __('err_general')];
+    }
+
+    public function getUserCoinTransactions($data) {
+        if (!$this->hasPermission(PermissionsConstants::VIEW_USER_PURCHASES)) {
+            return ['success' => false, 'message' => __('error.unauthorized')];
+        }
+
+        $targetUserUuid = $data['target_user_uuid'] ?? null;
+        $targetUserId = (int)($data['target_user_id'] ?? 0);
+
+        if (!$targetUserId && $targetUserUuid) {
+            $user = $this->userRepository->findByUuid($targetUserUuid);
+            if ($user) $targetUserId = (int)$user['id'];
+        }
+
+        if (!$targetUserId) {
+            return ['success' => false, 'message' => __('admin.user_not_found')];
+        }
+
+        global $container;
+        if (isset($container) && $container instanceof \App\Core\Container) {
+            $storeRepo = $container->get(\App\Core\Interfaces\StoreRepositoryInterface::class);
+            $limit = isset($data['limit']) ? (int)$data['limit'] : 100;
+            $offset = isset($data['offset']) ? (int)$data['offset'] : 0;
+            $history = $storeRepo->getCoinTransactionsHistory($targetUserId, $limit, $offset);
+            return ['success' => true, 'data' => $history];
+        }
+
+        return ['success' => false, 'message' => __('err_general')];
+    }
+
     public function updateAvatar($data) {
         if (!$this->hasPermission(PermissionsConstants::EDIT_USERS)) return ['success' => false, 'message' => __('error.unauthorized')];
         $targetId = (int)($data['target_user_id'] ?? 0);

@@ -132,6 +132,7 @@ class RoleRepository implements RoleRepositoryInterface {
             ['name' => 'moderate_users', 'description' => 'desc_moderate_users', 'is_critical' => 0, 'roles' => [2, 3, 4, 7]],
             ['name' => 'view_kardex', 'description' => 'desc_view_kardex', 'is_critical' => 0, 'roles' => [3, 4]],
             ['name' => 'manage_kardex', 'description' => 'desc_manage_kardex', 'is_critical' => 0, 'roles' => [3, 4]],
+            ['name' => 'view_user_purchases', 'description' => 'desc_view_user_purchases', 'is_critical' => 0, 'roles' => [3, 4, 6, 7]],
             ['name' => 'delete_users', 'description' => 'desc_delete_users', 'is_critical' => 1, 'roles' => [4]],
             ['name' => 'view_roles', 'description' => 'desc_view_roles', 'is_critical' => 0, 'roles' => [3, 4]],
             ['name' => 'manage_roles_structure', 'description' => 'desc_manage_roles_structure', 'is_critical' => 1, 'roles' => [4]],
