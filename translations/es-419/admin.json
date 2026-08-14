@@ -517,6 +517,7 @@
     "perm_cat_backups": "Copias de Seguridad (Backups)",
     "perm_cat_logs": "Registros y Logs",
     "perm_cat_system": "Administración del Sistema",
+    "perm_cat_support": "Soporte Técnico",
     "perm_cat_other": "Otros Permisos",
     "admin_role_perm_blocked_tier": "Permiso bloqueado: Requiere jerarquía superior.",
     "admin_tier_features_limit_required": "Debes habilitar al menos una ventaja o configurar límites numéricos para esta suscripción.",

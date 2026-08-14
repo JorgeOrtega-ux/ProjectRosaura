@@ -196,9 +196,11 @@ class SupportRepository implements SupportRepositoryInterface {
             $stmt = $this->pdo->prepare("
                 SELECT scs.*, 
                        u.username AS client_username, u.email AS client_email, u.profile_picture AS client_avatar, u.subscription_tier AS client_tier,
+                       st.color AS client_role_color,
                        a.username AS agent_username, a.email AS agent_email, a.profile_picture AS agent_avatar
                 FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
                 LEFT JOIN " . DB::TBL_USERS . " u ON scs.user_id = u.id
+                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 LEFT JOIN " . DB::TBL_USERS . " a ON scs.assigned_agent_id = a.id
                 WHERE scs.uuid = :uuid
                 LIMIT 1
@@ -277,9 +279,11 @@ class SupportRepository implements SupportRepositoryInterface {
         try {
             $sql = "
                 SELECT scs.*, 
-                       u.username AS client_username, u.email AS client_email, u.profile_picture AS client_avatar, u.subscription_tier AS client_tier
+                       u.username AS client_username, u.email AS client_email, u.profile_picture AS client_avatar, u.subscription_tier AS client_tier,
+                       st.color AS client_role_color
                 FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
                 LEFT JOIN " . DB::TBL_USERS . " u ON scs.user_id = u.id
+                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 WHERE scs.status IN ('waiting_in_queue', 'escalated')
             ";
             $params = [];
@@ -309,9 +313,11 @@ class SupportRepository implements SupportRepositoryInterface {
         try {
             $stmt = $this->pdo->prepare("
                 SELECT scs.*, 
-                       u.username AS client_username, u.email AS client_email, u.profile_picture AS client_avatar, u.subscription_tier AS client_tier
+                       u.username AS client_username, u.email AS client_email, u.profile_picture AS client_avatar, u.subscription_tier AS client_tier,
+                       st.color AS client_role_color
                 FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
                 LEFT JOIN " . DB::TBL_USERS . " u ON scs.user_id = u.id
+                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 WHERE scs.assigned_agent_id = :agent_id AND scs.status = 'active'
                 ORDER BY scs.updated_at DESC
             ");

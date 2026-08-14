@@ -23,7 +23,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                         <span class="material-symbols-rounded">expand_more</span>
                     </div>
                     <div class="component-module component-module--dropdown component-module--dropdown-right disabled" data-module="adminAgentStatusDropdown">
-                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                             <div class="pill-container"><div class="drag-handle"></div></div>
                             <div class="component-menu-list">
                                 <div class="component-menu-link" data-action="changeAgentStatus" data-val="online">
@@ -56,25 +56,32 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canViewMetrics ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/support/metrics" data-tooltip="<?php echo __('admin_support_metrics'); ?>" data-position="bottom" <?php echo !$canViewMetrics ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">analytics</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/dashboard" data-tooltip="<?php echo __('btn_back_to_dashboard'); ?>" data-position="bottom">
-                    <span class="material-symbols-rounded">dashboard</span>
-                </button>
             </div>
         </div>
 
-        <div class="component-bottom component-bottom--support-console">
+        <div class="component-bottom component-bottom--support-console component-bottom--no-gap">
             
             <!-- COLUMNA 1: COLAS DE ESPERA Y CHATS ACTIVOS -->
             <div class="admin-support-column admin-support-column--queues">
                 <div class="admin-support-column-header">
-                    <h2 class="component-top-title"><?php echo __('admin_support_queues_title'); ?></h2>
-                </div>
-                
-                <div class="component-pill-bar component-p-2">
-                    <button class="component-pill-button active" data-action="switchQueueTab" data-tab="l1"><?php echo __('lbl_dept_l1'); ?> <span class="component-badge" data-ref="badge-queue-l1">0</span></button>
-                    <button class="component-pill-button" data-action="switchQueueTab" data-tab="l2"><?php echo __('lbl_dept_l2'); ?> <span class="component-badge" data-ref="badge-queue-l2">0</span></button>
-                    <button class="component-pill-button" data-action="switchQueueTab" data-tab="l3"><?php echo __('lbl_dept_l3'); ?> <span class="component-badge" data-ref="badge-queue-l3">0</span></button>
-                    <button class="component-pill-button" data-action="switchQueueTab" data-tab="active"><?php echo __('lbl_my_active_chats'); ?> <span class="component-badge" data-ref="badge-queue-active">0</span></button>
+                    <div class="component-badge-group">
+                        <button class="component-badge component-badge--interactive component-badge--grouped-item active" data-action="switchQueueTab" data-tab="l1">
+                            <span><?php echo __('lbl_dept_l1'); ?></span>
+                            <span data-ref="badge-queue-l1">0</span>
+                        </button>
+                        <button class="component-badge component-badge--interactive component-badge--grouped-item" data-action="switchQueueTab" data-tab="l2">
+                            <span><?php echo __('lbl_dept_l2'); ?></span>
+                            <span data-ref="badge-queue-l2">0</span>
+                        </button>
+                        <button class="component-badge component-badge--interactive component-badge--grouped-item" data-action="switchQueueTab" data-tab="l3">
+                            <span><?php echo __('lbl_dept_l3'); ?></span>
+                            <span data-ref="badge-queue-l3">0</span>
+                        </button>
+                        <button class="component-badge component-badge--interactive component-badge--grouped-item" data-action="switchQueueTab" data-tab="active">
+                            <span><?php echo __('lbl_my_active_chats'); ?></span>
+                            <span data-ref="badge-queue-active">0</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="admin-support-queue-list" data-ref="admin-support-queue-container">
@@ -89,31 +96,65 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
             <div class="admin-support-column admin-support-column--chat">
                 <div class="admin-support-chat-header" data-ref="admin-support-chat-header">
                     <div class="component-card__content">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded" data-ref="current-chat-client-avatar">person</span>
+                        <div data-ref="current-chat-client-avatar-container">
+                            <div class="component-button--profile component-avatar--static-sm">
+                                <img src="/public/assets/img/fallbacks/avatar-default.png" alt="Guest" data-ref="current-chat-client-avatar">
+                            </div>
                         </div>
                         <div class="component-card__text">
                             <h2 class="component-card__title" data-ref="current-chat-client-name"><?php echo __('admin_select_chat_to_attend'); ?></h2>
                             <p class="component-card__description" data-ref="current-chat-client-subject"><?php echo __('admin_no_active_chat_selected'); ?></p>
                         </div>
                     </div>
-                    <div class="component-card__actions disabled" data-ref="admin-chat-top-actions">
-                        <?php if ($canEscalate): ?>
-                        <button class="component-button component-button--h34" data-action="openEscalateModal" type="button">
-                            <span class="material-symbols-rounded">forward</span>
-                            <span><?php echo __('btn_escalate_chat'); ?></span>
+                    
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit disabled" data-ref="admin-chat-top-actions">
+                        <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="adminChatMoreDropdown" data-tooltip="<?php echo __('btn_options') ?? 'Opciones'; ?>" data-position="bottom" type="button">
+                            <span class="material-symbols-rounded">more_vert</span>
                         </button>
-                        <?php endif; ?>
-                        <?php if ($canReassign): ?>
-                        <button class="component-button component-button--h34" data-action="openReassignModal" type="button">
-                            <span class="material-symbols-rounded">swap_horiz</span>
-                            <span><?php echo __('btn_reassign_chat') ?? 'Reasignar'; ?></span>
-                        </button>
-                        <?php endif; ?>
-                        <button class="component-button component-button--dark component-button--h34" data-action="openCloseChatModal" type="button">
-                            <span class="material-symbols-rounded">check_circle</span>
-                            <span><?php echo __('btn_resolve_chat'); ?></span>
-                        </button>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminChatMoreDropdown">
+                            <div class="component-menu component-menu--w200 component-menu--h-auto">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list">
+                                    <div class="component-menu-link" data-action="toggleModule" data-target="moduleSupportClientInfo">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">info</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span><?php echo __('admin_user_profile_title'); ?></span>
+                                        </div>
+                                    </div>
+                                    <?php if ($canEscalate): ?>
+                                    <div class="component-menu-link" data-action="openEscalateModal">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">forward</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span><?php echo __('btn_escalate_chat'); ?></span>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+                                    <?php if ($canReassign): ?>
+                                    <div class="component-menu-link" data-action="openReassignModal">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">swap_horiz</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span><?php echo __('btn_reassign_chat') ?? 'Reasignar'; ?></span>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+                                    <div class="component-menu-divider"></div>
+                                    <div class="component-menu-link" data-action="openCloseChatModal">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">check_circle</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span><?php echo __('btn_resolve_chat'); ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -130,52 +171,64 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                 </div>
 
                 <div class="admin-support-chat-footer disabled" data-ref="admin-support-chat-footer">
-                    <div class="admin-support-toolbar">
-                        <div class="component-dropdown-wrapper">
-                            <div class="component-dropdown-trigger component-dropdown-trigger--small" data-action="toggleModule" data-target="adminCannedResponsesDropdown">
-                                <span class="material-symbols-rounded">quickreply</span>
-                                <span class="component-dropdown-text"><?php echo __('lbl_quick_canned'); ?></span>
-                            </div>
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminCannedResponsesDropdown">
-                                <div class="component-menu component-menu--w335 component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list" data-ref="admin-canned-list-menu">
+                    <div class="component-search component-search--full component-search--radius-50">
+                        <div class="component-search-input">
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
+                                <button class="component-chat-attach-btn" data-action="toggleModule" data-target="adminCannedResponsesDropdown" data-tooltip="<?php echo __('lbl_quick_canned'); ?>" data-position="top" type="button">
+                                    <span class="material-symbols-rounded">quickreply</span>
+                                </button>
+                                <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-right component-module--dropdown-fixed disabled" data-module="adminCannedResponsesDropdown">
+                                    <div class="component-menu component-menu--w320 component-menu--h-auto">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable" data-ref="admin-canned-list-menu">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <button class="component-button component-button--icon component-button--h32" data-action="toggleInternalNoteMode" data-ref="btn-toggle-internal-note" data-tooltip="<?php echo __('tooltip_toggle_internal_note'); ?>" data-position="top" type="button">
+                                <span class="material-symbols-rounded msr-sticky_note_2">sticky_note_2</span>
+                            </button>
+
+                            <input type="text" data-ref="admin-support-chat-input" placeholder="<?php echo __('placeholder_agent_chat_input'); ?>" maxlength="2000" autocomplete="off">
+
+                            <button class="component-chat-send-btn active" data-action="sendAdminChatMessage" data-ref="admin-chat-btn-send" data-tooltip="<?php echo __('btn_send'); ?>" data-position="top" type="button">
+                                <span class="material-symbols-rounded">send</span>
+                            </button>
                         </div>
-
-                        <button class="component-button component-button--icon component-button--h32" data-action="toggleInternalNoteMode" data-ref="btn-toggle-internal-note" data-tooltip="<?php echo __('tooltip_toggle_internal_note'); ?>" data-position="top" type="button">
-                            <span class="material-symbols-rounded">sticky_note_2</span>
-                        </button>
-                    </div>
-
-                    <div class="chat-input-wrapper">
-                        <div class="component-input-group component-input-group--h40">
-                            <input class="component-input-field component-input-field--simple" data-ref="admin-support-chat-input" type="text" placeholder="<?php echo __('placeholder_agent_chat_input'); ?>" maxlength="2000" autocomplete="off">
-                        </div>
-                        <button class="component-button component-button--icon component-button--dark component-button--h40" data-action="sendAdminChatMessage" data-tooltip="<?php echo __('btn_send'); ?>" data-position="top" type="button">
-                            <span class="material-symbols-rounded">send</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- COLUMNA 3: DETALLES DEL USUARIO Y SESIÓN -->
-            <div class="admin-support-column admin-support-column--sidebar">
-                <div class="admin-support-column-header">
-                    <h2 class="component-top-title"><?php echo __('admin_user_profile_title'); ?></h2>
-                </div>
-
-                <div class="admin-support-sidebar-content" data-ref="admin-support-client-info">
-                    <div class="component-empty-state">
-                        <span class="material-symbols-rounded component-empty-state-icon">account_circle</span>
-                        <h3 class="component-card__title"><?php echo __('admin_no_user_selected'); ?></h3>
                     </div>
                 </div>
             </div>
 
         </div>
 
+    </div>
+
+    <!-- MODULO LATERAL IZQUIERDO: INFORMACIÓN DEL USUARIO Y SESIÓN -->
+    <div class="component-module component-module--sidebar disabled" data-module="moduleSupportClientInfo">
+        <div class="component-menu component-menu--w320 component-menu--h-full active" data-menu="support-client-info-menu">
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            
+            <div class="component-menu-header">
+                <div class="component-menu-header-box">
+                    <div class="chat-header-title-box">
+                        <span class="material-symbols-rounded">person</span>
+                        <span class="component-menu-header-title"><?php echo __('admin_user_profile_title'); ?></span>
+                    </div>
+                    <div class="component-menu-header-actions">
+                        <button class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="moduleSupportClientInfo" data-tooltip="<?php echo __('btn_close'); ?>" data-position="bottom" type="button">
+                            <span class="material-symbols-rounded">close</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-menu-section-parent component-p-3" data-ref="admin-support-client-info">
+                <div class="component-empty-state">
+                    <span class="material-symbols-rounded component-empty-state-icon">account_circle</span>
+                    <h3 class="component-card__title"><?php echo __('admin_no_user_selected'); ?></h3>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

@@ -219,6 +219,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                 $hasUsersPerm = count(array_intersect(['view_users', 'edit_users', 'moderate_users', 'delete_users', 'assign_roles'], $userPermissions)) > 0;
                 $hasBackupsPerm = count(array_intersect(['create_backups', 'restore_backups', 'delete_backups'], $userPermissions)) > 0;
                 $hasServerConfigPerm = in_array('manage_server_config', $userPermissions);
+                $hasSupportPerm = in_array('access_support_panel', $userPermissions);
                 ?>
                 <div class="component-menu-link nav-item" data-nav="/admin/dashboard">
                     <div class="component-menu-link-icon">
@@ -235,6 +236,15 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                     </div>
                     <div class="component-menu-link-text">
                         <span><?php echo __('menu_admin_users'); ?></span>
+                    </div>
+                </div>
+
+                <div class="component-menu-link nav-item <?php echo !$hasSupportPerm ? 'disabled-interaction' : ''; ?>" data-nav="/admin/support/live-console">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">support_agent</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('admin_support_live_title', [], 'Soporte en Vivo'); ?></span>
                     </div>
                 </div>
             </div>

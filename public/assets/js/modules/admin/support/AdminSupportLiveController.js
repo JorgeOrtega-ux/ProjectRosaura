@@ -479,6 +479,9 @@ export class AdminSupportLiveController {
                 const activeList = res.my_active_sessions || [];
                 this.onlineAgents = res.online_agents || [];
 
+                this.lastQueues = queues;
+                this.lastActiveList = activeList;
+
                 const b1 = document.querySelector('[data-ref="badge-queue-l1"]');
                 const b2 = document.querySelector('[data-ref="badge-queue-l2"]');
                 const b3 = document.querySelector('[data-ref="badge-queue-l3"]');
@@ -493,6 +496,7 @@ export class AdminSupportLiveController {
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
+            console.error('Error loading live queues:', error);
         }
     }
 
@@ -504,17 +508,17 @@ export class AdminSupportLiveController {
         let isActiveTab = false;
 
         if (this.activeTab === 'l1') {
-            list = queues.l1 || [];
+            list = (queues && queues.l1) || [];
         } else if (this.activeTab === 'l2') {
-            list = queues.l2 || [];
+            list = (queues && queues.l2) || [];
         } else if (this.activeTab === 'l3') {
-            list = queues.l3 || [];
+            list = (queues && queues.l3) || [];
         } else if (this.activeTab === 'active') {
-            list = activeList;
+            list = activeList || [];
             isActiveTab = true;
         }
 
-        if (list.length === 0) {
+        if (!list || list.length === 0) {
             container.innerHTML = `
                 <div class="component-empty-state">
                     <span class="material-symbols-rounded component-empty-state-icon">inbox</span>
@@ -531,17 +535,16 @@ export class AdminSupportLiveController {
             const priorityBadge = item.priority === 'urgent'
                 ? '<span class="component-badge component-badge--danger">Urgente</span>'
                 : (item.priority === 'high' ? '<span class="component-badge component-badge--warning">Alta</span>' : '');
+            const avatarHtml = this._renderAvatarHtml(item.client_avatar, item.client_username, item.client_role_color, 'component-avatar--static-sm');
 
             if (isActiveTab) {
                 html += `
-                    <div class="component-group-item component-group-item--clickable ${selectedClass}" data-action="selectActiveChat" data-uuid="${item.uuid}">
+                    <div class="component-group-item component-group-item--clickable ${selectedClass}" data-action="selectActiveChat" data-uuid="${this._escapeHtml(item.uuid)}">
                         <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">person</span>
-                            </div>
+                            ${avatarHtml}
                             <div class="component-card__text">
                                 <h3 class="component-card__title">${this._escapeHtml(item.client_username || 'Guest')} ${priorityBadge}</h3>
-                                <p class="component-card__description">${this._escapeHtml(item.subject)}</p>
+                                <p class="component-card__description">${this._escapeHtml(item.subject || item.initial_message || '')}</p>
                             </div>
                         </div>
                     </div>
@@ -550,16 +553,14 @@ export class AdminSupportLiveController {
                 html += `
                     <div class="component-group-item ${selectedClass}">
                         <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">support</span>
-                            </div>
+                            ${avatarHtml}
                             <div class="component-card__text">
                                 <h3 class="component-card__title">${this._escapeHtml(item.client_username || 'Guest')} ${priorityBadge}</h3>
-                                <p class="component-card__description">${this._escapeHtml(item.subject)}</p>
+                                <p class="component-card__description">${this._escapeHtml(item.subject || item.initial_message || '')}</p>
                             </div>
                         </div>
                         <div class="component-card__actions">
-                            <button class="component-button component-button--dark component-button--h34" data-action="claimSession" data-uuid="${item.uuid}" type="button">
+                            <button class="component-button component-button--dark component-button--h34" data-action="claimSession" data-uuid="${this._escapeHtml(item.uuid)}" type="button">
                                 <span>${window.__('btn_claim_chat')}</span>
                             </button>
                         </div>
@@ -569,6 +570,69 @@ export class AdminSupportLiveController {
         });
 
         container.innerHTML = html;
+        if (window.applyRoleDynamicColors) {
+            try {
+                window.applyRoleDynamicColors();
+            } catch (e) {}
+        }
+    }
+
+    _parseRoleColor(colorRaw) {
+        if (!colorRaw) return 'transparent';
+        try {
+            let colorData = colorRaw;
+            if (typeof colorRaw === 'string') {
+                const trimmed = colorRaw.trim();
+                if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                    colorData = JSON.parse(trimmed);
+                } else {
+                    return colorRaw;
+                }
+            }
+            if (colorData && typeof colorData === 'object') {
+                if (colorData.type === 'solid') {
+                    const firstColor = (colorData.colors && colorData.colors[0]);
+                    return (typeof firstColor === 'string' ? firstColor : firstColor?.hex) || '#808080';
+                }
+                if (colorData.type === 'linear') {
+                    const angle = colorData.angle || '90';
+                    const colors = Array.isArray(colorData.colors) ? colorData.colors : [];
+                    const stops = colors.map((c, i, arr) => {
+                        const hex = typeof c === 'string' ? c : (c.hex || '#000');
+                        const p = (typeof c === 'object' && c.percentage !== undefined) ? c.percentage : Math.floor((i / (arr.length - 1 || 1)) * 100);
+                        return `${hex} ${p}%`;
+                    }).join(', ');
+                    return `linear-gradient(${angle}deg, ${stops})`;
+                }
+                if (colorData.type === 'conic') {
+                    const angle = colorData.angle || '0';
+                    const colors = Array.isArray(colorData.colors) ? colorData.colors : [];
+                    const stops = colors.map((c, i, arr) => {
+                        const hex = typeof c === 'string' ? c : (c.hex || '#000');
+                        const p = (typeof c === 'object' && c.percentage !== undefined) ? c.percentage : Math.floor((i / (arr.length || 1)) * 100);
+                        return `${hex} ${p}%`;
+                    }).join(', ');
+                    return `conic-gradient(from ${angle}deg, ${stops})`;
+                }
+            }
+        } catch (e) {}
+        return 'transparent';
+    }
+
+    _renderAvatarHtml(avatarUrl, username, roleColorRaw, sizeClass = 'component-avatar--static-sm') {
+        const roleCss = this._parseRoleColor(roleColorRaw);
+        const hasRole = roleCss && roleCss !== 'transparent';
+        const dynamicClass = hasRole ? 'role-dynamic' : '';
+        const styleAttr = hasRole ? `style="--active-role-bg: ${this._escapeHtml(roleCss)};"` : '';
+        const dataAttr = hasRole ? `data-role-bg="${this._escapeHtml(roleCss)}"` : '';
+        const fallback = '/public/assets/img/fallbacks/avatar-default.png';
+        const src = avatarUrl ? this._escapeHtml(avatarUrl) : fallback;
+
+        return `
+            <div class="component-button--profile ${dynamicClass} ${sizeClass}" ${dataAttr} ${styleAttr}>
+                <img src="${src}" alt="${this._escapeHtml(username || 'Guest')}" onerror="this.src='${fallback}'">
+            </div>
+        `;
     }
 
     async _handleClaimSession(btn) {
@@ -648,6 +712,7 @@ export class AdminSupportLiveController {
     _renderActiveChatHeader(session) {
         const nameEl = document.querySelector('[data-ref="current-chat-client-name"]');
         const subjectEl = document.querySelector('[data-ref="current-chat-client-subject"]');
+        const avatarContainer = document.querySelector('[data-ref="current-chat-client-avatar-container"]');
 
         if (nameEl) {
             const dept = session.department_level ? ` (${session.department_level.toUpperCase()})` : '';
@@ -656,19 +721,23 @@ export class AdminSupportLiveController {
         if (subjectEl) {
             subjectEl.textContent = `${session.category || 'general'} • ${session.subject || ''}`;
         }
+        if (avatarContainer) {
+            avatarContainer.innerHTML = this._renderAvatarHtml(session.client_avatar, session.client_username, session.client_role_color, 'component-avatar--static-sm');
+        }
+        if (window.applyRoleDynamicColors) window.applyRoleDynamicColors();
     }
 
     _renderClientSidebar(session) {
         const container = document.querySelector('[data-ref="admin-support-client-info"]');
         if (!container) return;
 
+        const avatarHtml = this._renderAvatarHtml(session.client_avatar, session.client_username, session.client_role_color, 'component-avatar--40');
+
         container.innerHTML = `
             <div class="component-card--grouped">
                 <div class="component-group-item">
                     <div class="component-card__content">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">person</span>
-                        </div>
+                        ${avatarHtml}
                         <div class="component-card__text">
                             <h3 class="component-card__title">${this._escapeHtml(session.client_username || 'Guest')}</h3>
                             <p class="component-card__description">${this._escapeHtml(session.client_email || 'No email')}</p>
@@ -710,6 +779,7 @@ export class AdminSupportLiveController {
                 </div>
             </div>
         `;
+        if (window.applyRoleDynamicColors) window.applyRoleDynamicColors();
     }
 
     _renderMessages(messages) {
@@ -815,8 +885,17 @@ export class AdminSupportLiveController {
         }
     }
 
+    _closeMoreDropdown() {
+        const dropdown = document.querySelector('[data-module="adminChatMoreDropdown"]');
+        if (dropdown) {
+            dropdown.classList.remove('active');
+            dropdown.classList.add('disabled');
+        }
+    }
+
     _openEscalateModal() {
         if (!this.currentSessionUuid || !window.modalSystem) return;
+        this._closeMoreDropdown();
         window.modalSystem.show('escalateChatModal', {
             sessionUuid: this.currentSessionUuid,
             currentLevel: this.currentSession ? this.currentSession.department_level : 'l1'
@@ -895,6 +974,7 @@ export class AdminSupportLiveController {
 
     _openReassignModal() {
         if (!this.currentSessionUuid || !window.modalSystem) return;
+        this._closeMoreDropdown();
         window.modalSystem.show('reassignChatModal', {
             sessionUuid: this.currentSessionUuid,
             onlineAgents: this.onlineAgents
@@ -965,6 +1045,7 @@ export class AdminSupportLiveController {
 
     _openCloseModal() {
         if (!this.currentSessionUuid || !window.modalSystem) return;
+        this._closeMoreDropdown();
         window.modalSystem.show('closeChatModal', {
             sessionUuid: this.currentSessionUuid
         });
@@ -1005,8 +1086,8 @@ export class AdminSupportLiveController {
     }
 
     _escapeHtml(str) {
-        if (!str) return '';
-        return str
+        if (str === null || str === undefined) return '';
+        return String(str)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')

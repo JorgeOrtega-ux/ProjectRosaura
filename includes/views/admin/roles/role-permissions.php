@@ -66,6 +66,21 @@ $categories = [
         'title' => __('perm_cat_system', [], 'Sistema'),
         'icon' => 'settings',
         'perms' => ['access_admin_panel', 'view_dashboard', 'manage_server_config', 'perform_system_maintenance']
+    ],
+    'support' => [
+        'title' => __('perm_cat_support', [], 'Soporte Técnico'),
+        'icon' => 'support_agent',
+        'perms' => [
+            'access_support_panel',
+            'attend_support_chats_l1',
+            'attend_support_chats_l2',
+            'attend_support_chats_l3',
+            'escalate_support_chats',
+            'reassign_support_chats',
+            'manage_canned_responses',
+            'manage_support_tickets',
+            'view_support_metrics'
+        ]
     ]
 ];
 
