@@ -21,7 +21,7 @@ $initialActiveTab = 'l1';
 if (!empty($chatUuid)) {
     try {
         $dbMgr = new \App\Config\Database\DatabaseManager();
-        $pdo = $dbMgr->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+        $pdo = $dbMgr->getConnection(\App\Core\System\DatabaseConstants::CONN_SUPPORT);
         $stmt = $pdo->prepare("SELECT department_level, status, assigned_agent_id FROM support_chat_sessions WHERE uuid = ? LIMIT 1");
         $stmt->execute([$chatUuid]);
         $sessRow = $stmt->fetch(\PDO::FETCH_ASSOC);

@@ -209,6 +209,15 @@ class SupportService {
             }
         }
 
+        $availableAgents = $this->supportRepo->getAvailableAgentsCount('all');
+        if ($availableAgents === 0) {
+            return [
+                'success' => false,
+                'is_offline' => true,
+                'message' => __('support_livechat_unavailable_desc')
+            ];
+        }
+
         $category = trim($input['category'] ?? 'general');
         $subject = trim($input['subject'] ?? '');
         $initialMessage = trim($input['initial_message'] ?? '');

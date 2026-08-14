@@ -2339,5 +2339,30 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+
+    supportLiveChatUnavailableModal: {
+        build: () => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">headset_off</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('support_livechat_unavailable_heading')}</h2>
+                        <p class="component-modal-desc">${__('support_livechat_unavailable_desc')}</p>
+                    </div>
+                </div>
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_close', [], 'Cerrar')}</button>
+                    <button class="component-button component-button--dark component-button--h40" data-action="switchFromOfflineModalToTicket">
+                        <span class="material-symbols-rounded">mail</span>
+                        <span>${__('support_btn_switch_to_email')}</span>
+                    </button>
+                </div>
+            `;
+        }
     }
 };

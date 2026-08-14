@@ -6,6 +6,7 @@ class DatabaseConstants {
     public const CONN_IDENTITY  = 'identity';
     public const CONN_TELEMETRY = 'telemetry'; 
     public const CONN_CANVASES  = 'canvases';
+    public const CONN_SUPPORT   = 'support';
     public const TBL_USERS               = 'users';
     public const TBL_ROLES               = 'roles';
     public const TBL_PERMISSIONS         = 'permissions';

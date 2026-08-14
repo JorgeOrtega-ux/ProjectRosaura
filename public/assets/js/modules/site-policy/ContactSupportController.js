@@ -314,8 +314,39 @@ export class ContactSupportController {
                     window.appInstance.moduleManager.open(moduleEl);
                 }
             } else {
-                if (window.modalSystem) {
-                    window.modalSystem.show('startLiveSupportChatModal');
+                if (this.isLiveChatOnline === false) {
+                    if (window.modalSystem) {
+                        window.modalSystem.show('supportLiveChatUnavailableModal');
+                    }
+                } else {
+                    if (window.modalSystem) {
+                        window.modalSystem.show('startLiveSupportChatModal');
+                    }
+                }
+            }
+            return;
+        }
+
+        const switchOfflineModalBtn = e.target.closest('[data-action="switchFromOfflineModalToTicket"]');
+        if (switchOfflineModalBtn) {
+            e.preventDefault();
+            if (window.modalSystem) {
+                window.modalSystem.closeCurrent();
+                const isUserLoggedIn = !!(window.APP_USER && window.APP_USER.id);
+                if (isUserLoggedIn) {
+                    setTimeout(() => {
+                        window.modalSystem.show('createSupportTicketModal');
+                        setTimeout(() => {
+                            this._renderTurnstile();
+                        }, 100);
+                    }, 200);
+                } else {
+                    const loginUrl = window.APP_CONFIG?.APP_URL ? `${window.APP_CONFIG.APP_URL}/login` : '/login';
+                    if (window.spaRouter) {
+                        window.spaRouter.navigate(loginUrl);
+                    } else {
+                        window.location.href = loginUrl;
+                    }
                 }
             }
             return;
@@ -699,6 +730,9 @@ export class ContactSupportController {
             }, this.abortController ? this.abortController.signal : undefined);
 
             if (res && res.success) {
+                this.isLiveChatOnline = !!res.is_online;
+                this.availableAgentsCount = res.available_agents || 0;
+
                 const statusText = document.querySelector('[data-ref="support-agents-status-text"]');
                 if (statusText) {
                     if (res.available_agents > 0) {
@@ -721,8 +755,6 @@ export class ContactSupportController {
                         this._updateAgentDisplay(res.active_session);
                         this._loadMessages();
                     }
-                } else if (!res.is_online) {
-                    this._showState('offline');
                 } else {
                     if (!this.activeSessionUuid) {
                         this._showState(null);
@@ -737,8 +769,7 @@ export class ContactSupportController {
     _showState(stateName) {
         const states = {
             queue: document.querySelector('[data-ref="support-state-queue"]'),
-            room: document.querySelector('[data-ref="support-state-room"]'),
-            offline: document.querySelector('[data-ref="support-state-offline"]')
+            room: document.querySelector('[data-ref="support-state-room"]')
         };
 
         const footer = document.querySelector('[data-ref="support-chat-room-footer"]');
@@ -769,7 +800,7 @@ export class ContactSupportController {
                     status: stateName
                 }));
             }
-        } else if (stateName === 'preform' || stateName === 'offline' || stateName === 'feedback') {
+        } else {
             this.lastRenderedMaxId = 0;
             this.hasInitialMessagesLoaded = false;
             localStorage.removeItem('pr_active_support_session');
@@ -885,7 +916,17 @@ export class ContactSupportController {
                 }
                 this._updateFloatingButtonVisibility();
             } else {
-                showMessage(res && res.message ? res.message : window.__('err_support_chat_start_failed'), 'error');
+                if (res && res.is_offline) {
+                    this.isLiveChatOnline = false;
+                    if (window.modalSystem) {
+                        window.modalSystem.closeCurrent();
+                        setTimeout(() => {
+                            window.modalSystem.show('supportLiveChatUnavailableModal');
+                        }, 150);
+                    }
+                } else {
+                    showMessage(res && res.message ? res.message : window.__('err_support_chat_start_failed'), 'error');
+                }
             }
         } catch (error) {
             if (error.name === 'AbortError') return;

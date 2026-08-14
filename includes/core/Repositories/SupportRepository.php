@@ -13,9 +13,41 @@ use Exception;
 
 class SupportRepository implements SupportRepositoryInterface {
     private PDO $pdo;
+    private PDO $pdoIdentity;
 
     public function __construct(DatabaseManager $db) {
-        $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
+        $this->pdo = $db->getConnection(DB::CONN_SUPPORT);
+        $this->pdoIdentity = $db->getConnection(DB::CONN_IDENTITY);
+    }
+
+    /**
+     * Batch hydrate user profiles and subscription tiers from db_identity.
+     */
+    private function hydrateUsers(array $userIds): array {
+        $userIds = array_values(array_filter(array_unique(array_map('intval', $userIds))));
+        if (empty($userIds)) {
+            return [];
+        }
+
+        try {
+            $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+            $stmt = $this->pdoIdentity->prepare("
+                SELECT u.id, u.uuid, u.username, u.email, u.profile_picture, u.subscription_tier,
+                       tiers.color AS subscription_color
+                FROM " . DB::TBL_USERS . " u
+                LEFT JOIN subscription_tiers tiers ON u.subscription_tier = tiers.tier_level
+                WHERE u.id IN ($placeholders)
+            ");
+            $stmt->execute($userIds);
+            $users = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $users[(int)$row['id']] = $row;
+            }
+            return $users;
+        } catch (\Throwable $e) {
+            Logger::database("Failed to hydrate users in SupportRepository: " . $e->getMessage(), 'error');
+            return [];
+        }
     }
 
     public function createTicket(array $data): string {
@@ -58,16 +90,27 @@ class SupportRepository implements SupportRepositoryInterface {
     public function findByUuid(string $uuid): ?array {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT st.*, u.username, u.email, u.profile_picture, u.uuid AS user_uuid, tiers.color AS subscription_color
+                SELECT st.*
                 FROM " . DB::TBL_SUPPORT_TICKETS . " st
-                JOIN " . DB::TBL_USERS . " u ON st.user_id = u.id
-                LEFT JOIN subscription_tiers tiers ON u.subscription_tier = tiers.tier_level
                 WHERE st.uuid = :uuid
                 LIMIT 1
             ");
             $stmt->execute([':uuid' => $uuid]);
             $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $ticket ?: null;
+            if (!$ticket) {
+                return null;
+            }
+
+            $userMap = $this->hydrateUsers([(int)$ticket['user_id']]);
+            $userData = $userMap[(int)$ticket['user_id']] ?? null;
+
+            $ticket['username'] = $userData['username'] ?? 'Usuario';
+            $ticket['email'] = $userData['email'] ?? '';
+            $ticket['profile_picture'] = $userData['profile_picture'] ?? null;
+            $ticket['user_uuid'] = $userData['uuid'] ?? null;
+            $ticket['subscription_color'] = $userData['subscription_color'] ?? '#94A3B8';
+
+            return $ticket;
         } catch (PDOException $e) {
             Logger::database("Failed to fetch support ticket by UUID: " . $e->getMessage(), 'error');
             return null;
@@ -96,13 +139,7 @@ class SupportRepository implements SupportRepositoryInterface {
 
     public function getAllTickets(array $filters = [], int $limit = 50, int $offset = 0): array {
         try {
-            $sql = "
-                SELECT st.*, u.username, u.email, u.profile_picture, u.uuid AS user_uuid, tiers.color AS subscription_color
-                FROM " . DB::TBL_SUPPORT_TICKETS . " st
-                LEFT JOIN " . DB::TBL_USERS . " u ON st.user_id = u.id
-                LEFT JOIN subscription_tiers tiers ON u.subscription_tier = tiers.tier_level
-                WHERE 1=1
-            ";
+            $sql = "SELECT st.* FROM " . DB::TBL_SUPPORT_TICKETS . " st WHERE 1=1";
             $params = [];
 
             if (!empty($filters['status'])) {
@@ -118,8 +155,27 @@ class SupportRepository implements SupportRepositoryInterface {
                 $params[':priority'] = $filters['priority'];
             }
             if (!empty($filters['search'])) {
-                $sql .= " AND (st.subject LIKE :search OR u.username LIKE :search OR u.email LIKE :search)";
-                $params[':search'] = '%' . $filters['search'] . '%';
+                $searchTerm = trim($filters['search']);
+                $matchingUserIds = [];
+                try {
+                    $uStmt = $this->pdoIdentity->prepare("
+                        SELECT id FROM " . DB::TBL_USERS . " 
+                        WHERE username LIKE :s OR email LIKE :s 
+                        LIMIT 50
+                    ");
+                    $uStmt->execute([':s' => '%' . $searchTerm . '%']);
+                    $matchingUserIds = $uStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+                } catch (\Throwable $e) {
+                    Logger::database("User search in getAllTickets error: " . $e->getMessage(), 'error');
+                }
+
+                if (!empty($matchingUserIds)) {
+                    $userIn = implode(',', array_map('intval', $matchingUserIds));
+                    $sql .= " AND (st.subject LIKE :search OR st.user_id IN ($userIn))";
+                } else {
+                    $sql .= " AND st.subject LIKE :search";
+                }
+                $params[':search'] = '%' . $searchTerm . '%';
             }
 
             $sql .= " ORDER BY st.created_at DESC LIMIT :limit OFFSET :offset";
@@ -132,7 +188,25 @@ class SupportRepository implements SupportRepositoryInterface {
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            if (empty($tickets)) {
+                return [];
+            }
+
+            $userIds = array_column($tickets, 'user_id');
+            $userMap = $this->hydrateUsers($userIds);
+
+            foreach ($tickets as &$t) {
+                $uId = (int)$t['user_id'];
+                $u = $userMap[$uId] ?? null;
+                $t['username'] = $u['username'] ?? 'Usuario';
+                $t['email'] = $u['email'] ?? '';
+                $t['profile_picture'] = $u['profile_picture'] ?? null;
+                $t['user_uuid'] = $u['uuid'] ?? null;
+                $t['subscription_color'] = $u['subscription_color'] ?? '#94A3B8';
+            }
+
+            return $tickets;
         } catch (PDOException $e) {
             Logger::database("Failed to fetch all tickets: " . $e->getMessage(), 'error');
             return [];
@@ -198,22 +272,42 @@ class SupportRepository implements SupportRepositoryInterface {
     public function findSessionByUuid(string $uuid): ?array {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT scs.*, 
-                       u.username AS client_username, u.email AS client_email, u.profile_picture AS client_avatar, u.subscription_tier AS client_tier,
-                       st.color AS client_subscription_color,
-                       a.username AS agent_username, a.email AS agent_email, a.profile_picture AS agent_avatar,
-                       ast.color AS agent_subscription_color
+                SELECT scs.*
                 FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
-                LEFT JOIN " . DB::TBL_USERS . " u ON scs.user_id = u.id
-                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
-                LEFT JOIN " . DB::TBL_USERS . " a ON scs.assigned_agent_id = a.id
-                LEFT JOIN subscription_tiers ast ON a.subscription_tier = ast.tier_level
                 WHERE scs.uuid = :uuid
                 LIMIT 1
             ");
             $stmt->execute([':uuid' => $uuid]);
             $session = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $session ?: null;
+            if (!$session) {
+                return null;
+            }
+
+            $userIds = [];
+            if (!empty($session['user_id'])) {
+                $userIds[] = (int)$session['user_id'];
+            }
+            if (!empty($session['assigned_agent_id'])) {
+                $userIds[] = (int)$session['assigned_agent_id'];
+            }
+
+            $userMap = $this->hydrateUsers($userIds);
+
+            $client = !empty($session['user_id']) ? ($userMap[(int)$session['user_id']] ?? null) : null;
+            $agent = !empty($session['assigned_agent_id']) ? ($userMap[(int)$session['assigned_agent_id']] ?? null) : null;
+
+            $session['client_username'] = $client['username'] ?? null;
+            $session['client_email'] = $client['email'] ?? null;
+            $session['client_avatar'] = $client['profile_picture'] ?? null;
+            $session['client_tier'] = $client['subscription_tier'] ?? 0;
+            $session['client_subscription_color'] = $client['subscription_color'] ?? '#94A3B8';
+
+            $session['agent_username'] = $agent['username'] ?? null;
+            $session['agent_email'] = $agent['email'] ?? null;
+            $session['agent_avatar'] = $agent['profile_picture'] ?? null;
+            $session['agent_subscription_color'] = $agent['subscription_color'] ?? '#94A3B8';
+
+            return $session;
         } catch (PDOException $e) {
             Logger::database("Failed to fetch session by UUID: " . $e->getMessage(), 'error');
             return null;
@@ -242,19 +336,33 @@ class SupportRepository implements SupportRepositoryInterface {
     public function getActiveSessionForUser(int $userId): ?array {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT scs.*, 
-                       a.username AS agent_username, a.email AS agent_email, a.profile_picture AS agent_avatar,
-                       ast.color AS agent_subscription_color
+                SELECT scs.*
                 FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
-                LEFT JOIN " . DB::TBL_USERS . " a ON scs.assigned_agent_id = a.id
-                LEFT JOIN subscription_tiers ast ON a.subscription_tier = ast.tier_level
                 WHERE scs.user_id = :user_id AND scs.status IN ('waiting_in_queue', 'active', 'escalated')
                 ORDER BY scs.created_at DESC
                 LIMIT 1
             ");
             $stmt->execute([':user_id' => $userId]);
             $session = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $session ?: null;
+            if (!$session) {
+                return null;
+            }
+
+            if (!empty($session['assigned_agent_id'])) {
+                $userMap = $this->hydrateUsers([(int)$session['assigned_agent_id']]);
+                $agent = $userMap[(int)$session['assigned_agent_id']] ?? null;
+                $session['agent_username'] = $agent['username'] ?? null;
+                $session['agent_email'] = $agent['email'] ?? null;
+                $session['agent_avatar'] = $agent['profile_picture'] ?? null;
+                $session['agent_subscription_color'] = $agent['subscription_color'] ?? '#94A3B8';
+            } else {
+                $session['agent_username'] = null;
+                $session['agent_email'] = null;
+                $session['agent_avatar'] = null;
+                $session['agent_subscription_color'] = '#94A3B8';
+            }
+
+            return $session;
         } catch (PDOException $e) {
             Logger::database("Failed to fetch active session for user: " . $e->getMessage(), 'error');
             return null;
@@ -305,12 +413,8 @@ class SupportRepository implements SupportRepositoryInterface {
     public function getQueueSessions(string $level, int $limit = 50): array {
         try {
             $sql = "
-                SELECT scs.*, 
-                       u.username AS client_username, u.email AS client_email, u.profile_picture AS client_avatar, u.subscription_tier AS client_tier,
-                       st.color AS client_subscription_color
+                SELECT scs.*
                 FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
-                LEFT JOIN " . DB::TBL_USERS . " u ON scs.user_id = u.id
-                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 WHERE scs.status IN ('waiting_in_queue', 'escalated')
             ";
             $params = [];
@@ -329,7 +433,25 @@ class SupportRepository implements SupportRepositoryInterface {
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->execute();
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $sessions = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            if (empty($sessions)) {
+                return [];
+            }
+
+            $userIds = array_values(array_filter(array_column($sessions, 'user_id')));
+            $userMap = $this->hydrateUsers($userIds);
+
+            foreach ($sessions as &$s) {
+                $uId = !empty($s['user_id']) ? (int)$s['user_id'] : 0;
+                $u = $userMap[$uId] ?? null;
+                $s['client_username'] = $u['username'] ?? null;
+                $s['client_email'] = $u['email'] ?? null;
+                $s['client_avatar'] = $u['profile_picture'] ?? null;
+                $s['client_tier'] = $u['subscription_tier'] ?? 0;
+                $s['client_subscription_color'] = $u['subscription_color'] ?? '#94A3B8';
+            }
+
+            return $sessions;
         } catch (PDOException $e) {
             Logger::database("Failed to fetch queue sessions: " . $e->getMessage(), 'error');
             return [];
@@ -339,17 +461,32 @@ class SupportRepository implements SupportRepositoryInterface {
     public function getAgentActiveSessions(int $agentId): array {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT scs.*, 
-                       u.username AS client_username, u.email AS client_email, u.profile_picture AS client_avatar, u.subscription_tier AS client_tier,
-                       st.color AS client_subscription_color
+                SELECT scs.*
                 FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
-                LEFT JOIN " . DB::TBL_USERS . " u ON scs.user_id = u.id
-                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 WHERE scs.assigned_agent_id = :agent_id AND scs.status = 'active'
                 ORDER BY scs.updated_at DESC
             ");
             $stmt->execute([':agent_id' => $agentId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $sessions = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            if (empty($sessions)) {
+                return [];
+            }
+
+            $userIds = array_values(array_filter(array_column($sessions, 'user_id')));
+            $userMap = $this->hydrateUsers($userIds);
+
+            foreach ($sessions as &$s) {
+                $uId = !empty($s['user_id']) ? (int)$s['user_id'] : 0;
+                $u = $userMap[$uId] ?? null;
+                $s['client_username'] = $u['username'] ?? null;
+                $s['client_email'] = $u['email'] ?? null;
+                $s['client_avatar'] = $u['profile_picture'] ?? null;
+                $s['client_tier'] = $u['subscription_tier'] ?? 0;
+                $s['client_subscription_color'] = $u['subscription_color'] ?? '#94A3B8';
+            }
+
+            return $sessions;
         } catch (PDOException $e) {
             Logger::database("Failed to fetch agent active sessions: " . $e->getMessage(), 'error');
             return [];
@@ -653,11 +790,9 @@ class SupportRepository implements SupportRepositoryInterface {
     public function getSessionMessages(string $sessionUuid, bool $includeInternal = false, int $limit = 100, int $offset = 0): array {
         try {
             $sql = "
-                SELECT scm.uuid, scm.sender_type, scm.sender_id, scm.sender_name, scm.message, scm.attachments, scm.is_internal, scm.created_at,
-                       u.profile_picture AS sender_avatar
+                SELECT scm.uuid, scm.sender_type, scm.sender_id, scm.sender_name, scm.message, scm.attachments, scm.is_internal, scm.created_at
                 FROM " . DB::TBL_SUPPORT_CHAT_MESSAGES . " scm
                 JOIN " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs ON scm.session_id = scs.id
-                LEFT JOIN " . DB::TBL_USERS . " u ON scm.sender_id = u.id
                 WHERE scs.uuid = :uuid
             ";
 
@@ -674,11 +809,20 @@ class SupportRepository implements SupportRepositoryInterface {
             $stmt->execute();
 
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            if (empty($rows)) {
+                return [];
+            }
+
+            $senderIds = array_values(array_filter(array_column($rows, 'sender_id')));
+            $userMap = $this->hydrateUsers($senderIds);
+
             foreach ($rows as &$row) {
                 if (!empty($row['attachments'])) {
                     $row['attachments'] = json_decode($row['attachments'], true);
                 }
                 $row['is_internal'] = (bool)$row['is_internal'];
+                $sId = !empty($row['sender_id']) ? (int)$row['sender_id'] : 0;
+                $row['sender_avatar'] = $userMap[$sId]['profile_picture'] ?? null;
             }
 
             return $rows;
@@ -691,15 +835,25 @@ class SupportRepository implements SupportRepositoryInterface {
     public function getAgentStatus(int $agentId): ?array {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT sas.*, u.username, u.email, u.profile_picture AS avatar
+                SELECT sas.*
                 FROM " . DB::TBL_SUPPORT_AGENT_STATUS . " sas
-                JOIN " . DB::TBL_USERS . " u ON sas.agent_id = u.id
                 WHERE sas.agent_id = :agent_id
                 LIMIT 1
             ");
             $stmt->execute([':agent_id' => $agentId]);
             $status = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $status ?: null;
+            if (!$status) {
+                return null;
+            }
+
+            $userMap = $this->hydrateUsers([$agentId]);
+            $u = $userMap[$agentId] ?? null;
+
+            $status['username'] = $u['username'] ?? 'Agente';
+            $status['email'] = $u['email'] ?? '';
+            $status['avatar'] = $u['profile_picture'] ?? null;
+
+            return $status;
         } catch (PDOException $e) {
             Logger::database("Failed to fetch agent status: " . $e->getMessage(), 'error');
             return null;
@@ -708,8 +862,11 @@ class SupportRepository implements SupportRepositoryInterface {
 
     public function updateAgentStatus(int $agentId, string $status, ?string $level = null, ?int $maxChats = null): bool {
         try {
-            $existing = $this->getAgentStatus($agentId);
-            if (!$existing) {
+            $checkStmt = $this->pdo->prepare("SELECT agent_id FROM " . DB::TBL_SUPPORT_AGENT_STATUS . " WHERE agent_id = :agent_id LIMIT 1");
+            $checkStmt->execute([':agent_id' => $agentId]);
+            $exists = $checkStmt->fetchColumn();
+
+            if (!$exists) {
                 $stmt = $this->pdo->prepare("
                     INSERT INTO " . DB::TBL_SUPPORT_AGENT_STATUS . "
                     (agent_id, status, level, max_concurrent_chats, last_heartbeat)
@@ -818,9 +975,8 @@ class SupportRepository implements SupportRepositoryInterface {
     public function getOnlineAgents(string $level = 'all'): array {
         try {
             $sql = "
-                SELECT sas.*, u.username, u.email, u.profile_picture AS avatar
+                SELECT sas.*
                 FROM " . DB::TBL_SUPPORT_AGENT_STATUS . " sas
-                JOIN " . DB::TBL_USERS . " u ON sas.agent_id = u.id
                 WHERE sas.status IN ('online', 'busy')
                   AND sas.last_heartbeat >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
             ";
@@ -835,7 +991,24 @@ class SupportRepository implements SupportRepositoryInterface {
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $agents = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            if (empty($agents)) {
+                return [];
+            }
+
+            $agentIds = array_column($agents, 'agent_id');
+            $userMap = $this->hydrateUsers($agentIds);
+
+            foreach ($agents as &$a) {
+                $aId = (int)$a['agent_id'];
+                $u = $userMap[$aId] ?? null;
+                $a['username'] = $u['username'] ?? 'Agente';
+                $a['email'] = $u['email'] ?? '';
+                $a['avatar'] = $u['profile_picture'] ?? null;
+            }
+
+            return $agents;
         } catch (PDOException $e) {
             Logger::database("Failed to fetch online agents: " . $e->getMessage(), 'error');
             return [];
@@ -844,7 +1017,7 @@ class SupportRepository implements SupportRepositoryInterface {
 
     public function getCannedResponses(?string $minLevel = null, ?string $language = null): array {
         try {
-            $sql = "SELECT scr.*, u.username AS creator_username FROM " . DB::TBL_SUPPORT_CANNED_RESPONSES . " scr LEFT JOIN " . DB::TBL_USERS . " u ON scr.created_by = u.id";
+            $sql = "SELECT scr.* FROM " . DB::TBL_SUPPORT_CANNED_RESPONSES . " scr";
             $where = [];
             $params = [];
 
@@ -887,6 +1060,18 @@ class SupportRepository implements SupportRepositoryInterface {
                 $fallbackSql .= " ORDER BY scr.category ASC, scr.shortcut ASC";
                 $stmtFallback = $this->pdo->query($fallbackSql);
                 $results = $stmtFallback ? ($stmtFallback->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+            }
+
+            if (empty($results)) {
+                return [];
+            }
+
+            $creatorIds = array_values(array_filter(array_column($results, 'created_by')));
+            $userMap = $this->hydrateUsers($creatorIds);
+
+            foreach ($results as &$row) {
+                $cId = !empty($row['created_by']) ? (int)$row['created_by'] : 0;
+                $row['creator_username'] = $userMap[$cId]['username'] ?? null;
             }
 
             return $results;

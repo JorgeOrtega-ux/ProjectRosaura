@@ -390,16 +390,17 @@ def get_files_to_scan(target_path):
     return files_to_scan
 
 def main():
-    print(f"{Colors.HEADER}{Colors.BOLD}Herramienta de Análisis del Proyecto{Colors.ENDC}")
-    print("Selecciona el tipo de análisis:")
+    print(f"{Colors.HEADER}{Colors.BOLD}Herramienta de Gestión y Análisis del Proyecto Rosaura{Colors.ENDC}")
+    print("Selecciona una opción:")
     print("1 - Identificar textos hardcodeados (Internacionalización)")
     print("2 - Identificar estilos inline (style=\"...\") en archivos PHP y JS")
     print("3 - Identificar código de depuración (console.log, var_dump, etc.)")
     print("4 - Generar Sprite de Iconos SVG")
     print("5 - Escanear claves de traducción (_t y __) y comprobar JSONs")
-    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4 o 5: {Colors.ENDC}").strip()
+    print("6 - Poblar bases de datos con datos de prueba (~10k registros por tabla)")
+    choice = input(f"{Colors.WARNING}Ingresa 1, 2, 3, 4, 5 o 6: {Colors.ENDC}").strip()
 
-    if choice not in ('1', '2', '3', '4', '5'):
+    if choice not in ('1', '2', '3', '4', '5', '6'):
         print(f"{Colors.FAIL}Opción no válida. Saliendo.{Colors.ENDC}")
         return
 
@@ -414,6 +415,11 @@ def main():
     if choice == '5':
         from scripts import i18n_scanner
         i18n_scanner.run_scanner(target_path, script_dir)
+        return
+
+    if choice == '6':
+        from scripts import db_seeder
+        db_seeder.run_seeder(target_path, script_dir)
         return
 
     if choice == '1':
