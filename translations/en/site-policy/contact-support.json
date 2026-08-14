@@ -55,5 +55,15 @@
     "err_support_login_required": "You must log in to contact support.",
     "err_support_invalid_subject": "Subject must be between 4 and 200 characters.",
     "err_support_invalid_message": "Message must be between 15 and 5000 characters.",
-    "err_support_submission_failed": "An error occurred while submitting your ticket. Please try again."
+    "err_support_submission_failed": "An error occurred while submitting your ticket. Please try again.",
+    "lbl_client_language": "Client language",
+    "lbl_language": "Language",
+    "lbl_lang_es": "Spanish",
+    "lbl_lang_en": "English",
+    "lbl_status": "Status",
+    "lbl_priority": "Priority",
+    "lbl_date": "Date",
+    "lbl_agent_status": "Agent status",
+    "btn_back_to_queues": "Back to queues"
 }
+

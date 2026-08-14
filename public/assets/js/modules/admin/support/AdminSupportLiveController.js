@@ -222,6 +222,13 @@ export class AdminSupportLiveController {
     }
 
     handleClick(e) {
+        const backMobileBtn = e.target.closest('[data-action="backToQueuesMobile"]');
+        if (backMobileBtn) {
+            e.preventDefault();
+            this._handleBackToQueuesMobile();
+            return;
+        }
+
         const queueTabBtn = e.target.closest('[data-action="switchQueueTab"]');
         if (queueTabBtn) {
             e.preventDefault();
@@ -397,10 +404,14 @@ export class AdminSupportLiveController {
 
             if (res && res.success) {
                 this._updateAgentStatusUI(newStatus);
-                const dropdown = document.querySelector('[data-module="adminAgentStatusDropdown"]');
+                const dropdown = document.querySelector('[data-module="adminSupportTopMoreDropdown"]');
                 if (dropdown) {
-                    dropdown.classList.remove('active');
-                    dropdown.classList.add('disabled');
+                    if (window.moduleManager) {
+                        window.moduleManager.close(dropdown);
+                    } else {
+                        dropdown.classList.remove('active');
+                        dropdown.classList.add('disabled');
+                    }
                 }
             } else {
                 showMessage(res && res.message ? res.message : window.__('err_generic'), 'error');
@@ -411,9 +422,22 @@ export class AdminSupportLiveController {
         }
     }
 
-    async _loadCannedResponses() {
+    _handleBackToQueuesMobile() {
+        const consoleEl = document.querySelector('.component-bottom--console');
+        if (consoleEl) {
+            consoleEl.classList.remove('component-bottom--mobile-chat-active');
+        }
+    }
+
+    async _loadCannedResponses(language = null) {
         try {
-            const res = await this.api.post(ApiRoutes.AdminSupport.GetCannedResponses, {}, this.abortController ? this.abortController.signal : undefined);
+            const payload = {};
+            if (language) {
+                payload.language = language;
+            } else if (this.currentSession && this.currentSession.language) {
+                payload.language = this.currentSession.language;
+            }
+            const res = await this.api.post(ApiRoutes.AdminSupport.GetCannedResponses, payload, this.abortController ? this.abortController.signal : undefined);
             if (res && res.success) {
                 this.cannedResponses = res.responses || [];
                 this._renderCannedDropdown();
@@ -496,7 +520,6 @@ export class AdminSupportLiveController {
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
-            console.error('Error loading live queues:', error);
         }
     }
 
@@ -673,6 +696,10 @@ export class AdminSupportLiveController {
 
     async _selectSession(uuid) {
         this.currentSessionUuid = uuid;
+        const consoleEl = document.querySelector('.component-bottom--console');
+        if (consoleEl) {
+            consoleEl.classList.add('component-bottom--mobile-chat-active');
+        }
         const allItems = document.querySelectorAll('[data-action="selectActiveChat"]');
         allItems.forEach(item => {
             if (item.getAttribute('data-uuid') === uuid) {
@@ -719,12 +746,17 @@ export class AdminSupportLiveController {
             nameEl.textContent = `${session.client_username || 'Guest'}${dept}`;
         }
         if (subjectEl) {
-            subjectEl.textContent = `${session.category || 'general'} • ${session.subject || ''}`;
+            const langCode = (session.language || 'es-419').toLowerCase();
+            const langName = langCode.startsWith('en') ? window.__('lbl_lang_en') : window.__('lbl_lang_es');
+            const clientName = session.client_username || 'Guest';
+            subjectEl.textContent = `${session.category || 'general'} • ${clientName} • ${langName}`;
         }
         if (avatarContainer) {
             avatarContainer.innerHTML = this._renderAvatarHtml(session.client_avatar, session.client_username, session.client_role_color, 'component-avatar--static-sm');
         }
         if (window.applyRoleDynamicColors) window.applyRoleDynamicColors();
+
+        this._loadCannedResponses(session.language);
     }
 
     _renderClientSidebar(session) {

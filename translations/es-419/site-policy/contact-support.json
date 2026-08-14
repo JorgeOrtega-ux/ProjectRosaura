@@ -55,5 +55,14 @@
     "err_support_login_required": "Debes iniciar sesión para contactar con soporte.",
     "err_support_invalid_subject": "El asunto debe tener entre 4 y 200 caracteres.",
     "err_support_invalid_message": "El mensaje debe tener entre 15 y 5000 caracteres.",
-    "err_support_submission_failed": "Ocurrió un error al enviar el ticket. Por favor, intenta nuevamente."
+    "err_support_submission_failed": "Ocurrió un error al enviar el ticket. Por favor, intenta nuevamente.",
+    "lbl_client_language": "Idioma del cliente",
+    "lbl_language": "Idioma",
+    "lbl_lang_es": "Español",
+    "lbl_lang_en": "Inglés",
+    "lbl_status": "Estado",
+    "lbl_priority": "Prioridad",
+    "lbl_date": "Fecha",
+    "btn_back_to_queues": "Volver a colas de espera"
 }
+

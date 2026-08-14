@@ -462,7 +462,8 @@ class AdminSupportService {
         }
 
         $level = $this->getAgentLevel();
-        $responses = $this->supportRepo->getCannedResponses($level);
+        $language = isset($input['language']) ? trim($input['language']) : null;
+        $responses = $this->supportRepo->getCannedResponses($level, $language);
 
         return [
             'success' => true,
@@ -480,6 +481,7 @@ class AdminSupportService {
         $title = trim($input['title'] ?? '');
         $content = trim($input['content'] ?? '');
         $category = trim($input['category'] ?? 'general');
+        $language = trim($input['language'] ?? 'es-419');
         $minLevel = trim($input['min_level'] ?? 'l1');
         $uuid = trim($input['uuid'] ?? '');
 
@@ -495,6 +497,7 @@ class AdminSupportService {
             'title' => $title,
             'content' => $content,
             'category' => $category,
+            'language' => $language,
             'min_level' => $minLevel,
             'created_by' => $agentId
         ]);
@@ -609,9 +612,12 @@ class AdminSupportService {
 
         try {
             if (!empty($ticket['email'])) {
-                Mailer::sendCustomEmail(
+                $mailer = new Mailer();
+                $mailer->sendSupportTicketReply(
                     $ticket['email'],
-                    __('email_support_reply_subject', ['subject' => $ticket['subject']]),
+                    $ticket['username'] ?? 'User',
+                    $ticket['uuid'],
+                    $ticket['subject'],
                     $replyMessage
                 );
             }

@@ -30,7 +30,7 @@ interface SupportRepositoryInterface {
     public function heartbeatAgent(int $agentId): bool;
     public function getOnlineAgents(string $level = 'all'): array;
 
-    public function getCannedResponses(?string $minLevel = null): array;
+    public function getCannedResponses(?string $minLevel = null, ?string $language = null): array;
     public function saveCannedResponse(array $data): string;
     public function deleteCannedResponse(string $uuid): bool;
 

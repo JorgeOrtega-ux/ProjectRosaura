@@ -1873,6 +1873,7 @@
     "lbl_agent_status_busy": "Ocupado",
     "lbl_agent_status_away": "Ausente",
     "lbl_agent_status_offline": "Desconectado",
+    "lbl_agent_status": "Estado del agente",
     "admin_support_queues_title": "Colas de Espera",
     "lbl_my_active_chats": "Mis Chats",
     "admin_no_chats_in_queue": "No hay chats en espera",
@@ -1966,5 +1967,16 @@
     "btn_confirm_reassign": "Confirmar Transferencia",
     "admin_no_agents_to_reassign": "No hay otros agentes en línea disponibles.",
     "lbl_user_is_typing": "El usuario está escribiendo...",
-    "lbl_select_agent": "Seleccionar agente de soporte"
+    "lbl_select_agent": "Seleccionar agente de soporte",
+    "email_support_ticket_created_subject": "Hemos recibido tu solicitud de soporte - Project Rosaura",
+    "email_support_ticket_created_alt": "Hola {username}, hemos recibido tu solicitud de soporte con referencia {uuid} sobre '{subject}'. Te responderemos directamente a este correo.",
+    "email_support_reply_alt": "Hola {username}, el equipo de soporte ha respondido a tu ticket {uuid}: {reply}",
+    "lbl_client_language": "Idioma del cliente",
+    "lbl_language": "Idioma",
+    "lbl_lang_es": "Español",
+    "lbl_lang_en": "Inglés",
+    "lbl_status": "Estado",
+    "lbl_priority": "Prioridad",
+    "lbl_date": "Fecha",
+    "btn_back_to_queues": "Volver a colas de espera"
 }

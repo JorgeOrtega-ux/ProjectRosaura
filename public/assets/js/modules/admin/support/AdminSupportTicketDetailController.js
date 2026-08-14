@@ -83,7 +83,11 @@ export class AdminSupportTicketDetailController {
         }
 
         if (metaEl) {
-            metaEl.textContent = `${ticket.email || 'Guest'} • ${ticket.category} • Estado: ${ticket.status} • Prioridad: ${ticket.priority} • Fecha: ${ticket.created_at}`;
+            const statusLabel = window.__('lbl_status');
+            const priorityLabel = window.__('lbl_priority');
+            const dateLabel = window.__('lbl_date');
+            const clientIdentifier = ticket.email ? ticket.email : ticket.username;
+            metaEl.textContent = `${clientIdentifier} • ${ticket.category} • ${statusLabel}: ${ticket.status} • ${priorityLabel}: ${ticket.priority} • ${dateLabel}: ${ticket.created_at}`;
         }
 
         if (msgEl) {

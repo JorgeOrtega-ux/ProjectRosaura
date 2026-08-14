@@ -524,6 +524,7 @@ CREATE TABLE IF NOT EXISTS `support_chat_sessions` (
   `status` ENUM('waiting_in_queue', 'active', 'escalated', 'closed', 'abandoned') NOT NULL DEFAULT 'waiting_in_queue',
   `assigned_agent_id` INT(11) DEFAULT NULL,
   `category` VARCHAR(50) NOT NULL DEFAULT 'general',
+  `language` VARCHAR(10) NOT NULL DEFAULT 'es-419',
   `subject` VARCHAR(200) NOT NULL,
   `initial_message` TEXT DEFAULT NULL,
   `priority` ENUM('low', 'medium', 'high', 'urgent') NOT NULL DEFAULT 'medium',
@@ -595,25 +596,32 @@ CREATE TABLE IF NOT EXISTS `support_agent_status` (
 CREATE TABLE IF NOT EXISTS `support_canned_responses` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `uuid` CHAR(36) NOT NULL UNIQUE,
-  `shortcut` VARCHAR(50) NOT NULL UNIQUE,
+  `shortcut` VARCHAR(50) NOT NULL,
   `title` VARCHAR(100) NOT NULL,
   `content` TEXT NOT NULL,
   `category` VARCHAR(50) NOT NULL DEFAULT 'general',
+  `language` VARCHAR(10) NOT NULL DEFAULT 'es-419',
   `min_level` ENUM('l1', 'l2', 'l3') NOT NULL DEFAULT 'l1',
   `created_by` INT(11) DEFAULT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_scr_category` (`category`),
+  KEY `idx_scr_language` (`language`),
   CONSTRAINT `fk_scr_creator` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT IGNORE INTO `support_canned_responses` (`id`, `uuid`, `shortcut`, `title`, `content`, `category`, `min_level`) VALUES
-  (1, UUID(), 'saludo', 'Saludo Inicial de Soporte', '¡Hola! Gracias por comunicarte con el equipo de soporte técnico de Rosaura. ¿En qué podemos colaborarte hoy?', 'general', 'l1'),
-  (2, UUID(), 'pedir_captura', 'Solicitud de Captura de Pantalla', 'Para poder analizar tu caso en detalle, ¿podrías adjuntarnos una captura o describir exactamente el paso a paso donde ocurre el error?', 'technical', 'l1'),
-  (3, UUID(), 'escalar_l2', 'Aviso de Transferencia Especializada', 'He verificado tu caso y para brindarte una solución más ágil lo he transferido a un Especialista de Nivel 2. Por favor mantente en línea mientras revisamos tu expediente.', 'technical', 'l1'),
-  (4, UUID(), 'escalar_l3', 'Aviso de Transferencia a Supervisión', 'Tu caso ha sido escalado al Departamento de Supervisión e Ingeniería (Nivel 3). Estamos investigando a fondo la incidencia en el servidor.', 'technical', 'l2'),
-  (5, UUID(), 'despedida', 'Despedida y Cierre', 'Ha sido un placer ayudarte. Si tienes alguna otra duda o consulta adicional no dudes en escribirnos nuevamente. ¡Que tengas un excelente día!', 'general', 'l1');
+INSERT IGNORE INTO `support_canned_responses` (`id`, `uuid`, `shortcut`, `title`, `content`, `category`, `language`, `min_level`) VALUES
+  (1, UUID(), 'saludo', 'Saludo Inicial de Soporte', '¡Hola! Gracias por comunicarte con el equipo de soporte técnico de Rosaura. ¿En qué podemos colaborarte hoy?', 'general', 'es-419', 'l1'),
+  (2, UUID(), 'pedir_captura', 'Solicitud de Captura de Pantalla', 'Para poder analizar tu caso en detalle, ¿podrías adjuntarnos una captura o describir exactamente el paso a paso donde ocurre el error?', 'technical', 'es-419', 'l1'),
+  (3, UUID(), 'escalar_l2', 'Aviso de Transferencia Especializada', 'He verificado tu caso y para brindarte una solución más ágil lo he transferido a un Especialista de Nivel 2. Por favor mantente en línea mientras revisamos tu expediente.', 'technical', 'es-419', 'l1'),
+  (4, UUID(), 'escalar_l3', 'Aviso de Transferencia a Supervisión', 'Tu caso ha sido escalado al Departamento de Supervisión e Ingeniería (Nivel 3). Estamos investigando a fondo la incidencia en el servidor.', 'technical', 'es-419', 'l2'),
+  (5, UUID(), 'despedida', 'Despedida y Cierre', 'Ha sido un placer ayudarte. Si tienes alguna otra duda o consulta adicional no dudes en escribirnos nuevamente. ¡Que tengas un excelente día!', 'general', 'es-419', 'l1'),
+  (6, UUID(), 'greeting', 'Initial Support Greeting', 'Hello! Thank you for reaching out to Rosaura technical support team. How may we assist you today?', 'general', 'en', 'l1'),
+  (7, UUID(), 'request_screenshot', 'Request Screenshot / Details', 'In order to investigate your case in detail, could you please provide a screenshot or describe the exact steps where the error occurs?', 'technical', 'en', 'l1'),
+  (8, UUID(), 'escalate_l2', 'Transfer to Tier 2 Support', 'I have reviewed your case and transferred it to a Tier 2 Support Specialist for faster resolution. Please stay on the line while we review your details.', 'technical', 'en', 'l1'),
+  (9, UUID(), 'escalate_l3', 'Transfer to Supervision / Engineering', 'Your case has been escalated to Engineering and Supervision (Tier 3). We are investigating the server issue in depth.', 'technical', 'en', 'l2'),
+  (10, UUID(), 'farewell', 'Farewell and Closure', 'It has been a pleasure assisting you. If you have any further questions, please do not hesitate to contact us again. Have a great day!', 'general', 'en', 'l1');
 
 
 

@@ -68,6 +68,13 @@ export class AdminSupportCannedController {
             return;
         }
 
+        const selectLang = e.target.closest('[data-action="selectCannedLang"]');
+        if (selectLang) {
+            e.preventDefault();
+            this._handleSelectLang(selectLang);
+            return;
+        }
+
         const submitBtn = e.target.closest('[data-action="submitCannedForm"]');
         if (submitBtn) {
             e.preventDefault();
@@ -105,6 +112,8 @@ export class AdminSupportCannedController {
         let html = '';
         this.items.forEach(item => {
             const minLevelBadge = `<span class="component-badge">${item.min_level ? item.min_level.toUpperCase() : 'L1'}</span>`;
+            const langLabel = item.language === 'en' ? 'EN' : 'ES';
+            const langBadge = `<span class="component-badge component-badge--primary">${langLabel}</span>`;
 
             html += `
                 <div class="component-group-item">
@@ -113,7 +122,7 @@ export class AdminSupportCannedController {
                             <span class="material-symbols-rounded">quickreply</span>
                         </div>
                         <div class="component-card__text">
-                            <h3 class="component-card__title">/${this._escapeHtml(item.shortcut)} - ${this._escapeHtml(item.title)} ${minLevelBadge}</h3>
+                            <h3 class="component-card__title">/${this._escapeHtml(item.shortcut)} - ${this._escapeHtml(item.title)} ${minLevelBadge} ${langBadge}</h3>
                             <p class="component-card__description">${this._escapeHtml(item.content)}</p>
                         </div>
                     </div>
@@ -163,6 +172,29 @@ export class AdminSupportCannedController {
         }
     }
 
+    _handleSelectLang(item) {
+        const val = item.getAttribute('data-val');
+        const labelText = item.querySelector('.component-menu-link-text span')?.textContent || val;
+
+        const textEl = document.querySelector('[data-ref="canned-lang-text"]');
+        if (textEl) {
+            textEl.textContent = labelText;
+            textEl.setAttribute('data-value', val);
+        }
+
+        const menuList = item.closest('.component-menu-list');
+        if (menuList) {
+            menuList.querySelectorAll('.component-menu-link').forEach(l => l.classList.remove('active'));
+            item.classList.add('active');
+        }
+
+        const dropdown = document.querySelector('[data-module="dropdownCannedLang"]');
+        if (dropdown) {
+            dropdown.classList.remove('active');
+            dropdown.classList.add('disabled');
+        }
+    }
+
     async _submitCannedForm(btn) {
         const form = document.querySelector('[data-ref="admin-canned-form"]');
         if (!form || !btn || btn.classList.contains('disabled-interaction')) return;
@@ -172,11 +204,13 @@ export class AdminSupportCannedController {
         const titleInput = document.querySelector('[data-ref="canned-title-input"]');
         const contentInput = document.querySelector('[data-ref="canned-content-input"]');
         const levelText = document.querySelector('[data-ref="canned-level-text"]');
+        const langText = document.querySelector('[data-ref="canned-lang-text"]');
 
         const shortcut = shortcutInput ? shortcutInput.value.trim() : '';
         const title = titleInput ? titleInput.value.trim() : '';
         const content = contentInput ? contentInput.value.trim() : '';
         const minLevel = levelText ? levelText.getAttribute('data-value') : 'l1';
+        const language = langText ? langText.getAttribute('data-value') : 'es-419';
 
         if (!shortcut || !title || !content) {
             showMessage(window.__('err_support_invalid_canned'), 'error');
@@ -192,6 +226,7 @@ export class AdminSupportCannedController {
                 title: title,
                 content: content,
                 min_level: minLevel,
+                language: language,
                 category: 'general'
             }, this.abortController ? this.abortController.signal : undefined);
 

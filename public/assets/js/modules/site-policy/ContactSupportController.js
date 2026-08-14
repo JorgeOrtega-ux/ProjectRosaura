@@ -470,10 +470,12 @@ export class ContactSupportController {
         setButtonLoading(btn);
 
         try {
+            const clientLang = document.documentElement.lang || 'es-419';
             const res = await this.api.post(ApiRoutes.Support.StartLiveSession, {
                 category: category,
                 subject: subject,
-                initial_message: initialMessage
+                initial_message: initialMessage,
+                language: clientLang
             }, this.abortController ? this.abortController.signal : undefined);
 
             restoreButton(btn);

@@ -333,7 +333,7 @@ export const AdminModalTemplates = {
                         </div>
                     </div>
 
-                    <div class="component-group-item component-group-item--stacked">
+                    <div class="component-group-item component-group-item--stacked component-mb-3">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <span class="component-stat-card__title">${__('lbl_min_level_allowed')}</span>
@@ -357,6 +357,35 @@ export const AdminModalTemplates = {
                                             </div>
                                             <div class="component-menu-link ${item.min_level === 'l3' ? 'active' : ''}" data-action="selectCannedLevel" data-val="l3">
                                                 <div class="component-menu-link-text"><span>${__('lbl_dept_l3')}</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <span class="component-stat-card__title">${__('lbl_language')}</span>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCannedLang">
+                                    <span class="component-dropdown-text" data-ref="canned-lang-text" data-value="${item.language || 'es-419'}">${item.language === 'en' ? __('lbl_lang_en') : __('lbl_lang_es')}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownCannedLang">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            <div class="component-menu-link ${(!item.language || item.language === 'es-419') ? 'active' : ''}" data-action="selectCannedLang" data-val="es-419">
+                                                <div class="component-menu-link-text"><span>${__('lbl_lang_es')} (es-419)</span></div>
+                                            </div>
+                                            <div class="component-menu-link ${item.language === 'en' ? 'active' : ''}" data-action="selectCannedLang" data-val="en">
+                                                <div class="component-menu-link-text"><span>${__('lbl_lang_en')} (en)</span></div>
                                             </div>
                                         </div>
                                     </div>

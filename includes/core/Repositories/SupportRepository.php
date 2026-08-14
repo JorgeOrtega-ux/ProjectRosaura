@@ -162,6 +162,7 @@ class SupportRepository implements SupportRepositoryInterface {
             $uuid = $data['uuid'] ?? Utils::generateUuid();
             $userId = isset($data['user_id']) ? (int)$data['user_id'] : null;
             $category = $data['category'] ?? 'general';
+            $language = $data['language'] ?? 'es-419';
             $subject = trim($data['subject'] ?? '');
             $initialMessage = trim($data['initial_message'] ?? '');
             $priority = $data['priority'] ?? 'medium';
@@ -169,9 +170,9 @@ class SupportRepository implements SupportRepositoryInterface {
 
             $stmt = $this->pdo->prepare("
                 INSERT INTO " . DB::TBL_SUPPORT_CHAT_SESSIONS . " 
-                (uuid, user_id, department_level, status, category, subject, initial_message, priority, started_at, created_at, updated_at)
+                (uuid, user_id, department_level, status, category, language, subject, initial_message, priority, started_at, created_at, updated_at)
                 VALUES 
-                (:uuid, :user_id, :department_level, 'waiting_in_queue', :category, :subject, :initial_message, :priority, NOW(), NOW(), NOW())
+                (:uuid, :user_id, :department_level, 'waiting_in_queue', :category, :language, :subject, :initial_message, :priority, NOW(), NOW(), NOW())
             ");
 
             $stmt->execute([
@@ -179,6 +180,7 @@ class SupportRepository implements SupportRepositoryInterface {
                 ':user_id' => $userId,
                 ':department_level' => $level,
                 ':category' => $category,
+                ':language' => $language,
                 ':subject' => $subject,
                 ':initial_message' => $initialMessage,
                 ':priority' => $priority
@@ -745,15 +747,25 @@ class SupportRepository implements SupportRepositoryInterface {
         }
     }
 
-    public function getCannedResponses(?string $minLevel = null): array {
+    public function getCannedResponses(?string $minLevel = null, ?string $language = null): array {
         try {
             $sql = "SELECT scr.*, u.username AS creator_username FROM " . DB::TBL_SUPPORT_CANNED_RESPONSES . " scr LEFT JOIN " . DB::TBL_USERS . " u ON scr.created_by = u.id";
+            $where = [];
             $params = [];
 
             if ($minLevel === 'l1') {
-                $sql .= " WHERE scr.min_level = 'l1'";
+                $where[] = "scr.min_level = 'l1'";
             } else if ($minLevel === 'l2') {
-                $sql .= " WHERE scr.min_level IN ('l1', 'l2')";
+                $where[] = "scr.min_level IN ('l1', 'l2')";
+            }
+
+            if (!empty($language)) {
+                $where[] = "(scr.language = :language OR scr.language IS NULL)";
+                $params[':language'] = $language;
+            }
+
+            if (!empty($where)) {
+                $sql .= " WHERE " . implode(" AND ", $where);
             }
 
             $sql .= " ORDER BY scr.category ASC, scr.shortcut ASC";
@@ -774,6 +786,7 @@ class SupportRepository implements SupportRepositoryInterface {
             $title = trim($data['title'] ?? '');
             $content = trim($data['content'] ?? '');
             $category = $data['category'] ?? 'general';
+            $language = $data['language'] ?? 'es-419';
             $minLevel = $data['min_level'] ?? 'l1';
             $createdBy = isset($data['created_by']) ? (int)$data['created_by'] : null;
 
@@ -784,7 +797,7 @@ class SupportRepository implements SupportRepositoryInterface {
             if ($existingId) {
                 $stmt = $this->pdo->prepare("
                     UPDATE " . DB::TBL_SUPPORT_CANNED_RESPONSES . "
-                    SET shortcut = :shortcut, title = :title, content = :content, category = :category, min_level = :min_level, updated_at = NOW()
+                    SET shortcut = :shortcut, title = :title, content = :content, category = :category, language = :language, min_level = :min_level, updated_at = NOW()
                     WHERE id = :id
                 ");
                 $stmt->execute([
@@ -792,15 +805,16 @@ class SupportRepository implements SupportRepositoryInterface {
                     ':title' => $title,
                     ':content' => $content,
                     ':category' => $category,
+                    ':language' => $language,
                     ':min_level' => $minLevel,
                     ':id' => $existingId
                 ]);
             } else {
                 $stmt = $this->pdo->prepare("
                     INSERT INTO " . DB::TBL_SUPPORT_CANNED_RESPONSES . "
-                    (uuid, shortcut, title, content, category, min_level, created_by, created_at, updated_at)
+                    (uuid, shortcut, title, content, category, language, min_level, created_by, created_at, updated_at)
                     VALUES
-                    (:uuid, :shortcut, :title, :content, :category, :min_level, :created_by, NOW(), NOW())
+                    (:uuid, :shortcut, :title, :content, :category, :language, :min_level, :created_by, NOW(), NOW())
                 ");
                 $stmt->execute([
                     ':uuid' => $uuid,
@@ -808,6 +822,7 @@ class SupportRepository implements SupportRepositoryInterface {
                     ':title' => $title,
                     ':content' => $content,
                     ':category' => $category,
+                    ':language' => $language,
                     ':min_level' => $minLevel,
                     ':created_by' => $createdBy
                 ]);

@@ -8544,43 +8544,39 @@ html.dark-theme .component-skeleton-design-bottom {
     gap: 0 !important;
 }
 
-.component-bottom--support-console {
+.component-bottom--console {
     display: flex;
     flex-direction: row;
     flex: 1 1 auto;
     height: calc(100vh - 56px);
     overflow: hidden;
-    background: var(--bg-surface);
+    background: transparent;
     position: relative;
-    gap: 0 !important;
+    padding: 12px;
+    gap: 12px;
 }
 
-.admin-support-column {
+.component-column-box {
     display: flex;
     flex-direction: column;
     background: var(--bg-surface);
     overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
 }
 
-.admin-support-column--queues {
+.component-column-box--sidebar {
     width: 320px;
     flex: 0 0 320px;
-    border-right: 1px solid var(--border-color);
 }
 
-.admin-support-column--chat {
+.component-column-box--chat {
     flex: 1 1 auto;
     min-width: 0;
     position: relative;
 }
 
-.admin-support-column--sidebar {
-    width: 320px;
-    flex: 0 0 320px;
-    border-left: 1px solid var(--border-color);
-}
-
-.admin-support-column-header {
+.component-column-header {
     padding: 8px 10px;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-surface);
@@ -8590,7 +8586,7 @@ html.dark-theme .component-skeleton-design-bottom {
     justify-content: space-between;
 }
 
-.admin-support-queue-list {
+.component-card-list--scrollable {
     flex: 1 1 auto;
     overflow-y: auto;
     padding: 10px;
@@ -8601,7 +8597,7 @@ html.dark-theme .component-skeleton-design-bottom {
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-.admin-support-queue-list .component-group-item,
+.component-card-list .component-group-item,
 .component-group-item.component-group-item--clickable {
     border: 1px solid var(--border-color);
     border-radius: 12px;
@@ -8611,46 +8607,52 @@ html.dark-theme .component-skeleton-design-bottom {
     cursor: pointer;
 }
 
-.admin-support-queue-list .component-group-item:hover,
+.component-card-list .component-group-item:hover,
 .component-group-item.component-group-item--clickable:hover {
     background: var(--surface-hover);
     border-color: var(--text-primary);
 }
 
-.admin-support-queue-list .component-group-item.active,
+.component-card-list .component-group-item.active,
 .component-group-item.component-group-item--clickable.active {
     border-color: var(--text-primary);
     background: var(--surface-hover);
 }
 
 .component-search--radius-50,
-.admin-support-chat-footer .component-search {
+.component-chat-footer .component-search {
     border-radius: 50px !important;
 }
 
-.admin-support-chat-header {
-    padding: 8px 16px;
+.component-chat-header {
+    padding: 8px;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-surface);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
     flex: 0 0 auto;
 }
 
-.admin-support-chat-header .component-card__content {
+.component-mobile-back-box {
+    display: none;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.component-chat-header .component-card__content {
     flex: 1 1 auto;
     min-width: 0;
 }
 
-.admin-support-chat-header .component-badge-group {
+.component-chat-header .component-badge-group {
     width: auto;
     flex-shrink: 0;
     gap: 6px;
 }
 
-.admin-support-messages-container {
+.component-chat-messages {
     flex: 1 1 auto;
     overflow-y: auto;
     padding: 16px;
@@ -8661,19 +8663,19 @@ html.dark-theme .component-skeleton-design-bottom {
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-.admin-support-chat-footer {
-    padding: 8px 16px 12px 16px;
+.component-chat-footer {
+    padding: 8px;
     border-top: 1px solid var(--border-color);
     background: var(--bg-surface);
     flex: 0 0 auto;
 }
 
-.admin-support-chat-footer .component-search-input {
+.component-chat-footer .component-search-input {
     gap: 4px;
     padding: 0 4px;
 }
 
-.admin-support-chat-footer .component-button--icon.component-button--h32 {
+.component-chat-footer .component-button--icon.component-button--h32 {
     border: 1px solid var(--border-color);
     border-radius: 50%;
     width: 28px;
@@ -8684,36 +8686,52 @@ html.dark-theme .component-skeleton-design-bottom {
     transition: all 0.2s ease;
 }
 
-.admin-support-chat-footer .component-button--icon.component-button--h32 .material-symbols-rounded {
+.component-chat-footer .component-button--icon.component-button--h32 .material-symbols-rounded {
     font-size: 1.05rem;
 }
 
-.admin-support-chat-footer .component-button--icon.component-button--h32:hover {
+.component-chat-footer .component-button--icon.component-button--h32:hover {
     background: var(--surface-hover);
     color: var(--text-primary);
 }
 
-.admin-support-chat-footer .component-button--icon.component-button--h32.active,
-.admin-support-chat-footer .component-button--icon.component-button--h32.component-button--warning {
+.component-chat-footer .component-button--icon.component-button--h32.active,
+.component-chat-footer .component-button--icon.component-button--h32.component-button--warning {
     background: rgba(245, 158, 11, 0.15) !important;
     color: #f59e0b !important;
     border-color: #f59e0b !important;
 }
 
-.admin-support-sidebar-content {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    padding: 16px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+@media (max-width: 768px) {
+    .component-bottom--console {
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .component-column-box--sidebar {
+        width: 100%;
+        flex: 1 1 auto;
+    }
+
+    .component-column-box--chat {
+        display: none;
+        width: 100%;
+        flex: 1 1 auto;
+    }
+
+    .component-bottom--console.component-bottom--mobile-chat-active .component-column-box--sidebar {
+        display: none;
+    }
+
+    .component-bottom--console.component-bottom--mobile-chat-active .component-column-box--chat {
+        display: flex;
+    }
+
+    .component-mobile-back-box {
+        display: flex;
+    }
 }
 
-.admin-support-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
 
 .component-support-room-agent-bar {
     padding: 10px 14px;

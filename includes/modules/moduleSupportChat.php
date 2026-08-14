@@ -178,7 +178,7 @@
             <div class="component-menu-bottom component-chat-input-area" data-ref="support-chat-room-footer">
                 <div class="component-search component-search--w-auto">
                     <div class="component-search-input">
-                        <input type="text" data-ref="support-chat-input-text" placeholder="<?php echo __('placeholder_chat_message'); ?>" maxlength="1500" autocomplete="off">
+                        <input class="component-input-field" data-ref="support-chat-input-text" type="text" placeholder="<?php echo __('placeholder_chat_message'); ?>" maxlength="1500" autocomplete="off">
                         <button class="component-chat-send-btn" data-action="sendSupportChatMessage" data-ref="support-btn-send" type="button">
                             <span class="material-symbols-rounded">send</span>
                         </button>

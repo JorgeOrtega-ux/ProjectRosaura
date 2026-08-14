@@ -92,6 +92,25 @@ class SupportService {
                 'user_agent' => $userAgent
             ]);
 
+            try {
+                if (!empty($user['email'])) {
+                    $mailer = new \App\Core\Mail\Mailer();
+                    $mailer->sendSupportTicketCreated(
+                        $user['email'],
+                        $user['username'] ?? 'User',
+                        $ticketUuid,
+                        $subject,
+                        $category
+                    );
+                }
+            } catch (\Throwable $mailEx) {
+                Logger::warning("Could not send support ticket creation confirmation email", [
+                    'ticket_uuid' => $ticketUuid,
+                    'email' => $user['email'] ?? null,
+                    'exception' => $mailEx
+                ]);
+            }
+
             Logger::info("Support ticket created successfully", [
                 'ticket_uuid' => $ticketUuid,
                 'user_id' => $userId,
@@ -147,6 +166,7 @@ class SupportService {
                 'status' => $activeSession['status'],
                 'department_level' => $activeSession['department_level'],
                 'category' => $activeSession['category'],
+                'language' => $activeSession['language'] ?? 'es-419',
                 'subject' => $activeSession['subject'],
                 'agent_name' => $activeSession['agent_username'] ?? null,
                 'agent_avatar' => $activeSession['agent_avatar'] ?? null,
@@ -183,6 +203,7 @@ class SupportService {
                     'session_uuid' => $existing['uuid'],
                     'status' => $existing['status'],
                     'department_level' => $existing['department_level'],
+                    'language' => $existing['language'] ?? 'es-419',
                     'message' => __('msg_support_resumed_session')
                 ];
             }
@@ -191,6 +212,21 @@ class SupportService {
         $category = trim($input['category'] ?? 'general');
         $subject = trim($input['subject'] ?? '');
         $initialMessage = trim($input['initial_message'] ?? '');
+        $language = trim($input['language'] ?? '');
+
+        if (empty($language)) {
+            if ($userId) {
+                try {
+                    $userPref = $this->userRepo->getPreferences($userId);
+                    if (!empty($userPref['language'])) {
+                        $language = $userPref['language'];
+                    }
+                } catch (\Throwable $e) {}
+            }
+        }
+        if (empty($language)) {
+            $language = $_SESSION['lang'] ?? ($_COOKIE['lang'] ?? 'es-419');
+        }
 
         if (!in_array($category, self::ALLOWED_CATEGORIES, true)) {
             $category = 'general';
@@ -218,6 +254,7 @@ class SupportService {
                 'user_id' => $userId,
                 'department_level' => 'l1',
                 'category' => $category,
+                'language' => $language,
                 'subject' => $subject,
                 'initial_message' => $initialMessage,
                 'priority' => $priority
@@ -243,6 +280,7 @@ class SupportService {
                 'session_uuid' => $sessionUuid,
                 'queue_position' => $queuePos,
                 'category' => $category,
+                'language' => $language,
                 'subject' => $subject,
                 'priority' => $priority,
                 'client_username' => $userName,
@@ -255,6 +293,7 @@ class SupportService {
                 'session_uuid' => $sessionUuid,
                 'status' => 'waiting_in_queue',
                 'department_level' => 'l1',
+                'language' => $language,
                 'queue_position' => $queuePos,
                 'message' => __('msg_support_chat_requested')
             ];

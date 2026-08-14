@@ -291,5 +291,78 @@ class Mailer {
             return false;
         }
     }
-}
-?>
+
+    public function sendSupportTicketCreated($toEmail, $username, $ticketUuid, $subject, $category = 'general') {
+        try {
+            $lang = $this->getTargetLanguage($toEmail);
+            $this->mail->clearAddresses();
+            $this->mail->addAddress($toEmail, $username);
+
+            $this->mail->isHTML(true);
+            $this->mail->Subject = Translator::getForLang($lang, 'email_support_ticket_created_subject');
+
+            $this->mail->Body = EmailTemplates::get('support_ticket_created', [
+                'username' => $username,
+                'ticketUuid' => $ticketUuid,
+                'subject' => $subject,
+                'category' => $category
+            ], $lang);
+
+            $this->mail->AltBody = Translator::getForLang($lang, 'email_support_ticket_created_alt', [
+                'username' => $username,
+                'uuid' => $ticketUuid,
+                'subject' => $subject
+            ]);
+
+            return $this->mail->send();
+        } catch (PHPMailerException $e) {
+            Logger::error("Failed to send support ticket creation confirmation email", ['to_email' => $toEmail, 'smtp_error' => $this->mail->ErrorInfo, 'exception' => $e]);
+            return false;
+        }
+    }
+
+    public function sendSupportTicketReply($toEmail, $username, $ticketUuid, $subject, $replyMessage) {
+        try {
+            $lang = $this->getTargetLanguage($toEmail);
+            $this->mail->clearAddresses();
+            $this->mail->addAddress($toEmail, $username);
+
+            $this->mail->isHTML(true);
+            $this->mail->Subject = Translator::getForLang($lang, 'email_support_reply_subject', ['subject' => $subject]);
+
+            $this->mail->Body = EmailTemplates::get('support_ticket_reply', [
+                'username' => $username,
+                'ticketUuid' => $ticketUuid,
+                'subject' => $subject,
+                'replyMessage' => $replyMessage
+            ], $lang);
+
+            $this->mail->AltBody = Translator::getForLang($lang, 'email_support_reply_alt', [
+                'username' => $username,
+                'uuid' => $ticketUuid,
+                'reply' => $replyMessage
+            ]);
+
+            return $this->mail->send();
+        } catch (PHPMailerException $e) {
+            Logger::error("Failed to send support ticket reply email", ['to_email' => $toEmail, 'smtp_error' => $this->mail->ErrorInfo, 'exception' => $e]);
+            return false;
+        }
+    }
+
+    public static function sendCustomEmail($toEmail, $subject, $bodyHtml, $altBody = '') {
+        try {
+            $instance = new self();
+            $instance->mail->clearAddresses();
+            $instance->mail->addAddress($toEmail);
+            $instance->mail->isHTML(true);
+            $instance->mail->Subject = $subject;
+            $instance->mail->Body = $bodyHtml;
+            $instance->mail->AltBody = !empty($altBody) ? $altBody : strip_tags($bodyHtml);
+            return $instance->mail->send();
+        } catch (\Throwable $e) {
+            Logger::error("Failed to send custom email", ['to_email' => $toEmail, 'exception' => $e]);
+            return false;
+        }
+    }
+}
