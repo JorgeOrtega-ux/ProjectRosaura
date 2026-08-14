@@ -54,6 +54,13 @@ class CanvasCoreController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_invalid_params')]);
             }
 
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+            $accessCheck = $this->canvasServices->validateCanvasAccess($userId, $canvasId);
+            if (!$accessCheck['success']) {
+                $httpCode = $accessCheck['http_code'] ?? \App\Core\System\HttpConstants::FORBIDDEN;
+                return $this->respond(['success' => false, 'message' => $accessCheck['message'], 'http_code' => $httpCode]);
+            }
+
             $payload = json_encode([
                 'canvas_id' => $canvasId,
                 'board_w' => $boardW,

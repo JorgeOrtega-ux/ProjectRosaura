@@ -596,9 +596,8 @@ class CanvasSettingsService {
                 }
             }
 
-            $role = $this->canvasRepository->pdo->prepare("SELECT id FROM canvas_roles WHERE id = ? AND canvas_id = ?");
-            $role->execute([$roleId, $canvasId]);
-            if (!$role->fetch()) {
+            $role = $this->canvasRepository->getRoleById($roleId, $canvasId);
+            if (!$role) {
                 return ['success' => false, 'message' => __('err_role_not_found')];
             }
 

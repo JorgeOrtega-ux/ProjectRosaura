@@ -402,7 +402,8 @@ class CanvasAccessService {
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
             $isOwner = ($canvas['owner_id'] === $userId);
-            if (!$isOwner) {
+            $canManageInvites = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\CanvasPermissionsConstants::MANAGE_INVITES);
+            if (!$canManageInvites) {
                 return ['success' => false, 'message' => __('err_unauthorized_invites')];
             }
 
@@ -449,7 +450,8 @@ class CanvasAccessService {
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
             $isOwner = ($canvas['owner_id'] === $userId);
-            if (!$isOwner) {
+            $canManageInvites = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\CanvasPermissionsConstants::MANAGE_INVITES);
+            if (!$canManageInvites) {
                 return ['success' => false, 'message' => __('err_unauthorized_view_invites')];
             }
 
@@ -467,7 +469,8 @@ class CanvasAccessService {
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
             $isOwner = ($canvas['owner_id'] === $userId);
-            if (!$isOwner) {
+            $canManageInvites = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\CanvasPermissionsConstants::MANAGE_INVITES);
+            if (!$canManageInvites) {
                 return ['success' => false, 'message' => __('err_unauthorized_revoke_invites')];
             }
 

@@ -839,6 +839,20 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $roles;
     }
 
+    public function getRoleById(int $roleId, ?int $canvasId = null): ?array {
+        $sql = "SELECT * FROM " . DB::TBL_CANVAS_ROLES . " WHERE id = :id";
+        $params = [':id' => $roleId];
+        if ($canvasId !== null) {
+            $sql .= " AND (canvas_id IS NULL OR canvas_id = :canvas_id)";
+            $params[':canvas_id'] = $canvasId;
+        }
+        $sql .= " LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $role = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $role ?: null;
+    }
+
     public function getCanvasPermissions(): array {
         if ($this->redisClient) {
             try {
@@ -1357,7 +1371,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getSnapshotsHistoryByUuid(string $uuid): array {
-        $sql = "SELECT h.id, h.snapshot_uuid, h.file_path, h.created_at, c.privacy, 
+        $sql = "SELECT h.id, h.snapshot_uuid, h.file_path, h.created_at, h.privacy, 
                        (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_SNAPSHOTS_LIKES . " l WHERE l.snapshot_id = h.id) as likes_count
                 FROM " . DB::TBL_CANVAS_SNAPSHOTS_HISTORY . " h
                 INNER JOIN " . DB::TBL_CANVASES . " c ON h.canvas_id = c.id

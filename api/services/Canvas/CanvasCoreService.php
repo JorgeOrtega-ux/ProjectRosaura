@@ -38,6 +38,33 @@ class CanvasCoreService {
         return ['default']; 
     }
 
+    public function validateCanvasAccess(?int $userId, int $canvasId): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
+            }
+
+            if (($canvas['privacy'] ?? '') === DB::PRIVACY_PRIVATE) {
+                if ($userId === null) {
+                    return ['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED];
+                }
+                $isOwner = ((int)($canvas['owner_id'] ?? 0) === (int)$userId);
+                if (!$isOwner) {
+                    $roles = $this->canvasRepository->getMemberRoles($canvasId, $userId);
+                    if (empty($roles)) {
+                        return ['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
+                    }
+                }
+            }
+
+            return ['success' => true, 'canvas' => $canvas];
+        } catch (\Throwable $e) {
+            Logger::error('Error validating canvas access.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database'), 'http_code' => 500];
+        }
+    }
+
     public function generateWsTicket(?int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);

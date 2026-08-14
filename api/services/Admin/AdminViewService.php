@@ -34,28 +34,34 @@ class AdminViewService {
 
      */
     public static function parseSubscriptionColor(?string $raw): ?string {
-        if (empty($raw)) return null;
+        if (empty($raw)) return 'var(--text-muted)';
 
         $trimmed = trim($raw);
-        if (str_starts_with($trimmed, '{') && str_ends_with($trimmed, '}')) {
-            $data = json_decode($trimmed, true);
-            if (is_array($data) && isset($data['type'])) {
-                if ($data['type'] === 'solid') {
-                    return $data['color'] ?? null;
-                }
-                if ($data['type'] === 'gradient' && !empty($data['colors'])) {
-                    $angle = $data['angle'] ?? 90;
-                    $stops = [];
-                    foreach ($data['colors'] as $c) {
-                        $hex = $c['hex'] ?? '#000000';
-                        $pct = $c['percentage'] ?? 0;
-                        $stops[] = "{$hex} {$pct}%";
-                    }
-                    return "linear-gradient({$angle}deg, " . implode(', ', $stops) . ")";
-                }
-            }
+        $colorData = json_decode($trimmed, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($colorData)) {
+            return $trimmed;
         }
-        return $trimmed;
+
+        $firstColorObj = $colorData['colors'][0] ?? ($colorData['color'] ?? null);
+        $bg = is_string($firstColorObj) ? $firstColorObj : ($firstColorObj['hex'] ?? 'var(--text-muted)');
+
+        if (($colorData['type'] ?? 'solid') === 'gradient' && !empty($colorData['colors']) && count($colorData['colors']) > 1) {
+            $angle = (int)($colorData['angle'] ?? 0);
+            $stopsArray = [];
+            $prevStop = 0;
+            $colorsCount = count($colorData['colors']);
+            foreach ($colorData['colors'] as $i => $colorObj) {
+                $hex = is_string($colorObj) ? $colorObj : ($colorObj['hex'] ?? '#000000');
+                $percentage = (is_array($colorObj) && isset($colorObj['percentage'])) ? (int)$colorObj['percentage'] : floor(100 / $colorsCount);
+                $endStop = $prevStop + $percentage;
+                if ($i === $colorsCount - 1) $endStop = 100;
+                $stopsArray[] = "{$hex} {$prevStop}% {$endStop}%";
+                $prevStop = $endStop;
+            }
+            $bg = "conic-gradient(from {$angle}deg, " . implode(', ', $stopsArray) . ")";
+        }
+
+        return $bg;
     }
 
     /**

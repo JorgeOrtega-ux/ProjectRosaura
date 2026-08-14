@@ -1059,6 +1059,48 @@ class StripeServices {
         $userId = $this->sessionManager->getActiveAccountId();
         \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
 
+        $permissions = $this->sessionManager->get('user_permissions', []);
+        $isAdmin = in_array(\App\Core\System\PermissionsConstants::VIEW_USER_PURCHASES, $permissions, true)
+            || in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $permissions, true);
+
+        if (!$isAdmin) {
+            $dbManager = new \App\Config\Database\DatabaseManager();
+            $pdo = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmt = $pdo->prepare("SELECT id FROM payment_history WHERE user_id = :uid AND (stripe_payment_intent_id = :id1 OR stripe_invoice_id = :id2) LIMIT 1");
+            $stmt->execute([':uid' => $userId, ':id1' => $id, ':id2' => $id]);
+            $isOwned = (bool)$stmt->fetchColumn();
+
+            if (!$isOwned) {
+                $stmtCust = $pdo->prepare("SELECT stripe_customer_id FROM users WHERE id = :uid LIMIT 1");
+                $stmtCust->execute([':uid' => $userId]);
+                $userStripeCust = $stmtCust->fetchColumn();
+
+                $stripeMatch = false;
+                if (!empty($userStripeCust)) {
+                    try {
+                        if (strpos($id, 'in_') === 0) {
+                            $inv = \Stripe\Invoice::retrieve($id);
+                            if ($inv && $inv->customer === $userStripeCust) {
+                                $stripeMatch = true;
+                            }
+                        } elseif (strpos($id, 'ch_') === 0 || strpos($id, 'py_') === 0) {
+                            $chg = \Stripe\Charge::retrieve($id);
+                            if ($chg && $chg->customer === $userStripeCust) {
+                                $stripeMatch = true;
+                            }
+                        }
+                    } catch (\Throwable $e) {}
+                }
+
+                if (!$stripeMatch) {
+                    http_response_code(403);
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => __('err_unauthorized')]);
+                    exit;
+                }
+            }
+        }
+
         $pdfUrl = $this->getStripePdfUrl($id);
         $pdfData = null;
 

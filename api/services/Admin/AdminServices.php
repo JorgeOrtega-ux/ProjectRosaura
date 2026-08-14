@@ -2044,6 +2044,9 @@ class AdminServices {
             return ['success' => false, 'message' => __('err_user_not_found')];
         }
 
+        $authCheck = $this->canEditUser($user);
+        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
+
         try {
             $token = bin2hex(random_bytes(32));
             $resetLink = rtrim(APP_URL, '/') . "/reset-password?token=" . $token;
@@ -2088,6 +2091,9 @@ class AdminServices {
         if (!$user) {
             return ['success' => false, 'message' => __('err_user_not_found')];
         }
+
+        $authCheck = $this->canEditUser($user);
+        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
         try {
             $redisCache = new \App\Config\Database\RedisCache();
@@ -2141,6 +2147,9 @@ class AdminServices {
         if (!$user) {
             return ['success' => false, 'message' => __('err_user_not_found')];
         }
+
+        $authCheck = $this->canEditUser($user);
+        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
         try {
             $userId = (int)$user['id'];
@@ -2198,6 +2207,9 @@ class AdminServices {
         if (!$user) {
             return ['success' => false, 'message' => __('err_user_not_found')];
         }
+
+        $authCheck = $this->canEditUser($user);
+        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
         try {
             $this->tokenRepository->deleteAllByUserId((int)$user['id']);

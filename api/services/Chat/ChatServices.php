@@ -40,13 +40,27 @@ class ChatServices
             return ['success' => false, 'message' => __('err_invalid_canvas'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
 }
 
-        $stmt = $this->pdo->prepare("SELECT allow_chat, uuid FROM " . DB::TBL_CANVASES . " WHERE id = ?");
+        $stmt = $this->pdo->prepare("SELECT id, allow_chat, uuid, privacy, owner_id FROM " . DB::TBL_CANVASES . " WHERE id = ?");
         $stmt->execute([$canvasId]);
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$canvas || $canvas['allow_chat'] != 1) {
             return ['success' => false, 'message' => __('err_chat_disabled'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
-}
+        }
+
+        if (($canvas['privacy'] ?? '') === DB::PRIVACY_PRIVATE) {
+            if (!$userId) {
+                return ['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED];
+            }
+            $isOwner = ((int)($canvas['owner_id'] ?? 0) === (int)$userId);
+            if (!$isOwner) {
+                $checkStmt = $this->pdo->prepare("SELECT 1 FROM canvas_user_roles WHERE canvas_id = ? AND user_id = ? LIMIT 1");
+                $checkStmt->execute([$canvasId, $userId]);
+                if (!$checkStmt->fetch()) {
+                    return ['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
+                }
+            }
+        }
 
         $session = $this->cassandraManager->getSession();
         $messages = [];
@@ -219,13 +233,24 @@ class ChatServices
             return ['success' => false, 'message' => __('err_message_too_long'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 
-        $stmt = $this->pdo->prepare("SELECT allow_chat, uuid FROM " . DB::TBL_CANVASES . " WHERE id = ?");
+        $stmt = $this->pdo->prepare("SELECT id, allow_chat, uuid, privacy, owner_id FROM " . DB::TBL_CANVASES . " WHERE id = ?");
         $stmt->execute([$canvasId]);
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$canvas || $canvas['allow_chat'] != 1) {
             return ['success' => false, 'message' => __('err_chat_disabled'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
-}
+        }
+
+        if (($canvas['privacy'] ?? '') === DB::PRIVACY_PRIVATE) {
+            $isOwner = ((int)($canvas['owner_id'] ?? 0) === (int)$userId);
+            if (!$isOwner) {
+                $checkStmt = $this->pdo->prepare("SELECT 1 FROM canvas_user_roles WHERE canvas_id = ? AND user_id = ? LIMIT 1");
+                $checkStmt->execute([$canvasId, $userId]);
+                if (!$checkStmt->fetch()) {
+                    return ['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
+                }
+            }
+        }
 
         $stmt = $this->pdo->prepare("SELECT id FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ? AND sanction_scope IN ('chat_mute', 'canvas_ban') AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW()))");
         $stmt->execute([$canvasId, $userId]);
@@ -911,12 +936,26 @@ class ChatServices
             return ['success' => false, 'message' => __('err_invalid_canvas')];
         }
 
-        $stmt = $this->pdo->prepare("SELECT allow_chat, uuid FROM " . DB::TBL_CANVASES . " WHERE id = ?");
+        $stmt = $this->pdo->prepare("SELECT id, allow_chat, uuid, privacy, owner_id FROM " . DB::TBL_CANVASES . " WHERE id = ?");
         $stmt->execute([$canvasId]);
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$canvas) {
             return ['success' => false, 'message' => __('err_canvas_not_found')];
+        }
+
+        if (($canvas['privacy'] ?? '') === DB::PRIVACY_PRIVATE) {
+            if (!$userId) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+            $isOwner = ((int)($canvas['owner_id'] ?? 0) === (int)$userId);
+            if (!$isOwner) {
+                $checkStmt = $this->pdo->prepare("SELECT 1 FROM canvas_user_roles WHERE canvas_id = ? AND user_id = ? LIMIT 1");
+                $checkStmt->execute([$canvasId, $userId]);
+                if (!$checkStmt->fetch()) {
+                    return ['success' => false, 'message' => __('err_unauthorized')];
+                }
+            }
         }
 
         $session = $this->cassandraManager->getSession();

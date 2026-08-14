@@ -4,6 +4,7 @@ namespace App\Api\Services\Canvas;
 use App\Config\Database\DatabaseManager;
 use App\Core\Helpers\Utils;
 use App\Core\System\PermissionsConstants;
+use App\Core\System\CanvasPermissionsConstants;
 use App\Core\System\SubscriptionPlanConstants;
 use App\Core\System\Logger;
 
@@ -389,26 +390,26 @@ class CanvasViewService {
 
         $isOwner = ((int)$canvasOwnerId === (int)$userId);
         if (!$isOwner) {
-            $isOwner = $this->hasCanvasPermission($pdoCanvases, $canvasId, (int)$userId, 3);
-        }
-
-        if (!$isOwner) {
-            return [
-                'error' => __('err_unauthorized'),
-                'unauthorized' => true,
-                'userId' => $userId,
-                'canvasUuid' => $canvasUuid,
-                'canvasId' => $canvasId,
-                'canvasOwnerId' => $canvasOwnerId,
-                'members' => [],
-                'memberRoles' => [],
-                'userDetails' => [],
-                'totalMembers' => 0,
-                'page' => 1,
-                'totalPages' => 1,
-                'prevPageUrl' => '#',
-                'nextPageUrl' => '#'
-            ];
+            $canManageMembers = $this->hasCanvasPermission($pdoCanvases, $canvasId, (int)$userId, CanvasPermissionsConstants::MANAGE_MEMBERS);
+            if (!$canManageMembers) {
+                return [
+                    'error' => __('err_unauthorized'),
+                    'unauthorized' => true,
+                    'userId' => $userId,
+                    'canvasUuid' => $canvasUuid,
+                    'canvasId' => $canvasId,
+                    'canvasOwnerId' => $canvasOwnerId,
+                    'members' => [],
+                    'memberRoles' => [],
+                    'userDetails' => [],
+                    'page' => $page,
+                    'totalPages' => 0,
+                    'totalMembers' => 0,
+                    'canManageMembers' => false,
+                    'prevPageUrl' => '#',
+                    'nextPageUrl' => '#'
+                ];
+            }
         }
 
         $limit = 25;
@@ -513,11 +514,20 @@ class CanvasViewService {
     /**
 
      */
-    private function hasCanvasPermission(\PDO $pdo, int $canvasId, int $userId, int $permissionId): bool {
+    private function hasCanvasPermission(\PDO $pdo, int $canvasId, int $userId, $permission): bool {
+        if (is_numeric($permission)) {
+            $stmt = $pdo->prepare("SELECT 1 FROM canvas_role_permissions crp
+                                   JOIN canvas_user_roles cur ON crp.role_id = cur.role_id
+                                   WHERE cur.canvas_id = :cid AND cur.user_id = :uid AND crp.permission_id = :pid LIMIT 1");
+            $stmt->execute(['cid' => $canvasId, 'uid' => $userId, 'pid' => (int)$permission]);
+            return (bool)$stmt->fetchColumn();
+        }
+
         $stmt = $pdo->prepare("SELECT 1 FROM canvas_role_permissions crp
                                JOIN canvas_user_roles cur ON crp.role_id = cur.role_id
-                               WHERE cur.canvas_id = :cid AND cur.user_id = :uid AND crp.permission_id = :pid LIMIT 1");
-        $stmt->execute(['cid' => $canvasId, 'uid' => $userId, 'pid' => $permissionId]);
+                               JOIN canvas_permissions cp ON crp.permission_id = cp.id
+                               WHERE cur.canvas_id = :cid AND cur.user_id = :uid AND cp.name = :pname LIMIT 1");
+        $stmt->execute(['cid' => $canvasId, 'uid' => $userId, 'pname' => (string)$permission]);
         return (bool)$stmt->fetchColumn();
     }
 
@@ -601,7 +611,7 @@ class CanvasViewService {
                     
                     $hasPerm = false;
                     if (!$isOwner) {
-                        $hasPerm = $this->hasCanvasPermission($pdo, (int)$canvasData['id'], (int)$userId, 2);
+                        $hasPerm = $this->hasCanvasPermission($pdo, (int)$canvasData['id'], (int)$userId, CanvasPermissionsConstants::MANAGE_SETTINGS);
                     }
                     if ($isOwner || $hasPerm) {
                         $canvasId = (int)$canvasData['id'];
@@ -677,12 +687,9 @@ class CanvasViewService {
 
                 if ($canvas) {
                     $isOwner = ((int)$canvas['owner_id'] === (int)$userId);
-                    
-                    if (!$isOwner) {
-                        $isOwner = $this->hasCanvasPermission($pdo, (int)$canvas['id'], (int)$userId, 7);
-                    }
+                    $canManageResets = $isOwner || $this->hasCanvasPermission($pdo, (int)$canvas['id'], (int)$userId, CanvasPermissionsConstants::MANAGE_RESETS);
 
-                    if ($isOwner) {
+                    if ($canManageResets) {
                         $canvasId = (int)$canvas['id'];
 
                         $stmtSettings = $pdo->prepare('SELECT is_active, next_reset_at, take_snapshot FROM canvas_reset_settings WHERE canvas_id = :cid LIMIT 1');
@@ -782,12 +789,9 @@ class CanvasViewService {
         }
 
         $isOwner = ((int)$canvas['owner_id'] === (int)$userId);
-        
-        if (!$isOwner) {
-            $isOwner = $this->hasCanvasPermission($pdo, (int)$canvas['id'], (int)$userId, 2);
-        }
+        $canManageResize = $isOwner || $this->hasCanvasPermission($pdo, (int)$canvas['id'], (int)$userId, CanvasPermissionsConstants::MANAGE_SETTINGS);
 
-        if (!$isOwner) {
+        if (!$canManageResize) {
             return ['error' => __('err_unauthorized')];
         }
 
@@ -980,7 +984,7 @@ class CanvasViewService {
                 $w = $stmtRole->fetchColumn();
                 if ($w !== false) $userRolesWeight = (int)$w;
                 
-                if ($this->hasCanvasPermission($pdoCanvases, $canvasId, $userId, 4)) {
+                if ($this->hasCanvasPermission($pdoCanvases, $canvasId, $userId, CanvasPermissionsConstants::MANAGE_ROLES)) {
                     $canManageRoles = true;
                 }
             } catch (\Exception $e) {}
@@ -1192,7 +1196,7 @@ class CanvasViewService {
         }
 
         if ((int)$userId !== $canvasOwnerId) {
-            $hasPerm = $this->hasCanvasPermission($pdoCanvases, $canvasId, (int)$userId, 9);
+            $hasPerm = $this->hasCanvasPermission($pdoCanvases, $canvasId, (int)$userId, CanvasPermissionsConstants::MANAGE_INVITES);
             if (!$hasPerm) {
                 return ['error' => __('err_unauthorized')];
             }
@@ -1351,7 +1355,7 @@ class CanvasViewService {
                 $w = $stmtRole->fetchColumn();
                 if ($w !== false) $userRolesWeight = (int)$w;
                 
-                if ($this->hasCanvasPermission($pdoCanvases, $canvasId, $userId, 4)) {
+                if ($this->hasCanvasPermission($pdoCanvases, $canvasId, $userId, CanvasPermissionsConstants::MANAGE_ROLES)) {
                     $canManageRoles = true;
                 }
             } catch (\Exception $e) {}
@@ -1461,7 +1465,7 @@ class CanvasViewService {
                 $w = $stmtRole->fetchColumn();
                 if ($w !== false) $userRolesWeight = (int)$w;
                 
-                if ($this->hasCanvasPermission($pdoCanvases, $canvasId, $userId, 4)) {
+                if ($this->hasCanvasPermission($pdoCanvases, $canvasId, $userId, CanvasPermissionsConstants::MANAGE_ROLES)) {
                     $canManageRoles = true;
                 }
             } catch (\Exception $e) {}
@@ -1609,9 +1613,8 @@ class CanvasViewService {
         }
 
         $canvasId = (int)$canvas['id'];
-        $isOwner = ((int)$canvas['user_id'] === (int)$userId);
-        
-        if (!$isOwner && !$this->hasCanvasPermission($pdoCanvases, $canvasId, (int)$userId, 8)) {
+        $canManageSanctions = $isOwner || $this->hasCanvasPermission($pdoCanvases, $canvasId, (int)$userId, CanvasPermissionsConstants::MANAGE_SANCTIONS);
+        if (!$canManageSanctions) {
             return ['unauthorized' => true, 'redirect' => (defined('APP_URL') ? APP_URL : '') . '/canvases/manage'];
         }
         $realCanvasUuid = $canvas['uuid'];

@@ -183,11 +183,56 @@ class CanvasAssetController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_requires_inject_templates_plan')]);
             }
 
+            $canvasUuid = $input['canvas_id'] ?? null;
+            $url = $input['url'] ?? null;
+            $x = $input['x'] ?? 0;
+            $y = $input['y'] ?? 0;
+            
+            if (!$canvasUuid || !$url) {
+                return $this->respond(['success' => false, 'message' => __('err_missing_required_params')]);
+            }
+
+            $dbManager = new \App\Config\Database\DatabaseManager();
+            $pdo = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
+            $stmt = $pdo->prepare("SELECT id, owner_id, privacy, is_subscription_locked FROM canvases WHERE uuid = :uuid LIMIT 1");
+            $stmt->execute(['uuid' => $canvasUuid]);
+            $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$canvas) {
+                return $this->respond(['success' => false, 'message' => __('err_canvas_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND]);
+            }
+
+            $canvasId = (int)$canvas['id'];
+
+            if (!empty($canvas['is_subscription_locked'])) {
+                return $this->respond(['success' => false, 'message' => __('err_canvas_locked'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN]);
+            }
+
+            $isOwner = ((int)$canvas['owner_id'] === (int)$userId);
+
+            if (!$isOwner) {
+                // Check if user is banned from canvas
+                $stmtBan = $pdo->prepare("SELECT id FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ? AND sanction_scope IN ('canvas_ban', 'pixel_ban') AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW())) LIMIT 1");
+                $stmtBan->execute([$canvasId, $userId]);
+                if ($stmtBan->fetch()) {
+                    return $this->respond(['success' => false, 'message' => __('err_chat_restricted'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN]);
+                }
+
+                // Check canvas role permissions for place_pixels
+                $stmtPerm = $pdo->prepare("SELECT 1 FROM canvas_user_roles cur JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id JOIN canvas_permissions cp ON crp.permission_id = cp.id WHERE cur.canvas_id = ? AND cur.user_id = ? AND cp.name = 'place_pixels' LIMIT 1");
+                $stmtPerm->execute([$canvasId, $userId]);
+                $hasPlacePixelPerm = (bool)$stmtPerm->fetchColumn();
+
+                if ($canvas['privacy'] === \App\Core\System\DatabaseConstants::PRIVACY_PRIVATE && !$hasPlacePixelPerm) {
+                    return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN]);
+                }
+            }
+
             // --- TOKEN LIMIT CHECK (5 Hours Window) ---
             $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($tier);
             $maxTokens = (int)($planLimits['max_template_tokens'] ?? 0);
             if ($maxTokens <= 0) {
-                return $this->respond(['success' => false, 'message' => 'Tu plan actual no incluye cuota de tokens para inyección de plantillas.']);
+                return $this->respond(['success' => false, 'message' => __('err_plan_no_template_tokens')]);
             }
 
             $w = (int)($input['w'] ?? 500);
@@ -200,35 +245,14 @@ class CanvasAssetController extends BaseController {
             $resetAt = $usage['reset_at'] ?? null;
 
             if (($usedTokens + $tokensCost) > $maxTokens) {
-                $resetInSecs = $resetAt ? max(0, strtotime($resetAt) - time()) : 0;
-                $hoursLeft = ceil($resetInSecs / 3600);
                 return $this->respond([
                     'success' => false,
-                    'message' => "Límite de tokens alcanzado ({$usedTokens}/{$maxTokens} tokens consumidos). Se restablecerá en aproximadamente {$hoursLeft} hora(s)."
+                    'message' => __('err_template_tokens_limit_exceeded')
                 ]);
             }
 
             $this->userRepo->consumeTemplateTokens($userId, $tokensCost);
             // --- END TOKEN LIMIT CHECK ---
-
-            $canvasUuid = $input['canvas_id'] ?? null;
-            $url = $input['url'] ?? null;
-            $x = $input['x'] ?? 0;
-            $y = $input['y'] ?? 0;
-            
-            if (!$canvasUuid || !$url) {
-                return $this->respond(['success' => false, 'message' => __('err_missing_required_params')]);
-            }
-
-            $dbManager = new \App\Config\Database\DatabaseManager();
-            $pdo = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
-            $stmt = $pdo->prepare("SELECT id FROM canvases WHERE uuid = :uuid");
-            $stmt->execute(['uuid' => $canvasUuid]);
-            $canvasId = $stmt->fetchColumn();
-
-            if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => 'Lienzo no encontrado.']);
-            }
 
             $redis = (new \App\Config\Database\RedisCache())->getClient();
             $taskData = [
@@ -244,7 +268,7 @@ class CanvasAssetController extends BaseController {
             ];
             $redis->rpush('queue:canvas_draw_image', json_encode($taskData));
             
-            return $this->respond(['success' => true, 'message' => 'Imagen encolada correctamente. Por favor espera unos segundos.']);
+            return $this->respond(['success' => true, 'message' => __('msg_template_queued')]);
             
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

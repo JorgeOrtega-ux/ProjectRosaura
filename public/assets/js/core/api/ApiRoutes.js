@@ -59,6 +59,7 @@ export const ApiRoutes = {
         UnlinkGoogle: 'settings.unlink_google'
     },
     Admin: {
+        GetTranslations: 'admin.get_translations',
         GetDashboardMetrics: 'admin.get_dashboard_metrics',
         GetUser: 'admin.get_user',
         UpdateAvatar: 'admin.update_avatar',

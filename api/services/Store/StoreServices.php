@@ -132,7 +132,14 @@ class StoreServices {
                 $stripeSession = \Stripe\Checkout\Session::retrieve($sessionId);
                 if ($stripeSession && $stripeSession->payment_status === 'paid') {
                     $metadata = $stripeSession->metadata;
-                    if (isset($metadata->type) && $metadata->type === 'coins') {
+                    $sessionUserId = isset($metadata->user_id) ? (int) $metadata->user_id : null;
+                    if ($sessionUserId !== null && $sessionUserId !== (int) $userId) {
+                        Logger::warning("Stripe session user mismatch in getBalance", [
+                            'active_user_id' => $userId,
+                            'session_user_id' => $sessionUserId,
+                            'session_id' => $sessionId
+                        ]);
+                    } elseif (isset($metadata->type) && $metadata->type === 'coins') {
                         $amountCoins = isset($metadata->amount) ? (int) $metadata->amount : 0;
                         if ($amountCoins > 0) {
                             $purchasedCoins = $amountCoins;

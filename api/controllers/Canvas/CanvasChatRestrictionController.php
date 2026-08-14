@@ -98,6 +98,12 @@ class CanvasChatRestrictionController {
             if (!$canModerate) {
                 return ['status' => 'error', 'message' => __('err_no_permissions')];
             }
+
+            $modWeight = $this->canvasRepository->getUserCanvasWeight($userId, $canvasId);
+            $targetWeight = $this->canvasRepository->getUserCanvasWeight($targetUserId, $canvasId);
+            if ($targetWeight >= $modWeight) {
+                return ['status' => 'error', 'message' => __('err_insufficient_hierarchy')];
+            }
         }
 
         // Also prevent banning the owner

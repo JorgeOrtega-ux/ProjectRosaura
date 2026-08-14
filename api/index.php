@@ -200,8 +200,28 @@ try {
                     exit;
                 }
             }
-            
-            $sessionManager->set('user_role', $liveUser['role_name'] ?? '');
+
+            $activeId = $sessionManager->getActiveAccountId();
+            $roleRepo = $container->get(\App\Core\Interfaces\RoleRepositoryInterface::class);
+            $permissions = $roleRepo->getMergedPermissionsForUser($activeId);
+            $accounts = $sessionManager->get(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, []);
+            if (isset($accounts[$activeId])) {
+                $accounts[$activeId]['user_role_id'] = $liveUser['role_id'] ?? null;
+                $accounts[$activeId]['user_role_name'] = $liveUser['role_name'] ?? __('user');
+                $accounts[$activeId]['user_role_weight'] = (int)($liveUser['role_weight'] ?? 1);
+                $accounts[$activeId]['subscription_color'] = $liveUser['subscription_color'] ?? '#808080';
+                $accounts[$activeId]['user_permissions'] = $permissions;
+                $accounts[$activeId]['user_pic'] = $liveUser['profile_picture'] ?? null;
+                $accounts[$activeId]['subscription_tier'] = (int)($liveUser['subscription_tier'] ?? 0);
+                $accounts[$activeId]['real_subscription_tier'] = (int)($liveUser['real_subscription_tier'] ?? ($liveUser['subscription_tier'] ?? 0));
+                $accounts[$activeId]['google_id'] = $liveUser['google_id'] ?? null;
+                $sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+                $sessionManager->syncRootState();
+            } else {
+                $sessionManager->set('user_role', $liveUser['role_name'] ?? '');
+                $sessionManager->set('user_permissions', $permissions);
+                $sessionManager->set('user_role_weight', (int)($liveUser['role_weight'] ?? 1));
+            }
         }
     } elseif (isset($_COOKIE['remember_tokens']) || isset($_COOKIE['remember_token'])) {
         $authService->autoLogin(); 

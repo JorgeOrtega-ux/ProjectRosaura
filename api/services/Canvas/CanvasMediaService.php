@@ -50,17 +50,22 @@ class CanvasMediaService {
 
             $history = $this->canvasRepository->getSnapshotsHistoryByUuid($uuid);
 
-            $formattedHistory = array_map(function($item) {
+            $formattedHistory = [];
+            foreach ($history as $item) {
+                $isPrivateSnapshot = (($item['privacy'] ?? '') === DB::PRIVACY_PRIVATE);
+                if ($isPrivateSnapshot && !$isOwner) {
+                    continue;
+                }
                 $imageUrl = \App\Core\Helpers\Utils::getS3PublicUrl($item['file_path']);
-                return [
+                $formattedHistory[] = [
                     'id' => $item['id'],
                     'url' => $imageUrl,
                     'date' => date('d/m/Y H:i', strtotime($item['created_at'])),
                     'snapshot_uuid' => $item['snapshot_uuid'],
                     'likes_count' => (int)($item['likes_count'] ?? 0),
-                    'is_private' => ($item['privacy'] ?? '') === DB::PRIVACY_PRIVATE
+                    'is_private' => $isPrivateSnapshot
                 ];
-            }, $history);
+            }
 
             return [
                 'success' => true, 
@@ -82,7 +87,7 @@ class CanvasMediaService {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.file_path, s.snapshot_uuid, c.id as canvas_id, c.size, c.privacy, c.owner_id, c.palette_id 
+                SELECT s.file_path, s.snapshot_uuid, s.privacy as snapshot_privacy, c.id as canvas_id, c.size, c.privacy as canvas_privacy, c.owner_id, c.palette_id 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :snapshot_id 
@@ -103,7 +108,11 @@ class CanvasMediaService {
 
             $isOwner = ($data['owner_id'] === $userId);
 
-            if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
+            if ($data['snapshot_privacy'] === DB::PRIVACY_PRIVATE && !$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            if ($data['canvas_privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 

@@ -1,6 +1,7 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
 use App\Core\System\Translator;
+use App\Core\System\DatabaseConstants as DB;
 
 $adminService = new AdminViewService();
 $editUserData = $adminService->getEditUserData($_GET['uuid'] ?? '');
@@ -22,9 +23,9 @@ $isDefaultAvatar = \App\Core\Helpers\Utils::isDefaultAvatar($formattedAvatar);
 $langMap = Translator::getAvailableLanguages();
 
 $themeMap = [
-    \App\Core\System\DatabaseConstants::THEME_SYSTEM => __('theme_system'), 
-    \App\Core\System\DatabaseConstants::THEME_LIGHT => __('theme_light'), 
-    \App\Core\System\DatabaseConstants::THEME_DARK => __('theme_dark')
+    DB::THEME_SYSTEM => __('theme_system'), 
+    DB::THEME_LIGHT => __('theme_light'), 
+    DB::THEME_DARK => __('theme_dark')
 ];
 
 $rawRoleName = $user['role_name'] ?? '';
@@ -179,124 +180,130 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                                     <span class="component-display-value" data-ref="admin-display-subscription"><?php echo htmlspecialchars($subscriptionPlanLabel); ?></span>
                                 </div>
                             </div>
-                            <div class="component-card__actions component-card__actions--stretch">
-                                <button type="button" class="component-button component-button--h34" data-action="adminSyncStripe" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>">
-                                    <span class="material-symbols-rounded">sync</span>
-                                    <span><?php echo __('btn_sync_stripe', [], 'Sincronizar Stripe'); ?></span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item component-group-item--stateful">
-                        <div class="active component-state-box" data-state="admin-coins-view">
-                            <div class="component-card__content">
-                                <div class="component-card__text">
-                                    <h2 class="component-card__title"><?php echo __('lbl_user_coins', [], 'Saldo de Monedas'); ?></h2>
-                                    <span class="component-display-value" data-ref="admin-display-coins">
-                                        <span class="material-symbols-rounded">toll</span> <?php echo (int)($user['coins'] ?? 0); ?>
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="component-card__actions component-card__actions--stretch">
-                                <button type="button" class="component-button component-button--h34" data-action="adminOpenAdjustCoins" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>">
-                                    <span class="material-symbols-rounded">tune</span>
-                                    <span><?php echo __('btn_adjust_coins', [], 'Ajustar Monedas'); ?></span>
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="component-card--grouped admin-edit-group">
-                    <div class="component-group-item">
+                <div class="component-card--grouped component-accordion admin-edit-group">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('lbl_security_account_title', [], 'Seguridad y Acceso a la Cuenta'); ?></h2>
-                                <p class="component-card__description"><?php echo __('lbl_security_account_desc', [], 'Acciones administrativas para gestionar credenciales, bloqueos y sesiones.'); ?></p>
+                                <h2 class="component-card__title"><?php echo __('lbl_security_account_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('lbl_security_account_desc'); ?></p>
                             </div>
                         </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
                     </div>
-
-                    <hr class="component-divider">
-
-                    <div class="component-group-item">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('lbl_password_reset_title', [], 'Restablecimiento de Contraseña'); ?></h2>
-                                <p class="component-card__description"><?php echo __('lbl_password_reset_desc', [], 'Envía un enlace seguro al correo del usuario para que cree una nueva contraseña.'); ?></p>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <div class="component-group-item">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('lbl_sync_stripe_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('lbl_sync_stripe_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--stretch">
+                                    <button type="button" class="component-button component-button--h34" data-action="adminSyncStripe" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>">
+                                        <span><?php echo __('btn_sync_stripe'); ?></span>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <button type="button" class="component-button component-button--h34" data-action="adminSendPasswordReset" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>" data-email="<?php echo htmlspecialchars($user['email']); ?>">
-                                <span class="material-symbols-rounded">lock_reset</span>
-                                <span><?php echo __('btn_send_password_reset', [], 'Reset Contraseña'); ?></span>
-                            </button>
-                        </div>
-                    </div>
 
-                    <hr class="component-divider">
+                            <hr class="component-divider">
 
-                    <div class="component-group-item">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('lbl_unlock_login_title', [], 'Desbloqueo de Intentos Fallidos'); ?></h2>
-                                <p class="component-card__description"><?php echo __('lbl_unlock_login_desc', [], 'Elimina bloqueos temporales por intentos fallidos de inicio de sesión o 2FA (Rate Limit).'); ?></p>
+                            <div class="component-group-item">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('lbl_user_coins'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('lbl_user_coins_desc'); ?></p>
+                                        <span class="component-display-value" data-ref="admin-display-coins"><?php echo (int)($user['coins'] ?? 0); ?></span>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--stretch">
+                                    <button type="button" class="component-button component-button--h34" data-action="adminOpenAdjustCoins" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>">
+                                        <span><?php echo __('btn_adjust_coins'); ?></span>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <button type="button" class="component-button component-button--h34" data-action="adminUnlockRateLimit" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>" data-email="<?php echo htmlspecialchars($user['email']); ?>">
-                                <span class="material-symbols-rounded">lock_open</span>
-                                <span><?php echo __('btn_unlock_rate_limit', [], 'Desbloquear Login'); ?></span>
-                            </button>
-                        </div>
-                    </div>
 
-                    <hr class="component-divider">
+                            <hr class="component-divider">
 
-                    <div class="component-group-item">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('lbl_terminate_sessions_title', [], 'Sesiones Activas'); ?></h2>
-                                <p class="component-card__description"><?php echo __('lbl_terminate_sessions_desc', [], 'Desconecta al usuario en todos sus navegadores y revoca todos los tokens de acceso.'); ?></p>
+                            <div class="component-group-item">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('lbl_password_reset_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('lbl_password_reset_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--stretch">
+                                    <button type="button" class="component-button component-button--h34" data-action="adminSendPasswordReset" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>" data-email="<?php echo htmlspecialchars($user['email']); ?>">
+                                        <span><?php echo __('btn_send_password_reset'); ?></span>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <button type="button" class="component-button component-button--h34" data-action="adminTerminateSessions" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>" data-email="<?php echo htmlspecialchars($user['email']); ?>">
-                                <span class="material-symbols-rounded">logout</span>
-                                <span><?php echo __('btn_terminate_sessions', [], 'Cerrar Sesiones'); ?></span>
-                            </button>
-                        </div>
-                    </div>
 
-                    <hr class="component-divider">
+                            <hr class="component-divider">
 
-                    <div class="component-group-item">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('lbl_two_factor_auth_title', [], 'Autenticación en Dos Pasos (2FA)'); ?></h2>
-                                <span class="component-display-value" data-ref="admin-display-2fa">
+                            <div class="component-group-item">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('lbl_unlock_login_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('lbl_unlock_login_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--stretch">
+                                    <button type="button" class="component-button component-button--h34" data-action="adminUnlockRateLimit" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>" data-email="<?php echo htmlspecialchars($user['email']); ?>">
+                                        <span><?php echo __('btn_unlock_rate_limit'); ?></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <hr class="component-divider">
+
+                            <div class="component-group-item">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('lbl_terminate_sessions_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('lbl_terminate_sessions_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--stretch">
+                                    <button type="button" class="component-button component-button--h34" data-action="adminTerminateSessions" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>" data-email="<?php echo htmlspecialchars($user['email']); ?>">
+                                        <span><?php echo __('btn_terminate_sessions'); ?></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <hr class="component-divider">
+
+                            <div class="component-group-item">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('lbl_two_factor_auth_title'); ?></h2>
+                                        <span class="component-display-value" data-ref="admin-display-2fa">
+                                            <?php if (!empty($user['two_factor_enabled'])): ?>
+                                                <span class="component-badge component-badge--sm component-badge--success"><?php echo __('lbl_2fa_enabled'); ?></span>
+                                            <?php else: ?>
+                                                <span class="component-badge component-badge--sm"><?php echo __('lbl_2fa_disabled'); ?></span>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--stretch">
                                     <?php if (!empty($user['two_factor_enabled'])): ?>
-                                        <span class="component-badge component-badge--sm component-badge--success"><?php echo __('lbl_2fa_enabled', [], '2FA Activado'); ?></span>
+                                    <button type="button" class="component-button component-button--h34" data-action="adminOpenDisable2FA" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>">
+                                        <span><?php echo __('btn_disable_2fa'); ?></span>
+                                    </button>
                                     <?php else: ?>
-                                        <span class="component-badge component-badge--sm"><?php echo __('lbl_2fa_disabled', [], '2FA Desactivado'); ?></span>
+                                    <button type="button" class="component-button component-button--h34 disabled" disabled>
+                                        <span><?php echo __('lbl_2fa_not_active'); ?></span>
+                                    </button>
                                     <?php endif; ?>
-                                </span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <?php if (!empty($user['two_factor_enabled'])): ?>
-                            <button type="button" class="component-button component-button--h34" data-action="adminOpenDisable2FA" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>">
-                                <span class="material-symbols-rounded">shield_locked</span>
-                                <span><?php echo __('btn_disable_2fa', [], 'Desactivar 2FA'); ?></span>
-                            </button>
-                            <?php else: ?>
-                            <button type="button" class="component-button component-button--h34 disabled" disabled>
-                                <span><?php echo __('lbl_2fa_not_active', [], 'Sin 2FA'); ?></span>
-                            </button>
-                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

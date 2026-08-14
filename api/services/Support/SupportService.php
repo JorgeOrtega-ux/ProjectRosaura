@@ -306,6 +306,24 @@ class SupportService {
         }
     }
 
+    private function canAccessSupportSession(array $session): bool {
+        $isLoggedIn = $this->sessionManager->isLoggedIn();
+        $userId = $isLoggedIn ? (int)$this->sessionManager->getActiveAccountId() : null;
+        $permissions = $isLoggedIn ? $this->sessionManager->get('user_permissions', []) : [];
+        $isAgent = in_array(\App\Core\System\PermissionsConstants::ACCESS_SUPPORT_PANEL, $permissions, true)
+            || (!empty($session['assigned_agent_id']) && (int)$session['assigned_agent_id'] === $userId);
+
+        if ($isAgent) {
+            return true;
+        }
+
+        if (!empty($session['user_id'])) {
+            return $isLoggedIn && (int)$session['user_id'] === $userId;
+        }
+
+        return empty($session['user_id']);
+    }
+
     public function getSessionMessages(array $input): array {
         $sessionUuid = trim($input['session_uuid'] ?? '');
         if (empty($sessionUuid)) {
@@ -323,20 +341,18 @@ class SupportService {
             ];
         }
 
-        $isAgent = false;
-        if ($this->sessionManager->isLoggedIn()) {
-            $userId = (int)$this->sessionManager->getActiveAccountId();
-            $permissions = $this->sessionManager->get('user_permissions', []);
-            $isAgent = in_array(\App\Core\System\PermissionsConstants::ACCESS_SUPPORT_PANEL, $permissions, true)
-                || ($session['assigned_agent_id'] && (int)$session['assigned_agent_id'] === $userId);
-
-            if (!$isAgent && $session['user_id'] && (int)$session['user_id'] !== $userId) {
-                return [
-                    'success' => false,
-                    'message' => __('err_unauthorized')
-                ];
-            }
+        if (!$this->canAccessSupportSession($session)) {
+            return [
+                'success' => false,
+                'message' => __('err_unauthorized')
+            ];
         }
+
+        $isLoggedIn = $this->sessionManager->isLoggedIn();
+        $userId = $isLoggedIn ? (int)$this->sessionManager->getActiveAccountId() : null;
+        $permissions = $isLoggedIn ? $this->sessionManager->get('user_permissions', []) : [];
+        $isAgent = in_array(\App\Core\System\PermissionsConstants::ACCESS_SUPPORT_PANEL, $permissions, true)
+            || (!empty($session['assigned_agent_id']) && (int)$session['assigned_agent_id'] === $userId);
 
         $messages = $this->supportRepo->getSessionMessages($sessionUuid, $isAgent);
         $queuePos = 0;
@@ -389,6 +405,13 @@ class SupportService {
             ];
         }
 
+        if (!$this->canAccessSupportSession($session)) {
+            return [
+                'success' => false,
+                'message' => __('err_unauthorized')
+            ];
+        }
+
         if ($session['status'] === 'closed') {
             return [
                 'success' => false,
@@ -427,7 +450,7 @@ class SupportService {
             'session_uuid' => $sessionUuid,
             'sender_type' => 'user',
             'sender_name' => $userName,
-            'text' => $messageText
+            'text' => $message
         ]);
 
         return [
@@ -450,6 +473,13 @@ class SupportService {
             return [
                 'success' => false,
                 'message' => __('err_support_session_not_found')
+            ];
+        }
+
+        if (!$this->canAccessSupportSession($session)) {
+            return [
+                'success' => false,
+                'message' => __('err_unauthorized')
             ];
         }
 
@@ -481,6 +511,21 @@ class SupportService {
             return [
                 'success' => false,
                 'message' => __('err_invalid_request')
+            ];
+        }
+
+        $session = $this->supportRepo->findSessionByUuid($sessionUuid);
+        if (!$session) {
+            return [
+                'success' => false,
+                'message' => __('err_support_session_not_found')
+            ];
+        }
+
+        if (!$this->canAccessSupportSession($session)) {
+            return [
+                'success' => false,
+                'message' => __('err_unauthorized')
             ];
         }
 
@@ -537,6 +582,13 @@ class SupportService {
             return [
                 'success' => false,
                 'message' => __('err_support_session_not_found')
+            ];
+        }
+
+        if (!$this->canAccessSupportSession($session)) {
+            return [
+                'success' => false,
+                'message' => __('err_unauthorized')
             ];
         }
 

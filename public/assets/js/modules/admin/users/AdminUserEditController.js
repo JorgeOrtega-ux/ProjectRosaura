@@ -1,6 +1,8 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { AdminModalTemplates } from '../AdminModalTemplates.js';
+
 class AdminUserEditController {
     constructor() {
         this.api = new ApiService();
@@ -15,6 +17,9 @@ class AdminUserEditController {
         this.handleChangeBound = this.handleChange.bind(this);
     }
     init() {
+        if (window.modalSystem) {
+            window.modalSystem.registerTemplates(AdminModalTemplates);
+        }
         this.abortController = new AbortController();
         this.bindEvents();
         if (window.location.pathname.includes('/admin/user-profile')) {
@@ -34,11 +39,18 @@ class AdminUserEditController {
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('change', this.handleChangeBound);
     }
-    translateKey(key) {
-        return typeof window.__ === 'function' ? window.__(key) : key;
+    translateKey(key, params = {}, fallback = '') {
+        if (typeof window.__ === 'function') {
+            const res = window.__(key, params);
+            if (res && res !== key) return res;
+        }
+        return fallback || key;
     }
     handleViewLoaded(e) {
         if (e.detail.url.includes('/admin/user-profile')) {
+            if (window.modalSystem) {
+                window.modalSystem.registerTemplates(AdminModalTemplates);
+            }
             this.setupInitialState();
         }
     }
@@ -52,6 +64,9 @@ class AdminUserEditController {
             this.isDefaultAvatar = true;
         } else {
             this.isDefaultAvatar = false;
+        }
+        if (typeof window.applyRoleDynamicColors === 'function') {
+            window.applyRoleDynamicColors();
         }
     }
     handleClick(e) {
@@ -112,6 +127,9 @@ class AdminUserEditController {
     }
 
     openAdjustCoinsModal(btn) {
+        if (!this.targetUserId) {
+            this.targetUserId = btn.getAttribute('data-user-id') || document.querySelector('.view-content[data-user-id]')?.getAttribute('data-user-id');
+        }
         const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
         const userUuid = btn.getAttribute('data-user-uuid') || '';
         if (window.modalSystem) {
@@ -136,6 +154,10 @@ class AdminUserEditController {
             return;
         }
 
+        if (!this.targetUserId) {
+            this.targetUserId = document.querySelector('.view-content[data-user-id]')?.getAttribute('data-user-id');
+        }
+
         setButtonLoading(btn);
         try {
             const result = await this.api.post(ApiRoutes.Admin.AdjustCoins, {
@@ -151,7 +173,7 @@ class AdminUserEditController {
                 if (window.modalSystem && window.modalSystem.closeCurrent) window.modalSystem.closeCurrent(true);
                 const dispCoins = document.querySelector('[data-ref="admin-display-coins"]');
                 if (dispCoins && result.coins !== undefined) {
-                    dispCoins.innerHTML = `<span class="material-symbols-rounded">toll</span> ${result.coins}`;
+                    dispCoins.textContent = result.coins;
                 }
             } else {
                 showMessage(result?.message || this.translateKey('err_generic', [], 'Error al procesar solicitud.'), 'error');
@@ -163,6 +185,9 @@ class AdminUserEditController {
     }
 
     confirmPasswordReset(btn) {
+        if (!this.targetUserId) {
+            this.targetUserId = btn.getAttribute('data-user-id') || document.querySelector('.view-content[data-user-id]')?.getAttribute('data-user-id');
+        }
         const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
         const email = btn.getAttribute('data-email') || document.querySelector('[data-ref="admin-display-email"]')?.textContent || '';
         const userUuid = btn.getAttribute('data-user-uuid') || '';
@@ -184,6 +209,9 @@ class AdminUserEditController {
     }
 
     confirmUnlockRateLimit(btn) {
+        if (!this.targetUserId) {
+            this.targetUserId = btn.getAttribute('data-user-id') || document.querySelector('.view-content[data-user-id]')?.getAttribute('data-user-id');
+        }
         const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
         const email = btn.getAttribute('data-email') || document.querySelector('[data-ref="admin-display-email"]')?.textContent || '';
         const userUuid = btn.getAttribute('data-user-uuid') || '';
@@ -205,6 +233,9 @@ class AdminUserEditController {
     }
 
     confirmTerminateSessions(btn) {
+        if (!this.targetUserId) {
+            this.targetUserId = btn.getAttribute('data-user-id') || document.querySelector('.view-content[data-user-id]')?.getAttribute('data-user-id');
+        }
         const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
         const email = btn.getAttribute('data-email') || document.querySelector('[data-ref="admin-display-email"]')?.textContent || '';
         const userUuid = btn.getAttribute('data-user-uuid') || '';
@@ -226,6 +257,9 @@ class AdminUserEditController {
     }
 
     confirmSyncStripe(btn) {
+        if (!this.targetUserId) {
+            this.targetUserId = btn.getAttribute('data-user-id') || document.querySelector('.view-content[data-user-id]')?.getAttribute('data-user-id');
+        }
         const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
         const userUuid = btn.getAttribute('data-user-uuid') || '';
 
@@ -249,6 +283,10 @@ class AdminUserEditController {
         if (!modalBody) return;
         const actionType = modalBody.getAttribute('data-action-type');
         if (window.modalSystem && window.modalSystem.closeCurrent) window.modalSystem.closeCurrent(true);
+
+        if (!this.targetUserId) {
+            this.targetUserId = document.querySelector('.view-content[data-user-id]')?.getAttribute('data-user-id');
+        }
 
         try {
             let endpoint = null;
@@ -274,6 +312,9 @@ class AdminUserEditController {
     }
 
     openDisable2FAModal(btn) {
+        if (!this.targetUserId) {
+            this.targetUserId = btn.getAttribute('data-user-id') || document.querySelector('.view-content[data-user-id]')?.getAttribute('data-user-id');
+        }
         const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
         const userUuid = btn.getAttribute('data-user-uuid') || '';
         if (window.modalSystem) {
