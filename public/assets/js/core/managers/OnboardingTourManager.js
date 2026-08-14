@@ -1,6 +1,14 @@
 import { ApiRoutes } from '../api/ApiRoutes.js';
 import { ApiService } from '../api/ApiServices.js';
 
+// =========================================================================
+// Constante de testing para forzar la visualización continua de los modales
+// de introducción (Welcome y Onboarding Tours).
+// Pon en true para probarlos siempre, o false para el comportamiento normal (1 sola vez).
+// =========================================================================
+export const TESTING_ONBOARDING_MODALS = true;
+window.TESTING_ONBOARDING_MODALS = TESTING_ONBOARDING_MODALS;
+
 export class OnboardingTourManager {
     constructor() {
         this.api = new ApiService();
@@ -169,12 +177,42 @@ export class OnboardingTourManager {
         };
     }
 
+    isTestingMode() {
+        if (typeof window.TESTING_ONBOARDING_MODALS !== 'undefined') {
+            return !!window.TESTING_ONBOARDING_MODALS;
+        }
+        return !!TESTING_ONBOARDING_MODALS;
+    }
+
+    async triggerWelcomeTour() {
+        if (!window.modalSystem || !window.APP_USER || !window.activeUserId) return;
+
+        const isTesting = this.isTestingMode();
+        const flagKey = 'welcome_modal_seen';
+        const hasSeen = window.AppUserFlags && window.AppUserFlags.includes(flagKey);
+
+        if (!isTesting && hasSeen) {
+            return;
+        }
+
+        setTimeout(async () => {
+            const result = await window.modalSystem.show('welcomeUserModal');
+            if (result && result.confirmed) {
+                if (!isTesting) {
+                    this.markTourAsSeen(flagKey);
+                }
+            }
+        }, 500);
+    }
+
     async triggerTour(relativePath) {
         const rawConfig = this.tours[relativePath];
         if (!rawConfig) return;
 
+        const isTesting = this.isTestingMode();
         const hasSeen = window.AppUserFlags && window.AppUserFlags.includes(rawConfig.flagKey);
-        if (hasSeen) {
+
+        if (!isTesting && hasSeen) {
             return;
         }
 
@@ -194,7 +232,9 @@ export class OnboardingTourManager {
             setTimeout(async () => {
                 const result = await window.modalSystem.show('onboardingTourModal', tourConfig);
                 if (result && result.confirmed) {
-                    this.markTourAsSeen(rawConfig.flagKey);
+                    if (!isTesting) {
+                        this.markTourAsSeen(rawConfig.flagKey);
+                    }
                 }
             }, 500); // 500ms delay to ensure DOM is ready and visual transitions are smooth
         }

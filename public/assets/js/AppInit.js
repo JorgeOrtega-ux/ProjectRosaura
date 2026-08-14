@@ -268,30 +268,9 @@ document.addEventListener('DOMContentLoaded', () => {
         initialCleanUrl = initialCleanUrl.slice(0, -1);
     }
 
-    const showWelcomeFlow = async () => {
-        if (!window.modalSystem || !window.AppUserFlags || !window.APP_USER || !window.activeUserId) return;
-        
-        if (window.AppUserFlags.includes('welcome_modal_seen')) {
-            return;
-        }
-
-        // Mark flag immediately so regardless of how modal is closed, it is saved in DB
-        if (!window.AppUserFlags.includes('welcome_modal_seen')) {
-            window.AppUserFlags.push('welcome_modal_seen');
-        }
-
-        try {
-            const api = new ApiService();
-            await api.post(ApiRoutes.Settings.SetFlag, { flag_key: 'welcome_modal_seen' });
-        } catch (e) {
-        }
-
-        await window.modalSystem.show('welcomeUserModal');
-    };
-
-    setTimeout(() => {
-        showWelcomeFlow();
-    }, 500);
+    if (window.onboardingTourManager) {
+        window.onboardingTourManager.triggerWelcomeTour();
+    }
 
     function syncSupportFloatingButton() {
         const fab = document.querySelector('[data-ref="floating-support-btn"]');
