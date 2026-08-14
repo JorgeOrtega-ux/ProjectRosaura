@@ -87,7 +87,24 @@ export const AdminModalTemplates = {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
             const sessionUuid = data.sessionUuid || '';
-            const currentLevel = data.currentLevel || 'l1';
+            const currentLevel = (data.currentLevel || 'l1').toLowerCase();
+
+            const isL2 = currentLevel === 'l2';
+            const defaultTargetLevel = isL2 ? 'l3' : 'l2';
+            const defaultTargetText = isL2 ? __('lbl_dept_l3') : __('lbl_dept_l2');
+
+            const levelsListHtml = isL2 ? `
+                <div class="component-menu-link active" data-action="selectEscalateLevel" data-val="l3">
+                    <div class="component-menu-link-text"><span>${__('lbl_dept_l3')}</span></div>
+                </div>
+            ` : `
+                <div class="component-menu-link active" data-action="selectEscalateLevel" data-val="l2">
+                    <div class="component-menu-link-text"><span>${__('lbl_dept_l2')}</span></div>
+                </div>
+                <div class="component-menu-link" data-action="selectEscalateLevel" data-val="l3">
+                    <div class="component-menu-link-text"><span>${__('lbl_dept_l3')}</span></div>
+                </div>
+            `;
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -102,58 +119,33 @@ export const AdminModalTemplates = {
                 </div>
 
                 <div class="component-modal-body" data-ref="admin-escalate-form" data-session-uuid="${sessionUuid}">
-                    <div class="component-group-item component-group-item--stacked component-mb-3">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <span class="component-stat-card__title">${__('lbl_escalate_to_level')}</span>
+                    <div class="component-input-group">
+                        <label class="component-input-label component-input-label--static">${__('lbl_escalate_to_level')}</label>
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownEscalateLevel">
+                                <span class="material-symbols-rounded">arrow_upward</span>
+                                <span class="component-dropdown-text" data-ref="escalate-level-text" data-value="${defaultTargetLevel}">${defaultTargetText}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownEscalateLevel">
-                                    <span class="material-symbols-rounded">arrow_upward</span>
-                                    <span class="component-dropdown-text" data-ref="escalate-level-text" data-value="l2">${__('lbl_dept_l2')}</span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownEscalateLevel">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list">
-                                            <div class="component-menu-link active" data-action="selectEscalateLevel" data-val="l2">
-                                                <div class="component-menu-link-text"><span>${__('lbl_dept_l2')}</span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectEscalateLevel" data-val="l3">
-                                                <div class="component-menu-link-text"><span>${__('lbl_dept_l3')}</span></div>
-                                            </div>
-                                        </div>
+                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownEscalateLevel">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        ${levelsListHtml}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="component-group-item component-group-item--stacked component-mb-3">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <span class="component-stat-card__title">${__('lbl_escalation_reason')}</span>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <div class="component-input-group component-input-group--h34">
-                                <input class="component-input-field component-input-field--simple" data-ref="escalate-reason-input" type="text" placeholder="${__('placeholder_escalation_reason')}" maxlength="255" autocomplete="off">
-                            </div>
-                        </div>
+                    <div class="component-input-group">
+                        <input class="component-input-field" data-ref="escalate-reason-input" type="text" placeholder=" " maxlength="255" autocomplete="off" required>
+                        <label class="component-input-label">${__('lbl_escalation_reason')}</label>
                     </div>
 
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <span class="component-stat-card__title">${__('lbl_internal_note_next_agent')}</span>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <textarea class="component-input-field" data-ref="escalate-note-input" placeholder="${__('placeholder_internal_escalation_note')}" rows="3" maxlength="1500"></textarea>
-                        </div>
+                    <div class="component-input-group">
+                        <textarea class="component-input-field" data-ref="escalate-note-input" placeholder=" " rows="3" maxlength="1500"></textarea>
+                        <label class="component-input-label">${__('lbl_internal_note_next_agent')}</label>
                     </div>
                 </div>
 
@@ -182,15 +174,9 @@ export const AdminModalTemplates = {
                 </div>
 
                 <div class="component-modal-body" data-ref="admin-close-chat-form" data-session-uuid="${sessionUuid}">
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <span class="component-stat-card__title">${__('lbl_resolution_summary')}</span>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <textarea class="component-input-field" data-ref="close-chat-summary-input" placeholder="${__('placeholder_resolution_summary')}" rows="3" maxlength="2000"></textarea>
-                        </div>
+                    <div class="component-input-group">
+                        <textarea class="component-input-field" data-ref="close-chat-summary-input" placeholder=" " rows="3" maxlength="2000"></textarea>
+                        <label class="component-input-label">${__('lbl_resolution_summary')}</label>
                     </div>
                 </div>
 
@@ -211,17 +197,19 @@ export const AdminModalTemplates = {
             if (onlineAgents.length === 0) {
                 agentsHtml = `
                     <div class="component-empty-state component-p-2">
-                        <p class="component-empty-state-text">${__('admin_no_agents_to_reassign') || 'No hay otros agentes en línea disponibles.'}</p>
+                        <p class="component-empty-state-text">${__('admin_no_agents_to_reassign')}</p>
                     </div>
                 `;
             } else {
                 onlineAgents.forEach((agent, index) => {
                     const activeClass = index === 0 ? 'active' : '';
+                    const agentId = agent.agent_id || agent.id || '';
+                    const levelStr = (agent.level || agent.department_level || 'l1').toUpperCase();
                     agentsHtml += `
-                        <div class="component-menu-link ${activeClass}" data-action="selectReassignAgent" data-val="${agent.id}">
+                        <div class="component-menu-link ${activeClass}" data-action="selectReassignAgent" data-val="${agentId}">
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">support_agent</span></div>
                             <div class="component-menu-link-text">
-                                <span>${agent.username || 'Agent'} (${agent.department_level ? agent.department_level.toUpperCase() : 'L1'})</span>
+                                <span>${agent.username} (${levelStr})</span>
                             </div>
                         </div>
                     `;
@@ -229,8 +217,9 @@ export const AdminModalTemplates = {
             }
 
             const firstAgent = onlineAgents[0];
-            const defaultText = firstAgent ? `${firstAgent.username} (${(firstAgent.department_level || 'L1').toUpperCase()})` : (__('lbl_select_agent') || 'Seleccionar agente');
-            const defaultValue = firstAgent ? firstAgent.id : '';
+            const firstAgentLevel = firstAgent ? (firstAgent.level || firstAgent.department_level || 'l1').toUpperCase() : '';
+            const defaultText = firstAgent ? `${firstAgent.username} (${firstAgentLevel})` : __('lbl_select_agent');
+            const defaultValue = firstAgent ? (firstAgent.agent_id || firstAgent.id || '') : '';
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -239,31 +228,25 @@ export const AdminModalTemplates = {
                         <span class="material-symbols-rounded">swap_horiz</span>
                     </div>
                     <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('modal_reassign_chat_title') || 'Reasignar Conversación'}</h2>
-                        <p class="component-modal-desc">${__('modal_reassign_chat_desc') || 'Transfiere esta conversación activa a otro agente de soporte en línea.'}</p>
+                        <h2 class="component-modal-title">${__('modal_reassign_chat_title')}</h2>
+                        <p class="component-modal-desc">${__('modal_reassign_chat_desc')}</p>
                     </div>
                 </div>
 
                 <div class="component-modal-body" data-ref="admin-reassign-form" data-session-uuid="${sessionUuid}">
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <span class="component-stat-card__title">${__('lbl_select_agent') || 'Agente de Destino'}</span>
+                    <div class="component-input-group">
+                        <label class="component-input-label component-input-label--static">${__('lbl_select_agent')}</label>
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownReassignAgent">
+                                <span class="material-symbols-rounded">support_agent</span>
+                                <span class="component-dropdown-text" data-ref="reassign-agent-text" data-value="${defaultValue}">${defaultText}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownReassignAgent">
-                                    <span class="material-symbols-rounded">support_agent</span>
-                                    <span class="component-dropdown-text" data-ref="reassign-agent-text" data-value="${defaultValue}">${defaultText}</span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownReassignAgent">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list">
-                                            ${agentsHtml}
-                                        </div>
+                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownReassignAgent">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        ${agentsHtml}
                                     </div>
                                 </div>
                             </div>
@@ -273,7 +256,7 @@ export const AdminModalTemplates = {
 
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 component-button--dark ${onlineAgents.length === 0 ? 'disabled-interaction' : ''}" data-action="submitReassignChat">${__('btn_confirm_reassign') || 'Confirmar Transferencia'}</button>
+                    <button class="component-button component-button--h40 component-button--dark ${onlineAgents.length === 0 ? 'disabled-interaction' : ''}" data-action="submitReassignChat">${__('btn_confirm_reassign')}</button>
                 </div>
             `;
         }
@@ -296,68 +279,41 @@ export const AdminModalTemplates = {
                 </div>
 
                 <div class="component-modal-body" data-ref="admin-canned-form" data-uuid="${item.uuid || ''}">
-                    <div class="component-group-item component-group-item--stacked component-mb-3">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <span class="component-stat-card__title">${__('lbl_canned_shortcut')}</span>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <div class="component-input-group component-input-group--h34">
-                                <input class="component-input-field component-input-field--simple" data-ref="canned-shortcut-input" type="text" placeholder="${__('placeholder_canned_shortcut')}" value="${item.shortcut || ''}" maxlength="50" autocomplete="off">
-                            </div>
-                        </div>
+                    <div class="component-input-group">
+                        <input class="component-input-field" data-ref="canned-shortcut-input" type="text" placeholder=" " value="${item.shortcut || ''}" maxlength="50" autocomplete="off" required>
+                        <label class="component-input-label">${__('lbl_canned_shortcut')}</label>
                     </div>
 
-                    <div class="component-group-item component-group-item--stacked component-mb-3">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <span class="component-stat-card__title">${__('lbl_canned_title')}</span>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <div class="component-input-group component-input-group--h34">
-                                <input class="component-input-field component-input-field--simple" data-ref="canned-title-input" type="text" placeholder="${__('placeholder_canned_title')}" value="${item.title || ''}" maxlength="100" autocomplete="off">
-                            </div>
-                        </div>
+                    <div class="component-input-group">
+                        <input class="component-input-field" data-ref="canned-title-input" type="text" placeholder=" " value="${item.title || ''}" maxlength="100" autocomplete="off" required>
+                        <label class="component-input-label">${__('lbl_canned_title')}</label>
                     </div>
 
-                    <div class="component-group-item component-group-item--stacked component-mb-3">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <span class="component-stat-card__title">${__('lbl_canned_content')}</span>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <textarea class="component-input-field" data-ref="canned-content-input" placeholder="${__('placeholder_canned_content')}" rows="4" maxlength="3000">${item.content || ''}</textarea>
-                        </div>
+                    <div class="component-input-group">
+                        <textarea class="component-input-field" data-ref="canned-content-input" placeholder=" " rows="4" maxlength="3000" required>${item.content || ''}</textarea>
+                        <label class="component-input-label">${__('lbl_canned_content')}</label>
                     </div>
 
-                    <div class="component-group-item component-group-item--stacked component-mb-3">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <span class="component-stat-card__title">${__('lbl_min_level_allowed')}</span>
+                    <div class="component-input-group">
+                        <label class="component-input-label component-input-label--static">${__('lbl_min_level_allowed')}</label>
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCannedLevel">
+                                <span class="material-symbols-rounded">admin_panel_settings</span>
+                                <span class="component-dropdown-text" data-ref="canned-level-text" data-value="${item.min_level || 'l1'}">${item.min_level === 'l3' ? __('lbl_dept_l3') : (item.min_level === 'l2' ? __('lbl_dept_l2') : __('lbl_dept_l1'))}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCannedLevel">
-                                    <span class="component-dropdown-text" data-ref="canned-level-text" data-value="${item.min_level || 'l1'}">${item.min_level === 'l3' ? __('lbl_dept_l3') : (item.min_level === 'l2' ? __('lbl_dept_l2') : __('lbl_dept_l1'))}</span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownCannedLevel">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list">
-                                            <div class="component-menu-link ${(!item.min_level || item.min_level === 'l1') ? 'active' : ''}" data-action="selectCannedLevel" data-val="l1">
-                                                <div class="component-menu-link-text"><span>${__('lbl_dept_l1')}</span></div>
-                                            </div>
-                                            <div class="component-menu-link ${item.min_level === 'l2' ? 'active' : ''}" data-action="selectCannedLevel" data-val="l2">
-                                                <div class="component-menu-link-text"><span>${__('lbl_dept_l2')}</span></div>
-                                            </div>
-                                            <div class="component-menu-link ${item.min_level === 'l3' ? 'active' : ''}" data-action="selectCannedLevel" data-val="l3">
-                                                <div class="component-menu-link-text"><span>${__('lbl_dept_l3')}</span></div>
-                                            </div>
+                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownCannedLevel">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link ${(!item.min_level || item.min_level === 'l1') ? 'active' : ''}" data-action="selectCannedLevel" data-val="l1">
+                                            <div class="component-menu-link-text"><span>${__('lbl_dept_l1')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${item.min_level === 'l2' ? 'active' : ''}" data-action="selectCannedLevel" data-val="l2">
+                                            <div class="component-menu-link-text"><span>${__('lbl_dept_l2')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${item.min_level === 'l3' ? 'active' : ''}" data-action="selectCannedLevel" data-val="l3">
+                                            <div class="component-menu-link-text"><span>${__('lbl_dept_l3')}</span></div>
                                         </div>
                                     </div>
                                 </div>
@@ -365,28 +321,23 @@ export const AdminModalTemplates = {
                         </div>
                     </div>
 
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <span class="component-stat-card__title">${__('lbl_language')}</span>
+                    <div class="component-input-group">
+                        <label class="component-input-label component-input-label--static">${__('lbl_language')}</label>
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCannedLang">
+                                <span class="material-symbols-rounded">translate</span>
+                                <span class="component-dropdown-text" data-ref="canned-lang-text" data-value="${item.language || 'es-419'}">${item.language === 'en' ? __('lbl_lang_en') : __('lbl_lang_es')}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch">
-                            <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCannedLang">
-                                    <span class="component-dropdown-text" data-ref="canned-lang-text" data-value="${item.language || 'es-419'}">${item.language === 'en' ? __('lbl_lang_en') : __('lbl_lang_es')}</span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownCannedLang">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list">
-                                            <div class="component-menu-link ${(!item.language || item.language === 'es-419') ? 'active' : ''}" data-action="selectCannedLang" data-val="es-419">
-                                                <div class="component-menu-link-text"><span>${__('lbl_lang_es')} (es-419)</span></div>
-                                            </div>
-                                            <div class="component-menu-link ${item.language === 'en' ? 'active' : ''}" data-action="selectCannedLang" data-val="en">
-                                                <div class="component-menu-link-text"><span>${__('lbl_lang_en')} (en)</span></div>
-                                            </div>
+                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownCannedLang">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link ${(!item.language || item.language === 'es-419') ? 'active' : ''}" data-action="selectCannedLang" data-val="es-419">
+                                            <div class="component-menu-link-text"><span>${__('lbl_lang_es')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${item.language === 'en' ? 'active' : ''}" data-action="selectCannedLang" data-val="en">
+                                            <div class="component-menu-link-text"><span>${__('lbl_lang_en')}</span></div>
                                         </div>
                                     </div>
                                 </div>

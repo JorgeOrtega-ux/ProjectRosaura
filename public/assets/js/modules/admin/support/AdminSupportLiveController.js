@@ -150,13 +150,15 @@ export class AdminSupportLiveController {
                     this._loadQueues();
                     break;
                 case 'session_claimed':
+                    this._loadQueues();
+                    break;
                 case 'session_escalated':
                 case 'session_reassigned':
                 case 'session_closed':
-                    this._loadQueues();
                     if (this.currentSessionUuid && this.currentSessionUuid === sessionUuid) {
-                        this._loadMessages();
+                        this._resetChatView();
                     }
+                    this._loadQueues();
                     break;
                 case 'agent_status_updated':
                     this._loadQueues();
@@ -515,6 +517,13 @@ export class AdminSupportLiveController {
                 if (b2) b2.textContent = (queues.l2 || []).length;
                 if (b3) b3.textContent = (queues.l3 || []).length;
                 if (bAct) bAct.textContent = activeList.length;
+
+                if (this.currentSessionUuid) {
+                    const isStillActive = activeList.some(s => s.uuid === this.currentSessionUuid);
+                    if (!isStillActive) {
+                        this._resetChatView();
+                    }
+                }
 
                 this._renderCurrentQueueList(queues, activeList);
             }
@@ -879,9 +888,9 @@ export class AdminSupportLiveController {
 
         if (input) {
             if (this.isInternalNoteMode) {
-                input.placeholder = window.__('placeholder_internal_note') || 'Escribir nota interna privada...';
+                input.placeholder = window.__('placeholder_internal_note');
             } else {
-                input.placeholder = window.__('placeholder_agent_chat_input') || 'Escribe una respuesta para el usuario...';
+                input.placeholder = window.__('placeholder_agent_chat_input');
             }
         }
     }
@@ -991,8 +1000,7 @@ export class AdminSupportLiveController {
 
             if (res && res.success) {
                 showMessage(window.__('msg_support_escalated_successfully'), 'success');
-                this.currentSessionUuid = null;
-                this.currentSession = null;
+                this._resetChatView();
                 await this._loadQueues();
             } else {
                 showMessage(res && res.message ? res.message : window.__('err_support_escalation_failed'), 'error');
@@ -1062,8 +1070,7 @@ export class AdminSupportLiveController {
 
             if (res && res.success) {
                 showMessage(window.__('msg_support_reassigned_successfully'), 'success');
-                this.currentSessionUuid = null;
-                this.currentSession = null;
+                this._resetChatView();
                 await this._loadQueues();
             } else {
                 showMessage(res && res.message ? res.message : window.__('err_support_reassign_failed'), 'error');
@@ -1104,8 +1111,7 @@ export class AdminSupportLiveController {
 
             if (res && res.success) {
                 showMessage(window.__('msg_support_session_ended'), 'success');
-                this.currentSessionUuid = null;
-                this.currentSession = null;
+                this._resetChatView();
                 await this._loadQueues();
             } else {
                 showMessage(res && res.message ? res.message : window.__('err_support_close_failed'), 'error');
@@ -1115,6 +1121,61 @@ export class AdminSupportLiveController {
             restoreButton(btn);
             showMessage(window.__('err_support_close_failed'), 'error');
         }
+    }
+
+    _resetChatView() {
+        this.currentSessionUuid = null;
+        this.currentSession = null;
+
+        const nameEl = document.querySelector('[data-ref="current-chat-client-name"]');
+        const subjectEl = document.querySelector('[data-ref="current-chat-client-subject"]');
+        const avatarContainer = document.querySelector('[data-ref="current-chat-client-avatar-container"]');
+        const messagesContainer = document.querySelector('[data-ref="admin-support-messages-list"]');
+        const footer = document.querySelector('[data-ref="admin-support-chat-footer"]');
+        const actions = document.querySelector('[data-ref="admin-chat-top-actions"]');
+        const clientInfo = document.querySelector('[data-ref="admin-support-client-info"]');
+        const chatInput = document.querySelector('[data-ref="admin-support-chat-input"]');
+        const typingIndicator = document.querySelector('[data-ref="admin-support-typing-indicator"]');
+
+        if (chatInput) chatInput.value = '';
+        if (typingIndicator) typingIndicator.classList.add('disabled');
+        if (nameEl) nameEl.textContent = window.__('admin_select_chat_to_attend');
+        if (subjectEl) subjectEl.textContent = window.__('admin_no_active_chat_selected');
+        if (avatarContainer) {
+            const fallback = window.APP_URL ? `${window.APP_URL}/public/assets/images/defaults/avatar_default.webp` : '/public/assets/images/defaults/avatar_default.webp';
+            avatarContainer.innerHTML = `
+                <div class="component-button--profile component-avatar--static-sm">
+                    <img class="avatar-image" src="${fallback}" alt="Guest">
+                </div>
+            `;
+        }
+        if (messagesContainer) {
+            messagesContainer.innerHTML = `
+                <div class="component-empty-state">
+                    <span class="material-symbols-rounded component-empty-state-icon">forum</span>
+                    <h3 class="component-card__title">${window.__('admin_select_chat_to_attend')}</h3>
+                    <p class="component-card__description">${window.__('admin_no_active_chat_selected')}</p>
+                </div>
+            `;
+        }
+        if (footer) footer.classList.add('disabled');
+        if (actions) actions.classList.add('disabled');
+        if (clientInfo) {
+            clientInfo.innerHTML = `
+                <div class="component-card--grouped">
+                    <div class="component-empty-state">
+                        <span class="material-symbols-rounded component-empty-state-icon">account_circle</span>
+                        <h3 class="component-card__title">${window.__('admin_no_user_selected')}</h3>
+                    </div>
+                </div>
+            `;
+        }
+
+        const allActiveItems = document.querySelectorAll('[data-action="selectActiveChat"]');
+        allActiveItems.forEach(item => item.classList.remove('active'));
+
+        const consoleBottom = document.querySelector('.component-bottom--console');
+        if (consoleBottom) consoleBottom.classList.remove('component-bottom--mobile-chat-active');
     }
 
     _escapeHtml(str) {

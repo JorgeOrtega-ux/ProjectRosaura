@@ -116,6 +116,7 @@ class AdminSupportService {
         }
 
         $this->supportRepo->heartbeatAgent($agentId);
+        $this->supportRepo->cleanupStaleSessions();
 
         $l1Queue = $this->supportRepo->getQueueSessions('l1', 30);
         $l2Queue = ($this->hasPermission(PC::SUPPORT_CHAT_ATTEND_L2) || $this->hasPermission(PC::SUPPORT_CHAT_ATTEND_L3))
@@ -126,7 +127,8 @@ class AdminSupportService {
             : [];
 
         $myActiveSessions = $this->supportRepo->getAgentActiveSessions($agentId);
-        $onlineAgents = $this->supportRepo->getOnlineAgents('all');
+        $allOnlineAgents = $this->supportRepo->getOnlineAgents('all');
+        $onlineAgents = array_values(array_filter($allOnlineAgents, fn($a) => (int)($a['agent_id'] ?? 0) !== $agentId));
 
         return [
             'success' => true,
@@ -219,6 +221,13 @@ class AdminSupportService {
             return ['success' => false, 'message' => __('err_support_session_not_found')];
         }
 
+        if ($session['department_level'] === 'l3') {
+            return ['success' => false, 'message' => __('err_support_escalation_failed')];
+        }
+        if ($session['department_level'] === 'l2' && $toLevel !== 'l3') {
+            return ['success' => false, 'message' => __('err_invalid_request')];
+        }
+
         $escalated = $this->supportRepo->escalateSession($sessionUuid, $agentId, $toLevel, $reason, empty($internalNote) ? null : $internalNote);
         if (!$escalated) {
             return ['success' => false, 'message' => __('err_support_escalation_failed')];
@@ -277,7 +286,7 @@ class AdminSupportService {
         $sessionUuid = trim($input['session_uuid'] ?? '');
         $toAgentId = (int)($input['to_agent_id'] ?? 0);
 
-        if (empty($sessionUuid) || $toAgentId <= 0) {
+        if (empty($sessionUuid) || $toAgentId <= 0 || $toAgentId === $agentId) {
             return ['success' => false, 'message' => __('err_invalid_request')];
         }
 

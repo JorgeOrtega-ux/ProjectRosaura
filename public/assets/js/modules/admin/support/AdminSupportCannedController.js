@@ -9,8 +9,10 @@ export class AdminSupportCannedController {
         this.container = null;
         this.abortController = null;
         this.items = [];
+        this.searchQuery = '';
 
         this._boundClick = this.handleClick.bind(this);
+        this._boundInput = this.handleInput.bind(this);
     }
 
     init() {
@@ -24,6 +26,9 @@ export class AdminSupportCannedController {
     }
 
     bindEvents() {
+        if (this.container) {
+            this.container.addEventListener('input', this._boundInput);
+        }
         document.body.addEventListener('click', this._boundClick);
     }
 
@@ -33,10 +38,38 @@ export class AdminSupportCannedController {
             this.abortController = null;
         }
 
+        if (this.container) {
+            this.container.removeEventListener('input', this._boundInput);
+        }
         document.body.removeEventListener('click', this._boundClick);
     }
 
+    handleInput(e) {
+        const searchInput = e.target.closest('[data-ref="canned-search-input"]');
+        if (searchInput) {
+            this.searchQuery = searchInput.value.trim().toLowerCase();
+            this._renderList();
+        }
+    }
+
     handleClick(e) {
+        const toggleSearchBtn = e.target.closest('[data-action="toggleSearch"]');
+        if (toggleSearchBtn) {
+            e.preventDefault();
+            const toolbar = document.querySelector('[data-ref="search-toolbar"]');
+            if (toolbar) {
+                const isHidden = toolbar.classList.contains('disabled');
+                if (isHidden) {
+                    toolbar.classList.remove('disabled');
+                    const input = toolbar.querySelector('[data-ref="canned-search-input"]');
+                    if (input) input.focus();
+                } else {
+                    toolbar.classList.add('disabled');
+                }
+            }
+            return;
+        }
+
         const createBtn = e.target.closest('[data-action="openCreateCannedModal"]');
         if (createBtn) {
             e.preventDefault();
@@ -96,50 +129,67 @@ export class AdminSupportCannedController {
     }
 
     _renderList() {
-        const container = document.querySelector('[data-ref="admin-canned-container"]');
-        if (!container) return;
+        const tbody = document.querySelector('[data-ref="admin-canned-table-body"]');
+        if (!tbody) return;
 
-        if (this.items.length === 0) {
-            container.innerHTML = `
-                <div class="component-empty-state">
-                    <span class="material-symbols-rounded component-empty-state-icon">quickreply</span>
-                    <h3 class="component-card__title">${window.__('lbl_no_canned_found')}</h3>
-                </div>
+        let filtered = this.items;
+        if (this.searchQuery) {
+            filtered = this.items.filter(item =>
+                (item.shortcut && item.shortcut.toLowerCase().includes(this.searchQuery)) ||
+                (item.title && item.title.toLowerCase().includes(this.searchQuery)) ||
+                (item.content && item.content.toLowerCase().includes(this.searchQuery))
+            );
+        }
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        <div class="component-empty-state component-p-4">
+                            <span class="material-symbols-rounded component-empty-state-icon">quickreply</span>
+                            <h3 class="component-card__title">${window.__('lbl_no_canned_found')}</h3>
+                        </div>
+                    </td>
+                </tr>
             `;
             return;
         }
 
         let html = '';
-        this.items.forEach(item => {
-            const minLevelBadge = `<span class="component-badge">${item.min_level ? item.min_level.toUpperCase() : 'L1'}</span>`;
-            const langLabel = item.language === 'en' ? 'EN' : 'ES';
-            const langBadge = `<span class="component-badge component-badge--primary">${langLabel}</span>`;
+        filtered.forEach(item => {
+            const minLevelBadge = `<span class="component-badge component-badge--sm">${item.min_level ? item.min_level.toUpperCase() : 'L1'}</span>`;
+            const langLabel = item.language === 'en' ? window.__('lbl_lang_en') : window.__('lbl_lang_es');
+            const langBadge = `<span class="component-badge component-badge--sm">${langLabel}</span>`;
+            const snippet = item.content && item.content.length > 90 ? item.content.substring(0, 90) + '...' : (item.content || '');
 
             html += `
-                <div class="component-group-item">
-                    <div class="component-card__content">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">quickreply</span>
+                <tr class="component-table-row">
+                    <td>
+                        <span class="component-badge component-badge--primary font-mono">/${this._escapeHtml(item.shortcut)}</span>
+                    </td>
+                    <td>
+                        <span class="component-table-title">${this._escapeHtml(item.title)}</span>
+                    </td>
+                    <td>
+                        <span class="component-table-subtitle">${this._escapeHtml(snippet)}</span>
+                    </td>
+                    <td>${minLevelBadge}</td>
+                    <td>${langBadge}</td>
+                    <td class="text-right">
+                        <div class="component-table-actions">
+                            <button class="component-button component-button--icon component-button--h28" data-action="editCannedResponse" data-uuid="${item.uuid}" type="button">
+                                <span class="material-symbols-rounded">edit</span>
+                            </button>
+                            <button class="component-button component-button--icon component-button--h28 component-button--danger" data-action="deleteCannedResponse" data-uuid="${item.uuid}" type="button">
+                                <span class="material-symbols-rounded">delete</span>
+                            </button>
                         </div>
-                        <div class="component-card__text">
-                            <h3 class="component-card__title">/${this._escapeHtml(item.shortcut)} - ${this._escapeHtml(item.title)} ${minLevelBadge} ${langBadge}</h3>
-                            <p class="component-card__description">${this._escapeHtml(item.content)}</p>
-                        </div>
-                    </div>
-                    <div class="component-card__actions">
-                        <button class="component-button component-button--icon component-button--h34" data-action="editCannedResponse" data-uuid="${item.uuid}" type="button">
-                            <span class="material-symbols-rounded">edit</span>
-                        </button>
-                        <button class="component-button component-button--icon component-button--h34" data-action="deleteCannedResponse" data-uuid="${item.uuid}" type="button">
-                            <span class="material-symbols-rounded">delete</span>
-                        </button>
-                    </div>
-                </div>
-                <hr class="component-divider">
+                    </td>
+                </tr>
             `;
         });
 
-        container.innerHTML = html;
+        tbody.innerHTML = html;
     }
 
     _openModal(item = null) {

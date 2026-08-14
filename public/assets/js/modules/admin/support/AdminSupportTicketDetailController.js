@@ -48,6 +48,14 @@ export class AdminSupportTicketDetailController {
             return;
         }
 
+        const statusAction = e.target.closest('[data-action="updateTicketStatusAction"]');
+        if (statusAction) {
+            e.preventDefault();
+            const newStatus = statusAction.getAttribute('data-status');
+            this._updateStatus(newStatus);
+            return;
+        }
+
         const navBack = e.target.closest('[data-nav^="/admin/support/tickets"]');
         if (navBack && window.spaRouter) {
             e.preventDefault();
@@ -74,24 +82,103 @@ export class AdminSupportTicketDetailController {
     }
 
     _renderTicket(ticket) {
+        const appUrl = window.APP_URL || '';
+        const titleEl = document.querySelector('[data-ref="ticket-detail-title"]');
         const subjectEl = document.querySelector('[data-ref="ticket-detail-subject"]');
-        const metaEl = document.querySelector('[data-ref="ticket-detail-meta"]');
+        const dateEl = document.querySelector('[data-ref="ticket-detail-date"]');
         const msgEl = document.querySelector('[data-ref="ticket-detail-original-message"]');
+        const userNameEl = document.querySelector('[data-ref="ticket-user-name"]');
+        const userEmailEl = document.querySelector('[data-ref="ticket-user-email"]');
+        const avatarEl = document.querySelector('[data-ref="ticket-user-avatar"]');
+        const catBadge = document.querySelector('[data-ref="ticket-category-badge"]');
+        const priorityBadge = document.querySelector('[data-ref="ticket-priority-badge"]');
+        const statusText = document.querySelector('[data-ref="ticket-status-text"]');
+
+        if (titleEl) {
+            titleEl.textContent = `${window.__('admin_ticket_detail_title')} #${ticket.uuid.substring(0, 8)}`;
+        }
 
         if (subjectEl) {
             subjectEl.textContent = ticket.subject;
         }
 
-        if (metaEl) {
-            const statusLabel = window.__('lbl_status');
-            const priorityLabel = window.__('lbl_priority');
-            const dateLabel = window.__('lbl_date');
-            const clientIdentifier = ticket.email ? ticket.email : ticket.username;
-            metaEl.textContent = `${clientIdentifier} • ${ticket.category} • ${statusLabel}: ${ticket.status} • ${priorityLabel}: ${ticket.priority} • ${dateLabel}: ${ticket.created_at}`;
+        if (dateEl) {
+            dateEl.textContent = `${window.__('lbl_created_at')}: ${ticket.created_at}`;
+        }
+
+        if (userNameEl) {
+            userNameEl.textContent = ticket.username || window.__('lbl_user');
+        }
+
+        if (userEmailEl) {
+            userEmailEl.textContent = ticket.email || '';
+        }
+
+        if (avatarEl) {
+            avatarEl.src = ticket.avatar ? (appUrl + ticket.avatar) : (appUrl + '/public/assets/images/defaults/avatar_default.webp');
+        }
+
+        if (catBadge) {
+            catBadge.textContent = ticket.category || 'general';
+        }
+
+        if (priorityBadge) {
+            const prioMap = {
+                low: window.__('lbl_priority_low'),
+                medium: window.__('lbl_priority_medium'),
+                high: window.__('lbl_priority_high'),
+                urgent: window.__('lbl_priority_urgent')
+            };
+            priorityBadge.textContent = prioMap[ticket.priority] || ticket.priority;
+            priorityBadge.className = `component-badge component-badge--sm ${ticket.priority === 'urgent' ? 'component-badge--danger' : (ticket.priority === 'high' ? 'component-badge--warning' : '')}`;
+        }
+
+        if (statusText) {
+            const statusMap = {
+                open: window.__('lbl_status_open'),
+                in_progress: window.__('lbl_status_in_progress'),
+                resolved: window.__('lbl_status_resolved'),
+                closed: window.__('lbl_status_closed')
+            };
+            statusText.textContent = statusMap[ticket.status] || ticket.status;
         }
 
         if (msgEl) {
             msgEl.innerHTML = `<p class="component-card__description">${this._escapeHtml(ticket.message)}</p>`;
+        }
+
+        const statusLinks = document.querySelectorAll('[data-action="updateTicketStatusAction"]');
+        statusLinks.forEach(link => {
+            const s = link.getAttribute('data-status');
+            if (s === ticket.status) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    }
+
+    async _updateStatus(newStatus) {
+        if (!newStatus || !this.ticketUuid) return;
+
+        const statusModule = document.querySelector('[data-module="moduleTicketStatusChange"]');
+        if (statusModule) statusModule.classList.add('disabled');
+
+        try {
+            const res = await this.api.post(ApiRoutes.AdminSupport.UpdateTicketStatus, {
+                uuid: this.ticketUuid,
+                status: newStatus
+            }, this.abortController ? this.abortController.signal : undefined);
+
+            if (res && res.success) {
+                showMessage(window.__('msg_support_ticket_updated'), 'success');
+                this._loadTicketDetail();
+            } else {
+                showMessage(res && res.message ? res.message : window.__('err_generic'), 'error');
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            showMessage(window.__('err_generic'), 'error');
         }
     }
 

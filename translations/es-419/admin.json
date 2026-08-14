@@ -672,5 +672,18 @@
     "lbl_status": "Estado",
     "lbl_priority": "Prioridad",
     "lbl_date": "Fecha",
-    "btn_back_to_queues": "Volver a colas de espera"
+    "btn_back_to_queues": "Volver a colas de espera",
+    "lbl_user": "Usuario",
+    "lbl_customer_info": "Información del Solicitante",
+    "lbl_ticket_details": "Detalles de la Consulta",
+    "lbl_change_status": "Cambiar Estado",
+    "lbl_priority_low": "Baja",
+    "lbl_priority_medium": "Media",
+    "lbl_priority_high": "Alta",
+    "lbl_priority_urgent": "Urgente",
+    "lbl_view_ticket": "Ver Ticket",
+    "lbl_created_at": "Fecha de creación",
+    "lbl_actions": "Acciones",
+    "admin_canned_responses_title": "Respuestas Rápidas de Soporte",
+    "err_support_cannot_reassign_self": "No puedes reasignar una conversación a ti mismo."
 }

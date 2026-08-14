@@ -442,7 +442,7 @@ class SupportRepository implements SupportRepositoryInterface {
             $this->pdo->beginTransaction();
 
             $stmt = $this->pdo->prepare("
-                SELECT id, assigned_agent_id FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . "
+                SELECT id, department_level, assigned_agent_id FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . "
                 WHERE uuid = :uuid FOR UPDATE
             ");
             $stmt->execute([':uuid' => $sessionUuid]);
@@ -455,6 +455,7 @@ class SupportRepository implements SupportRepositoryInterface {
 
             $oldAgentId = $session['assigned_agent_id'] ? (int)$session['assigned_agent_id'] : null;
             $sessionId = (int)$session['id'];
+            $currentLevel = $session['department_level'] ?? 'l1';
 
             $updateStmt = $this->pdo->prepare("
                 UPDATE " . DB::TBL_SUPPORT_CHAT_SESSIONS . "
@@ -464,6 +465,20 @@ class SupportRepository implements SupportRepositoryInterface {
             $updateStmt->execute([
                 ':to_agent_id' => $toAgentId,
                 ':id' => $sessionId
+            ]);
+
+            $transferStmt = $this->pdo->prepare("
+                INSERT INTO " . DB::TBL_SUPPORT_CHAT_TRANSFERS . "
+                (session_id, from_agent_id, to_agent_id, from_level, to_level, reason, internal_note, created_at)
+                VALUES
+                (:session_id, :from_agent_id, :to_agent_id, :from_level, :to_level, 'Reassigned to agent', NULL, NOW())
+            ");
+            $transferStmt->execute([
+                ':session_id' => $sessionId,
+                ':from_agent_id' => $oldAgentId,
+                ':to_agent_id' => $toAgentId,
+                ':from_level' => $currentLevel,
+                ':to_level' => $currentLevel
             ]);
 
             if ($oldAgentId) {
@@ -717,6 +732,61 @@ class SupportRepository implements SupportRepositoryInterface {
         } catch (PDOException $e) {
             Logger::database("Failed to update agent heartbeat: " . $e->getMessage(), 'error');
             return false;
+        }
+    }
+
+    public function cleanupStaleSessions(): void {
+        try {
+            $this->pdo->exec("
+                UPDATE " . DB::TBL_SUPPORT_CHAT_SESSIONS . "
+                SET status = 'abandoned', closed_by = 'timeout', closed_at = NOW(), updated_at = NOW()
+                WHERE status IN ('waiting_in_queue', 'escalated')
+                  AND created_at < DATE_SUB(NOW(), INTERVAL 2 HOUR)
+            ");
+
+            $staleActiveStmt = $this->pdo->query("
+                SELECT id, assigned_agent_id FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . "
+                WHERE status = 'active'
+                  AND updated_at < DATE_SUB(NOW(), INTERVAL 3 HOUR)
+            ");
+            $staleActive = $staleActiveStmt ? $staleActiveStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+
+            if (!empty($staleActive)) {
+                $sessionIds = [];
+                $agentCounts = [];
+                foreach ($staleActive as $s) {
+                    $sessionIds[] = (int)$s['id'];
+                    $aId = (int)($s['assigned_agent_id'] ?? 0);
+                    if ($aId > 0) {
+                        $agentCounts[$aId] = ($agentCounts[$aId] ?? 0) + 1;
+                    }
+                }
+
+                $inPlaceholders = implode(',', $sessionIds);
+                $this->pdo->exec("
+                    UPDATE " . DB::TBL_SUPPORT_CHAT_SESSIONS . "
+                    SET status = 'closed', closed_by = 'timeout', closed_at = NOW(), updated_at = NOW()
+                    WHERE id IN ($inPlaceholders)
+                ");
+
+                foreach ($agentCounts as $agentId => $count) {
+                    $stmt = $this->pdo->prepare("
+                        UPDATE " . DB::TBL_SUPPORT_AGENT_STATUS . "
+                        SET current_active_chats = GREATEST(0, current_active_chats - :count)
+                        WHERE agent_id = :agent_id
+                    ");
+                    $stmt->execute([':count' => $count, ':agent_id' => $agentId]);
+                }
+            }
+
+            $this->pdo->exec("
+                UPDATE " . DB::TBL_SUPPORT_AGENT_STATUS . "
+                SET status = 'offline'
+                WHERE status IN ('online', 'busy', 'away')
+                  AND last_heartbeat < DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+            ");
+        } catch (PDOException $e) {
+            Logger::database("Failed to cleanup stale support sessions: " . $e->getMessage(), 'error');
         }
     }
 
