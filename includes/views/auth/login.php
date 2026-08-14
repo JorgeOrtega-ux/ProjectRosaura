@@ -20,7 +20,7 @@ $isMultiSessionAdd = $loginData['isMultiSessionAdd'];
                 <p class="component-form-desc"><?php echo htmlspecialchars($errorMsg); ?></p>
             </div>
             <div class="component-form-body">
-                <button class="component-button component-button--dark component-button--h45 component-button--full" data-nav="<?php echo APP_URL; ?>/login">
+                <button class="component-button component-button--h45 component-button--full" data-nav="<?php echo APP_URL; ?>/login">
                     <?php echo __('link_back_login'); ?>
                 </button>
             </div>
@@ -40,7 +40,7 @@ $isMultiSessionAdd = $loginData['isMultiSessionAdd'];
 
                     <?php echo \App\Core\Helpers\Utils::renderTurnstile('login_2fa'); ?>
 
-                    <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitLogin2FA">
+                    <button class="component-button component-button--h45 component-button--full" data-action="submitLogin2FA">
                         <?php echo __('btn_verify_login'); ?>
                     </button>
                     
@@ -76,7 +76,7 @@ $isMultiSessionAdd = $loginData['isMultiSessionAdd'];
 
                     <?php echo \App\Core\Helpers\Utils::renderTurnstile('login'); ?>
 
-                    <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitLogin">
+                    <button class="component-button component-button--h45 component-button--full" data-action="submitLogin">
                         <?php echo __('btn_continue'); ?>
                     </button>
 

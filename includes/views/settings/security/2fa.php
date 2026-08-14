@@ -79,7 +79,7 @@ $text2FA = $faData['text2FA'];
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--end">
-                                <button type="button" class="component-button component-button--h36 component-button--dark" data-action="openActivate2FADialog">
+                                <button type="button" class="component-button component-button--h36" data-action="openActivate2FADialog">
                                     <?php echo __('btn_activate'); ?>
                                 </button>
                             </div>
@@ -103,7 +103,7 @@ $text2FA = $faData['text2FA'];
                         </div>
                         <div class="component-card__actions component-card__actions--end">
                             <button class="component-button component-button--h36" data-action="copyRecoveryCodes"><?php echo __('btn_copy_codes'); ?></button>
-                            <button class="component-button component-button--h36 component-button--dark" data-action="finish2FA"><?php echo __('btn_finish'); ?></button>
+                            <button class="component-button component-button--h36" data-action="finish2FA"><?php echo __('btn_finish'); ?></button>
                         </div>
                     </div>
                 </div>

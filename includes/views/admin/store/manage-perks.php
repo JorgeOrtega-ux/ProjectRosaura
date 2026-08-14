@@ -49,7 +49,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
                     </button>
                     
                     <?php if ($canManageStore): ?>
-                    <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="addPerk" data-tooltip="<?php echo __('admin_store_new_perk') ?: 'Nueva Ventaja'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="addPerk" data-tooltip="<?php echo __('admin_store_new_perk') ?: 'Nueva Ventaja'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">add</span>
                     </button>
                     <?php endif; ?>

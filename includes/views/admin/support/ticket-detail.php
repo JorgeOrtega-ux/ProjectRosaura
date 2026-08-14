@@ -107,7 +107,7 @@
 
                     <div class="component-group-item">
                         <div class="component-card__actions component-card__actions--end">
-                            <button class="component-button component-button--dark component-button--h40" data-action="submitTicketReply" type="button">
+                            <button class="component-button component-button--h40" data-action="submitTicketReply" type="button">
                                 <span class="material-symbols-rounded">send</span>
                                 <span><?php echo __('btn_send_reply'); ?></span>
                             </button>

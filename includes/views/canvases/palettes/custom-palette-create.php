@@ -14,7 +14,7 @@ $translatedName = __('canvas_palette_new');
             <h1 class="component-top-title"><?php echo __('canvas_create_custom_palette'); ?></h1>
         </div>
         <div class="component-top-right">
-            <button class="component-button component-button--primary component-button--h40" data-action="savePaletteData">
+            <button class="component-button component-button--h40" data-action="savePaletteData">
                 <span class="material-symbols-rounded">save</span>
                 <?php echo __('btn_save'); ?>
             </button>
@@ -68,7 +68,7 @@ $translatedName = __('canvas_palette_new');
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
                                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="palette-name"><?php echo __('btn_cancel'); ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyPaletteName"><?php echo __('btn_save'); ?></button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="applyPaletteName"><?php echo __('btn_save'); ?></button>
                                                 </div>
                                             </div>
                                         </div>

@@ -89,12 +89,12 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
 
                                 <div class="component-card-section component-card-section--action">
                                     <?php if ($currentUserTier === $tierLevel): ?>
-                                        <button type="button" class="component-button component-button--dark component-button--rounded-pill disabled-interaction component-cursor-pointer component-card-button">
+                                        <button type="button" class="component-button component-button--rounded-pill disabled-interaction component-cursor-pointer component-card-button">
                                             <span class="material-symbols-rounded">check_circle</span>
                                             <span><?php echo __('plan_btn_current'); ?></span>
                                         </button>
                                     <?php else: ?>
-                                        <button type="button" class="component-button component-button--dark component-button--rounded-pill component-button--hover-text component-cursor-pointer component-card-button <?php echo $isPopular ? 'component-card-button--featured' : ''; ?>" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>">
+                                        <button type="button" class="component-button component-button--rounded-pill component-button--hover-text component-cursor-pointer component-card-button <?php echo $isPopular ? 'component-card-button--featured' : ''; ?>" data-action="subscribe" data-tier="<?php echo $tierLevel; ?>">
                                             <span class="btn-default-text">
                                                 <?php echo sprintf(__('plan_btn_get'), htmlspecialchars($tier['name'])); ?>
                                             </span>

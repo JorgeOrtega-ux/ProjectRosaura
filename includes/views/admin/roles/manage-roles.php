@@ -53,7 +53,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
                     </button>
                     
                     <?php if ($canManageRoles): ?>
-                    <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="addRole" data-tooltip="<?php echo __('btn_add_role'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="addRole" data-tooltip="<?php echo __('btn_add_role'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">add</span>
                     </button>
                     <?php endif; ?>

@@ -24,7 +24,7 @@ $isResetActive = $resetSettings['is_active'];
             </div>
         </div>
         <div class="component-top-right">
-            <button type="button" class="component-button component-button--primary component-button--h40" data-action="saveSettings">
+            <button type="button" class="component-button component-button--h40" data-action="saveSettings">
                 <span class="material-symbols-rounded">save</span>
                 <?php echo __('btn_save_changes'); ?>
             </button>

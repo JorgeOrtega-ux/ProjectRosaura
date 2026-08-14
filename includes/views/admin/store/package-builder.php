@@ -160,7 +160,7 @@ if ($isEdit && !empty($package)) {
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
                                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="pkg-stripe">Cancelar</button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="pkg-stripe">Guardar</button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="applyInlineSetting" data-field="pkg-stripe">Guardar</button>
                                                 </div>
                                             </div>
                                         </div>

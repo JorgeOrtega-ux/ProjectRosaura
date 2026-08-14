@@ -47,11 +47,11 @@ extract($accountData);
                     </div>
 
                     <div class="component-card__actions component-card__actions--stretch" data-ref="profile-avatar-actions">
-                        <button type="button" class="component-button component-button--h34 component-button--dark" data-ref="btn-change-avatar"><?php echo $isDefaultAvatar ? __('btn_upload_avatar') : __('btn_change_avatar'); ?></button>
+                        <button type="button" class="component-button component-button--h34" data-ref="btn-change-avatar"><?php echo $isDefaultAvatar ? __('btn_upload_avatar') : __('btn_change_avatar'); ?></button>
                         <button type="button" class="component-button component-button--h34 <?php echo $isDefaultAvatar ? 'disabled' : ''; ?>" data-ref="btn-delete-avatar"><?php echo __('btn_delete'); ?></button>
 
                         <button type="button" class="component-button component-button--h34 disabled" data-ref="btn-cancel-avatar"><?php echo __('btn_cancel'); ?></button>
-                        <button type="button" class="component-button component-button--h34 component-button--dark disabled" data-ref="btn-save-avatar"><?php echo __('btn_save'); ?></button>
+                        <button type="button" class="component-button component-button--h34 disabled" data-ref="btn-save-avatar"><?php echo __('btn_save'); ?></button>
                     </div>
                 </div>
                 
@@ -96,7 +96,7 @@ extract($accountData);
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
                                         <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="username"><?php echo __('btn_cancel'); ?></button>
-                                        <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveUsername"><?php echo __('btn_save'); ?></button>
+                                        <button type="button" class="component-button component-button--h34" data-action="saveUsername"><?php echo __('btn_save'); ?></button>
                                     </div>
                                 </div>
                             </div>
@@ -131,7 +131,7 @@ extract($accountData);
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
                                         <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="email"><?php echo __('btn_cancel'); ?></button>
-                                        <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveEmail"><?php echo __('btn_save'); ?></button>
+                                        <button type="button" class="component-button component-button--h34" data-action="saveEmail"><?php echo __('btn_save'); ?></button>
                                     </div>
                                 </div>
                             </div>
@@ -186,7 +186,7 @@ extract($accountData);
                                 <?php echo __('btn_disconnect', []); ?>
                             </button>
                         <?php else: ?>
-                            <button type="button" class="component-button component-button--h34 component-button--dark" data-action="linkGoogle">
+                            <button type="button" class="component-button component-button--h34" data-action="linkGoogle">
                                 <?php echo __('btn_connect', [], 'Conectar'); ?>
                             </button>
                         <?php endif; ?>

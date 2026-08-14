@@ -130,7 +130,7 @@ $isSystemRole = (isset($role['is_system']) && (int)$role['is_system'] === 1);
             </h1>
         </div>
         <div class="component-top-right">
-            <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="savePermissions" data-tooltip="<?php echo __('btn_save'); ?>" data-position="bottom" <?php echo $isSystemRole ? 'disabled' : ''; ?>>
+            <button class="component-button component-button--icon component-button--h40" data-action="savePermissions" data-tooltip="<?php echo __('btn_save'); ?>" data-position="bottom" <?php echo $isSystemRole ? 'disabled' : ''; ?>>
                 <span class="material-symbols-rounded">save</span>
             </button>
         </div>

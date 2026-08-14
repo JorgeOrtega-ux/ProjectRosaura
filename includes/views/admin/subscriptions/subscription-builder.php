@@ -237,7 +237,7 @@ $featuresData = [
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
                                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="tier-name"><?php echo __('btn_cancel'); ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="tier-name"><?php echo __('btn_save'); ?></button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="applyInlineSetting" data-field="tier-name"><?php echo __('btn_save'); ?></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -343,7 +343,7 @@ $featuresData = [
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
                                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-monthly"><?php echo __('btn_cancel'); ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="stripe-monthly"><?php echo __('btn_save'); ?></button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="applyInlineSetting" data-field="stripe-monthly"><?php echo __('btn_save'); ?></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -375,7 +375,7 @@ $featuresData = [
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
                                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="stripe-yearly"><?php echo __('btn_cancel'); ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="stripe-yearly"><?php echo __('btn_save'); ?></button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="applyInlineSetting" data-field="stripe-yearly"><?php echo __('btn_save'); ?></button>
                                                 </div>
                                             </div>
                                         </div>

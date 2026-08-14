@@ -74,7 +74,7 @@ extract($editData);
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
                                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="canvasname"><?php echo __('btn_cancel'); ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveCanvasName"><?php echo __('btn_save'); ?></button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="saveCanvasName"><?php echo __('btn_save'); ?></button>
                                                 </div>
                                             </div>
                                         </div>

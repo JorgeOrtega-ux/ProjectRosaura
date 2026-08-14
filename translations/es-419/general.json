@@ -2071,5 +2071,16 @@
     "lbl_two_factor_auth_title": "Autenticación en Dos Pasos (2FA)",
     "lbl_2fa_enabled": "2FA Activado",
     "lbl_2fa_disabled": "2FA Desactivado",
-    "lbl_2fa_not_active": "Sin 2FA"
+    "lbl_2fa_not_active": "Sin 2FA",
+    "lbl_adjust_coins_title": "Ajustar Saldo de Monedas",
+    "lbl_adjust_coins_desc": "Bonificar o ajustar monedas para el usuario {username}.",
+    "lbl_coins_amount": "Cantidad de Monedas",
+    "lbl_coin_reason_comp": "Compensación por incidencia",
+    "lbl_coin_reason_bonus": "Bonificación / Cortesía",
+    "lbl_coin_reason_refund": "Reembolso de compra",
+    "lbl_coin_reason_promo": "Premio / Evento especial",
+    "lbl_coin_reason_adjust": "Corrección de saldo",
+    "lbl_coin_reason_penalty": "Deducción por infracción",
+    "lbl_coin_reason_other": "Otro motivo administrativo"
 }
+

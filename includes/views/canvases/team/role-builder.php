@@ -56,7 +56,7 @@ if (trim($rawName) !== '') {
             <?php endif; ?>
         </div>
         <div class="component-top-right">
-            <button class="component-button component-button--primary component-button--h40" data-action="saveRoleData">
+            <button class="component-button component-button--h40" data-action="saveRoleData">
                 <span class="material-symbols-rounded">save</span>
                 <?php echo __('btn_save_changes'); ?>
             </button>
@@ -94,7 +94,7 @@ if (trim($rawName) !== '') {
                                         </div>
                                         <div class="component-card__actions component-card__actions--stretch">
                                             <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="role-name"><?php echo __('btn_cancel'); ?></button>
-                                            <button type="button" class="component-button component-button--h34 component-button--dark <?php echo $isSystemRole ? 'disabled-interaction' : ''; ?>" data-action="applyRoleName"><?php echo __('btn_save'); ?></button>
+                                            <button type="button" class="component-button component-button--h34 <?php echo $isSystemRole ? 'disabled-interaction' : ''; ?>" data-action="applyRoleName"><?php echo __('btn_save'); ?></button>
                                         </div>
                                     </div>
                                 </div>

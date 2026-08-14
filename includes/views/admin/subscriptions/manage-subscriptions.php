@@ -50,7 +50,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                     </button>
                     
                     <?php if ($canManageTiers): ?>
-                    <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="addTier" data-tooltip="<?php echo __('btn_add_tier'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="addTier" data-tooltip="<?php echo __('btn_add_tier'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">add</span>
                     </button>
                     <?php endif; ?>

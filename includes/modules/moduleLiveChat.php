@@ -119,7 +119,7 @@ $maxMB = $maxUploadMB ?? 10;
                     <?php echo __('chat_deactivated_desc'); ?>
                 </p>
                 <?php if (isset($isOwner) && $isOwner): ?>
-                <button class="component-button component-button--dark component-button--h40" data-action="activateChatFromPanel">
+                <button class="component-button component-button--h40" data-action="activateChatFromPanel">
                     <span class="material-symbols-rounded">chat</span>
                     <span><?php echo __('btn_activate_chat'); ?></span>
                 </button>

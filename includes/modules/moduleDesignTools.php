@@ -56,7 +56,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             <div class="component-menu-top">
                 <div class="component-template-upload-section">
                     <input type="file" accept="image/jpeg, image/png, image/webp" class="hidden-input" data-ref="template-file-input">
-                    <button class="component-button component-button--full component-button--dark component-button--h40" data-action="triggerTemplateUpload">
+                    <button class="component-button component-button--full component-button--h40" data-action="triggerTemplateUpload">
                         <span class="material-symbols-rounded">cloud_upload</span>
                         <?php echo __('dt_upload_library'); ?>
                     </button>

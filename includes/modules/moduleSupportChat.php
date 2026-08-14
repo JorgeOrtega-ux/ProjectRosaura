@@ -131,7 +131,7 @@
                     <h3 class="component-card__title"><?php echo __('support_livechat_unavailable_heading'); ?></h3>
                     <p class="component-empty-state-text"><?php echo __('support_livechat_unavailable_desc'); ?></p>
                     <div class="component-empty-state-actions">
-                        <button class="component-button component-button--dark component-button--h40" data-action="focusSupportEmailForm" type="button">
+                        <button class="component-button component-button--h40" data-action="focusSupportEmailForm" type="button">
                             <span class="material-symbols-rounded">mail</span>
                             <span><?php echo __('support_btn_switch_to_email'); ?></span>
                         </button>
@@ -143,6 +143,6 @@
     </div>
 </div>
 
-<button class="component-button component-button--dark component-button--icon component-button--h40 component-fab-support disabled" data-action="openFloatingSupportChat" data-ref="floating-support-btn" data-tooltip="<?php echo __('support_livechat_title'); ?>" data-position="left" type="button">
+<button class="component-button component-button--icon component-button--h40 component-fab-support disabled" data-action="openFloatingSupportChat" data-ref="floating-support-btn" data-tooltip="<?php echo __('support_livechat_title'); ?>" data-position="left" type="button">
     <span class="material-symbols-rounded">support_agent</span>
 </button>

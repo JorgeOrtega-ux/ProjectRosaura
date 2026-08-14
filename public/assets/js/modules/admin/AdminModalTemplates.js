@@ -45,10 +45,7 @@ export const AdminModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">shield_person</span>
-                    </div>
+                <div class="component-modal-header">
                     <div class="component-modal-header-text">
                         <h2 class="component-modal-title">${__('modal_manage_user_roles_title')}</h2>
                         <p class="component-modal-desc">${__('modal_manage_user_roles_desc')} <b>${user.username || ''}</b>.</p>
@@ -108,10 +105,7 @@ export const AdminModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">forward</span>
-                    </div>
+                <div class="component-modal-header">
                     <div class="component-modal-header-text">
                         <h2 class="component-modal-title">${__('modal_escalate_chat_title')}</h2>
                         <p class="component-modal-desc">${__('modal_escalate_chat_desc')}</p>
@@ -163,10 +157,7 @@ export const AdminModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">check_circle</span>
-                    </div>
+                <div class="component-modal-header">
                     <div class="component-modal-header-text">
                         <h2 class="component-modal-title">${__('modal_close_chat_title')}</h2>
                         <p class="component-modal-desc">${__('modal_close_chat_desc')}</p>
@@ -223,10 +214,7 @@ export const AdminModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">swap_horiz</span>
-                    </div>
+                <div class="component-modal-header">
                     <div class="component-modal-header-text">
                         <h2 class="component-modal-title">${__('modal_reassign_chat_title')}</h2>
                         <p class="component-modal-desc">${__('modal_reassign_chat_desc')}</p>
@@ -268,10 +256,7 @@ export const AdminModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">quickreply</span>
-                    </div>
+                <div class="component-modal-header">
                     <div class="component-modal-header-text">
                         <h2 class="component-modal-title">${item.uuid ? __('modal_edit_canned_title') : __('modal_create_canned_title')}</h2>
                         <p class="component-modal-desc">${__('modal_canned_desc')}</p>
@@ -397,28 +382,67 @@ export const AdminModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">toll</span>
-                    </div>
+                <div class="component-modal-header">
                     <div class="component-modal-header-text">
                         <h2 class="component-modal-title">${__('lbl_adjust_coins_title', [], 'Ajustar Saldo de Monedas')}</h2>
-                        <p class="component-modal-desc">${__('lbl_adjust_coins_desc', [], 'Bonificar o ajustar monedas para el usuario')} <b>${username}</b>.</p>
+                        <p class="component-modal-desc">${__('lbl_adjust_coins_desc', { username }, 'Bonificar o ajustar monedas para el usuario')} <b>${username}</b>.</p>
                     </div>
                 </div>
 
                 <div class="component-modal-body" data-ref="admin-adjust-coins-form" data-user-uuid="${userUuid}">
-                    <div class="component-item-card component-p-3">
-                        <label class="component-card__title component-mb-1">${__('lbl_coins_amount', [], 'Cantidad de Monedas (+ / -)')}</label>
-                        <div class="component-input-wrapper">
-                            <input class="component-input" type="number" step="1" name="amount" placeholder="Ej: 50 o -20" required>
+                    <div class="component-input-group">
+                        <label class="component-input-label component-input-label--static">${__('lbl_coins_amount', [], 'Cantidad de Monedas')}</label>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-inline-control component-inline-control--fixed">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="adjust_coins_amount" data-step="-50" data-min="-999999"><span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span></button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="adjust_coins_amount" data-step="-10" data-min="-999999"><span class="material-symbols-rounded msr-chevron_left">chevron_left</span></button>
+                                </div>
+                                <div class="component-inline-control__center" data-ref="val_adjust_coins_amount" data-value="50">+50</div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="adjust_coins_amount" data-step="10" data-max="999999"><span class="material-symbols-rounded msr-chevron_right">chevron_right</span></button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="adjust_coins_amount" data-step="50" data-max="999999"><span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span></button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="component-item-card component-p-3 component-mt-2">
-                        <label class="component-card__title component-mb-1">${__('lbl_reason', [], 'Motivo del Ajuste')}</label>
-                        <div class="component-input-wrapper">
-                            <input class="component-input" type="text" name="reason" placeholder="Ej: Compensación por incidencia técnica" required>
+                    <div class="component-input-group">
+                        <label class="component-input-label component-input-label--static">${__('lbl_reason', [], 'Motivo del Ajuste')}</label>
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownAdjustCoinsReason">
+                                <span class="material-symbols-rounded">category</span>
+                                <span class="component-dropdown-text" data-ref="adjust-coins-reason-text" data-value="${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}">${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownAdjustCoinsReason">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link active" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}">
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_bonus', [], 'Bonificación / Cortesía')}">
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_bonus', [], 'Bonificación / Cortesía')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_refund', [], 'Reembolso de compra')}">
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_refund', [], 'Reembolso de compra')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_promo', [], 'Premio / Evento especial')}">
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_promo', [], 'Premio / Evento especial')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_adjust', [], 'Corrección de saldo')}">
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_adjust', [], 'Corrección de saldo')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_penalty', [], 'Deducción por infracción')}">
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_penalty', [], 'Deducción por infracción')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_other', [], 'Otro motivo administrativo')}">
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_other', [], 'Otro motivo administrativo')}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -438,10 +462,7 @@ export const AdminModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">lock_reset</span>
-                    </div>
+                <div class="component-modal-header">
                     <div class="component-modal-header-text">
                         <h2 class="component-modal-title">${__('lbl_disable_2fa_title', [], 'Desactivar Autenticación 2FA')}</h2>
                         <p class="component-modal-desc">${__('lbl_disable_2fa_desc', [], 'Esta acción removerá el 2FA de')} <b>${username}</b>. ${__('lbl_action_audited', [], 'Quedará registrada en auditoría.')}</p>
@@ -449,11 +470,9 @@ export const AdminModalTemplates = {
                 </div>
 
                 <div class="component-modal-body" data-ref="admin-disable-2fa-form" data-user-uuid="${userUuid}">
-                    <div class="component-item-card component-p-3">
-                        <label class="component-card__title component-mb-1">${__('lbl_audit_reason', [], 'Motivo de Auditoría (Obligatorio)')}</label>
-                        <div class="component-input-wrapper">
-                            <textarea class="component-input" name="reason" rows="3" placeholder="Ej: Solicitud formal de usuario por pérdida de dispositivo de autenticación" required></textarea>
-                        </div>
+                    <div class="component-input-group">
+                        <textarea class="component-input-field" name="reason" placeholder=" " rows="3" required></textarea>
+                        <label class="component-input-label">${__('lbl_audit_reason', [], 'Motivo de Auditoría (Obligatorio)')}</label>
                     </div>
                 </div>
 
@@ -475,10 +494,7 @@ export const AdminModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">help_outline</span>
-                    </div>
+                <div class="component-modal-header">
                     <div class="component-modal-header-text">
                         <h2 class="component-modal-title">${__('lbl_view_issue', [], 'Detalles del Problema')}</h2>
                         <p class="component-modal-desc">${__('lbl_view_issue_desc', [], 'Información inicial registrada al abrir la sesión de soporte.')}</p>
@@ -486,29 +502,13 @@ export const AdminModalTemplates = {
                 </div>
 
                 <div class="component-modal-body">
-                    <div class="component-card--grouped">
-                        <div class="component-group-item">
-                            <div class="component-card__content">
-                                <div class="component-card__text">
-                                    <div class="component-badge-group component-mb-2">
-                                        <span class="component-badge component-badge--sm">${category}</span>
-                                        ${priority ? `<span class="component-badge component-badge--sm">${priority}</span>` : ''}
-                                        ${time ? `<span class="component-badge component-badge--sm">${time}</span>` : ''}
-                                    </div>
-                                    <h3 class="component-card__title">${subject}</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <hr class="component-divider">
-                        <div class="component-group-item">
-                            <div class="component-card__content">
-                                <div class="component-card__text">
-                                    <span class="component-stat-card__title component-mb-1">${__('lbl_description', [], 'Descripción')}</span>
-                                    <p class="component-card__description">${description}</p>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="component-badge-group component-mb-2">
+                        <span class="component-badge component-badge--sm">${category}</span>
+                        ${priority ? `<span class="component-badge component-badge--sm">${priority}</span>` : ''}
+                        ${time ? `<span class="component-badge component-badge--sm">${time}</span>` : ''}
                     </div>
+                    <h3 class="component-card__title component-mb-1">${subject}</h3>
+                    <p class="component-card__description">${description}</p>
                 </div>
 
                 <div class="component-modal-actions">
@@ -522,9 +522,6 @@ export const AdminModalTemplates = {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
             const title = data.title || __('title_confirm_action', [], 'Confirmar Acción');
             const desc = data.desc || '';
-            const icon = data.icon || 'help_outline';
-            const username = data.username || 'User';
-            const email = data.email || '';
             const confirmText = data.confirmText || __('btn_confirm', [], 'Confirmar');
             const confirmClass = data.confirmClass || 'component-button--dark';
             const actionTarget = data.actionTarget || 'submitConfirmSupportAction';
@@ -532,28 +529,14 @@ export const AdminModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">${icon}</span>
-                    </div>
+                <div class="component-modal-header">
                     <div class="component-modal-header-text">
                         <h2 class="component-modal-title">${title}</h2>
                         <p class="component-modal-desc">${desc}</p>
                     </div>
                 </div>
 
-                <div class="component-modal-body" data-ref="admin-confirm-support-action-body" data-user-uuid="${userUuid}" data-action-type="${data.actionType || ''}">
-                    <div class="component-card--grouped">
-                        <div class="component-group-item">
-                            <div class="component-card__content">
-                                <div class="component-card__text">
-                                    <h4 class="component-card__title">${username}</h4>
-                                    ${email ? `<p class="component-card__description">${email}</p>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div class="component-modal-body" data-ref="admin-confirm-support-action-body" data-user-uuid="${userUuid}" data-action-type="${data.actionType || ''}" style="display:none;"></div>
 
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [], 'Cancelar')}</button>
@@ -570,10 +553,7 @@ export const AdminModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered text-danger">
-                        <span class="material-symbols-rounded">block</span>
-                    </div>
+                <div class="component-modal-header">
                     <div class="component-modal-header-text">
                         <h2 class="component-modal-title">${__('lbl_suspend_user_title', [], 'Suspender Cuenta de Usuario')}</h2>
                         <p class="component-modal-desc">${__('lbl_suspend_user_desc', [], 'Aplica una restricción a')} <b>${username}</b>. ${__('lbl_action_audited', [], 'Quedará registrada en auditoría.')}</p>
@@ -581,8 +561,8 @@ export const AdminModalTemplates = {
                 </div>
 
                 <div class="component-modal-body" data-ref="admin-suspend-user-form" data-user-uuid="${userUuid}">
-                    <div class="component-item-card component-p-3">
-                        <label class="component-card__title component-mb-1">${__('lbl_suspension_type', [], 'Tipo de Suspensión')}</label>
+                    <div class="component-input-group">
+                        <label class="component-input-label component-input-label--static">${__('lbl_suspension_type', [], 'Tipo de Suspensión')}</label>
                         <div class="component-input-wrapper">
                             <select class="component-input component-select" name="suspension_type" data-ref="suspension-type-select">
                                 <option value="permanent">${__('lbl_suspension_perm', [], 'Permanente')}</option>
@@ -594,11 +574,9 @@ export const AdminModalTemplates = {
                         </div>
                     </div>
 
-                    <div class="component-item-card component-p-3 component-mt-2">
-                        <label class="component-card__title component-mb-1">${__('lbl_suspension_reason', [], 'Motivo de la Suspensión')}</label>
-                        <div class="component-input-wrapper">
-                            <textarea class="component-input" name="reason" rows="3" placeholder="Ej: Conducta inapropiada reiterada o solicitud del titular" required></textarea>
-                        </div>
+                    <div class="component-input-group">
+                        <textarea class="component-input-field" name="reason" placeholder=" " rows="3" required></textarea>
+                        <label class="component-input-label">${__('lbl_suspension_reason', [], 'Motivo de la Suspensión')}</label>
                     </div>
                 </div>
 
@@ -610,4 +588,3 @@ export const AdminModalTemplates = {
         }
     }
 };
-

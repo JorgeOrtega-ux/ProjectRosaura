@@ -33,7 +33,7 @@ extract($invitesData);
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
-                    <button data-nav="<?php echo htmlspecialchars($appUrl); ?>/canvases/manage/invites/generate/<?php echo htmlspecialchars($canvasUuid); ?>" class="component-button component-button--icon component-button--h40 component-button--primary" data-tooltip="<?php echo htmlspecialchars(__('lbl_generate_invite')); ?>" data-position="bottom">
+                    <button data-nav="<?php echo htmlspecialchars($appUrl); ?>/canvases/manage/invites/generate/<?php echo htmlspecialchars($canvasUuid); ?>" class="component-button component-button--icon component-button--h40" data-tooltip="<?php echo htmlspecialchars(__('lbl_generate_invite')); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">add_link</span>
                     </button>
                 </div>

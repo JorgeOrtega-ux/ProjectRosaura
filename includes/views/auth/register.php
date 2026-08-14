@@ -20,7 +20,7 @@ $maxPasswordLen = $registerData['maxPasswordLen'];
                 <p class="component-form-desc"><?php echo htmlspecialchars($errorMsg); ?></p>
             </div>
             <div class="component-form-body">
-                <button class="component-button component-button--dark component-button--h45 component-button--full" data-nav="<?php echo APP_URL; ?>/register">
+                <button class="component-button component-button--h45 component-button--full" data-nav="<?php echo APP_URL; ?>/register">
                     <?php echo __('btn_back_home'); ?>
                 </button>
             </div>
@@ -46,7 +46,7 @@ $maxPasswordLen = $registerData['maxPasswordLen'];
 
                     <?php echo \App\Core\Helpers\Utils::renderTurnstile('register'); ?>
 
-                    <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitRegisterStep1">
+                    <button class="component-button component-button--h45 component-button--full" data-action="submitRegisterStep1">
                         <?php echo __('btn_continue'); ?>
                     </button>
                     
@@ -84,7 +84,7 @@ $maxPasswordLen = $registerData['maxPasswordLen'];
                         <span class="material-symbols-rounded component-input-toggle" data-action="generateUsername" title="<?php echo __('title_generate_username'); ?>">auto_awesome</span>
                     </div>
 
-                    <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitRegisterStep2">
+                    <button class="component-button component-button--h45 component-button--full" data-action="submitRegisterStep2">
                         <?php echo __('btn_continue'); ?>
                     </button>
                     
@@ -107,7 +107,7 @@ $maxPasswordLen = $registerData['maxPasswordLen'];
                         <label class="component-input-label"><?php echo __('lbl_verify_code'); ?></label>
                     </div>
 
-                    <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitRegisterVerify">
+                    <button class="component-button component-button--h45 component-button--full" data-action="submitRegisterVerify">
                         <?php echo __('btn_create_account'); ?>
                     </button>
                     

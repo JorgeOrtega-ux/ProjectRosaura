@@ -89,7 +89,7 @@ if ($isEdit && !empty($perk)) {
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
                                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-id"><?php echo __('btn_cancel') ?: 'Cancelar'; ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="applyInlineSetting" data-field="perk-id"><?php echo __('btn_save') ?: 'Guardar'; ?></button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="applyInlineSetting" data-field="perk-id"><?php echo __('btn_save') ?: 'Guardar'; ?></button>
                                                 </div>
                                             </div>
                                         </div>

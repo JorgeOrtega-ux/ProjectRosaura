@@ -33,7 +33,7 @@ $currentCanvasTier = (int)($sizesList[$currentSizeRaw]['tier'] ?? 0);
             </div>
         </div>
         <div class="component-top-right">
-            <button type="button" class="component-button component-button--primary component-button--h40" data-action="saveScheduledResize">
+            <button type="button" class="component-button component-button--h40" data-action="saveScheduledResize">
                 <span class="material-symbols-rounded">save</span>
                 <?php echo __('btn_save_changes'); ?>
             </button>

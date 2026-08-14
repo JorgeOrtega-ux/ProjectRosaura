@@ -39,7 +39,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
             <h1 class="component-top-title"><?php echo __('lbl_generate_new_invite'); ?></h1>
         </div>
         <div class="component-top-right">
-            <button type="button" class="component-button component-button--h40 component-button--primary" data-action="submitGenerateInvite">
+            <button type="button" class="component-button component-button--h40" data-action="submitGenerateInvite">
                 <span class="material-symbols-rounded">add_link</span>
                 <?php echo __('btn_generate_invite'); ?>
             </button>

@@ -12,13 +12,13 @@ $coinPackages = $viewService->getStoreCoinsData();
                 <h1 class="component-top-title"><?php echo __('store_coins_title'); ?></h1>
             </div>
             <div class="component-top-right">
-                <button class="component-button component-button--primary component-button--h40" data-nav="/store/coins">
+                <button class="component-button component-button--h40" data-nav="/store/coins">
                     <span class="material-symbols-rounded">toll</span> 
                     <span data-ref="user-coins-balance">0</span>
                 </button>
                 
                 <div class="component-actions disabled" data-ref="store-coins-selection-actions">
-                    <button class="component-button component-button--primary component-button--h40" data-action="buySelectedCoins" data-tooltip="<?php echo __('btn_buy'); ?>" data-position="bottom">
+                    <button class="component-button component-button--h40" data-action="buySelectedCoins" data-tooltip="<?php echo __('btn_buy'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">shopping_cart</span>
                         <span><?php echo __('btn_buy'); ?></span>
                     </button>

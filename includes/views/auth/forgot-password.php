@@ -18,7 +18,7 @@
 
             <?php echo \App\Core\Helpers\Utils::renderTurnstile('forgot_password'); ?>
 
-            <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitForgotPassword">
+            <button class="component-button component-button--h45 component-button--full" data-action="submitForgotPassword">
                 <?php echo __('btn_continue'); ?>
             </button>
             

@@ -84,10 +84,10 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                         </div>
                         
                         <div class="component-card__actions component-card__actions--stretch" data-ref="admin-profile-avatar-actions">
-                            <button type="button" class="component-button component-button--h34 component-button--dark" data-ref="admin-btn-change-avatar"><?php echo $isDefaultAvatar ? __('btn_upload_photo') : __('btn_change_photo'); ?></button>
+                            <button type="button" class="component-button component-button--h34" data-ref="admin-btn-change-avatar"><?php echo $isDefaultAvatar ? __('btn_upload_photo') : __('btn_change_photo'); ?></button>
                             <button type="button" class="component-button component-button--h34 <?php echo $isDefaultAvatar ? 'disabled' : ''; ?>" data-ref="admin-btn-delete-avatar"><?php echo __('btn_delete'); ?></button>
                             <button type="button" class="component-button component-button--h34 disabled" data-ref="admin-btn-cancel-avatar"><?php echo __('btn_cancel'); ?></button>
-                            <button type="button" class="component-button component-button--h34 component-button--dark disabled" data-ref="admin-btn-save-avatar"><?php echo __('btn_save'); ?></button>
+                            <button type="button" class="component-button component-button--h34 disabled" data-ref="admin-btn-save-avatar"><?php echo __('btn_save'); ?></button>
                         </div>
                     </div>
 
@@ -116,7 +116,7 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                                         </div>
                                         <div class="component-card__actions component-card__actions--stretch">
                                             <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="admin-username"><?php echo __('btn_cancel'); ?></button>
-                                            <button type="button" class="component-button component-button--h34 component-button--dark" data-action="adminSaveUsername"><?php echo __('btn_save'); ?></button>
+                                            <button type="button" class="component-button component-button--h34" data-action="adminSaveUsername"><?php echo __('btn_save'); ?></button>
                                         </div>
                                     </div>
                                 </div>
@@ -149,7 +149,7 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                                         </div>
                                         <div class="component-card__actions component-card__actions--stretch">
                                             <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="admin-email"><?php echo __('btn_cancel'); ?></button>
-                                            <button type="button" class="component-button component-button--h34 component-button--dark" data-action="adminSaveEmail"><?php echo __('btn_save'); ?></button>
+                                            <button type="button" class="component-button component-button--h34" data-action="adminSaveEmail"><?php echo __('btn_save'); ?></button>
                                         </div>
                                     </div>
                                 </div>

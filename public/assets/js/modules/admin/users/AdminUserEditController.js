@@ -44,7 +44,13 @@ class AdminUserEditController {
             const res = window.__(key, params);
             if (res && res !== key) return res;
         }
-        return fallback || key;
+        let text = fallback || key;
+        if (params && typeof params === 'object') {
+            for (const [k, v] of Object.entries(params)) {
+                text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+            }
+        }
+        return text;
     }
     handleViewLoaded(e) {
         if (e.detail.url.includes('/admin/user-profile')) {
@@ -95,6 +101,12 @@ class AdminUserEditController {
         const btnSubmitAdjustCoins = e.target.closest('[data-action="adminSubmitAdjustCoins"]');
         if (btnSubmitAdjustCoins) this.submitAdjustCoins(btnSubmitAdjustCoins);
 
+        const btnAdjustConfig = e.target.closest('[data-action="adjustConfig"]');
+        if (btnAdjustConfig) this.handleAdjustCoins(btnAdjustConfig);
+
+        const btnSelectCoinsReason = e.target.closest('[data-action="selectCoinsReason"]');
+        if (btnSelectCoinsReason) this.handleSelectCoinsReason(btnSelectCoinsReason);
+
         const btnResetPass = e.target.closest('[data-action="adminSendPasswordReset"]');
         if (btnResetPass) this.confirmPasswordReset(btnResetPass);
 
@@ -141,13 +153,58 @@ class AdminUserEditController {
         }
     }
 
+    handleAdjustCoins(btn) {
+        const field = btn.getAttribute('data-field');
+        const step = parseInt(btn.getAttribute('data-step') || '0', 10);
+        const min = btn.getAttribute('data-min') !== null ? parseInt(btn.getAttribute('data-min'), 10) : -999999;
+        const max = btn.getAttribute('data-max') !== null ? parseInt(btn.getAttribute('data-max'), 10) : 999999;
+
+        const center = document.querySelector(`[data-ref="val_${field}"]`);
+        if (!center) return;
+
+        let currentVal = parseInt(center.getAttribute('data-value') || '0', 10);
+        let newVal = currentVal + step;
+
+        if (newVal < min) newVal = min;
+        if (newVal > max) newVal = max;
+
+        center.setAttribute('data-value', newVal);
+        center.textContent = (newVal > 0 ? '+' : '') + newVal;
+    }
+
+    handleSelectCoinsReason(item) {
+        const val = item.getAttribute('data-val');
+        const labelText = item.querySelector('.component-menu-link-text span')?.textContent || val;
+
+        const textEl = document.querySelector('[data-ref="adjust-coins-reason-text"]');
+        if (textEl) {
+            textEl.textContent = labelText;
+            textEl.setAttribute('data-value', val);
+        }
+
+        const menuList = item.closest('.component-menu-list');
+        if (menuList) {
+            menuList.querySelectorAll('.component-menu-link').forEach(l => l.classList.remove('active'));
+            item.classList.add('active');
+        }
+
+        const dropdown = document.querySelector('[data-module="dropdownAdjustCoinsReason"]');
+        if (dropdown && window.appInstance) {
+            window.appInstance.closeModule(dropdown);
+        } else if (dropdown) {
+            dropdown.classList.remove('active');
+            dropdown.classList.add('disabled');
+        }
+    }
+
     async submitAdjustCoins(btn) {
         const modalBody = document.querySelector('[data-ref="admin-adjust-coins-form"]');
         if (!modalBody) return;
-        const amountInput = modalBody.querySelector('input[name="amount"]');
-        const reasonInput = modalBody.querySelector('input[name="reason"]');
-        const amount = parseInt(amountInput?.value, 10);
-        const reason = reasonInput?.value?.trim() || '';
+        const amountEl = modalBody.querySelector('[data-ref="val_adjust_coins_amount"]');
+        const amount = parseInt(amountEl?.getAttribute('data-value') || amountEl?.textContent || '0', 10);
+        
+        const reasonTextEl = modalBody.querySelector('[data-ref="adjust-coins-reason-text"]');
+        const reason = reasonTextEl?.getAttribute('data-value') || reasonTextEl?.textContent?.trim() || 'Ajuste administrativo';
 
         if (isNaN(amount) || amount === 0) {
             showMessage(this.translateKey('err_invalid_amount', [], 'Ingresa una cantidad válida distinta de 0.'), 'error');
@@ -195,8 +252,7 @@ class AdminUserEditController {
         if (window.modalSystem) {
             window.modalSystem.show('confirmSupportActionModal', {
                 title: this.translateKey('lbl_confirm_send_password_reset_title', [], '¿Enviar restablecimiento de contraseña?'),
-                desc: this.translateKey('lbl_confirm_send_password_reset_desc', { email: email || username }, 'Se enviará un correo con un enlace seguro para que el usuario restablezca su contraseña.'),
-                icon: 'lock_reset',
+                desc: this.translateKey('lbl_confirm_send_password_reset_desc', { email: email || username, username: username }, `Se enviará un correo con un enlace seguro a ${email || username} para que el usuario restablezca su contraseña.`),
                 username: username,
                 email: email,
                 userUuid: userUuid,
@@ -219,8 +275,7 @@ class AdminUserEditController {
         if (window.modalSystem) {
             window.modalSystem.show('confirmSupportActionModal', {
                 title: this.translateKey('lbl_confirm_unlock_rate_limit_title', [], '¿Desbloquear intentos de inicio de sesión?'),
-                desc: this.translateKey('lbl_confirm_unlock_rate_limit_desc', { username, email: email || username }, 'Se limpiarán los bloqueos por intentos fallidos de contraseña y 2FA en el sistema.'),
-                icon: 'lock_open',
+                desc: this.translateKey('lbl_confirm_unlock_rate_limit_desc', { username, email: email || username }, `Se limpiarán los bloqueos por intentos fallidos de contraseña y 2FA para ${username} (${email || username}).`),
                 username: username,
                 email: email,
                 userUuid: userUuid,
@@ -243,8 +298,7 @@ class AdminUserEditController {
         if (window.modalSystem) {
             window.modalSystem.show('confirmSupportActionModal', {
                 title: this.translateKey('lbl_confirm_terminate_sessions_title', [], '¿Finalizar todas las sesiones?'),
-                desc: this.translateKey('lbl_confirm_terminate_sessions_desc', { username }, 'Se revocarán todos los tokens de autenticación y el usuario será desconectado.'),
-                icon: 'logout',
+                desc: this.translateKey('lbl_confirm_terminate_sessions_desc', { username }, `Se revocarán todos los tokens de autenticación activos de ${username}. El usuario será desconectado en todos sus dispositivos.`),
                 username: username,
                 email: email,
                 userUuid: userUuid,
@@ -266,12 +320,11 @@ class AdminUserEditController {
         if (window.modalSystem) {
             window.modalSystem.show('confirmSupportActionModal', {
                 title: this.translateKey('lbl_confirm_sync_stripe_title', [], '¿Sincronizar suscripción con Stripe?'),
-                desc: this.translateKey('lbl_confirm_sync_stripe_desc', { username }, 'Se verificará el estado en Stripe y se actualizará el plan del usuario.'),
-                icon: 'sync',
+                desc: this.translateKey('lbl_confirm_sync_stripe_desc', { username }, `Se verificará el estado actual en Stripe y se actualizará el nivel de suscripción y caché de ${username}.`),
                 username: username,
                 userUuid: userUuid,
                 actionType: 'syncStripe',
-                confirmText: this.translateKey('btn_sync_stripe', [], 'Sincronizar'),
+                confirmText: this.translateKey('btn_sync_stripe', [], 'Sincronizar Stripe'),
                 confirmClass: 'component-button--dark',
                 actionTarget: 'submitConfirmUserAdminAction'
             });

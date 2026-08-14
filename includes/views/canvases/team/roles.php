@@ -57,7 +57,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
-                    <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="addRole" data-tooltip="<?php echo __('btn_add_role'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="addRole" data-tooltip="<?php echo __('btn_add_role'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">add</span>
                     </button>
                 </div>

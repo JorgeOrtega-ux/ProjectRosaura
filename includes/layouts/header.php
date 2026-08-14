@@ -115,7 +115,7 @@ if ($isLoggedIn) {
             <?php endif; ?>
 
             <?php if (!$isLoggedIn): ?>
-                <button class="component-button component-button--dark component-button--h40" data-nav="<?php echo APP_URL; ?>/login">
+                <button class="component-button component-button--h40" data-nav="<?php echo APP_URL; ?>/login">
                     <?php echo __('btn_login'); ?>
                 </button>
                 <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleMainOptions" data-tooltip="<?php echo __('tooltip_options'); ?>" data-position="bottom">

@@ -72,7 +72,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--end">
-                                        <button type="button" class="component-button component-button--h36 component-button--dark" data-action="toggleAutoRenew" data-ref="sub-renewal-btn">
+                                        <button type="button" class="component-button component-button--h36" data-action="toggleAutoRenew" data-ref="sub-renewal-btn">
                                             <?php echo __('btn_cancel_renew'); ?>
                                         </button>
                                     </div>

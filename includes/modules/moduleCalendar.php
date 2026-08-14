@@ -26,7 +26,7 @@ $calendarModuleId = $calendarModuleId ?? 'adminModuleCalendar';
                 <button type="button" class="component-button component-button--h30" data-action="calendarClear"><?php echo __('btn_clear'); ?></button>
                 <div>
                     <button type="button" class="component-button component-button--h30" data-action="calendarCancel"><?php echo __('btn_cancel'); ?></button>
-                    <button type="button" class="component-button component-button--h30 component-button--dark" data-action="calendarConfirm"><?php echo __('btn_accept'); ?></button>
+                    <button type="button" class="component-button component-button--h30" data-action="calendarConfirm"><?php echo __('btn_accept'); ?></button>
                 </div>
             </div>
         </div>
