@@ -11,6 +11,7 @@ interface SupportRepositoryInterface {
 
     public function createChatSession(array $data): string;
     public function findSessionByUuid(string $uuid): ?array;
+    public function getSessionsByUser(int $userId, int $limit = 5): array;
     public function getActiveSessionForUser(int $userId): ?array;
     public function getQueuePosition(string $sessionUuid, string $level): int;
     public function getAvailableAgentsCount(string $level = 'l1'): int;

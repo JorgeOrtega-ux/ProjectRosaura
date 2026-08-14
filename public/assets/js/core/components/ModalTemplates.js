@@ -2289,5 +2289,59 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+
+    viewIssueModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const category = data.category || 'general';
+            const subject = data.subject || __('lbl_no_subject', [], 'Sin asunto');
+            const description = data.description || __('lbl_no_description', [], 'Sin descripción');
+            const time = data.time || '';
+            const priority = data.priority || '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">help_outline</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('lbl_view_issue', [], 'Detalles del Problema')}</h2>
+                        <p class="component-modal-desc">${__('lbl_view_issue_desc', [], 'Información inicial registrada al abrir la sesión de soporte.')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body">
+                    <div class="component-card--grouped">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <div class="component-badge-group component-mb-2">
+                                        <span class="component-badge component-badge--sm">${category}</span>
+                                        ${priority ? `<span class="component-badge component-badge--sm">${priority}</span>` : ''}
+                                        ${time ? `<span class="component-badge component-badge--sm">${time}</span>` : ''}
+                                    </div>
+                                    <h3 class="component-card__title">${subject}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="component-divider">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <span class="component-stat-card__title component-mb-1">${__('lbl_description', [], 'Descripción')}</span>
+                                    <p class="component-card__description">${description}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40 component-button--dark" data-modal-action="cancel">${__('btn_close', [], 'Cerrar')}</button>
+                </div>
+            `;
+        }
     }
 };

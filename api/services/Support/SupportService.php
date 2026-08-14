@@ -353,6 +353,7 @@ class SupportService {
                 'category' => $session['category'],
                 'priority' => $session['priority'] ?? 'medium',
                 'subject' => $session['subject'],
+                'initial_message' => $session['initial_message'] ?? null,
                 'client_username' => $session['client_username'] ?? null,
                 'client_avatar' => $session['client_avatar'] ?? null,
                 'client_email' => $session['client_email'] ?? null,

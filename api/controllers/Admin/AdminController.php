@@ -531,4 +531,52 @@ class AdminController extends BaseController {
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
+
+    public function send_password_reset($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::EDIT_USERS);
+            return $this->respond($this->adminServices->sendPasswordReset($input));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function unlock_rate_limit($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::EDIT_USERS);
+            return $this->respond($this->adminServices->unlockRateLimit($input));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function adjust_coins($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::EDIT_USERS);
+            return $this->respond($this->adminServices->adjustCoins($input));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function terminate_sessions($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::EDIT_USERS);
+            return $this->respond($this->adminServices->terminateSessions($input));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function disable_2fa($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::EDIT_USERS);
+            return $this->respond($this->adminServices->disable2FA($input));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function sync_stripe_subscription($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::EDIT_USERS);
+            return $this->respond($this->adminServices->syncStripeSubscription($input));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
 }

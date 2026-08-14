@@ -191,6 +191,7 @@ class AuthServices {
             $this->sessionManager->regenerate(true);
         }
         
+        $this->roleRepository->invalidateUserCache($user['id']);
         $userPrefs = $this->prefsManager->ensureDefaultPreferences($user['id']);
         $permissions = $this->roleRepository->getMergedPermissionsForUser($user['id']);
         $assignedRolesIds = !empty($user['assigned_roles_ids']) ? array_map('intval', explode(',', $user['assigned_roles_ids'])) : [SecurityConstants::DEFAULT_USER_ROLE_ID];

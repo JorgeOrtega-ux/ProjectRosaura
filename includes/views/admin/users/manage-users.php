@@ -31,35 +31,25 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
             <div class="component-top-right">
                 
                 <div class="component-actions disabled" data-ref="header-selection-actions">
-                    <?php if ($canEditUsers): ?>
-                    <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUser" data-tooltip="<?php echo __('tooltip_manage_account'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 <?php echo !$canEditUsers ? 'disabled-interaction' : ''; ?>" data-action="editSelectedUser" data-tooltip="<?php echo __('tooltip_manage_account'); ?><?php echo !$canEditUsers ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canEditUsers ? 'data-permission-denied="true" disabled' : ''; ?>>
                         <span class="material-symbols-rounded">manage_accounts</span>
                     </button>
-                    <?php endif; ?>
                     
-                    <?php if ($canAssignRoles): ?>
-                    <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUserRole" data-tooltip="<?php echo __('tooltip_manage_role'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 <?php echo !$canAssignRoles ? 'disabled-interaction' : ''; ?>" data-action="editSelectedUserRole" data-tooltip="<?php echo __('tooltip_manage_role'); ?><?php echo !$canAssignRoles ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canAssignRoles ? 'data-permission-denied="true" disabled' : ''; ?>>
                         <span class="material-symbols-rounded">admin_panel_settings</span>
                     </button>
-                    <?php endif; ?>
 
-                    <?php if ($canModerateUsers): ?>
-                    <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUserStatus" data-tooltip="<?php echo __('tooltip_manage_status'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 <?php echo !$canModerateUsers ? 'disabled-interaction' : ''; ?>" data-action="editSelectedUserStatus" data-tooltip="<?php echo __('tooltip_manage_status'); ?><?php echo !$canModerateUsers ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canModerateUsers ? 'data-permission-denied="true" disabled' : ''; ?>>
                         <span class="material-symbols-rounded">rule</span>
                     </button>
-                    <?php endif; ?>
 
-                    <?php if ($canViewKardex): ?>
-                    <button class="component-button component-button--icon component-button--h40" data-action="viewUserHistory" data-tooltip="<?php echo __('tooltip_view_history'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 <?php echo !$canViewKardex ? 'disabled-interaction' : ''; ?>" data-action="viewUserHistory" data-tooltip="<?php echo __('tooltip_view_history'); ?><?php echo !$canViewKardex ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canViewKardex ? 'data-permission-denied="true" disabled' : ''; ?>>
                         <span class="material-symbols-rounded">history</span>
                     </button>
-                    <?php endif; ?>
 
-                    <?php if ($canDeleteUsers): ?>
-                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedUsers" data-tooltip="<?php echo __('tooltip_delete_users'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger <?php echo !$canDeleteUsers ? 'disabled-interaction' : ''; ?>" data-action="deleteSelectedUsers" data-tooltip="<?php echo __('tooltip_delete_users'); ?><?php echo !$canDeleteUsers ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canDeleteUsers ? 'data-permission-denied="true" disabled' : ''; ?>>
                         <span class="material-symbols-rounded">delete</span>
                     </button>
-                    <?php endif; ?>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">

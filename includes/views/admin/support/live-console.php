@@ -7,8 +7,36 @@ $canReassign = in_array(PC::SUPPORT_CHAT_REASSIGN, $userPermissions);
 $canViewMetrics = in_array(PC::SUPPORT_VIEW_METRICS, $userPermissions);
 $canManageCanned = in_array(PC::SUPPORT_MANAGE_CANNED, $userPermissions);
 $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
+
+$chatUuid = $_GET['uuid'] ?? null;
+if (empty($chatUuid)) {
+    $uriParts = explode('/', trim(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/'));
+    $cIdx = array_search('c', $uriParts, true);
+    if ($cIdx !== false && isset($uriParts[$cIdx + 1])) {
+        $chatUuid = $uriParts[$cIdx + 1];
+    }
+}
+
+$initialActiveTab = 'l1';
+if (!empty($chatUuid)) {
+    try {
+        $dbMgr = new \App\Config\Database\DatabaseManager();
+        $pdo = $dbMgr->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+        $stmt = $pdo->prepare("SELECT department_level, status, assigned_agent_id FROM support_chat_sessions WHERE uuid = ? LIMIT 1");
+        $stmt->execute([$chatUuid]);
+        $sessRow = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if ($sessRow) {
+            $currentUserId = $_SESSION['user_id'] ?? null;
+            if ($sessRow['status'] === 'active' || ($currentUserId && (int)$sessRow['assigned_agent_id'] === (int)$currentUserId)) {
+                $initialActiveTab = 'active';
+            } elseif (!empty($sessRow['department_level'])) {
+                $initialActiveTab = $sessRow['department_level'];
+            }
+        }
+    } catch (\Throwable $e) {}
+}
 ?>
-<div class="view-content" data-ref="admin-support-live-wrapper">
+<div class="view-content" data-ref="admin-support-live-wrapper" data-initial-tab="<?php echo htmlspecialchars($initialActiveTab); ?>">
     <div class="component-wrapper component-wrapper--full no-padding">
         
         <div class="component-top">
@@ -101,19 +129,19 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
             <div class="component-column-box component-column-box--sidebar" data-ref="support-column-queues">
                 <div class="component-column-header">
                     <div class="component-badge-group">
-                        <button class="component-badge component-badge--interactive component-badge--grouped-item active" data-action="switchQueueTab" data-tab="l1" type="button">
+                        <button class="component-badge component-badge--interactive component-badge--grouped-item <?php echo $initialActiveTab === 'l1' ? 'active' : ''; ?>" data-action="switchQueueTab" data-tab="l1" type="button">
                             <span><?php echo __('lbl_dept_l1'); ?></span>
                             <span data-ref="badge-queue-l1">0</span>
                         </button>
-                        <button class="component-badge component-badge--interactive component-badge--grouped-item" data-action="switchQueueTab" data-tab="l2" type="button">
+                        <button class="component-badge component-badge--interactive component-badge--grouped-item <?php echo $initialActiveTab === 'l2' ? 'active' : ''; ?>" data-action="switchQueueTab" data-tab="l2" type="button">
                             <span><?php echo __('lbl_dept_l2'); ?></span>
                             <span data-ref="badge-queue-l2">0</span>
                         </button>
-                        <button class="component-badge component-badge--interactive component-badge--grouped-item" data-action="switchQueueTab" data-tab="l3" type="button">
+                        <button class="component-badge component-badge--interactive component-badge--grouped-item <?php echo $initialActiveTab === 'l3' ? 'active' : ''; ?>" data-action="switchQueueTab" data-tab="l3" type="button">
                             <span><?php echo __('lbl_dept_l3'); ?></span>
                             <span data-ref="badge-queue-l3">0</span>
                         </button>
-                        <button class="component-badge component-badge--interactive component-badge--grouped-item" data-action="switchQueueTab" data-tab="active" type="button">
+                        <button class="component-badge component-badge--interactive component-badge--grouped-item <?php echo $initialActiveTab === 'active' ? 'active' : ''; ?>" data-action="switchQueueTab" data-tab="active" type="button">
                             <span><?php echo __('lbl_my_active_chats'); ?></span>
                             <span data-ref="badge-queue-active">0</span>
                         </button>
@@ -130,9 +158,6 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                                 <div class="component-skeleton component-skeleton--desc-sm"></div>
                             </div>
                         </div>
-                        <div class="component-card__actions">
-                            <div class="component-skeleton component-skeleton--btn-sm"></div>
-                        </div>
                     </div>
                     <?php endfor; ?>
                 </div>
@@ -147,7 +172,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                         </button>
                     </div>
 
-                    <div class="component-card__content">
+                    <div class="component-card__content component-cursor-pointer" data-action="toggleModule" data-target="moduleSupportClientInfo">
                         <div data-ref="current-chat-client-avatar-container">
                             <div class="component-button--profile component-avatar--static-sm">
                                 <img class="avatar-image" data-ref="current-chat-client-avatar" src="/public/assets/img/fallbacks/avatar-default.png" alt="Guest">
@@ -167,6 +192,15 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                             <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="admin-chat-more-menu">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">
+                                    <div class="component-menu-link" data-action="openViewIssueModal">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">help_outline</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span><?php echo __('lbl_view_issue', [], 'Ver problema'); ?></span>
+                                        </div>
+                                    </div>
+
                                     <div class="component-menu-link" data-action="toggleModule" data-target="moduleSupportClientInfo">
                                         <div class="component-menu-link-icon">
                                             <span class="material-symbols-rounded">info</span>
@@ -175,6 +209,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                                             <span><?php echo __('lbl_user_profile_title'); ?></span>
                                         </div>
                                     </div>
+
                                     <?php if ($canEscalate): ?>
                                     <div class="component-menu-link" data-action="openEscalateModal">
                                         <div class="component-menu-link-icon">
@@ -230,7 +265,7 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                                 <button class="component-chat-attach-btn" data-action="toggleModule" data-target="adminCannedResponsesDropdown" data-tooltip="<?php echo __('lbl_quick_canned'); ?>" data-position="top" type="button">
                                     <span class="material-symbols-rounded">quickreply</span>
                                 </button>
-                                <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-left component-module--dropdown-fixed disabled" data-module="adminCannedResponsesDropdown">
+                                <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-right component-module--dropdown-fixed disabled" data-module="adminCannedResponsesDropdown">
                                     <div class="component-menu component-menu--w320 component-menu--h-auto component-menu--no-padding component-menu--limited active" data-ref="menuCannedResponses">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-header">
@@ -273,9 +308,9 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
 
     </div>
 
-    <!-- MODULO LATERAL IZQUIERDO: INFORMACIÓN DEL USUARIO Y SESIÓN -->
-    <div class="component-module component-module--sidebar disabled" data-module="moduleSupportClientInfo">
-        <div class="component-menu component-menu--w320 component-menu--h-full active" data-menu="support-client-info-menu">
+    <!-- MODULO LATERAL DERECHO: INFORMACIÓN DEL USUARIO Y SESIÓN -->
+    <div class="component-module component-module--sidebar component-module--sidebar-responsive component-module--sidebar-right disabled" data-module="moduleSupportClientInfo">
+        <div class="component-menu component-menu--w335 component-menu--chat component-menu--h-full component-menu--no-padding active" data-menu="support-client-info-menu">
             <div class="pill-container"><div class="drag-handle"></div></div>
             
             <div class="component-menu-header">
@@ -284,15 +319,10 @@ $canManageTickets = in_array(PC::SUPPORT_TICKETS_MANAGE, $userPermissions);
                         <span class="material-symbols-rounded">person</span>
                         <span class="component-menu-header-title"><?php echo __('lbl_user_profile_title'); ?></span>
                     </div>
-                    <div class="component-menu-header-actions">
-                        <button class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="moduleSupportClientInfo" data-tooltip="<?php echo __('btn_close'); ?>" data-position="bottom" type="button">
-                            <span class="material-symbols-rounded">close</span>
-                        </button>
-                    </div>
                 </div>
             </div>
 
-            <div class="component-menu-section-parent component-p-3" data-ref="admin-support-client-info">
+            <div class="component-menu-list component-menu-list--scrollable component-p-3" data-ref="admin-support-client-info">
                 <div class="component-empty-state">
                     <span class="material-symbols-rounded component-empty-state-icon">account_circle</span>
                     <h3 class="component-card__title"><?php echo __('lbl_no_user_selected'); ?></h3>

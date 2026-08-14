@@ -63,6 +63,7 @@ export class AdminSupportTicketDetailController {
             return;
         }
     }
+    }
 
     async _loadTicketDetail() {
         try {
@@ -175,6 +176,33 @@ export class AdminSupportTicketDetailController {
                 link.classList.remove('active');
             }
         });
+
+        this._loadClientProfile(ticket);
+    }
+
+    async _loadClientProfile(ticket) {
+        const metaBadges = document.querySelector('[data-ref="ticket-user-meta-badges"]');
+        if (!metaBadges) return;
+
+        try {
+            const res = await this.api.post(ApiRoutes.AdminSupport.GetClientProfile, { ticket_uuid: ticket.uuid }, this.abortController ? this.abortController.signal : undefined);
+            if (!res || !res.success || !res.user) {
+                metaBadges.innerHTML = `<span class="component-badge component-badge--sm">${window.__('lbl_guest', [], 'Invitado')}</span>`;
+                return;
+            }
+
+            const user = res.user;
+            this.currentUserData = user;
+
+            metaBadges.innerHTML = `
+                <span class="component-badge component-badge--sm">${this._escapeHtml(user.subscription_name || 'Básico')}</span>
+                <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">toll</span> ${user.coins || 0}</span>
+                <span class="component-badge component-badge--sm">${user.two_factor_enabled ? '2FA Activo' : '2FA Off'}</span>
+                ${user.is_suspended ? `<span class="component-badge component-badge--sm component-badge--danger"><span class="material-symbols-rounded">block</span> Suspendido</span>` : ''}
+            `;
+        } catch (e) {
+            Logger.error("Failed to load client profile in ticket detail: " + e.message);
+        }
     }
 
     async _updateStatus(newStatus) {

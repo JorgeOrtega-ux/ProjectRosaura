@@ -73,6 +73,33 @@ class AdminUserEditController {
         if (btnSaveEmail) this.saveEmail(btnSaveEmail);
         const btnSetPref = e.target.closest('[data-action="adminSetPref"]');
         if (btnSetPref) this.savePrefFromDropdown(btnSetPref);
+
+        const btnAdjustCoins = e.target.closest('[data-action="adminOpenAdjustCoins"]');
+        if (btnAdjustCoins) this.openAdjustCoinsModal(btnAdjustCoins);
+
+        const btnSubmitAdjustCoins = e.target.closest('[data-action="adminSubmitAdjustCoins"]');
+        if (btnSubmitAdjustCoins) this.submitAdjustCoins(btnSubmitAdjustCoins);
+
+        const btnResetPass = e.target.closest('[data-action="adminSendPasswordReset"]');
+        if (btnResetPass) this.confirmPasswordReset(btnResetPass);
+
+        const btnUnlockRl = e.target.closest('[data-action="adminUnlockRateLimit"]');
+        if (btnUnlockRl) this.confirmUnlockRateLimit(btnUnlockRl);
+
+        const btnTermSess = e.target.closest('[data-action="adminTerminateSessions"]');
+        if (btnTermSess) this.confirmTerminateSessions(btnTermSess);
+
+        const btnSyncStripe = e.target.closest('[data-action="adminSyncStripe"]');
+        if (btnSyncStripe) this.confirmSyncStripe(btnSyncStripe);
+
+        const btnOpenDis2fa = e.target.closest('[data-action="adminOpenDisable2FA"]');
+        if (btnOpenDis2fa) this.openDisable2FAModal(btnOpenDis2fa);
+
+        const btnSubmitDis2fa = e.target.closest('[data-action="adminSubmitDisable2FA"]');
+        if (btnSubmitDis2fa) this.submitDisable2FA(btnSubmitDis2fa);
+
+        const btnConfirmAction = e.target.closest('[data-action="submitConfirmUserAdminAction"]');
+        if (btnConfirmAction) this.submitConfirmUserAdminAction(btnConfirmAction);
     }
     handleChange(e) {
         if (!window.location.pathname.includes('/admin/user-profile')) return;
@@ -83,6 +110,222 @@ class AdminUserEditController {
             this.savePreference(key, value);
         }
     }
+
+    openAdjustCoinsModal(btn) {
+        const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
+        const userUuid = btn.getAttribute('data-user-uuid') || '';
+        if (window.modalSystem) {
+            window.modalSystem.show('adjustUserCoinsModal', {
+                userUuid: userUuid,
+                username: username,
+                actionTarget: 'adminSubmitAdjustCoins'
+            });
+        }
+    }
+
+    async submitAdjustCoins(btn) {
+        const modalBody = document.querySelector('[data-ref="admin-adjust-coins-form"]');
+        if (!modalBody) return;
+        const amountInput = modalBody.querySelector('input[name="amount"]');
+        const reasonInput = modalBody.querySelector('input[name="reason"]');
+        const amount = parseInt(amountInput?.value, 10);
+        const reason = reasonInput?.value?.trim() || '';
+
+        if (isNaN(amount) || amount === 0) {
+            showMessage(this.translateKey('err_invalid_amount', [], 'Ingresa una cantidad válida distinta de 0.'), 'error');
+            return;
+        }
+
+        setButtonLoading(btn);
+        try {
+            const result = await this.api.post(ApiRoutes.Admin.AdjustCoins, {
+                target_user_id: this.targetUserId,
+                amount: Math.abs(amount),
+                action: amount > 0 ? 'add' : 'subtract',
+                reason: reason
+            }, this.abortController?.signal);
+
+            restoreButton(btn);
+            if (result && result.success) {
+                showMessage(result.message || this.translateKey('msg_coins_adjusted_success', [], 'Monedas ajustadas correctamente.'), 'success');
+                if (window.modalSystem && window.modalSystem.closeCurrent) window.modalSystem.closeCurrent(true);
+                const dispCoins = document.querySelector('[data-ref="admin-display-coins"]');
+                if (dispCoins && result.coins !== undefined) {
+                    dispCoins.innerHTML = `<span class="material-symbols-rounded">toll</span> ${result.coins}`;
+                }
+            } else {
+                showMessage(result?.message || this.translateKey('err_generic', [], 'Error al procesar solicitud.'), 'error');
+            }
+        } catch (e) {
+            restoreButton(btn);
+            showMessage(this.translateKey('err_generic', [], 'Error al conectar con el servidor.'), 'error');
+        }
+    }
+
+    confirmPasswordReset(btn) {
+        const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
+        const email = btn.getAttribute('data-email') || document.querySelector('[data-ref="admin-display-email"]')?.textContent || '';
+        const userUuid = btn.getAttribute('data-user-uuid') || '';
+
+        if (window.modalSystem) {
+            window.modalSystem.show('confirmSupportActionModal', {
+                title: this.translateKey('lbl_confirm_send_password_reset_title', [], '¿Enviar restablecimiento de contraseña?'),
+                desc: this.translateKey('lbl_confirm_send_password_reset_desc', { email: email || username }, 'Se enviará un correo con un enlace seguro para que el usuario restablezca su contraseña.'),
+                icon: 'lock_reset',
+                username: username,
+                email: email,
+                userUuid: userUuid,
+                actionType: 'resetPassword',
+                confirmText: this.translateKey('btn_send_password_reset', [], 'Enviar Enlace'),
+                confirmClass: 'component-button--dark',
+                actionTarget: 'submitConfirmUserAdminAction'
+            });
+        }
+    }
+
+    confirmUnlockRateLimit(btn) {
+        const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
+        const email = btn.getAttribute('data-email') || document.querySelector('[data-ref="admin-display-email"]')?.textContent || '';
+        const userUuid = btn.getAttribute('data-user-uuid') || '';
+
+        if (window.modalSystem) {
+            window.modalSystem.show('confirmSupportActionModal', {
+                title: this.translateKey('lbl_confirm_unlock_rate_limit_title', [], '¿Desbloquear intentos de inicio de sesión?'),
+                desc: this.translateKey('lbl_confirm_unlock_rate_limit_desc', { username, email: email || username }, 'Se limpiarán los bloqueos por intentos fallidos de contraseña y 2FA en el sistema.'),
+                icon: 'lock_open',
+                username: username,
+                email: email,
+                userUuid: userUuid,
+                actionType: 'unlockRateLimit',
+                confirmText: this.translateKey('btn_unlock_rate_limit', [], 'Desbloquear Login'),
+                confirmClass: 'component-button--dark',
+                actionTarget: 'submitConfirmUserAdminAction'
+            });
+        }
+    }
+
+    confirmTerminateSessions(btn) {
+        const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
+        const email = btn.getAttribute('data-email') || document.querySelector('[data-ref="admin-display-email"]')?.textContent || '';
+        const userUuid = btn.getAttribute('data-user-uuid') || '';
+
+        if (window.modalSystem) {
+            window.modalSystem.show('confirmSupportActionModal', {
+                title: this.translateKey('lbl_confirm_terminate_sessions_title', [], '¿Finalizar todas las sesiones?'),
+                desc: this.translateKey('lbl_confirm_terminate_sessions_desc', { username }, 'Se revocarán todos los tokens de autenticación y el usuario será desconectado.'),
+                icon: 'logout',
+                username: username,
+                email: email,
+                userUuid: userUuid,
+                actionType: 'terminateSessions',
+                confirmText: this.translateKey('btn_terminate_sessions', [], 'Cerrar Sesiones'),
+                confirmClass: 'component-button--danger',
+                actionTarget: 'submitConfirmUserAdminAction'
+            });
+        }
+    }
+
+    confirmSyncStripe(btn) {
+        const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
+        const userUuid = btn.getAttribute('data-user-uuid') || '';
+
+        if (window.modalSystem) {
+            window.modalSystem.show('confirmSupportActionModal', {
+                title: this.translateKey('lbl_confirm_sync_stripe_title', [], '¿Sincronizar suscripción con Stripe?'),
+                desc: this.translateKey('lbl_confirm_sync_stripe_desc', { username }, 'Se verificará el estado en Stripe y se actualizará el plan del usuario.'),
+                icon: 'sync',
+                username: username,
+                userUuid: userUuid,
+                actionType: 'syncStripe',
+                confirmText: this.translateKey('btn_sync_stripe', [], 'Sincronizar'),
+                confirmClass: 'component-button--dark',
+                actionTarget: 'submitConfirmUserAdminAction'
+            });
+        }
+    }
+
+    async submitConfirmUserAdminAction(btn) {
+        const modalBody = document.querySelector('[data-ref="admin-confirm-support-action-body"]');
+        if (!modalBody) return;
+        const actionType = modalBody.getAttribute('data-action-type');
+        if (window.modalSystem && window.modalSystem.closeCurrent) window.modalSystem.closeCurrent(true);
+
+        try {
+            let endpoint = null;
+            if (actionType === 'resetPassword') endpoint = ApiRoutes.Admin.SendPasswordReset;
+            else if (actionType === 'unlockRateLimit') endpoint = ApiRoutes.Admin.UnlockRateLimit;
+            else if (actionType === 'terminateSessions') endpoint = ApiRoutes.Admin.TerminateSessions;
+            else if (actionType === 'syncStripe') endpoint = ApiRoutes.Admin.SyncStripe;
+
+            if (!endpoint) return;
+
+            const res = await this.api.post(endpoint, {
+                target_user_id: this.targetUserId
+            }, this.abortController?.signal);
+
+            if (res && res.success) {
+                showMessage(res.message || this.translateKey('msg_action_success', [], 'Acción completada con éxito.'), 'success');
+            } else {
+                showMessage(res?.message || this.translateKey('err_generic', [], 'Error al procesar solicitud.'), 'error');
+            }
+        } catch (e) {
+            showMessage(this.translateKey('err_generic', [], 'Error al conectar con el servidor.'), 'error');
+        }
+    }
+
+    openDisable2FAModal(btn) {
+        const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
+        const userUuid = btn.getAttribute('data-user-uuid') || '';
+        if (window.modalSystem) {
+            window.modalSystem.show('disableUser2faModal', {
+                userUuid: userUuid,
+                username: username,
+                actionTarget: 'adminSubmitDisable2FA'
+            });
+        }
+    }
+
+    async submitDisable2FA(btn) {
+        const modalBody = document.querySelector('[data-ref="admin-disable-2fa-form"]');
+        if (!modalBody) return;
+        const reasonInput = modalBody.querySelector('textarea[name="reason"]');
+        const reason = reasonInput?.value?.trim() || '';
+
+        if (!reason) {
+            showMessage(this.translateKey('err_reason_required', [], 'Ingresa un motivo obligatorio.'), 'error');
+            return;
+        }
+
+        setButtonLoading(btn);
+        try {
+            const result = await this.api.post(ApiRoutes.Admin.Disable2FA, {
+                target_user_id: this.targetUserId,
+                reason: reason
+            }, this.abortController?.signal);
+
+            restoreButton(btn);
+            if (result && result.success) {
+                showMessage(result.message || this.translateKey('msg_2fa_disabled_success', [], '2FA Desactivado con éxito.'), 'success');
+                if (window.modalSystem && window.modalSystem.closeCurrent) window.modalSystem.closeCurrent(true);
+                const disp2fa = document.querySelector('[data-ref="admin-display-2fa"]');
+                if (disp2fa) {
+                    disp2fa.innerHTML = `<span class="component-badge component-badge--sm">${this.translateKey('lbl_2fa_disabled', [], '2FA Desactivado')}</span>`;
+                }
+                const btnDis2fa = document.querySelector('[data-action="adminOpenDisable2FA"]');
+                if (btnDis2fa) {
+                    btnDis2fa.classList.add('disabled');
+                    btnDis2fa.setAttribute('disabled', 'disabled');
+                    btnDis2fa.innerHTML = `<span>${this.translateKey('lbl_2fa_not_active', [], 'Sin 2FA')}</span>`;
+                }
+            } else {
+                showMessage(result?.message || this.translateKey('err_generic', [], 'Error al procesar solicitud.'), 'error');
+            }
+        } catch (e) {
+            restoreButton(btn);
+            showMessage(this.translateKey('err_generic', [], 'Error al conectar con el servidor.'), 'error');
+        }
+    }
+
     async saveRole(btn) {
         const selectEl = document.querySelector('[data-ref="input-admin-role"]');
         const passEl = document.querySelector('[data-ref="input-admin-role-password"]');

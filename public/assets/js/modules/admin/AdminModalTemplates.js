@@ -388,6 +388,226 @@ export const AdminModalTemplates = {
                 </div>
             `;
         }
+    },
+    adjustUserCoinsModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const userUuid = data.userUuid || '';
+            const username = data.username || 'User';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">toll</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('lbl_adjust_coins_title', [], 'Ajustar Saldo de Monedas')}</h2>
+                        <p class="component-modal-desc">${__('lbl_adjust_coins_desc', [], 'Bonificar o ajustar monedas para el usuario')} <b>${username}</b>.</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body" data-ref="admin-adjust-coins-form" data-user-uuid="${userUuid}">
+                    <div class="component-item-card component-p-3">
+                        <label class="component-card__title component-mb-1">${__('lbl_coins_amount', [], 'Cantidad de Monedas (+ / -)')}</label>
+                        <div class="component-input-wrapper">
+                            <input class="component-input" type="number" step="1" name="amount" placeholder="Ej: 50 o -20" required>
+                        </div>
+                    </div>
+
+                    <div class="component-item-card component-p-3 component-mt-2">
+                        <label class="component-card__title component-mb-1">${__('lbl_reason', [], 'Motivo del Ajuste')}</label>
+                        <div class="component-input-wrapper">
+                            <input class="component-input" type="text" name="reason" placeholder="Ej: Compensación por incidencia técnica" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--dark" data-action="${data.actionTarget || 'submitAdjustCoins'}">${__('btn_apply')}</button>
+                </div>
+            `;
+        }
+    },
+    disableUser2faModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const userUuid = data.userUuid || '';
+            const username = data.username || 'User';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">lock_reset</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('lbl_disable_2fa_title', [], 'Desactivar Autenticación 2FA')}</h2>
+                        <p class="component-modal-desc">${__('lbl_disable_2fa_desc', [], 'Esta acción removerá el 2FA de')} <b>${username}</b>. ${__('lbl_action_audited', [], 'Quedará registrada en auditoría.')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body" data-ref="admin-disable-2fa-form" data-user-uuid="${userUuid}">
+                    <div class="component-item-card component-p-3">
+                        <label class="component-card__title component-mb-1">${__('lbl_audit_reason', [], 'Motivo de Auditoría (Obligatorio)')}</label>
+                        <div class="component-input-wrapper">
+                            <textarea class="component-input" name="reason" rows="3" placeholder="Ej: Solicitud formal de usuario por pérdida de dispositivo de autenticación" required></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--dark" data-action="${data.actionTarget || 'submitDisable2FA'}">${__('btn_disable_2fa', [], 'Desactivar 2FA')}</button>
+                </div>
+            `;
+        }
+    },
+    viewIssueModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const category = data.category || 'general';
+            const subject = data.subject || __('lbl_no_subject', [], 'Sin asunto');
+            const description = data.description || __('lbl_no_description', [], 'Sin descripción');
+            const time = data.time || '';
+            const priority = data.priority || '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">help_outline</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('lbl_view_issue', [], 'Detalles del Problema')}</h2>
+                        <p class="component-modal-desc">${__('lbl_view_issue_desc', [], 'Información inicial registrada al abrir la sesión de soporte.')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body">
+                    <div class="component-card--grouped">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <div class="component-badge-group component-mb-2">
+                                        <span class="component-badge component-badge--sm">${category}</span>
+                                        ${priority ? `<span class="component-badge component-badge--sm">${priority}</span>` : ''}
+                                        ${time ? `<span class="component-badge component-badge--sm">${time}</span>` : ''}
+                                    </div>
+                                    <h3 class="component-card__title">${subject}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="component-divider">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <span class="component-stat-card__title component-mb-1">${__('lbl_description', [], 'Descripción')}</span>
+                                    <p class="component-card__description">${description}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40 component-button--dark" data-modal-action="cancel">${__('btn_close', [], 'Cerrar')}</button>
+                </div>
+            `;
+        }
+    },
+    confirmSupportActionModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const title = data.title || __('title_confirm_action', [], 'Confirmar Acción');
+            const desc = data.desc || '';
+            const icon = data.icon || 'help_outline';
+            const username = data.username || 'User';
+            const email = data.email || '';
+            const confirmText = data.confirmText || __('btn_confirm', [], 'Confirmar');
+            const confirmClass = data.confirmClass || 'component-button--dark';
+            const actionTarget = data.actionTarget || 'submitConfirmSupportAction';
+            const userUuid = data.userUuid || '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">${icon}</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${title}</h2>
+                        <p class="component-modal-desc">${desc}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body" data-ref="admin-confirm-support-action-body" data-user-uuid="${userUuid}" data-action-type="${data.actionType || ''}">
+                    <div class="component-card--grouped">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h4 class="component-card__title">${username}</h4>
+                                    ${email ? `<p class="component-card__description">${email}</p>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [], 'Cancelar')}</button>
+                    <button class="component-button component-button--h40 ${confirmClass}" data-action="${actionTarget}">${confirmText}</button>
+                </div>
+            `;
+        }
+    },
+    supportSuspendUserModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const userUuid = data.userUuid || '';
+            const username = data.username || 'User';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered text-danger">
+                        <span class="material-symbols-rounded">block</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('lbl_suspend_user_title', [], 'Suspender Cuenta de Usuario')}</h2>
+                        <p class="component-modal-desc">${__('lbl_suspend_user_desc', [], 'Aplica una restricción a')} <b>${username}</b>. ${__('lbl_action_audited', [], 'Quedará registrada en auditoría.')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body" data-ref="admin-suspend-user-form" data-user-uuid="${userUuid}">
+                    <div class="component-item-card component-p-3">
+                        <label class="component-card__title component-mb-1">${__('lbl_suspension_type', [], 'Tipo de Suspensión')}</label>
+                        <div class="component-input-wrapper">
+                            <select class="component-input component-select" name="suspension_type" data-ref="suspension-type-select">
+                                <option value="permanent">${__('lbl_suspension_perm', [], 'Permanente')}</option>
+                                <option value="temporary">${__('lbl_suspension_temp', [], 'Temporal (1 día)')}</option>
+                                <option value="temporary_3d">${__('lbl_suspension_temp_3d', [], 'Temporal (3 días)')}</option>
+                                <option value="temporary_7d">${__('lbl_suspension_temp_7d', [], 'Temporal (7 días)')}</option>
+                                <option value="temporary_30d">${__('lbl_suspension_temp_30d', [], 'Temporal (30 días)')}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="component-item-card component-p-3 component-mt-2">
+                        <label class="component-card__title component-mb-1">${__('lbl_suspension_reason', [], 'Motivo de la Suspensión')}</label>
+                        <div class="component-input-wrapper">
+                            <textarea class="component-input" name="reason" rows="3" placeholder="Ej: Conducta inapropiada reiterada o solicitud del titular" required></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [], 'Cancelar')}</button>
+                    <button class="component-button component-button--h40 component-button--danger" data-action="submitSuspendUserModal">${__('btn_suspend_user', [], 'Suspender Cuenta')}</button>
+                </div>
+            `;
+        }
     }
 };
 

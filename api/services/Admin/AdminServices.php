@@ -1970,4 +1970,331 @@ class AdminServices {
             'message' => 'Estado del reporte actualizado correctamente.'
         ];
     }
+
+    public function sendPasswordReset(array $data): array {
+        $this->requirePermission(PermissionsConstants::EDIT_USERS);
+
+        $targetUserId = !empty($data['target_user_id']) ? (int)$data['target_user_id'] : null;
+        $targetUserUuid = !empty($data['target_user_uuid']) ? trim($data['target_user_uuid']) : null;
+
+        $user = null;
+        if ($targetUserId) {
+            $user = $this->userRepository->findById($targetUserId);
+        } elseif ($targetUserUuid) {
+            $user = $this->userRepository->findByUuid($targetUserUuid);
+        }
+
+        if (!$user) {
+            return ['success' => false, 'message' => __('err_user_not_found')];
+        }
+
+        try {
+            $token = bin2hex(random_bytes(32));
+            $resetLink = rtrim(APP_URL, '/') . "/reset-password?token=" . $token;
+            $expiresAt = Utils::calculateExpirationDate(15);
+            $payload = json_encode(['email' => $user['email']]);
+
+            $redis = (new \App\Config\Database\RedisCache())->getClient();
+            $verificationRepo = new \App\Core\Repositories\RedisVerificationCodeRepository($redis);
+            $verificationRepo->deleteByIdentifierAndType($user['email'], DB::VERIFY_TYPE_PASSWORD);
+            $created = $verificationRepo->createCode($user['email'], DB::VERIFY_TYPE_PASSWORD, $token, $payload, $expiresAt);
+
+            if (!$created) {
+                return ['success' => false, 'message' => __('err_internal_server_error')];
+            }
+
+            $mailer = new Mailer();
+            $sent = $mailer->sendPasswordResetLink($user['email'], $user['username'], $resetLink);
+            if ($sent) {
+                Logger::info("Admin triggered password reset email for user {$user['uuid']} ({$user['email']})");
+                return ['success' => true, 'message' => __('msg_password_reset_sent_success')];
+            }
+            return ['success' => false, 'message' => __('err_email_delivery_failed')];
+        } catch (\Throwable $e) {
+            Logger::error("Failed to send password reset: " . $e->getMessage());
+            return ['success' => false, 'message' => __('err_internal_server_error')];
+        }
+    }
+
+    public function unlockRateLimit(array $data): array {
+        $this->requirePermission(PermissionsConstants::EDIT_USERS);
+
+        $targetUserId = !empty($data['target_user_id']) ? (int)$data['target_user_id'] : null;
+        $targetUserUuid = !empty($data['target_user_uuid']) ? trim($data['target_user_uuid']) : null;
+
+        $user = null;
+        if ($targetUserId) {
+            $user = $this->userRepository->findById($targetUserId);
+        } elseif ($targetUserUuid) {
+            $user = $this->userRepository->findByUuid($targetUserUuid);
+        }
+
+        if (!$user) {
+            return ['success' => false, 'message' => __('err_user_not_found')];
+        }
+
+        try {
+            $redisCache = new \App\Config\Database\RedisCache();
+            $client = $redisCache->getClient();
+
+            if ($client) {
+                $keys = $client->keys(CacheConstants::PREFIX_RATE_LIMIT . '*');
+                if (!empty($keys)) {
+                    foreach ($keys as $k) {
+                        if (
+                            str_contains($k, 'login_attempts') ||
+                            str_contains($k, 'login_2fa') ||
+                            str_contains($k, 'password_reset') ||
+                            str_contains($k, 'auth_')
+                        ) {
+                            $client->del($k);
+                        }
+                    }
+                }
+            }
+
+            $adminId = $this->sessionManager->get('user_id');
+            Logger::info("Admin [{$adminId}] unlocked login rate limits for user {$user['uuid']} ({$user['email']})");
+
+            return [
+                'success' => true,
+                'message' => __('msg_rate_limit_unlocked_success')
+            ];
+        } catch (\Throwable $e) {
+            Logger::error("Failed to unlock rate limits: " . $e->getMessage());
+            return ['success' => false, 'message' => __('err_internal_server_error')];
+        }
+    }
+
+    public function adjustCoins(array $data): array {
+        $this->requirePermission(PermissionsConstants::EDIT_USERS);
+
+        $targetUserId = !empty($data['target_user_id']) ? (int)$data['target_user_id'] : null;
+        $targetUserUuid = !empty($data['target_user_uuid']) ? trim($data['target_user_uuid']) : null;
+        $amount = (int)($data['amount'] ?? 0);
+        $action = trim($data['action'] ?? 'add'); // add, subtract, set
+        $reason = trim($data['reason'] ?? 'Admin adjustment');
+
+        $user = null;
+        if ($targetUserId) {
+            $user = $this->userRepository->findById($targetUserId);
+        } elseif ($targetUserUuid) {
+            $user = $this->userRepository->findByUuid($targetUserUuid);
+        }
+
+        if (!$user) {
+            return ['success' => false, 'message' => __('err_user_not_found')];
+        }
+
+        try {
+            $userId = (int)$user['id'];
+            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
+
+            $stmt = $pdo->prepare("SELECT coins FROM " . DB::TBL_USERS . " WHERE id = ? FOR UPDATE");
+            $stmt->execute([$userId]);
+            $currentCoins = (int)$stmt->fetchColumn();
+
+            $newBalance = $currentCoins;
+            if ($action === 'set') {
+                $newBalance = max(0, $amount);
+            } elseif ($action === 'subtract') {
+                $newBalance = max(0, $currentCoins - $amount);
+            } else {
+                $newBalance = max(0, $currentCoins + $amount);
+            }
+
+            $upd = $pdo->prepare("UPDATE " . DB::TBL_USERS . " SET coins = ? WHERE id = ?");
+            $upd->execute([$newBalance, $userId]);
+
+            $redis = (new \App\Config\Database\RedisCache())->getClient();
+            if ($redis) {
+                $redis->del(CacheConstants::PREFIX_STORE_COINS . $userId);
+                $redis->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+            }
+
+            $adminId = $this->sessionManager->get('user_id');
+            Logger::info("Admin [{$adminId}] adjusted coins for user {$user['uuid']}: {$currentCoins} -> {$newBalance} (Reason: {$reason})");
+
+            return [
+                'success' => true,
+                'message' => __('msg_coins_adjusted_success'),
+                'coins' => $newBalance
+            ];
+        } catch (\Throwable $e) {
+            Logger::error("Failed to adjust coins: " . $e->getMessage());
+            return ['success' => false, 'message' => __('err_internal_server_error')];
+        }
+    }
+
+    public function terminateSessions(array $data): array {
+        $this->requirePermission(PermissionsConstants::EDIT_USERS);
+
+        $targetUserId = !empty($data['target_user_id']) ? (int)$data['target_user_id'] : null;
+        $targetUserUuid = !empty($data['target_user_uuid']) ? trim($data['target_user_uuid']) : null;
+
+        $user = null;
+        if ($targetUserId) {
+            $user = $this->userRepository->findById($targetUserId);
+        } elseif ($targetUserUuid) {
+            $user = $this->userRepository->findByUuid($targetUserUuid);
+        }
+
+        if (!$user) {
+            return ['success' => false, 'message' => __('err_user_not_found')];
+        }
+
+        try {
+            $this->tokenRepository->deleteAllByUserId((int)$user['id']);
+
+            $redis = (new \App\Config\Database\RedisCache())->getClient();
+            if ($redis) {
+                $redis->setex(CacheConstants::PREFIX_FORCE_REAUTH_USER . $user['id'], 86400, time());
+                $userSessionsKey = CacheConstants::PREFIX_USER_SESSIONS . $user['id'];
+                $sessionIds = $redis->smembers($userSessionsKey);
+                if (!empty($sessionIds)) {
+                    foreach ($sessionIds as $sessId) {
+                        $redis->del(CacheConstants::PREFIX_PHPSESSID . $sessId);
+                    }
+                    $redis->del($userSessionsKey);
+                }
+            }
+
+            $adminId = $this->sessionManager->get('user_id');
+            Logger::info("Admin [{$adminId}] terminated all sessions for user {$user['uuid']}");
+
+            return [
+                'success' => true,
+                'message' => __('msg_sessions_terminated_success')
+            ];
+        } catch (\Throwable $e) {
+            Logger::error("Failed to terminate user sessions: " . $e->getMessage());
+            return ['success' => false, 'message' => __('err_internal_server_error')];
+        }
+    }
+
+    public function disable2FA(array $data): array {
+        $this->requirePermission(PermissionsConstants::EDIT_USERS);
+
+        $targetUserId = !empty($data['target_user_id']) ? (int)$data['target_user_id'] : null;
+        $targetUserUuid = !empty($data['target_user_uuid']) ? trim($data['target_user_uuid']) : null;
+        $reason = trim($data['reason'] ?? '');
+
+        if (empty($reason)) {
+            return ['success' => false, 'message' => __('err_reason_required', [], 'Se requiere un motivo obligatorio.')];
+        }
+
+        $user = null;
+        if ($targetUserId) {
+            $user = $this->userRepository->findById($targetUserId);
+        } elseif ($targetUserUuid) {
+            $user = $this->userRepository->findByUuid($targetUserUuid);
+        }
+
+        if (!$user) {
+            return ['success' => false, 'message' => __('err_user_not_found')];
+        }
+
+        try {
+            $userId = (int)$user['id'];
+            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
+
+            $stmt = $pdo->prepare("UPDATE " . DB::TBL_USERS . " SET two_factor_enabled = 0, two_factor_secret = NULL, two_factor_backup_codes = NULL WHERE id = ?");
+            $stmt->execute([$userId]);
+
+            $redis = (new \App\Config\Database\RedisCache())->getClient();
+            if ($redis) {
+                $redis->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
+            }
+
+            $adminId = $this->sessionManager->get('user_id');
+            Logger::info("Admin [{$adminId}] disabled 2FA for user {$user['uuid']} ({$user['email']}) - Reason: {$reason}");
+
+            return [
+                'success' => true,
+                'message' => __('msg_2fa_disabled_success')
+            ];
+        } catch (\Throwable $e) {
+            Logger::error("Failed to disable 2FA: " . $e->getMessage());
+            return ['success' => false, 'message' => __('err_internal_server_error')];
+        }
+    }
+
+    public function syncStripeSubscription(array $data): array {
+        $this->requirePermission(PermissionsConstants::EDIT_USERS);
+
+        $targetUserId = !empty($data['target_user_id']) ? (int)$data['target_user_id'] : null;
+        $targetUserUuid = !empty($data['target_user_uuid']) ? trim($data['target_user_uuid']) : null;
+
+        $user = null;
+        if ($targetUserId) {
+            $user = $this->userRepository->findById($targetUserId);
+        } elseif ($targetUserUuid) {
+            $user = $this->userRepository->findByUuid($targetUserUuid);
+        }
+
+        if (!$user) {
+            return ['success' => false, 'message' => __('err_user_not_found')];
+        }
+
+        try {
+            $stripeCustomerId = $user['stripe_customer_id'] ?? null;
+            $stripeSecret = $_ENV['STRIPE_SECRET_KEY'] ?? null;
+
+            if ($stripeCustomerId && $stripeSecret && class_exists('\Stripe\Stripe')) {
+                \Stripe\Stripe::setApiKey($stripeSecret);
+                try {
+                    $subscriptions = \Stripe\Subscription::all([
+                        'customer' => $stripeCustomerId,
+                        'status' => 'active',
+                        'limit' => 1
+                    ]);
+
+                    if (!empty($subscriptions->data)) {
+                        $activeSub = $subscriptions->data[0];
+                        $priceId = $activeSub->items->data[0]->price->id ?? null;
+
+                        if ($priceId) {
+                            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
+                            $stmt = $pdo->prepare("SELECT tier_level FROM subscription_tiers WHERE stripe_price_id_monthly = ? OR stripe_price_id_yearly = ? LIMIT 1");
+                            $stmt->execute([$priceId, $priceId]);
+                            $tierLevel = $stmt->fetchColumn();
+
+                            if ($tierLevel !== false) {
+                                $upd = $pdo->prepare("UPDATE " . DB::TBL_USERS . " SET subscription_tier = ? WHERE id = ?");
+                                $upd->execute([(int)$tierLevel, (int)$user['id']]);
+
+                                $redis = (new \App\Config\Database\RedisCache())->getClient();
+                                if ($redis) {
+                                    $redis->del(CacheConstants::PREFIX_USER_PROFILE . $user['id']);
+                                    $redis->del(CacheConstants::PREFIX_USER_SUBSCRIPTION . $user['id']);
+                                }
+
+                                return [
+                                    'success' => true,
+                                    'message' => __('msg_subscription_synced_success'),
+                                    'tier' => (int)$tierLevel
+                                ];
+                            }
+                        }
+                    }
+                } catch (\Throwable $se) {
+                    Logger::warning("Stripe API sync error: " . $se->getMessage());
+                }
+            }
+
+            $redis = (new \App\Config\Database\RedisCache())->getClient();
+            if ($redis) {
+                $redis->del(CacheConstants::PREFIX_USER_PROFILE . $user['id']);
+                $redis->del(CacheConstants::PREFIX_USER_SUBSCRIPTION . $user['id']);
+            }
+
+            return [
+                'success' => true,
+                'message' => __('msg_subscription_synced_success')
+            ];
+        } catch (\Throwable $e) {
+            Logger::error("Failed to sync stripe: " . $e->getMessage());
+            return ['success' => false, 'message' => __('err_internal_server_error')];
+        }
+    }
 }

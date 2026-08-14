@@ -5,23 +5,42 @@ namespace App\Api\Services\Admin;
 use App\Core\Interfaces\SupportRepositoryInterface;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Interfaces\TokenRepositoryInterface;
+use App\Core\Interfaces\VerificationCodeRepositoryInterface;
+use App\Core\Interfaces\ModerationRepositoryInterface;
+use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use App\Core\System\PermissionsConstants as PC;
 use App\Core\System\Logger;
 use App\Core\Mail\Mailer;
+use App\Config\Database\DatabaseManager;
+use App\Core\System\DatabaseConstants as DB;
+use App\Core\Helpers\Utils;
 
 class AdminSupportService {
     private SupportRepositoryInterface $supportRepo;
     private SessionManagerInterface $sessionManager;
     private UserRepositoryInterface $userRepo;
+    private TokenRepositoryInterface $tokenRepo;
+    private VerificationCodeRepositoryInterface $verificationCodeRepo;
+    private ModerationRepositoryInterface $moderationRepo;
+    private SubscriptionRepositoryInterface $subscriptionRepo;
 
     public function __construct(
         SupportRepositoryInterface $supportRepo,
         SessionManagerInterface $sessionManager,
-        UserRepositoryInterface $userRepo
+        UserRepositoryInterface $userRepo,
+        TokenRepositoryInterface $tokenRepo,
+        VerificationCodeRepositoryInterface $verificationCodeRepo,
+        ModerationRepositoryInterface $moderationRepo,
+        SubscriptionRepositoryInterface $subscriptionRepo
     ) {
         $this->supportRepo = $supportRepo;
         $this->sessionManager = $sessionManager;
         $this->userRepo = $userRepo;
+        $this->tokenRepo = $tokenRepo;
+        $this->verificationCodeRepo = $verificationCodeRepo;
+        $this->moderationRepo = $moderationRepo;
+        $this->subscriptionRepo = $subscriptionRepo;
     }
 
     private function getCurrentAgentId(): ?int {
@@ -497,6 +516,7 @@ class AdminSupportService {
                 'category' => $session['category'],
                 'priority' => $session['priority'] ?? 'medium',
                 'subject' => $session['subject'],
+                'initial_message' => $session['initial_message'] ?? null,
                 'client_username' => $session['client_username'] ?? 'Guest',
                 'client_avatar' => $session['client_avatar'] ?? null,
                 'client_email' => $session['client_email'] ?? null,
@@ -695,6 +715,87 @@ class AdminSupportService {
         return [
             'success' => true,
             'metrics' => $metrics
+        ];
+    }
+
+    private function getDbConnection() {
+        $db = new DatabaseManager();
+        return $db->getConnection(DB::CONN_IDENTITY);
+    }
+
+    public function getClientProfile(array $input): array {
+        if (!$this->hasPermission(PC::ACCESS_SUPPORT_PANEL)) {
+            return ['success' => false, 'message' => __('err_unauthorized')];
+        }
+
+        $userId = null;
+        $userUuid = trim($input['user_uuid'] ?? '');
+        $sessionUuid = trim($input['session_uuid'] ?? '');
+        $ticketUuid = trim($input['ticket_uuid'] ?? '');
+
+        if (!empty($sessionUuid)) {
+            $session = $this->supportRepo->findSessionByUuid($sessionUuid);
+            if ($session && !empty($session['user_id'])) {
+                $userId = (int)$session['user_id'];
+            }
+        } elseif (!empty($ticketUuid)) {
+            $ticket = $this->supportRepo->findByUuid($ticketUuid);
+            if ($ticket && !empty($ticket['user_id'])) {
+                $userId = (int)$ticket['user_id'];
+            }
+        } elseif (!empty($userUuid)) {
+            $user = $this->userRepo->findByUuid($userUuid);
+            if ($user && !empty($user['id'])) {
+                $userId = (int)$user['id'];
+            }
+        } elseif (!empty($input['user_id'])) {
+            $userId = (int)$input['user_id'];
+        }
+
+        if (!$userId) {
+            return [
+                'success' => true,
+                'is_guest' => true,
+                'user' => null,
+                'recent_tickets' => [],
+                'recent_sessions' => [],
+                'permissions' => [
+                    'can_quick_actions' => false,
+                    'can_billing' => false,
+                    'can_security' => false,
+                    'can_critical' => false
+                ]
+            ];
+        }
+
+        $pdo = $this->getDbConnection();
+        $stmt = $pdo->prepare("
+            SELECT u.id, u.uuid, u.username, u.email, u.profile_picture, u.subscription_tier, u.coins,
+                   u.two_factor_enabled, u.stripe_customer_id, u.created_at, u.storage_used_bytes,
+                   tiers.name AS subscription_name, tiers.color AS subscription_color,
+                   ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date
+            FROM " . DB::TBL_USERS . " u
+            LEFT JOIN subscription_tiers tiers ON u.subscription_tier = tiers.tier_level
+            LEFT JOIN " . DB::TBL_USER_RESTRICTIONS . " ur ON u.id = ur.user_id AND ur.is_suspended = 1 AND (ur.suspension_end_date IS NULL OR ur.suspension_end_date > NOW())
+            WHERE u.id = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$userId]);
+        $userData = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$userData) {
+            return ['success' => false, 'message' => __('err_user_not_found')];
+        }
+
+        $recentTickets = $this->supportRepo->getTicketsByUser($userId, 5, 0);
+        $recentSessions = $this->supportRepo->getSessionsByUser($userId, 5);
+
+        return [
+            'success' => true,
+            'is_guest' => false,
+            'user' => $userData,
+            'recent_tickets' => $recentTickets,
+            'recent_sessions' => $recentSessions
         ];
     }
 }

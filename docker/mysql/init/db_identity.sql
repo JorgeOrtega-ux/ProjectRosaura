@@ -163,7 +163,7 @@ INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (6, 1), (6, 2), (6, 27), (6, 28), (6, 29), (6, 31), (6, 33), (6, 34);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
-  (7, 1), (7, 2), (7, 4), (7, 27), (7, 28), (7, 29), (7, 30), (7, 31), (7, 32), (7, 33), (7, 34), (7, 35), (7, 36);
+  (7, 1), (7, 2), (7, 3), (7, 4), (7, 27), (7, 28), (7, 29), (7, 30), (7, 31), (7, 32), (7, 33), (7, 34), (7, 35), (7, 36);
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

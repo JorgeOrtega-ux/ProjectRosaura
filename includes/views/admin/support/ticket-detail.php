@@ -65,6 +65,14 @@
 
                     <hr class="component-divider">
 
+                    <div class="component-group-item" data-ref="ticket-quick-actions-bar">
+                        <div class="component-card__content">
+                            <div class="component-badge-group" data-ref="ticket-user-meta-badges"></div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider">
+
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">

@@ -123,7 +123,13 @@ class AdminViewService {
     public function getManageUsersData(?string $searchQuery, array $rolesFilter, array $statusFilter, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
-        $userPerms = $_SESSION['user_permissions'] ?? [];
+        $activeUserId = $_SESSION['user_id'] ?? null;
+        if ($activeUserId) {
+            $roleRepo = new RoleRepository($this->dbManager, new \App\Config\Database\RedisCache());
+            $userPerms = $roleRepo->getMergedPermissionsForUser((int)$activeUserId);
+        } else {
+            $userPerms = $_SESSION['user_permissions'] ?? [];
+        }
         $isSuperAdmin = isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4;
         $canEditUsers = in_array(PermissionsConstants::EDIT_USERS, $userPerms);
         $canAssignRoles = in_array(PermissionsConstants::ASSIGN_ROLES, $userPerms);

@@ -12,6 +12,8 @@ export class AdminSupportLiveController {
         this.activeTab = 'l1';
         this.currentSession = null;
         this.currentSessionUuid = null;
+        this.currentClientUserUuid = null;
+        this.currentClientUsername = null;
         this.isInternalNoteMode = false;
         this.cannedResponses = [];
         this.onlineAgents = [];
@@ -33,7 +35,7 @@ export class AdminSupportLiveController {
         this.container = document.querySelector('[data-ref="admin-support-live-wrapper"]');
         this.abortController = new AbortController();
         this.isIntentionalDisconnect = false;
-        this.activeTab = 'l1';
+        this.activeTab = this.container?.getAttribute('data-initial-tab') || 'l1';
 
         const pathParts = window.location.pathname.split('/').filter(Boolean);
         const cIndex = pathParts.indexOf('c');
@@ -424,6 +426,22 @@ export class AdminSupportLiveController {
             return;
         }
 
+        const viewIssueBtn = e.target.closest('[data-action="openViewIssueModal"]');
+        if (viewIssueBtn) {
+            e.preventDefault();
+            this._closeMoreDropdown();
+            if (this.currentSession && window.modalSystem) {
+                window.modalSystem.show('viewIssueModal', {
+                    category: this.currentSession.category || 'general',
+                    subject: this.currentSession.subject || '',
+                    description: this.currentSession.initial_message || '',
+                    time: this.currentSession.started_at || '',
+                    priority: this.currentSession.priority || 'medium'
+                });
+            }
+            return;
+        }
+
         const openCloseBtn = e.target.closest('[data-action="openCloseChatModal"]');
         if (openCloseBtn) {
             e.preventDefault();
@@ -435,6 +453,13 @@ export class AdminSupportLiveController {
         if (submitCloseBtn) {
             e.preventDefault();
             this._submitClose(submitCloseBtn);
+            return;
+        }
+
+        const cannedBtn = e.target.closest('[data-action="openCannedModal"]');
+        if (cannedBtn) {
+            e.preventDefault();
+            this._openCannedModal();
             return;
         }
     }
@@ -646,11 +671,27 @@ export class AdminSupportLiveController {
                 if (b3) b3.textContent = (queues.l3 || []).length;
                 if (bAct) bAct.textContent = activeList.length;
 
+                if (this.currentSessionUuid) {
+                    if (activeList.some(s => s.uuid === this.currentSessionUuid)) {
+                        this.activeTab = 'active';
+                    } else if ((queues.l2 || []).some(s => s.uuid === this.currentSessionUuid)) {
+                        this.activeTab = 'l2';
+                    } else if ((queues.l3 || []).some(s => s.uuid === this.currentSessionUuid)) {
+                        this.activeTab = 'l3';
+                    } else if ((queues.l1 || []).some(s => s.uuid === this.currentSessionUuid)) {
+                        this.activeTab = 'l1';
+                    }
+                }
+
                 this._syncActiveTabUI();
 
                 if (this.currentSessionUuid) {
                     const isStillActive = activeList.some(s => s.uuid === this.currentSessionUuid);
-                    if (!isStillActive && this.activeTab === 'active') {
+                    const isStillInQueue = (queues.l1 || []).some(s => s.uuid === this.currentSessionUuid)
+                        || (queues.l2 || []).some(s => s.uuid === this.currentSessionUuid)
+                        || (queues.l3 || []).some(s => s.uuid === this.currentSessionUuid);
+
+                    if (!isStillActive && !isStillInQueue && this.activeTab === 'active') {
                         this._resetChatView();
                     }
                 }
@@ -868,13 +909,23 @@ export class AdminSupportLiveController {
             if (res && res.success && res.session) {
                 this.currentSession = res.session;
 
+                if (this.lastActiveList && this.lastActiveList.some(s => s.uuid === this.currentSessionUuid)) {
+                    this.activeTab = 'active';
+                } else if (res.session.department_level) {
+                    this.activeTab = res.session.department_level;
+                }
+                this._syncActiveTabUI();
+                if (this.lastQueues && this.lastActiveList) {
+                    this._renderCurrentQueueList(this.lastQueues, this.lastActiveList);
+                }
+
                 const header = document.querySelector('[data-ref="admin-support-chat-header"]');
                 if (header) {
                     header.classList.remove('disabled');
                 }
 
                 this._renderActiveChatHeader(res.session);
-                this._renderMessages(res.messages || []);
+                this._renderMessages(res.messages || [], res.session);
                 this._renderClientSidebar(res.session);
 
                 const footer = document.querySelector('[data-ref="admin-support-chat-footer"]');
@@ -913,59 +964,138 @@ export class AdminSupportLiveController {
         this._loadCannedResponses(session.language);
     }
 
-    _renderClientSidebar(session) {
+    async _renderClientSidebar(session) {
         const container = document.querySelector('[data-ref="admin-support-client-info"]');
         if (!container || !session) return;
 
-        const avatarHtml = this._renderAvatarHtml(session.client_avatar, session.client_username, session.client_role_color, 'component-avatar--40');
+        try {
+            const res = await this.api.post(ApiRoutes.AdminSupport.GetClientProfile, { session_uuid: session.uuid }, this.abortController ? this.abortController.signal : undefined);
+            if (!res || !res.success) {
+                container.innerHTML = `
+                    <div class="component-empty-state">
+                        <span class="material-symbols-rounded component-empty-state-icon">person_off</span>
+                        <h3 class="component-card__title">${window.__('lbl_no_user_info', [], 'No hay información del usuario')}</h3>
+                    </div>
+                `;
+                return;
+            }
 
-        container.innerHTML = `
-            <div class="component-card--grouped">
-                <div class="component-group-item">
-                    <div class="component-card__content">
-                        ${avatarHtml}
-                        <div class="component-card__text">
-                            <h3 class="component-card__title">${this._escapeHtml(session.client_username || 'Guest')}</h3>
-                            <p class="component-card__description">${this._escapeHtml(session.client_email || 'No email')}</p>
+            if (res.is_guest || !res.user) {
+                const avatarHtml = this._renderAvatarHtml(session.client_avatar, session.client_username || 'Guest', null, 'component-avatar--40');
+                container.innerHTML = `
+                    <div class="component-card--grouped">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                ${avatarHtml}
+                                <div class="component-card__text">
+                                    <h3 class="component-card__title">${this._escapeHtml(session.client_username || 'Invitado')}</h3>
+                                    <p class="component-card__description">${this._escapeHtml(session.client_email || 'Sin correo')}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="component-divider">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h4 class="component-card__title">${window.__('lbl_chat_category')}</h4>
+                                    <p class="component-card__description">${this._escapeHtml(session.category || 'general')}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const user = res.user;
+            const perms = res.permissions || {};
+            const recentTickets = res.recent_tickets || [];
+
+            const avatarHtml = this._renderAvatarHtml(user.profile_picture, user.username, user.subscription_color, 'component-avatar--40');
+
+            this.currentClientUserUuid = user.uuid;
+            this.currentClientUsername = user.username;
+            this.currentClientEmail = user.email;
+            this.currentClientData = user;
+
+            const __ = (k, p, d) => (window.__ && window.__(k) !== k) ? window.__(k, p) : (d || k);
+
+            let recentTicketsHtml = '';
+            if (recentTickets.length > 0) {
+                recentTicketsHtml = recentTickets.map(t => `
+                    <div class="component-group-item">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <span class="component-badge component-badge--sm">${this._escapeHtml(t.category || '')}</span>
+                                <h4 class="component-card__title component-mt-1">${this._escapeHtml(t.subject || '')}</h4>
+                                <p class="component-card__description">${this._escapeHtml(t.status || '')} &bull; ${this._escapeHtml(t.created_at || '')}</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('<hr class="component-divider">');
+            } else {
+                recentTicketsHtml = `<p class="component-card__description">${__('lbl_no_prior_tickets', [], 'Sin tickets previos')}</p>`;
+            }
+
+            container.innerHTML = `
+                <div class="component-card--grouped component-mb-3">
+                    <div class="component-group-item">
+                        <div class="component-card__content">
+                            ${avatarHtml}
+                            <div class="component-card__text">
+                                <h3 class="component-card__title">${this._escapeHtml(user.username || 'User')}</h3>
+                                <p class="component-card__description">${this._escapeHtml(user.email || '')}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider">
+
+                    <div class="component-group-item">
+                        <div class="component-card__content">
+                            <div class="component-badge-group">
+                                <span class="component-badge component-badge--sm">${this._escapeHtml(user.subscription_name || 'Básico')}</span>
+                                <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">toll</span> ${user.coins || 0}</span>
+                                <span class="component-badge component-badge--sm">${user.two_factor_enabled ? '2FA Activo' : '2FA Off'}</span>
+                                ${user.is_suspended ? `<span class="component-badge component-badge--sm component-badge--danger"><span class="material-symbols-rounded">block</span> Suspendido</span>` : ''}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <hr class="component-divider">
-
-                <div class="component-group-item">
-                    <div class="component-card__content">
-                        <div class="component-card__text">
-                            <h4 class="component-card__title">${window.__('lbl_chat_category')}</h4>
-                            <p class="component-card__description">${this._escapeHtml(session.category || 'general')}</p>
-                        </div>
+                <div class="component-item-card component-p-3">
+                    <h4 class="component-card__title component-mb-2">${__('lbl_recent_tickets', [], 'Tickets Recientes')}</h4>
+                    <div class="component-card--grouped">
+                        ${recentTicketsHtml}
                     </div>
                 </div>
+            `;
 
-                <hr class="component-divider">
+            if (window.applyRoleDynamicColors) window.applyRoleDynamicColors();
+        } catch (e) {
+            Logger.error("Failed to render client sidebar: " + e.message);
+        }
+    }
 
-                <div class="component-group-item">
-                    <div class="component-card__content">
-                        <div class="component-card__text">
-                            <h4 class="component-card__title">${window.__('lbl_chat_priority')}</h4>
-                            <p class="component-card__description">${this._escapeHtml(session.priority || 'medium')}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <hr class="component-divider">
-
-                <div class="component-group-item">
-                    <div class="component-card__content">
-                        <div class="component-card__text">
-                            <h4 class="component-card__title">${window.__('lbl_created_at')}</h4>
-                            <p class="component-card__description">${this._escapeHtml(session.started_at || '')}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        if (window.applyRoleDynamicColors) window.applyRoleDynamicColors();
+    _findSession(uuid) {
+        if (!uuid) return null;
+        if (this.currentSession && this.currentSession.uuid === uuid) {
+            return this.currentSession;
+        }
+        if (this.lastActiveList && Array.isArray(this.lastActiveList)) {
+            const found = this.lastActiveList.find(s => s.uuid === uuid);
+            if (found) return found;
+        }
+        if (this.lastQueues) {
+            for (const qKey of ['l1', 'l2', 'l3']) {
+                const list = this.lastQueues[qKey];
+                if (Array.isArray(list)) {
+                    const found = list.find(s => s.uuid === uuid);
+                    if (found) return found;
+                }
+            }
+        }
+        return this.currentSession || { uuid };
     }
 
     _renderMessages(messages) {
@@ -973,7 +1103,13 @@ export class AdminSupportLiveController {
         if (!container) return;
 
         let html = '';
-        messages.forEach(msg => {
+        const initialIssueMsg = this.currentSession?.initial_message;
+
+        (messages || []).forEach(msg => {
+            if (initialIssueMsg && msg.sender_type === 'user' && msg.message === initialIssueMsg) {
+                return;
+            }
+
             if (msg.sender_type === 'system') {
                 html += `
                     <div class="chat-message chat-message--status">

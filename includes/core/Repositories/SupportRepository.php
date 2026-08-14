@@ -218,6 +218,25 @@ class SupportRepository implements SupportRepositoryInterface {
         }
     }
 
+    public function getSessionsByUser(int $userId, int $limit = 5): array {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT scs.id, scs.uuid, scs.category, scs.priority, scs.status, scs.created_at, scs.ended_at
+                FROM " . DB::TBL_SUPPORT_CHAT_SESSIONS . " scs
+                WHERE scs.user_id = :user_id
+                ORDER BY scs.created_at DESC
+                LIMIT :limit
+            ");
+            $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
+            Logger::database("Failed to fetch sessions by user: " . $e->getMessage(), 'error');
+            return [];
+        }
+    }
+
     public function getActiveSessionForUser(int $userId): ?array {
         try {
             $stmt = $this->pdo->prepare("
@@ -832,21 +851,41 @@ class SupportRepository implements SupportRepositoryInterface {
             }
 
             if (!empty($language)) {
-                $baseLang = explode('-', $language)[0];
-                $where[] = "(scr.language = :language OR scr.language = :baseLang)";
-                $params[':language'] = $language;
+                $cleanLang = trim($language);
+                $baseLang = explode('-', str_replace('_', '-', $cleanLang))[0];
+                $where[] = "(scr.language = :language OR scr.language = :baseLang OR scr.language LIKE :likeLang)";
+                $params[':language'] = $cleanLang;
                 $params[':baseLang'] = $baseLang;
+                $params[':likeLang'] = $baseLang . '-%';
             }
 
+            $querySql = $sql;
             if (!empty($where)) {
-                $sql .= " WHERE " . implode(" AND ", $where);
+                $querySql .= " WHERE " . implode(" AND ", $where);
+            }
+            $querySql .= " ORDER BY scr.category ASC, scr.shortcut ASC";
+
+            $stmt = $this->pdo->prepare($querySql);
+            $stmt->execute($params);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            if (empty($results) && !empty($language)) {
+                $fallbackWhere = [];
+                if ($minLevel === 'l1') {
+                    $fallbackWhere[] = "scr.min_level = 'l1'";
+                } else if ($minLevel === 'l2') {
+                    $fallbackWhere[] = "scr.min_level IN ('l1', 'l2')";
+                }
+                $fallbackSql = $sql;
+                if (!empty($fallbackWhere)) {
+                    $fallbackSql .= " WHERE " . implode(" AND ", $fallbackWhere);
+                }
+                $fallbackSql .= " ORDER BY scr.category ASC, scr.shortcut ASC";
+                $stmtFallback = $this->pdo->query($fallbackSql);
+                $results = $stmtFallback ? ($stmtFallback->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
             }
 
-            $sql .= " ORDER BY scr.category ASC, scr.shortcut ASC";
-
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            return $results;
         } catch (PDOException $e) {
             Logger::database("Failed to fetch canned responses: " . $e->getMessage(), 'error');
             return [];

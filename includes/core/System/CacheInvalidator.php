@@ -154,6 +154,10 @@ class CacheInvalidator {
         try {
             $this->redis->del(CacheConstants::PREFIX_ROLES_ALL);
             $this->redis->del(CacheConstants::PREFIX_ALL_PERMISSIONS);
+            $keys = $this->redis->keys('rbac:*');
+            if (!empty($keys)) {
+                $this->redis->del($keys);
+            }
         } catch (\Throwable $e) {}
     }
 
@@ -167,6 +171,10 @@ class CacheInvalidator {
             if ($roleName !== null) {
                 $this->redis->del(CacheConstants::PREFIX_ROLE_BY_NAME . $roleName);
             }
+            $keys = $this->redis->keys('rbac:*');
+            if (!empty($keys)) {
+                $this->redis->del($keys);
+            }
         } catch (\Throwable $e) {}
     }
 
@@ -175,29 +183,10 @@ class CacheInvalidator {
         try {
             $this->redis->del(CacheConstants::PREFIX_ALL_PERMISSIONS);
             $this->redis->del(CacheConstants::PREFIX_ROLES_ALL);
-        } catch (\Throwable $e) {}
-    }
-
-    public function canvasRoles(?int $canvasId = null): void {
-        if (!$this->redis) return;
-        try {
-            $this->redis->del(CacheConstants::PREFIX_CANVAS_ROLES_LIST . ($canvasId ?? 'global'));
-            $this->redis->del(CacheConstants::PREFIX_CANVAS_ROLES_LIST . 'global');
-        } catch (\Throwable $e) {}
-    }
-
-    public function canvasSnapshots(int $canvasId): void {
-        if (!$this->redis) return;
-        try {
-            $this->redis->del(CacheConstants::PREFIX_CANVAS_SNAPSHOTS . $canvasId);
-        } catch (\Throwable $e) {}
-    }
-
-    public function canvasSanctions(int $canvasId, int $userId): void {
-        if (!$this->redis) return;
-        try {
-            $this->redis->del(sprintf(CacheConstants::PREFIX_CANVAS_BANNED, $canvasId, $userId));
-            $this->redis->del(sprintf(CacheConstants::PREFIX_CHAT_RESTRICTED, $canvasId, $userId));
+            $keys = $this->redis->keys('rbac:*');
+            if (!empty($keys)) {
+                $this->redis->del($keys);
+            }
         } catch (\Throwable $e) {}
     }
 
@@ -207,6 +196,10 @@ class CacheInvalidator {
             $keys = $this->redis->keys('user:*');
             if (!empty($keys)) {
                 $this->redis->del($keys);
+            }
+            $keysRbac = $this->redis->keys('rbac:*');
+            if (!empty($keysRbac)) {
+                $this->redis->del($keysRbac);
             }
         } catch (\Throwable $e) {}
     }

@@ -185,7 +185,8 @@ try {
                     exit;
                 }
             }
-            $permissions = !empty($liveUser['permissions']) ? explode(',', $liveUser['permissions']) : [];
+            $roleRepo = $container->get(\App\Core\Interfaces\RoleRepositoryInterface::class);
+            $permissions = $roleRepo->getMergedPermissionsForUser($activeId);
             $accounts = $sessionManager->get(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, []);
             if (isset($accounts[$activeId])) {
                 $accounts[$activeId]['user_role_id'] = $liveUser['role_id'] ?? null;

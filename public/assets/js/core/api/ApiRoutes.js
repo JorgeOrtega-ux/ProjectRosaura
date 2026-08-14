@@ -69,6 +69,13 @@ export const ApiRoutes = {
         UpdateRole: 'admin.update_role',
         GetUserRoles: 'admin.get_user_roles',
 
+        SendPasswordReset: 'admin.send_password_reset',
+        UnlockRateLimit: 'admin.unlock_rate_limit',
+        AdjustCoins: 'admin.adjust_coins',
+        TerminateSessions: 'admin.terminate_sessions',
+        Disable2FA: 'admin.disable_2fa',
+        SyncStripe: 'admin.sync_stripe',
+
         UpdateSuspension: 'admin.update_suspension',
         DeleteUsers: 'admin.delete_users',
 
@@ -111,12 +118,12 @@ export const ApiRoutes = {
         DeleteStorePerk: 'admin.store_perk.delete',
         ToggleStorePerk: 'admin.store_perk.toggle_visibility',
         SaveStorePerk: 'admin.store_perk.save',
-        GetTranslations: 'admin.get_translations',
-        GetBackupSchema: 'admin.get_backup_schema',
-        CreateCustomBackup: 'admin.create_custom_backup',
-        BackupStatus: 'admin.backup_status',
-        ReadLogs: 'admin.read_logs',
-        CheckWorkerStatus: 'admin.backups.check_worker_status'
+
+        GetServerLogs: 'admin.get_server_logs',
+        GetAuditLogs: 'admin.get_audit_logs',
+        GetSecurityLogs: 'admin.get_security_logs',
+        GetSystemLogs: 'admin.get_system_logs',
+        DeleteLogs: 'admin.delete_logs'
     },
     AdminSupport: {
         GetAgentStatus: 'admin.support.get_agent_status',
@@ -129,6 +136,7 @@ export const ApiRoutes = {
         SendMessage: 'admin.support.send_message',
         AddInternalNote: 'admin.support.add_internal_note',
         CloseSession: 'admin.support.close_session',
+        GetAgentsList: 'admin.support.get_agents_list',
         GetCannedResponses: 'admin.support.get_canned_responses',
         SaveCannedResponse: 'admin.support.save_canned_response',
         DeleteCannedResponse: 'admin.support.delete_canned_response',
@@ -136,7 +144,8 @@ export const ApiRoutes = {
         GetTicketDetail: 'admin.support.get_ticket_detail',
         UpdateTicketStatus: 'admin.support.update_ticket_status',
         ReplyTicket: 'admin.support.reply_ticket',
-        GetMetrics: 'admin.support.get_metrics'
+        GetMetrics: 'admin.support.get_metrics',
+        GetClientProfile: 'admin.support.get_client_profile'
     },
     Canvases: {
         GetHomeFeed: 'canvases.get_home_feed',

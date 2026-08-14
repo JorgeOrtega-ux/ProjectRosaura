@@ -155,4 +155,12 @@ class AdminSupportController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
+
+    public function getClientProfile($input) {
+        try {
+            return $this->respond($this->supportService->getClientProfile($input));
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
 }

@@ -464,9 +464,34 @@ export class ContactSupportController {
             return;
         }
 
+        const viewIssueBtn = e.target.closest('[data-action="openViewIssueModal"]');
+        if (viewIssueBtn) {
+            e.preventDefault();
+            const dropdown = document.querySelector('[data-module="supportUserChatMoreDropdown"]');
+            if (dropdown) {
+                dropdown.classList.remove('active');
+                dropdown.classList.add('disabled');
+            }
+            if (this.currentSessionData && window.modalSystem) {
+                window.modalSystem.show('viewIssueModal', {
+                    category: this.currentSessionData.category || 'general',
+                    subject: this.currentSessionData.subject || '',
+                    description: this.currentSessionData.initial_message || '',
+                    time: this.currentSessionData.started_at || '',
+                    priority: this.currentSessionData.priority || 'medium'
+                });
+            }
+            return;
+        }
+
         const endChatBtn = e.target.closest('[data-action="endSupportChatSession"]');
         if (endChatBtn) {
             e.preventDefault();
+            const dropdown = document.querySelector('[data-module="supportUserChatMoreDropdown"]');
+            if (dropdown) {
+                dropdown.classList.remove('active');
+                dropdown.classList.add('disabled');
+            }
             this._endLiveChatSession();
             return;
         }
@@ -754,7 +779,7 @@ export class ContactSupportController {
                 } else if (session.status === 'active') {
                     this._showState('room');
                     this._updateAgentDisplay(session);
-                    this._renderMessages(res.messages);
+                    this._renderMessages(res.messages, session);
                 } else if (session.status === 'closed') {
                     this._cleanupEndedSession();
                     if (window.modalSystem) {
@@ -776,7 +801,7 @@ export class ContactSupportController {
             }, this.abortController ? this.abortController.signal : undefined);
 
             if (res && res.success) {
-                this._renderMessages(res.messages);
+                this._renderMessages(res.messages, res.session);
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
@@ -874,7 +899,13 @@ export class ContactSupportController {
         if (!container) return;
 
         let html = '';
+        const initialIssueMsg = this.currentSessionData?.initial_message;
+
         (messages || []).forEach(msg => {
+            if (initialIssueMsg && msg.sender_type === 'user' && msg.message === initialIssueMsg) {
+                return;
+            }
+
             if (msg.sender_type === 'system') {
                 html += `
                     <div class="chat-message chat-message--status">

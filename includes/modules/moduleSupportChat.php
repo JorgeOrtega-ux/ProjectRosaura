@@ -45,9 +45,35 @@
                     </div>
                 </div>
                 <div class="component-card__actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="endSupportChatSession" data-tooltip="<?php echo __('btn_end_chat'); ?>" data-position="bottom" type="button">
-                        <span class="material-symbols-rounded text-danger">call_end</span>
-                    </button>
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
+                        <button class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="supportUserChatMoreDropdown" data-tooltip="<?php echo __('btn_options'); ?>" data-position="bottom" type="button">
+                            <span class="material-symbols-rounded">more_vert</span>
+                        </button>
+                        <div class="component-module component-module--dropdown component-module--dropdown-bottom component-module--dropdown-right component-module--dropdown-fixed chat-dropdown-module disabled" data-module="supportUserChatMoreDropdown">
+                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="support-user-chat-more-menu">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list">
+                                    <div class="component-menu-link" data-action="openViewIssueModal">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">help_outline</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span><?php echo __('lbl_view_issue', [], 'Ver problema'); ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="component-menu-divider"></div>
+                                    <div class="component-menu-link text-danger" data-action="endSupportChatSession">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">call_end</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span><?php echo __('btn_end_chat', [], 'Finalizar chat'); ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

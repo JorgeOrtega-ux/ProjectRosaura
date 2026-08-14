@@ -347,7 +347,9 @@ class AdminUsersController {
                 });
             } else {
                 [btnEditAccount, btnEditRole, btnEditStatus, btnHistory].forEach(btn => {
-                    if (btn) btn.classList.remove('disabled-interaction');
+                    if (btn && !btn.hasAttribute('data-permission-denied')) {
+                        btn.classList.remove('disabled-interaction');
+                    }
                 });
             }
             const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');

@@ -474,9 +474,6 @@ export const SkeletonTemplates = {
                         <div class="component-skeleton component-skeleton--desc-sm"></div>
                     </div>
                 </div>
-                <div class="component-card__actions">
-                    <div class="component-skeleton component-skeleton--btn-sm"></div>
-                </div>
             </div>`;
         }
         return items;

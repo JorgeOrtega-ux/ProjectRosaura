@@ -8787,6 +8787,42 @@ html.dark-theme .component-skeleton-design-bottom {
     font-weight: 600;
 }
 
+.chat-message--initial-ticket {
+    align-self: stretch;
+    width: 100%;
+    margin: 8px 0 12px 0;
+}
+
+.chat-message-ticket-box {
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius, 12px);
+    padding: 12px 14px;
+}
+
+.chat-message-ticket-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.chat-message-ticket-subject {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    line-height: 1.35;
+}
+
+.chat-message-ticket-description {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .component-queue-pulse-icon {
     display: inline-flex;
     align-items: center;

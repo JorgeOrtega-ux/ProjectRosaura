@@ -126,11 +126,42 @@ class RoleRepository implements RoleRepositoryInterface {
 
     public function ensureDefaultPermissionsExist(): void {
         $defaults = [
+            ['name' => 'access_admin_panel', 'description' => 'desc_access_admin_panel', 'is_critical' => 0, 'roles' => [3, 4, 5, 6, 7]],
+            ['name' => 'view_users', 'description' => 'desc_view_users', 'is_critical' => 0, 'roles' => [2, 3, 4, 6, 7]],
+            ['name' => 'edit_users', 'description' => 'desc_edit_users', 'is_critical' => 0, 'roles' => [3, 4, 7]],
+            ['name' => 'moderate_users', 'description' => 'desc_moderate_users', 'is_critical' => 0, 'roles' => [2, 3, 4, 7]],
+            ['name' => 'view_kardex', 'description' => 'desc_view_kardex', 'is_critical' => 0, 'roles' => [3, 4]],
+            ['name' => 'manage_kardex', 'description' => 'desc_manage_kardex', 'is_critical' => 0, 'roles' => [3, 4]],
+            ['name' => 'delete_users', 'description' => 'desc_delete_users', 'is_critical' => 1, 'roles' => [4]],
+            ['name' => 'view_roles', 'description' => 'desc_view_roles', 'is_critical' => 0, 'roles' => [3, 4]],
+            ['name' => 'manage_roles_structure', 'description' => 'desc_manage_roles_structure', 'is_critical' => 1, 'roles' => [4]],
+            ['name' => 'assign_roles', 'description' => 'desc_assign_roles', 'is_critical' => 1, 'roles' => [4]],
+            ['name' => 'manage_server_config', 'description' => 'desc_manage_server_config', 'is_critical' => 1, 'roles' => [4]],
+            ['name' => 'perform_system_maintenance', 'description' => 'desc_perform_system_maintenance', 'is_critical' => 1, 'roles' => [4]],
+            ['name' => 'create_backups', 'description' => 'desc_create_backups', 'is_critical' => 0, 'roles' => [3, 4]],
+            ['name' => 'restore_backups', 'description' => 'desc_restore_backups', 'is_critical' => 1, 'roles' => [4]],
+            ['name' => 'delete_backups', 'description' => 'desc_delete_backups', 'is_critical' => 1, 'roles' => [4]],
+            ['name' => 'download_backups', 'description' => 'desc_download_backups', 'is_critical' => 1, 'roles' => [4]],
+            ['name' => 'view_logs', 'description' => 'desc_view_logs', 'is_critical' => 0, 'roles' => [3, 4]],
+            ['name' => 'delete_logs', 'description' => 'desc_delete_logs', 'is_critical' => 1, 'roles' => [4]],
+            ['name' => 'create_canvas', 'description' => 'desc_create_canvas', 'is_critical' => 0, 'roles' => [1, 2, 3, 4]],
+            ['name' => 'manage_canvases', 'description' => 'desc_manage_canvases', 'is_critical' => 0, 'roles' => [1, 2, 3, 4]],
+            ['name' => 'join_canvas', 'description' => 'desc_join_canvas', 'is_critical' => 0, 'roles' => [1, 2, 3, 4]],
             ['name' => 'view_dashboard', 'description' => 'desc_view_dashboard', 'is_critical' => 0, 'roles' => [3, 4]],
             ['name' => 'manage_subscriptions', 'description' => 'desc_manage_subscriptions', 'is_critical' => 0, 'roles' => [3, 4]],
             ['name' => 'manage_store_packages', 'description' => 'desc_manage_store_packages', 'is_critical' => 0, 'roles' => [3, 4]],
             ['name' => 'manage_store_perks', 'description' => 'desc_manage_store_perks', 'is_critical' => 0, 'roles' => [3, 4]],
             ['name' => 'manage_content', 'description' => 'desc_manage_content', 'is_critical' => 0, 'roles' => [2, 3, 4]],
+            ['name' => 'access_support_panel', 'description' => 'desc_access_support_panel', 'is_critical' => 0, 'roles' => [3, 4, 5, 6, 7]],
+            ['name' => 'support_chat_attend_l1', 'description' => 'desc_support_chat_attend_l1', 'is_critical' => 0, 'roles' => [3, 4, 5, 6, 7]],
+            ['name' => 'support_chat_attend_l2', 'description' => 'desc_support_chat_attend_l2', 'is_critical' => 0, 'roles' => [3, 4, 6, 7]],
+            ['name' => 'support_chat_attend_l3', 'description' => 'desc_support_chat_attend_l3', 'is_critical' => 0, 'roles' => [3, 4, 7]],
+            ['name' => 'support_chat_escalate', 'description' => 'desc_support_chat_escalate', 'is_critical' => 0, 'roles' => [3, 4, 5, 6, 7]],
+            ['name' => 'support_chat_reassign', 'description' => 'desc_support_chat_reassign', 'is_critical' => 1, 'roles' => [3, 4, 7]],
+            ['name' => 'support_tickets_manage', 'description' => 'desc_support_tickets_manage', 'is_critical' => 0, 'roles' => [3, 4, 5, 6, 7]],
+            ['name' => 'support_manage_canned', 'description' => 'desc_support_manage_canned', 'is_critical' => 0, 'roles' => [3, 4, 5, 6, 7]],
+            ['name' => 'support_view_metrics', 'description' => 'desc_support_view_metrics', 'is_critical' => 0, 'roles' => [3, 4, 7]],
+            ['name' => 'support_audit_logs', 'description' => 'desc_support_audit_logs', 'is_critical' => 1, 'roles' => [3, 4, 7]],
         ];
 
         try {
@@ -153,6 +184,9 @@ class RoleRepository implements RoleRepositoryInterface {
                 if ($permId) {
                     foreach ($perm['roles'] as $roleId) {
                         $stmtAssign->execute([$roleId, $permId]);
+                        if ($stmtAssign->rowCount() > 0) {
+                            $created = true;
+                        }
                     }
                 }
             }
@@ -160,6 +194,7 @@ class RoleRepository implements RoleRepositoryInterface {
             if ($created) {
                 $this->invalidateGlobalPermissionsCache();
                 $this->invalidateGlobalRolesCache();
+                $this->cacheInvalidator->allUsers();
             }
         } catch (\Throwable $e) {
             Logger::error("Error seeding default permissions: " . $e->getMessage(), ['exception' => $e]);

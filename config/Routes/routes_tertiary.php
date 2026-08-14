@@ -939,6 +939,118 @@ return [
             ],
         ],
     ],
+    'admin.support.get_client_profile' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'getClientProfile',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_get_profile',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.send_password_reset' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'send_password_reset',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_send_reset',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.unlock_rate_limit' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'unlock_rate_limit',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_unlock_rl',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.adjust_coins' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'adjust_coins',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_adjust_coins',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.terminate_sessions' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'terminate_sessions',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_term_sessions',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.disable_2fa' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'disable_2fa',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_disable_2fa',
+                'max' => 10,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.sync_stripe' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'sync_stripe_subscription',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_sync_stripe',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'stripe.create_checkout' => [
         'controller' => 'App\\Api\\Controllers\\Stripe\\StripeController',
         'action' => 'create_checkout',
