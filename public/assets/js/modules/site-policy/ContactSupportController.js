@@ -308,6 +308,17 @@ export class ContactSupportController {
         const openLiveChatModalBtn = e.target.closest('[data-action="openStartLiveChatModal"]');
         if (openLiveChatModalBtn) {
             e.preventDefault();
+            const isUserLoggedIn = !!(window.APP_USER && window.APP_USER.id);
+            if (!isUserLoggedIn) {
+                const loginUrl = window.APP_CONFIG?.APP_URL ? `${window.APP_CONFIG.APP_URL}/login` : '/login';
+                if (window.spaRouter) {
+                    window.spaRouter.navigate(loginUrl);
+                } else {
+                    window.location.href = loginUrl;
+                }
+                return;
+            }
+
             if (this.activeSessionUuid) {
                 const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
                 if (moduleEl && window.appInstance?.moduleManager) {

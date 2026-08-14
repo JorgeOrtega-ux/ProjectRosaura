@@ -505,6 +505,29 @@ def seed_database(project_root, target_records=10000):
             cursor.executemany(sql_upb, upb_rows[i:i+BATCH_SIZE])
         conn.commit()
 
+        # Tabla: user_restrictions
+        print("  -> Generando tabla: `user_restrictions`...")
+        ur_rows = []
+        for i in range(1, target_records + 1):
+            is_susp = 1 if i <= 100 else 0
+            ur_rows.append((
+                i,
+                is_susp,
+                'temporary' if is_susp else None,
+                'Suspensión preventiva por análisis de actividad' if is_susp else None,
+                datetime.now() + timedelta(days=7) if is_susp else None,
+                None,
+                None,
+                None
+            ))
+        sql_ur = """
+        INSERT INTO `user_restrictions` (user_id, is_suspended, suspension_type, suspension_reason, suspension_end_date, deleted_by, deleted_reason, admin_notes)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        for i in range(0, len(ur_rows), BATCH_SIZE):
+            cursor.executemany(sql_ur, ur_rows[i:i+BATCH_SIZE])
+        conn.commit()
+
         print(f"{Colors.GREEN}✓ db_identity poblada exitosamente con ~150,000 registros.{Colors.ENDC}")
 
         # -------------------------------------------------------------
@@ -771,7 +794,21 @@ def seed_database(project_root, target_records=10000):
             cursor.executemany(sql_ut, ut_rows[i:i+BATCH_SIZE])
         conn.commit()
 
-        print(f"{Colors.GREEN}✓ db_canvases poblada exitosamente con ~150,000 registros.{Colors.ENDC}")
+        # Tabla: canvas_user_roles
+        print("  -> Generando tabla: `canvas_user_roles`...")
+        cur_rows = []
+        for i in range(1, target_records + 1):
+            cur_rows.append((
+                i,
+                random.randint(1, target_records),
+                random.choice([1, 2, 3])
+            ))
+        sql_cur = "INSERT IGNORE INTO `canvas_user_roles` (canvas_id, user_id, role_id) VALUES (%s, %s, %s)"
+        for i in range(0, len(cur_rows), BATCH_SIZE):
+            cursor.executemany(sql_cur, cur_rows[i:i+BATCH_SIZE])
+        conn.commit()
+
+        print(f"{Colors.GREEN}✓ db_canvases poblada exitosamente con ~160,000 registros.{Colors.ENDC}")
 
         # -------------------------------------------------------------
         # 4. POBLAR DB_SUPPORT (~10k por tabla)

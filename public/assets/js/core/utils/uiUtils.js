@@ -353,6 +353,77 @@ function initCarouselScroll(wrapper) {
     return { updateButtons };
 }
 
+function appendInfiniteScrollSkeletons(container, count = 4, gridSelector = '.component-grid') {
+    if (!container) return;
+    const grid = container.querySelector(gridSelector) || container;
+    if (grid) {
+        let skeletonCards = '';
+        for (let i = 0; i < count; i++) {
+            skeletonCards += `<div class="component-skeleton component-skeleton--card infinite-scroll-skeleton"></div>`;
+        }
+        grid.insertAdjacentHTML('beforeend', skeletonCards);
+    }
+}
+
+function removeInfiniteScrollSkeletons(container) {
+    if (!container) return;
+    const skeletons = container.querySelectorAll('.infinite-scroll-skeleton');
+    skeletons.forEach(s => s.remove());
+}
+
+function renderVirtualGridItems(container, items, virtualObserver, isLoadMore = false, gridDataRef = 'home-all-canvases') {
+    if (!container) return null;
+
+    let grid = container.querySelector('.component-grid');
+
+    if (!isLoadMore || !grid) {
+        container.innerHTML = `<div class="component-grid" data-ref="${gridDataRef}"></div>`;
+        grid = container.querySelector('.component-grid');
+        if (virtualObserver) {
+            virtualObserver.disconnect();
+            virtualObserver.initObserver();
+        }
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    items.forEach(item => {
+        const wrapper = document.createElement('div');
+        if (virtualObserver) {
+            virtualObserver.observe(wrapper, item);
+        }
+        fragment.appendChild(wrapper);
+    });
+
+    grid.appendChild(fragment);
+    return grid;
+}
+
+function setupGridInfiniteScroll({ container, hasMore, currentObserver = null, onIntersect, rootMargin = '200px' }) {
+    if (currentObserver) {
+        currentObserver.disconnect();
+    }
+
+    if (!hasMore || !container) return null;
+
+    const cards = container.querySelectorAll('.virtual-card-container, .component-card');
+    if (cards.length === 0) return null;
+
+    const lastCard = cards[cards.length - 1];
+
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0] && entries[0].isIntersecting) {
+            observer.disconnect();
+            if (typeof onIntersect === 'function') {
+                onIntersect();
+            }
+        }
+    }, { rootMargin });
+
+    observer.observe(lastCard);
+    return observer;
+}
+
 export { 
     showMessage, 
     setButtonLoading, 
@@ -371,5 +442,9 @@ export {
     getAllPalettes,
     localInputFormatToUtcString,
     isDarkMode,
-    initCarouselScroll
+    initCarouselScroll,
+    appendInfiniteScrollSkeletons,
+    removeInfiniteScrollSkeletons,
+    renderVirtualGridItems,
+    setupGridInfiniteScroll
 };

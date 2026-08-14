@@ -17,17 +17,33 @@ class SearchController extends BaseController {
 
     public function search($input) {
         try {
-            $query = $input['q'] ?? $_GET['q'] ?? '';
+            $query = trim($input['q'] ?? $_GET['q'] ?? '');
+            $page = max(1, (int)($input['page'] ?? $_GET['page'] ?? 1));
+            $limit = min(100, max(1, (int)($input['limit'] ?? $_GET['limit'] ?? 20)));
             
-            if (empty(trim($query))) {
-                return $this->respond(['success' => true, 'data' => []]);
+            if (empty($query)) {
+                return $this->respond([
+                    'success'  => true,
+                    'data'     => [],
+                    'total'    => 0,
+                    'page'     => $page,
+                    'per_page' => $limit,
+                    'has_more' => false
+                ]);
             }
 
             $currentUserId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             
-            $results = $this->searchServices->searchCanvases($query, $currentUserId);
+            $results = $this->searchServices->searchCanvases($query, $currentUserId, $page, $limit);
             
-            return $this->respond(['success' => true, 'data' => $results]);
+            return $this->respond([
+                'success'  => true,
+                'data'     => $results['canvases'],
+                'total'    => $results['total'],
+                'page'     => $results['page'],
+                'per_page' => $results['per_page'],
+                'has_more' => $results['has_more']
+            ]);
 
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

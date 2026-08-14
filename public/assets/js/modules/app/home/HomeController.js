@@ -2,7 +2,14 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
-import { renderSkeleton, initCarouselScroll } from '../../../core/utils/uiUtils.js';
+import { 
+    renderSkeleton, 
+    initCarouselScroll, 
+    appendInfiniteScrollSkeletons, 
+    removeInfiniteScrollSkeletons, 
+    renderVirtualGridItems, 
+    setupGridInfiniteScroll 
+} from '../../../core/utils/uiUtils.js';
 import { VirtualGridObserver } from '../../../core/utils/VirtualGridObserver.js';
 
 class HomeController {
@@ -220,14 +227,7 @@ class HomeController {
 
         this.isLoadingMore = true;
         if (isLoadMore && this.contentArea) {
-            const grid = this.contentArea.querySelector('.component-grid');
-            if (grid) {
-                let skeletonCards = '';
-                for (let i = 0; i < 4; i++) {
-                    skeletonCards += `<div class="component-skeleton component-skeleton--card infinite-scroll-skeleton"></div>`;
-                }
-                grid.insertAdjacentHTML('beforeend', skeletonCards);
-            }
+            appendInfiniteScrollSkeletons(this.contentArea, 4);
         }
 
         let newCanvases = [];
@@ -254,9 +254,11 @@ class HomeController {
             }
         }
 
+        removeInfiniteScrollSkeletons(this.contentArea);
+
         if (newCanvases.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
+            renderVirtualGridItems(this.contentArea, isLoadMore ? newCanvases : (this.allCanvases.length ? this.allCanvases.concat(newCanvases) : newCanvases), this.virtualObserver, isLoadMore, 'home-all-canvases');
             this.allCanvases = this.allCanvases.concat(newCanvases);
-            this.renderCanvases(this.contentArea, this.allCanvases, isLoadMore);
         } else if (isError && !isLoadMore) {
             this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
         } else if (!isLoadMore) {
@@ -270,11 +272,6 @@ class HomeController {
             this.contentArea.innerHTML = emptyHtml;
         }
         
-        if (this.contentArea) {
-            const skeletons = this.contentArea.querySelectorAll('.infinite-scroll-skeleton');
-            skeletons.forEach(s => s.remove());
-        }
-        
         if (newCanvases.length < limit) {
             this.hasMore = false;
         }
@@ -282,62 +279,18 @@ class HomeController {
         this.isLoadingMore = false;
 
         this.reinitializeUI();
-        this.setupInfiniteScroll();
-    }
-
-    setupInfiniteScroll() {
-        if (!this.hasMore || !this.contentArea) return;
-        
-        if (this.observer) {
-            this.observer.disconnect();
-        }
-        
-        const cards = this.contentArea.querySelectorAll('.virtual-card-container, .component-card');
-        if (cards.length === 0) return;
-        
-        const lastCard = cards[cards.length - 1];
-        
-        this.observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting) {
-                this.observer.disconnect();
-                this.loadCanvases(true);
-            }
-        }, { rootMargin: '200px' });
-        
-        this.observer.observe(lastCard);
+        this.observer = setupGridInfiniteScroll({
+            container: this.contentArea,
+            hasMore: this.hasMore,
+            currentObserver: this.observer,
+            onIntersect: () => this.loadCanvases(true)
+        });
     }
 
     showError(container, message) {
         if (container) {
             container.innerHTML = CardTemplates.emptyState(message, 'error');
         }
-    }
-
-    renderCanvases(container, canvases, isLoadMore = false) {
-        if (!container) return;
-        
-        let grid = container.querySelector('.component-grid');
-        
-        if (!isLoadMore || !grid) {
-            container.innerHTML = `<div class="component-grid" data-ref="home-all-canvases"></div>`;
-            grid = container.querySelector('.component-grid');
-            if (this.virtualObserver) {
-                this.virtualObserver.disconnect();
-                this.virtualObserver.initObserver();
-            }
-        }
-        
-        const fragment = document.createDocumentFragment();
-        
-        const itemsToRender = isLoadMore ? canvases.slice(this.currentOffset - canvases.length) : canvases;
-        
-        itemsToRender.forEach(canvas => {
-            const wrapper = document.createElement('div');
-            this.virtualObserver.observe(wrapper, canvas);
-            fragment.appendChild(wrapper);
-        });
-        
-        grid.appendChild(fragment);
     }
 
     reinitializeUI() {

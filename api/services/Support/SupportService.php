@@ -177,36 +177,47 @@ class SupportService {
     }
 
     public function startLiveSession(array $input): array {
-        $userId = null;
-        $priority = 'medium';
-
-        if ($this->sessionManager->isLoggedIn()) {
-            $userId = $this->sessionManager->getActiveAccountId();
-            if ($userId) {
-                $user = $this->userRepo->findById($userId);
-                if ($user) {
-                    $tier = (int)($user['subscription_tier'] ?? 0);
-                    if ($tier >= 3) {
-                        $priority = 'urgent';
-                    } else if ($tier >= 1) {
-                        $priority = 'high';
-                    }
-                }
-            }
+        if (!$this->sessionManager->isLoggedIn()) {
+            return [
+                'success' => false,
+                'message' => __('err_support_login_required')
+            ];
         }
 
-        if ($userId) {
-            $existing = $this->supportRepo->getActiveSessionForUser($userId);
-            if ($existing) {
-                return [
-                    'success' => true,
-                    'session_uuid' => $existing['uuid'],
-                    'status' => $existing['status'],
-                    'department_level' => $existing['department_level'],
-                    'language' => $existing['language'] ?? 'es-419',
-                    'message' => __('msg_support_resumed_session')
-                ];
-            }
+        $userId = $this->sessionManager->getActiveAccountId();
+        if (!$userId) {
+            return [
+                'success' => false,
+                'message' => __('err_support_login_required')
+            ];
+        }
+
+        $user = $this->userRepo->findById($userId);
+        if (!$user) {
+            return [
+                'success' => false,
+                'message' => __('err_user_not_found')
+            ];
+        }
+
+        $priority = 'medium';
+        $tier = (int)($user['subscription_tier'] ?? 0);
+        if ($tier >= 3) {
+            $priority = 'urgent';
+        } else if ($tier >= 1) {
+            $priority = 'high';
+        }
+
+        $existing = $this->supportRepo->getActiveSessionForUser($userId);
+        if ($existing) {
+            return [
+                'success' => true,
+                'session_uuid' => $existing['uuid'],
+                'status' => $existing['status'],
+                'department_level' => $existing['department_level'],
+                'language' => $existing['language'] ?? 'es-419',
+                'message' => __('msg_support_resumed_session')
+            ];
         }
 
         $availableAgents = $this->supportRepo->getAvailableAgentsCount('all');
@@ -269,11 +280,7 @@ class SupportService {
                 'priority' => $priority
             ]);
 
-            $userName = 'Guest';
-            if ($userId) {
-                $user = $this->userRepo->findById($userId);
-                $userName = $user['username'] ?? 'User';
-            }
+            $userName = $user['username'] ?? 'User';
 
             $this->supportRepo->addMessage(
                 $sessionUuid,

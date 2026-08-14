@@ -55,9 +55,15 @@ $isLoggedIn = !empty($activeAccountId);
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
+                            <?php if ($isLoggedIn): ?>
                             <button class="component-button component-button--h36" data-action="openStartLiveChatModal" type="button">
                                 <span><?php echo __('support_btn_start_chat'); ?></span>
                             </button>
+                            <?php else: ?>
+                            <button class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/login" type="button">
+                                <span><?php echo __('support_guest_login_btn'); ?></span>
+                            </button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
