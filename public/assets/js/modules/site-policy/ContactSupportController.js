@@ -8,7 +8,6 @@ export class ContactSupportController {
         this.container = null;
         this.abortController = null;
         this.turnstileWidgetId = undefined;
-        this.pollInterval = null;
         this.activeSessionUuid = null;
         this.csatSessionUuid = null;
         this.currentRating = 5;
@@ -19,6 +18,9 @@ export class ContactSupportController {
         this.isIntentionalDisconnect = false;
         this.typingTimeout = null;
         this._moduleObserver = null;
+        this.lastRenderedMaxId = 0;
+        this.hasInitialMessagesLoaded = false;
+        this.lastPlayedMessageId = null;
 
         this._boundClick = this.handleClick.bind(this);
         this._boundKeydown = this.handleKeydown.bind(this);
@@ -50,11 +52,6 @@ export class ContactSupportController {
 
     destroy() {
         this.isIntentionalDisconnect = true;
-
-        if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-            this.pollInterval = null;
-        }
 
         if (this.wsHeartbeatInterval) {
             clearInterval(this.wsHeartbeatInterval);
@@ -100,6 +97,7 @@ export class ContactSupportController {
 
             this.ws.onopen = () => {
                 this._startWsHeartbeat();
+                this._loadMessages();
             };
 
             this.ws.onmessage = (e) => {
@@ -152,12 +150,10 @@ export class ContactSupportController {
             if (status === 'queue' || status === 'waiting' || status === 'waiting_in_queue') {
                 this._showState('queue');
                 this._connectWebSocket(uuid);
-                this._startPolling();
             } else if (status === 'room' || status === 'active' || status === 'in_progress') {
                 this._showState('room');
                 this._connectWebSocket(uuid);
                 this._loadMessages();
-                this._startPolling();
             }
             this._updateFloatingButtonVisibility();
         } catch (e) {}
@@ -173,12 +169,20 @@ export class ContactSupportController {
             if (sessionUuid && sessionUuid !== this.activeSessionUuid) return;
 
             switch (event) {
-                case 'new_message':
-                    this._loadMessages();
-                    if (payload.data && payload.data.message && payload.data.message.sender_type === 'agent') {
-                        this._playNotificationSound();
+                case 'new_message': {
+                    const isFromAgent = payload.data && (
+                        payload.data.sender_type === 'agent' ||
+                        payload.data.sender_type === 'system' ||
+                        (payload.data.message && (payload.data.message.sender_type === 'agent' || payload.data.message.sender_type === 'system'))
+                    );
+                    const msgId = Number(payload.data?.message?.id || payload.data?.id) || null;
+                    if (isFromAgent) {
+                        this._playNotificationSound('message');
+                        if (msgId) this.lastPlayedMessageId = msgId;
                     }
+                    this._loadMessages();
                     break;
+                }
                 case 'session_claimed':
                     this._showState('room');
                     if (payload.data && payload.data.agent_name) {
@@ -239,10 +243,16 @@ export class ContactSupportController {
         }
     }
 
-    _playNotificationSound() {
+    _playNotificationSound(type = 'message') {
         try {
-            const audio = new Audio('/public/assets/sounds/support/chat_message.mp3');
-            audio.volume = 0.45;
+            const soundMap = {
+                message: '/public/assets/sounds/support/chat_message.mp3',
+                incoming: '/public/assets/sounds/support/chat_incoming.mp3',
+                resolved: '/public/assets/sounds/support/chat_resolved.mp3'
+            };
+            const src = soundMap[type] || soundMap.message;
+            const audio = new Audio(src);
+            audio.volume = 0.5;
             audio.play().catch(() => {});
         } catch (e) {}
     }
@@ -576,11 +586,9 @@ export class ContactSupportController {
                         this._showState('queue');
                         const qNum = document.querySelector('[data-ref="support-queue-position-number"]');
                         if (qNum) qNum.textContent = `#${res.active_session.queue_position || 1}`;
-                        this._startPolling();
                     } else if (res.active_session.status === 'active' || res.active_session.status === 'in_progress') {
                         this._showState('room');
                         this._updateAgentDisplay(res.active_session);
-                        this._startPolling();
                         this._loadMessages();
                     }
                 } else if (!res.is_online) {
@@ -632,6 +640,8 @@ export class ContactSupportController {
                 }));
             }
         } else if (stateName === 'preform' || stateName === 'offline' || stateName === 'feedback') {
+            this.lastRenderedMaxId = 0;
+            this.hasInitialMessagesLoaded = false;
             localStorage.removeItem('pr_active_support_session');
         }
         this._updateFloatingButtonVisibility();
@@ -735,7 +745,6 @@ export class ContactSupportController {
                 this._showState('queue');
                 const qNum = document.querySelector('[data-ref="support-queue-position-number"]');
                 if (qNum) qNum.textContent = `#${res.queue_position || 1}`;
-                this._startPolling();
 
                 const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
                 if (moduleEl && window.appInstance?.moduleManager) {
@@ -752,43 +761,6 @@ export class ContactSupportController {
             if (error.name === 'AbortError') return;
             restoreButton(btn);
             showMessage(window.__('err_support_chat_start_failed'), 'error');
-        }
-    }
-
-    _startPolling() {
-        if (this.pollInterval) clearInterval(this.pollInterval);
-        this.pollInterval = setInterval(() => {
-            this._pollSessionStatus();
-        }, 8000);
-    }
-
-    async _pollSessionStatus() {
-        if (!this.activeSessionUuid) return;
-
-        try {
-            const res = await this.api.post(ApiRoutes.Support.GetSessionMessages, {
-                session_uuid: this.activeSessionUuid
-            }, this.abortController ? this.abortController.signal : undefined);
-
-            if (res && res.success) {
-                const session = res.session;
-                if (session.status === 'waiting_in_queue' || session.status === 'escalated') {
-                    this._showState('queue');
-                    const qNum = document.querySelector('[data-ref="support-queue-position-number"]');
-                    if (qNum) qNum.textContent = `#${session.queue_position || 1}`;
-                } else if (session.status === 'active') {
-                    this._showState('room');
-                    this._updateAgentDisplay(session);
-                    this._renderMessages(res.messages, session);
-                } else if (session.status === 'closed') {
-                    this._cleanupEndedSession();
-                    if (window.modalSystem) {
-                        window.modalSystem.show('supportCsatModal');
-                    }
-                }
-            }
-        } catch (error) {
-            if (error.name === 'AbortError') return;
         }
     }
 
@@ -898,6 +870,30 @@ export class ContactSupportController {
         const container = document.querySelector('[data-ref="support-chat-messages-list"]');
         if (!container) return;
 
+        let maxId = 0;
+        let hasNewAgentMessage = false;
+
+        (messages || []).forEach(msg => {
+            const mId = Number(msg.id) || 0;
+            if (mId > maxId) maxId = mId;
+
+            if (this.hasInitialMessagesLoaded && mId > this.lastRenderedMaxId && msg.sender_type !== 'user') {
+                if (mId !== this.lastPlayedMessageId) {
+                    hasNewAgentMessage = true;
+                    this.lastPlayedMessageId = mId;
+                }
+            }
+        });
+
+        if (hasNewAgentMessage) {
+            this._playNotificationSound('message');
+        }
+
+        if (maxId > this.lastRenderedMaxId) {
+            this.lastRenderedMaxId = maxId;
+        }
+        this.hasInitialMessagesLoaded = true;
+
         let html = '';
         const initialIssueMsg = this.currentSessionData?.initial_message;
 
@@ -985,11 +981,6 @@ export class ContactSupportController {
         this.csatSessionUuid = this.activeSessionUuid;
         this.activeSessionUuid = null;
         localStorage.removeItem('pr_active_support_session');
-
-        if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-            this.pollInterval = null;
-        }
 
         if (this.ws) {
             this.ws.close();

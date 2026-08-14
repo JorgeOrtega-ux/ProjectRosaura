@@ -8,7 +8,6 @@ export class AdminSupportLiveController {
         this.api = new ApiService();
         this.container = null;
         this.abortController = null;
-        this.pollInterval = null;
         this.activeTab = 'l1';
         this.currentSession = null;
         this.currentSessionUuid = null;
@@ -25,6 +24,9 @@ export class AdminSupportLiveController {
         this.wsHeartbeatInterval = null;
         this.isIntentionalDisconnect = false;
         this.typingTimeout = null;
+        this.lastRenderedMaxId = 0;
+        this.hasInitialMessagesLoaded = false;
+        this.lastPlayedMessageId = null;
 
         this._boundClick = this.handleClick.bind(this);
         this._boundKeydown = this.handleKeydown.bind(this);
@@ -65,7 +67,6 @@ export class AdminSupportLiveController {
         }
 
         this._connectWebSocket();
-        this._startPolling();
     }
 
     bindEvents() {
@@ -76,11 +77,6 @@ export class AdminSupportLiveController {
 
     destroy() {
         this.isIntentionalDisconnect = true;
-
-        if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-            this.pollInterval = null;
-        }
 
         if (this.wsHeartbeatInterval) {
             clearInterval(this.wsHeartbeatInterval);
@@ -116,6 +112,10 @@ export class AdminSupportLiveController {
 
             this.ws.onopen = () => {
                 this._startWsHeartbeat();
+                this._loadQueues();
+                if (this.currentSessionUuid) {
+                    this._loadMessages();
+                }
             };
 
             this.ws.onmessage = (e) => {
@@ -198,15 +198,18 @@ export class AdminSupportLiveController {
                 case 'new_message': {
                     const isFromUser = eventData.sender_type === 'user' || (eventData.message && eventData.message.sender_type === 'user');
                     const senderName = eventData.sender_name || (eventData.message && eventData.message.sender_name) || 'Usuario';
+                    const msgId = Number(eventData.message?.id || eventData.id) || null;
 
                     if (this.currentSessionUuid && this.currentSessionUuid === sessionUuid) {
-                        this._loadMessages();
                         if (isFromUser) {
                             this._playSound('message');
+                            if (msgId) this.lastPlayedMessageId = msgId;
                         }
+                        this._loadMessages();
                     } else {
                         if (isFromUser) {
                             this._playSound('message');
+                            if (msgId) this.lastPlayedMessageId = msgId;
                             showMessage(window.__('notif_new_message_received', { user: senderName }), 'info');
                             this._showBrowserNotification(window.__('title_support_live'), window.__('notif_new_message_received', { user: senderName }));
                         }
@@ -477,16 +480,20 @@ export class AdminSupportLiveController {
 
     async _handleSwitchTab(btn) {
         const tab = btn.getAttribute('data-tab');
-        if (!tab) return;
+        if (!tab || tab === this.activeTab) return;
+
         this.activeTab = tab;
         this._syncActiveTabUI();
 
-        const container = document.querySelector('[data-ref="admin-support-queue-container"]');
-        if (container) {
-            renderSkeleton(container, 'supportQueueSkeleton');
+        if (this.lastQueues && this.lastActiveList) {
+            this._renderCurrentQueueList(this.lastQueues, this.lastActiveList);
+        } else {
+            const container = document.querySelector('[data-ref="admin-support-queue-container"]');
+            if (container) {
+                renderSkeleton(container, 'supportQueueSkeleton');
+            }
+            await this._loadQueues();
         }
-
-        await this._loadQueues();
     }
 
     async _loadAgentStatus() {
@@ -501,6 +508,7 @@ export class AdminSupportLiveController {
     }
 
     _updateAgentStatusUI(status) {
+        this.currentAgentStatus = status;
         const textEl = document.querySelector('[data-ref="agent-status-display-text"]');
         const iconEl = document.querySelector('[data-ref="agent-status-indicator-icon"]');
 
@@ -531,7 +539,7 @@ export class AdminSupportLiveController {
 
     async _handleChangeStatus(item) {
         const newStatus = item.getAttribute('data-val');
-        if (!newStatus) return;
+        if (!newStatus || newStatus === this.currentAgentStatus) return;
 
         try {
             const res = await this.api.post(ApiRoutes.AdminSupport.UpdateAgentStatus, {
@@ -638,16 +646,6 @@ export class AdminSupportLiveController {
             dropdown.classList.remove('active');
             dropdown.classList.add('disabled');
         }
-    }
-
-    _startPolling() {
-        if (this.pollInterval) clearInterval(this.pollInterval);
-        this.pollInterval = setInterval(() => {
-            this._loadQueues();
-            if (this.currentSessionUuid) {
-                this._loadMessages();
-            }
-        }, 8000);
     }
 
     async _loadQueues() {
@@ -869,6 +867,14 @@ export class AdminSupportLiveController {
 
     async _selectSession(uuid) {
         if (!uuid) return;
+        if (this.currentSessionUuid === uuid && this.currentSession && this.currentSession.uuid === uuid) {
+            return;
+        }
+
+        if (this.currentSessionUuid !== uuid) {
+            this.lastRenderedMaxId = 0;
+            this.hasInitialMessagesLoaded = false;
+        }
         this.currentSessionUuid = uuid;
 
         const targetPath = `/admin/support/live-console/c/${uuid}`;
@@ -1101,6 +1107,30 @@ export class AdminSupportLiveController {
     _renderMessages(messages) {
         const container = document.querySelector('[data-ref="admin-support-messages-list"]');
         if (!container) return;
+
+        let maxId = 0;
+        let hasNewUserMessage = false;
+
+        (messages || []).forEach(msg => {
+            const mId = Number(msg.id) || 0;
+            if (mId > maxId) maxId = mId;
+
+            if (this.hasInitialMessagesLoaded && mId > this.lastRenderedMaxId && msg.sender_type === 'user') {
+                if (mId !== this.lastPlayedMessageId) {
+                    hasNewUserMessage = true;
+                    this.lastPlayedMessageId = mId;
+                }
+            }
+        });
+
+        if (hasNewUserMessage) {
+            this._playSound('message');
+        }
+
+        if (maxId > this.lastRenderedMaxId) {
+            this.lastRenderedMaxId = maxId;
+        }
+        this.hasInitialMessagesLoaded = true;
 
         let html = '';
         const initialIssueMsg = this.currentSession?.initial_message;
