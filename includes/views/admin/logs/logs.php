@@ -52,7 +52,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/logs?page=' . ($page + 1)
                                         <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--compact">
+                                <div class="component-menu-list">
                                     <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterCategory">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">category</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('filter_log_category'); ?></span></div>
@@ -71,7 +71,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/logs?page=' . ($page + 1)
                                         <span class="component-menu-header-title"><?php echo __('filter_by_category'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                <div class="component-menu-list component-menu-list--scrollable">
                                     <?php 
                                     $checkedCategories = empty($categoryFilter) ? ['app', 'database', 'security'] : $categoryFilter;
                                     ?>

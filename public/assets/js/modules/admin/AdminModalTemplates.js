@@ -65,7 +65,7 @@ export const AdminModalTemplates = {
                         <div class="component-module component-module--dropdown disabled" data-module="dropdownRolesList">
                             <div class="component-menu component-menu--w-full component-menu--h-auto">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list component-menu-list--compact component-menu-list--max-h250">
+                                <div class="component-menu-list component-menu-list--max-h250">
                                     ${rolesHtml}
                                 </div>
                             </div>

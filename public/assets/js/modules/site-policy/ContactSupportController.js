@@ -1,6 +1,6 @@
 import { ApiRoutes, WsConfig } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
-import { restoreButton, setButtonLoading, showMessage } from '../../core/utils/uiUtils.js';
+import { restoreButton, setButtonLoading, showMessage, toggleDropdown, closeDropdown, closeAllDropdowns } from '../../core/utils/uiUtils.js';
 import { ImageViewerSystem } from '../../core/components/ImageViewerSystem.js';
 
 export class ContactSupportController {
@@ -598,23 +598,11 @@ export class ContactSupportController {
             return;
         }
 
-        const toggleDropdownBtn = e.target.closest('[data-action="toggleDropdown"]');
+        const toggleDropdownBtn = e.target.closest('[data-action="toggleDropdown"], [data-action="toggleModule"]');
         if (toggleDropdownBtn) {
             e.preventDefault();
             e.stopPropagation();
-            const targetId = toggleDropdownBtn.getAttribute('data-target');
-            const dropdown = document.querySelector(`[data-module="${targetId}"]`);
-            if (dropdown) {
-                const isCurrentlyActive = !dropdown.classList.contains('disabled');
-                document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(d => {
-                    d.classList.remove('active');
-                    d.classList.add('disabled');
-                });
-                if (!isCurrentlyActive) {
-                    dropdown.classList.remove('disabled');
-                    dropdown.classList.add('active');
-                }
-            }
+            toggleDropdown(toggleDropdownBtn.getAttribute('data-target'), toggleDropdownBtn);
             return;
         }
 
@@ -630,11 +618,7 @@ export class ContactSupportController {
             e.preventDefault();
             const fileInput = document.getElementById('support-chat-file-input');
             if (fileInput) fileInput.click();
-            const dropdown = triggerAttach.closest('.chat-dropdown-module');
-            if (dropdown) {
-                dropdown.classList.remove('active');
-                dropdown.classList.add('disabled');
-            }
+            closeDropdown(triggerAttach.closest('.chat-dropdown-module'));
             return;
         }
 

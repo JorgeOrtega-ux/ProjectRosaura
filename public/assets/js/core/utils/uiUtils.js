@@ -424,6 +424,59 @@ function setupGridInfiniteScroll({ container, hasMore, currentObserver = null, o
     return observer;
 }
 
+function toggleDropdown(target, triggerEl = null) {
+    if (!target && triggerEl) {
+        target = triggerEl.getAttribute('data-target');
+    }
+    if (window.appInstance && window.appInstance.moduleManager) {
+        window.appInstance.moduleManager.toggle(target, triggerEl);
+    } else {
+        const moduleEl = typeof target === 'string' 
+            ? document.querySelector(`[data-module="${target}"]`) 
+            : target;
+        if (!moduleEl) return;
+        const isCurrentlyActive = !moduleEl.classList.contains('disabled');
+        if (isCurrentlyActive) {
+            moduleEl.classList.remove('active');
+            moduleEl.classList.add('disabled');
+        } else {
+            document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
+                el.classList.remove('active');
+                el.classList.add('disabled');
+            });
+            moduleEl.classList.remove('disabled');
+            moduleEl.classList.add('active');
+        }
+    }
+}
+
+function closeDropdown(target) {
+    if (!target) return;
+    if (window.appInstance && window.appInstance.moduleManager) {
+        window.appInstance.moduleManager.close(target);
+    } else {
+        const moduleEl = typeof target === 'string' 
+            ? document.querySelector(`[data-module="${target}"]`) 
+            : target;
+        if (moduleEl) {
+            moduleEl.classList.remove('active');
+            moduleEl.classList.add('disabled');
+        }
+    }
+}
+
+function closeAllDropdowns(except = null) {
+    if (window.appInstance && window.appInstance.moduleManager) {
+        window.appInstance.moduleManager.closeAllModules(except);
+    } else {
+        document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
+            if (except && el === except) return;
+            el.classList.remove('active');
+            el.classList.add('disabled');
+        });
+    }
+}
+
 export { 
     showMessage, 
     setButtonLoading, 
@@ -446,5 +499,10 @@ export {
     appendInfiniteScrollSkeletons,
     removeInfiniteScrollSkeletons,
     renderVirtualGridItems,
-    setupGridInfiniteScroll
+    setupGridInfiniteScroll,
+    toggleDropdown,
+    closeDropdown,
+    closeAllDropdowns,
+    toggleDropdown as toggleModule,
+    closeDropdown as closeModule
 };

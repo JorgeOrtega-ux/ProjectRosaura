@@ -1,5 +1,5 @@
 import { ApiRoutes } from '../api/ApiRoutes.js';
-import { showMessage, renderSkeleton, getLockDetails } from '../utils/uiUtils.js';
+import { showMessage, renderSkeleton, getLockDetails, closeAllDropdowns, toggleDropdown } from '../utils/uiUtils.js';
 import { CanvasApiService } from '../api/CanvasApiService.js';
 
 export class CanvasCardInteractions {
@@ -361,24 +361,17 @@ export class CanvasCardInteractions {
     }
 
     closeDropdowns() {
-        if (window.appInstance && window.appInstance.moduleManager) {
-            window.appInstance.moduleManager.closeAllModules();
-        } else {
-            document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
-                el.classList.remove('active');
-                el.classList.add('disabled');
-
-                const mainPage = el.querySelector('[data-menu-page="main"]');
-                if (mainPage) {
-                    el.querySelectorAll('.component-menu-page').forEach(p => p.classList.remove('active'));
-                    mainPage.classList.add('active');
-                }
-
-                if (el.dataset.module?.startsWith('snapshot-menu-') || el.closest('.component-gallery-actions-wrapper')) {
-                    setTimeout(() => el.remove(), 250);
-                }
-            });
-        }
+        closeAllDropdowns();
+        document.querySelectorAll('.component-module--dropdown').forEach(el => {
+            const mainPage = el.querySelector('[data-menu-page="main"]');
+            if (mainPage) {
+                el.querySelectorAll('.component-menu-page').forEach(p => p.classList.remove('active'));
+                mainPage.classList.add('active');
+            }
+            if (el.dataset.module?.startsWith('snapshot-menu-') || el.closest('.component-gallery-actions-wrapper')) {
+                setTimeout(() => el.remove(), 250);
+            }
+        });
     }
 
     toggleDynamicMenu(btn) {

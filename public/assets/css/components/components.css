@@ -1942,10 +1942,6 @@ html.dark-theme .component-menu-header.shadow {
     gap: 8px;
 }
 
-.component-menu-list--compact {
-    padding: 8px;
-    gap: 8px;
-}
 
 .component-menu-list--scrollable {
     overflow-y: auto;

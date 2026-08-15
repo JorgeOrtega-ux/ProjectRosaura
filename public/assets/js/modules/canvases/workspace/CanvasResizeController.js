@@ -1,7 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
-import { showMessage, setButtonLoading, restoreButton, localInputFormatToUtcString } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, localInputFormatToUtcString, toggleDropdown, closeDropdown } from '../../../core/utils/uiUtils.js';
 
 class CanvasResizeController {
     constructor() {
@@ -127,7 +127,7 @@ class CanvasResizeController {
             return;
         }
 
-        const dropdownTrigger = e.target.closest('[data-action="toggleDropdown"]');
+        const dropdownTrigger = e.target.closest('[data-action="toggleDropdown"], [data-action="toggleModule"]');
         const sizeScheduledItem = e.target.closest('[data-type="size_scheduled"]');
         const sizeInstantItem = e.target.closest('[data-type="size_instant"]');
         
@@ -136,21 +136,7 @@ class CanvasResizeController {
         
         if (dropdownTrigger) {
             e.preventDefault();
-            const targetId = dropdownTrigger.getAttribute('data-target');
-            const module = this.wrapper.querySelector(`[data-module="${targetId}"]`);
-            if (module) {
-                const isActive = module.classList.contains('active');
-                
-                this.wrapper.querySelectorAll('.component-module--dropdown').forEach(d => {
-                    d.classList.remove('active');
-                    d.classList.add('disabled');
-                });
-                
-                if (!isActive) {
-                    module.classList.remove('disabled');
-                    module.classList.add('active');
-                }
-            }
+            toggleDropdown(dropdownTrigger.getAttribute('data-target'), dropdownTrigger);
             return;
         }
 
@@ -159,6 +145,7 @@ class CanvasResizeController {
             if (!sizeScheduledItem.classList.contains('disabled-interaction') && sizeScheduledItem.getAttribute('data-action') === 'selectValue') {
                 this.handleSizeSelect(sizeScheduledItem, 'scheduled');
             }
+            return;
         }
 
         if (sizeInstantItem) {
@@ -166,25 +153,19 @@ class CanvasResizeController {
             if (!sizeInstantItem.classList.contains('disabled-interaction') && sizeInstantItem.getAttribute('data-action') === 'selectValue') {
                 this.handleSizeSelect(sizeInstantItem, 'instant');
             }
+            return;
         }
-
 
         if (applyNowBtn && !applyNowBtn.classList.contains('disabled-interaction')) {
             e.preventDefault();
             this.confirmResizeNow(applyNowBtn);
+            return;
         }
 
         if (saveScheduledBtn && !saveScheduledBtn.classList.contains('disabled-interaction')) {
             e.preventDefault();
             this.saveScheduledResize(saveScheduledBtn);
-        }
-        
-        if (!dropdownTrigger && !e.target.closest('.component-menu') && !e.target.closest('.component-calendar')) {
-            const activeDropdowns = this.wrapper.querySelectorAll('.component-module--dropdown.active');
-            activeDropdowns.forEach(dropdown => {
-                dropdown.classList.remove('active');
-                dropdown.classList.add('disabled');
-            });
+            return;
         }
     }
 
@@ -194,11 +175,7 @@ class CanvasResizeController {
         }
 
         const moduleName = context === 'scheduled' ? 'dropdownSizeScheduled' : 'dropdownSizeInstant';
-        const dropdown = this.wrapper.querySelector(`[data-module="${moduleName}"]`);
-        if (dropdown) {
-            dropdown.classList.remove('active');
-            dropdown.classList.add('disabled');
-        }
+        closeDropdown(this.wrapper.querySelector(`[data-module="${moduleName}"]`));
 
         const value = btn.getAttribute('data-value');
         const label = btn.getAttribute('data-label');

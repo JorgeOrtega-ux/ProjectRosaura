@@ -40,7 +40,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                         <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--compact">
+                                <div class="component-menu-list">
                                     <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterType">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">category</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('filter_purchase_type'); ?></span></div>
@@ -64,7 +64,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                         <span class="component-menu-header-title"><?php echo __('filter_purchase_type'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                <div class="component-menu-list component-menu-list--scrollable">
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input class="filter-radio" data-filter-type="type" data-value="payments_all" type="radio" name="purchase_type_filter" value="payments_all" checked></div>
                                         <div class="component-menu-link-text"><span><?php echo __('type_all_payments'); ?></span></div>
@@ -94,7 +94,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                         <span class="component-menu-header-title"><?php echo __('filter_purchase_status'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                <div class="component-menu-list component-menu-list--scrollable">
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input class="filter-checkbox" data-filter-type="status" data-value="all" type="checkbox" value="all" checked></div>
                                         <div class="component-menu-link-text"><span><?php echo __('status_all'); ?></span></div>

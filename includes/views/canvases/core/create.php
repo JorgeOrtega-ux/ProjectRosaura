@@ -87,7 +87,7 @@ extract($createData);
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
                                     <div class="component-dropdown-wrapper" data-dropdown-type="multiple" data-max="8">
-                                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownTags">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownTags">
                                             <span class="material-symbols-rounded">label</span>
                                             <span class="component-dropdown-text" data-ref="text-tags"><?php echo __('ph_select_tags'); ?></span>
                                             <span class="material-symbols-rounded">expand_more</span>
@@ -152,7 +152,7 @@ extract($createData);
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownSize">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownSize">
                                     <span class="material-symbols-rounded"><?php echo htmlspecialchars($defaultSizeData['icon']); ?></span>
                                     <span class="component-dropdown-text" data-ref="text-size"><?php echo htmlspecialchars($defaultSizeData['label']); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
@@ -241,7 +241,7 @@ extract($createData);
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
                                     <div class="component-dropdown-wrapper">
-                                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownTemplate" data-ref="template_dropdown_trigger">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownTemplate" data-ref="template_dropdown_trigger">
                                             <span class="material-symbols-rounded">crop_free</span>
                                             <span class="component-dropdown-text" data-ref="text-template"><?php echo __('lbl_select_template'); ?></span>
                                             <span class="material-symbols-rounded">expand_more</span>
@@ -268,7 +268,7 @@ extract($createData);
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownPrivacy">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownPrivacy">
                                     <span class="material-symbols-rounded">lock</span>
                                     <span class="component-dropdown-text" data-ref="text-privacy"><?php echo __('canvas_privacy_private'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
@@ -301,7 +301,7 @@ extract($createData);
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownApproval">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownApproval">
                                     <span class="material-symbols-rounded" data-ref="icon-approval">no_accounts</span>
                                     <span class="component-dropdown-text" data-ref="text-approval"><?php echo __('canvas_approval_false'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
@@ -454,7 +454,7 @@ extract($createData);
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownPalette">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownPalette">
                                     <span class="material-symbols-rounded" data-ref="icon-palette">palette</span>
                                     <span class="component-dropdown-text" data-ref="text-palette"><?php echo __('lbl_loading'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>

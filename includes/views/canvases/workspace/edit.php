@@ -94,7 +94,7 @@ extract($editData);
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
                                     <div class="component-dropdown-wrapper" data-dropdown-type="multiple" data-max="8">
-                                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownTags">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownTags">
                                             <span class="material-symbols-rounded">label</span>
                                             <span class="component-dropdown-text" data-ref="text-tags">
                                                 <?php echo count($cTags) > 0 ? count($cTags) . ' seleccionadas' : __('ph_select_tags'); ?>
@@ -174,7 +174,7 @@ extract($editData);
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownPrivacy">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownPrivacy">
                                     <span class="material-symbols-rounded" data-ref="icon-privacy"><?php echo $cPrivacy === 'public' ? 'public' : 'lock'; ?></span>
                                     <span class="component-dropdown-text" data-ref="text-privacy"><?php echo $cPrivacy === 'public' ? __('canvas_privacy_public') : __('canvas_privacy_private'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
@@ -207,7 +207,7 @@ extract($editData);
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownApproval">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownApproval">
                                     <span class="material-symbols-rounded" data-ref="icon-approval"><?php echo $cApproval ? 'front_hand' : 'no_accounts'; ?></span>
                                     <span class="component-dropdown-text" data-ref="text-approval"><?php echo $cApproval ? __('canvas_approval_true') : __('canvas_approval_false'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
@@ -360,7 +360,7 @@ extract($editData);
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownPalette">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownPalette">
                                     <span class="material-symbols-rounded" data-ref="icon-palette">palette</span>
                                     <span class="component-dropdown-text" data-ref="text-palette" data-current-palette="<?php echo htmlspecialchars($cPalette); ?>"><?php echo ucfirst($cPalette); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>

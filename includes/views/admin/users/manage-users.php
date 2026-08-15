@@ -76,7 +76,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                         <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--compact">
+                                <div class="component-menu-list">
                                     <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterRoles">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">admin_panel_settings</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('filter_role'); ?></span></div>
@@ -100,7 +100,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                         <span class="component-menu-header-title"><?php echo __('filter_by_role'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                <div class="component-menu-list component-menu-list--scrollable">
                                     <?php 
                                     $checkedRoles = empty($rolesFilter) ? array_column($allRoles, 'id') : $rolesFilter;
                                     foreach ($allRoles as $r): 
@@ -124,7 +124,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                         <span class="component-menu-header-title"><?php echo __('filter_by_status'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                <div class="component-menu-list component-menu-list--scrollable">
                                     <?php 
                                     $checkedStatuses = empty($statusFilter) ? ['active', 'suspended', 'deleted'] : $statusFilter;
                                     ?>

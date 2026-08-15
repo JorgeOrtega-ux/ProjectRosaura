@@ -44,7 +44,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
                                     <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
                                 </div>
                             </div>
-                            <div class="component-menu-list component-menu-list--compact">
+                            <div class="component-menu-list">
                                 <?php 
                                 $checkedCategories = empty($categoryFilter) ? ['moderation', 'role', 'profile'] : $categoryFilter;
                                 ?>

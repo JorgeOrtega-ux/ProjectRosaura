@@ -327,7 +327,7 @@ export class MainController {
         
         if (btn) {
             const action = btn.getAttribute('data-action');
-            if (action === 'toggleModule') {
+            if (action === 'toggleModule' || action === 'toggleDropdown') {
                 this.toggleModule(btn.getAttribute('data-target'), btn);
                 return;
             }

@@ -46,7 +46,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                         <span class="component-menu-header-title"><?php echo __('lbl_visibility', [], 'Visibilidad'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--compact">
+                                <div class="component-menu-list">
                                     <div class="component-menu-link component-menu-link--bordered" data-action="changeMessageVisibility" data-value="visible" data-ref="vis-option-visible">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">check_circle</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('msg_visibility_visible', [], 'Visible'); ?></span></div>
@@ -88,7 +88,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                         <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--compact">
+                                <div class="component-menu-list">
                                     <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterType">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">chat</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('filter_type'); ?></span></div>
@@ -112,7 +112,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                         <span class="component-menu-header-title"><?php echo __('filter_by_type'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                <div class="component-menu-list component-menu-list--scrollable">
                                     <a class="component-menu-link component-menu-link--bordered <?php echo $filter === 'all' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, 'all', $sort, $searchQuery); ?>">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">chat</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('filter_all'); ?></span></div>
@@ -134,7 +134,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                         <span class="component-menu-header-title"><?php echo __('filter_by_sort'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                <div class="component-menu-list component-menu-list--scrollable">
                                     <a class="component-menu-link component-menu-link--bordered <?php echo $sort === 'recent' ? 'active' : ''; ?>" data-nav="<?php echo buildMessagesUrl($appUrl, 1, $filter, 'recent', $searchQuery); ?>">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('sort_recent'); ?></span></div>

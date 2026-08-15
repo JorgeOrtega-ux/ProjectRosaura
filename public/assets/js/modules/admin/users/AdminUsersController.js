@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick, toggleDropdown } from '../../../core/utils/uiUtils.js';
 import { AdminModalTemplates } from '../AdminModalTemplates.js';
 class AdminUsersController {
     constructor() {
@@ -316,12 +316,10 @@ class AdminUsersController {
         }
     }
     toggleFiltersModule() {
-        if (window.appInstance) {
-            window.appInstance.toggleModule('moduleUserFilters');
-            const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
-            if (filtersModule && !filtersModule.classList.contains('disabled')) {
-                this.backToMainFilters(); 
-            }
+        toggleDropdown('moduleUserFilters');
+        const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
+        if (filtersModule && !filtersModule.classList.contains('disabled')) {
+            this.backToMainFilters(); 
         }
     }
     handleUserSelection(rowElement) {

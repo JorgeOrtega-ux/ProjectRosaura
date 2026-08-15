@@ -368,7 +368,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         </div>
     </div>
     
-    <script src="<?php echo $appPath; ?>/assets/js/core/utils/ui-engine.min.js?v=<?php echo file_exists(ROOT_PATH . '/public/assets/js/core/utils/ui-engine.min.js') ? filemtime(ROOT_PATH . '/public/assets/js/core/utils/ui-engine.min.js') : '1.0'; ?>"></script>
+    <script src="<?php echo $appPath; ?>/assets/js/core/utils/ui-engine.js?v=<?php echo file_exists(ROOT_PATH . '/public/assets/js/core/utils/ui-engine.js') ? filemtime(ROOT_PATH . '/public/assets/js/core/utils/ui-engine.js') : '1.0'; ?>"></script>
     <script type="module" src="<?php echo $appPath; ?>/assets/js/AppInit.js?v=<?php echo file_exists(ROOT_PATH . '/public/assets/js/AppInit.js') ? filemtime(ROOT_PATH . '/public/assets/js/AppInit.js') : '1.0'; ?>"></script>
 </body>
 </html>

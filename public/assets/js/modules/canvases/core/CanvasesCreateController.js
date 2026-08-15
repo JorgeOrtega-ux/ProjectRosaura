@@ -1,7 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
-import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes, toggleDropdown, closeDropdown } from '../../../core/utils/uiUtils.js';
 
 
 class CanvasesCreateController {
@@ -241,11 +241,7 @@ class CanvasesCreateController {
                 triggerText.textContent = label || __('lbl_select_template');
             }
             
-            const dropdownModule = actionBtn.closest('.component-module--dropdown');
-            if (dropdownModule) {
-                dropdownModule.classList.remove('active');
-                dropdownModule.classList.add('disabled');
-            }
+            closeDropdown(actionBtn.closest('.component-module--dropdown'));
             
             const hiddenInput = document.querySelector('[data-ref="canvas_template_id"]');
             if (hiddenInput) {
@@ -255,7 +251,7 @@ class CanvasesCreateController {
             return;
         }
 
-        if (action === 'toggleDropdown') {
+        if (action === 'toggleDropdown' || action === 'toggleModule') {
             this.toggleDropdown(actionBtn);
         } else if (action === 'selectValue') {
             this.selectDropdownValue(actionBtn);
@@ -384,26 +380,7 @@ class CanvasesCreateController {
 
     toggleDropdown(triggerBtn) {
         if (triggerBtn.classList.contains('disabled-interaction')) return;
-        
-        const targetId = triggerBtn.getAttribute('data-target');
-        const targetDropdown = document.querySelector(`[data-module="${targetId}"]`);
-        
-        document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
-            if (el !== targetDropdown) {
-                el.classList.remove('active');
-                el.classList.add('disabled');
-            }
-        });
-
-        if (targetDropdown) {
-            if (targetDropdown.classList.contains('disabled')) {
-                targetDropdown.classList.remove('disabled');
-                targetDropdown.classList.add('active');
-            } else {
-                targetDropdown.classList.remove('active');
-                targetDropdown.classList.add('disabled');
-            }
-        }
+        toggleDropdown(triggerBtn.getAttribute('data-target'), triggerBtn);
     }
 
     selectDropdownValue(optionBtn) {
@@ -436,11 +413,7 @@ class CanvasesCreateController {
                 if (triggerIcon) triggerIcon.textContent = icon;
             }
 
-            const module = dropdownWrapper.querySelector('.component-module--dropdown');
-            if (module) {
-                module.classList.remove('active');
-                module.classList.add('disabled');
-            }
+            closeDropdown(dropdownWrapper.querySelector('.component-module--dropdown'));
         }
     }
 
@@ -459,11 +432,7 @@ class CanvasesCreateController {
             const triggerText = dropdownWrapper.querySelector('[data-ref="text-palette"]');
             if (triggerText) triggerText.textContent = paletteName;
 
-            const dropdownModule = dropdownWrapper.querySelector('.component-module--dropdown');
-            if(dropdownModule) {
-                dropdownModule.classList.remove('active');
-                dropdownModule.classList.add('disabled');
-            }
+            closeDropdown(dropdownWrapper.querySelector('.component-module--dropdown'));
         }
     }
 

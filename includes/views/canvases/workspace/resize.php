@@ -76,7 +76,7 @@ $currentCanvasTier = (int)($sizesList[$currentSizeRaw]['tier'] ?? 0);
                             </div>
                             <div class="component-card__actions component-card__actions--start component-card__actions--column">
                                 <div class="component-dropdown-wrapper">
-                                    <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownSizeInstant">
+                                    <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownSizeInstant">
                                         <span class="material-symbols-rounded" data-ref="instant-resize-icon"><?php echo htmlspecialchars($instantMeta['icon']); ?></span>
                                         <span class="component-dropdown-text" data-ref="text-size-instant"><?php echo htmlspecialchars($instantMeta['label']); ?></span>
                                         <span class="material-symbols-rounded">expand_more</span>
@@ -198,7 +198,7 @@ $currentCanvasTier = (int)($sizesList[$currentSizeRaw]['tier'] ?? 0);
                                 </div>
                                 <div class="component-card__actions component-card__actions--start component-card__actions--column">
                                     <div class="component-dropdown-wrapper">
-                                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownSizeScheduled">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownSizeScheduled">
                                             <span class="material-symbols-rounded" data-ref="scheduled-resize-icon"><?php echo htmlspecialchars($scheduledMeta['icon']); ?></span>
                                             <span class="component-dropdown-text" data-ref="text-size-scheduled"><?php echo htmlspecialchars($scheduledMeta['label']); ?></span>
                                             <span class="material-symbols-rounded">expand_more</span>

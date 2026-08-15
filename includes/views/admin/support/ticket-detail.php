@@ -67,7 +67,7 @@ $dynamicClass = ($subColorCSS && $subColorCSS !== 'transparent') ? 'subscription
                                 <span class="component-menu-header-title"><?php echo __('lbl_change_status'); ?></span>
                             </div>
                         </div>
-                        <div class="component-menu-list component-menu-list--compact">
+                        <div class="component-menu-list">
                             <div class="component-menu-link <?php echo $ticket['status'] === 'open' ? 'active' : ''; ?>" data-action="updateTicketStatusAction" data-status="open">
                                 <div class="component-menu-link-text"><span><?php echo __('lbl_status_open'); ?></span></div>
                             </div>

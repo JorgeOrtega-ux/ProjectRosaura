@@ -61,7 +61,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                                         <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--compact">
+                                <div class="component-menu-list">
                                     <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterType">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">settings</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('filter_backup_type'); ?></span></div>
@@ -85,7 +85,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                                         <span class="component-menu-header-title"><?php echo __('filter_by_type'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                <div class="component-menu-list component-menu-list--scrollable">
                                     <?php 
                                     $checkedTypes = empty($typesFilter) ? ['manual', 'auto'] : $typesFilter;
                                     ?>
@@ -110,7 +110,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                                         <span class="component-menu-header-title"><?php echo __('filter_by_status'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                <div class="component-menu-list component-menu-list--scrollable">
                                     <?php 
                                     $checkedStatuses = empty($statusFilter) ? ['success', 'failed'] : $statusFilter;
                                     ?>

@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick, toggleDropdown } from '../../../core/utils/uiUtils.js';
 class AdminLogsController {
     constructor() {
         this.selectedLogs = new Set();
@@ -198,12 +198,10 @@ class AdminLogsController {
         }
     }
     toggleFiltersModule() {
-        if (window.appInstance) {
-            window.appInstance.toggleModule('moduleLogFilters');
-            const filtersModule = document.querySelector('[data-module="moduleLogFilters"]');
-            if (filtersModule && !filtersModule.classList.contains('disabled')) {
-                this.backToMainFilters(); 
-            }
+        toggleDropdown('moduleLogFilters');
+        const filtersModule = document.querySelector('[data-module="moduleLogFilters"]');
+        if (filtersModule && !filtersModule.classList.contains('disabled')) {
+            this.backToMainFilters(); 
         }
     }
     handleLogSelection(target) {

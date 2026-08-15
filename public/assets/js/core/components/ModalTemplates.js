@@ -2073,7 +2073,7 @@ export const ModalTemplates = {
                     
                     <div class="component-modal-body">
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                            <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleDropdown" data-target="moduleSupportTicketCategory">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleModule" data-target="moduleSupportTicketCategory">
                                 <div class="component-dropdown-trigger-title">
                                     <span class="material-symbols-rounded" data-ref="modal_ticket_cat_icon">bug_report</span>
                                     <span class="component-dropdown-text" data-ref="modal_ticket_cat_text">${__('support_cat_technical')}</span>
@@ -2084,7 +2084,7 @@ export const ModalTemplates = {
                             <div class="component-module component-module--dropdown disabled" data-module="moduleSupportTicketCategory">
                                 <div class="component-menu component-menu--w-full component-menu--h-auto active" data-ref="menuSupportTicketCategory">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list component-menu-list--compact">
+                                    <div class="component-menu-list">
                                         <div class="component-menu-link active" data-action="selectModalTicketCategory" data-val="technical" data-icon="bug_report">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">bug_report</span></div>
                                             <div class="component-menu-link-text"><span>${__('support_cat_technical')}</span></div>
@@ -2171,7 +2171,7 @@ export const ModalTemplates = {
                     
                     <div class="component-modal-body">
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                            <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleDropdown" data-target="moduleLiveChatCategory">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleModule" data-target="moduleLiveChatCategory">
                                 <div class="component-dropdown-trigger-title">
                                     <span class="material-symbols-rounded" data-ref="modal_live_cat_icon">bug_report</span>
                                     <span class="component-dropdown-text" data-ref="modal_live_cat_text">${__('support_cat_technical')}</span>
@@ -2182,7 +2182,7 @@ export const ModalTemplates = {
                             <div class="component-module component-module--dropdown disabled" data-module="moduleLiveChatCategory">
                                 <div class="component-menu component-menu--w-full component-menu--h-auto active" data-ref="menuLiveChatCategory">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list component-menu-list--compact">
+                                    <div class="component-menu-list">
                                         <div class="component-menu-link active" data-action="selectModalLiveCategory" data-val="technical" data-icon="bug_report">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">bug_report</span></div>
                                             <div class="component-menu-link-text"><span>${__('support_cat_technical')}</span></div>

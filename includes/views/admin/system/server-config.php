@@ -93,7 +93,7 @@ extract($serverConfigData);
                                                 <div class="component-module component-module--dropdown disabled" data-module="moduleAllowedDomains">
                                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                                         <div class="pill-container"><div class="drag-handle"></div></div>
-                                                        <div class="component-menu-list component-menu-list--compact" data-ref="list_allowed_domains">
+                                                        <div class="component-menu-list" data-ref="list_allowed_domains">
                                                             <label class="component-menu-link component-menu-link--bordered">
                                                                 <div class="component-menu-link-icon"><input type="checkbox" class="domain-checkbox" data-action="toggleDomain" value="gmail.com"></div>
                                                                 <div class="component-menu-link-text"><span>gmail.com</span></div>

@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, catchPaginationClick } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, catchPaginationClick, closeAllDropdowns } from '../../../core/utils/uiUtils.js';
 
 class CanvasesManageController {
     constructor() {
@@ -258,10 +258,7 @@ class CanvasesManageController {
         const canvasId = Array.from(this.selectedCanvasIds)[0];
         setButtonLoading(btn);
 
-        document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
-            el.classList.remove('active');
-            el.classList.add('disabled');
-        });
+        closeAllDropdowns();
 
         try {
             const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.CreateSnapshot) ? ApiRoutes.Canvases.CreateSnapshot : 'canvases.create_snapshot';
@@ -276,8 +273,9 @@ class CanvasesManageController {
                 showMessage(result.message, 'error');
             }
         } catch (error) {
-            if (error.name === 'AbortError') return;
-            showMessage(window.__('general_save_network_error'), 'error');
+            if (error.name !== 'AbortError') {
+                showMessage(window.__('err_failed_to_process') || 'Error al procesar la solicitud', 'error');
+            }
         } finally {
             restoreButton(btn);
         }
@@ -343,10 +341,7 @@ class CanvasesManageController {
         this.selectedCanvasUuid = null;
         this.currentCanvasSize = null;
         document.querySelectorAll('[data-action="selectCanvas"]').forEach(el => el.classList.remove('selected'));
-        document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
-            el.classList.remove('active');
-            el.classList.add('disabled');
-        });
+        closeAllDropdowns();
         this.updateSelectionUI();
     }
 

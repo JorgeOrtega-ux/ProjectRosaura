@@ -216,7 +216,7 @@ Utilizado para expandir/contraer ajustes o detalles.
 
 ## Estandarización de Módulos y Menús Desplegables (Dropdowns)
 
-Todos los menús desplegables del proyecto siguen una arquitectura unificada gestionada de forma automática por `ModuleManager.js` y el motor de posicionamiento dinámico `UiEngine` (Popper.js):
+Todos los menús desplegables del proyecto siguen una arquitectura unificada gestionada de forma automática por `ModuleManager.js` y el motor de posicionamiento dinámico `UiEngine` (`ui-engine.js`):
 
 ### 1. Reglas de Posicionamiento y Responsive
 * **Desktop (> 768px)**: El posicionamiento es gestionado exclusivamente de forma dinámica por `UiEngine` (`ModuleManager._attachEngine`), con prevención de colisiones (`preventOverflow`) y auto-volteado inteligente (`flip`).

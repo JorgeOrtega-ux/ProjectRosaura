@@ -26,7 +26,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--compact">
+                                <div class="component-menu-list">
                                     <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterType">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">category</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('filter_purchase_type'); ?></span></div>
@@ -50,7 +50,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         <span class="component-menu-header-title"><?php echo __('filter_purchase_type'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                <div class="component-menu-list component-menu-list--scrollable">
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input type="radio" name="purchase_type_filter" class="filter-radio" data-filter-type="type" value="payments_all" checked></div>
                                         <div class="component-menu-link-text"><span><?php echo __('type_all_payments'); ?></span></div>
@@ -80,7 +80,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         <span class="component-menu-header-title"><?php echo __('filter_purchase_status'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                <div class="component-menu-list component-menu-list--scrollable">
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="status" value="all" checked></div>
                                         <div class="component-menu-link-text"><span><?php echo __('status_all'); ?></span></div>

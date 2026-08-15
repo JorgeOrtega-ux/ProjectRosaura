@@ -46,7 +46,7 @@ extract($ticketsData);
                                         <span class="component-menu-header-title"><?php echo __('lbl_status'); ?></span>
                                     </div>
                                 </div>
-                                <div class="component-menu-list component-menu-list--compact">
+                                <div class="component-menu-list">
                                     <div class="component-menu-link <?php echo empty($statusFilter) ? 'active' : ''; ?>" data-action="filterTicketStatus" data-status="">
                                         <div class="component-menu-link-text"><span><?php echo __('lbl_all_statuses'); ?></span></div>
                                     </div>

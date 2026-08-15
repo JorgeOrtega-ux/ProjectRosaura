@@ -1,7 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
-import { showMessage, setButtonLoading, restoreButton, localInputFormatToUtcString } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, localInputFormatToUtcString, toggleDropdown, closeDropdown } from '../../../core/utils/uiUtils.js';
 
 class CanvasResetController {
     constructor() {
@@ -133,39 +133,17 @@ class CanvasResetController {
             return;
         }
 
-        const btnDropdown = e.target.closest('[data-action="toggleDropdown"]');
+        const btnDropdown = e.target.closest('[data-action="toggleDropdown"], [data-action="toggleModule"]');
         if (btnDropdown) {
             e.preventDefault();
             this.toggleDropdown(btnDropdown);
             return;
         }
-
-        if (!btnDropdown && !e.target.closest('.component-menu') && !e.target.closest('.component-calendar')) {
-            const activeDropdowns = this.wrapper.querySelectorAll('.component-module--dropdown.active');
-            activeDropdowns.forEach(dropdown => {
-                dropdown.classList.remove('active');
-                dropdown.classList.add('disabled');
-            });
-        }
     }
 
     toggleDropdown(btn) {
-        const targetId = btn.getAttribute('data-target');
-        const dropdown = this.wrapper.querySelector(`[data-module="${targetId}"]`);
-        
-        if (dropdown) {
-            const isActive = dropdown.classList.contains('active');
-            
-            this.wrapper.querySelectorAll('.component-module--dropdown').forEach(d => {
-                d.classList.remove('active');
-                d.classList.add('disabled');
-            });
-            
-            if (!isActive) {
-                dropdown.classList.remove('disabled');
-                dropdown.classList.add('active');
-            }
-        }
+        if (!btn || btn.classList.contains('disabled-interaction')) return;
+        toggleDropdown(btn.getAttribute('data-target'), btn);
     }
 
     handleToggleChange(e) {
@@ -191,6 +169,8 @@ class CanvasResetController {
             });
         }
         element.classList.add('active');
+
+        closeDropdown(element.closest('.component-module--dropdown'));
     }
 
     updateOptionsContainerState(isActive) {

@@ -1,5 +1,5 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { catchPaginationClick, debounce } from '../../../core/utils/uiUtils.js';
+import { catchPaginationClick, debounce, toggleDropdown } from '../../../core/utils/uiUtils.js';
 
 class AdminBackupsController {
     constructor() {
@@ -220,12 +220,10 @@ class AdminBackupsController {
     }
 
     toggleFiltersModule() {
-        if (window.appInstance) {
-            window.appInstance.toggleModule('moduleBackupFilters');
-            const filtersModule = document.querySelector('[data-module="moduleBackupFilters"]');
-            if (filtersModule && !filtersModule.classList.contains('disabled')) {
-                this.backToMainFilters(); 
-            }
+        toggleDropdown('moduleBackupFilters');
+        const filtersModule = document.querySelector('[data-module="moduleBackupFilters"]');
+        if (filtersModule && !filtersModule.classList.contains('disabled')) {
+            this.backToMainFilters(); 
         }
     }
 

@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage } from '../../../core/utils/uiUtils.js';
+import { showMessage, closeAllDropdowns } from '../../../core/utils/uiUtils.js';
 
 class CanvasSnapshotsGalleryController {
     constructor() {
@@ -96,10 +96,7 @@ class CanvasSnapshotsGalleryController {
     }
 
     closeDropdowns() {
-        document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
-            el.classList.remove('active');
-            el.classList.add('disabled');
-        });
+        closeAllDropdowns();
     }
 
     async togglePrivacy(btn) {

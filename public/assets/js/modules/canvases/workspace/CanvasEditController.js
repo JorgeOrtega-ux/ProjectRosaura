@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes, toggleDropdown, closeDropdown } from '../../../core/utils/uiUtils.js';
 
 
 class CanvasEditController {
@@ -193,11 +193,7 @@ class CanvasEditController {
                 triggerText.setAttribute('data-current-palette', this.state.palette_id);
             }
 
-            const dropdownModule = dropdownWrapper.querySelector('.component-module--dropdown');
-            if(dropdownModule) {
-                dropdownModule.classList.remove('active');
-                dropdownModule.classList.add('disabled');
-            }
+            closeDropdown(dropdownWrapper.querySelector('.component-module--dropdown'));
         }
     }
 
@@ -213,22 +209,8 @@ class CanvasEditController {
     }
 
     toggleDropdown(btn) {
-        const targetId = btn.getAttribute('data-target');
-        const dropdown = this.container.querySelector(`[data-module="${targetId}"]`);
-        
-        if (dropdown) {
-            const isActive = dropdown.classList.contains('active');
-            
-            this.container.querySelectorAll('.component-module--dropdown').forEach(d => {
-                d.classList.remove('active');
-                d.classList.add('disabled');
-            });
-            
-            if (!isActive) {
-                dropdown.classList.remove('disabled');
-                dropdown.classList.add('active');
-            }
-        }
+        if (!btn || btn.classList.contains('disabled-interaction')) return;
+        toggleDropdown(btn.getAttribute('data-target'), btn);
     }
 
     toggleTag(btn) {
@@ -238,30 +220,29 @@ class CanvasEditController {
         
         if (isSelected) {
             this.state.tags = this.state.tags.filter(t => t !== val);
-            btn.classList.remove('active');
-            const icon = btn.querySelector('[data-ref="icon-check"]');
-            if (icon) icon.textContent = 'check_box_outline_blank';
         } else {
             if (this.state.tags.length >= 8) {
-                showMessage(window.__('msg_max_tags'), 'warning');
+                if (window.appInstance && window.appInstance.showToast) {
+                    window.appInstance.showToast('Máximo 8 etiquetas permitidas', 'warning');
+                }
                 return;
             }
             this.state.tags.push(val);
-            btn.classList.add('active');
-            const icon = btn.querySelector('[data-ref="icon-check"]');
-            if (icon) icon.textContent = 'check_box';
         }
 
-        const triggerWrapper = btn.closest('.component-dropdown-wrapper');
-        if (triggerWrapper) {
-            const textRef = triggerWrapper.querySelector('[data-ref="text-tags"]');
-            if (textRef) {
-                if (this.state.tags.length > 0) {
-                    textRef.textContent = `${this.state.tags.length} seleccionadas`;
-                } else {
-                    textRef.textContent = window.__('ph_select_tags');
-                }
-            }
+        const iconRef = btn.querySelector('[data-ref="icon-check"]');
+        if (iconRef) {
+            iconRef.textContent = isSelected ? 'check_box_outline_blank' : 'check_box';
+        }
+        btn.classList.toggle('active', !isSelected);
+        this.updateTagsTriggerText();
+    }
+
+    updateTagsTriggerText() {
+        const textRef = this.container.querySelector('[data-ref="text-tags"]');
+        if (textRef) {
+            const count = this.state.tags.length;
+            textRef.textContent = count === 0 ? window.__('ph_select_tags') : `${count} seleccionadas`;
         }
     }
 
@@ -280,8 +261,8 @@ class CanvasEditController {
                 const textRef = dropdownWrapper.querySelector('[data-ref="text-privacy"]');
                 const iconRef = dropdownWrapper.querySelector('[data-ref="icon-privacy"]');
                 
-                if(textRef) textRef.textContent = window.__(label);
-                if(iconRef) iconRef.textContent = icon;
+                if (textRef) textRef.textContent = window.__(label);
+                if (iconRef) iconRef.textContent = icon;
                 
                 const menu = btn.closest('.component-menu-list');
                 if (menu) {
@@ -289,11 +270,7 @@ class CanvasEditController {
                     btn.classList.add('active');
                 }
 
-                const dropdownModule = dropdownWrapper.querySelector('.component-module--dropdown');
-                if(dropdownModule) {
-                    dropdownModule.classList.remove('active');
-                    dropdownModule.classList.add('disabled');
-                }
+                closeDropdown(dropdownWrapper.querySelector('.component-module--dropdown'));
             }
         }
     }
