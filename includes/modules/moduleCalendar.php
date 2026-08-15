@@ -1,7 +1,7 @@
 <?php
 $calendarModuleId = $calendarModuleId ?? 'adminModuleCalendar';
 ?>
-<div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="<?php echo htmlspecialchars($calendarModuleId); ?>">
+<div class="component-module component-module--dropdown disabled" data-module="<?php echo htmlspecialchars($calendarModuleId); ?>">
     <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
         <div class="pill-container"><div class="drag-handle"></div></div>
         

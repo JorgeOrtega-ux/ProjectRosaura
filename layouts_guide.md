@@ -214,6 +214,86 @@ Utilizado para expandir/contraer ajustes o detalles.
 
 ---
 
+## Estandarización de Módulos y Menús Desplegables (Dropdowns)
+
+Todos los menús desplegables del proyecto siguen una arquitectura unificada gestionada de forma automática por `ModuleManager.js` y el motor de posicionamiento dinámico `UiEngine` (Popper.js):
+
+### 1. Reglas de Posicionamiento y Responsive
+* **Desktop (> 768px)**: El posicionamiento es gestionado exclusivamente de forma dinámica por `UiEngine` (`ModuleManager._attachEngine`), con prevención de colisiones (`preventOverflow`) y auto-volteado inteligente (`flip`).
+  * **Prohibido**: No se deben usar clases estáticas de orientación como `.component-module--dropdown-left`, `.component-module--dropdown-right`, `.component-module--dropdown-top` o `.component-module--dropdown-bottom`.
+  * **Ubicación preferida opcional**: Se define en el botón disparador mediante `data-position="top"` o `data-position="bottom"`.
+* **Mobile (<= 768px)**: `UiEngine` se desvincula por completo (`_detachEngine`) y se limpian todos los estilos inline (`top`, `left`, `transform`, etc.). El menú pasa a ser un **Bottom-Sheet** fijo con gestos táctiles de arrastre hacia abajo para cerrar (`.pill-container` > `.drag-handle`).
+
+---
+
+### 2. Tipos de Dropdowns y Regla de Oro de Padding y Listas
+
+> [!IMPORTANT]
+> **Regla de Padding (`component-menu--no-padding`) y Scroll (`component-menu-list--scrollable`)**:
+> - **Categoría 1 (Con Encabezado/Buscador)**: Requiere `component-menu--no-padding` en `.component-menu` y `.component-menu-list--scrollable` en la lista interna para que el buscador/título quede fijo arriba y solo la lista desplace con su propio padding de 8px.
+> - **Categoría 2 (Dropdowns Simples de Selección/Acciones)**: **NUNCA** deben llevar `component-menu--no-padding` ni `component-menu-list--scrollable`. El scroll y el padding de 8px son manejados limpiamente por el contenedor padre `.component-menu` (o `.component-menu--limited`), y la lista interna debe ser simplemente `<div class="component-menu-list">` para evitar barras de desplazamiento dobles.
+> - **Categoría 3 (Calendarios)**: Conserva `component-menu--no-padding` ya que `.component-calendar` implementa su propio layout de rejilla.
+
+#### A. Menú Desplegable Simple (Selección, Enlaces y Acciones)
+```html
+<div class="component-dropdown-wrapper">
+    <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleSimple">
+        <span class="material-symbols-rounded">settings</span>
+        <span class="component-dropdown-text">Opción Seleccionada</span>
+        <span class="material-symbols-rounded">expand_more</span>
+    </div>
+    <div class="component-module component-module--dropdown disabled" data-module="moduleSimple">
+        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-menu-list">
+                <div class="component-menu-link active" data-action="selectOption" data-value="1">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">check</span></div>
+                    <div class="component-menu-link-text"><span>Opción 1</span></div>
+                </div>
+                <div class="component-menu-link" data-action="selectOption" data-value="2">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">star</span></div>
+                    <div class="component-menu-link-text"><span>Opción 2</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+#### B. Menú Desplegable con Encabezado / Barra de Búsqueda
+```html
+<div class="component-dropdown-wrapper">
+    <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleWithSearch">
+        <span class="material-symbols-rounded">language</span>
+        <span class="component-dropdown-text">Español</span>
+        <span class="material-symbols-rounded">expand_more</span>
+    </div>
+    <div class="component-module component-module--dropdown disabled" data-module="moduleWithSearch">
+        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-menu-header">
+                <div class="component-search component-search--full component-search--h36">
+                    <div class="component-search-icon">
+                        <span class="material-symbols-rounded">search</span>
+                    </div>
+                    <div class="component-search-input">
+                        <input type="text" data-ref="search-input" placeholder="Buscar idioma...">
+                    </div>
+                </div>
+            </div>
+            <div class="component-menu-list component-menu-list--scrollable" data-ref="items-list">
+                <div class="component-menu-link active" data-action="selectItem" data-value="es">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
+                    <div class="component-menu-link-text"><span>Español</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+---
+
 ## Solución al Bug de Scroll y Padding Colapsado
 
 > [!NOTE]

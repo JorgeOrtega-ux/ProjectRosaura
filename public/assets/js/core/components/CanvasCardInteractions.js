@@ -361,22 +361,24 @@ export class CanvasCardInteractions {
     }
 
     closeDropdowns() {
-        document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
-            el.classList.remove('active');
-            el.classList.add('disabled');
+        if (window.appInstance && window.appInstance.moduleManager) {
+            window.appInstance.moduleManager.closeAllModules();
+        } else {
+            document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
+                el.classList.remove('active');
+                el.classList.add('disabled');
 
-            // Reset internal menu page to main if it exists
-            const mainPage = el.querySelector('[data-menu-page="main"]');
-            if (mainPage) {
-                el.querySelectorAll('.component-menu-page').forEach(p => p.classList.remove('active'));
-                mainPage.classList.add('active');
-            }
+                const mainPage = el.querySelector('[data-menu-page="main"]');
+                if (mainPage) {
+                    el.querySelectorAll('.component-menu-page').forEach(p => p.classList.remove('active'));
+                    mainPage.classList.add('active');
+                }
 
-            // Remove dynamic card menus from DOM after close animation
-            if (el.dataset.module?.startsWith('snapshot-menu-') || el.closest('.component-gallery-actions-wrapper')) {
-                setTimeout(() => el.remove(), 250);
-            }
-        });
+                if (el.dataset.module?.startsWith('snapshot-menu-') || el.closest('.component-gallery-actions-wrapper')) {
+                    setTimeout(() => el.remove(), 250);
+                }
+            });
+        }
     }
 
     toggleDynamicMenu(btn) {
@@ -488,7 +490,7 @@ export class CanvasCardInteractions {
         }
 
         const html = `
-            <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed active" data-module="snapshot-menu-${id}">
+            <div class="component-module component-module--dropdown disabled" data-module="snapshot-menu-${id}">
                 <div class="component-menu component-menu--w265">
                     <div class="pill-container"><div class="drag-handle"></div></div>
 
@@ -534,11 +536,19 @@ export class CanvasCardInteractions {
             </div>
         `;
 
-        
         this.closeDropdowns();
         wrapper.insertAdjacentHTML('beforeend', html);
         
-        // Let the global app re-init events for this new module if necessary, or just rely on global delegation
+        const newModule = wrapper.querySelector(`[data-module="snapshot-menu-${id}"]`);
+        if (newModule) {
+            if (window.appInstance && window.appInstance.moduleManager) {
+                window.appInstance.moduleManager.open(newModule, btn);
+            } else {
+                newModule.classList.remove('disabled');
+                newModule.classList.add('active');
+            }
+        }
+        
         if (window.app && typeof window.app.initModules === 'function') {
             window.app.initModules(wrapper);
         } else if (window.uiUtils && typeof window.uiUtils.initDropdowns === 'function') {

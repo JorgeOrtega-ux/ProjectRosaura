@@ -82,10 +82,10 @@ $currentCanvasTier = (int)($sizesList[$currentSizeRaw]['tier'] ?? 0);
                                         <span class="material-symbols-rounded">expand_more</span>
                                     </div>
 
-                                    <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownSizeInstant">
-                                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                    <div class="component-module component-module--dropdown disabled" data-module="dropdownSizeInstant">
+                                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                             <div class="pill-container"><div class="drag-handle"></div></div>
-                                            <div class="component-menu-list component-menu-list--scrollable">
+                                            <div class="component-menu-list">
                                                 <?php foreach ($sizesList as $val => $data): 
                                                     $requiredTier = $data['tier'] ?? 0;
                                                     $isTierAllowed = $isOfficial ? false : ($ownerTier >= $requiredTier);
@@ -204,10 +204,10 @@ $currentCanvasTier = (int)($sizesList[$currentSizeRaw]['tier'] ?? 0);
                                             <span class="material-symbols-rounded">expand_more</span>
                                         </div>
 
-                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownSizeScheduled">
-                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="component-module component-module--dropdown disabled" data-module="dropdownSizeScheduled">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                                <div class="component-menu-list component-menu-list--scrollable">
+                                                <div class="component-menu-list">
                                                     <?php foreach ($sizesList as $val => $data): 
                                                         $requiredTier = $data['tier'] ?? 0;
                                                         $isTierAllowed = $isOfficial ? false : ($ownerTier >= $requiredTier);

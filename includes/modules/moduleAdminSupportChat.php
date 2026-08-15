@@ -36,8 +36,8 @@
                         <button class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="adminFloatingChatMoreDropdown" data-tooltip="<?php echo __('btn_options'); ?>" data-position="bottom" type="button">
                             <span class="material-symbols-rounded">more_vert</span>
                         </button>
-                        <div class="component-module component-module--dropdown component-module--dropdown-bottom component-module--dropdown-right component-module--dropdown-fixed chat-dropdown-module disabled" data-module="adminFloatingChatMoreDropdown">
-                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="admin-floating-chat-more-menu">
+                        <div class="component-module component-module--dropdown chat-dropdown-module disabled" data-module="adminFloatingChatMoreDropdown">
+                            <div class="component-menu component-menu--w265 component-menu--h-auto active" data-menu="admin-floating-chat-more-menu">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list">
                                     <div class="component-menu-link" data-action="maximizeAdminFloatingChat">
@@ -95,7 +95,7 @@
                             <button class="component-chat-attach-btn" data-action="toggleModule" data-target="adminFloatingCannedResponsesDropdown" data-tooltip="<?php echo __('lbl_quick_canned'); ?>" data-position="top" type="button">
                                 <span class="material-symbols-rounded">quickreply</span>
                             </button>
-                            <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-right component-module--dropdown-fixed chat-dropdown-module disabled" data-module="adminFloatingCannedResponsesDropdown">
+                            <div class="component-module component-module--dropdown chat-dropdown-module disabled" data-module="adminFloatingCannedResponsesDropdown">
                                 <div class="component-menu component-menu--w320 component-menu--h-auto component-menu--no-padding component-menu--limited active" data-ref="menuFloatingCannedResponses">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-header">

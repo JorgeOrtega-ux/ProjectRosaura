@@ -92,7 +92,7 @@ $isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PAN
                                     </button>
                                 </div>
                                 
-                                <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed disabled" data-module="snapshot-menu-<?php echo $snapshot['id']; ?>">
+                                <div class="component-module component-module--dropdown disabled" data-module="snapshot-menu-<?php echo $snapshot['id']; ?>">
                                     <div class="component-menu component-menu--w265">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list">

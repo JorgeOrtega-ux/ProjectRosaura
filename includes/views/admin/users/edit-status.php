@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Api\Services\Admin\AdminViewService;
 use App\Core\System\DatabaseConstants as DB;
 
@@ -133,10 +133,10 @@ if ($initialState['isSuspended'] === '1') {
                                                     <span class="component-dropdown-text" data-ref="admin-isSuspended-text"><?php echo $displayTexts['isSuspended']; ?></span>
                                                     <span class="material-symbols-rounded">expand_more</span>
                                                 </div>
-                                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspended">
-                                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                                         <div class="component-menu-list component-menu-list--scrollable">
+                                                <div class="component-module component-module--dropdown disabled" data-module="adminModuleSuspended">
+                                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                                         <div class="pill-container"><div class="drag-handle"></div></div>
+                                                         <div class="component-menu-list">
                                                              <div class="component-menu-link <?php echo ($initialState['isSuspended'] === '0') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="isSuspended" data-value="0">
                                                                  <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock_open</span></div>
                                                                  <div class="component-menu-link-text"><span><?php echo __('suspension_none'); ?></span></div>
@@ -168,7 +168,7 @@ if ($initialState['isSuspended'] === '1') {
                                                          <span class="component-dropdown-text" data-ref="admin-suspensionReason-text"><?php echo $displayTexts['suspensionReason']; ?></span>
                                                          <span class="material-symbols-rounded">expand_more</span>
                                                      </div>
-                                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionReason">
+                                                     <div class="component-module component-module--dropdown disabled" data-module="adminModuleSuspensionReason">
                                                          <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                                              <div class="pill-container"><div class="drag-handle"></div></div>
                                                              
@@ -223,10 +223,10 @@ if ($initialState['isSuspended'] === '1') {
                                                          <span class="component-dropdown-text" data-ref="admin-suspendedType-text"><?php echo $displayTexts['suspendedType']; ?></span>
                                                          <span class="material-symbols-rounded">expand_more</span>
                                                      </div>
-                                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspendedType">
-                                                         <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                                     <div class="component-module component-module--dropdown disabled" data-module="adminModuleSuspendedType">
+                                                         <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                                              <div class="pill-container"><div class="drag-handle"></div></div>
-                                                             <div class="component-menu-list component-menu-list--scrollable">
+                                                             <div class="component-menu-list">
                                                                  <div class="component-menu-link <?php echo ($initialState['suspendedType'] === DB::SUSPENSION_TEMP) ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspendedType" data-value="<?php echo DB::SUSPENSION_TEMP; ?>">
                                                                      <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
                                                                      <div class="component-menu-link-text"><span><?php echo __('suspension_temp'); ?></span></div>
@@ -259,10 +259,10 @@ if ($initialState['isSuspended'] === '1') {
                                                          <span class="component-dropdown-text" data-ref="admin-suspensionDuration-text"><?php echo $displayTexts['suspensionDuration']; ?></span>
                                                          <span class="material-symbols-rounded">expand_more</span>
                                                      </div>
-                                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionDuration">
-                                                         <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                                     <div class="component-module component-module--dropdown disabled" data-module="adminModuleSuspensionDuration">
+                                                         <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                                              <div class="pill-container"><div class="drag-handle"></div></div>
-                                                             <div class="component-menu-list component-menu-list--scrollable">
+                                                             <div class="component-menu-list">
                                                                  <div class="component-menu-link <?php echo ($initialState['suspensionDuration'] === '1') ? 'active' : ''; ?>" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="1">
                                                                      <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
                                                                      <div class="component-menu-link-text"><span><?php echo __('duration_1d'); ?></span></div>

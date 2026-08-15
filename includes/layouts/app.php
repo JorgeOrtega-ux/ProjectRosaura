@@ -276,7 +276,9 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/root.css?v=<?php echo filemtime(dirname(__DIR__, 2) . '/public/assets/css/root.css'); ?>">
     <title><?php echo htmlspecialchars($initialTitle); ?></title>
     
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <?php if (!empty(\App\Core\Helpers\EnvLoader::get('TURNSTILE_SITE_KEY', ''))): ?>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <?php endif; ?>
     <?php if (!empty(\App\Core\Helpers\EnvLoader::get('GOOGLE_CLIENT_ID', ''))): ?>
         <script src="https://accounts.google.com/gsi/client" async defer></script>
     <?php endif; ?>

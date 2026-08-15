@@ -59,7 +59,7 @@ $dynamicClass = ($subColorCSS && $subColorCSS !== 'transparent') ? 'subscription
                     <span class="component-dropdown-text" data-ref="ticket-status-text"><?php echo htmlspecialchars($stInfo['label']); ?></span>
                     <span class="material-symbols-rounded">expand_more</span>
                 </div>
-                <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--spaced disabled" data-module="moduleTicketStatusChange">
+                <div class="component-module component-module--dropdown disabled" data-module="moduleTicketStatusChange">
                     <div class="component-menu component-menu--w200 component-menu--h-auto component-menu--no-padding active">
                         <div class="pill-container"><div class="drag-handle"></div></div>
                         <div class="component-menu-header">

@@ -62,10 +62,10 @@ export const AdminModalTemplates = {
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
 
-                        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--dropdown-full component-module--spaced disabled" data-module="dropdownRolesList">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                        <div class="component-module component-module--dropdown disabled" data-module="dropdownRolesList">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact component-menu-list--max-h250">
+                                <div class="component-menu-list component-menu-list--compact component-menu-list--max-h250">
                                     ${rolesHtml}
                                 </div>
                             </div>
@@ -121,8 +121,8 @@ export const AdminModalTemplates = {
                                 <span class="component-dropdown-text" data-ref="escalate-level-text" data-value="${defaultTargetLevel}">${defaultTargetText}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownEscalateLevel">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownEscalateLevel">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
                                         ${levelsListHtml}
@@ -230,8 +230,8 @@ export const AdminModalTemplates = {
                                 <span class="component-dropdown-text" data-ref="reassign-agent-text" data-value="${defaultValue}">${defaultText}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownReassignAgent">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownReassignAgent">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
                                         ${agentsHtml}
@@ -287,8 +287,8 @@ export const AdminModalTemplates = {
                                 <span class="component-dropdown-text" data-ref="canned-level-text" data-value="${item.min_level || 'l1'}">${item.min_level === 'l3' ? __('lbl_dept_l3') : (item.min_level === 'l2' ? __('lbl_dept_l2') : __('lbl_dept_l1'))}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownCannedLevel">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownCannedLevel">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
                                         <div class="component-menu-link ${(!item.min_level || item.min_level === 'l1') ? 'active' : ''}" data-action="selectCannedLevel" data-val="l1">
@@ -326,10 +326,10 @@ export const AdminModalTemplates = {
                                 }</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownCannedLang">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownCannedLang">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list component-menu-list--scrollable">
+                                    <div class="component-menu-list">
                                         <div class="component-menu-link ${(!item.language || item.language === 'es-419') ? 'active' : ''}" data-action="selectCannedLang" data-val="es-419">
                                             <div class="component-menu-link-text"><span>Español (Latinoamérica)</span></div>
                                         </div>
@@ -415,8 +415,8 @@ export const AdminModalTemplates = {
                                 <span class="component-dropdown-text" data-ref="adjust-coins-reason-text" data-value="${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}">${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownAdjustCoinsReason">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownAdjustCoinsReason">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
                                         <div class="component-menu-link active" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}">

@@ -323,7 +323,7 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                                     <span class="component-dropdown-text" data-ref="admin-lang-text"><?php echo htmlspecialchars($langMap[$prefs['language']] ?? $prefs['language']); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="adminModuleLanguage">
+                                <div class="component-module component-module--dropdown disabled bs-initialized" data-module="adminModuleLanguage">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-header">
@@ -366,10 +366,10 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                                     <span class="component-dropdown-text" data-ref="admin-theme-text"><?php echo htmlspecialchars($themeMap[$prefs['theme']] ?? $prefs['theme']); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="adminModuleTheme">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                <div class="component-module component-module--dropdown disabled" data-module="adminModuleTheme">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
+                                        <div class="component-menu-list">
                                             <div class="component-menu-link <?php echo $prefs['theme'] === DB::THEME_SYSTEM ? 'active' : ''; ?>" data-action="adminSetPref" data-key="theme" data-value="<?php echo DB::THEME_SYSTEM; ?>">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">brightness_auto</span></div>
                                                 <div class="component-menu-link-text"><span><?php echo __('theme_system'); ?></span></div>

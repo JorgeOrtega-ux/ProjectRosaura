@@ -75,10 +75,10 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                         <span class="component-dropdown-text" data-ref="text-role"><?php echo htmlspecialchars($defLabel); ?></span>
                                         <span class="material-symbols-rounded">expand_more</span>
                                     </div>
-                                    <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleRole">
-                                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                    <div class="component-module component-module--dropdown disabled" data-module="moduleRole">
+                                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                             <div class="pill-container"><div class="drag-handle"></div></div>
-                                            <div class="component-menu-list component-menu-list--scrollable">
+                                            <div class="component-menu-list">
                                                 <?php foreach ($availableRoles as $role): 
                                                     $rawName = $role['name'];
                                                     $isSystemFlag = $role['is_system'] ?? 0;

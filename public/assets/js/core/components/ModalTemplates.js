@@ -1335,10 +1335,10 @@ export const ModalTemplates = {
                             <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder')}</span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleReportReason">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleReportReason">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list component-menu-list--scrollable">
+                                <div class="component-menu-list">
                                     ${reasonsHtml}
                                 </div>
                             </div>
@@ -1376,10 +1376,10 @@ export const ModalTemplates = {
                             <span class="component-dropdown-text" data-ref="report_trigger_text">${__('report_select_reason_placeholder')}</span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleReportReason">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleReportReason">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list component-menu-list--scrollable">
+                                <div class="component-menu-list">
                                     ${reasonsHtml}
                                 </div>
                             </div>
@@ -1707,34 +1707,34 @@ export const ModalTemplates = {
                     <p class="component-modal-desc">${__('desc_chat_restriction')}</p>
                 </div>
                 <div class="component-modal-body">
-                    <!-- Alcance de la SanciÃ³n -->
+                    <!-- Alcance de la Sanción -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
                         <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSanctionScope" data-ref="sanction_scope" data-value="${activeScope.key}">
                             <span class="material-symbols-rounded" data-ref="sanction_scope_trigger_icon">${activeScope.icon}</span>
                             <span class="component-dropdown-text" data-ref="sanction_scope_trigger_text">${activeScope.label}</span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleSanctionScope">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleSanctionScope">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list component-menu-list--scrollable">
+                                <div class="component-menu-list">
                                     ${scopeOptionsHtml}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- DuraciÃ³n -->
+                    <!-- Duración -->
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
                         <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionType" data-ref="suspension_type" data-value="${activeType.key}">
                             <span class="material-symbols-rounded" data-ref="suspension_type_trigger_icon">${activeType.icon}</span>
                             <span class="component-dropdown-text" data-ref="suspension_type_trigger_text">${activeType.label}</span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleSuspensionType">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleSuspensionType">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list component-menu-list--scrollable">
+                                <div class="component-menu-list">
                                     ${typeOptionsHtml}
                                 </div>
                             </div>
@@ -1748,10 +1748,10 @@ export const ModalTemplates = {
                             <span class="component-dropdown-text" data-ref="suspension_reason_trigger_text">${activeReasonLabel}</span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleSuspensionReason">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleSuspensionReason">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list component-menu-list--scrollable">
+                                <div class="component-menu-list">
                                     ${reasonOptionsHtml}
                                 </div>
                             </div>
@@ -1867,7 +1867,7 @@ export const ModalTemplates = {
                             <span class="component-dropdown-text" data-ref="modal-calendar-date-text">${dateDisplay}</span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="modalCalendarDateOnly">
+                        <div class="component-module component-module--dropdown disabled" data-module="modalCalendarDateOnly">
                             <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-calendar">
@@ -2040,10 +2040,10 @@ export const ModalTemplates = {
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
 
-                        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--dropdown-full component-module--spaced disabled" data-module="dropdownCanvasRolesList">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                        <div class="component-module component-module--dropdown disabled" data-module="dropdownCanvasRolesList">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact component-menu-list--max-h250">
+                                <div class="component-menu-list component-menu-list--max-h250">
                                     ${rolesHtml}
                                 </div>
                             </div>
@@ -2081,10 +2081,10 @@ export const ModalTemplates = {
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
 
-                            <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--dropdown-full component-module--spaced disabled" data-module="moduleSupportTicketCategory">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding active" data-ref="menuSupportTicketCategory">
+                            <div class="component-module component-module--dropdown disabled" data-module="moduleSupportTicketCategory">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto active" data-ref="menuSupportTicketCategory">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                    <div class="component-menu-list component-menu-list--compact">
                                         <div class="component-menu-link active" data-action="selectModalTicketCategory" data-val="technical" data-icon="bug_report">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">bug_report</span></div>
                                             <div class="component-menu-link-text"><span>${__('support_cat_technical')}</span></div>
@@ -2179,10 +2179,10 @@ export const ModalTemplates = {
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
 
-                            <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--dropdown-full component-module--spaced disabled" data-module="moduleLiveChatCategory">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding active" data-ref="menuLiveChatCategory">
+                            <div class="component-module component-module--dropdown disabled" data-module="moduleLiveChatCategory">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto active" data-ref="menuLiveChatCategory">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                    <div class="component-menu-list component-menu-list--compact">
                                         <div class="component-menu-link active" data-action="selectModalLiveCategory" data-val="technical" data-icon="bug_report">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">bug_report</span></div>
                                             <div class="component-menu-link-text"><span>${__('support_cat_technical')}</span></div>

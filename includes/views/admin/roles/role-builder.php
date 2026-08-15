@@ -69,7 +69,7 @@ if (!function_exists('renderColorBlock')) {
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
                         
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="' . $uniqueId . '" data-ref="componentModule">
+                        <div class="component-module component-module--dropdown disabled" data-module="' . $uniqueId . '" data-ref="componentModule">
                             <div class="component-menu component-menu--w-full component-menu--h-auto">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 
@@ -273,7 +273,7 @@ if (trim($rawName) !== '') {
                                     <span class="component-dropdown-text" data-ref="colorTypeText"><?php echo $colorTypeLabel; ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleColorType">
+                                <div class="component-module component-module--dropdown disabled" data-module="moduleColorType">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list">
@@ -316,7 +316,7 @@ if (trim($rawName) !== '') {
                                     <span class="component-dropdown-text" data-ref="gradientAngleText"><?php echo $gradientAngle; ?>°</span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleGradientAngle">
+                                <div class="component-module component-module--dropdown disabled" data-module="moduleGradientAngle">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list">

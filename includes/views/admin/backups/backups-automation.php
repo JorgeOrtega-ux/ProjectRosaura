@@ -105,10 +105,10 @@ $selectedModules = [
                                             </span>
                                             <span class="material-symbols-rounded">expand_more</span>
                                         </div>
-                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleAutoFreq">
-                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                        <div class="component-module component-module--dropdown disabled" data-module="adminModuleAutoFreq">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                                <div class="component-menu-list component-menu-list--scrollable">
+                                                <div class="component-menu-list">
                                                     <?php 
                                                     $freqs = [1 => '1h', 3 => '3h', 6 => '6h', 12 => '12h', 24 => '24h', 48 => '48h', 168 => '168h'];
                                                     foreach($freqs as $val => $label): 

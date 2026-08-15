@@ -1747,8 +1747,9 @@ html.dark-theme .component-avatar__overlay {
 .component-module--dropdown {
     position: absolute;
     top: calc(100% + 5px);
-    right: 0;
     z-index: 100;
+    width: max-content;
+    max-width: 100vw;
 }
 
 .component-module--dropdown-top {
@@ -1774,7 +1775,9 @@ html.dark-theme .component-avatar__overlay {
     top: calc(100% + 10px);
 }
 
-.component-dropdown-wrapper .component-module--dropdown:not(.component-module--dropdown-fixed) {
+.component-dropdown-wrapper--full .component-module--dropdown,
+.component-dropdown-wrapper--w-full .component-module--dropdown,
+.component-dropdown-wrapper:not(.component-dropdown-wrapper--fit) .component-module--dropdown:has(.component-menu--w-full) {
     width: 100%;
 }
 

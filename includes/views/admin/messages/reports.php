@@ -53,10 +53,10 @@ $backUrl = $appUrl . '/admin/messages';
                             <span class="component-dropdown-text" data-ref="admin-report-status-text"><?php echo __('report_status_action'); ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleReportStatusAction">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleReportStatusAction">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list component-menu-list--scrollable">
+                                <div class="component-menu-list">
                                     <div class="component-menu-link" data-action="markReportReviewed">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">check</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('report_status_reviewed'); ?></span></div>

@@ -7,9 +7,9 @@ $canJoinCanvas = in_array('join_canvas', $userPermissions);
 ?>
 
 <div class="component-module component-module--dropdown disabled" data-module="moduleCanvases">
-    <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="canvases-options">
+    <div class="component-menu component-menu--w265 component-menu--h-auto active" data-menu="canvases-options">
         <div class="pill-container"><div class="drag-handle"></div></div>
-        <div class="component-menu-list component-menu-list--scrollable">
+        <div class="component-menu-list">
             
             <?php if ($canCreateCanvas): ?>
             <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/canvases/create">

@@ -3,7 +3,7 @@ $userPrefs = $_SESSION['user_prefs'] ?? [];
 $currentLang = $userPrefs['language'] ?? ($_COOKIE['pr_language'] ?? 'es-419');
 $languages = \App\Core\System\Translator::getAvailableLanguages();
 ?>
-<div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleLanguage">
+<div class="component-module component-module--dropdown disabled" data-module="moduleLanguage">
     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
         <div class="pill-container"><div class="drag-handle"></div></div>
         <div class="component-menu-header">
@@ -31,7 +31,7 @@ $languages = \App\Core\System\Translator::getAvailableLanguages();
             <div class="component-menu-empty" data-ref="language-empty" hidden>
                  <div class="component-menu-link disabled-interaction">
                      <div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div>
-                     <div class="component-menu-link-text"><span ><?php echo __('no_results_found'); ?></span></div>
+                     <div class="component-menu-link-text"><span><?php echo __('no_results_found'); ?></span></div>
                  </div>
             </div>
         </div>

@@ -990,10 +990,10 @@ export class DesignChat {
             <button class="component-button component-button--icon component-button--icon-sm-ghost" data-action="toggleChatDropdown" data-target="${uniqueId}">
                 <span class="material-symbols-rounded component-icon--18">more_vert</span>
             </button>
-            <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed chat-dropdown-module disabled" data-module="${uniqueId}">
-                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="${uniqueId}-options">
+            <div class="component-module component-module--dropdown chat-dropdown-module disabled" data-module="${uniqueId}">
+                <div class="component-menu component-menu--w265 component-menu--h-auto active" data-menu="${uniqueId}-options">
                     <div class="pill-container"><div class="drag-handle"></div></div>
-                    <div class="component-menu-list component-menu-list--scrollable">
+                    <div class="component-menu-list">
                         <div class="component-menu-link" data-action="chatReplyMessage" data-id="${msg.id}" data-username="${msg.username}" data-message="${(msg.message || '').replace(/"/g, '&quot;')}">
                             <div class="component-menu-link-icon">
                                 <span class="material-symbols-rounded">reply</span>

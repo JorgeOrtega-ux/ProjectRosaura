@@ -92,7 +92,7 @@ extract($createData);
                                             <span class="component-dropdown-text" data-ref="text-tags"><?php echo __('ph_select_tags'); ?></span>
                                             <span class="material-symbols-rounded">expand_more</span>
                                         </div>
-                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownTags">
+                                        <div class="component-module component-module--dropdown disabled" data-module="dropdownTags">
                                             <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                                 <div class="component-menu-header">
@@ -157,10 +157,10 @@ extract($createData);
                                     <span class="component-dropdown-text" data-ref="text-size"><?php echo htmlspecialchars($defaultSizeData['label']); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownSize">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                <div class="component-module component-module--dropdown disabled" data-module="dropdownSize">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
+                                        <div class="component-menu-list">
                                             <?php foreach ($canvasSizesList as $val => $data): 
                                                 $requiredTier = $data['tier'] ?? 0;
                                                 $isTierAllowed = ($tier >= $requiredTier);
@@ -246,10 +246,10 @@ extract($createData);
                                             <span class="component-dropdown-text" data-ref="text-template"><?php echo __('lbl_select_template'); ?></span>
                                             <span class="material-symbols-rounded">expand_more</span>
                                         </div>
-                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownTemplate">
-                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="component-module component-module--dropdown disabled" data-module="dropdownTemplate">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                                <div class="component-menu-list component-menu-list--scrollable" data-ref="canvas_templates_list">
+                                                <div class="component-menu-list" data-ref="canvas_templates_list">
                                                     <!-- Renderizado dinámico desde JS -->
                                                 </div>
                                             </div>
@@ -273,10 +273,10 @@ extract($createData);
                                     <span class="component-dropdown-text" data-ref="text-privacy"><?php echo __('canvas_privacy_private'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownPrivacy">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                <div class="component-module component-module--dropdown disabled" data-module="dropdownPrivacy">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
+                                        <div class="component-menu-list">
                                             <div class="component-menu-link" data-action="selectValue" data-type="privacy" data-value="public" data-label="canvas_privacy_public" data-icon="public">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
                                                 <div class="component-menu-link-text"><span><?php echo __('canvas_privacy_public'); ?></span></div>
@@ -306,10 +306,10 @@ extract($createData);
                                     <span class="component-dropdown-text" data-ref="text-approval"><?php echo __('canvas_approval_false'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownApproval">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                <div class="component-module component-module--dropdown disabled" data-module="dropdownApproval">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
+                                        <div class="component-menu-list">
                                             <div class="component-menu-link active" data-action="selectValue" data-type="requires_approval" data-value="false" data-label="canvas_approval_false" data-icon="no_accounts">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">no_accounts</span></div>
                                                 <div class="component-menu-link-text"><span><?php echo __('canvas_approval_false'); ?></span></div>
@@ -459,10 +459,10 @@ extract($createData);
                                     <span class="component-dropdown-text" data-ref="text-palette"><?php echo __('lbl_loading'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownPalette">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                <div class="component-module component-module--dropdown disabled" data-module="dropdownPalette">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable" data-ref="palette-selector-container">
+                                        <div class="component-menu-list" data-ref="palette-selector-container">
                                         </div>
                                         <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
                                             <div class="component-menu-footer">

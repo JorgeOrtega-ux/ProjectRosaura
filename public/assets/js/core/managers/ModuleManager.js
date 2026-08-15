@@ -1,7 +1,3 @@
-/**
- * ModuleManager — Gestiona los dropdowns, sidebars, bottom sheets, navegación de submenús y drag-to-close mobile.
- * Unifica el ciclo de vida y la jerarquía de módulos (.component-module).
- */
 export class ModuleManager {
     constructor(config = {}) {
         this.config = {
@@ -9,6 +5,8 @@ export class ModuleManager {
             allowMultipleModules: false,
             ...config
         };
+
+        this.activeEngines = new Map();
 
         this.dragState = {
             startY: 0,
@@ -44,9 +42,12 @@ export class ModuleManager {
         document.removeEventListener('pointercancel', this.handlePointerUpBound);
         document.removeEventListener('keydown', this.handleKeyDownBound);
         window.removeEventListener('resize', this.handleResizeBound);
-    }
 
-    // ─── Keyboard ─────────────────────────────────────────────────────────────
+        this.activeEngines.forEach((engine, mod) => {
+            this._detachEngine(mod);
+        });
+        this.activeEngines.clear();
+    }
 
     handleKeyDown(e) {
         if (e.key === 'Escape' && this.config.closeOnEsc) {
@@ -57,27 +58,34 @@ export class ModuleManager {
         }
     }
 
-    // ─── Resize ───────────────────────────────────────────────────────────────
-
     handleResize() {
-        if (!this.isMobile) {
+        if (this.isMobile) {
+            this.activeEngines.forEach((engine, mod) => {
+                this._detachEngine(mod);
+            });
+            this.activeEngines.clear();
+
             document.querySelectorAll('.is-dragging').forEach(m => {
                 m.classList.remove('is-dragging');
                 const p = m.querySelector('.component-menu');
                 if (p) p.removeAttribute('style');
             });
             this.dragState.isDragging = false;
+        } else {
+            const activeDropdowns = document.querySelectorAll('.component-module--dropdown:not(.disabled)');
+            activeDropdowns.forEach(mod => {
+                if (!this.activeEngines.has(mod)) {
+                    this._attachEngine(mod);
+                } else {
+                    const engine = this.activeEngines.get(mod);
+                    if (engine && typeof engine.update === 'function') {
+                        engine.update();
+                    }
+                }
+            });
         }
     }
 
-    // ─── Module Resolution ────────────────────────────────────────────────────
-
-    /**
-     * Resuelve el elemento del módulo buscando contextualmente cerca del trigger antes de buscar globalmente.
-     * @param {string|Element} moduleTarget 
-     * @param {Element|null} triggerEl 
-     * @returns {Element|null}
-     */
     resolveModule(moduleTarget, triggerEl = null) {
         if (!moduleTarget) return null;
         if (moduleTarget instanceof Element) return moduleTarget;
@@ -110,8 +118,6 @@ export class ModuleManager {
         return document.querySelector(`[data-module="${moduleTarget}"]`);
     }
 
-    // ─── Module open/close (Hierarchy-Aware) ──────────────────────────────────
-
     toggle(moduleTarget, triggerEl = null) {
         const moduleEl = this.resolveModule(moduleTarget, triggerEl);
         if (!moduleEl) return;
@@ -122,7 +128,6 @@ export class ModuleManager {
             return;
         }
 
-        // Obtener la cadena de ancestros directos (.component-module) para no cerrarlos nunca
         const ancestors = [];
         let parent = moduleEl.parentElement;
         while (parent) {
@@ -132,11 +137,10 @@ export class ModuleManager {
             parent = parent.parentElement;
         }
 
-        // Cerrar otros módulos activos que no sean ancestros ni el módulo actual
         const activeModules = document.querySelectorAll('.component-module:not(.disabled)');
         activeModules.forEach(activeMod => {
             if (activeMod === moduleEl) return;
-            if (ancestors.includes(activeMod)) return; // Conservar sidebar/padre activo
+            if (ancestors.includes(activeMod)) return;
             if (activeMod.contains(moduleEl)) return;
             this.close(activeMod);
         });
@@ -155,7 +159,6 @@ export class ModuleManager {
             accountMenu.classList.add('disabled');
         }
 
-        // Asegurar que al menos un menú interno esté activo si no hay ninguno
         const activeInnerMenu = module.querySelector('.component-menu.active:not(.disabled)');
         if (!activeInnerMenu) {
             const defaultMenu = module.querySelector('.component-menu[data-menu="main-options"]')
@@ -170,24 +173,25 @@ export class ModuleManager {
 
         module.classList.remove('disabled');
         module.classList.add('active');
+
+        this._attachEngine(module, triggerEl);
     }
 
     close(module) {
+        this._detachEngine(module);
+
         module.classList.remove('active');
         module.classList.add('disabled');
         module.querySelectorAll('.component-menu').forEach(p => p.removeAttribute('style'));
 
-        // Cerrar recursivamente cualquier submódulo hijo
         module.querySelectorAll('.component-module:not(.disabled)').forEach(child => this.close(child));
 
-        // Reset internal menu pages to main
         const mainPage = module.querySelector('[data-menu-page="main"]');
         if (mainPage) {
             module.querySelectorAll('.component-menu-page').forEach(p => p.classList.remove('active'));
             mainPage.classList.add('active');
         }
 
-        // Reset submenús a menú principal si existen
         const mainFilters = module.querySelector('[data-ref="menuMainFilters"], [data-menu="main-options"], [data-ref="menu-main"]');
         if (mainFilters) {
             module.querySelectorAll('.component-menu').forEach(m => {
@@ -200,7 +204,6 @@ export class ModuleManager {
             mainFilters.classList.add('active');
         }
 
-        // Remove dynamic card dropdowns from DOM after close animation
         if (module.dataset.module?.startsWith('snapshot-menu-') || module.closest('.component-gallery-actions-wrapper') || module.classList.contains('dynamic-card-module')) {
             setTimeout(() => {
                 if (module.parentNode && module.classList.contains('disabled')) {
@@ -221,19 +224,12 @@ export class ModuleManager {
         });
     }
 
-    /**
-     * Marca módulos bottom-sheet para animaciones CSS.
-     */
     markBottomSheets() {
         document.querySelectorAll('.component-module--dropdown:not(.bs-initialized)').forEach(module => {
             module.classList.add('bs-initialized');
         });
     }
 
-    /**
-     * Cierra módulos cuando el click fue fuera de ellos de forma jerárquica y precisa.
-     * @param {MouseEvent} e
-     */
     handleOutsideClick(e) {
         if (this.dragState.isDragging) return;
 
@@ -244,26 +240,20 @@ export class ModuleManager {
         if (activeModules.length === 0) return;
 
         activeModules.forEach(module => {
-            // 1. Click directo dentro del módulo (paneles, contenido, inputs, scrollbar, etc.)
             if (module.contains(e.target)) return;
 
-            // 2. Click sobre el trigger que conmuta este módulo
             const moduleName = module.getAttribute('data-module');
             if (moduleName) {
                 const trigger = e.target.closest(`[data-action="toggleModule"][data-target="${moduleName}"], [data-target="${moduleName}"]`);
                 if (trigger) return;
             }
 
-            // 3. Click dentro del dropdown wrapper que engloba trigger y módulo
             const wrapper = module.closest('.component-dropdown-wrapper');
             if (wrapper && wrapper.contains(e.target)) return;
 
-            // El click fue efectivamente fuera de este módulo -> cerrar
             this.close(module);
         });
     }
-
-    // ─── Sub-menu navigation ──────────────────────────────────────────────────
 
     showSubMenu(currentMenu, targetMenuName) {
         const targetMenu = document.querySelector(`[data-menu="${targetMenuName}"]`);
@@ -328,8 +318,6 @@ export class ModuleManager {
         }
     }
 
-    // ─── Drag-to-close (bottom sheets mobile) ─────────────────────────────────
-
     handlePointerDown(e) {
         if (!this.isMobile) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -380,5 +368,104 @@ export class ModuleManager {
         this.dragState.currentDiff = 0;
         this.dragState.module      = null;
         this.dragState.panel       = null;
+    }
+
+    _attachEngine(module, triggerEl = null) {
+        if (this.isMobile || typeof window.UiEngine === 'undefined') return;
+        if (!module || !module.classList.contains('component-module--dropdown')) return;
+
+        let referenceEl = triggerEl;
+        if (!referenceEl) {
+            const wrapper = module.closest('.component-dropdown-wrapper');
+            if (wrapper) {
+                referenceEl = wrapper.querySelector('.component-dropdown-trigger, [data-action="toggleModule"], [data-action="toggleDropdown"], [data-action="toggleDynamicMenu"]');
+            }
+            if (!referenceEl && module.dataset.module) {
+                referenceEl = document.querySelector(`[data-action="toggleModule"][data-target="${module.dataset.module}"], [data-target="${module.dataset.module}"]`);
+            }
+        }
+
+        if (!referenceEl) return;
+
+        this._detachEngine(module);
+
+        let rawPos = referenceEl.getAttribute('data-dropdown-position') || module.getAttribute('data-dropdown-position') || referenceEl.getAttribute('data-position') || module.getAttribute('data-position');
+        const isEndAligned = referenceEl.closest('.component-top-right, .header-right, .component-card__actions--end, .component-gallery-actions, .chat-msg-actions, .component-actions');
+        let preferredPlacement;
+        if (rawPos && rawPos !== 'bottom' && rawPos !== 'top') {
+            const placementMap = {
+                'left': 'left-start',
+                'right': 'right-start'
+            };
+            preferredPlacement = placementMap[rawPos] || rawPos;
+        } else if (rawPos === 'top') {
+            preferredPlacement = isEndAligned ? 'top-end' : 'top-start';
+        } else {
+            preferredPlacement = isEndAligned ? 'bottom-end' : 'bottom-start';
+        }
+
+        const engine = window.UiEngine.createEngine(referenceEl, module, {
+            placement: preferredPlacement,
+            strategy: 'absolute',
+            modifiers: [
+                {
+                    name: 'offset',
+                    options: {
+                        offset: [0, 6]
+                    }
+                },
+                {
+                    name: 'flip',
+                    enabled: true,
+                    options: {
+                        fallbackPlacements: ['top-end', 'bottom-end', 'top-start', 'bottom-start', 'top', 'bottom']
+                    }
+                },
+                {
+                    name: 'preventOverflow',
+                    enabled: true,
+                    options: {
+                        boundary: 'viewport',
+                        padding: 8
+                    }
+                },
+                {
+                    name: 'computeStyles',
+                    options: {
+                        gpuAcceleration: false,
+                        adaptive: false
+                    }
+                }
+            ]
+        });
+
+        this.activeEngines.set(module, engine);
+        engine.update();
+        requestAnimationFrame(() => {
+            if (this.activeEngines.has(module)) {
+                engine.update();
+            }
+        });
+    }
+
+    _detachEngine(module) {
+        if (!module) return;
+
+        if (this.activeEngines.has(module)) {
+            const engine = this.activeEngines.get(module);
+            if (engine && typeof engine.destroy === 'function') {
+                engine.destroy();
+            }
+            this.activeEngines.delete(module);
+        }
+
+        module.removeAttribute('data-ui-placement');
+        module.style.removeProperty('position');
+        module.style.removeProperty('top');
+        module.style.removeProperty('left');
+        module.style.removeProperty('bottom');
+        module.style.removeProperty('right');
+        module.style.removeProperty('transform');
+        module.style.removeProperty('margin');
     }
 }

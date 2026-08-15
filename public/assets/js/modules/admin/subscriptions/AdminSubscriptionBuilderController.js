@@ -84,7 +84,7 @@ class AdminSubscriptionBuilderController {
                                 </div>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="${uniqueId}" data-ref="componentModule">
+                            <div class="component-module component-module--dropdown disabled" data-module="${uniqueId}" data-ref="componentModule">
                                 <div class="component-menu component-menu--w-full component-menu--h-auto">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-color-picker" data-ref="customColorPicker" data-h="0" data-s="0" data-v="50">

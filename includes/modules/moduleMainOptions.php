@@ -43,9 +43,9 @@ $parseSubscriptionColor = function($subColorRaw) {
 </style>
 
 <div class="component-module component-module--dropdown disabled" data-module="moduleMainOptions">
-    <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="main-options">
+    <div class="component-menu component-menu--w265 component-menu--h-auto active" data-menu="main-options">
         <div class="pill-container"><div class="drag-handle"></div></div>
-        <div class="component-menu-list component-menu-list--scrollable">
+        <div class="component-menu-list">
             <?php if ($isLoggedIn): ?>
                 <?php 
                     $activeAcc = $linkedAccounts[$activeAccountId] ?? null;

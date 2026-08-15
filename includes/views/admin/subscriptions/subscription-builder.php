@@ -101,7 +101,7 @@ function renderColorBlock($hex, $percentage, $isSolid = false) {
     $html .= '                  </div>';
     $html .= '                  <span class="material-symbols-rounded">expand_more</span>';
     $html .= '              </div>';
-    $html .= '              <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="' . $id . '" data-ref="componentModule">';
+    $html .= '              <div class="component-module component-module--dropdown disabled" data-module="' . $id . '" data-ref="componentModule">';
     $html .= '                  <div class="component-menu component-menu--w-full component-menu--h-auto">';
     $html .= '                      <div class="pill-container"><div class="drag-handle"></div></div>';
     $html .= '                      <div class="component-color-picker" data-ref="customColorPicker" data-h="' . $hue . '" data-s="' . $sat . '" data-v="' . $val . '">';
@@ -676,7 +676,7 @@ $featuresData = [
                                             <span class="component-dropdown-text" data-ref="colorTypeText"><?php echo $colorTypeLabel; ?></span>
                                             <span class="material-symbols-rounded">expand_more</span>
                                         </div>
-                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleColorType">
+                                        <div class="component-module component-module--dropdown disabled" data-module="moduleColorType">
                                             <div class="component-menu component-menu--w-full component-menu--h-auto">
                                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                                 <div class="component-menu-list">
@@ -717,7 +717,7 @@ $featuresData = [
                                                 <span class="component-dropdown-text" data-ref="gradientAngleText"><?php echo $gradientAngle; ?>°</span>
                                                 <span class="material-symbols-rounded">expand_more</span>
                                             </div>
-                                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleGradientAngle">
+                                            <div class="component-module component-module--dropdown disabled" data-module="moduleGradientAngle">
                                                 <div class="component-menu component-menu--w-full component-menu--h-auto">
                                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                                     <div class="component-menu-list">

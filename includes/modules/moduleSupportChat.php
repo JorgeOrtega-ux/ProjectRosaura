@@ -49,8 +49,8 @@
                         <button class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="supportUserChatMoreDropdown" data-tooltip="<?php echo __('btn_options'); ?>" data-position="bottom" type="button">
                             <span class="material-symbols-rounded">more_vert</span>
                         </button>
-                        <div class="component-module component-module--dropdown component-module--dropdown-bottom component-module--dropdown-right component-module--dropdown-fixed chat-dropdown-module disabled" data-module="supportUserChatMoreDropdown">
-                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="support-user-chat-more-menu">
+                        <div class="component-module component-module--dropdown chat-dropdown-module disabled" data-module="supportUserChatMoreDropdown">
+                            <div class="component-menu component-menu--w265 component-menu--h-auto active" data-menu="support-user-chat-more-menu">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list">
                                     <div class="component-menu-link" data-action="openViewIssueModal">
@@ -96,10 +96,10 @@
                             <button class="component-chat-attach-btn" data-action="toggleModule" data-target="support-attach-menu" data-tooltip="<?php echo __('chat_attach_photos'); ?>" data-position="top" type="button">
                                 <span class="material-symbols-rounded">add</span>
                             </button>
-                            <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-right component-module--dropdown-fixed chat-dropdown-module disabled" data-module="support-attach-menu">
-                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-ref="menuSupportAttachOptions">
+                            <div class="component-module component-module--dropdown chat-dropdown-module disabled" data-module="support-attach-menu">
+                                <div class="component-menu component-menu--w265 component-menu--h-auto active" data-ref="menuSupportAttachOptions">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list component-menu-list--scrollable">
+                                    <div class="component-menu-list">
                                         <div class="component-menu-link" data-action="triggerSupportChatAttach">
                                             <div class="component-menu-link-icon">
                                                 <span class="material-symbols-rounded">attach_file</span>

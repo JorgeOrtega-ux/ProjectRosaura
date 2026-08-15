@@ -176,10 +176,10 @@ extract($dashboardData);
                             <span class="component-dropdown-text" data-ref="chart-dropdown-text"><?php echo __('admin_dashboard_global_activity'); ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleChartMode">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleChartMode">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list component-menu-list--scrollable">
+                                <div class="component-menu-list">
                                     
                                     <div class="component-menu-link active" data-ref="menu-tab-act" data-tab="activity">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">monitoring</span></div>

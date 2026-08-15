@@ -23,8 +23,8 @@ $maxMB = $maxUploadMB ?? 10;
                         <button class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="chat-options-menu">
                             <span class="material-symbols-rounded">more_vert</span>
                         </button>
-                        <div class="component-module component-module--dropdown component-module--dropdown-bottom component-module--dropdown-right chat-dropdown-module disabled" data-module="chat-options-menu">
-                            <div class="component-menu component-menu--w200 component-menu--h-auto component-menu--no-padding active" data-menu="chat-options-list">
+                        <div class="component-module component-module--dropdown chat-dropdown-module disabled" data-module="chat-options-menu">
+                            <div class="component-menu component-menu--w200 component-menu--h-auto active" data-menu="chat-options-list">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list">
                                     <div class="component-menu-link text-danger" data-action="deactivateChatOption">
@@ -70,13 +70,13 @@ $maxMB = $maxUploadMB ?? 10;
                     <div class="component-search-input <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled-interaction' : ''; ?>">
                         
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
-                            <button class="component-chat-attach-btn" data-action="toggleModule" data-target="chat-attach-menu" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
+                            <button class="component-chat-attach-btn" data-action="toggleModule" data-target="chat-attach-menu" data-position="top" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
                                 <span class="material-symbols-rounded">add</span>
                             </button>
-                            <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-right component-module--dropdown-fixed chat-dropdown-module disabled" data-module="chat-attach-menu">
-                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="chat-attach-options">
+                            <div class="component-module component-module--dropdown chat-dropdown-module disabled" data-module="chat-attach-menu">
+                                <div class="component-menu component-menu--w265 component-menu--h-auto active" data-menu="chat-attach-options">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list component-menu-list--scrollable">
+                                    <div class="component-menu-list">
                                         <div class="component-menu-link" data-action="triggerChatAttach">
                                             <div class="component-menu-link-icon">
                                                 <span class="material-symbols-rounded">attach_file</span>
