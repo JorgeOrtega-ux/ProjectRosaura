@@ -1,7 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
-import { showMessage, setButtonLoading, restoreButton, localInputFormatToUtcString, toggleDropdown, closeDropdown } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, localInputFormatToUtcString, closeDropdown } from '../../../core/utils/uiUtils.js';
 
 class CanvasResizeController {
     constructor() {
@@ -127,18 +127,11 @@ class CanvasResizeController {
             return;
         }
 
-        const dropdownTrigger = e.target.closest('[data-action="toggleDropdown"], [data-action="toggleModule"]');
         const sizeScheduledItem = e.target.closest('[data-type="size_scheduled"]');
         const sizeInstantItem = e.target.closest('[data-type="size_instant"]');
         
         const applyNowBtn = e.target.closest('[data-action="applyResizeNow"]');
         const saveScheduledBtn = e.target.closest('[data-action="saveScheduledResize"]');
-        
-        if (dropdownTrigger) {
-            e.preventDefault();
-            toggleDropdown(dropdownTrigger.getAttribute('data-target'), dropdownTrigger);
-            return;
-        }
 
         if (sizeScheduledItem) {
             e.preventDefault();

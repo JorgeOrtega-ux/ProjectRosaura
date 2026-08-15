@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes, toggleDropdown, closeDropdown } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes, closeDropdown } from '../../../core/utils/uiUtils.js';
 
 
 class CanvasEditController {
@@ -206,11 +206,6 @@ class CanvasEditController {
         } catch (error) {
             if (error.name === 'AbortError') return;
         }
-    }
-
-    toggleDropdown(btn) {
-        if (!btn || btn.classList.contains('disabled-interaction')) return;
-        toggleDropdown(btn.getAttribute('data-target'), btn);
     }
 
     toggleTag(btn) {

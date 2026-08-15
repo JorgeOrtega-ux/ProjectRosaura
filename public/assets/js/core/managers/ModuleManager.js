@@ -240,6 +240,15 @@ export class ModuleManager {
         if (activeModules.length === 0) return;
 
         activeModules.forEach(module => {
+            if (this.isMobile && (module.classList.contains('component-module--dropdown') || module.classList.contains('component-module--sidebar-responsive'))) {
+                const clickedMenu = e.target.closest('.component-menu');
+                if (clickedMenu && module.contains(clickedMenu)) {
+                    return;
+                }
+                this.close(module);
+                return;
+            }
+
             if (module.contains(e.target)) return;
 
             const moduleName = module.getAttribute('data-module');
@@ -249,7 +258,10 @@ export class ModuleManager {
             }
 
             const wrapper = module.closest('.component-dropdown-wrapper');
-            if (wrapper && wrapper.contains(e.target)) return;
+            if (wrapper && wrapper.contains(e.target)) {
+                const trigger = wrapper.querySelector('.component-dropdown-trigger');
+                if (trigger && trigger.contains(e.target)) return;
+            }
 
             this.close(module);
         });

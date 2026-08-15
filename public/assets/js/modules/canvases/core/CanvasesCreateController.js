@@ -1,7 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
-import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes, toggleDropdown, closeDropdown } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes, closeDropdown } from '../../../core/utils/uiUtils.js';
 
 
 class CanvasesCreateController {
@@ -251,9 +251,7 @@ class CanvasesCreateController {
             return;
         }
 
-        if (action === 'toggleDropdown' || action === 'toggleModule') {
-            this.toggleDropdown(actionBtn);
-        } else if (action === 'selectValue') {
+        if (action === 'selectValue') {
             this.selectDropdownValue(actionBtn);
         } else if (action === 'toggleTag') {
             this.toggleTag(actionBtn);
@@ -376,11 +374,6 @@ class CanvasesCreateController {
         if (btnCancel) {
             btnCancel.click();
         }
-    }
-
-    toggleDropdown(triggerBtn) {
-        if (triggerBtn.classList.contains('disabled-interaction')) return;
-        toggleDropdown(triggerBtn.getAttribute('data-target'), triggerBtn);
     }
 
     selectDropdownValue(optionBtn) {

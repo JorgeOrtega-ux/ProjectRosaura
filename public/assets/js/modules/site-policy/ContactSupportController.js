@@ -1,6 +1,6 @@
 import { ApiRoutes, WsConfig } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
-import { restoreButton, setButtonLoading, showMessage, toggleDropdown, closeDropdown, closeAllDropdowns } from '../../core/utils/uiUtils.js';
+import { restoreButton, setButtonLoading, showMessage, closeDropdown, closeAllDropdowns } from '../../core/utils/uiUtils.js';
 import { ImageViewerSystem } from '../../core/components/ImageViewerSystem.js';
 
 export class ContactSupportController {
@@ -595,14 +595,6 @@ export class ContactSupportController {
         if (submitCsatBtn) {
             e.preventDefault();
             this._submitCsatFeedback(submitCsatBtn);
-            return;
-        }
-
-        const toggleDropdownBtn = e.target.closest('[data-action="toggleDropdown"], [data-action="toggleModule"]');
-        if (toggleDropdownBtn) {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleDropdown(toggleDropdownBtn.getAttribute('data-target'), toggleDropdownBtn);
             return;
         }
 

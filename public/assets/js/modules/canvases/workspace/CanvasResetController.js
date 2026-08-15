@@ -1,7 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
-import { showMessage, setButtonLoading, restoreButton, localInputFormatToUtcString, toggleDropdown, closeDropdown } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, localInputFormatToUtcString, closeDropdown } from '../../../core/utils/uiUtils.js';
 
 class CanvasResetController {
     constructor() {
@@ -132,18 +132,6 @@ class CanvasResetController {
             }
             return;
         }
-
-        const btnDropdown = e.target.closest('[data-action="toggleDropdown"], [data-action="toggleModule"]');
-        if (btnDropdown) {
-            e.preventDefault();
-            this.toggleDropdown(btnDropdown);
-            return;
-        }
-    }
-
-    toggleDropdown(btn) {
-        if (!btn || btn.classList.contains('disabled-interaction')) return;
-        toggleDropdown(btn.getAttribute('data-target'), btn);
     }
 
     handleToggleChange(e) {

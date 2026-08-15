@@ -85,7 +85,6 @@ export class PurchaseHistoryController {
         const downloadReceiptBtn = e.target.closest('[data-action="downloadReceipt"]');
         const downloadInvoiceBtn = e.target.closest('[data-action="downloadInvoice"]');
         
-        const toggleModuleBtn = e.target.closest('[data-action="toggleModule"]');
         const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
         const backToMainBtn = e.target.closest('[data-action="backToMainFilters"]');
         
