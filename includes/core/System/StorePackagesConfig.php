@@ -52,7 +52,33 @@ class StorePackagesConfig {
         return $visuals[$perkId] ?? ['icon' => 'shield'];
     }
 
+    private static ?array $coinPackagesCache = null;
+    private static ?array $contentPackagesCache = null;
+
+    public static function resetCache(): void {
+        self::$coinPackagesCache = null;
+        self::$contentPackagesCache = null;
+    }
+
     public static function getCoinPackages(): array {
+        if (self::$coinPackagesCache !== null) {
+            return self::$coinPackagesCache;
+        }
+
+        try {
+            $redis = (new \App\Config\Database\RedisCache())->getClient();
+            if ($redis && !defined('SYSTEM_DEGRADED')) {
+                $cached = $redis->get(CacheConstants::KEY_STORE_COIN_PACKAGES);
+                if ($cached) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded) && !empty($decoded)) {
+                        self::$coinPackagesCache = $decoded;
+                        return $decoded;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
         $packages = [];
         try {
             $db = new \App\Config\Database\DatabaseManager();
@@ -86,13 +112,22 @@ class StorePackagesConfig {
                     'default_price_id' => $row['stripe_price_id'],
                 ];
             }
+
+            if (!empty($packages)) {
+                try {
+                    $redis = (new \App\Config\Database\RedisCache())->getClient();
+                    if ($redis && !defined('SYSTEM_DEGRADED')) {
+                        $redis->setex(CacheConstants::KEY_STORE_COIN_PACKAGES, CacheConstants::TTL_ONE_WEEK, json_encode($packages));
+                    }
+                } catch (\Throwable $e) {}
+            }
         } catch (\Exception $e) {
             \App\Core\System\Logger::error("Failed to load coin packages from DB: " . $e->getMessage());
         }
 
         if (empty($packages)) {
             // Fallback en caso de error de BBDD
-            return [
+            $packages = [
                 1000 => [
                     'id' => StoreConstants::COINS_1000,
                     'name' => __('store_coins_1000_name'),
@@ -112,10 +147,29 @@ class StorePackagesConfig {
             ];
         }
 
+        self::$coinPackagesCache = $packages;
         return $packages;
     }
 
     public static function getContentPackages(): array {
+        if (self::$contentPackagesCache !== null) {
+            return self::$contentPackagesCache;
+        }
+
+        try {
+            $redis = (new \App\Config\Database\RedisCache())->getClient();
+            if ($redis && !defined('SYSTEM_DEGRADED')) {
+                $cached = $redis->get(CacheConstants::KEY_STORE_PERK_PACKAGES);
+                if ($cached) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded) && !empty($decoded)) {
+                        self::$contentPackagesCache = $decoded;
+                        return $decoded;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
         $packages = [];
         try {
             $db = new \App\Config\Database\DatabaseManager();
@@ -134,6 +188,15 @@ class StorePackagesConfig {
                     'icon' => $meta['icon'],
                     'is_single_use' => (bool)$row['is_single_use'],
                 ];
+            }
+
+            if (!empty($packages)) {
+                try {
+                    $redis = (new \App\Config\Database\RedisCache())->getClient();
+                    if ($redis && !defined('SYSTEM_DEGRADED')) {
+                        $redis->setex(CacheConstants::KEY_STORE_PERK_PACKAGES, CacheConstants::TTL_ONE_WEEK, json_encode($packages));
+                    }
+                } catch (\Throwable $e) {}
             }
         } catch (\Exception $e) {
             \App\Core\System\Logger::error("Failed to load perk packages from DB: " . $e->getMessage());

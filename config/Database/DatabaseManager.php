@@ -9,9 +9,13 @@ use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 
 class DatabaseManager {
-    private $connections = [];
+    private static array $connections = [];
 
     public function __construct() {
+    }
+
+    public static function resetConnections(): void {
+        self::$connections = [];
     }
 
     public function getConnection(string $connectionName = DB::CONN_IDENTITY): PDO {
@@ -24,7 +28,7 @@ class DatabaseManager {
         $pass = $_ENV['DB_PASS']; 
         
         $envVarName = 'DB_' . strtoupper($connectionName) . '_NAME';
-        $dbname = $_ENV[$envVarName];
+        $dbname = $_ENV[$envVarName] ?? null;
 
         if (!$dbname) {
             throw new Exception('err_db_name_missing');
@@ -32,8 +36,8 @@ class DatabaseManager {
 
         $connectionKey = $host . '_' . $dbname;
 
-        if (isset($this->connections[$connectionKey])) {
-            return $this->connections[$connectionKey];
+        if (isset(self::$connections[$connectionKey])) {
+            return self::$connections[$connectionKey];
         }
 
         try {
@@ -41,11 +45,11 @@ class DatabaseManager {
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
             
-            $appTimezone = $_ENV['APP_TIMEZONE'];
+            $appTimezone = $_ENV['APP_TIMEZONE'] ?? 'UTC';
             $offset = (new \DateTime('now', new \DateTimeZone($appTimezone)))->format('P');
             $pdo->exec("SET time_zone = '{$offset}';");
             
-            $this->connections[$connectionKey] = $pdo;
+            self::$connections[$connectionKey] = $pdo;
             
             return $pdo;
         } catch (PDOException $e) {
@@ -70,8 +74,8 @@ class DatabaseManager {
         
         $connectionKey = $host . '_global';
 
-        if (isset($this->connections[$connectionKey])) {
-            return $this->connections[$connectionKey];
+        if (isset(self::$connections[$connectionKey])) {
+            return self::$connections[$connectionKey];
         }
 
         try {
@@ -79,11 +83,11 @@ class DatabaseManager {
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
             
-            $appTimezone = $_ENV['APP_TIMEZONE'];
+            $appTimezone = $_ENV['APP_TIMEZONE'] ?? 'UTC';
             $offset = (new \DateTime('now', new \DateTimeZone($appTimezone)))->format('P');
             $pdo->exec("SET time_zone = '{$offset}';");
             
-            $this->connections[$connectionKey] = $pdo;
+            self::$connections[$connectionKey] = $pdo;
             
             return $pdo;
         } catch (PDOException $e) {

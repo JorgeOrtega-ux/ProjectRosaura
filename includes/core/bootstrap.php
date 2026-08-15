@@ -22,19 +22,18 @@ define('APP_NAME', $_ENV['APP_NAME']);
 $appTimezone = $_ENV['APP_TIMEZONE'];
 date_default_timezone_set($appTimezone);
 
+$redisCache = null;
 $redisClient = null;
 try {
-    if (getenv('REDIS_HOST') && getenv('REDIS_PORT')) {
-        $redisParams = ['scheme' => 'tcp', 'host' => getenv('REDIS_HOST'), 'port' => (int)getenv('REDIS_PORT')];
-        if (getenv('REDIS_PASS')) $redisParams['password'] = getenv('REDIS_PASS');
+    if (getenv('REDIS_HOST') || isset($_ENV['REDIS_HOST'])) {
+        $redisCache = new \App\Config\Database\RedisCache();
+        $redisClient = $redisCache->getClient();
         
-        $redisClient = new \Predis\Client($redisParams);
-        $redisClient->ping(); 
-        
-        $redisHost = getenv('REDIS_HOST');
-        $redisPass = getenv('REDIS_PASS');
+        $redisHost = getenv('REDIS_HOST') ?: ($_ENV['REDIS_HOST'] ?? '127.0.0.1');
+        $redisPort = getenv('REDIS_PORT') ?: ($_ENV['REDIS_PORT'] ?? 6379);
+        $redisPass = getenv('REDIS_PASS') ?: ($_ENV['REDIS_PASS'] ?? '');
         ini_set('session.save_handler', 'redis');
-        $redisPath = "tcp://$redisHost:6379" . (!empty($redisPass) ? "?auth=$redisPass" : "");
+        $redisPath = "tcp://$redisHost:$redisPort" . (!empty($redisPass) ? "?auth=$redisPass" : "");
         ini_set('session.save_path', $redisPath);
     }
 } catch (\Throwable $e) {
@@ -145,7 +144,7 @@ use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\SessionManagerInterface;
 
-$container = new Container();
+$container = new Container($redisCache);
 $serverConfig = [];
 $isSystemDegraded = false;
 $sessionManager = $container->get(SessionManagerInterface::class);

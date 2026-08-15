@@ -47,15 +47,15 @@ class Container implements ContainerInterface {
     private $bindings = [];
     private $resolving = [];
 
-    public function __construct() {
-        $db = new DatabaseManager(); 
+    public function __construct(?RedisCache $redis = null, ?DatabaseManager $db = null, ?\App\Config\Database\CassandraManager $cassandra = null) {
+        $db = $db ?? new DatabaseManager(); 
         $this->instances[DatabaseManager::class] = $db; 
         
-        $redis = new RedisCache();
+        $redis = $redis ?? new RedisCache();
         $this->instances[Client::class] = $redis->getClient();
         $this->instances[RedisCache::class] = $redis;
         
-        $cassandra = new \App\Config\Database\CassandraManager();
+        $cassandra = $cassandra ?? new \App\Config\Database\CassandraManager();
         $this->instances[\App\Config\Database\CassandraManager::class] = $cassandra;
         
         $this->bindings[RateLimiterInterface::class] = RedisRateLimiter::class; 

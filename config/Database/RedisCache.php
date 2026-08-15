@@ -8,13 +8,32 @@ use App\Core\System\Logger;
 use App\Core\Helpers\EnvLoader;
 
 class RedisCache {
+    private static $sharedClient = null;
+    private static bool $connectionAttempted = false;
     private $client;
 
-    public function __construct() {
+    public function __construct(?Client $existingClient = null) {
+        if ($existingClient !== null) {
+            $this->client = $existingClient;
+            self::$sharedClient = $existingClient;
+            return;
+        }
+
+        if (self::$sharedClient !== null) {
+            $this->client = self::$sharedClient;
+            return;
+        }
+
+        if (self::$connectionAttempted) {
+            $this->setupDummyClient();
+            return;
+        }
+
         $host = EnvLoader::get('REDIS_HOST', '');
         $port = (int)EnvLoader::get('REDIS_PORT', 6379);
 
         if (empty($host)) {
+            self::$connectionAttempted = true;
             $this->setupDummyClient();
             return;
         }
@@ -34,12 +53,19 @@ class RedisCache {
         try {
             $this->client = new Client($parameters);
             $this->client->ping();
+            self::$sharedClient = $this->client;
         } catch (Exception $e) {
+            self::$connectionAttempted = true;
             Logger::error('Redis connection failure', [
                 'exception' => $e->getMessage()
             ]);
             $this->setupDummyClient();
         }
+    }
+
+    public static function resetSharedClient(): void {
+        self::$sharedClient = null;
+        self::$connectionAttempted = false;
     }
 
     private function setupDummyClient() {

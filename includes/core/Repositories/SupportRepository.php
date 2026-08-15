@@ -15,16 +15,24 @@ use PDOException;
 use Exception;
 
 class SupportRepository implements SupportRepositoryInterface {
+    private DatabaseManager $db;
     private PDO $pdo;
-    private PDO $pdoIdentity;
+    private ?PDO $pdoIdentity = null;
     private $redisClient;
     private CacheInvalidator $cacheInvalidator;
 
     public function __construct(DatabaseManager $db, RedisCache $redisCache = null) {
+        $this->db = $db;
         $this->pdo = $db->getConnection(DB::CONN_SUPPORT);
-        $this->pdoIdentity = $db->getConnection(DB::CONN_IDENTITY);
         $this->redisClient = $redisCache ? $redisCache->getClient() : null;
         $this->cacheInvalidator = new CacheInvalidator($this->redisClient);
+    }
+
+    private function getPdoIdentity(): PDO {
+        if ($this->pdoIdentity === null) {
+            $this->pdoIdentity = $this->db->getConnection(DB::CONN_IDENTITY);
+        }
+        return $this->pdoIdentity;
     }
 
     /**
@@ -38,7 +46,7 @@ class SupportRepository implements SupportRepositoryInterface {
 
         try {
             $placeholders = implode(',', array_fill(0, count($userIds), '?'));
-            $stmt = $this->pdoIdentity->prepare("
+            $stmt = $this->getPdoIdentity()->prepare("
                 SELECT u.id, u.uuid, u.username, u.email, u.profile_picture, u.subscription_tier,
                        tiers.color AS subscription_color
                 FROM " . DB::TBL_USERS . " u
@@ -166,7 +174,7 @@ class SupportRepository implements SupportRepositoryInterface {
                 $searchTerm = trim($filters['search']);
                 $matchingUserIds = [];
                 try {
-                    $uStmt = $this->pdoIdentity->prepare("
+                    $uStmt = $this->getPdoIdentity()->prepare("
                         SELECT id FROM " . DB::TBL_USERS . " 
                         WHERE username LIKE :s OR email LIKE :s 
                         LIMIT 50

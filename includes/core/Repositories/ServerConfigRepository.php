@@ -12,12 +12,20 @@ use PDO;
 use PDOException;
 
 class ServerConfigRepository implements ServerConfigRepositoryInterface {
-    private $pdo;
-    private $redis;
+    private DatabaseManager $db;
+    private Client $redis;
+    private ?PDO $pdo = null;
 
     public function __construct(DatabaseManager $db, Client $redis) {
-        $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
+        $this->db = $db;
         $this->redis = $redis;
+    }
+
+    private function getPdo(): PDO {
+        if ($this->pdo === null) {
+            $this->pdo = $this->db->getConnection(DB::CONN_IDENTITY);
+        }
+        return $this->pdo;
     }
 
     public function getConfig(): array {
@@ -105,7 +113,7 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
         $tblServerConfig = DB::TBL_SERVER_CONFIG;
 
         try {
-            $stmt = $this->pdo->query("SELECT * FROM {$tblServerConfig} LIMIT 1");
+            $stmt = $this->getPdo()->query("SELECT * FROM {$tblServerConfig} LIMIT 1");
             $config = $stmt->fetch(PDO::FETCH_ASSOC);
 
             $finalConfig = $config ?: $defaultConfig;
@@ -147,13 +155,13 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
             if (empty($fields)) return true;
 
             $sql = "UPDATE {$tblServerConfig} SET " . implode(', ', $fields) . " WHERE id = 1";
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->getPdo()->prepare($sql);
             
             try {
                 $result = $stmt->execute($values);
             } catch (\PDOException $e) {
                 if (strpos($e->getMessage(), 'verification_code_expiration_minutes') !== false) {
-                    $this->pdo->exec("ALTER TABLE {$tblServerConfig} ADD COLUMN verification_code_expiration_minutes INT NOT NULL DEFAULT 15");
+                    $this->getPdo()->exec("ALTER TABLE {$tblServerConfig} ADD COLUMN verification_code_expiration_minutes INT NOT NULL DEFAULT 15");
                     $result = $stmt->execute($values);
                 } else {
                     throw $e;

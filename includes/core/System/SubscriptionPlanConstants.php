@@ -37,6 +37,16 @@ class SubscriptionPlanConstants {
     ];
 
     private static $tierLimitsCache = [];
+    private static $allTiersCache = null;
+    private static $tierPricesCache = null;
+    private static $maxTierCache = null;
+
+    public static function resetCache(): void {
+        self::$tierLimitsCache = [];
+        self::$allTiersCache = null;
+        self::$tierPricesCache = null;
+        self::$maxTierCache = null;
+    }
 
     public static function getTierLimits(int $tier): array {
         if (isset(self::$tierLimitsCache[$tier])) {
@@ -47,13 +57,9 @@ class SubscriptionPlanConstants {
             $tier = self::getMaxTierLevel();
         }
 
-        try {
-            $db = new \App\Config\Database\DatabaseManager();
-            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $stmt = $pdo->prepare("SELECT * FROM subscription_tiers WHERE tier_level = ?");
-            $stmt->execute([$tier]);
-            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if ($row) {
+        $allTiers = self::getAllTiers();
+        foreach ($allTiers as $row) {
+            if ((int)$row['tier_level'] === $tier) {
                 $limits = [
                     'name' => $row['name'],
                     'max_canvases' => (int)$row['max_canvases'],
@@ -78,8 +84,6 @@ class SubscriptionPlanConstants {
                 self::$tierLimitsCache[$tier] = $limits;
                 return $limits;
             }
-        } catch (\Exception $e) {
-            // Silently fallback on error
         }
 
         $default = [
@@ -124,51 +128,81 @@ class SubscriptionPlanConstants {
     }
 
     public static function getTierPrices(): array {
-        $prices = [];
-        try {
-            $db = new \App\Config\Database\DatabaseManager();
-            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $stmt = $pdo->query("SELECT tier_level, price_monthly, price_yearly FROM subscription_tiers");
-            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $prices[(int)$row['tier_level']] = [
-                    'monthly' => (float)$row['price_monthly'],
-                    'yearly'  => (float)$row['price_yearly']
-                ];
-            }
-        } catch (\Exception $e) {
-            // Silently fallback on error
+        if (self::$tierPricesCache !== null) {
+            return self::$tierPricesCache;
         }
+        $tiers = self::getAllTiers();
+        $prices = [];
+        foreach ($tiers as $row) {
+            $prices[(int)$row['tier_level']] = [
+                'monthly' => (float)$row['price_monthly'],
+                'yearly'  => (float)$row['price_yearly']
+            ];
+        }
+        self::$tierPricesCache = $prices;
         return $prices;
     }
 
     public static function getMaxTierLevel(): int {
-        try {
-            $db = new \App\Config\Database\DatabaseManager();
-            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $stmt = $pdo->query("SELECT MAX(tier_level) FROM subscription_tiers WHERE is_active = 1");
-            $max = $stmt->fetchColumn();
-            if ($max !== false && $max !== null) {
-                return (int)$max;
-            }
-        } catch (\Exception $e) {
-            // Silently fallback on error
+        if (self::$maxTierCache !== null) {
+            return self::$maxTierCache;
         }
-        return 3;
+        $tiers = self::getAllTiers();
+        $max = 0;
+        foreach ($tiers as $t) {
+            if (isset($t['is_active']) && (int)$t['is_active'] === 1) {
+                $level = (int)$t['tier_level'];
+                if ($level > $max) {
+                    $max = $level;
+                }
+            }
+        }
+        self::$maxTierCache = $max ?: 3;
+        return self::$maxTierCache;
     }
 
     public static function getAllTiers(): array {
+        if (self::$allTiersCache !== null) {
+            return self::$allTiersCache;
+        }
+
+        try {
+            $redis = (new \App\Config\Database\RedisCache())->getClient();
+            if ($redis && !defined('SYSTEM_DEGRADED')) {
+                $cached = $redis->get(CacheConstants::KEY_SUBSCRIPTION_TIERS_ALL);
+                if ($cached) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) {
+                        self::$allTiersCache = $decoded;
+                        return $decoded;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
         $tiers = [];
         try {
             $db = new \App\Config\Database\DatabaseManager();
             $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
             $stmt = $pdo->query("SELECT * FROM subscription_tiers ORDER BY tier_level ASC");
             while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $row['color'] = json_decode($row['color'], true) ?? [];
+                $row['color'] = is_string($row['color'] ?? null) ? (json_decode($row['color'], true) ?? []) : ($row['color'] ?? []);
                 $tiers[] = $row;
+            }
+
+            if (!empty($tiers)) {
+                try {
+                    $redis = (new \App\Config\Database\RedisCache())->getClient();
+                    if ($redis && !defined('SYSTEM_DEGRADED')) {
+                        $redis->setex(CacheConstants::KEY_SUBSCRIPTION_TIERS_ALL, CacheConstants::TTL_ONE_WEEK, json_encode($tiers));
+                    }
+                } catch (\Throwable $e) {}
             }
         } catch (\Exception $e) {
             // Silently fallback on error
         }
+
+        self::$allTiersCache = $tiers;
         return $tiers;
     }
 

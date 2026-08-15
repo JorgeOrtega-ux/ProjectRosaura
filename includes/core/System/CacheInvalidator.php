@@ -208,21 +208,33 @@ class CacheInvalidator {
     public function storePackages(): void {
         if (!$this->redis) return;
         try {
+            $this->redis->del(CacheConstants::KEY_STORE_COIN_PACKAGES);
             $this->deleteByPattern('store:coin_packages:*');
+            if (class_exists(StorePackagesConfig::class)) {
+                StorePackagesConfig::resetCache();
+            }
         } catch (\Throwable $e) {}
     }
 
     public function storePerkPackages(): void {
         if (!$this->redis) return;
         try {
+            $this->redis->del(CacheConstants::KEY_STORE_PERK_PACKAGES);
             $this->deleteByPattern('store:perk_packages:*');
+            if (class_exists(StorePackagesConfig::class)) {
+                StorePackagesConfig::resetCache();
+            }
         } catch (\Throwable $e) {}
     }
 
     public function subscriptionTiers(): void {
         if (!$this->redis) return;
         try {
+            $this->redis->del(CacheConstants::KEY_SUBSCRIPTION_TIERS_ALL);
             $this->deleteByPattern('subscription:tiers:*');
+            if (class_exists(SubscriptionPlanConstants::class)) {
+                SubscriptionPlanConstants::resetCache();
+            }
         } catch (\Throwable $e) {}
     }
 
