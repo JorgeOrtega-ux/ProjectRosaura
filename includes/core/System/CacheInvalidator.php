@@ -10,6 +10,35 @@ class CacheInvalidator {
         $this->redis = $redis;
     }
 
+    private function deleteByPattern(string $pattern): void {
+        if (!$this->redis) return;
+        try {
+            if (class_exists('\\Predis\\Collection\\Iterator\\Keyspace')) {
+                $batch = [];
+                foreach (new \Predis\Collection\Iterator\Keyspace($this->redis, $pattern) as $key) {
+                    $batch[] = $key;
+                    if (count($batch) >= 100) {
+                        $this->redis->del($batch);
+                        $batch = [];
+                    }
+                }
+                if (!empty($batch)) {
+                    $this->redis->del($batch);
+                }
+            } else {
+                $cursor = '0';
+                do {
+                    $result = $this->redis->scan($cursor, ['MATCH' => $pattern, 'COUNT' => 100]);
+                    $cursor = (string)$result[0];
+                    $keys = $result[1];
+                    if (!empty($keys)) {
+                        $this->redis->del($keys);
+                    }
+                } while ($cursor !== '0' && $cursor !== '');
+            }
+        } catch (\Throwable $e) {}
+    }
+
     public function user(int $userId, ?string $uuid = null): void {
         if (!$this->redis) return;
         try {
@@ -51,35 +80,15 @@ class CacheInvalidator {
             $this->redis->del("canvas:{$canvasId}:config");
             $this->redis->del("canvas:{$canvasId}:state");
 
-            $uuidKeys = $this->redis->keys(CacheConstants::PREFIX_CANVAS_DETAIL . 'uuid:*');
-            if (!empty($uuidKeys)) {
-                $this->redis->del($uuidKeys);
-            }
-
-            $viewKeys = $this->redis->keys("canvas:view_data:{$canvasId}:*");
-            if (!empty($viewKeys)) {
-                $this->redis->del($viewKeys);
-            }
-            $preloadKeys = $this->redis->keys("canvas:layout_preload:{$canvasId}:*");
-            if (!empty($preloadKeys)) {
-                $this->redis->del($preloadKeys);
-            }
+            $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_DETAIL . 'uuid:*');
+            $this->deleteByPattern("canvas:view_data:{$canvasId}:*");
+            $this->deleteByPattern("canvas:layout_preload:{$canvasId}:*");
 
             $metaPattern = CacheConstants::PREFIX_CANVAS_META . $canvasId . CacheConstants::SUFFIX_CANVAS_META_USER . '*';
-            $metaKeys = $this->redis->keys($metaPattern);
-            if (!empty($metaKeys)) {
-                $this->redis->del($metaKeys);
-            }
+            $this->deleteByPattern($metaPattern);
 
-            $pubKeys = $this->redis->keys(CacheConstants::PREFIX_CANVAS_PUBLIC_PAGE . '*');
-            if (!empty($pubKeys)) {
-                $this->redis->del($pubKeys);
-            }
-
-            $homeKeys = $this->redis->keys(CacheConstants::PREFIX_CANVAS_HOME_FEED . '*');
-            if (!empty($homeKeys)) {
-                $this->redis->del($homeKeys);
-            }
+            $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_PUBLIC_PAGE . '*');
+            $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_HOME_FEED . '*');
         } catch (\Throwable $e) {}
     }
 
@@ -93,15 +102,8 @@ class CacheInvalidator {
                 $this->redis->del(CacheConstants::PREFIX_CANVAS_TIER_COUNT . "{$userId}:{$t}");
             }
 
-            $dashKeys = $this->redis->keys(CacheConstants::PREFIX_CANVAS_DASHBOARD . "u{$userId}:*");
-            if (!empty($dashKeys)) {
-                $this->redis->del($dashKeys);
-            }
-
-            $keys = $this->redis->keys(CacheConstants::PREFIX_CANVAS_HOME_FEED . '*');
-            if (!empty($keys)) {
-                $this->redis->del($keys);
-            }
+            $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_DASHBOARD . "u{$userId}:*");
+            $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_HOME_FEED . '*');
         } catch (\Throwable $e) {}
     }
 
@@ -154,10 +156,7 @@ class CacheInvalidator {
         try {
             $this->redis->del(CacheConstants::PREFIX_ROLES_ALL);
             $this->redis->del(CacheConstants::PREFIX_ALL_PERMISSIONS);
-            $keys = $this->redis->keys('rbac:*');
-            if (!empty($keys)) {
-                $this->redis->del($keys);
-            }
+            $this->deleteByPattern('rbac:*');
         } catch (\Throwable $e) {}
     }
 
@@ -171,10 +170,7 @@ class CacheInvalidator {
             if ($roleName !== null) {
                 $this->redis->del(CacheConstants::PREFIX_ROLE_BY_NAME . $roleName);
             }
-            $keys = $this->redis->keys('rbac:*');
-            if (!empty($keys)) {
-                $this->redis->del($keys);
-            }
+            $this->deleteByPattern('rbac:*');
         } catch (\Throwable $e) {}
     }
 
@@ -183,24 +179,15 @@ class CacheInvalidator {
         try {
             $this->redis->del(CacheConstants::PREFIX_ALL_PERMISSIONS);
             $this->redis->del(CacheConstants::PREFIX_ROLES_ALL);
-            $keys = $this->redis->keys('rbac:*');
-            if (!empty($keys)) {
-                $this->redis->del($keys);
-            }
+            $this->deleteByPattern('rbac:*');
         } catch (\Throwable $e) {}
     }
 
     public function allUsers(): void {
         if (!$this->redis) return;
         try {
-            $keys = $this->redis->keys('user:*');
-            if (!empty($keys)) {
-                $this->redis->del($keys);
-            }
-            $keysRbac = $this->redis->keys('rbac:*');
-            if (!empty($keysRbac)) {
-                $this->redis->del($keysRbac);
-            }
+            $this->deleteByPattern('user:*');
+            $this->deleteByPattern('rbac:*');
         } catch (\Throwable $e) {}
     }
 
@@ -221,40 +208,28 @@ class CacheInvalidator {
     public function storePackages(): void {
         if (!$this->redis) return;
         try {
-            $keys = $this->redis->keys('store:coin_packages:*');
-            if (!empty($keys)) {
-                $this->redis->del($keys);
-            }
+            $this->deleteByPattern('store:coin_packages:*');
         } catch (\Throwable $e) {}
     }
 
     public function storePerkPackages(): void {
         if (!$this->redis) return;
         try {
-            $keys = $this->redis->keys('store:perk_packages:*');
-            if (!empty($keys)) {
-                $this->redis->del($keys);
-            }
+            $this->deleteByPattern('store:perk_packages:*');
         } catch (\Throwable $e) {}
     }
 
     public function subscriptionTiers(): void {
         if (!$this->redis) return;
         try {
-            $keys = $this->redis->keys('subscription:tiers:*');
-            if (!empty($keys)) {
-                $this->redis->del($keys);
-            }
+            $this->deleteByPattern('subscription:tiers:*');
         } catch (\Throwable $e) {}
     }
 
     public function cannedResponses(): void {
         if (!$this->redis) return;
         try {
-            $keys = $this->redis->keys(CacheConstants::PREFIX_SUPPORT_CANNED . '*');
-            if (!empty($keys)) {
-                $this->redis->del($keys);
-            }
+            $this->deleteByPattern(CacheConstants::PREFIX_SUPPORT_CANNED . '*');
         } catch (\Throwable $e) {}
     }
 }

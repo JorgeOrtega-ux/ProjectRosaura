@@ -118,8 +118,21 @@ class RedisCache {
         }
     }
 
-    public function executeWithLock(string $name, int $timeoutSeconds, callable $callback) {
-        $lockToken = $this->acquireLock($name, $timeoutSeconds);
+    public function executeWithLock(string $name, int $timeoutSeconds, callable $callback, int $maxRetries = 10, int $retryDelayMs = 50) {
+        $lockToken = false;
+        for ($i = 0; $i < $maxRetries; $i++) {
+            $lockToken = $this->acquireLock($name, $timeoutSeconds);
+            if ($lockToken !== false) {
+                break;
+            }
+            usleep($retryDelayMs * 1000);
+        }
+
+        if ($lockToken === false) {
+            Logger::warning('Failed to acquire distributed lock after retries', ['lock_name' => $name]);
+            return ['success' => false, 'message_key' => 'error.system_busy'];
+        }
+
         try {
             return $callback($lockToken);
         } finally {

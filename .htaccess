@@ -3,35 +3,40 @@
     
     Options +FollowSymLinks -Indexes -MultiViews
 
-    # Base de tu proyecto local
     RewriteBase /
 
-    # 1. Enrutar archivos estáticos (JS, CSS)
+    RewriteRule ^storage/private(/.*)?$ - [F,L]
+    RewriteRule ^config(/.*)?$ - [F,L]
+    RewriteRule ^includes(/.*)?$ - [F,L]
+
     RewriteRule ^assets/(.*)$ public/assets/$1 [L]
 
-    # 1.5. Enrutar webhook de Stripe directamente (sin pasar por el SPA)
     RewriteRule ^stripe/webhook$ stripe/webhook.php [L]
 
-    # 1.6. Enrutar avatares con token hasheado (estilo Google)
     RewriteRule ^(?:public/)?avatar/([a-zA-Z0-9_-]+)$ api/avatar.php?token=$1 [QSA,L]
 
-    # 2. Enrutar peticiones de almacenamiento local a storage/public
     RewriteRule ^storage/(.*)$ storage/public/$1 [L]
 
-    # 3. Si la petición ya está apuntando a public/ internamente, la dejamos pasar
     RewriteRule ^public/ - [L]
 
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
-    # 4.5 Alias for api.php compatibility
     RewriteRule ^api\.php$ api/index.php [QSA,L]
 
-    # 5. Cualquier otra petición (incluyendo la raíz y las rutas SPA) va al index.php
     RewriteRule ^(.*)$ public/index.php [QSA,L]
 </IfModule>
 
-# Compresión Gzip para acelerar la transferencia de archivos
+<FilesMatch "^\.|\.(env|log|lock|sql|md|yml|yaml|ini)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
     AddOutputFilterByType DEFLATE application/javascript application/x-javascript application/json
@@ -39,7 +44,6 @@
     AddOutputFilterByType DEFLATE image/svg+xml font/opentype font/otf font/ttf font/woff font/woff2
 </IfModule>
 
-# Caché de Navegador para evitar descargas repetidas de activos estáticos
 <IfModule mod_expires.c>
     ExpiresActive On
     ExpiresByType image/jpeg "access plus 1 year"

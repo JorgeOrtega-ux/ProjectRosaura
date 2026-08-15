@@ -629,7 +629,7 @@ class SettingsServices
         if (empty($secret) || empty($code)) return ['success' => false, 'message' => __('validation.missing_fields')];
 
         $ga = new GoogleAuthenticator();
-        if ($ga->verifyCode($secret, $code, 4)) {
+        if ($ga->verifyCode($secret, $code, 1)) {
             $codes = Utils::generateRecoveryCodes(10, 8);
             
             $hashedCodes = array_map(function($c) {

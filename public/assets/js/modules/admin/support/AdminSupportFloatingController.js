@@ -162,7 +162,9 @@ export class AdminSupportFloatingController {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
 
         try {
-            const wsUrl = `${WsConfig.getBaseUrl()}/support/admin_console`;
+            const agentId = window.activeUserId || (window.APP_USER && window.APP_USER.id) || '';
+            const queryParam = agentId ? `?agent_id=${encodeURIComponent(agentId)}` : '';
+            const wsUrl = `${WsConfig.getBaseUrl()}/support/admin_console${queryParam}`;
             this.ws = new WebSocket(wsUrl);
 
             this.ws.onopen = () => {

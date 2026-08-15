@@ -115,10 +115,17 @@ class AdminSupportService {
         $level = $this->getAgentLevel();
         $this->supportRepo->updateAgentStatus($agentId, $status, $level, $maxChats);
 
+        $availableCount = $this->supportRepo->getAvailableAgentsCount('all');
+
         $this->publishSupportEvent('agent_status_updated', null, [
             'agent_id' => $agentId,
             'status' => $status,
             'level' => $level
+        ]);
+
+        $this->publishSupportEvent('support_availability_changed', null, [
+            'is_online' => $availableCount > 0,
+            'available_agents' => $availableCount
         ]);
 
         return [
@@ -134,7 +141,7 @@ class AdminSupportService {
             return ['success' => false, 'message' => __('err_unauthorized')];
         }
 
-        $this->supportRepo->heartbeatAgent($agentId);
+        $this->supportRepo->heartbeatAgent($agentId, true);
         $this->supportRepo->cleanupStaleSessions();
 
         $l1Queue = $this->supportRepo->getQueueSessions('l1', 30);

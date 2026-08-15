@@ -115,7 +115,9 @@ export class AdminSupportLiveController {
         if (this.isIntentionalDisconnect) return;
 
         try {
-            const wsUrl = `${WsConfig.getBaseUrl()}/support/admin_console`;
+            const agentId = this.agentId || window.activeUserId || (window.APP_USER && window.APP_USER.id) || '';
+            const queryParam = agentId ? `?agent_id=${encodeURIComponent(agentId)}` : '';
+            const wsUrl = `${WsConfig.getBaseUrl()}/support/admin_console${queryParam}`;
             this.ws = new WebSocket(wsUrl);
 
             this.ws.onopen = () => {
@@ -632,7 +634,13 @@ export class AdminSupportLiveController {
         try {
             const res = await this.api.post(ApiRoutes.AdminSupport.GetAgentStatus, {}, this.abortController ? this.abortController.signal : undefined);
             if (res && res.success) {
-                this._updateAgentStatusUI(res.status);
+                this.agentId = res.agent_id;
+                let status = res.status || 'offline';
+                if (status === 'offline') {
+                    status = 'online';
+                    this.api.post(ApiRoutes.AdminSupport.UpdateAgentStatus, { status: 'online' }).catch(() => {});
+                }
+                this._updateAgentStatusUI(status);
             }
         } catch (error) {
             if (error.name === 'AbortError') return;

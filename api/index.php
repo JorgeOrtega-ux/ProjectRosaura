@@ -1,21 +1,5 @@
 <?php
 
-ob_start();
-register_shutdown_function(function() {
-    $output = ob_get_contents();
-    $logData = [
-        'time' => date('Y-m-d H:i:s'),
-        'method' => $_SERVER['REQUEST_METHOD'] ?? '',
-        'uri' => $_SERVER['REQUEST_URI'] ?? '',
-        'csrf_header' => $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '',
-        'cookies' => $_COOKIE,
-        'post' => $_POST,
-        'json_input' => json_decode(file_get_contents('php://input'), true),
-        'response_code' => http_response_code(),
-        'response' => substr($output, 0, 1000)
-    ];
-    @file_put_contents(dirname(__DIR__) . '/storage/private/logs/api_requests.log', json_encode($logData) . "\n", FILE_APPEND);
-});
 ini_set('display_errors', '0');
 ini_set('memory_limit', '512M');
 error_reporting(E_ALL);
@@ -151,8 +135,9 @@ $container = new Container();
 
 try {
     $rateLimiter = $container->get(\App\Core\Interfaces\RateLimiterInterface::class);
-    
-    $globalLimit = $rateLimiter->consume('global_api_traffic', 150, 1);
+    $clientIp = Utils::getIpAddress();
+    $rateLimitKey = 'global_api_ip_' . md5($clientIp);
+    $globalLimit = $rateLimiter->consume($rateLimitKey, 300, 1);
     
     if (!$globalLimit['allowed']) {
         http_response_code(429);

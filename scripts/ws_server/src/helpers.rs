@@ -407,3 +407,14 @@ pub async fn support_events_listener(state: AppState) {
         sleep(Duration::from_secs(2)).await;
     }
 }
+
+pub async fn publish_redis_event(redis_pool: &deadpool_redis::Pool, channel: &str, payload: &str) {
+    if let Ok(mut conn) = redis_pool.get().await {
+        let _: Result<(), _> = deadpool_redis::redis::cmd("PUBLISH")
+            .arg(channel)
+            .arg(payload)
+            .query_async(&mut conn)
+            .await;
+    }
+}
+

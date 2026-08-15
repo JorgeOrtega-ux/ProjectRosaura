@@ -18,7 +18,7 @@ class GoogleAuthenticator {
         return "otpauth://totp/" . rawurlencode($name) . ":" . rawurlencode($email) . "?secret=" . $secret . "&issuer=" . rawurlencode($name);
     }
 
-    public function verifyCode(string $secret, string $code, int $discrepancy = 4, ?int $currentTimeSlice = null): bool {
+    public function verifyCode(string $secret, string $code, int $discrepancy = 1, ?int $currentTimeSlice = null): bool {
         if ($currentTimeSlice === null) {
             $currentTimeSlice = (int) floor(time() / 30);
         }
@@ -28,10 +28,8 @@ class GoogleAuthenticator {
             return false;
         }
 
-        $calculatedCodes = [];
         for ($i = -$discrepancy; $i <= $discrepancy; $i++) {
             $calculated = $this->getCode($secret, $currentTimeSlice + $i);
-            $calculatedCodes[] = $calculated;
             if (hash_equals($calculated, $code)) {
                 return true;
             }
@@ -39,15 +37,33 @@ class GoogleAuthenticator {
 
         if (class_exists('\\App\\Core\\System\\Logger')) {
             \App\Core\System\Logger::security("2FA verification failed", 'warning', [
-                'provided_code' => $code,
-                'secret_preview' => substr($secret, 0, 4) . '***',
                 'time_slice' => $currentTimeSlice,
-                'server_time' => date('Y-m-d H:i:s'),
-                'expected_codes' => $calculatedCodes
+                'server_time' => date('Y-m-d H:i:s')
             ]);
         }
 
         return false;
+    }
+
+    public function getMatchedTimeSlice(string $secret, string $code, int $discrepancy = 1, ?int $currentTimeSlice = null): ?int {
+        if ($currentTimeSlice === null) {
+            $currentTimeSlice = (int) floor(time() / 30);
+        }
+        
+        $code = trim($code);
+        if (strlen($code) !== 6 || !ctype_digit($code)) {
+            return null;
+        }
+
+        for ($i = -$discrepancy; $i <= $discrepancy; $i++) {
+            $slice = $currentTimeSlice + $i;
+            $calculated = $this->getCode($secret, $slice);
+            if (hash_equals($calculated, $code)) {
+                return $slice;
+            }
+        }
+
+        return null;
     }
 
     public function getCode(string $secret, ?int $timeSlice = null): string {
@@ -94,4 +110,3 @@ class GoogleAuthenticator {
         return $bytes;
     }
 }
-?>

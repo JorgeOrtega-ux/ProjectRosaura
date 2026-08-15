@@ -39,6 +39,9 @@ export class ContactSupportController {
         this._restoreActiveSession();
         this._renderTurnstile();
         this._checkLiveChatStatus();
+        if (!this.activeSessionUuid) {
+            this._connectWebSocket('presence');
+        }
     }
 
     bindEvents() {
@@ -167,12 +170,37 @@ export class ContactSupportController {
         } catch (e) {}
     }
 
+    _updateAvailabilityUI(isOnline, count) {
+        this.isLiveChatOnline = !!isOnline;
+        this.availableAgentsCount = count || 0;
+        const statusText = document.querySelector('[data-ref="support-agents-status-text"]');
+        if (statusText) {
+            if (isOnline && count > 0) {
+                statusText.textContent = window.__('msg_support_agents_available', { count: count });
+            } else {
+                statusText.textContent = window.__('support_livechat_unavailable_desc');
+            }
+        }
+    }
+
     _handleWsEvent(payload) {
         if (!payload) return;
+
+        if (payload.type === 'support_connected' && payload.role === 'presence') {
+            this._updateAvailabilityUI(payload.is_online, payload.available_agents);
+            return;
+        }
 
         if (payload.type === 'support_event') {
             const event = payload.event;
             const sessionUuid = payload.session_uuid;
+
+            if (event === 'support_availability_changed') {
+                const isOnline = !!payload.data?.is_online;
+                const count = payload.data?.available_agents || 0;
+                this._updateAvailabilityUI(isOnline, count);
+                return;
+            }
 
             if (sessionUuid && sessionUuid !== this.activeSessionUuid) return;
 

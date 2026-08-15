@@ -910,13 +910,14 @@ class SupportRepository implements SupportRepositoryInterface {
         }
     }
 
-    public function heartbeatAgent(int $agentId): bool {
+    public function heartbeatAgent(int $agentId, bool $reviveOnline = false): bool {
         try {
-            $stmt = $this->pdo->prepare("
-                UPDATE " . DB::TBL_SUPPORT_AGENT_STATUS . "
-                SET last_heartbeat = NOW()
-                WHERE agent_id = :agent_id
-            ");
+            $sql = "UPDATE " . DB::TBL_SUPPORT_AGENT_STATUS . " SET last_heartbeat = NOW()";
+            if ($reviveOnline) {
+                $sql .= ", status = CASE WHEN status = 'offline' THEN 'online' ELSE status END";
+            }
+            $sql .= " WHERE agent_id = :agent_id";
+            $stmt = $this->pdo->prepare($sql);
             return $stmt->execute([':agent_id' => $agentId]);
         } catch (PDOException $e) {
             Logger::database("Failed to update agent heartbeat: " . $e->getMessage(), 'error');

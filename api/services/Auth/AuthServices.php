@@ -851,7 +851,20 @@ class AuthServices {
             }
         } else {
             $ga = new GoogleAuthenticator();
-            $isValid = $ga->verifyCode($user['two_factor_secret'], $code, 4);
+            $slice = $ga->getMatchedTimeSlice($user['two_factor_secret'], $code, 1);
+            if ($slice !== null) {
+                $redisCacheObj = new RedisCache();
+                $redisClient = $redisCacheObj->getClient();
+                $replayKey = "2fa_used:{$userId}:{$slice}";
+                if ($redisClient && $redisClient->exists($replayKey)) {
+                    $isValid = false;
+                } else {
+                    if ($redisClient) {
+                        $redisClient->setex($replayKey, 120, 1);
+                    }
+                    $isValid = true;
+                }
+            }
         }
 
         if ($isValid) {
@@ -992,6 +1005,10 @@ class AuthServices {
         $token = trim($data['token'] ?? ''); $password = trim($data['password'] ?? '');
         if (empty($token) || empty($password)) return ['success' => false, 'message' => __('validation.missing_fields')];
         
+        $ip = Utils::getIpAddress();
+        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_RESET_PASSWORD . "_{$ip}", RateLimitConstants::MAX_10, RateLimitConstants::TIME_15, true);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message' => __($rateCheck['message_key'] ?? 'error.too_many_attempts')];
+
         $minPass = (int)($this->config['min_password_length'] ?? 8);
         $maxPass = (int)($this->config['max_password_length'] ?? 64);
         $passValidation = Utils::validatePasswordFormat($password, $minPass, $maxPass);
@@ -1005,6 +1022,7 @@ class AuthServices {
         $user = $this->userRepository->findByEmail($email);
         
         if ($user && $this->userRepository->updatePassword($user['id'], password_hash($password, PASSWORD_BCRYPT))) {
+            $this->rateLimiter->clear(RateLimitConstants::KEY_AUTH_RESET_PASSWORD . "_{$ip}");
             $this->tokenRepository->deleteAllByUserId($user['id']);
             $this->verificationCodeRepository->deleteByIdentifierAndType($email, DatabaseConstants::VERIFY_TYPE_PASSWORD);
             

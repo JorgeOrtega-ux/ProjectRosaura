@@ -40,6 +40,7 @@ pub struct AppState {
     pub db_pool: MySqlPool,
     pub support_rooms: Arc<DashMap<String, DashSet<String>>>, // session_uuid -> set of connection_ids
     pub admin_support_conns: Arc<DashSet<String>>, // set of connection_ids of admin live consoles
+    pub admin_agents: Arc<DashMap<i32, DashSet<String>>>, // agent_id -> set of connection_ids
     pub perks_config: Arc<Mutex<Option<PerksConfig>>>,
     pub user_perk_cooldowns: Arc<DashMap<String, std::time::Instant>>,
     pub canvas_configs: Arc<DashMap<String, ((i32, i32, bool, i32, i32, i32), std::time::Instant)>>,
@@ -54,6 +55,7 @@ impl AppState {
             live_rooms: Arc::new(DashMap::new()),
             support_rooms: Arc::new(DashMap::new()),
             admin_support_conns: Arc::new(DashSet::new()),
+            admin_agents: Arc::new(DashMap::new()),
             ws_meta: Arc::new(DashMap::new()),
             tx_channels: Arc::new(DashMap::new()),
             user_locks: Arc::new(DashMap::new()),

@@ -1,0 +1,69 @@
+# ==============================================================================
+# Antigravity & AI Agents Ignore List (.geminiignore)
+# Previene consumo innecesario de tokens al ignorar dependencias, binarios y assets
+# ==============================================================================
+
+# Dependencias de terceros (código externo que satura la ventana de contexto)
+vendor/
+node_modules/
+composer.lock
+package-lock.json
+
+# Archivos de build y compilación (Rust, C, Python, etc.)
+scripts/ws_server/target/
+target/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Directorios de almacenamiento, logs, copias de seguridad y sesiones
+storage/
+storage/private/logs/
+storage/private/canvases/
+storage/private/backups/
+storage/public/
+*.log
+error_log
+
+# Archivos de audio y sonidos (binarios pesados)
+sounds/
+public/assets/sounds/
+*.mp3
+*.wav
+*.ogg
+*.flac
+*.m4a
+
+# Imágenes y recursos multimedia binarios
+public/assets/img/
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.ico
+*.pdf
+*.zip
+*.tar
+*.gz
+*.enc
+*.mmdb
+
+# Archivos minificados y mapas de código
+*.min.js
+*.min.css
+*.map
+
+# Herramientas y reportes internos generados
+admin_tools/data/
+admin_tools/reports/
+admin_tools/__pycache__/
+
+# Archivos de configuración de IDEs y editores
+.idea/
+.vscode/
+.git/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

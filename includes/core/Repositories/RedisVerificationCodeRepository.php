@@ -15,6 +15,8 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
 
     public function createCode(string $identifier, string $codeType, string $code, string $payload, string $expiresAt): bool {
         try {
+            $this->deleteByIdentifierAndType($identifier, $codeType);
+
             $id = $this->redis->incr('seq:verification_codes');
             
             $now = time();

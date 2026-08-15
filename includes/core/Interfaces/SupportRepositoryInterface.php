@@ -28,7 +28,7 @@ interface SupportRepositoryInterface {
 
     public function getAgentStatus(int $agentId): ?array;
     public function updateAgentStatus(int $agentId, string $status, ?string $level = null, ?int $maxChats = null): bool;
-    public function heartbeatAgent(int $agentId): bool;
+    public function heartbeatAgent(int $agentId, bool $reviveOnline = false): bool;
     public function getOnlineAgents(string $level = 'all'): array;
 
     public function getCannedResponses(?string $minLevel = null, ?string $language = null): array;
