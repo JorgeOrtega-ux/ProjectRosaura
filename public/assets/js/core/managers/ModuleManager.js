@@ -49,7 +49,12 @@ export class ModuleManager {
     // ─── Keyboard ─────────────────────────────────────────────────────────────
 
     handleKeyDown(e) {
-        if (e.key === 'Escape' && this.config.closeOnEsc) this.closeAllModules();
+        if (e.key === 'Escape' && this.config.closeOnEsc) {
+            const hasActiveModal = document.querySelector('.component-modal-overlay.active, .chat-image-viewer-overlay.active, .modal-container .component-modal-box');
+            if (hasActiveModal) return;
+
+            this.closeAllModules();
+        }
     }
 
     // ─── Resize ───────────────────────────────────────────────────────────────
@@ -231,6 +236,9 @@ export class ModuleManager {
      */
     handleOutsideClick(e) {
         if (this.dragState.isDragging) return;
+
+        const isClickInsideModal = e.target.closest('.component-modal-overlay, .modal-container, .chat-image-viewer-overlay, .component-modal-box');
+        if (isClickInsideModal) return;
 
         const activeModules = document.querySelectorAll('.component-module:not(.disabled)');
         if (activeModules.length === 0) return;

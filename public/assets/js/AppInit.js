@@ -10,6 +10,7 @@ import { ApiRoutes } from './core/api/ApiRoutes.js';
 import { OnboardingTourManager } from './core/managers/OnboardingTourManager.js';
 
 import { formatNumber } from './core/utils/uiUtils.js';
+import { AdminSupportFloatingController } from './modules/admin/support/AdminSupportFloatingController.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     window.formatNumber = formatNumber;
@@ -272,16 +273,27 @@ document.addEventListener('DOMContentLoaded', () => {
         window.onboardingTourManager.triggerWelcomeTour();
     }
 
+    const adminFloatingChatModule = document.querySelector('[data-module="moduleAdminSupportChat"]');
+    if (adminFloatingChatModule) {
+        window.adminSupportFloatingController = new AdminSupportFloatingController();
+        window.adminSupportFloatingController.init();
+    }
+
     function syncSupportFloatingButton() {
         const fab = document.querySelector('[data-ref="floating-support-btn"]');
-        if (!fab) return;
-        const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
-        const isModuleOpen = moduleEl && !moduleEl.classList.contains('disabled');
-        const savedSession = localStorage.getItem('pr_active_support_session');
-        if (savedSession && !isModuleOpen) {
-            fab.classList.remove('disabled');
-        } else {
-            fab.classList.add('disabled');
+        if (fab) {
+            const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
+            const isModuleOpen = moduleEl && !moduleEl.classList.contains('disabled');
+            const savedSession = localStorage.getItem('pr_active_support_session');
+            if (savedSession && !isModuleOpen) {
+                fab.classList.remove('disabled');
+            } else {
+                fab.classList.add('disabled');
+            }
+        }
+
+        if (window.adminSupportFloatingController) {
+            window.adminSupportFloatingController.syncVisibility();
         }
     }
 

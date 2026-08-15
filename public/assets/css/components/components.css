@@ -8918,7 +8918,8 @@ html.dark-theme .component-skeleton-design-bottom {
     gap: 16px;
 }
 
-.component-fab-support {
+.component-fab-support,
+.component-fab-admin-support {
     position: fixed;
     bottom: 24px;
     right: 24px;
@@ -8930,6 +8931,20 @@ html.dark-theme .component-skeleton-design-bottom {
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0.2s ease;
 }
 
-.component-fab-support.disabled {
+.component-fab-support.disabled,
+.component-fab-admin-support.disabled {
     display: none !important;
+}
+
+.component-fab-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 18px;
+    border-radius: 9px;
 }

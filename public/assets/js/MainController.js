@@ -349,6 +349,16 @@ export class MainController {
                 return;
             }
 
+            else if (action === 'openFloatingAdminSupportChat') {
+                e.preventDefault();
+                if (window.adminSupportFloatingController) {
+                    window.adminSupportFloatingController.toggleModule();
+                } else {
+                    this.moduleManager.toggleMenuInModule('moduleAdminSupportChat', 'menu-admin-support-chat');
+                }
+                return;
+            }
+
             else if (action === 'openFilterSubMenu' || action === 'openSubMenu') {
                 e.preventDefault();
                 const targetRef = btn.getAttribute('data-target');

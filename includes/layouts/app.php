@@ -351,6 +351,13 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
                     <?php include __DIR__ . '/../modules/moduleSurface.php'; ?>
                     <?php include __DIR__ . '/../modules/moduleCanvasInfo.php'; ?>
                     <?php include __DIR__ . '/../modules/moduleSupportChat.php'; ?>
+                    <?php 
+                    $userRoles = $_SESSION['user_roles'] ?? [];
+                    $isSuperAdmin = in_array(4, $userRoles);
+                    $canAccessSupport = $isSuperAdmin || in_array(\App\Core\System\PermissionsConstants::ACCESS_SUPPORT_PANEL, $userPermissions) || in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions);
+                    if ($canAccessSupport): ?>
+                    <?php include __DIR__ . '/../modules/moduleAdminSupportChat.php'; ?>
+                    <?php endif; ?>
                     <div class="general-content-scrolleable" data-ref="app-router-outlet">
                         <?php $loader->load($currentView); ?>
                     </div>

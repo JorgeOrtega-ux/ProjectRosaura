@@ -1049,8 +1049,15 @@ export class AdminSupportLiveController {
             if (res && res.success && res.session) {
                 this.currentSession = res.session;
 
-                if (this.lastActiveList && this.lastActiveList.some(s => s.uuid === this.currentSessionUuid)) {
+                const isMyActive = (this.lastActiveList && this.lastActiveList.some(s => s.uuid === this.currentSessionUuid)) || res.session.status === 'active';
+                if (isMyActive) {
                     this.activeTab = 'active';
+                    try {
+                        localStorage.setItem('pr_active_agent_support_session', JSON.stringify(res.session));
+                        if (window.adminSupportFloatingController) {
+                            window.adminSupportFloatingController.setActiveSession(res.session);
+                        }
+                    } catch (e) {}
                 } else if (res.session.department_level) {
                     this.activeTab = res.session.department_level;
                 }
@@ -1620,6 +1627,12 @@ export class AdminSupportLiveController {
     _resetChatView() {
         this.currentSessionUuid = null;
         this.currentSession = null;
+        try {
+            localStorage.removeItem('pr_active_agent_support_session');
+            if (window.adminSupportFloatingController) {
+                window.adminSupportFloatingController.clearActiveSession();
+            }
+        } catch (e) {}
 
         if (window.location.pathname !== '/admin/support/live-console') {
             window.history.replaceState(null, '', '/admin/support/live-console');
