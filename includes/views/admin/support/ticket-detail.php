@@ -53,41 +53,36 @@ $dynamicClass = ($subColorCSS && $subColorCSS !== 'transparent') ? 'subscription
             <h1 class="component-top-title" data-ref="ticket-detail-title"><?php echo __('title_ticket_detail'); ?> #<?php echo htmlspecialchars(substr($ticket['uuid'], 0, 8)); ?></h1>
         </div>
         <div class="component-top-right">
-            <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
+            <div class="component-dropdown-wrapper">
                 <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleTicketStatusChange">
-                    <span class="material-symbols-rounded">rule</span>
+                    <span class="material-symbols-rounded" data-ref="ticket-status-icon"><?php echo htmlspecialchars($stInfo['icon']); ?></span>
                     <span class="component-dropdown-text" data-ref="ticket-status-text"><?php echo htmlspecialchars($stInfo['label']); ?></span>
                     <span class="material-symbols-rounded">expand_more</span>
                 </div>
                 <div class="component-module component-module--dropdown disabled" data-module="moduleTicketStatusChange">
-                    <div class="component-menu component-menu--w200 component-menu--h-auto component-menu--no-padding active">
+                    <div class="component-menu component-menu--w-full component-menu--h-auto active">
                         <div class="pill-container"><div class="drag-handle"></div></div>
-                        <div class="component-menu-header">
-                            <div class="component-menu-header-box">
-                                <span class="component-menu-header-title"><?php echo __('lbl_change_status'); ?></span>
-                            </div>
-                        </div>
                         <div class="component-menu-list">
                             <div class="component-menu-link <?php echo $ticket['status'] === 'open' ? 'active' : ''; ?>" data-action="updateTicketStatusAction" data-status="open">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">error</span></div>
                                 <div class="component-menu-link-text"><span><?php echo __('lbl_status_open'); ?></span></div>
                             </div>
                             <div class="component-menu-link <?php echo $ticket['status'] === 'in_progress' ? 'active' : ''; ?>" data-action="updateTicketStatusAction" data-status="in_progress">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">timelapse</span></div>
                                 <div class="component-menu-link-text"><span><?php echo __('lbl_status_in_progress'); ?></span></div>
                             </div>
                             <div class="component-menu-link <?php echo $ticket['status'] === 'resolved' ? 'active' : ''; ?>" data-action="updateTicketStatusAction" data-status="resolved">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">check_circle</span></div>
                                 <div class="component-menu-link-text"><span><?php echo __('lbl_status_resolved'); ?></span></div>
                             </div>
                             <div class="component-menu-link <?php echo $ticket['status'] === 'closed' ? 'active' : ''; ?>" data-action="updateTicketStatusAction" data-status="closed">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
                                 <div class="component-menu-link-text"><span><?php echo __('lbl_status_closed'); ?></span></div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo $appUrl; ?>/admin/support/tickets" data-tooltip="<?php echo __('btn_back_to_tickets'); ?>" data-position="bottom">
-                <span class="material-symbols-rounded">arrow_back</span>
-            </button>
         </div>
     </div>
 
@@ -130,11 +125,18 @@ $dynamicClass = ($subColorCSS && $subColorCSS !== 'transparent') ? 'subscription
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <span class="component-stat-card__title"><?php echo __('lbl_ticket_details'); ?></span>
+                                <span class="component-card__label"><?php echo __('lbl_ticket_details'); ?></span>
                                 <h3 class="component-card__title component-mt-1" data-ref="ticket-detail-subject"><?php echo htmlspecialchars($ticket['subject']); ?></h3>
                                 <p class="component-card__description" data-ref="ticket-detail-date"><?php echo __('lbl_created_at'); ?>: <?php echo htmlspecialchars($ticket['created_at']); ?></p>
                             </div>
                         </div>
+                        <?php if (!empty($ticket['message'])): ?>
+                        <div class="component-card__content component-mt-2">
+                            <div class="component-card__text" data-ref="ticket-detail-original-message">
+                                <p class="component-card__description"><?php echo nl2br(htmlspecialchars($ticket['message'])); ?></p>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -147,10 +149,7 @@ $dynamicClass = ($subColorCSS && $subColorCSS !== 'transparent') ? 'subscription
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--stretch component-mt-2">
-                            <div class="component-input-group">
-                                <textarea class="component-input-field" data-ref="ticket-reply-text" placeholder=" " rows="5" maxlength="5000" required></textarea>
-                                <label class="component-input-label"><?php echo __('placeholder_reply_ticket_message'); ?></label>
-                            </div>
+                            <textarea class="component-input-field" data-ref="ticket-reply-text" placeholder="<?php echo __('placeholder_reply_ticket_message'); ?>" rows="5" maxlength="5000" required></textarea>
                         </div>
                     </div>
 

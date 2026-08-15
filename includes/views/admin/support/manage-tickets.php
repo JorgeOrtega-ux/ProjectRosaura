@@ -48,18 +48,23 @@ extract($ticketsData);
                                 </div>
                                 <div class="component-menu-list">
                                     <div class="component-menu-link <?php echo empty($statusFilter) ? 'active' : ''; ?>" data-action="filterTicketStatus" data-status="">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">checklist</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('lbl_all_statuses'); ?></span></div>
                                     </div>
                                     <div class="component-menu-link <?php echo $statusFilter === 'open' ? 'active' : ''; ?>" data-action="filterTicketStatus" data-status="open">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">error</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('lbl_status_open'); ?></span></div>
                                     </div>
                                     <div class="component-menu-link <?php echo $statusFilter === 'in_progress' ? 'active' : ''; ?>" data-action="filterTicketStatus" data-status="in_progress">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">timelapse</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('lbl_status_in_progress'); ?></span></div>
                                     </div>
                                     <div class="component-menu-link <?php echo $statusFilter === 'resolved' ? 'active' : ''; ?>" data-action="filterTicketStatus" data-status="resolved">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">check_circle</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('lbl_status_resolved'); ?></span></div>
                                     </div>
                                     <div class="component-menu-link <?php echo $statusFilter === 'closed' ? 'active' : ''; ?>" data-action="filterTicketStatus" data-status="closed">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('lbl_status_closed'); ?></span></div>
                                     </div>
                                 </div>

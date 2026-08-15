@@ -599,6 +599,7 @@ export const SkeletonTemplates = {
                 <div class="component-details-card">
                     <div class="component-details-card-top">
                         <div class="component-menu-link component-menu-link--bordered nav-item component-details-toggle-btn">
+                            <div class="component-menu-link-icon"><div class="component-skeleton component-skeleton--h18 component-skeleton--w18 component-skeleton--rounded"></div></div>
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w110"></div>
                             <div class="component-skeleton component-skeleton--h14 component-skeleton--w40"></div>
                         </div>

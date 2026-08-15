@@ -357,10 +357,10 @@ export class AdminSupportLiveController {
             return;
         }
 
-        const selectActiveChatBtn = e.target.closest('[data-action="selectActiveChat"]');
-        if (selectActiveChatBtn) {
+        const selectChatBtn = e.target.closest('[data-action="selectActiveChat"], [data-action="selectQueueSession"]');
+        if (selectChatBtn) {
             e.preventDefault();
-            const uuid = selectActiveChatBtn.getAttribute('data-uuid');
+            const uuid = selectChatBtn.getAttribute('data-uuid');
             if (uuid) this._selectSession(uuid);
             return;
         }
@@ -863,40 +863,26 @@ export class AdminSupportLiveController {
             const isSelected = item.uuid === this.currentSessionUuid;
             const selectedClass = isSelected ? 'active' : '';
             const priorityBadge = item.priority === 'urgent'
-                ? `<span class="component-badge component-badge--danger">${window.__('lbl_priority_urgent')}</span>`
-                : (item.priority === 'high' ? `<span class="component-badge component-badge--warning">${window.__('lbl_priority_high')}</span>` : '');
+                ? `<span class="component-badge component-badge--sm component-badge--danger"><span class="material-symbols-rounded">flag</span></span>`
+                : (item.priority === 'high' ? `<span class="component-badge component-badge--sm component-badge--warning"><span class="material-symbols-rounded">flag</span></span>` : '');
             const avatarHtml = this._renderAvatarHtml(item.client_avatar, item.client_username, item.client_subscription_color, 'component-avatar--static-sm');
+            const isPending = !isActiveTab && (item.status === 'waiting_in_queue' || item.status === 'escalated' || !item.assigned_agent_id);
+            const dotHtml = isPending ? `<span class="component-indicator-dot" title="${this._escapeHtml(window.__('lbl_pending_chat', [], 'Chat pendiente de atención'))}"></span>` : '';
+            const actionAttr = isActiveTab ? 'data-action="selectActiveChat"' : 'data-action="selectQueueSession"';
 
-            if (isActiveTab) {
-                html += `
-                    <div class="component-group-item component-group-item--clickable ${selectedClass}" data-action="selectActiveChat" data-uuid="${this._escapeHtml(item.uuid)}">
-                        <div class="component-card__content">
-                            ${avatarHtml}
-                            <div class="component-card__text">
-                                <h3 class="component-card__title">${this._escapeHtml(item.client_username || 'Guest')} ${priorityBadge}</h3>
-                                <p class="component-card__description">${this._escapeHtml(item.subject || item.initial_message || '')}</p>
-                            </div>
+            html += `
+                <div class="component-group-item component-group-item--clickable ${selectedClass}" ${actionAttr} data-uuid="${this._escapeHtml(item.uuid)}">
+                    ${dotHtml}
+                    <div class="component-card__content">
+                        ${avatarHtml}
+                        <div class="component-card__text">
+                            <h3 class="component-card__title">${this._escapeHtml(item.client_username || 'Guest')}</h3>
+                            <p class="component-card__description">${this._escapeHtml(item.subject || item.initial_message || window.__('lbl_no_subject', [], 'Sin asunto'))}</p>
                         </div>
                     </div>
-                `;
-            } else {
-                html += `
-                    <div class="component-group-item ${selectedClass}">
-                        <div class="component-card__content">
-                            ${avatarHtml}
-                            <div class="component-card__text">
-                                <h3 class="component-card__title">${this._escapeHtml(item.client_username || 'Guest')} ${priorityBadge}</h3>
-                                <p class="component-card__description">${this._escapeHtml(item.subject || item.initial_message || '')}</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions">
-                            <button class="component-button component-button--dark component-button--h34" data-action="claimSession" data-uuid="${this._escapeHtml(item.uuid)}" type="button">
-                                <span>${window.__('btn_claim_chat')}</span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
+                    ${priorityBadge ? `<div class="component-card__actions">${priorityBadge}</div>` : ''}
+                </div>
+            `;
         });
 
         container.innerHTML = html;
@@ -982,8 +968,17 @@ export class AdminSupportLiveController {
                 showMessage(window.__('msg_support_chat_claimed'), 'success');
                 this.activeTab = 'active';
                 this._syncActiveTabUI();
+                if (this.currentSession) {
+                    this.currentSession.status = 'active';
+                    this.currentSession.assigned_agent_id = this.agentId || window.activeUserId || 1;
+                }
                 await this._loadQueues();
-                this._selectSession(uuid);
+                await this._loadMessages();
+
+                const chatInput = document.querySelector('[data-ref="admin-support-chat-input"]');
+                if (chatInput) {
+                    chatInput.focus();
+                }
             } else {
                 showMessage(res && res.message ? res.message : window.__('err_support_claim_failed'), 'error');
             }
@@ -1018,7 +1013,7 @@ export class AdminSupportLiveController {
             consoleEl.classList.add('component-bottom--mobile-chat-active');
         }
 
-        const allItems = document.querySelectorAll('[data-action="selectActiveChat"]');
+        const allItems = document.querySelectorAll('[data-action="selectActiveChat"], [data-action="selectQueueSession"]');
         allItems.forEach(item => {
             if (item.getAttribute('data-uuid') === uuid) {
                 item.classList.add('active');
@@ -1046,7 +1041,7 @@ export class AdminSupportLiveController {
             if (res && res.success && res.session) {
                 this.currentSession = res.session;
 
-                const isMyActive = (this.lastActiveList && this.lastActiveList.some(s => s.uuid === this.currentSessionUuid)) || res.session.status === 'active';
+                const isMyActive = (this.lastActiveList && this.lastActiveList.some(s => s.uuid === this.currentSessionUuid)) || (res.session.status === 'active' && !!res.session.assigned_agent_id);
                 if (isMyActive) {
                     this.activeTab = 'active';
                     try {
@@ -1068,43 +1063,204 @@ export class AdminSupportLiveController {
                     header.classList.remove('disabled');
                 }
 
-                this._renderActiveChatHeader(res.session);
-                this._renderMessages(res.messages || [], res.session);
+                const isPending = !isMyActive && (res.session.status === 'waiting_in_queue' || res.session.status === 'escalated' || !res.session.assigned_agent_id);
+
+                this._renderActiveChatHeader(res.session, isPending);
+
+                if (isPending) {
+                    this._renderPendingClaimView(res.session);
+                } else {
+                    this._renderMessages(res.messages || [], res.session);
+                }
+
                 this._renderClientSidebar(res.session);
 
                 const footer = document.querySelector('[data-ref="admin-support-chat-footer"]');
                 const actions = document.querySelector('[data-ref="admin-chat-top-actions"]');
 
-                if (footer) footer.classList.remove('disabled');
-                if (actions) actions.classList.remove('disabled');
+                if (footer) {
+                    if (isPending) {
+                        footer.classList.add('disabled');
+                        footer.classList.remove('active');
+                    } else {
+                        footer.classList.remove('disabled');
+                        footer.classList.add('active');
+                    }
+                }
+                if (actions) {
+                    if (isPending) {
+                        actions.classList.add('disabled');
+                    } else {
+                        actions.classList.remove('disabled');
+                    }
+                }
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
         }
     }
 
-    _renderActiveChatHeader(session) {
-        if (!session) return;
+    _renderPendingClaimView(session) {
+        const container = document.querySelector('[data-ref="admin-support-messages-list"]');
+        if (!container || !session) return;
 
-        const nameEl = document.querySelector('[data-ref="current-chat-client-name"]');
-        const subjectEl = document.querySelector('[data-ref="current-chat-client-subject"]');
-        const avatarContainer = document.querySelector('[data-ref="current-chat-client-avatar-container"]');
+        const subject = session.subject || window.__('lbl_no_subject', [], 'Sin asunto');
+        const description = session.initial_message || session.subject || window.__('lbl_no_description', [], 'Sin descripción proporcionada');
+        const category = session.category || 'general';
+        const priority = session.priority || 'medium';
+        const priorityClass = priority === 'urgent' ? 'component-badge--danger' : (priority === 'high' ? 'component-badge--warning' : '');
+        const timeWaiting = session.created_at || '';
 
-        if (nameEl) {
-            const dept = session.department_level ? ` (${session.department_level.toUpperCase()})` : '';
-            nameEl.textContent = `${session.client_username || 'Guest'}${dept}`;
+        const subjectLabel = (window.__ && window.__('lbl_problem_subject') !== 'lbl_problem_subject')
+            ? window.__('lbl_problem_subject')
+            : 'Asunto';
+
+        const descLabel = (window.__ && window.__('lbl_problem_description') !== 'lbl_problem_description')
+            ? window.__('lbl_problem_description')
+            : 'Descripción';
+
+        container.innerHTML = `
+            <div class="component-support-claim-container">
+                <div class="component-support-claim-card">
+                    <div class="component-card--grouped component-w-full">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <span class="component-card__label">${this._escapeHtml(subjectLabel)}</span>
+                                    <h3 class="component-card__title">${this._escapeHtml(subject)}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="component-divider">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <span class="component-card__label">${this._escapeHtml(descLabel)}</span>
+                                    <p class="component-card__description">${this._escapeHtml(description).replace(/\n/g, '<br>')}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="component-divider">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-badge-group">
+                                    <span class="component-badge component-badge--sm">
+                                        <span class="material-symbols-rounded">category</span>
+                                        <span>${this._escapeHtml(category)}</span>
+                                    </span>
+                                    <span class="component-badge component-badge--sm ${priorityClass}">
+                                        <span class="material-symbols-rounded">flag</span>
+                                        <span>${this._escapeHtml(priority)}</span>
+                                    </span>
+                                    ${timeWaiting ? `
+                                    <span class="component-badge component-badge--sm">
+                                        <span class="material-symbols-rounded">schedule</span>
+                                        <span>${this._escapeHtml(timeWaiting)}</span>
+                                    </span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    _renderActiveChatHeader(session, isPending = false) {
+        const header = document.querySelector('[data-ref="admin-support-chat-header"]');
+        if (!header || !session) return;
+
+        header.classList.remove('disabled');
+        header.classList.add('active');
+
+        const clientName = session.client_username || session.guest_name || window.__('lbl_guest', [], 'Invitado');
+
+        if (isPending) {
+            const helpTitle = (window.__ && window.__('lbl_user_requests_help') !== 'lbl_user_requests_help')
+                ? window.__('lbl_user_requests_help', { user: clientName })
+                : `${clientName} solicita ayuda`;
+            const claimBtnText = (window.__ && window.__('btn_claim_chat') !== 'btn_claim_chat')
+                ? window.__('btn_claim_chat')
+                : 'Atender Chat';
+
+            header.innerHTML = `
+                <div class="component-mobile-back-box">
+                    <button class="component-button component-button--icon component-button--h34" data-action="backToQueuesMobile" data-tooltip="${this._escapeHtml(window.__('btn_back_to_queues', [], 'Volver a colas de espera'))}" data-position="bottom" type="button">
+                        <span class="material-symbols-rounded">arrow_back</span>
+                    </button>
+                </div>
+                <div class="component-chat-header-title-box">
+                    <h2 class="component-top-title" data-ref="current-chat-client-name">${this._escapeHtml(helpTitle)}</h2>
+                </div>
+                <div class="component-chat-header-actions" data-ref="admin-chat-pending-actions">
+                    <button class="component-button component-button--dark component-button--h34" data-action="claimSession" data-uuid="${this._escapeHtml(session.uuid)}" type="button">
+                        <span class="material-symbols-rounded">headset_mic</span>
+                        <span>${this._escapeHtml(claimBtnText)}</span>
+                    </button>
+                </div>
+            `;
+            return;
         }
-        if (subjectEl) {
-            const langCode = (session.language || 'es-419').toLowerCase();
-            const langName = langCode.startsWith('en') ? window.__('lbl_lang_en') : window.__('lbl_lang_es');
-            const clientName = session.client_username || 'Guest';
-            subjectEl.textContent = `${session.category || 'general'} • ${clientName} • ${langName}`;
-        }
-        if (avatarContainer) {
-            avatarContainer.innerHTML = this._renderAvatarHtml(session.client_avatar, session.client_username, session.client_subscription_color, 'component-avatar--static-sm');
-        }
+
+        const dept = session.department_level ? ` (${session.department_level.toUpperCase()})` : '';
+        const langCode = (session.language || 'es-419').toLowerCase();
+        const langName = langCode.startsWith('en') ? window.__('lbl_lang_en', [], 'Inglés') : window.__('lbl_lang_es', [], 'Español');
+        const subjectText = `${session.category || 'general'} • ${clientName} • ${langName}`;
+        const avatarHtml = this._renderAvatarHtml(session.client_avatar, session.client_username, session.client_subscription_color, 'component-avatar--static-sm');
+
+        header.innerHTML = `
+            <div class="component-mobile-back-box">
+                <button class="component-button component-button--icon component-button--h34" data-action="backToQueuesMobile" data-tooltip="${this._escapeHtml(window.__('btn_back_to_queues', [], 'Volver a colas de espera'))}" data-position="bottom" type="button">
+                    <span class="material-symbols-rounded">arrow_back</span>
+                </button>
+            </div>
+            <div class="component-card__content component-cursor-pointer" data-action="toggleModule" data-target="moduleSupportClientInfo" data-ref="current-chat-header-info">
+                <div data-ref="current-chat-client-avatar-container">
+                    ${avatarHtml}
+                </div>
+                <div class="component-card__text">
+                    <h2 class="component-card__title" data-ref="current-chat-client-name">${this._escapeHtml(clientName + dept)}</h2>
+                    <p class="component-card__description" data-ref="current-chat-client-subject">${this._escapeHtml(subjectText)}</p>
+                </div>
+            </div>
+            <div class="component-dropdown-wrapper component-dropdown-wrapper--fit" data-ref="admin-chat-top-actions">
+                <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="adminChatMoreDropdown" data-tooltip="${this._escapeHtml(window.__('btn_options', [], 'Opciones'))}" data-position="bottom" type="button">
+                    <span class="material-symbols-rounded">more_vert</span>
+                </button>
+                <div class="component-module component-module--dropdown disabled" data-module="adminChatMoreDropdown">
+                    <div class="component-menu component-menu--w265 component-menu--h-auto active" data-menu="admin-chat-more-menu">
+                        <div class="pill-container"><div class="drag-handle"></div></div>
+                        <div class="component-menu-list">
+                            <div class="component-menu-link" data-action="openViewIssueModal">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">help_outline</span></div>
+                                <div class="component-menu-link-text"><span>${this._escapeHtml(window.__('lbl_view_issue', [], 'Ver Asunto'))}</span></div>
+                            </div>
+                            <div class="component-menu-link" data-action="toggleModule" data-target="moduleSupportClientInfo">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">info</span></div>
+                                <div class="component-menu-link-text"><span>${this._escapeHtml(window.__('lbl_user_profile_title', [], 'Información del Usuario'))}</span></div>
+                            </div>
+                            ${this.canEscalate ? `
+                            <div class="component-menu-link" data-action="openEscalateModal">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">forward</span></div>
+                                <div class="component-menu-link-text"><span>${this._escapeHtml(window.__('btn_escalate_chat', [], 'Escalar Chat'))}</span></div>
+                            </div>` : ''}
+                            ${this.canReassign ? `
+                            <div class="component-menu-link" data-action="openReassignModal">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">swap_horiz</span></div>
+                                <div class="component-menu-link-text"><span>${this._escapeHtml(window.__('btn_reassign_chat', [], 'Reasignar Chat'))}</span></div>
+                            </div>` : ''}
+                            <div class="component-menu-divider"></div>
+                            <div class="component-menu-link" data-action="openCloseChatModal">
+                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">check_circle</span></div>
+                                <div class="component-menu-link-text"><span>${this._escapeHtml(window.__('btn_resolve_chat', [], 'Finalizar y Resolver'))}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
         if (window.applySubscriptionDynamicColors) window.applySubscriptionDynamicColors();
-
         this._loadCannedResponses(session.language);
     }
 
@@ -1681,8 +1837,8 @@ export class AdminSupportLiveController {
             `;
         }
 
-        const allActiveItems = document.querySelectorAll('[data-action="selectActiveChat"]');
-        allActiveItems.forEach(item => item.classList.remove('active'));
+        const allItems = document.querySelectorAll('[data-action="selectActiveChat"], [data-action="selectQueueSession"]');
+        allItems.forEach(item => item.classList.remove('active'));
 
         const consoleBottom = document.querySelector('.component-bottom--console');
         if (consoleBottom) consoleBottom.classList.remove('component-bottom--mobile-chat-active');

@@ -719,5 +719,11 @@
     "lbl_metric_transfers_l1_l2": "Escalaciones L1 → L2",
     "lbl_metric_transfers_l2_l3": "Escalaciones L2 → L3",
     "lbl_metric_total_tickets": "Tickets por Correo",
-    "lbl_metric_open_tickets": "Tickets Abiertos"
+    "lbl_metric_open_tickets": "Tickets Abiertos",
+    "lbl_user_requests_help": "{user} solicita ayuda",
+    "lbl_problem_description": "Descripción",
+    "lbl_problem_subject": "Asunto",
+    "lbl_claim_chat_desc": "Atiende esta conversación para comenzar a responder los mensajes del usuario.",
+    "lbl_pending_chat": "Chat pendiente de atención",
+    "lbl_no_description": "Sin descripción proporcionada"
 }

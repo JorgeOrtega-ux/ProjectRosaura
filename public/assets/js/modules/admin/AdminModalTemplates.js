@@ -92,13 +92,16 @@ export const AdminModalTemplates = {
 
             const levelsListHtml = isL2 ? `
                 <div class="component-menu-link active" data-action="selectEscalateLevel" data-val="l3">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">admin_panel_settings</span></div>
                     <div class="component-menu-link-text"><span>${__('lbl_dept_l3')}</span></div>
                 </div>
             ` : `
                 <div class="component-menu-link active" data-action="selectEscalateLevel" data-val="l2">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">supervisor_account</span></div>
                     <div class="component-menu-link-text"><span>${__('lbl_dept_l2')}</span></div>
                 </div>
                 <div class="component-menu-link" data-action="selectEscalateLevel" data-val="l3">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">admin_panel_settings</span></div>
                     <div class="component-menu-link-text"><span>${__('lbl_dept_l3')}</span></div>
                 </div>
             `;
@@ -292,12 +295,15 @@ export const AdminModalTemplates = {
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
                                         <div class="component-menu-link ${(!item.min_level || item.min_level === 'l1') ? 'active' : ''}" data-action="selectCannedLevel" data-val="l1">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">support_agent</span></div>
                                             <div class="component-menu-link-text"><span>${__('lbl_dept_l1')}</span></div>
                                         </div>
                                         <div class="component-menu-link ${item.min_level === 'l2' ? 'active' : ''}" data-action="selectCannedLevel" data-val="l2">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">supervisor_account</span></div>
                                             <div class="component-menu-link-text"><span>${__('lbl_dept_l2')}</span></div>
                                         </div>
                                         <div class="component-menu-link ${item.min_level === 'l3' ? 'active' : ''}" data-action="selectCannedLevel" data-val="l3">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">admin_panel_settings</span></div>
                                             <div class="component-menu-link-text"><span>${__('lbl_dept_l3')}</span></div>
                                         </div>
                                     </div>
@@ -331,33 +337,43 @@ export const AdminModalTemplates = {
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
                                         <div class="component-menu-link ${(!item.language || item.language === 'es-419') ? 'active' : ''}" data-action="selectCannedLang" data-val="es-419">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
                                             <div class="component-menu-link-text"><span>Español (Latinoamérica)</span></div>
                                         </div>
                                         <div class="component-menu-link ${item.language === 'es-MX' ? 'active' : ''}" data-action="selectCannedLang" data-val="es-MX">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
                                             <div class="component-menu-link-text"><span>Español (México)</span></div>
                                         </div>
                                         <div class="component-menu-link ${item.language === 'es-ES' ? 'active' : ''}" data-action="selectCannedLang" data-val="es-ES">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
                                             <div class="component-menu-link-text"><span>Español (España)</span></div>
                                         </div>
                                         <div class="component-menu-link ${(item.language === 'en-US' || item.language === 'en') ? 'active' : ''}" data-action="selectCannedLang" data-val="en-US">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
                                             <div class="component-menu-link-text"><span>English (United States)</span></div>
                                         </div>
                                         <div class="component-menu-link ${item.language === 'en-GB' ? 'active' : ''}" data-action="selectCannedLang" data-val="en-GB">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
                                             <div class="component-menu-link-text"><span>English (United Kingdom)</span></div>
                                         </div>
                                         <div class="component-menu-link ${item.language === 'fr-FR' ? 'active' : ''}" data-action="selectCannedLang" data-val="fr-FR">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
                                             <div class="component-menu-link-text"><span>Français (France)</span></div>
                                         </div>
                                         <div class="component-menu-link ${item.language === 'de-DE' ? 'active' : ''}" data-action="selectCannedLang" data-val="de-DE">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
                                             <div class="component-menu-link-text"><span>Deutsch (Deutschland)</span></div>
                                         </div>
                                         <div class="component-menu-link ${item.language === 'it-IT' ? 'active' : ''}" data-action="selectCannedLang" data-val="it-IT">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
                                             <div class="component-menu-link-text"><span>Italiano (Italia)</span></div>
                                         </div>
                                         <div class="component-menu-link ${item.language === 'pt-BR' ? 'active' : ''}" data-action="selectCannedLang" data-val="pt-BR">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
                                             <div class="component-menu-link-text"><span>Português (Brasil)</span></div>
                                         </div>
                                         <div class="component-menu-link ${item.language === 'pt-PT' ? 'active' : ''}" data-action="selectCannedLang" data-val="pt-PT">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
                                             <div class="component-menu-link-text"><span>Português (Portugal)</span></div>
                                         </div>
                                     </div>
@@ -420,24 +436,31 @@ export const AdminModalTemplates = {
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
                                         <div class="component-menu-link active" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">build</span></div>
                                             <div class="component-menu-link-text"><span>${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}</span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_bonus', [], 'Bonificación / Cortesía')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">featured_seasonal_and_gifts</span></div>
                                             <div class="component-menu-link-text"><span>${__('lbl_coin_reason_bonus', [], 'Bonificación / Cortesía')}</span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_refund', [], 'Reembolso de compra')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">currency_exchange</span></div>
                                             <div class="component-menu-link-text"><span>${__('lbl_coin_reason_refund', [], 'Reembolso de compra')}</span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_promo', [], 'Premio / Evento especial')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">celebration</span></div>
                                             <div class="component-menu-link-text"><span>${__('lbl_coin_reason_promo', [], 'Premio / Evento especial')}</span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_adjust', [], 'Corrección de saldo')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">tune</span></div>
                                             <div class="component-menu-link-text"><span>${__('lbl_coin_reason_adjust', [], 'Corrección de saldo')}</span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_penalty', [], 'Deducción por infracción')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
                                             <div class="component-menu-link-text"><span>${__('lbl_coin_reason_penalty', [], 'Deducción por infracción')}</span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_other', [], 'Otro motivo administrativo')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
                                             <div class="component-menu-link-text"><span>${__('lbl_coin_reason_other', [], 'Otro motivo administrativo')}</span></div>
                                         </div>
                                     </div>

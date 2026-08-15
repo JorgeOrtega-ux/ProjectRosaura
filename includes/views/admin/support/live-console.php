@@ -149,8 +149,12 @@ $fallbackAvatar = $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
                             $avatarSrc = (strpos($validPic, 'http') === 0) ? $validPic : $appUrl . '/' . ltrim($validPic, '/');
                             $isCurrent = ($chatUuid === $session['uuid']);
                             $dynamicClass = ($subColorCSS && $subColorCSS !== 'transparent') ? 'subscription-dynamic' : '';
+                            $isPending = ($session['status'] === 'waiting_in_queue' || $session['status'] === 'escalated' || empty($session['assigned_agent_id']));
                         ?>
                         <div class="component-group-item component-group-item--clickable <?php echo $isCurrent ? 'active' : ''; ?>" data-action="selectQueueSession" data-uuid="<?php echo htmlspecialchars($session['uuid']); ?>">
+                            <?php if ($isPending): ?>
+                                <span class="component-indicator-dot" title="<?php echo __('lbl_pending_chat'); ?>"></span>
+                            <?php endif; ?>
                             <div class="component-card__content">
                                 <div class="component-button--profile <?php echo $dynamicClass; ?> component-avatar--static-sm" 
                                      data-sub-bg="<?php echo htmlspecialchars($subColorCSS); ?>"
@@ -161,13 +165,15 @@ $fallbackAvatar = $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
                                 </div>
                                 <div class="component-card__text">
                                     <h3 class="component-card__title"><?php echo htmlspecialchars($clientName); ?></h3>
-                                    <p class="component-card__description"><?php echo htmlspecialchars($session['subject'] ?? __('lbl_no_subject')); ?></p>
+                                    <p class="component-card__description"><?php echo htmlspecialchars($session['subject'] ?? $session['initial_message'] ?? __('lbl_no_subject')); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions">
+                                <?php if (!empty($session['priority']) && $session['priority'] !== 'low' && $session['priority'] !== 'medium'): ?>
                                 <span class="component-badge component-badge--sm <?php echo $session['priority'] === 'urgent' ? 'component-badge--danger' : ($session['priority'] === 'high' ? 'component-badge--warning' : ''); ?>">
                                     <span class="material-symbols-rounded">flag</span>
                                 </span>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <?php endforeach; ?>
@@ -184,12 +190,15 @@ $fallbackAvatar = $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
             <div class="component-column-box component-column-box--chat" data-ref="support-column-chat">
                 <?php 
                 $hasChat = !empty($currentSession);
+                $isPendingSession = $hasChat && ($currentSession['status'] === 'waiting_in_queue' || $currentSession['status'] === 'escalated' || empty($currentSession['assigned_agent_id']));
                 $currClientName = $currentSession['client_username'] ?? $currentSession['guest_name'] ?? __('lbl_guest');
                 $currSubColorRaw = !empty($currentSession['client_subscription_color']) ? $currentSession['client_subscription_color'] : '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}';
                 $currSubColorCSS = AdminViewService::parseSubscriptionColor($currSubColorRaw);
                 $currPic = Utils::getValidImage($currentSession['client_avatar'] ?? null, 'avatar');
                 $currAvatarSrc = (strpos($currPic, 'http') === 0) ? $currPic : $appUrl . '/' . ltrim($currPic, '/');
                 $currDynamicClass = ($currSubColorCSS && $currSubColorCSS !== 'transparent') ? 'subscription-dynamic' : '';
+                $isActionsEnabled = $hasChat && !$isPendingSession;
+                $isFooterEnabled = $hasChat && !$isPendingSession;
                 ?>
                 <div class="component-chat-header <?php echo $hasChat ? 'active' : 'disabled'; ?>" data-ref="admin-support-chat-header">
                     <div class="component-mobile-back-box">
@@ -198,99 +207,169 @@ $fallbackAvatar = $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
                         </button>
                     </div>
 
-                    <div class="component-card__content component-cursor-pointer" data-action="toggleModule" data-target="moduleSupportClientInfo">
-                        <div data-ref="current-chat-client-avatar-container">
-                            <div class="component-button--profile <?php echo $currDynamicClass; ?> component-avatar--static-sm"
-                                 data-sub-bg="<?php echo htmlspecialchars($currSubColorCSS); ?>"
-                                 style="--active-subscription-bg: <?php echo htmlspecialchars($currSubColorCSS); ?>;">
-                                <img class="avatar-image image-lazy-fade" data-ref="current-chat-client-avatar" 
-                                     src="<?php echo htmlspecialchars($hasChat ? $currAvatarSrc : $fallbackAvatar); ?>" 
-                                     alt="Client"
-                                     onload="this.classList.add('image-loaded')"
-                                     onerror="this.onerror=null; this.src='<?php echo $fallbackAvatar; ?>'; this.classList.add('image-loaded');">
+                    <?php if ($hasChat && $isPendingSession): ?>
+                        <div class="component-chat-header-title-box">
+                            <h2 class="component-top-title" data-ref="current-chat-client-name"><?php echo __('lbl_user_requests_help', ['user' => htmlspecialchars($currClientName)]); ?></h2>
+                        </div>
+                        
+                        <div class="component-chat-header-actions" data-ref="admin-chat-pending-actions">
+                            <button class="component-button component-button--dark component-button--h34" data-action="claimSession" data-uuid="<?php echo htmlspecialchars($currentSession['uuid']); ?>" type="button">
+                                <span class="material-symbols-rounded">headset_mic</span>
+                                <span><?php echo __('btn_claim_chat'); ?></span>
+                            </button>
+                        </div>
+                    <?php else: ?>
+                        <div class="component-card__content component-cursor-pointer" data-action="toggleModule" data-target="moduleSupportClientInfo" data-ref="current-chat-header-info">
+                            <div data-ref="current-chat-client-avatar-container">
+                                <div class="component-button--profile <?php echo $currDynamicClass; ?> component-avatar--static-sm"
+                                     data-sub-bg="<?php echo htmlspecialchars($currSubColorCSS); ?>"
+                                     style="--active-subscription-bg: <?php echo htmlspecialchars($currSubColorCSS); ?>;">
+                                    <img class="avatar-image image-lazy-fade" data-ref="current-chat-client-avatar" 
+                                         src="<?php echo htmlspecialchars($hasChat ? $currAvatarSrc : $fallbackAvatar); ?>" 
+                                         alt="Client"
+                                         onload="this.classList.add('image-loaded')"
+                                         onerror="this.onerror=null; this.src='<?php echo $fallbackAvatar; ?>'; this.classList.add('image-loaded');">
+                                </div>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title" data-ref="current-chat-client-name"><?php echo htmlspecialchars($hasChat ? $currClientName : __('lbl_select_chat_to_attend')); ?></h2>
+                                <p class="component-card__description" data-ref="current-chat-client-subject"><?php echo htmlspecialchars($hasChat ? ($currentSession['subject'] ?? '') : __('lbl_no_active_chat_selected')); ?></p>
                             </div>
                         </div>
-                        <div class="component-card__text">
-                            <h2 class="component-card__title" data-ref="current-chat-client-name"><?php echo htmlspecialchars($hasChat ? $currClientName : __('lbl_select_chat_to_attend')); ?></h2>
-                            <p class="component-card__description" data-ref="current-chat-client-subject"><?php echo htmlspecialchars($hasChat ? ($currentSession['subject'] ?? '') : __('lbl_no_active_chat_selected')); ?></p>
-                        </div>
-                    </div>
-                    
-                    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit <?php echo $hasChat ? '' : 'disabled'; ?>" data-ref="admin-chat-top-actions">
-                        <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="adminChatMoreDropdown" data-tooltip="<?php echo __('btn_options'); ?>" data-position="bottom" type="button">
-                            <span class="material-symbols-rounded">more_vert</span>
-                        </button>
-                        <div class="component-module component-module--dropdown disabled" data-module="adminChatMoreDropdown">
-                            <div class="component-menu component-menu--w265 component-menu--h-auto active" data-menu="admin-chat-more-menu">
-                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list">
-                                    <div class="component-menu-link" data-action="openViewIssueModal">
-                                        <div class="component-menu-link-icon">
-                                            <span class="material-symbols-rounded">help_outline</span>
+                        
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--fit <?php echo $isActionsEnabled ? '' : 'disabled'; ?>" data-ref="admin-chat-top-actions">
+                            <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="adminChatMoreDropdown" data-tooltip="<?php echo __('btn_options'); ?>" data-position="bottom" type="button">
+                                <span class="material-symbols-rounded">more_vert</span>
+                            </button>
+                            <div class="component-module component-module--dropdown disabled" data-module="adminChatMoreDropdown">
+                                <div class="component-menu component-menu--w265 component-menu--h-auto active" data-menu="admin-chat-more-menu">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link" data-action="openViewIssueModal">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">help_outline</span>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span><?php echo __('lbl_view_issue'); ?></span>
+                                            </div>
                                         </div>
-                                        <div class="component-menu-link-text">
-                                            <span><?php echo __('lbl_view_issue'); ?></span>
-                                        </div>
-                                    </div>
 
-                                    <div class="component-menu-link" data-action="toggleModule" data-target="moduleSupportClientInfo">
-                                        <div class="component-menu-link-icon">
-                                            <span class="material-symbols-rounded">info</span>
+                                        <div class="component-menu-link" data-action="toggleModule" data-target="moduleSupportClientInfo">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">info</span>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span><?php echo __('lbl_user_profile_title'); ?></span>
+                                            </div>
                                         </div>
-                                        <div class="component-menu-link-text">
-                                            <span><?php echo __('lbl_user_profile_title'); ?></span>
-                                        </div>
-                                    </div>
 
-                                    <?php if ($canEscalate): ?>
-                                    <div class="component-menu-link" data-action="openEscalateModal">
-                                        <div class="component-menu-link-icon">
-                                            <span class="material-symbols-rounded">forward</span>
+                                        <?php if ($canEscalate): ?>
+                                        <div class="component-menu-link" data-action="openEscalateModal">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">forward</span>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span><?php echo __('btn_escalate_chat'); ?></span>
+                                            </div>
                                         </div>
-                                        <div class="component-menu-link-text">
-                                            <span><?php echo __('btn_escalate_chat'); ?></span>
+                                        <?php endif; ?>
+                                        <?php if ($canReassign): ?>
+                                        <div class="component-menu-link" data-action="openReassignModal">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">swap_horiz</span>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span><?php echo __('btn_reassign_chat'); ?></span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <?php endif; ?>
-                                    <?php if ($canReassign): ?>
-                                    <div class="component-menu-link" data-action="openReassignModal">
-                                        <div class="component-menu-link-icon">
-                                            <span class="material-symbols-rounded">swap_horiz</span>
-                                        </div>
-                                        <div class="component-menu-link-text">
-                                            <span><?php echo __('btn_reassign_chat'); ?></span>
-                                        </div>
-                                    </div>
-                                    <?php endif; ?>
-                                    <div class="component-menu-divider"></div>
-                                    <div class="component-menu-link" data-action="openCloseChatModal">
-                                        <div class="component-menu-link-icon">
-                                            <span class="material-symbols-rounded">check_circle</span>
-                                        </div>
-                                        <div class="component-menu-link-text">
-                                            <span><?php echo __('btn_resolve_chat'); ?></span>
+                                        <?php endif; ?>
+                                        <div class="component-menu-divider"></div>
+                                        <div class="component-menu-link" data-action="openCloseChatModal">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">check_circle</span>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span><?php echo __('btn_resolve_chat'); ?></span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="component-chat-messages" data-ref="admin-support-messages-list">
-                    <?php if ($hasChat && !empty($sessionMessages)): ?>
-                        <?php foreach ($sessionMessages as $msg): 
-                            $isAgent = ($msg['sender_type'] === 'agent');
-                            $isInternal = !empty($msg['is_internal']);
-                            $bubbleClass = $isInternal ? 'message-internal' : ($isAgent ? 'message-outgoing' : 'message-incoming');
-                        ?>
-                        <div class="component-chat-message <?php echo $bubbleClass; ?>">
-                            <div class="component-chat-message__content">
-                                <p><?php echo nl2br(htmlspecialchars($msg['message'])); ?></p>
-                                <span class="component-chat-message__time"><?php echo htmlspecialchars($msg['created_at']); ?></span>
+                    <?php if ($hasChat): ?>
+                        <?php if ($isPendingSession): ?>
+                            <div class="component-support-claim-container">
+                                <div class="component-support-claim-card">
+                                    <div class="component-card--grouped component-w-full">
+                                        <div class="component-group-item">
+                                            <div class="component-card__content">
+                                                <div class="component-card__text">
+                                                    <span class="component-card__label"><?php echo __('lbl_problem_subject'); ?></span>
+                                                    <h3 class="component-card__title"><?php echo htmlspecialchars($currentSession['subject'] ?? __('lbl_no_subject')); ?></h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <hr class="component-divider">
+                                        <div class="component-group-item">
+                                            <div class="component-card__content">
+                                                <div class="component-card__text">
+                                                    <span class="component-card__label"><?php echo __('lbl_problem_description'); ?></span>
+                                                    <p class="component-card__description"><?php echo nl2br(htmlspecialchars($currentSession['initial_message'] ?? $currentSession['subject'] ?? __('lbl_no_description'))); ?></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <hr class="component-divider">
+                                        <div class="component-group-item">
+                                            <div class="component-card__content">
+                                                <div class="component-badge-group">
+                                                    <span class="component-badge component-badge--sm">
+                                                        <span class="material-symbols-rounded">category</span>
+                                                        <span><?php echo htmlspecialchars($currentSession['category'] ?? 'general'); ?></span>
+                                                    </span>
+                                                    <?php 
+                                                    $prio = $currentSession['priority'] ?? 'medium';
+                                                    $prioBadgeClass = $prio === 'urgent' ? 'component-badge--danger' : ($prio === 'high' ? 'component-badge--warning' : '');
+                                                    ?>
+                                                    <span class="component-badge component-badge--sm <?php echo $prioBadgeClass; ?>">
+                                                        <span class="material-symbols-rounded">flag</span>
+                                                        <span><?php echo htmlspecialchars($prio); ?></span>
+                                                    </span>
+                                                    <?php if (!empty($currentSession['created_at'])): ?>
+                                                    <span class="component-badge component-badge--sm">
+                                                        <span class="material-symbols-rounded">schedule</span>
+                                                        <span><?php echo htmlspecialchars($currentSession['created_at']); ?></span>
+                                                    </span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <?php endforeach; ?>
+                        <?php elseif (!empty($sessionMessages)): ?>
+                            <?php foreach ($sessionMessages as $msg): 
+                                $isAgent = ($msg['sender_type'] === 'agent');
+                                $isInternal = !empty($msg['is_internal']);
+                                $bubbleClass = $isInternal ? 'message-internal' : ($isAgent ? 'message-outgoing' : 'message-incoming');
+                            ?>
+                            <div class="component-chat-message <?php echo $bubbleClass; ?>">
+                                <div class="component-chat-message__content">
+                                    <p><?php echo nl2br(htmlspecialchars($msg['message'])); ?></p>
+                                    <span class="component-chat-message__time"><?php echo htmlspecialchars($msg['created_at']); ?></span>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="component-empty-state">
+                                <span class="material-symbols-rounded component-empty-state-icon">chat_bubble_outline</span>
+                                <h3 class="component-card__title"><?php echo __('lbl_select_chat_prompt'); ?></h3>
+                                <p class="component-card__description"><?php echo __('lbl_no_active_chat_selected'); ?></p>
+                            </div>
+                        <?php endif; ?>
                     <?php else: ?>
                         <div class="component-empty-state">
                             <span class="material-symbols-rounded component-empty-state-icon">chat_bubble_outline</span>
@@ -305,7 +384,7 @@ $fallbackAvatar = $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
                     <span><?php echo __('lbl_user_is_typing'); ?></span>
                 </div>
 
-                <div class="component-chat-footer <?php echo $hasChat ? 'active' : 'disabled'; ?>" data-ref="admin-support-chat-footer">
+                <div class="component-chat-footer <?php echo $isFooterEnabled ? 'active' : 'disabled'; ?>" data-ref="admin-support-chat-footer">
                     <div class="chat-attachments-preview-container disabled" data-ref="admin-support-chat-attachments-preview"></div>
                     <div class="component-search component-search--full component-search--radius-50">
                         <div class="component-search-input">

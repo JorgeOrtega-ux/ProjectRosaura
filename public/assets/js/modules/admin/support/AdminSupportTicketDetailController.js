@@ -136,28 +136,40 @@ export class AdminSupportTicketDetailController {
         }
 
         if (catBadge) {
-            catBadge.textContent = ticket.category || 'general';
+            catBadge.innerHTML = `<span class="material-symbols-rounded">category</span><span>${this._escapeHtml(ticket.category || 'general')}</span>`;
         }
 
         if (priorityBadge) {
             const prioMap = {
-                low: window.__('lbl_priority_low'),
-                medium: window.__('lbl_priority_medium'),
-                high: window.__('lbl_priority_high'),
-                urgent: window.__('lbl_priority_urgent')
+                low: window.__('lbl_priority_low', [], 'Baja'),
+                medium: window.__('lbl_priority_medium', [], 'Media'),
+                high: window.__('lbl_priority_high', [], 'Alta'),
+                urgent: window.__('lbl_priority_urgent', [], 'Urgente')
             };
-            priorityBadge.textContent = prioMap[ticket.priority] || ticket.priority;
+            const label = prioMap[ticket.priority] || ticket.priority;
+            priorityBadge.innerHTML = `<span class="material-symbols-rounded">flag</span><span>${this._escapeHtml(label)}</span>`;
             priorityBadge.className = `component-badge component-badge--sm ${ticket.priority === 'urgent' ? 'component-badge--danger' : (ticket.priority === 'high' ? 'component-badge--warning' : '')}`;
         }
 
         if (statusText) {
             const statusMap = {
-                open: window.__('lbl_status_open'),
-                in_progress: window.__('lbl_status_in_progress'),
-                resolved: window.__('lbl_status_resolved'),
-                closed: window.__('lbl_status_closed')
+                open: window.__('lbl_status_open', [], 'Abierto'),
+                in_progress: window.__('lbl_status_in_progress', [], 'En progreso'),
+                resolved: window.__('lbl_status_resolved', [], 'Resuelto'),
+                closed: window.__('lbl_status_closed', [], 'Cerrado')
             };
             statusText.textContent = statusMap[ticket.status] || ticket.status;
+        }
+
+        const statusIcon = document.querySelector('[data-ref="ticket-status-icon"]');
+        if (statusIcon) {
+            const iconMap = {
+                open: 'error',
+                in_progress: 'timelapse',
+                resolved: 'check_circle',
+                closed: 'lock'
+            };
+            statusIcon.textContent = iconMap[ticket.status] || 'rule';
         }
 
         if (msgEl) {
@@ -206,7 +218,15 @@ export class AdminSupportTicketDetailController {
         if (!newStatus || !this.ticketUuid) return;
 
         const statusModule = document.querySelector('[data-module="moduleTicketStatusChange"]');
-        if (statusModule) statusModule.classList.add('disabled');
+        if (statusModule) {
+            if (window.appInstance?.moduleManager) {
+                window.appInstance.moduleManager.close(statusModule);
+            } else if (window.moduleManager) {
+                window.moduleManager.close(statusModule);
+            } else {
+                statusModule.classList.add('disabled');
+            }
+        }
 
         try {
             const res = await this.api.post(ApiRoutes.AdminSupport.UpdateTicketStatus, {
