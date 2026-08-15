@@ -62,14 +62,7 @@ export class AdminSupportLiveController {
         this.bindEvents();
         this._syncActiveTabUI();
         this._requestNotificationPermission();
-        await this._loadAgentStatus();
-        await this._loadCannedResponses();
-        await this._loadQueues();
-
-        if (this.currentSessionUuid) {
-            await this._selectSession(this.currentSessionUuid);
-        }
-
+        this._loadCannedResponses();
         this._connectWebSocket();
     }
 
@@ -122,10 +115,6 @@ export class AdminSupportLiveController {
 
             this.ws.onopen = () => {
                 this._startWsHeartbeat();
-                this._loadQueues();
-                if (this.currentSessionUuid) {
-                    this._loadMessages();
-                }
             };
 
             this.ws.onmessage = (e) => {

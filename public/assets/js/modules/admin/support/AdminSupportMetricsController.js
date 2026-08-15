@@ -11,7 +11,6 @@ export class AdminSupportMetricsController {
     init() {
         this.container = document.querySelector('[data-ref="admin-support-metrics-wrapper"]');
         this.abortController = new AbortController();
-        this._loadMetrics();
     }
 
     destroy() {

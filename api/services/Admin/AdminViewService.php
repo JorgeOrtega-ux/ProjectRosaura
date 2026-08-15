@@ -1715,4 +1715,181 @@ class AdminViewService {
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
     }
+
+    /**
+     * Datos para la gestión de tickets de soporte (support/manage-tickets.php).
+     */
+    public function getManageTicketsData(?string $searchQuery = '', ?string $statusFilter = '', int $page = 1): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $userPerms = $_SESSION['user_permissions'] ?? [];
+        $canManageTickets = in_array(PermissionsConstants::SUPPORT_TICKETS_MANAGE, $userPerms);
+
+        $limit = 50;
+        if ($page < 1) $page = 1;
+        $offset = ($page - 1) * $limit;
+
+        $supportRepo = new \App\Core\Repositories\SupportRepository($this->dbManager, new \App\Config\Database\RedisCache());
+        $filters = [];
+        if (!empty($searchQuery)) $filters['search'] = trim($searchQuery);
+        if (!empty($statusFilter)) $filters['status'] = trim($statusFilter);
+
+        $tickets = $supportRepo->getAllTickets($filters, $limit, $offset);
+
+        return [
+            'tickets' => $tickets,
+            'canManageTickets' => $canManageTickets,
+            'page' => $page,
+            'totalPages' => 1,
+            'searchQuery' => $searchQuery ?? '',
+            'statusFilter' => $statusFilter ?? '',
+            'appUrl' => defined('APP_URL') ? APP_URL : ''
+        ];
+    }
+
+    /**
+     * Datos para respuestas rápidas de soporte (support/canned-responses.php).
+     */
+    public function getCannedResponsesData(?string $searchQuery = ''): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $userPerms = $_SESSION['user_permissions'] ?? [];
+        $canManageCanned = in_array(PermissionsConstants::SUPPORT_MANAGE_CANNED, $userPerms);
+
+        $supportRepo = new \App\Core\Repositories\SupportRepository($this->dbManager, new \App\Config\Database\RedisCache());
+        $responses = $supportRepo->getCannedResponses();
+
+        if (!empty($searchQuery)) {
+            $q = mb_strtolower(trim($searchQuery));
+            $responses = array_values(array_filter($responses, function($item) use ($q) {
+                return (isset($item['shortcut']) && mb_strpos(mb_strtolower($item['shortcut']), $q) !== false) ||
+                       (isset($item['title']) && mb_strpos(mb_strtolower($item['title']), $q) !== false) ||
+                       (isset($item['content']) && mb_strpos(mb_strtolower($item['content']), $q) !== false);
+            }));
+        }
+
+        return [
+            'responses' => $responses,
+            'canManageCanned' => $canManageCanned,
+            'searchQuery' => $searchQuery ?? '',
+            'appUrl' => defined('APP_URL') ? APP_URL : ''
+        ];
+    }
+
+    /**
+     * Datos para métricas de soporte (support/metrics.php).
+     */
+    public function getSupportMetricsData(): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $userPerms = $_SESSION['user_permissions'] ?? [];
+        $canViewMetrics = in_array(PermissionsConstants::SUPPORT_VIEW_METRICS, $userPerms);
+
+        $supportRepo = new \App\Core\Repositories\SupportRepository($this->dbManager, new \App\Config\Database\RedisCache());
+        $metrics = $supportRepo->getSupportMetrics();
+
+        return [
+            'metrics' => $metrics,
+            'canViewMetrics' => $canViewMetrics,
+            'appUrl' => defined('APP_URL') ? APP_URL : ''
+        ];
+    }
+
+    /**
+     * Datos para el detalle de un ticket de soporte (support/ticket-detail.php).
+     */
+    public function getTicketDetailData(?string $ticketUuid): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $userPerms = $_SESSION['user_permissions'] ?? [];
+        $canManageTickets = in_array(PermissionsConstants::SUPPORT_TICKETS_MANAGE, $userPerms);
+
+        if (empty($ticketUuid)) {
+            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/support/tickets"];
+        }
+
+        $supportRepo = new \App\Core\Repositories\SupportRepository($this->dbManager, new \App\Config\Database\RedisCache());
+        $ticket = $supportRepo->findByUuid(trim($ticketUuid));
+
+        if (!$ticket) {
+            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/support/tickets"];
+        }
+
+        return [
+            'ticket' => $ticket,
+            'canManageTickets' => $canManageTickets,
+            'appUrl' => defined('APP_URL') ? APP_URL : ''
+        ];
+    }
+
+    /**
+     * Datos para la consola de soporte en vivo (support/live-console.php).
+     */
+    public function getLiveConsoleData(?string $chatUuid = null): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $userPermissions = $_SESSION['user_permissions'] ?? [];
+        $currentUserId = (int)($_SESSION['user_id'] ?? 0);
+
+        $canEscalate = in_array(PermissionsConstants::SUPPORT_CHAT_ESCALATE, $userPermissions);
+        $canReassign = in_array(PermissionsConstants::SUPPORT_CHAT_REASSIGN, $userPermissions);
+        $canViewMetrics = in_array(PermissionsConstants::SUPPORT_VIEW_METRICS, $userPermissions);
+        $canManageCanned = in_array(PermissionsConstants::SUPPORT_MANAGE_CANNED, $userPermissions);
+        $canManageTickets = in_array(PermissionsConstants::SUPPORT_TICKETS_MANAGE, $userPermissions);
+
+        $supportRepo = new \App\Core\Repositories\SupportRepository($this->dbManager, new \App\Config\Database\RedisCache());
+
+        // Agent status
+        $agentStatusData = $currentUserId ? $supportRepo->getAgentStatus($currentUserId) : null;
+        $agentStatus = $agentStatusData['status'] ?? 'offline';
+
+        // Queues count and sessions
+        $qL1 = $supportRepo->getQueueSessions('l1', 50);
+        $qL2 = $supportRepo->getQueueSessions('l2', 50);
+        $qL3 = $supportRepo->getQueueSessions('l3', 50);
+        $qActive = $currentUserId ? $supportRepo->getAgentActiveSessions($currentUserId) : [];
+
+        $counts = [
+            'l1' => count($qL1),
+            'l2' => count($qL2),
+            'l3' => count($qL3),
+            'active' => count($qActive)
+        ];
+
+        // Determine initial active tab
+        $initialActiveTab = 'l1';
+        $currentSession = null;
+        $sessionMessages = [];
+
+        if (!empty($chatUuid)) {
+            $currentSession = $supportRepo->findSessionByUuid($chatUuid);
+            if ($currentSession) {
+                if ($currentSession['status'] === 'active' || ($currentUserId && (int)$currentSession['assigned_agent_id'] === $currentUserId)) {
+                    $initialActiveTab = 'active';
+                } elseif (!empty($currentSession['department_level'])) {
+                    $initialActiveTab = $currentSession['department_level'];
+                }
+                $sessionMessages = $supportRepo->getSessionMessages($chatUuid, true, 100, 0);
+            }
+        }
+
+        // Active tab sessions list
+        $activeTabSessions = match($initialActiveTab) {
+            'l2' => $qL2,
+            'l3' => $qL3,
+            'active' => $qActive,
+            default => $qL1
+        };
+
+        return [
+            'canEscalate' => $canEscalate,
+            'canReassign' => $canReassign,
+            'canViewMetrics' => $canViewMetrics,
+            'canManageCanned' => $canManageCanned,
+            'canManageTickets' => $canManageTickets,
+            'agentStatus' => $agentStatus,
+            'counts' => $counts,
+            'initialActiveTab' => $initialActiveTab,
+            'activeTabSessions' => $activeTabSessions,
+            'currentSession' => $currentSession,
+            'sessionMessages' => $sessionMessages,
+            'chatUuid' => $chatUuid,
+            'appUrl' => defined('APP_URL') ? APP_URL : ''
+        ];
+    }
 }

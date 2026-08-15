@@ -22,9 +22,6 @@ export class AdminSupportTicketDetailController {
         }
 
         this.bindEvents();
-        if (this.ticketUuid) {
-            this._loadTicketDetail();
-        }
     }
 
     bindEvents() {
@@ -126,14 +123,15 @@ export class AdminSupportTicketDetailController {
 
         if (avatarEl) {
             const pic = ticket.profile_picture || ticket.avatar;
-            if (pic) {
+            const fallbackAvatar = `${appUrl}/public/assets/img/fallbacks/avatar-default.png`;
+            if (pic && !pic.includes('avatar-default.png')) {
                 avatarEl.src = pic.startsWith('http') ? pic : `${appUrl}/${pic.replace(/^\/+/, '')}`;
             } else {
-                avatarEl.src = `${appUrl}/public/assets/img/fallbacks/avatar-default.png`;
+                avatarEl.src = fallbackAvatar;
             }
             avatarEl.onerror = () => {
                 avatarEl.onerror = null;
-                avatarEl.src = `${appUrl}/public/assets/img/fallbacks/avatar-default.png`;
+                avatarEl.src = fallbackAvatar;
             };
         }
 

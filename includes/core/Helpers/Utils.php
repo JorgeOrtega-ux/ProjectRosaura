@@ -380,7 +380,7 @@ class Utils {
 
 
     private static $fallbacks = [
-        'avatar' => '/avatar/Um9zYXVyYVVzZXI6VQ', // Token para "U"
+        'avatar' => 'public/assets/img/fallbacks/avatar-default.png',
         'canvas' => 'public/assets/img/fallbacks/canvas-default.png',
         'snapshot' => 'public/assets/img/fallbacks/canvas-default.png',
         'chat_attachment' => 'public/assets/img/fallbacks/canvas-default.png'
@@ -389,7 +389,7 @@ class Utils {
     public static function getValidImage($path, $type = 'avatar') {
         $fallback = self::$fallbacks[$type] ?? self::$fallbacks['avatar'];
         
-        if (empty($path)) {
+        if (empty($path) || strpos($path, 'avatar-default.png') !== false) {
             return $fallback;
         }
 

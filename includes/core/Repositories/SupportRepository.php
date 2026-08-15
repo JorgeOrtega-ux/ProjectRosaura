@@ -48,6 +48,7 @@ class SupportRepository implements SupportRepositoryInterface {
             $stmt->execute($userIds);
             $users = [];
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $row['profile_picture'] = Utils::getValidImage($row['profile_picture'] ?? null, 'avatar');
                 $users[(int)$row['id']] = $row;
             }
             return $users;

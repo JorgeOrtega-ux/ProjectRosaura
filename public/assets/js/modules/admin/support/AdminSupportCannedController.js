@@ -7,9 +7,8 @@ export class AdminSupportCannedController {
     constructor() {
         this.api = new ApiService();
         this.container = null;
+        this.basePath = window.AppBasePath || '';
         this.abortController = null;
-        this.items = [];
-        this.searchQuery = '';
         this.selectedUuid = null;
 
         this._boundClick = this.handleClick.bind(this);
@@ -23,7 +22,6 @@ export class AdminSupportCannedController {
             window.modalSystem.registerTemplates(AdminModalTemplates);
         }
         this.bindEvents();
-        this._loadCanned();
     }
 
     bindEvents() {
@@ -49,8 +47,16 @@ export class AdminSupportCannedController {
     handleInput(e) {
         const searchInput = e.target.closest('[data-ref="canned-search-input"]');
         if (searchInput) {
-            this.searchQuery = searchInput.value.trim().toLowerCase();
-            this._renderList();
+            const query = searchInput.value.trim().toLowerCase();
+            const rows = document.querySelectorAll('[data-ref="admin-canned-table-body"] tr[data-action="selectCannedRow"]');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (!query || text.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
         }
     }
 
@@ -63,9 +69,11 @@ export class AdminSupportCannedController {
                 const isHidden = toolbar.classList.contains('disabled');
                 if (isHidden) {
                     toolbar.classList.remove('disabled');
+                    toolbar.classList.add('active');
                     const input = toolbar.querySelector('[data-ref="canned-search-input"]');
                     if (input) input.focus();
                 } else {
+                    toolbar.classList.remove('active');
                     toolbar.classList.add('disabled');
                 }
             }
@@ -80,16 +88,20 @@ export class AdminSupportCannedController {
         }
 
         const selectRow = e.target.closest('[data-action="selectCannedRow"]');
-        if (selectRow && !e.target.closest('button') && !e.target.closest('a')) {
+        if (selectRow && !e.target.closest('button') && !e.target.closest('a') && !e.target.closest('.component-dropdown-wrapper')) {
             e.preventDefault();
             const uuid = selectRow.getAttribute('data-uuid');
             if (this.selectedUuid === uuid) {
-                this.selectedUuid = null;
+                this.deselectCanned();
             } else {
                 this.selectedUuid = uuid;
+                const tbody = document.querySelector('[data-ref="admin-canned-table-body"]');
+                if (tbody) {
+                    tbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+                }
+                selectRow.classList.add('selected');
+                this._updateSelectionUI();
             }
-            this._updateSelectionUI();
-            this._renderList();
             return;
         }
 
@@ -97,8 +109,18 @@ export class AdminSupportCannedController {
         if (editSelectedBtn) {
             e.preventDefault();
             if (this.selectedUuid) {
-                const item = this.items.find(i => i.uuid === this.selectedUuid);
-                if (item) this._openModal(item);
+                const row = document.querySelector(`[data-action="selectCannedRow"][data-uuid="${this.selectedUuid}"]`);
+                if (row) {
+                    const item = {
+                        uuid: this.selectedUuid,
+                        shortcut: row.getAttribute('data-shortcut') || '',
+                        title: row.getAttribute('data-title') || '',
+                        content: row.getAttribute('data-content') || '',
+                        min_level: row.getAttribute('data-min-level') || 'l1',
+                        language: row.getAttribute('data-language') || 'es-419'
+                    };
+                    this._openModal(item);
+                }
             }
             return;
         }
@@ -109,15 +131,6 @@ export class AdminSupportCannedController {
             if (this.selectedUuid) {
                 this._deleteCanned(this.selectedUuid, deleteSelectedBtn);
             }
-            return;
-        }
-
-        const deselectBtn = e.target.closest('[data-action="deselectCanned"]');
-        if (deselectBtn) {
-            e.preventDefault();
-            this.selectedUuid = null;
-            this._updateSelectionUI();
-            this._renderList();
             return;
         }
 
@@ -141,6 +154,15 @@ export class AdminSupportCannedController {
             this._submitCannedForm(submitBtn);
             return;
         }
+    }
+
+    deselectCanned() {
+        this.selectedUuid = null;
+        const tbody = document.querySelector('[data-ref="admin-canned-table-body"]');
+        if (tbody) {
+            tbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+        }
+        this._updateSelectionUI();
     }
 
     _updateSelectionUI() {
@@ -168,87 +190,6 @@ export class AdminSupportCannedController {
         }
     }
 
-    async _loadCanned() {
-        try {
-            const res = await this.api.post(ApiRoutes.AdminSupport.GetCannedResponses, {}, this.abortController ? this.abortController.signal : undefined);
-            if (res && res.success) {
-                this.items = res.responses || [];
-                this._renderList();
-            }
-        } catch (error) {
-            if (error.name === 'AbortError') return;
-        }
-    }
-
-    _renderList() {
-        const tbody = document.querySelector('[data-ref="admin-canned-table-body"]');
-        if (!tbody) return;
-
-        let filtered = this.items;
-        if (this.searchQuery) {
-            filtered = this.items.filter(item =>
-                (item.shortcut && item.shortcut.toLowerCase().includes(this.searchQuery)) ||
-                (item.title && item.title.toLowerCase().includes(this.searchQuery)) ||
-                (item.content && item.content.toLowerCase().includes(this.searchQuery))
-            );
-        }
-
-        if (filtered.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="5">
-                        <div class="component-empty-state component-p-4">
-                            <span class="material-symbols-rounded component-empty-state-icon">quickreply</span>
-                            <h3 class="component-card__title">${window.__('lbl_no_canned_found')}</h3>
-                        </div>
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        const langMap = {
-            'es-419': 'Español (Latinoamérica)',
-            'es-MX': 'Español (México)',
-            'es-ES': 'Español (España)',
-            'en-US': 'English (United States)',
-            'en-GB': 'English (United Kingdom)',
-            'en': 'English (United States)',
-            'fr-FR': 'Français (France)',
-            'de-DE': 'Deutsch (Deutschland)',
-            'it-IT': 'Italiano (Italia)',
-            'pt-BR': 'Português (Brasil)',
-            'pt-PT': 'Português (Portugal)'
-        };
-
-        let html = '';
-        filtered.forEach(item => {
-            const isSelected = item.uuid === this.selectedUuid;
-            const minLevelBadge = `<span class="component-badge component-badge--sm">${item.min_level ? item.min_level.toUpperCase() : 'L1'}</span>`;
-            const langName = langMap[item.language] || item.language || 'Español';
-            const langBadge = `<span class="component-badge component-badge--sm">${this._escapeHtml(langName)}</span>`;
-            const snippet = item.content && item.content.length > 90 ? item.content.substring(0, 90) + '...' : (item.content || '');
-
-            html += `
-                <tr class="component-table-row component-table-row--clickable ${isSelected ? 'selected' : ''}" data-action="selectCannedRow" data-uuid="${item.uuid}">
-                    <td>
-                        <span class="component-badge component-badge--primary font-mono">/${this._escapeHtml(item.shortcut)}</span>
-                    </td>
-                    <td>
-                        <span class="component-table-title">${this._escapeHtml(item.title)}</span>
-                    </td>
-                    <td>
-                        <span class="component-table-subtitle">${this._escapeHtml(snippet)}</span>
-                    </td>
-                    <td>${minLevelBadge}</td>
-                    <td>${langBadge}</td>
-                </tr>
-            `;
-        });
-
-        tbody.innerHTML = html;
-    }
-
     _openModal(item = null) {
         if (!window.modalSystem) return;
         window.modalSystem.show('cannedResponseModal', {
@@ -273,9 +214,8 @@ export class AdminSupportCannedController {
         }
 
         const dropdown = document.querySelector('[data-module="dropdownCannedLevel"]');
-        if (dropdown) {
-            dropdown.classList.remove('active');
-            dropdown.classList.add('disabled');
+        if (dropdown && window.appInstance) {
+            window.appInstance.closeModule(dropdown);
         }
     }
 
@@ -296,9 +236,8 @@ export class AdminSupportCannedController {
         }
 
         const dropdown = document.querySelector('[data-module="dropdownCannedLang"]');
-        if (dropdown) {
-            dropdown.classList.remove('active');
-            dropdown.classList.add('disabled');
+        if (dropdown && window.appInstance) {
+            window.appInstance.closeModule(dropdown);
         }
     }
 
@@ -342,9 +281,11 @@ export class AdminSupportCannedController {
 
             if (res && res.success) {
                 showMessage(window.__('msg_support_canned_saved'), 'success');
-                this.selectedUuid = null;
-                this._updateSelectionUI();
-                this._loadCanned();
+                if (window.spaRouter) {
+                    window.spaRouter.navigate(`${this.basePath}/admin/support/canned-responses`, { forceReload: true });
+                } else {
+                    window.location.reload();
+                }
             } else {
                 showMessage(res && res.message ? res.message : window.__('err_generic'), 'error');
             }
@@ -367,9 +308,11 @@ export class AdminSupportCannedController {
 
             if (res && res.success) {
                 showMessage(window.__('msg_support_canned_deleted'), 'success');
-                this.selectedUuid = null;
-                this._updateSelectionUI();
-                this._loadCanned();
+                if (window.spaRouter) {
+                    window.spaRouter.navigate(`${this.basePath}/admin/support/canned-responses`, { forceReload: true });
+                } else {
+                    window.location.reload();
+                }
             } else {
                 showMessage(res && res.message ? res.message : window.__('err_generic'), 'error');
             }
@@ -378,15 +321,5 @@ export class AdminSupportCannedController {
             restoreButton(btn);
             showMessage(window.__('err_generic'), 'error');
         }
-    }
-
-    _escapeHtml(str) {
-        if (!str) return '';
-        return str
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
     }
 }
