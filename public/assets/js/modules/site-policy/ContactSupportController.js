@@ -1366,7 +1366,8 @@ export class ContactSupportController {
 
             if (response && response.success) {
                 const ticketUuid = response.ticket_uuid || '';
-                const successMsg = window.__('msg_support_ticket_created', { uuid: ticketUuid });
+                const trackingCode = response.tracking_code || ticketUuid;
+                const successMsg = window.__('msg_support_ticket_created', { uuid: ticketUuid, tracking_code: trackingCode, trackingCode: trackingCode });
 
                 showMessage(successMsg, 'success');
 
@@ -1430,7 +1431,8 @@ export class ContactSupportController {
 
             if (response && response.success) {
                 const ticketUuid = response.ticket_uuid || '';
-                const successMsg = window.__('msg_support_ticket_created', { uuid: ticketUuid });
+                const trackingCode = response.tracking_code || ticketUuid;
+                const successMsg = window.__('msg_support_ticket_created', { uuid: ticketUuid, tracking_code: trackingCode, trackingCode: trackingCode });
 
                 showMessage(successMsg, 'success');
 

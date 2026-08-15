@@ -10,6 +10,8 @@ export class AdminSupportTicketDetailController {
         this.ticketUuid = null;
 
         this._boundClick = this.handleClick.bind(this);
+        this.ticketData = null;
+        this.currentAgentName = null;
     }
 
     init() {
@@ -53,11 +55,144 @@ export class AdminSupportTicketDetailController {
             return;
         }
 
+        const templateAction = e.target.closest('[data-action="applyTicketTemplate"]');
+        if (templateAction) {
+            e.preventDefault();
+            const key = templateAction.getAttribute('data-template-key');
+            this._applyTemplate(key, templateAction);
+            return;
+        }
+
         const navBack = e.target.closest('[data-nav^="/admin/support/tickets"]');
         if (navBack && window.spaRouter) {
             e.preventDefault();
             window.spaRouter.navigate('/admin/support/tickets');
             return;
+        }
+    }
+
+    _getTemplates() {
+        const clientName = this.ticketData?.username || this.container?.getAttribute('data-ticket-username') || window.__('lbl_user', [], 'Usuario');
+        const trackingCode = this.ticketData?.tracking_code || this.container?.getAttribute('data-ticket-tracking') || '';
+        const subject = this.ticketData?.subject || this.container?.getAttribute('data-ticket-subject') || '';
+        const agentName = this.currentAgentName || window.__('lbl_support_team', [], 'Equipo de Soporte');
+
+        return {
+            blank: {
+                label: window.__('tpl_ticket_blank', [], 'Respuesta Personalizada / Libre'),
+                text: ''
+            },
+            resolved: {
+                label: window.__('tpl_ticket_resolved', [], 'Resolución y Cierre de Incidencia'),
+                text: `¡Hola ${clientName}!
+
+Te informamos que hemos revisado y resuelto exitosamente la consulta que nos enviaste sobre "${subject}".
+
+Detalles de la solución:
+[Describa aquí las acciones realizadas o los pasos aplicados para solucionar la incidencia]
+
+Por favor verifica que todo funcione de manera correcta. Si tienes alguna duda adicional sobre este caso o requieres más asistencia, puedes responder con toda confianza a este mensaje.
+
+¡Gracias por ser parte de Project Rosaura!`
+            },
+            request_details: {
+                label: window.__('tpl_ticket_request_details', [], 'Solicitud de Más Información / Capturas'),
+                text: `¡Hola ${clientName}!
+
+Gracias por ponerte en contacto con nuestro equipo de soporte técnico.
+
+Para poder investigar a fondo tu solicitud respecto a "${subject}", necesitamos que por favor nos proporciones los siguientes detalles adicionales:
+
+1. [Indique los detalles específicos requeridos o pasos exactos para reproducir]
+2. ¿En qué navegador y dispositivo te encuentras experimentando este comportamiento?
+3. Si es posible, adjúntanos una captura de pantalla clara del mensaje de error o pantalla correspondiente.
+
+Quedamos atentos a tu pronta respuesta para continuar con la atención de tu caso.`
+            },
+            investigating: {
+                label: window.__('tpl_ticket_investigating', [], 'En Investigación Técnica / Escalamiento'),
+                text: `¡Hola ${clientName}!
+
+Hemos recibido y analizado la información de tu caso sobre "${subject}".
+
+Debido a la naturaleza técnica de la incidencia, hemos transferido tu expediente al departamento especializado de ingeniería para realizar un diagnóstico más profundo en nuestros servidores.
+
+Actualmente estamos trabajando en ello:
+[Indique cualquier avance preliminar o tiempo estimado de resolución]
+
+Te mantendremos informado por este mismo medio tan pronto tengamos novedades. Agradecemos tu paciencia y comprensión.`
+            },
+            billing: {
+                label: window.__('tpl_ticket_billing', [], 'Facturación, Membresía y Pagos'),
+                text: `¡Hola ${clientName}!
+
+Te escribimos en respuesta a tu consulta sobre facturación y suscripción correspondiente a "${subject}".
+
+Hemos verificado el estado de tu cuenta y te confirmamos lo siguiente:
+[Describa aquí el estado del pago, ajuste aplicado o confirmación de la membresía]
+
+Tus beneficios y estado de cuenta se encuentran actualizados en la plataforma. Si tienes alguna otra duda sobre tus cobros o suscripción, quedamos a tu completa disposición.`
+            },
+            security: {
+                label: window.__('tpl_ticket_security', [], 'Verificación y Seguridad de Cuenta'),
+                text: `¡Hola ${clientName}!
+
+Hemos recibido tu solicitud de seguridad y acceso a la cuenta para el caso "${subject}".
+
+Por motivos de protección y privacidad de tu cuenta:
+[Indique los pasos de verificación requeridos, estado del 2FA o restablecimiento de credenciales]
+
+Recuerda que nuestro equipo nunca te solicitará contraseñas en texto plano ni códigos de seguridad fuera de nuestros canales oficiales.
+
+Quedamos atentos a tu confirmación.`
+            },
+            follow_up: {
+                label: window.__('tpl_ticket_follow_up', [], 'Actualización de Estado / En Progreso'),
+                text: `¡Hola ${clientName}!
+
+Queremos brindarte una actualización sobre el seguimiento de tu ticket [${trackingCode}]:
+
+[Indique el estado actual del caso y los próximos pasos en ejecución]
+
+Continuamos gestionando tu caso de manera prioritaria y te notificaremos a la brevedad ante cualquier nuevo avance.`
+            }
+        };
+    }
+
+    _applyTemplate(key, linkEl) {
+        const templates = this._getTemplates();
+        const tpl = templates[key] || templates.blank;
+
+        const allLinks = document.querySelectorAll('[data-action="applyTicketTemplate"]');
+        allLinks.forEach(l => l.classList.remove('active'));
+        if (linkEl) linkEl.classList.add('active');
+
+        const labelEl = document.querySelector('[data-ref="ticket-selected-template-label"]');
+        if (labelEl) {
+            labelEl.textContent = tpl.label;
+        }
+
+        const replyInput = document.querySelector('[data-ref="ticket-reply-text"]');
+        if (replyInput) {
+            replyInput.value = tpl.text;
+            replyInput.focus();
+
+            // Find first placeholder like [Describa...] or [Indique...] to select it
+            const match = tpl.text.match(/\[.*?\]/);
+            if (match && match.index !== undefined) {
+                replyInput.setSelectionRange(match.index, match.index + match[0].length);
+            }
+        }
+
+        const tplModule = document.querySelector('[data-module="moduleTicketReplyTemplates"]');
+        if (tplModule) {
+            if (window.appInstance?.moduleManager) {
+                window.appInstance.moduleManager.close(tplModule);
+            } else if (window.moduleManager) {
+                window.moduleManager.close(tplModule);
+            } else {
+                tplModule.classList.add('disabled');
+            }
         }
     }
 
@@ -68,6 +203,8 @@ export class AdminSupportTicketDetailController {
             }, this.abortController ? this.abortController.signal : undefined);
 
             if (res && res.success && res.ticket) {
+                this.ticketData = res.ticket;
+                this.currentAgentName = res.current_agent_name || null;
                 this._renderTicket(res.ticket);
             } else {
                 showMessage(res && res.message ? res.message : window.__('err_support_ticket_not_found'), 'error');
@@ -79,8 +216,10 @@ export class AdminSupportTicketDetailController {
     }
 
     _renderTicket(ticket) {
+        this.ticketData = ticket;
         const appUrl = window.APP_URL || '';
         const titleEl = document.querySelector('[data-ref="ticket-detail-title"]');
+        const trackingBadge = document.querySelector('[data-ref="ticket-tracking-badge"]');
         const subjectEl = document.querySelector('[data-ref="ticket-detail-subject"]');
         const dateEl = document.querySelector('[data-ref="ticket-detail-date"]');
         const msgEl = document.querySelector('[data-ref="ticket-detail-original-message"]');
@@ -91,8 +230,14 @@ export class AdminSupportTicketDetailController {
         const priorityBadge = document.querySelector('[data-ref="ticket-priority-badge"]');
         const statusText = document.querySelector('[data-ref="ticket-status-text"]');
 
+        const trackingDisplay = ticket.tracking_code ? `[${ticket.tracking_code}]` : `#${ticket.uuid.substring(0, 8)}`;
+
         if (titleEl) {
-            titleEl.textContent = `${window.__('title_ticket_detail')} #${ticket.uuid.substring(0, 8)}`;
+            titleEl.innerHTML = `${window.__('title_ticket_detail')} <span class="component-font-mono">${this._escapeHtml(trackingDisplay)}</span>`;
+        }
+
+        if (trackingBadge && ticket.tracking_code) {
+            trackingBadge.innerHTML = `<span class="material-symbols-rounded">tag</span><span class="component-font-mono">${this._escapeHtml(ticket.tracking_code)}</span>`;
         }
 
         if (subjectEl) {

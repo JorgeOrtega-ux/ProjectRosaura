@@ -292,25 +292,36 @@ class Mailer {
         }
     }
 
-    public function sendSupportTicketCreated($toEmail, $username, $ticketUuid, $subject, $category = 'general') {
+    public function sendSupportTicketCreated($toEmail, $username, $ticketUuid, $subject, $category = 'general', $message = '', $trackingCode = '') {
         try {
             $lang = $this->getTargetLanguage($toEmail);
             $this->mail->clearAddresses();
             $this->mail->addAddress($toEmail, $username);
 
+            if (empty($trackingCode)) {
+                $trackingCode = '4-50' . date('y') . sprintf('%09d', abs(crc32($ticketUuid)));
+            }
+
             $this->mail->isHTML(true);
-            $this->mail->Subject = Translator::getForLang($lang, 'email_support_ticket_created_subject');
+            $subjectText = Translator::getForLang($lang, 'email_support_ticket_created_subject', ['trackingCode' => $trackingCode, 'subject' => $subject]);
+            if ($subjectText === 'email_support_ticket_created_subject') {
+                $subjectText = "[{$trackingCode}] " . ($lang === 'en' ? 'Your inquiry to the Rosaura Support team' : 'Su consulta al equipo de Asistencia de Rosaura');
+            }
+            $this->mail->Subject = $subjectText;
 
             $this->mail->Body = EmailTemplates::get('support_ticket_created', [
                 'username' => $username,
+                'trackingCode' => $trackingCode,
                 'ticketUuid' => $ticketUuid,
                 'subject' => $subject,
-                'category' => $category
+                'category' => $category,
+                'message' => $message
             ], $lang);
 
             $this->mail->AltBody = Translator::getForLang($lang, 'email_support_ticket_created_alt', [
                 'username' => $username,
                 'uuid' => $ticketUuid,
+                'trackingCode' => $trackingCode,
                 'subject' => $subject
             ]);
 
@@ -321,31 +332,100 @@ class Mailer {
         }
     }
 
-    public function sendSupportTicketReply($toEmail, $username, $ticketUuid, $subject, $replyMessage) {
+    public function sendSupportTicketReply($toEmail, $username, $ticketUuid, $subject, $replyMessage, $agentName = 'Agente de Asistencia', $trackingCode = '') {
         try {
             $lang = $this->getTargetLanguage($toEmail);
             $this->mail->clearAddresses();
             $this->mail->addAddress($toEmail, $username);
 
+            if (empty($trackingCode)) {
+                $trackingCode = '4-50' . date('y') . sprintf('%09d', abs(crc32($ticketUuid)));
+            }
+
             $this->mail->isHTML(true);
-            $this->mail->Subject = Translator::getForLang($lang, 'email_support_reply_subject', ['subject' => $subject]);
+            $subjectText = Translator::getForLang($lang, 'email_support_reply_subject', ['trackingCode' => $trackingCode, 'subject' => $subject]);
+            if ($subjectText === 'email_support_reply_subject') {
+                $subjectText = "[{$trackingCode}] " . ($lang === 'en' ? "Your inquiry to the Rosaura Support team: {$subject}" : "Su consulta al equipo de Asistencia de Rosaura: {$subject}");
+            }
+            $this->mail->Subject = $subjectText;
 
             $this->mail->Body = EmailTemplates::get('support_ticket_reply', [
                 'username' => $username,
+                'trackingCode' => $trackingCode,
                 'ticketUuid' => $ticketUuid,
                 'subject' => $subject,
-                'replyMessage' => $replyMessage
+                'replyMessage' => $replyMessage,
+                'agentName' => $agentName
             ], $lang);
 
             $this->mail->AltBody = Translator::getForLang($lang, 'email_support_reply_alt', [
                 'username' => $username,
                 'uuid' => $ticketUuid,
-                'reply' => $replyMessage
+                'trackingCode' => $trackingCode,
+                'reply' => $replyMessage,
+                'agent' => $agentName
             ]);
 
             return $this->mail->send();
         } catch (PHPMailerException $e) {
             Logger::error("Failed to send support ticket reply email", ['to_email' => $toEmail, 'smtp_error' => $this->mail->ErrorInfo, 'exception' => $e]);
+            return false;
+        }
+    }
+
+    public function sendSupportChatTranscript($toEmail, $username, $sessionUuid, $agentName, array $messages = [], ?string $summary = null, ?string $sessionCode = null) {
+        try {
+            $lang = $this->getTargetLanguage($toEmail);
+            $this->mail->clearAddresses();
+            $this->mail->addAddress($toEmail, $username);
+
+            if (empty($sessionCode)) {
+                $sessionCode = '4-50' . date('y') . sprintf('%09d', abs(crc32($sessionUuid)));
+            }
+
+            $transcriptHtml = '';
+            foreach ($messages as $msg) {
+                if (!empty($msg['is_internal'])) continue;
+                $senderType = $msg['sender_type'] ?? 'user';
+                $senderName = htmlspecialchars($msg['sender_name'] ?? 'User');
+                $text = nl2br(htmlspecialchars($msg['message'] ?? ''));
+                $time = htmlspecialchars(date('H:i', strtotime($msg['created_at'] ?? 'now')));
+
+                if ($senderType === 'system') {
+                    $transcriptHtml .= "<div style='text-align: center; margin: 10px 0; color: #888888; font-size: 12px; font-style: italic;'>[Sistema: {$text}]</div>";
+                } elseif ($senderType === 'agent') {
+                    $transcriptHtml .= "<div style='margin: 12px 0 12px 30px; padding: 10px 14px; background-color: #f0f4ff; border-radius: 8px; border: 1px solid #d0e0ff;'><div style='font-size: 12px; font-weight: bold; color: #1a56db; margin-bottom: 4px;'>{$senderName} (Soporte) <span style='font-weight: normal; color: #888888; font-size: 11px; float: right;'>{$time}</span></div><div style='font-size: 14px; color: #111111; line-height: 1.5;'>{$text}</div></div>";
+                } else {
+                    $transcriptHtml .= "<div style='margin: 12px 30px 12px 0; padding: 10px 14px; background-color: #f5f5fa; border-radius: 8px; border: 1px solid #e5e5ea;'><div style='font-size: 12px; font-weight: bold; color: #333333; margin-bottom: 4px;'>{$senderName} <span style='font-weight: normal; color: #888888; font-size: 11px; float: right;'>{$time}</span></div><div style='font-size: 14px; color: #111111; line-height: 1.5;'>{$text}</div></div>";
+                }
+            }
+
+            if (empty($transcriptHtml)) {
+                $transcriptHtml = "<p style='color: #888888; font-style: italic; margin: 0;'>No se registraron mensajes adicionales en esta sesión.</p>";
+            }
+
+            $this->mail->isHTML(true);
+            $subjectText = Translator::getForLang($lang, 'email_support_chat_transcript_subject', ['sessionCode' => $sessionCode]);
+            if ($subjectText === 'email_support_chat_transcript_subject') {
+                $subjectText = "[{$sessionCode}] " . ($lang === 'en' ? 'Transcript of your live chat with Rosaura Support' : 'Transcripción de tu sesión de chat con Asistencia de Rosaura');
+            }
+            $this->mail->Subject = $subjectText;
+
+            $this->mail->Body = EmailTemplates::get('support_chat_transcript', [
+                'username' => $username,
+                'sessionCode' => $sessionCode,
+                'sessionUuid' => $sessionUuid,
+                'agentName' => $agentName,
+                'subject' => Translator::getForLang($lang, 'lbl_live_support_session', [], 'Soporte en Vivo'),
+                'summary' => $summary,
+                'chatTranscriptHtml' => $transcriptHtml
+            ], $lang);
+
+            $this->mail->AltBody = "Hola {$username}, adjuntamos la transcripción de tu sesión de soporte con referencia [{$sessionCode}]. Atendido por: {$agentName}.";
+
+            return $this->mail->send();
+        } catch (PHPMailerException $e) {
+            Logger::error("Failed to send support chat transcript email", ['to_email' => $toEmail, 'smtp_error' => $this->mail->ErrorInfo, 'exception' => $e]);
             return false;
         }
     }

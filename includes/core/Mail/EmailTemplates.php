@@ -60,6 +60,28 @@ class EmailTemplates {
             $data['statusText'] = $statusTextStr;
             $data['color'] = $colorText;
         }
+
+        // Support ticket created message block
+        if ($templateName === 'support_ticket_created') {
+            $msg = trim($data['message'] ?? '');
+            if (!empty($msg)) {
+                $lbl = ($lang === 'en' || strpos($lang, 'en') === 0) ? 'Message submitted:' : 'Mensaje enviado:';
+                $data['ticketMessageBlock'] = "<div style='margin-top: 14px; padding-top: 12px; border-top: 1px solid #00000010;'><p style='margin: 0 0 6px 0; color: #777777; font-size: 13px;'><strong>" . $lbl . "</strong></p><p style='margin: 0; color: #333333; font-size: 13px; line-height: 1.5; white-space: pre-wrap; background: #ffffff; padding: 10px 14px; border-radius: 6px; border: 1px solid #00000010;'>" . htmlspecialchars($msg) . "</p></div>";
+            } else {
+                $data['ticketMessageBlock'] = '';
+            }
+        }
+
+        // Support chat transcript blocks
+        if ($templateName === 'support_chat_transcript') {
+            $summary = trim($data['summary'] ?? '');
+            if (!empty($summary)) {
+                $lblSummary = ($lang === 'en' || strpos($lang, 'en') === 0) ? 'Resolution summary:' : 'Resumen de resolución:';
+                $data['resolutionBlock'] = "<p style='margin: 6px 0 0 0; font-size: 13px; color: #555555;'><strong>" . $lblSummary . "</strong> <span style='color: #111111;'>" . htmlspecialchars($summary) . "</span></p>";
+            } else {
+                $data['resolutionBlock'] = '';
+            }
+        }
         
         if (!isset($data['expiresIn'])) {
             $data['expiresIn'] = 15;

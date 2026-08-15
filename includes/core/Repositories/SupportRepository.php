@@ -69,6 +69,7 @@ class SupportRepository implements SupportRepositoryInterface {
     public function createTicket(array $data): string {
         try {
             $uuid = $data['uuid'] ?? Utils::generateUuid();
+            $trackingCode = $data['tracking_code'] ?? Utils::generateSupportTrackingCode();
             $userId = (int)$data['user_id'];
             $category = $data['category'] ?? 'general';
             $subject = trim($data['subject'] ?? '');
@@ -78,13 +79,14 @@ class SupportRepository implements SupportRepositoryInterface {
 
             $stmt = $this->pdo->prepare("
                 INSERT INTO " . DB::TBL_SUPPORT_TICKETS . " 
-                (uuid, user_id, category, subject, message, status, priority, ip_address, user_agent, created_at, updated_at)
+                (uuid, tracking_code, user_id, category, subject, message, status, priority, ip_address, user_agent, created_at, updated_at)
                 VALUES 
-                (:uuid, :user_id, :category, :subject, :message, 'open', 'medium', :ip_address, :user_agent, NOW(), NOW())
+                (:uuid, :tracking_code, :user_id, :category, :subject, :message, 'open', 'medium', :ip_address, :user_agent, NOW(), NOW())
             ");
 
             $stmt->execute([
                 ':uuid' => $uuid,
+                ':tracking_code' => $trackingCode,
                 ':user_id' => $userId,
                 ':category' => $category,
                 ':subject' => $subject,
@@ -108,13 +110,20 @@ class SupportRepository implements SupportRepositoryInterface {
             $stmt = $this->pdo->prepare("
                 SELECT st.*
                 FROM " . DB::TBL_SUPPORT_TICKETS . " st
-                WHERE st.uuid = :uuid
+                WHERE st.uuid = :uuid OR st.tracking_code = :uuid_tracking
                 LIMIT 1
             ");
-            $stmt->execute([':uuid' => $uuid]);
+            $stmt->execute([
+                ':uuid' => $uuid,
+                ':uuid_tracking' => trim($uuid, '[]')
+            ]);
             $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$ticket) {
                 return null;
+            }
+
+            if (empty($ticket['tracking_code'])) {
+                $ticket['tracking_code'] = '4-50' . date('y', strtotime($ticket['created_at'] ?? 'now')) . sprintf('%09d', abs(crc32($ticket['uuid'])));
             }
 
             $userMap = $this->hydrateUsers([(int)$ticket['user_id']]);
@@ -136,7 +145,7 @@ class SupportRepository implements SupportRepositoryInterface {
     public function getTicketsByUser(int $userId, int $limit = 20, int $offset = 0): array {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT id, uuid, category, subject, status, priority, created_at, updated_at
+                SELECT id, uuid, tracking_code, category, subject, status, priority, created_at, updated_at
                 FROM " . DB::TBL_SUPPORT_TICKETS . "
                 WHERE user_id = :user_id
                 ORDER BY created_at DESC
@@ -146,7 +155,13 @@ class SupportRepository implements SupportRepositoryInterface {
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($rows as &$r) {
+                if (empty($r['tracking_code'])) {
+                    $r['tracking_code'] = '4-50' . date('y', strtotime($r['created_at'] ?? 'now')) . sprintf('%09d', abs(crc32($r['uuid'])));
+                }
+            }
+            return $rows;
         } catch (PDOException $e) {
             Logger::database("Failed to fetch user tickets: " . $e->getMessage(), 'error');
             return [];
@@ -172,6 +187,7 @@ class SupportRepository implements SupportRepositoryInterface {
             }
             if (!empty($filters['search'])) {
                 $searchTerm = trim($filters['search']);
+                $cleanCode = trim($searchTerm, '[]');
                 $matchingUserIds = [];
                 try {
                     $uStmt = $this->getPdoIdentity()->prepare("
@@ -187,11 +203,13 @@ class SupportRepository implements SupportRepositoryInterface {
 
                 if (!empty($matchingUserIds)) {
                     $userIn = implode(',', array_map('intval', $matchingUserIds));
-                    $sql .= " AND (st.subject LIKE :search OR st.user_id IN ($userIn))";
+                    $sql .= " AND (st.subject LIKE :search_subj OR st.tracking_code LIKE :search_code OR st.uuid LIKE :search_uuid OR st.user_id IN ($userIn))";
                 } else {
-                    $sql .= " AND st.subject LIKE :search";
+                    $sql .= " AND (st.subject LIKE :search_subj OR st.tracking_code LIKE :search_code OR st.uuid LIKE :search_uuid)";
                 }
-                $params[':search'] = '%' . $searchTerm . '%';
+                $params[':search_subj'] = '%' . $searchTerm . '%';
+                $params[':search_uuid'] = '%' . $searchTerm . '%';
+                $params[':search_code'] = '%' . $cleanCode . '%';
             }
 
             $sql .= " ORDER BY st.created_at DESC LIMIT :limit OFFSET :offset";
@@ -213,6 +231,9 @@ class SupportRepository implements SupportRepositoryInterface {
             $userMap = $this->hydrateUsers($userIds);
 
             foreach ($tickets as &$t) {
+                if (empty($t['tracking_code'])) {
+                    $t['tracking_code'] = '4-50' . date('y', strtotime($t['created_at'] ?? 'now')) . sprintf('%09d', abs(crc32($t['uuid'])));
+                }
                 $uId = (int)$t['user_id'];
                 $u = $userMap[$uId] ?? null;
                 $t['username'] = $u['username'] ?? 'Usuario';

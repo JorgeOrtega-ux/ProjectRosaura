@@ -52,7 +52,7 @@
     "err_support_feedback_failed": "Failed to submit rating.",
     "err_support_max_images_exceeded": "Maximum 5 images allowed per message.",
     "err_support_message_send_failed": "Could not send message.",
-    "msg_support_ticket_created": "Your support ticket has been submitted successfully! Reference UUID: {uuid}",
+    "msg_support_ticket_created": "Your support ticket has been submitted successfully! Tracking number: [{tracking_code}]",
     "err_support_login_required": "You must log in to contact support.",
     "err_support_invalid_subject": "Subject must be between 4 and 200 characters.",
     "err_support_invalid_message": "Message must be between 15 and 5000 characters.",

@@ -517,6 +517,39 @@ class AdminSupportService {
             return ['success' => false, 'message' => __('err_support_close_failed')];
         }
 
+        try {
+            $session = $this->supportRepo->findSessionByUuid($sessionUuid);
+            if ($session) {
+                $userEmail = $session['client_email'] ?? null;
+                $userName = $session['client_username'] ?? 'User';
+                if (!$userEmail && !empty($session['user_id'])) {
+                    $u = $this->userRepo->findById((int)$session['user_id']);
+                    if ($u && !empty($u['email'])) {
+                        $userEmail = $u['email'];
+                        $userName = $u['username'] ?? $userName;
+                    }
+                }
+                if (!empty($userEmail)) {
+                    $messages = $this->supportRepo->getSessionMessages($sessionUuid, false);
+                    if (count($messages) > 1) {
+                        $agentUser = $this->userRepo->findById($agentId);
+                        $agentName = $agentUser['username'] ?? ($session['agent_username'] ?? 'Agente de Soporte');
+                        $mailer = new Mailer();
+                        $mailer->sendSupportChatTranscript(
+                            $userEmail,
+                            $userName,
+                            $sessionUuid,
+                            $agentName,
+                            $messages,
+                            empty($summary) ? null : $summary
+                        );
+                    }
+                }
+            }
+        } catch (\Throwable $mEx) {
+            Logger::warning("Could not send live session transcript email on agent close", ['exception' => $mEx]);
+        }
+
         $closeMsg = $this->supportRepo->addMessage(
             $sessionUuid,
             'system',
@@ -608,12 +641,21 @@ class AdminSupportService {
             return ['success' => false, 'message' => __('err_unauthorized')];
         }
 
+        $agentId = $this->getCurrentAgentId();
+        $agentUser = $agentId ? $this->userRepo->findById($agentId) : null;
+        $agentName = $agentUser['username'] ?? 'Soporte';
+
         $level = $this->getAgentLevel();
         $language = isset($input['language']) ? trim($input['language']) : null;
         $responses = $this->supportRepo->getCannedResponses($level, $language);
 
+        foreach ($responses as &$resp) {
+            $resp['content'] = str_replace('{agent_name}', $agentName, $resp['content']);
+        }
+
         return [
             'success' => true,
+            'agent_name' => $agentName,
             'responses' => $responses
         ];
     }
@@ -711,9 +753,14 @@ class AdminSupportService {
             return ['success' => false, 'message' => __('err_support_ticket_not_found')];
         }
 
+        $agentId = $this->getCurrentAgentId();
+        $agentUser = $agentId ? $this->userRepo->findById($agentId) : null;
+        $agentName = $agentUser['username'] ?? 'Soporte';
+
         return [
             'success' => true,
-            'ticket' => $ticket
+            'ticket' => $ticket,
+            'current_agent_name' => $agentName
         ];
     }
 
@@ -755,6 +802,10 @@ class AdminSupportService {
             return ['success' => false, 'message' => __('err_support_ticket_not_found')];
         }
 
+        $agentUser = $this->userRepo->findById($agentId);
+        $agentName = $agentUser['username'] ?? 'Equipo de Soporte';
+        $trackingCode = $ticket['tracking_code'] ?? ('4-50' . date('y', strtotime($ticket['created_at'] ?? 'now')) . sprintf('%09d', abs(crc32($ticket['uuid']))));
+
         $this->supportRepo->updateTicketStatus($uuid, 'in_progress');
 
         try {
@@ -765,7 +816,9 @@ class AdminSupportService {
                     $ticket['username'] ?? 'User',
                     $ticket['uuid'],
                     $ticket['subject'],
-                    $replyMessage
+                    $replyMessage,
+                    $agentName,
+                    $trackingCode
                 );
             }
         } catch (\Throwable $e) {

@@ -79,11 +79,13 @@ class SupportService {
 
         try {
             $ticketUuid = Utils::generateUuid();
+            $trackingCode = Utils::generateSupportTrackingCode();
             $ipAddress = Utils::getIpAddress();
             $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500);
 
             $this->supportRepo->createTicket([
                 'uuid' => $ticketUuid,
+                'tracking_code' => $trackingCode,
                 'user_id' => $userId,
                 'category' => $category,
                 'subject' => $subject,
@@ -100,12 +102,15 @@ class SupportService {
                         $user['username'] ?? 'User',
                         $ticketUuid,
                         $subject,
-                        $category
+                        $category,
+                        $message,
+                        $trackingCode
                     );
                 }
             } catch (\Throwable $mailEx) {
                 Logger::warning("Could not send support ticket creation confirmation email", [
                     'ticket_uuid' => $ticketUuid,
+                    'tracking_code' => $trackingCode,
                     'email' => $user['email'] ?? null,
                     'exception' => $mailEx
                 ]);
@@ -113,14 +118,16 @@ class SupportService {
 
             Logger::info("Support ticket created successfully", [
                 'ticket_uuid' => $ticketUuid,
+                'tracking_code' => $trackingCode,
                 'user_id' => $userId,
                 'category' => $category
             ]);
 
             return [
                 'success' => true,
-                'message' => __('msg_support_ticket_created', ['uuid' => $ticketUuid]),
-                'ticket_uuid' => $ticketUuid
+                'message' => __('msg_support_ticket_created', ['uuid' => $ticketUuid, 'tracking_code' => $trackingCode]),
+                'ticket_uuid' => $ticketUuid,
+                'tracking_code' => $trackingCode
             ];
         } catch (\Throwable $e) {
             Logger::error("Error submitting support ticket: " . $e->getMessage(), [
@@ -567,6 +574,35 @@ class SupportService {
                 'success' => false,
                 'message' => __('err_support_close_failed')
             ];
+        }
+
+        try {
+            $userEmail = $session['client_email'] ?? null;
+            $userName = $session['client_username'] ?? 'User';
+            if (!$userEmail && !empty($session['user_id'])) {
+                $u = $this->userRepo->findById((int)$session['user_id']);
+                if ($u && !empty($u['email'])) {
+                    $userEmail = $u['email'];
+                    $userName = $u['username'] ?? $userName;
+                }
+            }
+            if (!empty($userEmail)) {
+                $messages = $this->supportRepo->getSessionMessages($sessionUuid, false);
+                if (count($messages) > 1) {
+                    $mailer = new \App\Core\Mail\Mailer();
+                    $agentName = $session['agent_username'] ?? __('lbl_support_team', [], 'Equipo de Soporte');
+                    $mailer->sendSupportChatTranscript(
+                        $userEmail,
+                        $userName,
+                        $sessionUuid,
+                        $agentName,
+                        $messages,
+                        null
+                    );
+                }
+            }
+        } catch (\Throwable $mEx) {
+            Logger::warning("Could not send live session transcript email on user close", ['exception' => $mEx]);
         }
 
         $this->publishSupportEvent('session_closed', $sessionUuid, [

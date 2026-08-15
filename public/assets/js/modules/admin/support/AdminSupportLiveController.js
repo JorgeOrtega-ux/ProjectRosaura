@@ -763,7 +763,15 @@ export class AdminSupportLiveController {
     }
 
     _insertCannedResponse(item) {
-        const content = item.getAttribute('data-content');
+        let content = item.getAttribute('data-content') || '';
+        const clientName = this.currentSession?.client_username || this.currentSession?.guest_name || window.__('lbl_user', [], 'Usuario');
+        const agentName = this.currentAgentName || window.currentUser?.username || window.__('lbl_agent', [], 'Agente');
+
+        content = content
+            .replace(/\{client_name\}/g, clientName)
+            .replace(/\{agent_name\}/g, agentName)
+            .replace(/\{user_name\}/g, clientName);
+
         const input = document.querySelector('[data-ref="admin-support-chat-input"]');
         if (input && content) {
             input.value = content;
