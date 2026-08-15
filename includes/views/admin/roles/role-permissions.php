@@ -72,14 +72,15 @@ $categories = [
         'icon' => 'support_agent',
         'perms' => [
             'access_support_panel',
-            'attend_support_chats_l1',
-            'attend_support_chats_l2',
-            'attend_support_chats_l3',
-            'escalate_support_chats',
-            'reassign_support_chats',
-            'manage_canned_responses',
-            'manage_support_tickets',
-            'view_support_metrics'
+            'support_chat_attend_l1',
+            'support_chat_attend_l2',
+            'support_chat_attend_l3',
+            'support_chat_escalate',
+            'support_chat_reassign',
+            'support_tickets_manage',
+            'support_manage_canned',
+            'support_view_metrics',
+            'support_audit_logs'
         ]
     ]
 ];

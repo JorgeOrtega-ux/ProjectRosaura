@@ -1213,7 +1213,7 @@ export class AdminSupportLiveController {
 
             if (window.applySubscriptionDynamicColors) window.applySubscriptionDynamicColors();
         } catch (e) {
-            Logger.error("Failed to render client sidebar: " + e.message);
+            console.error("Failed to render client sidebar: " + e.message);
         }
     }
 

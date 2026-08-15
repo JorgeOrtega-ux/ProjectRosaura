@@ -247,4 +247,14 @@ class CacheInvalidator {
             }
         } catch (\Throwable $e) {}
     }
+
+    public function cannedResponses(): void {
+        if (!$this->redis) return;
+        try {
+            $keys = $this->redis->keys(CacheConstants::PREFIX_SUPPORT_CANNED . '*');
+            if (!empty($keys)) {
+                $this->redis->del($keys);
+            }
+        } catch (\Throwable $e) {}
+    }
 }

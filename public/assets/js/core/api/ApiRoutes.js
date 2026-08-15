@@ -138,7 +138,6 @@ export const ApiRoutes = {
         SendMessage: 'admin.support.send_message',
         AddInternalNote: 'admin.support.add_internal_note',
         CloseSession: 'admin.support.close_session',
-        GetAgentsList: 'admin.support.get_agents_list',
         GetCannedResponses: 'admin.support.get_canned_responses',
         SaveCannedResponse: 'admin.support.save_canned_response',
         DeleteCannedResponse: 'admin.support.delete_canned_response',

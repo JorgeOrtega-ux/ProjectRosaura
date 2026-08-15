@@ -4,8 +4,11 @@ namespace App\Core\Repositories;
 
 use App\Core\Interfaces\SupportRepositoryInterface;
 use App\Config\Database\DatabaseManager;
+use App\Config\Database\RedisCache;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
+use App\Core\System\CacheConstants;
+use App\Core\System\CacheInvalidator;
 use App\Core\Helpers\Utils;
 use PDO;
 use PDOException;
@@ -14,10 +17,14 @@ use Exception;
 class SupportRepository implements SupportRepositoryInterface {
     private PDO $pdo;
     private PDO $pdoIdentity;
+    private $redisClient;
+    private CacheInvalidator $cacheInvalidator;
 
-    public function __construct(DatabaseManager $db) {
+    public function __construct(DatabaseManager $db, RedisCache $redisCache = null) {
         $this->pdo = $db->getConnection(DB::CONN_SUPPORT);
         $this->pdoIdentity = $db->getConnection(DB::CONN_IDENTITY);
+        $this->redisClient = $redisCache ? $redisCache->getClient() : null;
+        $this->cacheInvalidator = new CacheInvalidator($this->redisClient);
     }
 
     /**
@@ -1016,6 +1023,19 @@ class SupportRepository implements SupportRepositoryInterface {
     }
 
     public function getCannedResponses(?string $minLevel = null, ?string $language = null): array {
+        $cacheKey = CacheConstants::PREFIX_SUPPORT_CANNED . ($minLevel ?? 'all') . ':' . ($language ?? 'all');
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
         try {
             $sql = "SELECT scr.* FROM " . DB::TBL_SUPPORT_CANNED_RESPONSES . " scr";
             $where = [];
@@ -1074,6 +1094,12 @@ class SupportRepository implements SupportRepositoryInterface {
                 $row['creator_username'] = $userMap[$cId]['username'] ?? null;
             }
 
+            if ($this->redisClient) {
+                try {
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_HOUR, json_encode($results));
+                } catch (\Throwable $e) {}
+            }
+
             return $results;
         } catch (PDOException $e) {
             Logger::database("Failed to fetch canned responses: " . $e->getMessage(), 'error');
@@ -1130,6 +1156,7 @@ class SupportRepository implements SupportRepositoryInterface {
                 ]);
             }
 
+            $this->cacheInvalidator->cannedResponses();
             return $uuid;
         } catch (PDOException $e) {
             Logger::database("Failed to save canned response: " . $e->getMessage(), 'error');
@@ -1140,7 +1167,11 @@ class SupportRepository implements SupportRepositoryInterface {
     public function deleteCannedResponse(string $uuid): bool {
         try {
             $stmt = $this->pdo->prepare("DELETE FROM " . DB::TBL_SUPPORT_CANNED_RESPONSES . " WHERE uuid = :uuid");
-            return $stmt->execute([':uuid' => $uuid]);
+            $deleted = $stmt->execute([':uuid' => $uuid]);
+            if ($deleted) {
+                $this->cacheInvalidator->cannedResponses();
+            }
+            return $deleted;
         } catch (PDOException $e) {
             Logger::database("Failed to delete canned response: " . $e->getMessage(), 'error');
             return false;

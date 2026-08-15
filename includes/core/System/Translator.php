@@ -126,6 +126,8 @@ class Translator {
         $text = $key;
         if (array_key_exists($key, self::$cache[$lang])) {
             $text = self::$cache[$lang][$key];
+        } elseif ($lang !== 'es-419') {
+            return self::getForLang('es-419', $key, $params);
         }
 
         foreach ($params as $paramKey => $paramValue) {

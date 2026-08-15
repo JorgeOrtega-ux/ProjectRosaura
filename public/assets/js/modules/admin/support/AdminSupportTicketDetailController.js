@@ -63,7 +63,6 @@ export class AdminSupportTicketDetailController {
             return;
         }
     }
-    }
 
     async _loadTicketDetail() {
         try {
@@ -201,7 +200,7 @@ export class AdminSupportTicketDetailController {
                 ${user.is_suspended ? `<span class="component-badge component-badge--sm component-badge--danger"><span class="material-symbols-rounded">block</span> Suspendido</span>` : ''}
             `;
         } catch (e) {
-            Logger.error("Failed to load client profile in ticket detail: " + e.message);
+            console.error("Failed to load client profile in ticket detail: " + e.message);
         }
     }
 
