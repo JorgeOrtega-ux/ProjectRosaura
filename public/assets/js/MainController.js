@@ -341,24 +341,6 @@ export class MainController {
                 return;
             }
 
-            else if (action === 'openFloatingSupportChat') {
-                e.preventDefault();
-                this.moduleManager.toggleMenuInModule('moduleSupportChat', 'menu-support-chat');
-                const fab = document.querySelector('[data-ref="floating-support-btn"]');
-                if (fab) fab.classList.add('disabled');
-                return;
-            }
-
-            else if (action === 'openFloatingAdminSupportChat') {
-                e.preventDefault();
-                if (window.adminSupportFloatingController) {
-                    window.adminSupportFloatingController.toggleModule();
-                } else {
-                    this.moduleManager.toggleMenuInModule('moduleAdminSupportChat', 'menu-admin-support-chat');
-                }
-                return;
-            }
-
             else if (action === 'openFilterSubMenu' || action === 'openSubMenu') {
                 e.preventDefault();
                 const targetRef = btn.getAttribute('data-target');

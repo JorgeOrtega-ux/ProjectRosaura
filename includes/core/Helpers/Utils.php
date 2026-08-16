@@ -184,14 +184,6 @@ class Utils {
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
-    public static function generateSupportTrackingCode(): string {
-        $prefix = '4-50';
-        $year = date('y');
-        $randomPart = sprintf('%09d', random_int(100000000, 999999999));
-        return $prefix . $year . $randomPart;
-    }
-
-
     public static function generateProfilePicture($text, $seed = '') {
         $cleanText = trim(preg_replace('/[^\p{L}\p{N}\s]/u', '', $text));
         if (empty($cleanText)) {

@@ -31,7 +31,6 @@ export const RouteModulesMap = {
     '/site-policy/cookies-policy': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-policy' },
     '/site-policy/legal-notice': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-policy' },
     '/site-policy/refund-policy': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-policy' },
-    '/site-policy/contact-support': { path: './modules/site-policy/ContactSupportController.js', className: 'ContactSupportController', skeletonType: 'layout-policy' },
 
     '/settings': { path: './modules/settings/ProfileController.js', className: 'ProfileController', skeletonType: 'layout-basic' },
     '/settings/your-account': { path: './modules/settings/ProfileController.js', className: 'ProfileController', skeletonType: 'layout-basic' },
@@ -86,14 +85,6 @@ export const RouteModulesMap = {
 
     '/admin/logs': { path: './modules/admin/logs/AdminLogsController.js', className: 'AdminLogsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/logs/viewer': { path: './modules/admin/logs/AdminLogsViewerController.js', className: 'AdminLogsViewerController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-    '/admin/support': { path: './modules/admin/support/AdminSupportLiveController.js', className: 'AdminSupportLiveController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
-    '/admin/support/live-console': { path: './modules/admin/support/AdminSupportLiveController.js', className: 'AdminSupportLiveController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
-    '/admin/support/live-console/c/:uuid': { path: './modules/admin/support/AdminSupportLiveController.js', className: 'AdminSupportLiveController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
-    '/admin/support/c/:uuid': { path: './modules/admin/support/AdminSupportLiveController.js', className: 'AdminSupportLiveController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
-    '/admin/support/tickets': { path: './modules/admin/support/AdminSupportTicketsController.js', className: 'AdminSupportTicketsController', requiresAdminLang: true, skeletonType: 'layout-table' },
-    '/admin/support/ticket/:uuid': { path: './modules/admin/support/AdminSupportTicketDetailController.js', className: 'AdminSupportTicketDetailController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-    '/admin/support/canned-responses': { path: './modules/admin/support/AdminSupportCannedController.js', className: 'AdminSupportCannedController', requiresAdminLang: true, skeletonType: 'layout-table' },
-    '/admin/support/metrics': { path: './modules/admin/support/AdminSupportMetricsController.js', className: 'AdminSupportMetricsController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
 
     '/canvases/create': { path: './modules/canvases/core/CanvasesCreateController.js', className: 'CanvasesCreateController', skeletonType: 'layout-basic' },
     '/canvases/manage': { path: './modules/canvases/core/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-table' },

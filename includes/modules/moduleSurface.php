@@ -106,17 +106,6 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                         <span><?php echo __('menu_policy_refunds'); ?></span>
                     </div>
                 </div>
-
-                <div class="component-menu-divider"></div>
-
-                <div class="component-menu-link nav-item" data-nav="/site-policy/contact-support">
-                    <div class="component-menu-link-icon">
-                        <span class="material-symbols-rounded">support_agent</span>
-                    </div>
-                    <div class="component-menu-link-text">
-                        <span><?php echo __('menu_policy_support'); ?></span>
-                    </div>
-                </div>
             </div>
         </div>
     </div>

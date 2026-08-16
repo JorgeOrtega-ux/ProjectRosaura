@@ -66,7 +66,6 @@ class CacheConstants {
     public const PREFIX_CANVAS_RESIZE_SETTINGS = 'canvas:resize_settings:';
     public const PREFIX_CANVAS_BANNED          = 'canvas:%s:canvas_banned:%s';
     public const PREFIX_CHAT_RESTRICTED        = 'canvas:%s:chat_restricted:%s';
-    public const PREFIX_SUPPORT_CANNED         = 'support:canned:';
 
     // --- Claves no-CacheConstants (internamente usadas en repos) ---
     // canvas:{canvasId}:meta:u:{userId}

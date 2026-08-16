@@ -153,16 +153,6 @@ class RoleRepository implements RoleRepositoryInterface {
             ['name' => 'manage_store_packages', 'description' => 'desc_manage_store_packages', 'is_critical' => 0, 'roles' => [3, 4]],
             ['name' => 'manage_store_perks', 'description' => 'desc_manage_store_perks', 'is_critical' => 0, 'roles' => [3, 4]],
             ['name' => 'manage_content', 'description' => 'desc_manage_content', 'is_critical' => 0, 'roles' => [2, 3, 4]],
-            ['name' => 'access_support_panel', 'description' => 'desc_access_support_panel', 'is_critical' => 0, 'roles' => [3, 4, 5, 6, 7]],
-            ['name' => 'support_chat_attend_l1', 'description' => 'desc_support_chat_attend_l1', 'is_critical' => 0, 'roles' => [3, 4, 5, 6, 7]],
-            ['name' => 'support_chat_attend_l2', 'description' => 'desc_support_chat_attend_l2', 'is_critical' => 0, 'roles' => [3, 4, 6, 7]],
-            ['name' => 'support_chat_attend_l3', 'description' => 'desc_support_chat_attend_l3', 'is_critical' => 0, 'roles' => [3, 4, 7]],
-            ['name' => 'support_chat_escalate', 'description' => 'desc_support_chat_escalate', 'is_critical' => 0, 'roles' => [3, 4, 5, 6, 7]],
-            ['name' => 'support_chat_reassign', 'description' => 'desc_support_chat_reassign', 'is_critical' => 1, 'roles' => [3, 4, 7]],
-            ['name' => 'support_tickets_manage', 'description' => 'desc_support_tickets_manage', 'is_critical' => 0, 'roles' => [3, 4, 5, 6, 7]],
-            ['name' => 'support_manage_canned', 'description' => 'desc_support_manage_canned', 'is_critical' => 0, 'roles' => [3, 4, 5, 6, 7]],
-            ['name' => 'support_view_metrics', 'description' => 'desc_support_view_metrics', 'is_critical' => 0, 'roles' => [3, 4, 7]],
-            ['name' => 'support_audit_logs', 'description' => 'desc_support_audit_logs', 'is_critical' => 1, 'roles' => [3, 4, 7]],
         ];
 
         try {

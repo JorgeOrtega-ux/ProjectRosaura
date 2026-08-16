@@ -138,17 +138,15 @@ def seed_database(project_root, target_records=10000):
 
     try:
         # 1. Reiniciar esquemas
-        print(f"\n{Colors.WARNING}1/5 Recreando esquemas limpios desde docker/mysql/init/...{Colors.ENDC}")
+        print(f"\n{Colors.WARNING}1/4 Recreando esquemas limpios desde docker/mysql/init/...{Colors.ENDC}")
         schema_files = [
             'db_identity.sql',
             'db_canvases.sql',
-            'db_support.sql',
             'db_telemetry.sql'
         ]
 
         cursor.execute("DROP DATABASE IF EXISTS db_identity;")
         cursor.execute("DROP DATABASE IF EXISTS db_canvases;")
-        cursor.execute("DROP DATABASE IF EXISTS db_support;")
         cursor.execute("DROP DATABASE IF EXISTS db_telemetry;")
         conn.commit()
 
@@ -162,7 +160,6 @@ def seed_database(project_root, target_records=10000):
         grant_sql = f"""
         GRANT ALL PRIVILEGES ON db_identity.* TO '{config['app_user']}'@'%';
         GRANT ALL PRIVILEGES ON db_canvases.* TO '{config['app_user']}'@'%';
-        GRANT ALL PRIVILEGES ON db_support.* TO '{config['app_user']}'@'%';
         GRANT ALL PRIVILEGES ON db_telemetry.* TO '{config['app_user']}'@'%';
         FLUSH PRIVILEGES;
         """
@@ -269,14 +266,12 @@ def seed_database(project_root, target_records=10000):
 
         # Tabla: user_roles
         print("  -> Generando tabla: `user_roles`...")
-        role_rows = [(1, 4), (1, 7)] # Admin SuperAdmin + SupportAgentL3
+        role_rows = [(1, 4)] # SuperAdmin
         for i in range(2, target_records + 1):
             if i <= 10:
                 role_rows.append((i, 3)) # Admin
             elif i <= 30:
                 role_rows.append((i, 2)) # Moderator
-            elif i <= 50:
-                role_rows.append((i, random.choice([5, 6, 7]))) # SupportAgent
             else:
                 role_rows.append((i, 1)) # User
 
@@ -811,148 +806,14 @@ def seed_database(project_root, target_records=10000):
         print(f"{Colors.GREEN}✓ db_canvases poblada exitosamente con ~160,000 registros.{Colors.ENDC}")
 
         # -------------------------------------------------------------
-        # 4. POBLAR DB_SUPPORT (~10k por tabla)
+        # 4. POBLAR DB_TELEMETRY (~10k por tabla)
         # -------------------------------------------------------------
-        print(f"\n{Colors.WARNING}4/5 Poblando 'db_support' (~{target_records:,} por tabla)...{Colors.ENDC}")
-        cursor.execute("USE db_support;")
-
-        # Tabla: support_tickets
-        print("  -> Generando tabla: `support_tickets`...")
-        st_rows = []
-        for i in range(1, target_records + 1):
-            cat = random.choice(CATEGORIES)
-            subj = random.choice(TICKET_SUBJECTS)
-            stat = random.choice(['open', 'in_progress', 'resolved', 'closed'])
-            prio = random.choice(['low', 'medium', 'high', 'urgent'])
-            ip = f"172.18.{random.randint(0,254)}.{random.randint(1,254)}"
-            st_rows.append((
-                str(uuid.uuid4()),
-                random.randint(1, target_records),
-                cat,
-                f"{subj} #{i}",
-                f"Mensaje detallado para la consulta #{i}. He experimentado este comportamiento de manera recurrente.",
-                stat,
-                prio,
-                ip,
-                'Mozilla/5.0 Chrome/120.0.0.0',
-                random_date(180)
-            ))
-        sql_st = """
-        INSERT INTO `support_tickets` (uuid, user_id, category, subject, message, status, priority, ip_address, user_agent, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        for i in range(0, len(st_rows), BATCH_SIZE):
-            cursor.executemany(sql_st, st_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: support_chat_sessions
-        print("  -> Generando tabla: `support_chat_sessions`...")
-        scs_rows = []
-        for i in range(1, target_records + 1):
-            cat = random.choice(CATEGORIES)
-            subj = random.choice(TICKET_SUBJECTS)
-            stat = random.choice(['waiting_in_queue', 'active', 'escalated', 'closed', 'abandoned'])
-            lvl = random.choice(['l1', 'l2', 'l3'])
-            prio = random.choice(['low', 'medium', 'high', 'urgent'])
-            st_at = random_date(120)
-            scs_rows.append((
-                i,
-                str(uuid.uuid4()),
-                random.randint(1, target_records),
-                lvl,
-                stat,
-                1 if stat in ('active', 'escalated', 'closed') else None, # Assigned to Agent 1
-                cat,
-                random.choice(['es-419', 'en-US', 'es-ES']),
-                f"{subj} [Live #{i}]",
-                f"Mensaje inicial del usuario solicitando soporte en vivo.",
-                prio,
-                st_at,
-                st_at if stat in ('active', 'escalated', 'closed') else None,
-                st_at if stat in ('closed', 'abandoned') else None,
-                'agent' if stat == 'closed' else None,
-                'Sesión resuelta satisfactoriamente.' if stat == 'closed' else None,
-                random.randint(4, 5) if stat == 'closed' else None,
-                'Excelente atención' if stat == 'closed' else None,
-                st_at
-            ))
-        sql_scs = """
-        INSERT INTO `support_chat_sessions` (id, uuid, user_id, department_level, status, assigned_agent_id, category,
-                                             language, subject, initial_message, priority, started_at, accepted_at,
-                                             closed_at, closed_by, resolution_summary, user_rating, user_feedback, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        for i in range(0, len(scs_rows), BATCH_SIZE):
-            cursor.executemany(sql_scs, scs_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: support_chat_messages
-        print("  -> Generando tabla: `support_chat_messages`...")
-        scm_rows = []
-        for i in range(1, target_records + 1):
-            s_type = random.choice(['user', 'agent', 'system', 'internal_note'])
-            s_name = 'Agente Rosaura' if s_type == 'agent' else ('Sistema' if s_type == 'system' else 'Usuario')
-            scm_rows.append((
-                str(uuid.uuid4()),
-                random.randint(1, target_records), # session_id
-                s_type,
-                1 if s_type == 'agent' else random.randint(1, target_records),
-                s_name,
-                random.choice(CHAT_MESSAGES_SAMPLES),
-                None,
-                1 if s_type == 'internal_note' else 0,
-                random_date(100)
-            ))
-        sql_scm = """
-        INSERT INTO `support_chat_messages` (uuid, session_id, sender_type, sender_id, sender_name, message, attachments, is_internal, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        for i in range(0, len(scm_rows), BATCH_SIZE):
-            cursor.executemany(sql_scm, scm_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: support_chat_transfers
-        print("  -> Generando tabla: `support_chat_transfers`...")
-        sct_rows = []
-        for i in range(1, target_records + 1):
-            sct_rows.append((
-                random.randint(1, target_records), # session_id
-                1,
-                1,
-                'l1',
-                'l2',
-                'Escalación por requerimiento de verificación de facturación',
-                'Nota interna sobre el caso del cliente',
-                random_date(90)
-            ))
-        sql_sct = """
-        INSERT INTO `support_chat_transfers` (session_id, from_agent_id, to_agent_id, from_level, to_level, reason, internal_note, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        for i in range(0, len(sct_rows), BATCH_SIZE):
-            cursor.executemany(sql_sct, sct_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Agente 1 en línea
-        print("  -> Configurando estado de agentes: `support_agent_status`...")
-        cursor.execute("""
-        INSERT INTO `support_agent_status` (agent_id, status, current_active_chats, max_concurrent_chats, level, last_heartbeat)
-        VALUES (1, 'online', 0, 5, 'l3', NOW())
-        ON DUPLICATE KEY UPDATE status = 'online', last_heartbeat = NOW();
-        """)
-        conn.commit()
-
-        print(f"{Colors.GREEN}✓ db_support poblada exitosamente con ~40,000 registros y agente activo.{Colors.ENDC}")
-
-        # -------------------------------------------------------------
-        # 5. POBLAR DB_TELEMETRY (~10k por tabla)
-        # -------------------------------------------------------------
-        print(f"\n{Colors.WARNING}5/5 Poblando 'db_telemetry' (~{target_records:,} por tabla)...{Colors.ENDC}")
+        print(f"\n{Colors.WARNING}4/4 Poblando 'db_telemetry' (~{target_records:,} por tabla)...{Colors.ENDC}")
         cursor.execute("USE db_telemetry;")
 
         # Tabla: api_latency
         print("  -> Generando tabla: `api_latency`...")
-        endpoints = ['/api/v1/auth/login', '/api/v1/canvas/get', '/api/v1/support/queue-status',
+        endpoints = ['/api/v1/auth/login', '/api/v1/canvas/get',
                      '/api/v1/profile/update', '/api/v1/canvas/pixels', '/api/v1/store/packages']
         al_rows = []
         for i in range(1, target_records + 1):
@@ -973,7 +834,7 @@ def seed_database(project_root, target_records=10000):
 
         # Tabla: pageviews
         print("  -> Generando tabla: `pageviews`...")
-        paths = ['/', '/canvas', '/contact-support', '/pricing', '/profile', '/admin/dashboard', '/admin/support/live']
+        paths = ['/', '/canvas', '/pricing', '/profile', '/admin/dashboard']
         pv_rows = []
         for i in range(1, target_records + 1):
             pv_rows.append((
@@ -1016,14 +877,13 @@ def seed_database(project_root, target_records=10000):
         conn.commit()
 
         elapsed = round(time.time() - start_total_time, 2)
-        total_inserted = target_records * 32 # ~32 tablas pobladas con 10k c/u = ~320,000 registros
+        total_inserted = target_records * 27 # ~27 tablas pobladas
 
         print(f"\n{Colors.GREEN}{Colors.BOLD}======================================================================{Colors.ENDC}")
         print(f"{Colors.GREEN}{Colors.BOLD}   ¡REPOBLACIÓN COMPLETADA CON ÉXITO EN {elapsed} SEGUNDOS!           {Colors.ENDC}")
         print(f"{Colors.GREEN}{Colors.BOLD}======================================================================{Colors.ENDC}")
         print(f"📊 {Colors.BOLD}Total de registros generados:{Colors.ENDC} ~{total_inserted:,} filas")
         print(f"👤 {Colors.BOLD}Usuario Administrador creado:{Colors.ENDC} admin / admin@example.com (Password: {Colors.CYAN}password{Colors.ENDC})")
-        print(f"🎧 {Colors.BOLD}Agente Live Chat:{Colors.ENDC} Admin (ID 1) activo y listo para atender chats.")
         print(f"{Colors.GREEN}======================================================================{Colors.ENDC}\n")
 
     except Exception as e:
@@ -1040,10 +900,9 @@ def run_seeder(project_root, script_dir):
     print(f"{Colors.FAIL}{Colors.BOLD}             ¡ADVERTENCIA CRÍTICA: BORRADO TOTAL DE BD!               {Colors.ENDC}")
     print(f"{Colors.FAIL}{Colors.BOLD}======================================================================{Colors.ENDC}")
     print(f"{Colors.WARNING}Esta acción ELIMINARÁ Y REINICIALIZARÁ COMPLETAMENTE toda la información{Colors.ENDC}")
-    print(f"{Colors.WARNING}existente en las 4 bases de datos del proyecto:{Colors.ENDC}")
+    print(f"{Colors.WARNING}existente en las 3 bases de datos del proyecto:{Colors.ENDC}")
     print(f"  • {Colors.CYAN}db_identity{Colors.ENDC}  (Usuarios, Roles, Suscripciones, Pagos, etc.)")
     print(f"  • {Colors.CYAN}db_canvases{Colors.ENDC}  (Lienzos, Miembros, Snapshots, Chats, etc.)")
-    print(f"  • {Colors.CYAN}db_support{Colors.ENDC}   (Tickets, Sesiones Live Chat, Mensajes, etc.)")
     print(f"  • {Colors.CYAN}db_telemetry{Colors.ENDC} (Latencias de API, Pageviews, Eventos Auth)")
     print(f"\n{Colors.BOLD}Se poblarán aproximadamente 10,000 registros por tabla de prueba.{Colors.ENDC}")
     print(f"{Colors.FAIL}TODOS LOS DATOS ACTUALES SE PERDERÁN DE FORMA IRREVERSIBLE.{Colors.ENDC}")

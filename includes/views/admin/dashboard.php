@@ -27,9 +27,6 @@ extract($dashboardData);
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageStorePerks ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/store-perks" data-tooltip="Tienda de Ventajas<?php echo !$canManageStorePerks ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageStorePerks ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">shopping_bag</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h40 <?php echo !$canAccessSupport ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/support/live-console" data-tooltip="<?php echo __('admin_manage_support'); ?><?php echo !$canAccessSupport ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canAccessSupport ? 'disabled' : ''; ?>>
-                    <span class="material-symbols-rounded">support_agent</span>
-                </button>
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageRoles ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/roles" data-tooltip="<?php echo __('btn_manage_roles'); ?><?php echo !$canManageRoles ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageRoles ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">admin_panel_settings</span>
                 </button>

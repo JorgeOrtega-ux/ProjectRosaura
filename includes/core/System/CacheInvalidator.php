@@ -237,11 +237,4 @@ class CacheInvalidator {
             }
         } catch (\Throwable $e) {}
     }
-
-    public function cannedResponses(): void {
-        if (!$this->redis) return;
-        try {
-            $this->deleteByPattern(CacheConstants::PREFIX_SUPPORT_CANNED . '*');
-        } catch (\Throwable $e) {}
-    }
 }

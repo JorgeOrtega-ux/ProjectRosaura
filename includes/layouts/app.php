@@ -50,7 +50,6 @@ $routeTitles = [
     '/settings/2fa' => __('route_2fa'),
     '/account-suspended' => __('route_suspended'),
     '/account-deleted' => __('route_deleted'),
-    '/site-policy/contact-support' => __('route_support'),
     '/admin' => __('route_admin_dashboard'),
     '/admin/dashboard' => __('route_admin_dashboard'),
     '/admin/users' => __('route_admin_users'),
@@ -357,14 +356,6 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
                 <div class="general-content-bottom">
                     <?php include __DIR__ . '/../modules/moduleSurface.php'; ?>
                     <?php include __DIR__ . '/../modules/moduleCanvasInfo.php'; ?>
-                    <?php include __DIR__ . '/../modules/moduleSupportChat.php'; ?>
-                    <?php 
-                    $userRoles = $_SESSION['user_roles'] ?? [];
-                    $isSuperAdmin = in_array(4, $userRoles);
-                    $canAccessSupport = $isSuperAdmin || in_array(\App\Core\System\PermissionsConstants::ACCESS_SUPPORT_PANEL, $userPermissions) || in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions);
-                    if ($canAccessSupport): ?>
-                    <?php include __DIR__ . '/../modules/moduleAdminSupportChat.php'; ?>
-                    <?php endif; ?>
                     <div class="general-content-scrolleable" data-ref="app-router-outlet">
                         <?php $loader->load($currentView); ?>
                     </div>

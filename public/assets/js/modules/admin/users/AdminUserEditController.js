@@ -250,7 +250,7 @@ class AdminUserEditController {
         const userUuid = btn.getAttribute('data-user-uuid') || '';
 
         if (window.modalSystem) {
-            window.modalSystem.show('confirmSupportActionModal', {
+            window.modalSystem.show('confirmUserAdminActionModal', {
                 title: this.translateKey('lbl_confirm_send_password_reset_title', [], '¿Enviar restablecimiento de contraseña?'),
                 desc: this.translateKey('lbl_confirm_send_password_reset_desc', { email: email || username, username: username }, `Se enviará un correo con un enlace seguro a ${email || username} para que el usuario restablezca su contraseña.`),
                 username: username,
@@ -273,7 +273,7 @@ class AdminUserEditController {
         const userUuid = btn.getAttribute('data-user-uuid') || '';
 
         if (window.modalSystem) {
-            window.modalSystem.show('confirmSupportActionModal', {
+            window.modalSystem.show('confirmUserAdminActionModal', {
                 title: this.translateKey('lbl_confirm_unlock_rate_limit_title', [], '¿Desbloquear intentos de inicio de sesión?'),
                 desc: this.translateKey('lbl_confirm_unlock_rate_limit_desc', { username, email: email || username }, `Se limpiarán los bloqueos por intentos fallidos de contraseña y 2FA para ${username} (${email || username}).`),
                 username: username,
@@ -296,7 +296,7 @@ class AdminUserEditController {
         const userUuid = btn.getAttribute('data-user-uuid') || '';
 
         if (window.modalSystem) {
-            window.modalSystem.show('confirmSupportActionModal', {
+            window.modalSystem.show('confirmUserAdminActionModal', {
                 title: this.translateKey('lbl_confirm_terminate_sessions_title', [], '¿Finalizar todas las sesiones?'),
                 desc: this.translateKey('lbl_confirm_terminate_sessions_desc', { username }, `Se revocarán todos los tokens de autenticación activos de ${username}. El usuario será desconectado en todos sus dispositivos.`),
                 username: username,
@@ -318,7 +318,7 @@ class AdminUserEditController {
         const userUuid = btn.getAttribute('data-user-uuid') || '';
 
         if (window.modalSystem) {
-            window.modalSystem.show('confirmSupportActionModal', {
+            window.modalSystem.show('confirmUserAdminActionModal', {
                 title: this.translateKey('lbl_confirm_sync_stripe_title', [], '¿Sincronizar suscripción con Stripe?'),
                 desc: this.translateKey('lbl_confirm_sync_stripe_desc', { username }, `Se verificará el estado actual en Stripe y se actualizará el nivel de suscripción y caché de ${username}.`),
                 username: username,
@@ -332,7 +332,7 @@ class AdminUserEditController {
     }
 
     async submitConfirmUserAdminAction(btn) {
-        const modalBody = document.querySelector('[data-ref="admin-confirm-support-action-body"]');
+        const modalBody = document.querySelector('[data-ref="admin-confirm-user-admin-action-body"]');
         if (!modalBody) return;
         const actionType = modalBody.getAttribute('data-action-type');
         if (window.modalSystem && window.modalSystem.closeCurrent) window.modalSystem.closeCurrent(true);

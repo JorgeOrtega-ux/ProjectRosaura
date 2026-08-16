@@ -96,10 +96,7 @@ INSERT IGNORE INTO roles (id, uuid, name, weight, is_system) VALUES
   (1, UUID(), 'User', 1, 1),
   (2, UUID(), 'Moderator', 50, 1),
   (3, UUID(), 'Administrator', 80, 1),
-  (4, UUID(), 'SuperAdministrator', 100, 1),
-  (5, UUID(), 'SupportAgentL1', 20, 1),
-  (6, UUID(), 'SupportAgentL2', 40, 1),
-  (7, UUID(), 'SupportAgentL3', 60, 1);
+  (4, UUID(), 'SuperAdministrator', 100, 1);
 
 INSERT IGNORE INTO permissions (id, name, description, is_critical) VALUES
   (1, 'access_admin_panel', 'desc_access_admin_panel', 0),
@@ -128,43 +125,22 @@ INSERT IGNORE INTO permissions (id, name, description, is_critical) VALUES
   (24, 'manage_store_packages', 'desc_manage_store_packages', 0),
   (25, 'manage_store_perks', 'desc_manage_store_perks', 0),
   (26, 'manage_content', 'desc_manage_content', 0),
-  (27, 'access_support_panel', 'desc_access_support_panel', 0),
-  (28, 'support_chat_attend_l1', 'desc_support_chat_attend_l1', 0),
-  (29, 'support_chat_attend_l2', 'desc_support_chat_attend_l2', 0),
-  (30, 'support_chat_attend_l3', 'desc_support_chat_attend_l3', 0),
-  (31, 'support_chat_escalate', 'desc_support_chat_escalate', 0),
-  (32, 'support_chat_reassign', 'desc_support_chat_reassign', 1),
-  (33, 'support_tickets_manage', 'desc_support_tickets_manage', 0),
-  (34, 'support_manage_canned', 'desc_support_manage_canned', 0),
-  (35, 'support_view_metrics', 'desc_support_view_metrics', 0),
-  (36, 'support_audit_logs', 'desc_support_audit_logs', 1),
-  (37, 'view_user_purchases', 'desc_view_user_purchases', 0);
+  (27, 'view_user_purchases', 'desc_view_user_purchases', 0);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9),
   (4, 10), (4, 11), (4, 12), (4, 13), (4, 14), (4, 15), (4, 16), (4, 17), (4, 18),
-  (4, 19), (4, 20), (4, 21), (4, 22), (4, 23), (4, 24), (4, 25), (4, 26),
-  (4, 27), (4, 28), (4, 29), (4, 30), (4, 31), (4, 32), (4, 33), (4, 34), (4, 35), (4, 36), (4, 37);
+  (4, 19), (4, 20), (4, 21), (4, 22), (4, 23), (4, 24), (4, 25), (4, 26), (4, 27);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 8), (3, 10), (3, 13), (3, 17), 
-  (3, 19), (3, 20), (3, 21), (3, 22), (3, 23), (3, 24), (3, 25), (3, 26),
-  (3, 27), (3, 28), (3, 29), (3, 30), (3, 31), (3, 32), (3, 33), (3, 34), (3, 35), (3, 36), (3, 37);
+  (3, 19), (3, 20), (3, 21), (3, 22), (3, 23), (3, 24), (3, 25), (3, 26), (3, 27);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (2, 1), (2, 2), (2, 4), (2, 5), (2, 6), (2, 19), (2, 20), (2, 21), (2, 26);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (1, 19), (1, 20), (1, 21);
-
-INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
-  (5, 1), (5, 27), (5, 28), (5, 31), (5, 33), (5, 34);
-
-INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
-  (6, 1), (6, 2), (6, 27), (6, 28), (6, 29), (6, 31), (6, 33), (6, 34), (6, 37);
-
-INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
-  (7, 1), (7, 2), (7, 3), (7, 4), (7, 27), (7, 28), (7, 29), (7, 30), (7, 31), (7, 32), (7, 33), (7, 34), (7, 35), (7, 36), (7, 37);
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

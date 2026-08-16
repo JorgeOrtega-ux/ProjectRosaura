@@ -10,7 +10,6 @@ import { ApiRoutes } from './core/api/ApiRoutes.js';
 import { OnboardingTourManager } from './core/managers/OnboardingTourManager.js';
 
 import { formatNumber } from './core/utils/uiUtils.js';
-import { AdminSupportFloatingController } from './modules/admin/support/AdminSupportFloatingController.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     window.formatNumber = formatNumber;
@@ -32,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!cookieConsent) return;
 
         const currentPath = window.location.pathname.toLowerCase();
-        const isAuthOrHelp = ['/login', '/register', '/forgot-password', '/reset-password', '/account-suspended', '/account-deleted', '/help', '/support', '/site-policy'].some(route => currentPath.includes(route));
+        const isAuthOrHelp = ['/login', '/register', '/forgot-password', '/reset-password', '/account-suspended', '/account-deleted', '/help', '/site-policy'].some(route => currentPath.includes(route));
         
         if (isAuthOrHelp) {
             if (window.promoNoticeTimeoutId) {
@@ -58,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.promoNoticeTimeoutId = setTimeout(() => {
             window.promoNoticeTimeoutId = null;
             const verifyPath = window.location.pathname.toLowerCase();
-            const stillAuthOrHelp = ['/login', '/register', '/forgot-password', '/reset-password', '/account-suspended', '/account-deleted', '/help', '/support', '/site-policy'].some(route => verifyPath.includes(route));
+            const stillAuthOrHelp = ['/login', '/register', '/forgot-password', '/reset-password', '/account-suspended', '/account-deleted', '/help', '/site-policy'].some(route => verifyPath.includes(route));
             if (stillAuthOrHelp || !window.activeUserId) return;
 
             window.noticeSystem.show('promoCard', {
@@ -272,33 +271,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.onboardingTourManager) {
         window.onboardingTourManager.triggerWelcomeTour();
     }
-
-    const adminFloatingChatModule = document.querySelector('[data-module="moduleAdminSupportChat"]');
-    if (adminFloatingChatModule) {
-        window.adminSupportFloatingController = new AdminSupportFloatingController();
-        window.adminSupportFloatingController.init();
-    }
-
-    function syncSupportFloatingButton() {
-        const fab = document.querySelector('[data-ref="floating-support-btn"]');
-        if (fab) {
-            const moduleEl = document.querySelector('[data-module="moduleSupportChat"]');
-            const isModuleOpen = moduleEl && !moduleEl.classList.contains('disabled');
-            const savedSession = localStorage.getItem('pr_active_support_session');
-            if (savedSession && !isModuleOpen) {
-                fab.classList.remove('disabled');
-            } else {
-                fab.classList.add('disabled');
-            }
-        }
-
-        if (window.adminSupportFloatingController) {
-            window.adminSupportFloatingController.syncVisibility();
-        }
-    }
-
-    syncSupportFloatingButton();
-    window.addEventListener('viewLoaded', syncSupportFloatingButton);
 
     window.dispatchEvent(new CustomEvent('viewLoaded', { 
         detail: { 

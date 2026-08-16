@@ -306,21 +306,6 @@ services:
       retries: 15
       start_period: 45s
 
-  # ==========================================
-  # SERVICIO IA OLLAMA (Soporte Técnico)
-  # ==========================================
-  rosaura_ollama:
-    image: ollama/ollama:latest
-    container_name: rosaura_ollama
-    volumes:
-      - ollama_data:/root/.ollama
-    networks:
-      - rosaura_network
-    restart: unless-stopped
-    # IMPORTANTE: Sin 'ports' — solo accesible dentro de la red Docker
-    # Para descargar el modelo la primera vez:
-    #   docker exec rosaura_ollama ollama pull qwen3:1.7b
-
 networks:
   rosaura_network:
     driver: bridge
@@ -331,4 +316,3 @@ volumes:
   typesense_data:
   minio_data:
   cassandra_data:
-  ollama_data:
