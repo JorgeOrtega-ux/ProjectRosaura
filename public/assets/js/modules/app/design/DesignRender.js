@@ -190,7 +190,7 @@ export const DesignRender = {
 
                 const selArray = this.selectedPixels ? Array.from(this.selectedPixels) : [];
                 const hoverKey = this.hoveredPixel ? ((this.hoveredPixel.y << 16) | this.hoveredPixel.x) : -1;
-                const isOwnerProtecting = (this.interactionMode === 'owner_protecting' || this.interactionMode === 'user_protecting');
+                const isOwnerProtecting = (this.interactionMode === 'owner_protecting');
                 
                 const topBar = document.querySelector('.general-content-top');
                 const canvasEl = this.canvas;
@@ -604,10 +604,6 @@ export const DesignRender = {
                     primaryColor = '#06b6d4';
                     secondaryColor = 'rgba(6, 182, 212, 0.4)';
                     fillColor = 'rgba(6, 182, 212, 0.08)';
-                } else if (warning.perkId === 'tectonic_rift') {
-                    primaryColor = '#84cc16';
-                    secondaryColor = 'rgba(132, 204, 22, 0.4)';
-                    fillColor = 'rgba(132, 204, 22, 0.08)';
                 }
 
                 const elapsed = now - warning.startTime;
@@ -816,38 +812,10 @@ export const DesignRender = {
                     this.ctx.arc(wx, wy, Math.min(outerR * 0.15, 3), 0, 2 * Math.PI);
                     this.ctx.fillStyle = '#ffffff';
                     this.ctx.fill();
-                } else if (warning.perkId === 'tectonic_rift') {
-                    this.ctx.beginPath();
-                    this.ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
-                    this.ctx.strokeStyle = primaryColor;
-                    this.ctx.lineWidth = 1.0 / scale;
-                    this.ctx.stroke();
-
-                    const seed = warning.startTime;
-                    this.ctx.beginPath();
-                    for (let k = 0; k < 5; k++) {
-                        const angle = ((seed + k * 1337) % 100) / 100 * 2 * Math.PI;
-                        const len = outerR * (0.3 + 0.7 * (((seed + k * 777) % 100) / 100));
-                        let curX = wx;
-                        let curY = wy;
-                        this.ctx.moveTo(curX, curY);
-                        const steps = 4;
-                        for (let s = 1; s <= steps; s++) {
-                            const t = s / steps;
-                            const targetX = wx + t * len * Math.cos(angle);
-                            const targetY = wy + t * len * Math.sin(angle);
-                            const jitterX = (Math.sin(seed + s * 10 + k) * 2) / scale;
-                            const jitterY = (Math.cos(seed + s * 10 + k) * 2) / scale;
-                            this.ctx.lineTo(targetX + jitterX, targetY + jitterY);
-                        }
-                    }
-                    this.ctx.strokeStyle = `rgba(132, 204, 22, ${0.4 + 0.3 * Math.sin(now / 100)})`;
-                    this.ctx.lineWidth = 2.0 / scale;
-                    this.ctx.stroke();
                 }
 
                 // --- 3. RENDERIZADO DEL CÍRCULO BASE Y MIRA (para Perks no triangulares) ---
-                if (warning.perkId !== 'ion_strike' && warning.perkId !== 'supernova_blast' && warning.perkId !== 'tectonic_rift') {
+                if (warning.perkId !== 'ion_strike' && warning.perkId !== 'supernova_blast') {
                     // Mira telescópica cruzada en el centro
                     this.ctx.beginPath();
                     this.ctx.moveTo(wx - crossLength, wy);
@@ -1086,65 +1054,6 @@ export const DesignRender = {
                         this.ctx.fillStyle = i % 2 === 0 ? '#06b6d4' : '#ffffff';
                         this.ctx.fillRect(px - size / 2, py - size / 2, size, size);
                     }
-                    return;
-                }
-
-                if (exp.perkId === 'tectonic_rift') {
-                    const r = exp.maxRadius;
-                    const op = opacity;
-                    this.ctx.save();
-                    this.ctx.beginPath();
-                    
-                    // Draw 7 asymmetrical, long cracks
-                    for (let k = 0; k < 7; k++) {
-                        const angleSeed = Math.sin(exp.startTime + k * 12.3) * 1000;
-                        const angle = (k * 2 * Math.PI / 7) + (angleSeed % 0.6);
-                        const lenSeed = Math.cos(exp.startTime + k * 45.6) * 1000;
-                        const len = r * (1.2 + Math.abs(lenSeed % 1.6)) * progress;
-                        
-                        let curX = exp.x + 0.5;
-                        let curY = exp.y + 0.5;
-                        this.ctx.moveTo(curX, curY);
-                        
-                        const steps = 6;
-                        for (let s = 1; s <= steps; s++) {
-                            const t = s / steps;
-                            const targetX = exp.x + 0.5 + t * len * Math.cos(angle);
-                            const targetY = exp.y + 0.5 + t * len * Math.sin(angle);
-                            
-                            const jitterSeed = Math.sin(now * 0.05 + s * 7 + k) * 3.0;
-                            const jitter = jitterSeed / this.transform.scale;
-                            
-                            this.ctx.lineTo(targetX + jitter, targetY - jitter);
-                            
-                            // Draw visual sub-branch
-                            if (s === 3 && (Math.abs(angleSeed) % 10) < 3.5) {
-                                this.ctx.save();
-                                this.ctx.beginPath();
-                                this.ctx.moveTo(targetX + jitter, targetY - jitter);
-                                const branchAngle = angle + 0.6;
-                                const branchLen = len * 0.45;
-                                const bx = targetX + jitter + branchLen * Math.cos(branchAngle);
-                                const by = targetY - jitter + branchLen * Math.sin(branchAngle);
-                                this.ctx.lineTo(bx, by);
-                                this.ctx.strokeStyle = `rgba(132, 204, 22, ${op * 0.65})`;
-                                this.ctx.lineWidth = Math.max(0.7, 2.0 * op / this.transform.scale);
-                                this.ctx.stroke();
-                                this.ctx.restore();
-                            }
-                        }
-                    }
-                    this.ctx.strokeStyle = `rgba(132, 204, 22, ${op * 0.85})`;
-                    this.ctx.lineWidth = Math.max(1.0, 3.5 * op / this.transform.scale);
-                    this.ctx.stroke();
-                    
-                    // Outer shockwave
-                    this.ctx.beginPath();
-                    this.ctx.arc(exp.x + 0.5, exp.y + 0.5, r * 1.6 * progress, 0, 2 * Math.PI);
-                    this.ctx.strokeStyle = `rgba(163, 230, 53, ${op * 0.35})`;
-                    this.ctx.lineWidth = Math.max(1.0, 4.0 * (1 - progress) / this.transform.scale);
-                    this.ctx.stroke();
-                    this.ctx.restore();
                     return;
                 }
 

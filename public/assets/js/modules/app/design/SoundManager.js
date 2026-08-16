@@ -60,12 +60,6 @@ const SOUND_PROFILES = {
         warnThrottleMs: 10000, // warning_seconds 8s → 1 warning
     },
 
-    pixel_shield_1: {
-        file:        'pixel_shield.ogg',
-        maxDuration: 2.0,
-        throttleMs:  0,
-    },
-
     pixel_missile_1: {
         file:        'pixel_missile.ogg',
         warnFile:    'pixel_missile_warning.ogg',

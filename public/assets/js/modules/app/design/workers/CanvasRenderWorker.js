@@ -113,8 +113,7 @@ const EXPLOSION_STYLES = {
     'orbital_cannon_1': 'nuclear',
     'black_hole_1': 'blackhole',
     'supernova_blast': 'nuclear',
-    'ion_strike': 'ion',
-    'tectonic_rift': 'tectonic'
+    'ion_strike': 'ion'
 };
 
 function requestRender() {
@@ -422,71 +421,6 @@ function clearBombPixels(cX, cY, r, perkId) {
                     markDirty(x, y);
                 }
             }
-        }
-        flushDirtyRect();
-        return;
-    }
-
-    if (perkId === 'tectonic_rift') {
-        const affectedOffsets = new Set();
-        const crackStack = [];
-        
-        // 5 to 7 main cracks
-        const numCracks = 5 + Math.floor(Math.random() * 3);
-        
-        // Thickness based on board dimensions
-        const maxDim = Math.max(boardWidth, boardHeight);
-        const thickness = maxDim > 500 ? 3 : (maxDim > 200 ? 2 : 1);
-        const offsets = thickness === 1 ? [[0, 0]] : (thickness === 2 ? [[0, 0], [1, 0], [0, 1], [1, 1]] : [
-            [-1, -1], [0, -1], [1, -1],
-            [-1, 0], [0, 0], [1, 0],
-            [-1, 1], [0, 1], [1, 1]
-        ]);
-
-        for (let i = 0; i < numCracks; i++) {
-            const baseAngle = (i * 2 * Math.PI) / numCracks;
-            const angle = baseAngle + (Math.random() - 0.5) * (Math.PI / numCracks);
-            const len = radius * (1.0 + Math.random() * 1.5);
-            crackStack.push({ sx: cX, sy: cY, angle, len, depth: 2 });
-        }
-
-        while (crackStack.length > 0) {
-            const { sx, sy, angle, len, depth } = crackStack.pop();
-            const steps = Math.ceil(len);
-            for (let s = 0; s <= steps; s++) {
-                const t = steps > 0 ? s / steps : 0;
-                let px = Math.round(sx + t * len * Math.cos(angle));
-                let py = Math.round(sy + t * len * Math.sin(angle));
-
-                if (s > 0 && s < steps) {
-                    px += Math.floor(Math.random() * 3) - 1;
-                    py += Math.floor(Math.random() * 3) - 1;
-                }
-
-                offsets.forEach(([dx, dy]) => {
-                    const nx = px + dx;
-                    const ny = py + dy;
-                    if (nx >= 0 && nx < boardWidth && ny >= 0 && ny < boardHeight) {
-                        affectedOffsets.add(ny * boardWidth + nx);
-                    }
-                });
-
-                // 12% chance to branch
-                if (depth > 0 && s > 0 && s < steps && Math.random() < 0.12) {
-                    const branchAngle = angle + (Math.random() - 0.5) * 1.2;
-                    const branchLen = len * (1 - t) * (0.4 + Math.random() * 0.4);
-                    if (branchLen > 3) {
-                        crackStack.push({ sx: px, sy: py, angle: branchAngle, len: branchLen, depth: depth - 1 });
-                    }
-                }
-            }
-        }
-
-        for (const offset of affectedOffsets) {
-            pixelBuffer[offset] = 0;
-            const x = offset % boardWidth;
-            const y = Math.floor(offset / boardWidth);
-            markDirty(x, y);
         }
         flushDirtyRect();
         return;
@@ -1079,10 +1013,6 @@ function render() {
                 primaryColor = '#06b6d4';
                 secondaryColor = 'rgba(6, 182, 212, 0.4)';
                 fillColor = 'rgba(6, 182, 212, 0.08)';
-            } else if (warning.perkId === 'tectonic_rift') {
-                primaryColor = '#84cc16';
-                secondaryColor = 'rgba(132, 204, 22, 0.4)';
-                fillColor = 'rgba(132, 204, 22, 0.08)';
             }
 
             const elapsed = now - warning.startTime;
@@ -1300,38 +1230,10 @@ function render() {
                 ctx.arc(wx, wy, Math.min(outerR * 0.15, 3), 0, 2 * Math.PI);
                 ctx.fillStyle = '#ffffff';
                 ctx.fill();
-            } else if (warning.perkId === 'tectonic_rift') {
-                ctx.beginPath();
-                ctx.arc(wx, wy, outerR, 0, 2 * Math.PI);
-                ctx.strokeStyle = primaryColor;
-                ctx.lineWidth = 1.0 / scale;
-                ctx.stroke();
-
-                const seed = warning.startTime;
-                ctx.beginPath();
-                for (let k = 0; k < 5; k++) {
-                    const angle = ((seed + k * 1337) % 100) / 100 * 2 * Math.PI;
-                    const len = outerR * (0.3 + 0.7 * (((seed + k * 777) % 100) / 100));
-                    let curX = wx;
-                    let curY = wy;
-                    ctx.moveTo(curX, curY);
-                    const steps = 4;
-                    for (let s = 1; s <= steps; s++) {
-                        const t = s / steps;
-                        const targetX = wx + t * len * Math.cos(angle);
-                        const targetY = wy + t * len * Math.sin(angle);
-                        const jitterX = (Math.sin(seed + s * 10 + k) * 2) / scale;
-                        const jitterY = (Math.cos(seed + s * 10 + k) * 2) / scale;
-                        ctx.lineTo(targetX + jitterX, targetY + jitterY);
-                    }
-                }
-                ctx.strokeStyle = `rgba(132, 204, 22, ${0.4 + 0.3 * Math.sin(now / 100)})`;
-                ctx.lineWidth = 2.0 / scale;
-                ctx.stroke();
             }
 
             // --- 3. RENDERIZADO DEL CÍRCULO BASE Y MIRA (para Perks no triangulares) ---
-            if (warning.perkId !== 'ion_strike' && warning.perkId !== 'supernova_blast' && warning.perkId !== 'tectonic_rift') {
+            if (warning.perkId !== 'ion_strike' && warning.perkId !== 'supernova_blast') {
                 // Mira telescópica cruzada en el centro
                 ctx.beginPath();
                 ctx.moveTo(wx - crossLength, wy);
@@ -1572,65 +1474,6 @@ function render() {
                     ctx.fillStyle = i % 2 === 0 ? '#06b6d4' : '#ffffff';
                     ctx.fillRect(px - size / 2, py - size / 2, size, size);
                 }
-                return;
-            }
-
-            if (exp.perkId === 'tectonic_rift') {
-                const r = exp.maxRadius;
-                const op = opacity;
-                ctx.save();
-                ctx.beginPath();
-                
-                // Draw 7 asymmetrical, long cracks
-                for (let k = 0; k < 7; k++) {
-                    const angleSeed = Math.sin(exp.startTime + k * 12.3) * 1000;
-                    const angle = (k * 2 * Math.PI / 7) + (angleSeed % 0.6);
-                    const lenSeed = Math.cos(exp.startTime + k * 45.6) * 1000;
-                    const len = r * (1.2 + Math.abs(lenSeed % 1.6)) * progress;
-                    
-                    let curX = exp.x + 0.5;
-                    let curY = exp.y + 0.5;
-                    ctx.moveTo(curX, curY);
-                    
-                    const steps = 6;
-                    for (let s = 1; s <= steps; s++) {
-                        const t = s / steps;
-                        const targetX = exp.x + 0.5 + t * len * Math.cos(angle);
-                        const targetY = exp.y + 0.5 + t * len * Math.sin(angle);
-                        
-                        const jitterSeed = Math.sin(now * 0.05 + s * 7 + k) * 3.0;
-                        const jitter = jitterSeed / transform.scale;
-                        
-                        ctx.lineTo(targetX + jitter, targetY - jitter);
-                        
-                        // Draw visual sub-branch
-                        if (s === 3 && (Math.abs(angleSeed) % 10) < 3.5) {
-                            ctx.save();
-                            ctx.beginPath();
-                            ctx.moveTo(targetX + jitter, targetY - jitter);
-                            const branchAngle = angle + 0.6;
-                            const branchLen = len * 0.45;
-                            const bx = targetX + jitter + branchLen * Math.cos(branchAngle);
-                            const by = targetY - jitter + branchLen * Math.sin(branchAngle);
-                            ctx.lineTo(bx, by);
-                            ctx.strokeStyle = `rgba(132, 204, 22, ${op * 0.65})`;
-                            ctx.lineWidth = Math.max(0.7, 2.0 * op / transform.scale);
-                            ctx.stroke();
-                            ctx.restore();
-                        }
-                    }
-                }
-                ctx.strokeStyle = `rgba(132, 204, 22, ${op * 0.85})`;
-                ctx.lineWidth = Math.max(1.0, 3.5 * op / transform.scale);
-                ctx.stroke();
-                
-                // Outer shockwave
-                ctx.beginPath();
-                ctx.arc(exp.x + 0.5, exp.y + 0.5, r * 1.6 * progress, 0, 2 * Math.PI);
-                ctx.strokeStyle = `rgba(163, 230, 53, ${op * 0.35})`;
-                ctx.lineWidth = Math.max(1.0, 4.0 * (1 - progress) / transform.scale);
-                ctx.stroke();
-                ctx.restore();
                 return;
             }
 
@@ -2322,8 +2165,6 @@ self.onmessage = function (e) {
                     duration = 5000;
                 } else if (perkId === 'ion_strike') {
                     duration = 4500;
-                } else if (perkId === 'tectonic_rift') {
-                    duration = 3000;
                 }
 
                 explosions.push({

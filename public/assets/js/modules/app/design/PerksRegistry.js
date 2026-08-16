@@ -98,30 +98,12 @@ const PerksRegistry = {
     },
 
     /**
-     * @param {string} perkId
-     * @returns {boolean}
-     */
-    isBuff(perkId) {
-        const perk = this.get(perkId);
-        return perk ? perk.category === 'buff' : false;
-    },
-
-    /**
      * Get all bomb perk IDs.
      * @returns {string[]}
      */
     getBombIds() {
         const config = _perksConfig || {};
         return Object.keys(config).filter(id => config[id].type === 'bomb');
-    },
-
-    /**
-     * Get all buff perk IDs (no_cooldown, protection, eraser).
-     * @returns {string[]}
-     */
-    getBuffIds() {
-        const config = _perksConfig || {};
-        return Object.keys(config).filter(id => config[id].category === 'buff');
     },
 
     // ──────────────────────────────────────

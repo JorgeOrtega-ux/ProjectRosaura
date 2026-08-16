@@ -75,7 +75,6 @@ class SubscriptionPlanConstants {
                     'feat_advanced_roles' => (bool)$row['feat_advanced_roles'],
                     'feat_chat_restriction' => (bool)$row['feat_chat_restriction'],
                     'feat_custom_palettes' => (bool)$row['feat_custom_palettes'],
-                    'feat_priority_rendering' => (bool)($row['feat_priority_rendering'] ?? false),
                     'feat_unlimited_exports' => (bool)$row['feat_unlimited_exports'],
                     'feat_inject_templates' => (bool)($row['feat_inject_templates'] ?? false),
                     'feat_live_share' => (bool)($row['feat_live_share'] ?? false),
