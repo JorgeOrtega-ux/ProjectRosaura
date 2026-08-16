@@ -1,11 +1,12 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, catchPaginationClick } from '../../../core/utils/uiUtils.js';
 
 class CanvasRolesController {
     constructor() {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
+        this.abortController = null;
         this.isInitialized = false;
         
         this.selectedRoleId = null;
@@ -14,11 +15,14 @@ class CanvasRolesController {
         this.selectedIsSystem = 0;
         
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
+        this.handlePaginationClickBound = this.handlePaginationClick.bind(this);
+        this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
     }
 
     init() {
         if (this.isInitialized) return;
         this.isInitialized = true;
+        this.abortController = new AbortController();
         
         const wrapper = document.querySelector('[data-ref="canvasRolesView"]');
         if (!wrapper) return;
@@ -29,15 +33,39 @@ class CanvasRolesController {
         this.isOwner = wrapper.getAttribute('data-is-owner') === '1';
 
         this.bindEvents();
+        this.deselectAll();
     }
 
     destroy() {
+        if (this.abortController) this.abortController.abort();
+        document.removeEventListener('click', this.handlePaginationClickBound, true);
         document.removeEventListener('click', this.handleGlobalClickBound);
+        window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
+        this.deselectAll();
         this.isInitialized = false;
     }
 
     bindEvents() {
+        document.addEventListener('click', this.handlePaginationClickBound, true);
         document.addEventListener('click', this.handleGlobalClickBound);
+        window.addEventListener('viewLoaded', this.handleViewLoadedBound);
+    }
+
+    handlePaginationClick(e) {
+        catchPaginationClick(e, url => this.handlePagination(url));
+    }
+
+    handleViewLoaded(e) {
+        if (e.detail.url.includes('/canvases/manage/roles/')) {
+            const wrapper = document.querySelector('[data-ref="canvasRolesView"]');
+            if (wrapper) {
+                this.canvasId = wrapper.getAttribute('data-canvas-id');
+                this.canvasUuid = wrapper.getAttribute('data-canvas-uuid');
+                this.userWeight = parseInt(wrapper.getAttribute('data-user-weight')) || 0;
+                this.isOwner = wrapper.getAttribute('data-is-owner') === '1';
+            }
+            this.deselectAll();
+        }
     }
 
     handleGlobalClick(e) {
@@ -89,6 +117,10 @@ class CanvasRolesController {
         this.updateSelectionUI();
     }
 
+    deselectRole() {
+        this.deselectAll();
+    }
+
     updateSelectionUI() {
         const defaultMode = document.querySelector('[data-ref="header-default-actions"]');
         const selectionMode = document.querySelector('[data-ref="role-selection-actions"]');
@@ -117,6 +149,35 @@ class CanvasRolesController {
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');
             if (defaultMode) defaultMode.classList.replace('disabled', 'active');
+        }
+    }
+
+    async handlePagination(url) {
+        const bottom = document.querySelector('.component-bottom');
+        if (bottom) {
+            bottom.classList.add('disabled-interaction');
+        }
+
+        try {
+            const html = await this.api.fetchHtml(url, { signal: this.abortController ? this.abortController.signal : null });
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const newBottom = doc.querySelector('.component-bottom');
+            if (newBottom && bottom) {
+                bottom.innerHTML = newBottom.innerHTML;
+            }
+
+            window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
+            this.deselectAll();
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            if (window.spaRouter) window.spaRouter.reload();
+            else window.location.href = url;
+        } finally {
+            if (bottom) {
+                bottom.classList.remove('disabled-interaction');
+            }
         }
     }
 
@@ -165,10 +226,8 @@ class CanvasRolesController {
 
             if (response.success) {
                 showMessage(response.message, "success");
-                setTimeout(() => {
-                    if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage/roles/${this.canvasUuid}`, {forceReload: true});
-                    else window.location.reload();
-                }, 1000);
+                this.deselectAll();
+                await this.handlePagination(window.location.href);
             } else {
                 showMessage(response.message, "error");
                 restoreButton(btn);

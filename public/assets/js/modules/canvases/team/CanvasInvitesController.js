@@ -1,19 +1,24 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage } from '../../../core/utils/uiUtils.js';
+import { showMessage, catchPaginationClick } from '../../../core/utils/uiUtils.js';
 
 class CanvasInvitesController {
     constructor() {
         this.api = new ApiService();
         this.selectedInviteIds = new Set();
+        this.basePath = window.AppBasePath || '';
+        this.abortController = null;
         this.isInitialized = false;
         
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
+        this.handlePaginationClickBound = this.handlePaginationClick.bind(this);
+        this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
     }
 
     init() {
         if (this.isInitialized) return;
         this.isInitialized = true;
+        this.abortController = new AbortController();
         
         this.wrapper = document.querySelector('[data-ref="manage-invites-wrapper"]');
         if (this.wrapper) {
@@ -26,13 +31,33 @@ class CanvasInvitesController {
     }
 
     destroy() {
+        if (this.abortController) this.abortController.abort();
+        document.removeEventListener('click', this.handlePaginationClickBound, true);
         document.removeEventListener('click', this.handleGlobalClickBound);
+        window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
         this.selectedInviteIds.clear();
         this.isInitialized = false;
     }
 
     bindEvents() {
+        document.addEventListener('click', this.handlePaginationClickBound, true);
         document.addEventListener('click', this.handleGlobalClickBound);
+        window.addEventListener('viewLoaded', this.handleViewLoadedBound);
+    }
+
+    handlePaginationClick(e) {
+        catchPaginationClick(e, url => this.handlePagination(url));
+    }
+
+    handleViewLoaded(e) {
+        if (e.detail.url.includes('/canvases/manage/invites/')) {
+            this.wrapper = document.querySelector('[data-ref="manage-invites-wrapper"]');
+            if (this.wrapper) {
+                this.canvasId = this.wrapper.dataset.canvasId;
+                this.canvasUuid = this.wrapper.dataset.canvasUuid;
+            }
+            this.deselectInvite();
+        }
     }
 
     handleGlobalClick(e) {
@@ -93,6 +118,35 @@ class CanvasInvitesController {
         }
     }
 
+    async handlePagination(url) {
+        const tableContainer = document.querySelector('[data-ref="view-table"]');
+        if (tableContainer) {
+            tableContainer.classList.add('disabled-interaction');
+        }
+
+        try {
+            const html = await this.api.fetchHtml(url, { signal: this.abortController ? this.abortController.signal : null });
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const newTable = doc.querySelector('[data-ref="view-table"]');
+            if (newTable && tableContainer) {
+                tableContainer.innerHTML = newTable.innerHTML;
+            }
+
+            window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
+            this.deselectInvite();
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            if (window.spaRouter) window.spaRouter.reload();
+            else window.location.href = url;
+        } finally {
+            if (tableContainer) {
+                tableContainer.classList.remove('disabled-interaction');
+            }
+        }
+    }
+
     async revokeSelectedInvites() {
         if (this.selectedInviteIds.size === 0) return;
         
@@ -124,11 +178,8 @@ class CanvasInvitesController {
 
             if (successCount > 0) {
                 showMessage(__('msg_invites_revoked').replace(':count', successCount), 'success');
-                if (window.spaRouter) {
-                    window.spaRouter.navigate(`${window.AppBasePath || ''}/canvases/manage/invites/${this.canvasUuid}`);
-                } else {
-                    window.location.reload();
-                }
+                this.deselectInvite();
+                await this.handlePagination(window.location.href);
             }
             if (failCount > 0) {
                 showMessage(__('err_invites_revoke').replace(':count', failCount), 'warning');

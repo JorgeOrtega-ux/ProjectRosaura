@@ -242,14 +242,8 @@ class CanvasesManageController {
             if (result.success) {
                 resultDialog.success();
                 showMessage(result.message, 'success');
-                this.selectedCanvasIds.clear();
-                this.selectedCanvasUuid = null;
-                this.currentCanvasSize = null;
-
-                setTimeout(() => {
-                    if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
-                    else window.location.reload();
-                }, 2000);
+                this.deselectCanvas();
+                await this.handlePagination(window.location.href);
             } else {
                 resultDialog.failure(result.message);
             }
@@ -596,10 +590,8 @@ class CanvasesManageController {
 
                 if (res && res.success) {
                     showMessage(res.message, 'success');
-                    setTimeout(() => {
-                        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
-                        else window.location.reload();
-                    }, 1200);
+                    this.deselectCanvas();
+                    await this.handlePagination(window.location.href);
                 } else {
                     showMessage(res?.message || window.__('err_generic'), 'error');
                 }

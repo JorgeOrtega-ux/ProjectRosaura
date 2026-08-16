@@ -1,37 +1,59 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, debounce } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
 
 class AdminMessagesController {
     constructor() {
         this.api = new ApiService();
         this.selectedMessageId = null;
+        this.basePath = window.AppBasePath || '';
+        this.abortController = null;
         this.isInitialized = false;
+        this.handlePaginationClickBound = this.handlePaginationClick.bind(this);
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
         this.handleGlobalInputBound = this.handleGlobalInput.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.filterTimeout = null;
         this.applyAllFilters = debounce(this.executeServerFilters.bind(this), 400);
     }
+
     init() {
         if (this.isInitialized) return;
         this.isInitialized = true;
+        this.abortController = new AbortController();
         this.bindEvents();
         this.initializeFiltersFromURL();
     }
+
     destroy() {
+        if (this.abortController) this.abortController.abort();
+        document.removeEventListener('click', this.handlePaginationClickBound, true);
         document.removeEventListener('click', this.handleGlobalClickBound);
         document.removeEventListener('input', this.handleGlobalInputBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
         this.selectedMessageId = null;
         this.isInitialized = false;
     }
+
     bindEvents() {
+        document.addEventListener('click', this.handlePaginationClickBound, true);
         document.addEventListener('click', this.handleGlobalClickBound);
         document.addEventListener('input', this.handleGlobalInputBound);
         window.addEventListener('viewLoaded', this.handleViewLoadedBound);
     }
+
+    handlePaginationClick(e) {
+        if (!window.location.pathname.includes('/admin/messages') || 
+            window.location.pathname.includes('/admin/messages/visibility') || 
+            window.location.pathname.includes('/admin/messages/reports')) return;
+        catchPaginationClick(e, url => this.handlePagination(url));
+    }
+
     handleGlobalClick(e) {
+        if (!window.location.pathname.includes('/admin/messages') || 
+            window.location.pathname.includes('/admin/messages/visibility') || 
+            window.location.pathname.includes('/admin/messages/reports')) return;
+
         const searchBtn = e.target.closest('[data-action="searchMessages"]');
         const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
         const backToMainFiltersBtn = e.target.closest('[data-action="backToMainFilters"]');
@@ -68,16 +90,19 @@ class AdminMessagesController {
             }
         }
     }
+
     handleGlobalInput(e) {
         if (e.target && e.target.getAttribute('data-ref') === 'message-search-input') {
             this.applyAllFilters();
         }
     }
+
     handleViewLoaded(e) {
         if (e.detail.url.includes('/admin/messages') && !e.detail.url.includes('/admin/messages/visibility') && !e.detail.url.includes('/admin/messages/reports')) {
             this.initializeFiltersFromURL();
         }
     }
+
     initializeFiltersFromURL() {
         const urlParams = new URLSearchParams(window.location.search);
         const searchInput = document.querySelector('[data-ref="message-search-input"]');
@@ -93,9 +118,11 @@ class AdminMessagesController {
         this.updateFilterButtonsState();
         this.deselectMessage();
     }
+
     resetViewState() {
         this.deselectMessage();
     }
+
     openFilterSubMenu(btn) {
         const targetId = btn.getAttribute('data-target');
         const targetMenu = document.querySelector(`[data-ref="${targetId}"]`);
@@ -107,6 +134,7 @@ class AdminMessagesController {
             targetMenu.classList.add('active');
         }
     }
+
     backToMainFilters() {
         const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
         const subMenus = document.querySelectorAll('[data-module="moduleMessageFilters"] .component-menu:not([data-ref="menuMainFilters"])');
@@ -119,6 +147,7 @@ class AdminMessagesController {
             mainFilters.classList.add('active');
         }
     }
+
     toggleSearchToolbar() {
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         const searchInput = document.querySelector('[data-ref="message-search-input"]');
@@ -139,6 +168,7 @@ class AdminMessagesController {
             }
         }
     }
+
     updateFilterButtonsState() {
         const queryInput = document.querySelector('[data-ref="message-search-input"]');
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
@@ -150,6 +180,44 @@ class AdminMessagesController {
         }
     }
 
+    async handlePagination(url) {
+        const tableContainer = document.querySelector('[data-ref="view-table"]');
+        const currentPaginations = document.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
+        if (tableContainer) {
+            tableContainer.classList.add('disabled-interaction');
+        }
+        try {
+            const html = await this.api.fetchHtml(url, { signal: this.abortController ? this.abortController.signal : null });
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTable = doc.querySelector('[data-ref="view-table"]');
+            if (newTable && tableContainer) {
+                tableContainer.innerHTML = newTable.innerHTML;
+            }
+            const newPaginations = doc.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
+            if (newPaginations.length > 0 && currentPaginations.length > 0) {
+                currentPaginations.forEach((container, index) => {
+                    if (newPaginations[index]) {
+                        container.innerHTML = newPaginations[index].innerHTML;
+                        if (newPaginations[index].hasAttribute('data-tooltip')) {
+                            container.setAttribute('data-tooltip', newPaginations[index].getAttribute('data-tooltip'));
+                        }
+                    }
+                });
+            }
+            window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
+            this.resetViewState();
+            this.updateFilterButtonsState();
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            if (window.spaRouter) window.spaRouter.navigate(url);
+            else window.location.href = url;
+        } finally {
+            if (tableContainer) {
+                tableContainer.classList.remove('disabled-interaction');
+            }
+        }
+    }
 
     executeServerFilters() {
         const queryInput = document.querySelector('[data-ref="message-search-input"]');
@@ -166,15 +234,10 @@ class AdminMessagesController {
             urlParams.delete('q');
         }
 
-        const basePath = window.AppBasePath || '';
-        const url = `${basePath}/admin/messages?${urlParams.toString()}`;
-        
-        if (window.spaRouter) {
-            window.spaRouter.navigate(url);
-        } else {
-            window.location.href = url;
-        }
+        const url = `${this.basePath}/admin/messages?${urlParams.toString()}`;
+        this.handlePagination(url);
     }
+
     handleMessageSelection(rowElement) {
         const messageUuid = rowElement.getAttribute('data-message-uuid');
         if (this.selectedMessageId === messageUuid) {
@@ -187,11 +250,13 @@ class AdminMessagesController {
         }
         this.updateSelectionUI();
     }
+
     deselectMessage() {
         this.selectedMessageId = null;
         document.querySelectorAll('[data-action="selectMessage"]').forEach(el => el.classList.remove('selected'));
         this.updateSelectionUI();
     }
+
     syncVisibilityDropdown(visibility) {
         const options = document.querySelectorAll('[data-action="changeMessageVisibility"]');
         options.forEach(opt => {
@@ -202,13 +267,14 @@ class AdminMessagesController {
             }
         });
     }
+
     async changeSelectedMessageVisibility(newVisibility, btnElement) {
         if (!this.selectedMessageId) return;
         try {
             const response = await this.api.post(ApiRoutes.Admin.UpdateMessageVisibility, {
                 uuid: this.selectedMessageId,
                 visibility: newVisibility
-            });
+            }, this.abortController ? this.abortController.signal : null);
 
             if (response && response.success !== false) {
                 showMessage(response.message || (typeof window.__ === 'function' ? window.__('msg_visibility_updated', [], 'Visibilidad actualizada') : 'Visibilidad actualizada'), 'success');
@@ -234,6 +300,7 @@ class AdminMessagesController {
             showMessage(err.message || 'Error al actualizar visibilidad', 'error');
         }
     }
+
     updateSelectionUI() {
         const defaultMode = document.querySelector('[data-ref="header-default-actions"]');
         const selectionMode = document.querySelector('[data-ref="header-selection-actions"]');
@@ -266,6 +333,7 @@ class AdminMessagesController {
             if (defaultMode) defaultMode.classList.replace('disabled', 'active');
         }
     }
+
     viewMessageReports() {
         if (!this.selectedMessageId) return;
         const basePath = window.AppBasePath || '';

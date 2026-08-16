@@ -148,7 +148,7 @@ export class SpaRouter {
         }
     }
 
-    navigate(url) {
+    navigate(url, options = {}) {
         if (!url || typeof url !== 'string' || !url.trim()) return;
         let targetPath = url;
         try {
@@ -167,10 +167,15 @@ export class SpaRouter {
             ? targetPath.replace(/\/$/, '') 
             : targetPath;
 
-        if (normalizedCurrent === normalizedTarget) return;
+        if (normalizedCurrent === normalizedTarget && !options.forceReload) return;
 
         window.history.pushState(null, '', url);
         this.loadRoute(url);
+    }
+
+    reload() {
+        const currentUrl = window.location.pathname + window.location.search;
+        return this.loadRoute(currentUrl);
     }
 
     async loadRoute(url) {

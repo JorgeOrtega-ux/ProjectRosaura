@@ -207,10 +207,10 @@ class AdminSubscriptionsController extends BaseListController {
         try {
             const res = await this.api.post(apiRoute, payload, this.abortController.signal);
             if (res.aborted) return;
-            if (res.success) { showMessage(window.__('msg_joined_successfully'), 'success'); await this.handlePagination(window.location.href); }
+            if (res.success) { showMessage(res.message || window.__('subscription_deleted_success') || 'Plan eliminado', 'success'); await this.handlePagination(window.location.href); }
             else showMessage(res.message || window.__('err_default'), 'error');
         } catch (err) {
-            if (err.name !== 'AbortError') showMessage(window.__('err_update_canvas'), 'error');
+            if (err.name !== 'AbortError') showMessage(window.__('err_delete'), 'error');
         } finally {
             if (btn) restoreButton(btn);
         }

@@ -204,11 +204,10 @@ class AdminRolesController extends BaseListController {
         const res = await this.api.post(apiRoute, payload, this.abortController.signal);
         if (res.aborted) return;
         if (res.success) {
-            showMessage(window.__('msg_joined_successfully'), 'success');
-            if (window.spaRouter) window.spaRouter.navigate(window.location.pathname + window.location.search);
-            else window.location.reload();
+            showMessage(res.message || window.__('role_deleted_success') || 'Rol eliminado', 'success');
+            await this.handlePagination(window.location.href);
         } else {
-            showMessage(res.message || window.__('err_update_canvas'), 'error');
+            showMessage(res.message || window.__('err_delete'), 'error');
         }
     }
 }

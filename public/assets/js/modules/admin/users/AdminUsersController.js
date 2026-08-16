@@ -280,11 +280,8 @@ class AdminUsersController {
                 } else {
                     showMessage(window.__('users_deleted_success').replace('{deleted}', result.deleted_count), 'success');
                 }
-                this.selectedUserIds.clear();
-                setTimeout(() => {
-                    if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/users`, { forceReload: true });
-                    else window.location.reload();
-                }, 2500);
+                this.deselectUser();
+                await this.handlePagination(window.location.href);
             } else {
                 resultDialog.failure(result.message);
             }
