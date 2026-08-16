@@ -24,7 +24,7 @@ export class ModuleManager {
         this.handleResizeBound      = this.handleResize.bind(this);
     }
 
-    get isMobile() { return window.innerWidth <= 768; }
+    get isMobile() { return window.innerWidth <= 768 || window.innerHeight <= 550; }
 
     init() {
         document.addEventListener('pointerdown', this.handlePointerDownBound);

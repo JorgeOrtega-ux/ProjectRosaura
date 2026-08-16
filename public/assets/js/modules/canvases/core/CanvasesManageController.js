@@ -441,8 +441,13 @@ class CanvasesManageController {
                         else btnSanctions.setAttribute('data-nav', `${this.basePath}/canvases/manage/sanctions/${activeUuid}`);
                     }
                     if (btnRoles) {
-                        if (!isOwner && !perms.includes(4)) btnRoles.classList.add('disabled-interaction');
-                        else btnRoles.setAttribute('data-nav', `${this.basePath}/canvases/manage/roles/${activeUuid}`);
+                        if (!isOwner && !perms.includes(4)) {
+                            btnRoles.classList.add('disabled-interaction');
+                        } else if (btnRoles.classList.contains('premium-locked')) {
+                            btnRoles.removeAttribute('data-nav');
+                        } else {
+                            btnRoles.setAttribute('data-nav', `${this.basePath}/canvases/manage/roles/${activeUuid}`);
+                        }
                     }
                     if (btnInvites) {
                         if (!isOwner && !perms.includes(9)) btnInvites.classList.add('disabled-interaction');

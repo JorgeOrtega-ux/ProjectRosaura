@@ -170,6 +170,23 @@ export class AdManager {
         });
     }
 
+    initDrawerAds() {
+        if (this.isExempt() || !this.enabled) {
+            document.querySelectorAll('.component-menu-footer--ad').forEach(el => {
+                el.classList.add('disabled');
+            });
+            return;
+        }
+
+        if (this.mode === 'adsense') {
+            try {
+                if (window.adsbygoogle && Array.isArray(window.adsbygoogle)) {
+                    window.adsbygoogle.push({});
+                }
+            } catch (err) {}
+        }
+    }
+
     _initAdView(modalBox, mode) {
         this._attachEventListeners(modalBox);
 

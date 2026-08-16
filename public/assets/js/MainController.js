@@ -38,7 +38,7 @@ export class MainController {
         this.lastVisibleTime = Date.now();
     }
 
-    get isMobile() { return window.innerWidth <= 768; }
+    get isMobile() { return window.innerWidth <= 768 || window.innerHeight <= 550; }
 
     get userTier() { return window.appUserTier || 0; }
 

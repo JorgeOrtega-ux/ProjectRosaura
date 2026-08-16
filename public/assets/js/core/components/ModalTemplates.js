@@ -401,7 +401,6 @@ export const ModalTemplates = {
                         display: none;
                         flex-direction: column;
                         flex: 1;
-                        animation: fadeIn 0.3s ease;
                     }
                     .onboarding-tour-step.active {
                         display: flex;
@@ -414,51 +413,41 @@ export const ModalTemplates = {
                         justify-content: center;
                         gap: 20px;
                         flex-shrink: 0;
-                        background: linear-gradient(135deg, rgba(186, 230, 253, 0.75) 0%, rgba(224, 204, 254, 0.7) 60%, rgba(199, 210, 254, 0.75) 100%);
+                        background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
                         position: relative;
                         overflow: hidden;
-                    }
-
-                    .onboarding-tour-banner::after {
-                        content: '';
-                        position: absolute;
-                        bottom: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 56px;
-                        background: linear-gradient(to bottom, transparent, var(--bg-surface));
-                        pointer-events: none;
                     }
                     
                     .dark-theme .onboarding-tour-banner,
                     [data-theme="dark"] .onboarding-tour-banner {
-                        background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(49, 46, 129, 0.75) 50%, rgba(76, 29, 149, 0.7) 100%);
+                        background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
                     }
 
                     .onboarding-tour-icon-tile {
                         width: 65px;
                         height: 65px;
-                        border-radius: 16px;
-                        background: rgba(255, 255, 255, 0.75);
-                        border: 1px solid rgba(255, 255, 255, 0.4);
-                        backdrop-filter: blur(12px);
-                        -webkit-backdrop-filter: blur(12px);
+                        border-radius: 18px;
+                        background: rgba(255, 255, 255, 0.18);
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                        backdrop-filter: blur(14px);
+                        -webkit-backdrop-filter: blur(14px);
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
+                        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+                        animation: stepSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
                     }
 
                     .dark-theme .onboarding-tour-icon-tile,
                     [data-theme="dark"] .onboarding-tour-icon-tile {
-                        background: rgba(255, 255, 255, 0.07);
-                        border-color: rgba(255, 255, 255, 0.08);
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+                        background: rgba(255, 255, 255, 0.1);
+                        border-color: rgba(255, 255, 255, 0.15);
+                        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
                     }
 
                     .onboarding-tour-icon-tile .material-symbols-rounded {
-                        font-size: 30px;
-                        color: #0f172a;
+                        font-size: 32px;
+                        color: #ffffff;
                         line-height: 1;
                     }
 
@@ -475,7 +464,13 @@ export const ModalTemplates = {
                         overflow-y: auto;
                     }
 
-                    @media (max-width: 768px) {
+                    .onboarding-tour-body .component-modal-title,
+                    .onboarding-tour-body .step-modal-desc,
+                    .onboarding-tour-body .welcome-features-list {
+                        animation: stepSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+                    }
+
+                    @media (max-width: 768px), (max-height: 550px) {
                         .onboarding-tour-modal-wrapper .pill-container {
                             position: absolute !important;
                             top: 0;
@@ -483,6 +478,9 @@ export const ModalTemplates = {
                             width: 100%;
                             z-index: 10;
                             background: transparent !important;
+                        }
+                        .onboarding-tour-modal-wrapper .drag-handle {
+                            background-color: rgba(255, 255, 255, 0.45) !important;
                         }
                         .onboarding-tour-banner {
                             padding-top: 24px;
@@ -616,7 +614,6 @@ export const ModalTemplates = {
                         display: none;
                         flex-direction: column;
                         flex: 1;
-                        animation: fadeIn 0.3s ease;
                     }
                     .onboarding-tour-step.active {
                         display: flex;
@@ -629,51 +626,41 @@ export const ModalTemplates = {
                         justify-content: center;
                         gap: 20px;
                         flex-shrink: 0;
-                        background: linear-gradient(135deg, rgba(186, 230, 253, 0.75) 0%, rgba(224, 204, 254, 0.7) 60%, rgba(199, 210, 254, 0.75) 100%);
+                        background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
                         position: relative;
                         overflow: hidden;
-                    }
-
-                    .onboarding-tour-banner::after {
-                        content: '';
-                        position: absolute;
-                        bottom: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 56px;
-                        background: linear-gradient(to bottom, transparent, var(--bg-surface));
-                        pointer-events: none;
                     }
                     
                     .dark-theme .onboarding-tour-banner,
                     [data-theme="dark"] .onboarding-tour-banner {
-                        background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(49, 46, 129, 0.75) 50%, rgba(76, 29, 149, 0.7) 100%);
+                        background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
                     }
 
                     .onboarding-tour-icon-tile {
                         width: 65px;
                         height: 65px;
-                        border-radius: 16px;
-                        background: rgba(255, 255, 255, 0.75);
-                        border: 1px solid rgba(255, 255, 255, 0.4);
-                        backdrop-filter: blur(12px);
-                        -webkit-backdrop-filter: blur(12px);
+                        border-radius: 18px;
+                        background: rgba(255, 255, 255, 0.18);
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                        backdrop-filter: blur(14px);
+                        -webkit-backdrop-filter: blur(14px);
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
+                        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+                        animation: stepSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
                     }
 
                     .dark-theme .onboarding-tour-icon-tile,
                     [data-theme="dark"] .onboarding-tour-icon-tile {
-                        background: rgba(255, 255, 255, 0.07);
-                        border-color: rgba(255, 255, 255, 0.08);
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+                        background: rgba(255, 255, 255, 0.1);
+                        border-color: rgba(255, 255, 255, 0.15);
+                        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
                     }
 
                     .onboarding-tour-icon-tile .material-symbols-rounded {
-                        font-size: 30px;
-                        color: #0f172a;
+                        font-size: 32px;
+                        color: #ffffff;
                         line-height: 1;
                     }
 
@@ -690,7 +677,13 @@ export const ModalTemplates = {
                         overflow-y: auto;
                     }
 
-                    @media (max-width: 768px) {
+                    .onboarding-tour-body .component-modal-title,
+                    .onboarding-tour-body .step-modal-desc,
+                    .onboarding-tour-body .welcome-features-list {
+                        animation: stepSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+                    }
+
+                    @media (max-width: 768px), (max-height: 550px) {
                         .onboarding-tour-modal-wrapper .pill-container {
                             position: absolute !important;
                             top: 0;
@@ -698,6 +691,9 @@ export const ModalTemplates = {
                             width: 100%;
                             z-index: 10;
                             background: transparent !important;
+                        }
+                        .onboarding-tour-modal-wrapper .drag-handle {
+                            background-color: rgba(255, 255, 255, 0.45) !important;
                         }
                         .onboarding-tour-banner {
                             padding-top: 24px;

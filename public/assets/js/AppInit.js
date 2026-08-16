@@ -155,10 +155,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadedControllers = {}; 
     window.importLocks = {}; 
     window.activeControllerInstance = null;
+    let currentModuleLoadId = 0;
     
     window.adminLangLoaded = false;
 
     window.addEventListener('viewLoaded', async (e) => {
+        const loadId = ++currentModuleLoadId;
         const cleanUrl = e.detail.cleanUrl; 
         const loadTimeMs = e.detail.loadTimeMs || 0; 
         
@@ -208,11 +210,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            if (loadId !== currentModuleLoadId) return;
+
             const className = moduleConfig.className;
 
             if (window.importLocks[className]) {
                 await window.importLocks[className];
             }
+
+            if (loadId !== currentModuleLoadId) return;
 
             try {
                 let targetInstance;
@@ -227,6 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.importLocks[className] = import(importPath);
                     const module = await window.importLocks[className];
                     
+                    if (loadId !== currentModuleLoadId) return;
+
                     const ControllerClass = module[className];
                     targetInstance = new ControllerClass();
                     
@@ -234,6 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     targetInstance = window.loadedControllers[className];
                 }
+
+                if (loadId !== currentModuleLoadId) return;
 
                 if (window.activeControllerInstance && typeof window.activeControllerInstance.destroy === 'function') {
                     window.activeControllerInstance.destroy();
@@ -251,13 +261,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 delete window.importLocks[className];
             }
         } else {
+            if (loadId !== currentModuleLoadId) return;
+
             if (window.activeControllerInstance && typeof window.activeControllerInstance.destroy === 'function') {
                 window.activeControllerInstance.destroy();
                 window.activeControllerInstance = null;
             }
         }
 
-        if (window.onboardingTourManager) {
+        if (loadId === currentModuleLoadId && window.onboardingTourManager) {
             window.onboardingTourManager.triggerTour(relativePath);
         }
     });

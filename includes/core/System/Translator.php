@@ -22,6 +22,9 @@ class Translator {
         $file = ROOT_PATH . '/translations/' . $lang . '/general.json';
         
         self::$translations = self::decodeJsonFile($file);
+        if (empty(self::$translations) && $lang !== 'es-419') {
+            self::$translations = self::decodeJsonFile(ROOT_PATH . '/translations/es-419/general.json');
+        }
 
         // Siempre cargamos el contexto de políticas del sitio (site-policy) ya que se
         // requiere para modales de consentimiento, footers y páginas de políticas en todo el sitio.
@@ -87,6 +90,11 @@ class Translator {
         
         if (self::$translations !== null && array_key_exists($key, self::$translations)) {
             $text = self::$translations[$key];
+        } else {
+            $fallback = self::getForLang('es-419', $key, $params);
+            if ($fallback !== $key) {
+                return $fallback;
+            }
         }
         
         foreach ($params as $paramKey => $paramValue) {

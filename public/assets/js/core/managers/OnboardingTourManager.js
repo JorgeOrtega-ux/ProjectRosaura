@@ -12,6 +12,8 @@ window.TESTING_ONBOARDING_MODALS = TESTING_ONBOARDING_MODALS;
 export class OnboardingTourManager {
     constructor() {
         this.api = new ApiService();
+        this.pendingWelcomeTimeout = null;
+        this.pendingTourTimeout = null;
         
         this.tours = {
             '/canvases/manage': {
@@ -184,6 +186,17 @@ export class OnboardingTourManager {
         return !!TESTING_ONBOARDING_MODALS;
     }
 
+    cancelPendingTours() {
+        if (this.pendingWelcomeTimeout) {
+            clearTimeout(this.pendingWelcomeTimeout);
+            this.pendingWelcomeTimeout = null;
+        }
+        if (this.pendingTourTimeout) {
+            clearTimeout(this.pendingTourTimeout);
+            this.pendingTourTimeout = null;
+        }
+    }
+
     async triggerWelcomeTour() {
         if (!window.modalSystem || !window.APP_USER || !window.activeUserId) return;
 
@@ -195,7 +208,13 @@ export class OnboardingTourManager {
             return;
         }
 
-        setTimeout(async () => {
+        if (this.pendingWelcomeTimeout) {
+            clearTimeout(this.pendingWelcomeTimeout);
+            this.pendingWelcomeTimeout = null;
+        }
+
+        this.pendingWelcomeTimeout = setTimeout(async () => {
+            this.pendingWelcomeTimeout = null;
             const result = await window.modalSystem.show('welcomeUserModal');
             if (result && result.confirmed) {
                 if (!isTesting) {
@@ -228,8 +247,14 @@ export class OnboardingTourManager {
             })
         };
 
+        if (this.pendingTourTimeout) {
+            clearTimeout(this.pendingTourTimeout);
+            this.pendingTourTimeout = null;
+        }
+
         if (window.modalSystem) {
-            setTimeout(async () => {
+            this.pendingTourTimeout = setTimeout(async () => {
+                this.pendingTourTimeout = null;
                 const result = await window.modalSystem.show('onboardingTourModal', tourConfig);
                 if (result && result.confirmed) {
                     if (!isTesting) {

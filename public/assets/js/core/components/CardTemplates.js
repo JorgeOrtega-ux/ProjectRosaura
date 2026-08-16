@@ -148,6 +148,14 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         `;
     },
 
+    drawerBottomAdCard: (type = 'palette', config = {}) => {
+        return `
+            <div class="component-menu-footer component-menu-footer--ad" data-ref="${type}-ad-footer">
+                <div class="component-drawer-ad-card" data-ad-card="${type}"></div>
+            </div>
+        `;
+    },
+
     emptyState: (message, icon = 'collections') => {
         return `
             <div class="component-empty-state" data-ref="empty-state-rendered">

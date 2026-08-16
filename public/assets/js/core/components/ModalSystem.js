@@ -56,6 +56,7 @@ export class ModalSystem {
         document.removeEventListener('pointerup', this.handlePointerUpBound);
         document.removeEventListener('pointercancel', this.handlePointerUpBound);
         document.removeEventListener('keydown', this.handleKeyDownBound);
+        document.body.classList.remove('modal-open');
         
         const container = document.querySelector('.modal-container[data-type="modal"]');
         if (container) container.remove();
@@ -164,6 +165,7 @@ export class ModalSystem {
             requestAnimationFrame(() => {
                 if (this.activeOverlay) {
                     this.activeOverlay.classList.add('active');
+                    document.body.classList.add('modal-open');
                 }
             });
 
@@ -515,6 +517,31 @@ export class ModalSystem {
         }
     }
 
+    hasActiveModal() {
+        return !!(this.activeOverlay || this.activeBox || (this.modalStack && this.modalStack.length > 0));
+    }
+
+    closeAll(result = false) {
+        if (this.modalStack && this.modalStack.length > 0) {
+            while (this.modalStack.length > 0) {
+                const prevModal = this.modalStack.pop();
+                if (prevModal.calendarSystem) {
+                    prevModal.calendarSystem.destroy();
+                }
+                if (prevModal.overlay && prevModal.overlay.parentNode) {
+                    prevModal.overlay.remove();
+                }
+                if (prevModal.resolveFn) {
+                    prevModal.resolveFn({ confirmed: false, action: false, data: {} });
+                }
+            }
+        }
+        if (this.activeOverlay || this.activeBox) {
+            this.closeCurrent(result);
+        }
+        document.body.classList.remove('modal-open');
+    }
+
     closeCurrent(result = false) {
         let formData = {};
         
@@ -563,6 +590,8 @@ export class ModalSystem {
             this.activeAsyncConfirm = prevModal.asyncConfirm;
 
             if (this.activeOverlay) this.activeOverlay.classList.remove('disabled');
+        } else {
+            document.body.classList.remove('modal-open');
         }
 
         setTimeout(() => {
@@ -702,7 +731,7 @@ export class ModalSystem {
 
     handlePointerDown(e) {
         if (!this.activeBox) return; 
-        if (window.innerWidth > 768) return;
+        if (window.innerWidth > 768 && window.innerHeight > 550) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return; 
 
         const dragHandle = e.target.closest('.pill-container');

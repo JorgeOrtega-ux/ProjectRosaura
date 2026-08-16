@@ -7,6 +7,7 @@ export class SpaRouter {
         this.outlet = document.querySelector(options.outlet || '[data-ref="app-router-outlet"]');
         this.basePath = window.AppBasePath || ''; 
         this.abortController = null; 
+        this.currentNavigationId = 0;
         this.api = new ApiService();
         this.prefetchCache = new Set();
         
@@ -105,6 +106,16 @@ export class SpaRouter {
     }
 
     handlePopState(e) {
+        if (window.modalSystem) {
+            window.modalSystem.closeAll(false);
+        }
+        if (window.onboardingTourManager && typeof window.onboardingTourManager.cancelPendingTours === 'function') {
+            window.onboardingTourManager.cancelPendingTours();
+        }
+        if (window.appInstance && typeof window.appInstance.closeAllModules === 'function') {
+            window.appInstance.closeAllModules();
+        }
+
         const url = window.location.pathname + window.location.search;
         this.loadRoute(url);
     }
@@ -169,6 +180,16 @@ export class SpaRouter {
 
         if (normalizedCurrent === normalizedTarget && !options.forceReload) return;
 
+        if (window.modalSystem) {
+            window.modalSystem.closeAll(false);
+        }
+        if (window.onboardingTourManager && typeof window.onboardingTourManager.cancelPendingTours === 'function') {
+            window.onboardingTourManager.cancelPendingTours();
+        }
+        if (window.appInstance && typeof window.appInstance.closeAllModules === 'function') {
+            window.appInstance.closeAllModules();
+        }
+
         window.history.pushState(null, '', url);
         this.loadRoute(url);
     }
@@ -179,10 +200,21 @@ export class SpaRouter {
     }
 
     async loadRoute(url) {
+        if (window.modalSystem) {
+            window.modalSystem.closeAll(false);
+        }
+        if (window.onboardingTourManager && typeof window.onboardingTourManager.cancelPendingTours === 'function') {
+            window.onboardingTourManager.cancelPendingTours();
+        }
+        if (window.appInstance && typeof window.appInstance.closeAllModules === 'function') {
+            window.appInstance.closeAllModules();
+        }
+
         if (this.abortController) {
             this.abortController.abort();
         }
         
+        const navId = ++this.currentNavigationId;
         this.abortController = new AbortController();
         const signal = this.abortController.signal;
 
@@ -225,6 +257,8 @@ export class SpaRouter {
                 returnResponse: true
             });
 
+            if (navId !== this.currentNavigationId) return;
+
             if (response.status === 503) {
                 window.dispatchEvent(new CustomEvent('systemMaintenanceTriggered'));
                 return;
@@ -233,11 +267,13 @@ export class SpaRouter {
             if (response.ok || response.status === 404 || response.status === 403 || response.status === 500) {
                 const updateUrl = response.headers.get('X-SPA-Update-URL');
                 if (updateUrl) {
+                    if (navId !== this.currentNavigationId) return;
                     window.history.replaceState(null, '', updateUrl);
                     url = updateUrl; 
                 }
 
                 const html = await response.text();
+                if (navId !== this.currentNavigationId) return;
                 
                 this.render(html);
                 this.highlightCurrentRoute();
@@ -286,15 +322,19 @@ export class SpaRouter {
 
                 const loadTimeMs = Math.round(performance.now() - startTime);
 
+                if (navId !== this.currentNavigationId) return;
+
                 window.dispatchEvent(new CustomEvent('viewLoaded', { 
                     detail: { 
                         url: url,
                         cleanUrl: moduleUrl, 
                         originalUrl: cleanUrl, 
-                        loadTimeMs: loadTimeMs
+                        loadTimeMs: loadTimeMs,
+                        navigationId: navId
                     } 
                 }));
             } else {
+                if (navId !== this.currentNavigationId) return;
                 this.render(`
                     <div class="component-message-layout">
                         <div class="component-message-box">
@@ -308,7 +348,7 @@ export class SpaRouter {
                 `);
             }
         } catch (error) {
-            if (error.name === 'AbortError') {
+            if (navId !== this.currentNavigationId || error.name === 'AbortError') {
                 return;
             }
 
@@ -329,6 +369,15 @@ export class SpaRouter {
     handlePointerOver(e) {
         const navTarget = e.target.closest('[data-nav]');
         if (!navTarget) return;
+
+        if (
+            navTarget.classList.contains('premium-locked') || 
+            navTarget.hasAttribute('data-requires-premium') || 
+            navTarget.disabled || 
+            navTarget.classList.contains('disabled-interaction')
+        ) {
+            return;
+        }
 
         const url = navTarget.dataset.nav;
         if (!url || url.startsWith('http') || url.startsWith('javascript:') || this.prefetchCache.has(url)) return;

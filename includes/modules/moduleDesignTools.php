@@ -1,8 +1,9 @@
 <?php
 
 use App\Core\System\SubscriptionPlanConstants;
-$userTier = (int) ($_SESSION['subscription_tier'] ?? $_SESSION['tier'] ?? $_SESSION['user_tier'] ?? 0);
+$userTier = (int) ($userTier ?? $_SESSION['subscription_tier'] ?? $_SESSION['tier'] ?? $_SESSION['user_tier'] ?? 0);
 $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates');
+$hasNoAds = SubscriptionPlanConstants::hasFeature($userTier, 'no_ads');
 ?>
 <div class="component-module component-module--sidebar component-module--sidebar-responsive disabled" data-module="moduleDesignTools">
     
@@ -17,15 +18,15 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         </div>
 
         <!-- Section 3: Colores por Defecto -->
-        <div class="component-menu-section-parent">
-            <div class="component-menu-top">
+        <div class="component-menu-section-parent component-menu-section-parent--scrollable">
+            <div class="component-menu-section-header">
                 <div class="component-menu-header-box">
                     <span class="material-symbols-rounded">color_lens</span>
                     <span class="component-menu-header-title"><?php echo __('dt_default_colors'); ?></span>
                 </div>
             </div>
             
-            <div class="component-menu-bottom">
+            <div class="component-menu-section-body">
                <div class="component-items-grid" data-ref="color-palette-grid">
                     <div class="component-loader-center component-loader-center--compact">
                         <div class="component-empty-state-content">
@@ -40,6 +41,12 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                 </div>
             </div>
         </div>
+
+        <?php if (!$hasNoAds): ?>
+        <div class="component-menu-footer component-menu-footer--ad" data-ref="palette-ad-footer">
+            <div class="component-drawer-ad-card" data-ad-card="palette"></div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding disabled" data-ref="menu-templates">
@@ -53,7 +60,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         </div>
         
         <div class="component-menu-section-parent component-menu-section-parent--bordered">
-            <div class="component-menu-top">
+            <div class="component-menu-section-header">
                 <div class="component-template-upload-section">
                     <input type="file" accept="image/jpeg, image/png, image/webp" class="hidden-input" data-ref="template-file-input">
                     <button class="component-button component-button--full component-button--h40" data-action="triggerTemplateUpload">
@@ -64,14 +71,14 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             </div>
         </div>
         
-        <div class="component-menu-section-parent">
-            <div class="component-menu-top">
+        <div class="component-menu-section-parent component-menu-section-parent--scrollable">
+            <div class="component-menu-section-header">
                 <div class="component-menu-header-box">
                     <span class="material-symbols-rounded">collections_bookmark</span>
                     <span class="component-menu-header-title"><?php echo __('dt_my_library'); ?> (<span data-ref="template-count">0</span>)</span>
                 </div>
             </div>
-            <div class="component-menu-bottom">
+            <div class="component-menu-section-body">
                 <div class="component-items-grid component-items-grid--5" data-ref="user-templates-grid">
                 </div>
                 <div class="component-empty-state disabled" data-ref="empty-state-rendered">
@@ -80,8 +87,12 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                 </div>
             </div>
         </div>
+
+        <?php if (!$hasNoAds): ?>
+        <div class="component-menu-footer component-menu-footer--ad" data-ref="templates-ad-footer">
+            <div class="component-drawer-ad-card" data-ad-card="templates"></div>
+        </div>
+        <?php endif; ?>
     </div>
-
-
 
 </div>

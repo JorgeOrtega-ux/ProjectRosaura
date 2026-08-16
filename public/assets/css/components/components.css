@@ -1077,7 +1077,6 @@ textarea.component-input-field::placeholder {
     display: none;
     flex-direction: column;
     flex: 1;
-    animation: fadeIn 0.3s ease;
 }
 
 .step-modal-step.active {
@@ -1282,6 +1281,18 @@ textarea.component-input-field::placeholder {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes stepSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(18px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
     }
 }
 
@@ -2510,7 +2521,7 @@ input:checked+.component-toggle-slider:before {
     padding: 3px;
     gap: 3px;
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 12px;
     background-color: var(--bg-surface);
     box-sizing: border-box;
 }
@@ -2534,7 +2545,7 @@ input:checked+.component-toggle-slider:before {
 .component-inline-control__btn {
     background: transparent;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 8px;
     height: 32px;
     width: 32px;
     display: flex;
@@ -2573,7 +2584,7 @@ input:checked+.component-toggle-slider:before {
     font-weight: 700;
     color: var(--text-primary);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 8px;
     background-color: transparent;
     user-select: none;
     box-sizing: border-box;
@@ -3215,6 +3226,16 @@ html.dark-theme .component-tab-close:hover,
     display: none;
 }
 
+body.modal-open,
+body:has(.component-modal-overlay.active) {
+    overflow: hidden !important;
+}
+
+body.modal-open .general-content-scrolleable,
+body:has(.component-modal-overlay.active) .general-content-scrolleable {
+    overflow-y: hidden !important;
+}
+
 .component-modal-overlay {
     position: fixed;
     top: 0;
@@ -3232,6 +3253,7 @@ html.dark-theme .component-tab-close:hover,
     transition: opacity 0.3s ease, visibility 0.3s ease;
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
+    overscroll-behavior: contain;
 }
 
 .component-modal-overlay.active {
@@ -3256,9 +3278,12 @@ html.dark-theme .component-tab-close:hover,
     align-items: flex-start;
     justify-content: center;
     width: 100%;
+    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
     padding: 0 24px;
     transform: scale(0.95);
     transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-sizing: border-box;
 }
 
 .component-modal-wrapper--fullscreen {
@@ -3283,10 +3308,17 @@ html.dark-theme .component-tab-close:hover,
     padding: 24px;
     width: 100%;
     max-width: 425px;
+    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
     gap: 8px;
     box-shadow: var(--shadow-card);
+    box-sizing: border-box;
 }
 
 .component-modal-step {
@@ -3294,6 +3326,7 @@ html.dark-theme .component-tab-close:hover,
     flex-direction: column;
     gap: 16px;
     width: 100%;
+    animation: stepSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .component-modal-step.disabled {
@@ -3661,6 +3694,7 @@ html.dark-theme .component-tab-close:hover,
     transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
     margin-left: 8px;
     flex-shrink: 0;
+    align-self: flex-start;
 }
 
 .component-modal-close-btn .material-symbols-rounded {
@@ -3968,6 +4002,36 @@ html.dark-theme .component-tab-close:hover,
     border: 1px solid var(--border-subtle);
     padding: 24px;
     box-sizing: border-box;
+}
+
+.component-menu-footer--ad {
+    padding: 8px;
+    margin-top: auto;
+    background-color: var(--bg-surface);
+    border-top: none;
+}
+
+.component-menu-footer--ad.disabled {
+    display: none !important;
+}
+
+.component-drawer-ad-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background-color: var(--bg-surface-alt, #1c1c20);
+    border: 1px solid var(--border-color);
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 120px;
+    position: relative;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.component-drawer-ad-card:hover {
+    border-color: var(--border-color-hover, rgba(255, 255, 255, 0.15));
 }
 
 .component-toast {
@@ -4323,7 +4387,7 @@ html.dark-theme .component-tab-close:hover,
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 550px) {
 
     .component-dropdown-wrapper:has(.component-module.active),
     .component-gallery-actions-wrapper:has(.component-module.active) {
@@ -4442,6 +4506,7 @@ html.dark-theme .component-tab-close:hover,
         padding: 0;
         margin: 0;
         transform: translateY(100%);
+        max-height: 90vh;
     }
 
     .component-modal-overlay.active .component-modal-wrapper {
@@ -4459,6 +4524,17 @@ html.dark-theme .component-tab-close:hover,
         padding-top: 0;
         padding-bottom: 24px;
         margin: 0;
+        max-height: 90vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+
+    .component-modal-wrapper--fullscreen,
+    .component-modal-box--fullscreen {
+        max-height: 100vh !important;
+        height: 100vh !important;
     }
 
     .component-modal-close-btn {
@@ -5105,6 +5181,28 @@ html.dark-theme .component-tab-close:hover,
     display: flex;
     flex-direction: column;
     width: 100%;
+}
+
+.component-menu-section-parent--scrollable {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.component-menu-section-header {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+}
+
+.component-menu-section-body {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
 }
 
 .component-menu-section-parent--bordered {
