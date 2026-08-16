@@ -203,10 +203,9 @@ $featuresData = [
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">diamond</span>
-                            </div>
-                            <div class="component-card__text">
+                            </div>                            <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('admin_tier_details_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('admin_tier_details_desc') ?: 'Configura los datos básicos e identificadores.'; ?></p>
+                                <p class="component-card__description"><?php echo __('admin_tier_details_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -220,7 +219,7 @@ $featuresData = [
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title"><?php echo __('admin_tier_name'); ?></h2>
-                                            <span class="component-display-value" data-ref="display-tier-name"><?php echo htmlspecialchars($tierData['name']) ?: (__('admin_not_configured')); ?></span>
+                                            <span class="component-display-value" data-ref="display-tier-name"><?php echo !empty($tierData['name']) ? htmlspecialchars($tierData['name']) : __('admin_not_configured'); ?></span>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
@@ -250,8 +249,8 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_level_title') ?: 'Nivel (Tier)'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_level_desc') ?: 'Jerarquía numérica (0 = free, 1 = plus, etc).'; ?></p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_level_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_level_desc'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -262,17 +261,49 @@ $featuresData = [
                                         </div>
                                         <div class="component-inline-control__center" data-ref="val_tierLevel" data-value="<?php echo (int)$tierData['tier_level']; ?>"><?php echo (int)$tierData['tier_level']; ?></div>
                                         <div class="component-inline-control__group">
-                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="1" data-max="99"><span class="material-symbols-rounded">chevron_right</span></button>
-                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="5" data-max="99"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="1" data-max="50"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="tierLevel" data-step="5" data-max="50"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-
+                            
+                            <hr class="component-divider">
+                            
+                            <div class="component-group-item">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_featured_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_featured_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" data-ref="toggle-popular" <?php echo !empty($tierData['is_popular']) ? 'checked' : ''; ?>>
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <hr class="component-divider">
+                            
+                            <div class="component-group-item">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_visibility_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_visibility_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" data-ref="toggle-active" <?php echo !empty($tierData['is_active']) ? 'checked' : ''; ?>>
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
         
                             <hr class="component-divider">
-
+        
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
@@ -283,20 +314,20 @@ $featuresData = [
                                 <div class="component-card__actions component-card__actions--start">
                                     <div class="component-inline-control component-inline-control--fixed">
                                         <div class="component-inline-control__group">
-                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="-5" data-min="0" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
-                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="-1" data-min="0" data-decimal="true"><span class="material-symbols-rounded">chevron_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="-5" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="-1" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_priceMonthly" data-value="<?php echo (float)($tierData['price_monthly'] ?? 0); ?>"><?php echo number_format((float)($tierData['price_monthly'] ?? 0), 2); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_priceMonthly" data-value="<?php echo (float)$tierData['price_monthly']; ?>">$<?php echo number_format((float)$tierData['price_monthly'], 2); ?></div>
                                         <div class="component-inline-control__group">
-                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="1" data-max="999" data-decimal="true"><span class="material-symbols-rounded">chevron_right</span></button>
-                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="5" data-max="999" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="1" data-max="999"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceMonthly" data-step="5" data-max="999"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
+        
                             <hr class="component-divider">
-
+        
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
@@ -307,13 +338,13 @@ $featuresData = [
                                 <div class="component-card__actions component-card__actions--start">
                                     <div class="component-inline-control component-inline-control--fixed">
                                         <div class="component-inline-control__group">
-                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="-10" data-min="0" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
-                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="-1" data-min="0" data-decimal="true"><span class="material-symbols-rounded">chevron_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="-50" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="-10" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="val_priceYearly" data-value="<?php echo (float)($tierData['price_yearly'] ?? 0); ?>"><?php echo number_format((float)($tierData['price_yearly'] ?? 0), 2); ?></div>
+                                        <div class="component-inline-control__center" data-ref="val_priceYearly" data-value="<?php echo (float)$tierData['price_yearly']; ?>">$<?php echo number_format((float)$tierData['price_yearly'], 2); ?></div>
                                         <div class="component-inline-control__group">
-                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="1" data-max="9999" data-decimal="true"><span class="material-symbols-rounded">chevron_right</span></button>
-                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="10" data-max="9999" data-decimal="true"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="10" data-max="9999"><span class="material-symbols-rounded">chevron_right</span></button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="priceYearly" data-step="50" data-max="9999"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
                                         </div>
                                     </div>
                                 </div>
@@ -325,8 +356,8 @@ $featuresData = [
                                 <div class="active component-state-box" data-state="stripe-monthly-view">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_tier_stripe_monthly') ?: 'Stripe Price ID (Mensual)'; ?></h2>
-                                            <span class="component-display-value" data-ref="display-stripe-monthly"><?php echo htmlspecialchars($tierData['stripe_price_id_monthly']) ?: (__('admin_not_configured')); ?></span>
+                                            <h2 class="component-card__title"><?php echo __('admin_tier_stripe_monthly'); ?></h2>
+                                            <span class="component-display-value" data-ref="display-stripe-monthly"><?php echo !empty($tierData['stripe_price_id_monthly']) ? htmlspecialchars($tierData['stripe_price_id_monthly']) : __('admin_not_configured'); ?></span>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
@@ -336,7 +367,7 @@ $featuresData = [
                                 <div class="disabled component-state-box" data-state="stripe-monthly-edit">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_tier_stripe_monthly') ?: 'Stripe Price ID (Mensual)'; ?></h2>
+                                            <h2 class="component-card__title"><?php echo __('admin_tier_stripe_monthly'); ?></h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
                                                     <input type="text" data-ref="input-stripe-monthly" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['stripe_price_id_monthly']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['stripe_price_id_monthly']); ?>" placeholder="ID Mensual">
@@ -357,8 +388,8 @@ $featuresData = [
                                 <div class="active component-state-box" data-state="stripe-yearly-view">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_tier_stripe_yearly') ?: 'Stripe Price ID (Anual)'; ?></h2>
-                                            <span class="component-display-value" data-ref="display-stripe-yearly"><?php echo htmlspecialchars($tierData['stripe_price_id_yearly']) ?: (__('admin_not_configured')); ?></span>
+                                            <h2 class="component-card__title"><?php echo __('admin_tier_stripe_yearly'); ?></h2>
+                                            <span class="component-display-value" data-ref="display-stripe-yearly"><?php echo !empty($tierData['stripe_price_id_yearly']) ? htmlspecialchars($tierData['stripe_price_id_yearly']) : __('admin_not_configured'); ?></span>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
@@ -368,7 +399,7 @@ $featuresData = [
                                 <div class="disabled component-state-box" data-state="stripe-yearly-edit">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_tier_stripe_yearly') ?: 'Stripe Price ID (Anual)'; ?></h2>
+                                            <h2 class="component-card__title"><?php echo __('admin_tier_stripe_yearly'); ?></h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
                                                     <input type="text" data-ref="input-stripe-yearly" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($tierData['stripe_price_id_yearly']); ?>" data-original-value="<?php echo htmlspecialchars($tierData['stripe_price_id_yearly']); ?>" placeholder="ID Anual">
@@ -394,7 +425,7 @@ $featuresData = [
                                 <span class="material-symbols-rounded">stars</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('admin_tier_features_title') ?: 'Características'; ?></h2>
+                                <h2 class="component-card__title"><?php echo __('admin_tier_features_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('admin_tier_features_desc'); ?></p>
                             </div>
                         </div>
@@ -414,7 +445,7 @@ $featuresData = [
                                 <div class="component-group-item">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __($fData['title_key']) ?: $fKey; ?></h2>
+                                            <h2 class="component-card__title"><?php echo __($fData['title_key']); ?></h2>
                                             <p class="component-card__description"><?php echo __($fData['desc_key']); ?></p>
                                         </div>
                                     </div>
@@ -441,7 +472,7 @@ $featuresData = [
                                 <span class="material-symbols-rounded">speed</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('admin_tier_limits_title') ?: 'Límites y Beneficios'; ?></h2>
+                                <h2 class="component-card__title"><?php echo __('admin_tier_limits_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('admin_tier_limits_desc'); ?></p>
                             </div>
                         </div>
@@ -478,7 +509,7 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_storage') ?: 'Almacenamiento Máximo (MB)'; ?></h2>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_storage'); ?></h2>
                                         <p class="component-card__description"><?php echo __('admin_tier_limit_storage_desc'); ?></p>
                                     </div>
                                 </div>
@@ -502,8 +533,8 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_upload') ?: 'Límite de Subida por Archivo (MB)'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_limit_upload_desc') ?: 'Peso máximo permitido por cada archivo original subido en chats y plantillas.'; ?></p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_upload'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_upload_desc'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -527,7 +558,7 @@ $featuresData = [
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('admin_tier_limit_capturas'); ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_limit_capturas_desc') ?: 'Historial máximo permitido (-1 = Ilimitado).'; ?></p>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_capturas_desc'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -574,8 +605,8 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked" data-requires-feature="feat_custom_palettes">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_palettes') ?: 'Paletas Personalizadas'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_limit_palettes_desc') ?: 'Límite máximo de paletas guardadas.'; ?></p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_palettes'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_palettes_desc'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -598,8 +629,8 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked" data-requires-feature="feat_inject_templates">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_template_tokens') ?: 'Tokens de Plantilla'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_limit_template_tokens_desc') ?: 'Cuota máxima de tokens para inyección de plantillas.'; ?></p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_template_tokens'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_template_tokens_desc'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -622,8 +653,8 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_pixels_per_batch') ?: 'Píxeles por Lote Máximo'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_limit_pixels_per_batch_desc') ?: 'Cantidad máxima de píxeles colocados por lote permitida en lienzos de este nivel.'; ?></p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_limit_pixels_per_batch'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_limit_pixels_per_batch_desc'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -665,10 +696,10 @@ $featuresData = [
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_color_type') ?: 'Tipo de Color'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_color_type_desc') ?: 'Sólido o degradado.'; ?></p>
+                                        <h2 class="component-card__title"><?php echo __('admin_tier_color_type'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('admin_tier_color_type_desc'); ?></p>
                                     </div>
-                                </div>
+                                </div>                     </div>
                                 <div class="component-card__actions component-card__actions--start">
                                     <div class="component-dropdown-wrapper">
                                         <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleColorType">

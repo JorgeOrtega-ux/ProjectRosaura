@@ -91,9 +91,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                     <thead>
                         <tr>
                             <th><?php echo __('admin_tier_col_name'); ?></th>
-                            <th data-width="120"><?php echo __('admin_tier_col_level') ?: 'Nivel (Tier)'; ?></th>
-                            <th data-width="140"><?php echo __('admin_tier_col_visibility') ?: 'Visibilidad'; ?></th>
-                            <th data-width="140"><?php echo __('admin_tier_col_popularity') ?: 'Popularidad'; ?></th>
+                            <th data-width="120"><?php echo __('admin_tier_col_level'); ?></th>
+                            <th data-width="140"><?php echo __('admin_tier_col_visibility'); ?></th>
+                            <th data-width="140"><?php echo __('admin_tier_col_popularity'); ?></th>
                             <th data-width="180"><?php echo __('admin_roles_col_created_at'); ?></th>
                         </tr>
                     </thead>
@@ -138,7 +138,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                                      <div class="component-button--profile subscription-dynamic component-avatar--static-sm" 
                                           data-sub-bg="<?php echo htmlspecialchars($cssColorValue); ?>"
                                           style="--active-subscription-bg: <?php echo htmlspecialchars($cssColorValue); ?>;">
-                                        <img src="/public/assets/img/fallbacks/avatar-default.png" alt="Suscripción"
+                                        <img src="/public/assets/img/fallbacks/avatar-default.png" alt="<?php echo __('alt_avatar'); ?>"
                                              class="image-lazy-fade"
                                              onload="this.classList.add('image-loaded')">
                                     </div>
@@ -160,12 +160,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                                 <?php if ($tier['is_active']): ?>
                                     <div class="component-badge component-badge--sm component-badge--success">
                                         <span class="material-symbols-rounded component-icon-sm">check_circle</span>
-                                        <span><?php echo __('admin_tier_status_active') ?: 'Activa'; ?></span>
+                                        <span><?php echo __('admin_tier_status_active'); ?></span>
                                     </div>
                                 <?php else: ?>
                                     <div class="component-badge component-badge--sm component-badge--danger">
                                         <span class="material-symbols-rounded component-icon-sm">cancel</span>
-                                        <span><?php echo __('admin_tier_status_inactive') ?: 'Inactiva'; ?></span>
+                                        <span><?php echo __('admin_tier_status_inactive'); ?></span>
                                     </div>
                                 <?php endif; ?>
                             </td>
@@ -173,7 +173,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                                 <?php if ($tier['is_popular']): ?>
                                     <div class="component-badge component-badge--sm component-badge--warning">
                                         <span class="material-symbols-rounded component-icon-sm">star</span>
-                                        <span><?php echo __('admin_tier_status_popular') ?: 'Popular'; ?></span>
+                                        <span><?php echo __('admin_tier_status_popular'); ?></span>
                                     </div>
                                 <?php else: ?>
                                     <span class="td-muted">-</span>
@@ -189,7 +189,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                         <?php endforeach; ?>
                         
                         <tr class="disabled" data-ref="empty-search-table">
-                            <td colspan="3" class="component-empty-table-cell">
+                            <td colspan="5" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
                                     <p class="component-empty-state-text"><?php echo __('admin_tier_search_empty'); ?></p>
@@ -201,9 +201,8 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
             </div>
             <?php else: ?>
             <div class="component-empty-state" data-ref="tiers-empty-state">
-                <span class="material-symbols-rounded empty-icon">workspace_premium</span>
-                <h3><?php echo __('admin_tier_empty_title'); ?></h3>
-                <p><?php echo __('admin_tier_empty_desc'); ?></p>
+                <span class="material-symbols-rounded component-empty-state-icon">workspace_premium</span>
+                <p class="component-empty-state-text"><?php echo __('admin_tier_empty_desc'); ?></p>
             </div>
             <?php endif; ?>
         </div>

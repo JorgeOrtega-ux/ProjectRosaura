@@ -37,9 +37,9 @@ $coinPackages = $viewService->getStoreCoinsData();
                 <table class="component-table">
                     <thead>
                         <tr>
-                            <th><?php echo __('th_package') ?: 'Paquete'; ?></th>
-                            <th><?php echo __('th_amount') ?: 'Cantidad'; ?></th>
-                            <th><?php echo __('th_bonus') ?: 'Bonificación'; ?></th>
+                            <th><?php echo __('th_package'); ?></th>
+                            <th><?php echo __('th_amount'); ?></th>
+                            <th><?php echo __('th_bonus'); ?></th>
                             <th><?php echo __('th_price'); ?></th>
                         </tr>
                     </thead>

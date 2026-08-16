@@ -79,23 +79,51 @@ class SecurityController {
                             (credentialInp && (credentialInp.value || credentialInp.getAttribute('data-value'))) || '';
 
         if (val === '' && !googleToken) { 
-            showMessage(window.__('err_current_password_required'), 'error'); 
+            showMessage(window.__('err_identity_verification_required') || window.__('err_current_password_required'), 'error'); 
             return; 
         }
         
+        const googleBadge = document.querySelector('.google-verify-badge');
+        
         setButtonLoading(btn);
+        if (googleBadge && googleToken) {
+            setButtonLoading(googleBadge);
+        }
+
         const payload = googleToken ? { credential: googleToken, google_token: googleToken } : { current_password: val };
         const result = await this.api.post(ApiRoutes.Settings.VerifyCurrentPassword, payload, this.abortController.signal);
         
         if (result.aborted) return;
         
         restoreButton(btn);
+        if (googleBadge) {
+            restoreButton(googleBadge);
+        }
         
         if (result.success) {
-            document.querySelector('[data-ref="step-1-current-password"]').classList.replace('active', 'disabled');
-            document.querySelector('[data-ref="step-2-new-password"]').classList.replace('disabled', 'active');
-            setTimeout(() => { const nextInput = document.querySelector('[data-ref="cp_new_password"]'); if (nextInput) nextInput.focus(); }, 50);
-        } else showMessage(result.message, 'error');
+            if (googleBadge && googleToken) {
+                googleBadge.classList.add('google-verify-badge--verified');
+                const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+                googleBadge.innerHTML = `
+                    <span class="material-symbols-rounded component-icon-sm">check_circle</span>
+                    <span class="google-verify-text">${__('google_session_verified')}</span>
+                `;
+            }
+            setTimeout(() => {
+                const step1 = document.querySelector('[data-ref="step-1-current-password"]');
+                const step2 = document.querySelector('[data-ref="step-2-new-password"]');
+                if (step1 && step2) {
+                    step1.classList.replace('active', 'disabled');
+                    step2.classList.replace('disabled', 'active');
+                }
+                const nextInput = document.querySelector('[data-ref="cp_new_password"]');
+                if (nextInput) nextInput.focus();
+            }, 300);
+        } else {
+            if (googleTokenInp) { googleTokenInp.value = ''; googleTokenInp.removeAttribute('data-value'); }
+            if (credentialInp) { if ('value' in credentialInp) credentialInp.value = ''; credentialInp.removeAttribute('data-value'); }
+            showMessage(result.message, 'error');
+        }
     }
 
     async updatePassword(btn) {
@@ -151,7 +179,7 @@ class SecurityController {
             const passInput = dialog.data['modal_delete_password'];
             const credential = dialog.data['credential'] || dialog.data['google_token'];
             if (!passInput && !credential) {
-                dialog.failure(window.__('err_password_required'));
+                dialog.failure(window.__('err_identity_verification_required') || window.__('err_password_required'));
                 return;
             }
 

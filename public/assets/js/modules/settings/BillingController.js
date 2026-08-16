@@ -125,7 +125,7 @@ export class BillingController {
         const renewalContainer = this.subscriptionArea.querySelector('[data-ref="sub-renewal-container"]');
         if (renewalContainer) {
             if (data.tier > 0) {
-                renewalContainer.classList.remove('u-hidden');
+                renewalContainer.classList.remove('disabled');
                 let renewText = cancelAtEnd ? (window.__('status_canceled')) : (window.__('status_active'));
                 const renewalDescEl = renewalContainer.querySelector('[data-ref="sub-renewal-desc"]');
                 if (renewalDescEl) {
@@ -146,7 +146,7 @@ export class BillingController {
                     }
                 }
             } else {
-                renewalContainer.classList.add('u-hidden');
+                renewalContainer.classList.add('disabled');
             }
         }
 
@@ -176,9 +176,9 @@ export class BillingController {
         const tokensDivider = this.subscriptionArea.querySelector('[data-ref="sub-tokens-divider"]');
 
         if (tokensContainer) {
-            if (tokens.has_feature || tokens.max_tokens > 0) {
-                if (tokensDivider) tokensDivider.classList.remove('u-hidden');
-                tokensContainer.classList.remove('u-hidden');
+            if (tokens.has_feature && tokens.max_tokens > 0) {
+                if (tokensDivider) tokensDivider.classList.remove('disabled');
+                tokensContainer.classList.remove('disabled');
 
                 const usedTok = tokens.used_tokens || 0;
                 const maxTok = tokens.max_tokens || 5000;
@@ -211,8 +211,8 @@ export class BillingController {
                     tokensProgressFill.style.width = `${tokPercentage}%`;
                 }
             } else {
-                if (tokensDivider) tokensDivider.classList.add('u-hidden');
-                tokensContainer.classList.add('u-hidden');
+                if (tokensDivider) tokensDivider.classList.add('disabled');
+                tokensContainer.classList.add('disabled');
             }
         }
     }

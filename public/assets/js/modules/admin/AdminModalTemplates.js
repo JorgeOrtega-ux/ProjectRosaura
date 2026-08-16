@@ -90,14 +90,14 @@ export const AdminModalTemplates = {
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
                     <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('lbl_adjust_coins_title', [], 'Ajustar Saldo de Monedas')}</h2>
-                        <p class="component-modal-desc">${__('lbl_adjust_coins_desc', { username }, 'Bonificar o ajustar monedas para el usuario')} <b>${username}</b>.</p>
+                        <h2 class="component-modal-title">${__('lbl_adjust_coins_title')}</h2>
+                        <p class="component-modal-desc">${__('lbl_adjust_coins_desc', { username })} <b>${username}</b>.</p>
                     </div>
                 </div>
 
                 <div class="component-modal-body" data-ref="admin-adjust-coins-form" data-user-uuid="${userUuid}">
                     <div class="component-input-group">
-                        <label class="component-input-label component-input-label--static">${__('lbl_coins_amount', [], 'Cantidad de Monedas')}</label>
+                        <label class="component-input-label component-input-label--static">${__('lbl_coins_amount')}</label>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-inline-control component-inline-control--fixed">
                                 <div class="component-inline-control__group">
@@ -114,44 +114,44 @@ export const AdminModalTemplates = {
                     </div>
 
                     <div class="component-input-group">
-                        <label class="component-input-label component-input-label--static">${__('lbl_reason', [], 'Motivo del Ajuste')}</label>
+                        <label class="component-input-label component-input-label--static">${__('lbl_reason')}</label>
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
                             <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownAdjustCoinsReason">
                                 <span class="material-symbols-rounded">category</span>
-                                <span class="component-dropdown-text" data-ref="adjust-coins-reason-text" data-value="${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}">${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}</span>
+                                <span class="component-dropdown-text" data-ref="adjust-coins-reason-text" data-value="${__('lbl_coin_reason_comp')}">${__('lbl_coin_reason_comp')}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
                             <div class="component-module component-module--dropdown disabled" data-module="dropdownAdjustCoinsReason">
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
-                                        <div class="component-menu-link active" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}">
+                                        <div class="component-menu-link active" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_comp')}">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">build</span></div>
-                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_comp', [], 'Compensación por incidencia')}</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_comp')}</span></div>
                                         </div>
-                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_bonus', [], 'Bonificación / Cortesía')}">
+                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_bonus')}">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">featured_seasonal_and_gifts</span></div>
-                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_bonus', [], 'Bonificación / Cortesía')}</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_bonus')}</span></div>
                                         </div>
-                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_refund', [], 'Reembolso de compra')}">
+                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_refund')}">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">currency_exchange</span></div>
-                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_refund', [], 'Reembolso de compra')}</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_refund')}</span></div>
                                         </div>
-                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_promo', [], 'Premio / Evento especial')}">
+                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_promo')}">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">celebration</span></div>
-                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_promo', [], 'Premio / Evento especial')}</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_promo')}</span></div>
                                         </div>
-                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_adjust', [], 'Corrección de saldo')}">
+                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_adjust')}">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">tune</span></div>
-                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_adjust', [], 'Corrección de saldo')}</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_adjust')}</span></div>
                                         </div>
-                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_penalty', [], 'Deducción por infracción')}">
+                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_penalty')}">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
-                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_penalty', [], 'Deducción por infracción')}</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_penalty')}</span></div>
                                         </div>
-                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_other', [], 'Otro motivo administrativo')}">
+                                        <div class="component-menu-link" data-action="selectCoinsReason" data-val="${__('lbl_coin_reason_other')}">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
-                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_other', [], 'Otro motivo administrativo')}</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_coin_reason_other')}</span></div>
                                         </div>
                                     </div>
                                 </div>
@@ -177,21 +177,21 @@ export const AdminModalTemplates = {
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
                     <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('lbl_disable_2fa_title', [], 'Desactivar Autenticación 2FA')}</h2>
-                        <p class="component-modal-desc">${__('lbl_disable_2fa_desc', [], 'Esta acción removerá el 2FA de')} <b>${username}</b>. ${__('lbl_action_audited', [], 'Quedará registrada en auditoría.')}</p>
+                        <h2 class="component-modal-title">${__('lbl_disable_2fa_title')}</h2>
+                        <p class="component-modal-desc">${__('lbl_disable_2fa_desc')} <b>${username}</b>. ${__('lbl_action_audited')}</p>
                     </div>
                 </div>
 
                 <div class="component-modal-body" data-ref="admin-disable-2fa-form" data-user-uuid="${userUuid}">
                     <div class="component-input-group">
                         <textarea class="component-input-field" name="reason" placeholder=" " rows="3" required></textarea>
-                        <label class="component-input-label">${__('lbl_audit_reason', [], 'Motivo de Auditoría (Obligatorio)')}</label>
+                        <label class="component-input-label">${__('lbl_audit_reason')}</label>
                     </div>
                 </div>
 
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="${data.actionTarget || 'submitDisable2FA'}">${__('btn_disable_2fa', [], 'Desactivar 2FA')}</button>
+                    <button class="component-button component-button--h40 component-button--dark" data-action="${data.actionTarget || 'submitDisable2FA'}">${__('btn_disable_2fa')}</button>
                 </div>
             `;
         }
@@ -199,9 +199,9 @@ export const AdminModalTemplates = {
     confirmUserAdminActionModal: {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const title = data.title || __('title_confirm_action', [], 'Confirmar Acción');
+            const title = data.title || __('title_confirm_action');
             const desc = data.desc || '';
-            const confirmText = data.confirmText || __('btn_confirm', [], 'Confirmar');
+            const confirmText = data.confirmText || __('btn_confirm');
             const confirmClass = data.confirmClass || 'component-button--dark';
             const actionTarget = data.actionTarget || 'submitConfirmUserAdminAction';
             const userUuid = data.userUuid || '';
@@ -215,10 +215,10 @@ export const AdminModalTemplates = {
                     </div>
                 </div>
 
-                <div class="component-modal-body" data-ref="admin-confirm-user-admin-action-body" data-user-uuid="${userUuid}" data-action-type="${data.actionType || ''}" style="display:none;"></div>
+                <div class="component-modal-body disabled" data-ref="admin-confirm-user-admin-action-body" data-user-uuid="${userUuid}" data-action-type="${data.actionType || ''}"></div>
 
                 <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [], 'Cancelar')}</button>
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
                     <button class="component-button component-button--h40 ${confirmClass}" data-action="${actionTarget}">${confirmText}</button>
                 </div>
             `;

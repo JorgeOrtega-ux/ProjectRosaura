@@ -143,7 +143,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                     <thead>
                         <tr>
                             <th><?php echo __('table_header_canvas_name'); ?></th>
-                            <th>Rol</th>
+                            <th><?php echo __('table_header_role'); ?></th>
                             <th><?php echo __('table_header_privacy'); ?></th>
                             <th><?php echo __('table_header_size'); ?></th>
                             <th><?php echo __('table_header_limit'); ?></th>
@@ -170,11 +170,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                     <td>
                                         <?php if ($isOwner): ?>
                                             <div class="component-badge component-badge--sm component-badge--primary">
-                                                <span>Propietario</span>
+                                                <span><?php echo __('role_owner'); ?></span>
                                             </div>
                                         <?php else: ?>
                                             <div class="component-badge component-badge--sm component-badge--secondary">
-                                                <span><?php echo htmlspecialchars($canvas['user_role_name'] ?? 'Colaborador'); ?></span>
+                                                <span><?php echo htmlspecialchars(!empty($canvas['user_role_name']) ? $canvas['user_role_name'] : __('lbl_collaborator')); ?></span>
                                             </div>
                                         <?php endif; ?>
                                     </td>

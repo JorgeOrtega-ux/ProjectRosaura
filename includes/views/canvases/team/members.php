@@ -51,6 +51,7 @@ extract($membersData);
                                 <span class="material-symbols-rounded">chevron_left</span>
                             </button>
                         </div>
+                        <div class="component-inline-control__center"><?php echo $page; ?></div>
                         <div class="component-inline-control__group">
                             <button class="component-inline-control__btn <?php echo $page >= $totalPages ? 'disabled-interaction' : ''; ?>" <?php echo $page < $totalPages ? 'data-nav="'.$nextPageUrl.'"' : ''; ?>>
                                 <span class="material-symbols-rounded">chevron_right</span>

@@ -57,9 +57,9 @@ extract($invitesData);
                                 <?php 
                                     $isExpired = $invite['expires_at'] && strtotime($invite['expires_at']) <= time();
                                     $isMaxed = $invite['max_uses'] !== null && $invite['uses_count'] >= $invite['max_uses'];
-                                    $statusClass = ($isExpired || $isMaxed) ? 'text-gray-500' : 'text-green-500';
+                                    $statusClass = ($isExpired || $isMaxed) ? 'component-badge--muted' : 'component-badge--success';
                                 ?>
-                                <tr class="component-table-row <?php echo ($isExpired || $isMaxed) ? 'opacity-50' : ''; ?>" data-action="selectInvite" data-invite-id="<?php echo htmlspecialchars($invite['id']); ?>" data-invite-code="<?php echo htmlspecialchars($invite['code']); ?>">
+                                <tr class="component-table-row <?php echo ($isExpired || $isMaxed) ? 'disabled' : ''; ?>" data-action="selectInvite" data-invite-id="<?php echo htmlspecialchars($invite['id']); ?>" data-invite-code="<?php echo htmlspecialchars($invite['code']); ?>">
                                     <td>
                                         <div class="component-badge component-badge--sm">
                                             <span class="material-symbols-rounded">key</span>
@@ -75,7 +75,7 @@ extract($invitesData);
                                     <td>
                                         <div class="component-badge component-badge--sm">
                                             <span class="material-symbols-rounded">group</span>
-                                            <span><?php echo $invite['uses_count']; ?> / <?php echo $invite['max_uses'] ?? 'âˆž'; ?></span>
+                                            <span><?php echo $invite['uses_count']; ?> / <?php echo $invite['max_uses'] ?? '∞'; ?></span>
                                         </div>
                                     </td>
                                     <td>

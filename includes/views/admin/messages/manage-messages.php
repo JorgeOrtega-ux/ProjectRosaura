@@ -34,7 +34,7 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
             <div class="component-top-right">
                 <div class="component-actions disabled" data-ref="header-selection-actions">
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
-                        <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleMessageVisibility" data-ref="btn-toggle-visibility" data-tooltip="<?php echo __('admin_visibility_tooltip', [], 'Cambiar visibilidad'); ?>" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleMessageVisibility" data-ref="btn-toggle-visibility" data-tooltip="<?php echo __('admin_visibility_tooltip'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">visibility</span>
                         </button>
                         
@@ -43,21 +43,21 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-header">
                                     <div class="component-menu-header-box">
-                                        <span class="component-menu-header-title"><?php echo __('lbl_visibility', [], 'Visibilidad'); ?></span>
+                                        <span class="component-menu-header-title"><?php echo __('lbl_visibility'); ?></span>
                                     </div>
                                 </div>
                                 <div class="component-menu-list">
                                     <div class="component-menu-link component-menu-link--bordered" data-action="changeMessageVisibility" data-value="visible" data-ref="vis-option-visible">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">check_circle</span></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('msg_visibility_visible', [], 'Visible'); ?></span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('msg_visibility_visible'); ?></span></div>
                                     </div>
                                     <div class="component-menu-link component-menu-link--bordered" data-action="changeMessageVisibility" data-value="under_review" data-ref="vis-option-under_review">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">pending</span></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('msg_visibility_under_review', [], 'En revisión'); ?></span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('msg_visibility_under_review'); ?></span></div>
                                     </div>
                                     <div class="component-menu-link component-menu-link--bordered" data-action="changeMessageVisibility" data-value="deleted" data-ref="vis-option-deleted">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('msg_visibility_deleted', [], 'Eliminado'); ?></span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('msg_visibility_deleted'); ?></span></div>
                                     </div>
                                 </div>
                             </div>

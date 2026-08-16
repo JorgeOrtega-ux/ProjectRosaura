@@ -29,12 +29,12 @@ if ($isEdit && !empty($package)) {
     
     <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title"><?php echo $isEdit ? 'Editar Paquete' : 'Crear Paquete'; ?></h1>
+            <h1 class="component-top-title"><?php echo $isEdit ? __('admin_store_edit_package') : __('admin_store_create_package'); ?></h1>
         </div>
         <div class="component-top-right">
-            <button type="button" class="component-button component-button--h40" data-action="savePackage" data-tooltip="<?php echo __('btn_save') ?: 'Guardar'; ?>" data-position="bottom">
+            <button type="button" class="component-button component-button--h40" data-action="savePackage" data-tooltip="<?php echo __('btn_save'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">save</span>
-                <span><?php echo __('btn_save') ?: 'Guardar'; ?></span>
+                <span><?php echo __('btn_save'); ?></span>
             </button>
         </div>
     </div>
@@ -143,11 +143,11 @@ if ($isEdit && !empty($package)) {
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title">Stripe Price ID</h2>
-                                            <span class="component-display-value" data-ref="display-pkg-stripe"><?php echo htmlspecialchars($pkgData['stripe_price_id']) ?: 'Sin configurar'; ?></span>
+                                            <span class="component-display-value" data-ref="display-pkg-stripe"><?php echo !empty($pkgData['stripe_price_id']) ? htmlspecialchars($pkgData['stripe_price_id']) : __('lbl_unconfigured'); ?></span>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="pkg-stripe">Editar</button>
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="pkg-stripe"><?php echo __('btn_edit'); ?></button>
                                     </div>
                                 </div>
                                 <div class="disabled component-state-box" data-state="pkg-stripe-edit">

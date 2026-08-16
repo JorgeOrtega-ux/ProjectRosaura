@@ -323,7 +323,7 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                                     <span class="component-dropdown-text" data-ref="admin-lang-text"><?php echo htmlspecialchars($langMap[$prefs['language']] ?? $prefs['language']); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
-                                <div class="component-module component-module--dropdown disabled bs-initialized" data-module="adminModuleLanguage">
+                                <div class="component-module component-module--dropdown disabled" data-module="adminModuleLanguage">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-header">

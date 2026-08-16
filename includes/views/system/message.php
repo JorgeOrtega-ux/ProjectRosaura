@@ -36,8 +36,8 @@ switch ($type) {
         http_response_code(403);
         $config = [
             'icon' => 'gavel',
-            'title' => __('canvas_banned_title') ?: 'Acceso Restringido',
-            'desc' => __('err_user_banned_from_canvas') ?: 'Has sido suspendido/baneado de este lienzo por un administrador.'
+            'title' => __('canvas_banned_title'),
+            'desc' => __('err_user_banned_from_canvas')
         ];
         break;
 

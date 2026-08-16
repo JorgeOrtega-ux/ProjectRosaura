@@ -27,12 +27,12 @@ if ($isEdit && !empty($perk)) {
     
     <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title"><?php echo $isEdit ? (__('admin_store_edit_perk') ?: 'Editar Ventaja') : (__('admin_store_create_perk') ?: 'Crear Ventaja'); ?></h1>
+            <h1 class="component-top-title"><?php echo $isEdit ? __('admin_store_edit_perk') : __('admin_store_create_perk'); ?></h1>
         </div>
         <div class="component-top-right">
-            <button type="button" class="component-button component-button--h40" data-action="savePerk" data-tooltip="<?php echo __('btn_save') ?: 'Guardar'; ?>" data-position="bottom">
+            <button type="button" class="component-button component-button--h40" data-action="savePerk" data-tooltip="<?php echo __('btn_save'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">save</span>
-                <span><?php echo __('btn_save') ?: 'Guardar'; ?></span>
+                <span><?php echo __('btn_save'); ?></span>
             </button>
         </div>
     </div>
@@ -49,8 +49,8 @@ if ($isEdit && !empty($perk)) {
                                 <span class="material-symbols-rounded">auto_awesome</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('lbl_perk_details') ?: 'Detalles de la Ventaja'; ?></h2>
-                                <p class="component-card__description"><?php echo __('desc_perk_details') ?: 'Configura el ID de backend, precio, claves de traducción e íconos.'; ?></p>
+                                <h2 class="component-card__title"><?php echo __('lbl_perk_details'); ?></h2>
+                                <p class="component-card__description"><?php echo __('desc_perk_details'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -66,7 +66,7 @@ if ($isEdit && !empty($perk)) {
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title"><?php echo __('lbl_perk_backend_id'); ?></h2>
-                                            <span class="component-display-value" data-ref="display-perk-id"><?php echo htmlspecialchars($perkData['perk_id']) ?: __('lbl_not_configured'); ?></span>
+                                            <span class="component-display-value" data-ref="display-perk-id"><?php echo !empty($perkData['perk_id']) ? htmlspecialchars($perkData['perk_id']) : __('lbl_not_configured'); ?></span>
                                             <?php if ($isEdit): ?>
                                                 <p class="component-card__description">
                                                     <span class="material-symbols-rounded">warning</span>
@@ -76,20 +76,20 @@ if ($isEdit && !empty($perk)) {
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-id"><?php echo __('btn_edit') ?: 'Editar'; ?></button>
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-id"><?php echo __('btn_edit'); ?></button>
                                     </div>
                                 </div>
                                 <div class="disabled component-state-box" data-state="perk-id-edit">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('lbl_perk_backend_id') ?: 'Identificador de Backend (Perk ID)'; ?></h2>
+                                            <h2 class="component-card__title"><?php echo __('lbl_perk_backend_id'); ?></h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
                                                     <input type="text" data-ref="input-perk-id" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($perkData['perk_id']); ?>" data-original-value="<?php echo htmlspecialchars($perkData['perk_id']); ?>" placeholder="e.g. pixel_shield_1">
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
-                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-id"><?php echo __('btn_cancel') ?: 'Cancelar'; ?></button>
-                                                    <button type="button" class="component-button component-button--h34" data-action="applyInlineSetting" data-field="perk-id"><?php echo __('btn_save') ?: 'Guardar'; ?></button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="perk-id"><?php echo __('btn_cancel'); ?></button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="applyInlineSetting" data-field="perk-id"><?php echo __('btn_save'); ?></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -103,8 +103,8 @@ if ($isEdit && !empty($perk)) {
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('lbl_perk_price') ?: 'Precio (Monedas)'; ?></h2>
-                                        <p class="component-card__description"><?php echo __('desc_perk_price') ?: 'El costo en monedas para comprar esta ventaja.'; ?></p>
+                                        <h2 class="component-card__title"><?php echo __('lbl_perk_price'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('desc_perk_price'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">

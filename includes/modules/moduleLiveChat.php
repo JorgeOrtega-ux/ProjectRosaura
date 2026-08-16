@@ -27,7 +27,7 @@ $maxMB = $maxUploadMB ?? 10;
                             <div class="component-menu component-menu--w200 component-menu--h-auto active" data-menu="chat-options-list">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list">
-                                    <div class="component-menu-link text-danger" data-action="deactivateChatOption">
+                                    <div class="component-menu-link component-menu-link--danger" data-action="deactivateChatOption">
                                         <div class="component-menu-link-icon">
                                             <span class="material-symbols-rounded">chat_bubble_outline</span>
                                         </div>

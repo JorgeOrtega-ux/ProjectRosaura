@@ -825,7 +825,7 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_user_not_found')];
             }
             if (!\App\Core\Helpers\Utils::verifyUserIdentity($user, ['password' => $password, 'credential' => $credential])) {
-                return ['success' => false, 'message' => __('err_invalid_password')];
+                return ['success' => false, 'message' => !empty($credential) ? __('auth.google_verification_failed') : __('err_invalid_password')];
             }
 
             $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
@@ -956,7 +956,7 @@ class CanvasCoreService {
             if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
 
             if (!\App\Core\Helpers\Utils::verifyUserIdentity($user, ['password' => $password, 'credential' => $credential])) {
-                return ['success' => false, 'message' => __('err_invalid_password')];
+                return ['success' => false, 'message' => !empty($credential) ? __('auth.google_verification_failed') : __('err_invalid_password')];
             }
 
             $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
@@ -1018,7 +1018,7 @@ class CanvasCoreService {
             if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
 
             if (!\App\Core\Helpers\Utils::verifyUserIdentity($user, ['password' => $password, 'credential' => $credential])) {
-                return ['success' => false, 'message' => __('err_invalid_password')];
+                return ['success' => false, 'message' => !empty($credential) ? __('auth.google_verification_failed') : __('err_invalid_password')];
             }
 
             $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);

@@ -93,7 +93,7 @@ export class PreferenceManager {
                     password = (res.data && res.data.confirmSecPasswordInput) || res.confirmSecPasswordInput || '';
                     googleCredential = (res.data && (res.data.credential || res.data.google_token)) || '';
                     if (!password && !googleCredential) {
-                        this.showToast(window.__('auth_incorrect_password'), 'error');
+                        this.showToast(window.__('err_identity_verification_required') || window.__('auth_incorrect_password'), 'error');
                         return;
                     }
                 } else {

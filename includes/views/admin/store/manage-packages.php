@@ -26,7 +26,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('store_coins_title') ?: 'Paquetes de Monedas'; ?></h1>
+                <h1 class="component-top-title"><?php echo __('store_coins_title'); ?></h1>
             </div>
             <div class="component-top-right">
                 <div class="component-actions disabled" data-ref="package-selection-actions">
@@ -49,7 +49,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
                     </button>
                     
                     <?php if ($canManageStore): ?>
-                    <button class="component-button component-button--icon component-button--h40" data-action="addPackage" data-tooltip="Nuevo Paquete" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="addPackage" data-tooltip="<?php echo __('btn_add_package'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">add</span>
                     </button>
                     <?php endif; ?>
@@ -76,7 +76,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="package-search-input" placeholder="Buscar paquete..." value="<?php echo htmlspecialchars($searchQuery); ?>">
+                        <input type="text" data-ref="package-search-input" placeholder="<?php echo __('search_packages_placeholder'); ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
                     </div>
                 </div>
             </div>
@@ -88,16 +88,16 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
                 <table class="component-table">
                     <thead>
                         <tr>
-                            <th>Nombre del Paquete</th>
-                            <th data-width="120">Cantidad</th>
-                            <th data-width="120">Precio (USD)</th>
-                            <th data-width="140">Visibilidad</th>
+                            <th><?php echo __('th_package'); ?></th>
+                            <th data-width="120"><?php echo __('th_amount'); ?></th>
+                            <th data-width="120"><?php echo __('th_price'); ?></th>
+                            <th data-width="140"><?php echo __('lbl_visibility'); ?></th>
                         </tr>
                     </thead>
                     <tbody data-ref="packages-table-body">
                         <?php foreach ($packages as $pkg): 
-                            $rawName = __($pkg['name']) ?: $pkg['name'];
-                            $icon = $pkg['icon'] ?: 'monetization_on';
+                            $rawName = __($pkg['name']);
+                            $icon = !empty($pkg['icon']) ? $pkg['icon'] : 'monetization_on';
                         ?>
                         <tr class="component-table-row clickable" 
                             data-action="selectPackageRow" 
@@ -128,12 +128,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
                                 <?php if ($pkg['is_active']): ?>
                                     <div class="component-badge component-badge--sm component-badge--success">
                                         <span class="material-symbols-rounded component-icon-sm">check_circle</span>
-                                        <span><?php echo __('admin_tier_status_active') ?: 'Activa'; ?></span>
+                                        <span><?php echo __('admin_tier_status_active'); ?></span>
                                     </div>
                                 <?php else: ?>
                                     <div class="component-badge component-badge--sm component-badge--danger">
                                         <span class="material-symbols-rounded component-icon-sm">cancel</span>
-                                        <span><?php echo __('admin_tier_status_inactive') ?: 'Inactiva'; ?></span>
+                                        <span><?php echo __('admin_tier_status_inactive'); ?></span>
                                     </div>
                                 <?php endif; ?>
                             </td>
@@ -144,7 +144,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
                             <td colspan="4" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                    <p class="component-empty-state-text">No se encontraron resultados</p>
+                                    <p class="component-empty-state-text"><?php echo __('lbl_no_results_found'); ?></p>
                                 </div>
                             </td>
                         </tr>
@@ -153,9 +153,8 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
             </div>
             <?php else: ?>
             <div class="component-empty-state" data-ref="packages-empty-state">
-                <span class="material-symbols-rounded empty-icon">storefront</span>
-                <h3>No hay paquetes creados</h3>
-                <p>Crea el primer paquete de monedas para tu tienda.</p>
+                <span class="material-symbols-rounded component-empty-state-icon">storefront</span>
+                <p class="component-empty-state-text"><?php echo __('store_coins_empty'); ?></p>
             </div>
             <?php endif; ?>
         </div>

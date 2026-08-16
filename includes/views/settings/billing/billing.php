@@ -28,7 +28,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 <span class="material-symbols-rounded">stars</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('subscription_details_title') ?: 'Plan y Almacenamiento'; ?></h2>
+                                <h2 class="component-card__title"><?php echo __('subscription_details_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('subscription_details_desc'); ?></p>
                             </div>
                         </div>
@@ -59,7 +59,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
 
                             <!-- Renovación Automática -->
-                            <div data-ref="sub-renewal-container">
+                            <div data-ref="sub-renewal-container" class="disabled">
                                 <hr class="component-divider">
                                 <div class="component-group-item">
                                     <div class="component-card__content">
@@ -97,10 +97,10 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 </div>
                             </div>
 
-                            <hr class="component-divider" data-ref="sub-tokens-divider">
+                            <hr class="component-divider disabled" data-ref="sub-tokens-divider">
 
                             <!-- Uso de Tokens de Inyección de Plantillas -->
-                            <div class="component-group-item component-group-item--stacked" data-ref="sub-tokens-container">
+                            <div class="component-group-item component-group-item--stacked disabled" data-ref="sub-tokens-container">
                                 <div>
                                     <div class="component-card__content">
                                         <div class="component-card__text">

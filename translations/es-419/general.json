@@ -270,6 +270,7 @@
     "err_email_required": "Por favor ingresa tu correo.",
     "err_password_mismatch": "Las contraseñas no coinciden.",
     "err_current_password_required": "Ingresa tu contraseña actual.",
+    "err_identity_verification_required": "Debes verificar tu identidad antes de continuar.",
     "err_file_size_mb": "La imagen no debe superar los :sizeMB.",
     "err_file_type_img": "Solo se permiten imágenes en formato PNG o JPG.",
     "err_code_6_digits": "El código debe tener 6 dígitos.",
@@ -1189,6 +1190,8 @@
     "error.too_many_attempts": "Demasiados intentos. Intenta más tarde.",
     "lbl_data": "Datos",
     "auth.incorrect_password": "Contraseña incorrecta.",
+    "auth.identity_verification_failed": "No se pudo verificar tu identidad.",
+    "auth.google_verification_failed": "La cuenta de Google no coincide con el usuario activo.",
     "admin_role_name": "Nombre del Rol",
     "canvas_size_title": "Tamaño del Lienzo",
     "lbl_code": "Código",
@@ -1943,6 +1946,14 @@
     "btn_back_to_tickets": "Volver a tickets",
     "btn_ai_improve": "✨ Mejorar",
     "lbl_ai_processing": "Procesando...",
-    "err_ai_unavailable": "⚠ IA no disponible"
+    "err_ai_unavailable": "⚠ IA no disponible",
+    "lbl_disable_2fa_title": "Desactivar Autenticación 2FA",
+    "lbl_disable_2fa_desc": "Esta acción removerá el 2FA de",
+    "lbl_action_audited": "Quedará registrada en auditoría.",
+    "lbl_audit_reason": "Motivo de Auditoría (Obligatorio)",
+    "title_confirm_action": "Confirmar Acción",
+    "upgrade_show_all_features": "Mostrar todos los beneficios",
+    "upgrade_hide_features": "Ocultar beneficios",
+    "lbl_collaborator": "Colaborador"
 }
 

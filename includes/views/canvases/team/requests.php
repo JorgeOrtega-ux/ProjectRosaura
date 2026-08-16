@@ -23,13 +23,12 @@ extract($reqData);
             </div>
             
             <div class="component-top-right">
-                
                 <div class="component-actions disabled" data-ref="header-selection-actions">
                     <button class="component-button component-button--icon component-button--h40" data-action="approveSelectedRequests" data-tooltip="<?php echo __('tooltip_approve_request'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">check_circle</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="rejectSelectedRequests" data-tooltip="<?php echo __('tooltip_reject_request'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="rejectSelectedRequests" data-tooltip="<?php echo __('tooltip_reject_request'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">cancel</span>
                     </button>
                 </div>
@@ -61,21 +60,25 @@ extract($reqData);
                             </tr>
                         <?php else: ?>
                             <?php foreach ($pendingRequests as $req): ?>
-                                <tr data-request-id="<?php echo htmlspecialchars($req['id']); ?>">
+                                <tr class="component-table-row clickable" data-action="selectRequest" data-request-id="<?php echo htmlspecialchars($req['id']); ?>">
                                     <td>
-                                        <div>
-                                            <span data-user-id="<?php echo htmlspecialchars($req['user_id']); ?>">
-                                                <?php echo __('lbl_user'); ?> #<?php echo htmlspecialchars($req['user_id']); ?>
-                                            </span>
+                                        <div class="td-user-info">
+                                            <div class="component-badge component-badge--sm">
+                                                <span class="material-symbols-rounded">person</span>
+                                                <span><?php echo !empty($req['username']) ? htmlspecialchars($req['username']) : __('lbl_user') . ' #' . htmlspecialchars($req['user_id']); ?></span>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($req['created_at']))); ?></td>
                                     <td>
-                                        <div>
-                                            <span class="status-badge">
-                                                <?php echo __('status_pending'); ?>
-                                            </span>
-                                            <input type="checkbox" class="request-checkbox" value="<?php echo htmlspecialchars($req['id']); ?>">
+                                        <div class="component-badge component-badge--sm">
+                                            <span class="material-symbols-rounded">calendar_today</span>
+                                            <span><?php echo htmlspecialchars(date('d/m/Y', strtotime($req['created_at']))); ?></span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="component-badge component-badge--sm component-badge--warning">
+                                            <span class="material-symbols-rounded">pending</span>
+                                            <span><?php echo __('status_pending'); ?></span>
                                         </div>
                                     </td>
                                 </tr>

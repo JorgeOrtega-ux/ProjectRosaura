@@ -466,7 +466,11 @@ class SettingsServices
             return ['success' => true, 'message' => __('settings.identity_verified')];
         }
 
-        return ['success' => false, 'message' => __('auth.incorrect_password')];
+        $isGoogle = !empty($data['credential']) || !empty($data['google_token']);
+        return [
+            'success' => false, 
+            'message' => $isGoogle ? __('auth.google_verification_failed') : __('auth.incorrect_password')
+        ];
     }
 
     public function updatePassword($data)

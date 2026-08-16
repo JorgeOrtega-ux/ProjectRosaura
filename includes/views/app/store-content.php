@@ -37,8 +37,8 @@ $contentPackages = $viewService->getStoreContentData();
                 <table class="component-table">
                     <thead>
                         <tr>
-                            <th><?php echo __('th_item') ?: 'Ítem / Ventaja'; ?></th>
-                            <th><?php echo __('th_description') ?: 'Descripción'; ?></th>
+                            <th><?php echo __('th_item'); ?></th>
+                            <th><?php echo __('th_description'); ?></th>
                             <th><?php echo __('th_price'); ?></th>
                         </tr>
                     </thead>

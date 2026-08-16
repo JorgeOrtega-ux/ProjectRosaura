@@ -71,7 +71,7 @@ extract($accountData);
                                     if ($roleLower !== 'user' && $roleLower !== 'usuario') {
                                         $showRole = true;
                                         $roleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', $roleLower);
-                                        $translatedRole = __($roleKey, [], $userRoleName);
+                                        $translatedRole = __($roleKey);
                                     }
                                 }
                                 ?>

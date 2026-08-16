@@ -600,9 +600,9 @@ export const DesignTemplates = {
         const hasLockedTemplate = this.templates && this.templates.some(t => t.locked);
         if (btnTopUnlock) {
             if (hasLockedTemplate) {
-                btnTopUnlock.classList.remove('disabled', 'u-hidden');
+                btnTopUnlock.classList.remove('disabled');
             } else {
-                btnTopUnlock.classList.add('disabled', 'u-hidden');
+                btnTopUnlock.classList.add('disabled');
             }
         }
 
@@ -668,14 +668,14 @@ export const DesignTemplates = {
 
         // Hide floating toolbar while user is actively moving, resizing, panning, or zooming
         if (!this.activeTemplateId || !this.templates || isLockedState || this.templateInteraction || this.isDragging || this.isZooming) {
-            toolbarEl.classList.add('u-hidden');
+            toolbarEl.classList.add('disabled');
             toolbarEl.classList.remove('active');
             return;
         }
 
         const tpl = this.templates.find(t => t.id === this.activeTemplateId);
         if (!tpl || tpl.locked || !this.canvas || !this.transform) {
-            toolbarEl.classList.add('u-hidden');
+            toolbarEl.classList.add('disabled');
             toolbarEl.classList.remove('active');
             return;
         }
@@ -699,7 +699,7 @@ export const DesignTemplates = {
         toolbarEl.style.left = `${Math.round(leftPx)}px`;
         toolbarEl.style.top = `${Math.round(topPx)}px`;
         toolbarEl.style.transform = 'translate(-50%, -100%)';
-        toolbarEl.classList.remove('u-hidden');
+        toolbarEl.classList.remove('disabled');
         toolbarEl.classList.add('active');
     },
 

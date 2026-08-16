@@ -32,7 +32,13 @@ export class ToastSystem {
         if (type === 'warning') iconName = 'warning';
         if (type === 'info')    iconName = 'info';
 
-        toast.innerHTML = `<div class="component-toast-icon"><span class="material-symbols-rounded">${iconName}</span></div><div class="component-toast-text">${message}</div>`;
+        let displayText = message;
+        if (typeof window.__ === 'function' && typeof message === 'string' && message.trim() !== '') {
+            const translated = window.__(message);
+            if (translated) displayText = translated;
+        }
+
+        toast.innerHTML = `<div class="component-toast-icon"><span class="material-symbols-rounded">${iconName}</span></div><div class="component-toast-text">${displayText}</div>`;
 
         container.appendChild(toast);
         void toast.offsetHeight;

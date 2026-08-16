@@ -36,12 +36,6 @@ $parseSubscriptionColor = function($subColorRaw) {
 };
 ?>
 
-<style>
-    .component-module[data-module="moduleMainOptions"] .component-avatar::before {
-        top: -2px !important; left: -2px !important; right: -2px !important; bottom: -2px !important;
-    }
-</style>
-
 <div class="component-module component-module--dropdown disabled" data-module="moduleMainOptions">
     <div class="component-menu component-menu--w265 component-menu--h-auto active" data-menu="main-options">
         <div class="pill-container"><div class="drag-handle"></div></div>
@@ -71,7 +65,7 @@ $parseSubscriptionColor = function($subColorRaw) {
                             if ($roleLower !== 'user' && $roleLower !== 'usuario') {
                                 $showRole = true;
                                 $roleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', $roleLower);
-                                $translatedRole = __($roleKey, [], $roleName);
+                                $translatedRole = __($roleKey);
                             }
                         }
                         ?>
@@ -169,7 +163,7 @@ $parseSubscriptionColor = function($subColorRaw) {
                             if ($accRoleLower !== 'user' && $accRoleLower !== 'usuario') {
                                 $accShowRole = true;
                                 $accRoleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', $accRoleLower);
-                                $accTranslatedRole = __($accRoleKey, [], $accRoleName);
+                                $accTranslatedRole = __($accRoleKey);
                             }
                         }
                         ?>

@@ -23,47 +23,47 @@ $rolePermissionsIds = $rolePermissions;
 
 $categories = [
     'users' => [
-        'title' => __('perm_cat_users', [], 'Usuarios'),
+        'title' => __('perm_cat_users'),
         'icon' => 'group',
         'perms' => ['view_users', 'edit_users', 'moderate_users', 'delete_users', 'view_kardex', 'manage_kardex', 'view_user_purchases']
     ],
     'roles' => [
-        'title' => __('perm_cat_roles', [], 'Roles'),
+        'title' => __('perm_cat_roles'),
         'icon' => 'admin_panel_settings',
         'perms' => ['view_roles', 'manage_roles_structure', 'assign_roles']
     ],
     'subscriptions' => [
-        'title' => __('perm_cat_subscriptions', [], 'Suscripciones'),
+        'title' => __('perm_cat_subscriptions'),
         'icon' => 'workspace_premium',
         'perms' => ['manage_subscriptions']
     ],
     'store' => [
-        'title' => __('perm_cat_store', [], 'Tienda'),
+        'title' => __('perm_cat_store'),
         'icon' => 'storefront',
         'perms' => ['manage_store_packages', 'manage_store_perks']
     ],
     'content' => [
-        'title' => __('perm_cat_content', [], 'Contenido'),
+        'title' => __('perm_cat_content'),
         'icon' => 'chat',
         'perms' => ['manage_content']
     ],
     'canvases' => [
-        'title' => __('perm_cat_canvases', [], 'Lienzos'),
+        'title' => __('perm_cat_canvases'),
         'icon' => 'palette',
         'perms' => ['create_canvas', 'manage_canvases', 'join_canvas']
     ],
     'backups' => [
-        'title' => __('perm_cat_backups', [], 'Copias de Seguridad'),
+        'title' => __('perm_cat_backups'),
         'icon' => 'backup',
         'perms' => ['create_backups', 'restore_backups', 'delete_backups', 'download_backups']
     ],
     'logs' => [
-        'title' => __('perm_cat_logs', [], 'Registros y Logs'),
+        'title' => __('perm_cat_logs'),
         'icon' => 'history',
         'perms' => ['view_logs', 'delete_logs']
     ],
     'system' => [
-        'title' => __('perm_cat_system', [], 'Sistema'),
+        'title' => __('perm_cat_system'),
         'icon' => 'settings',
         'perms' => ['access_admin_panel', 'view_dashboard', 'manage_server_config', 'perform_system_maintenance']
     ]
@@ -136,8 +136,8 @@ $isSystemRole = (isset($role['is_system']) && (int)$role['is_system'] === 1);
                 <div data-ref="permissions-container" class="component-list">
                     <?php if (empty($allPermissions)): ?>
                         <div class="component-empty-state">
-                            <span class="material-symbols-rounded empty-icon">lock</span>
-                            <h3><?php echo __('admin_perms_empty_title'); ?></h3>
+                            <span class="material-symbols-rounded component-empty-state-icon">lock</span>
+                            <p class="component-empty-state-text"><?php echo __('admin_perms_empty_title'); ?></p>
                         </div>
                     <?php else: ?>
                         <?php foreach ($groupedPermissions as $catKey => $catData): 

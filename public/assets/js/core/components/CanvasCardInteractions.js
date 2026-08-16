@@ -221,7 +221,7 @@ export class CanvasCardInteractions {
             const credential = confirm.data['credential'] || confirm.data['google_token'] || '';
 
             if (!password && !credential) {
-                showMessage(window.__('err_password_required'), 'error');
+                showMessage(window.__('err_identity_verification_required') || window.__('err_password_required'), 'error');
                 return;
             }
 
@@ -341,7 +341,7 @@ export class CanvasCardInteractions {
             const credential = confirmRes.data && (confirmRes.data.credential || confirmRes.data.google_token) ? (confirmRes.data.credential || confirmRes.data.google_token) : '';
 
             if (!password && !credential) {
-                if (typeof showMessage === 'function') showMessage(window.__('err_password_required'), 'error');
+                if (typeof showMessage === 'function') showMessage(window.__('err_identity_verification_required') || window.__('err_password_required'), 'error');
                 return;
             }
 

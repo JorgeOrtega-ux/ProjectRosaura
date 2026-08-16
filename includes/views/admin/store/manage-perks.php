@@ -26,7 +26,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('admin_store_perks_title') ?: 'Tienda de Ventajas (Contenido)'; ?></h1>
+                <h1 class="component-top-title"><?php echo __('admin_store_perks_title'); ?></h1>
             </div>
             <div class="component-top-right">
                 <div class="component-actions disabled" data-ref="perk-selection-actions">
@@ -49,7 +49,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
                     </button>
                     
                     <?php if ($canManageStore): ?>
-                    <button class="component-button component-button--icon component-button--h40" data-action="addPerk" data-tooltip="<?php echo __('admin_store_new_perk') ?: 'Nueva Ventaja'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="addPerk" data-tooltip="<?php echo __('admin_store_new_perk'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">add</span>
                     </button>
                     <?php endif; ?>
@@ -76,7 +76,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="perk-search-input" placeholder="<?php echo __('placeholder_search_perk') ?: 'Buscar ventaja...'; ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
+                        <input type="text" data-ref="perk-search-input" placeholder="<?php echo __('placeholder_search_perk'); ?>" value="<?php echo htmlspecialchars($searchQuery); ?>">
                     </div>
                 </div>
             </div>
@@ -88,16 +88,16 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
                 <table class="component-table">
                     <thead>
                         <tr>
-                            <th><?php echo __('th_perk_name') ?: 'Nombre de la Ventaja'; ?></th>
-                            <th><?php echo __('th_perk_id') ?: 'Identificador (Perk ID)'; ?></th>
-                            <th data-width="120"><?php echo __('th_perk_price') ?: 'Precio (Monedas)'; ?></th>
-                            <th data-width="140"><?php echo __('th_perk_visibility') ?: 'Visibilidad'; ?></th>
+                            <th><?php echo __('th_item'); ?></th>
+                            <th><?php echo __('th_perk_id'); ?></th>
+                            <th data-width="120"><?php echo __('th_price'); ?></th>
+                            <th data-width="140"><?php echo __('lbl_visibility'); ?></th>
                         </tr>
                     </thead>
                     <tbody data-ref="perks-table-body">
                         <?php foreach ($perks as $pkg): 
-                            $rawName = __($pkg['name']) ?: $pkg['name'];
-                            $icon = $pkg['icon'] ?: 'shield';
+                            $rawName = __($pkg['name']);
+                            $icon = !empty($pkg['icon']) ? $pkg['icon'] : 'shield';
                         ?>
                         <tr class="component-table-row clickable" 
                             data-action="selectPerkRow" 
@@ -128,12 +128,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
                                 <?php if ($pkg['is_active']): ?>
                                     <div class="component-badge component-badge--sm component-badge--success">
                                         <span class="material-symbols-rounded component-icon-sm">check_circle</span>
-                                        <span><?php echo __('admin_tier_status_active') ?: 'Activa'; ?></span>
+                                        <span><?php echo __('admin_tier_status_active'); ?></span>
                                     </div>
                                 <?php else: ?>
                                     <div class="component-badge component-badge--sm component-badge--danger">
                                         <span class="material-symbols-rounded component-icon-sm">cancel</span>
-                                        <span><?php echo __('admin_tier_status_inactive') ?: 'Inactiva'; ?></span>
+                                        <span><?php echo __('admin_tier_status_inactive'); ?></span>
                                     </div>
                                 <?php endif; ?>
                             </td>
@@ -141,10 +141,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
                         <?php endforeach; ?>
                         
                         <tr class="disabled" data-ref="empty-search-table">
-                            <td colspan="5" class="component-empty-table-cell">
+                            <td colspan="4" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                    <p class="component-empty-state-text"><?php echo __('msg_no_results_found') ?: 'No se encontraron resultados'; ?></p>
+                                    <p class="component-empty-state-text"><?php echo __('msg_no_results_found'); ?></p>
                                 </div>
                             </td>
                         </tr>
@@ -153,9 +153,8 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
             </div>
             <?php else: ?>
             <div class="component-empty-state" data-ref="perks-empty-state">
-                <span class="material-symbols-rounded empty-icon">shopping_bag</span>
-                <h3><?php echo __('msg_no_perks_configured') ?: 'No hay ventajas configuradas'; ?></h3>
-                <p><?php echo __('msg_create_first_perk') ?: 'Crea la primera ventaja para tu tienda.'; ?></p>
+                <span class="material-symbols-rounded component-empty-state-icon">shopping_bag</span>
+                <p class="component-empty-state-text"><?php echo __('msg_no_perks_configured'); ?></p>
             </div>
             <?php endif; ?>
         </div>

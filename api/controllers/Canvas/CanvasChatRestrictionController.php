@@ -54,7 +54,8 @@ class CanvasChatRestrictionController {
         $stmt->execute([$userId]);
         $user = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!$user || !\App\Core\Helpers\Utils::verifyUserIdentity($user, $data)) {
-            return ['status' => 'error', 'message' => __('err_invalid_password')];
+            $isGoogle = !empty($data['credential']) || !empty($data['google_token']);
+            return ['status' => 'error', 'message' => $isGoogle ? __('auth.google_verification_failed') : __('err_invalid_password')];
         }
 
         // Resolve canvas by ID or UUID

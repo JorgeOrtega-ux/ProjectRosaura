@@ -79,7 +79,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
                     <div class="component-search-icon">
                         <span class="material-symbols-rounded">search</span>
                     </div>
-                    <input type="text" class="component-search-input" placeholder="<?php echo __('placeholder_search_roles'); ?>" data-ref="role-search-input" value="<?php echo htmlspecialchars($searchQuery); ?>" autocomplete="off">
+                    <div class="component-search-input">
+                        <input type="text" placeholder="<?php echo __('placeholder_search_roles'); ?>" data-ref="role-search-input" value="<?php echo htmlspecialchars($searchQuery); ?>" autocomplete="off">
+                    </div>
                 </div>
             </div>
 
@@ -150,9 +152,8 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
             </div>
             <?php else: ?>
             <div class="component-empty-state" data-ref="roles-empty-state">
-                <span class="material-symbols-rounded empty-icon">admin_panel_settings</span>
-                <h3><?php echo __('admin_roles_empty_title'); ?></h3>
-                <p><?php echo __('admin_roles_empty_desc'); ?></p>
+                <span class="material-symbols-rounded component-empty-state-icon">admin_panel_settings</span>
+                <p class="component-empty-state-text"><?php echo __('admin_roles_empty_desc'); ?></p>
             </div>
             <?php endif; ?>
         </div>

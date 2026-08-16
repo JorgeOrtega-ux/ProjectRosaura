@@ -143,7 +143,8 @@ class AdminServices {
         $adminData = $this->userRepository->findById($currentUserId);
         $payload = is_array($passwordData) ? $passwordData : ['password' => (string)$passwordData];
         if (!$adminData || !\App\Core\Helpers\Utils::verifyUserIdentity($adminData, $payload)) {
-            return ['success' => false, 'message' => __('auth.incorrect_password')];
+            $isGoogle = !empty($payload['credential']) || !empty($payload['google_token']);
+            return ['success' => false, 'message' => $isGoogle ? __('auth.google_verification_failed') : __('auth.incorrect_password')];
         }
         $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}");
         return ['success' => true, 'admin_id' => $currentUserId];

@@ -762,7 +762,7 @@ export class ModalSystem {
             client_id: clientId,
             scope: 'openid email profile',
             callback: (response) => {
-                if (response.access_token) {
+                if (response && response.access_token) {
                     const modal = btn.closest('.component-modal-box');
                     if (modal) {
                         const googleTokenEl = modal.querySelector('[data-ref="google_token"]');
@@ -779,26 +779,24 @@ export class ModalSystem {
                         }
                     }
 
-                    restoreButton(btn);
-                    btn.classList.add('google-verify-badge--verified');
-                    btn.innerHTML = `
-                        <span class="material-symbols-rounded component-icon-sm">check_circle</span>
-                        <span class="google-verify-text">${__('google_session_verified')}</span>
-                    `;
-
+                    // Keep loader spinner active on the badge while the backend verifies identity
                     const confirmBtn = modal ? modal.querySelector(
-                        'button[data-modal-action="confirm"], ' +
                         'button[data-action="submitVerifyCurrentPassword"], ' +
+                        'button[data-modal-action="confirm"], ' +
                         'button[data-modal-action="confirm_dynamic_form"], ' +
                         'button[data-action="confirm"]'
                     ) : null;
 
                     if (confirmBtn && !confirmBtn.disabled) {
-                        setTimeout(() => confirmBtn.click(), 400);
+                        confirmBtn.click();
+                    } else {
+                        restoreButton(btn);
                     }
                 } else {
                     restoreButton(btn);
-                    showMessage(__('err_google_auth_failed'), 'error');
+                    if (response && response.error) {
+                        showMessage(__('err_google_auth_failed'), 'error');
+                    }
                 }
             },
             error_callback: () => {
