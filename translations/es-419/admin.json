@@ -432,7 +432,7 @@
     "admin_tier_col_level": "Nivel",
     "admin_tier_col_name": "Nombre",
     "admin_tier_col_popularity": "Popularidad",
-    "admin_tier_col_visibility": "Visibilidad",
+    "admin_tier_col_visibility": "Permitir compra",
     "admin_tier_color_type": "Tipo de color",
     "admin_tier_color_type_desc": "Elige entre color sólido o gradiente.",
     "admin_tier_delete_desc": "Elimina esta suscripción permanentemente.",

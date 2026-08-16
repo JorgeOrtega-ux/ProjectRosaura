@@ -406,8 +406,35 @@ class StoreRepository implements StoreRepositoryInterface {
     }
 
     public function markPerkAsUsed(int $userId, string $perkId): bool {
+        // 1. Validar si la ventaja está deshabilitada para uso globalmente
+        try {
+            $checkStmt = $this->db->prepare("SELECT is_usable FROM store_perk_packages WHERE perk_id = ? LIMIT 1");
+            $checkStmt->execute([$perkId]);
+            $perkPkg = $checkStmt->fetch(\PDO::FETCH_ASSOC);
+
+            if ($perkPkg && isset($perkPkg['is_usable']) && (int)$perkPkg['is_usable'] === 0) {
+                \App\Core\System\Logger::warning("Intento de uso de ventaja deshabilitada", [
+                    'user_id' => $userId,
+                    'perk_id' => $perkId
+                ]);
+                return false;
+            }
+        } catch (\Throwable $e) {
+            \App\Core\System\Logger::error("Error verificando is_usable de ventaja: " . $e->getMessage());
+        }
+
         $this->db->beginTransaction();
         try {
+            // 2. Intentar descontar de user_perk_balances
+            $balanceStmt = $this->db->prepare("
+                UPDATE user_perk_balances 
+                SET quantity_available = quantity_available - 1 
+                WHERE user_id = ? AND perk_id = ? AND quantity_available > 0
+            ");
+            $balanceStmt->execute([$userId, $perkId]);
+            $hasBalance = $balanceStmt->rowCount() > 0;
+
+            // 3. Marcar una instancia en user_perks como usada si existe
             $stmt = $this->db->prepare("
                 UPDATE user_perks 
                 SET is_used = 1, used_at = NOW() 
@@ -415,20 +442,16 @@ class StoreRepository implements StoreRepositoryInterface {
                 ORDER BY created_at ASC LIMIT 1
             ");
             $stmt->execute([$userId, $perkId]);
-            if ($stmt->rowCount() > 0) {
-                $balanceStmt = $this->db->prepare("
-                    UPDATE user_perk_balances 
-                    SET quantity_available = GREATEST(0, quantity_available - 1) 
-                    WHERE user_id = ? AND perk_id = ?
-                ");
-                $balanceStmt->execute([$userId, $perkId]);
-                $this->db->commit();
-                // Invalidate perks cache
-                $this->cacheInvalidator->userPerks($userId);
-                return true;
+            $hasPerkRow = $stmt->rowCount() > 0;
+
+            // Si no tenía saldo en balances ni filas disponibles en user_perks, no puede usarlo
+            if (!$hasBalance && !$hasPerkRow) {
+                $this->db->rollBack();
+                return false;
             }
+
             $this->db->commit();
-            // Invalidate perks cache
+            // Invalidar caché de perks del usuario
             $this->cacheInvalidator->userPerks($userId);
             return true;
         } catch (\Throwable $e) {

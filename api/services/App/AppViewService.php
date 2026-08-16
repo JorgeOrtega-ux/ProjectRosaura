@@ -36,7 +36,10 @@ class AppViewService {
         if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfig::class, 'getContentPackages')) {
             try {
                 $packages = StorePackagesConfig::getContentPackages();
-                return is_array($packages) ? $packages : [];
+                if (is_array($packages)) {
+                    return array_filter($packages, fn($p) => !empty($p['is_active']));
+                }
+                return [];
             } catch (\Throwable $e) {
                 Logger::error("Error loading store content packages: " . $e->getMessage(), ['exception' => $e]);
                 return [];

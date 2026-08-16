@@ -114,11 +114,18 @@ class AdminPerkBuilderController {
         }
 
         const priceVal = document.querySelector('[data-ref="val_perkPrice"]')?.dataset.value;
+        const activeCheckbox = document.querySelector('[data-ref="toggle-perk-active"]');
+        const usableCheckbox = document.querySelector('[data-ref="toggle-perk-usable"]');
+
+        const isActive = activeCheckbox ? (activeCheckbox.checked ? 1 : 0) : 1;
+        const isUsable = usableCheckbox ? (usableCheckbox.checked ? 1 : 0) : 1;
 
         const data = {
             uuid: uuid,
             perk_id: perkId,
-            price_coins: priceVal !== undefined ? parseInt(priceVal, 10) : 1000
+            price_coins: priceVal !== undefined ? parseInt(priceVal, 10) : 1000,
+            is_active: isActive,
+            is_usable: isUsable
         };
 
         setButtonLoading(btn);

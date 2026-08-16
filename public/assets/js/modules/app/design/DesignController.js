@@ -338,11 +338,13 @@ class DesignController {
                             <span class="material-symbols-rounded">${icon}</span>
                             <span>${currentSel}/10</span>
                         `;
-                    } else if (this.isCooldownSynced) {
+                    } else if (this.isCooldownSynced || this.cooldownBalance !== undefined) {
                         const rText = remaining > 0 ? `${Math.ceil(remaining)}s` : '0s';
+                        const curBal = typeof this.cooldownBalance === 'number' ? Math.floor(this.cooldownBalance) : (this.cooldownMax || 5);
+                        const maxBal = this.cooldownMax || 5;
                         newHtml = `
                             <span class="material-symbols-rounded">bolt</span>
-                            <span>${Math.floor(this.cooldownBalance)}/${this.cooldownMax}</span>
+                            <span>${curBal}/${maxBal}</span>
                             <span>|</span>
                             <span class="material-symbols-rounded">timer</span>
                             <span>${rText}</span>
@@ -350,7 +352,7 @@ class DesignController {
                     } else {
                         newHtml = `
                             <span class="material-symbols-rounded">bolt</span>
-                            <span>...</span>
+                            <span>${this.cooldownMax || 5}/${this.cooldownMax || 5}</span>
                             <span>|</span>
                             <span class="material-symbols-rounded">timer</span>
                             <span>0s</span>

@@ -110,6 +110,7 @@ export const ApiRoutes = {
 
         DeleteStorePerk: 'admin.store_perk.delete',
         ToggleStorePerk: 'admin.store_perk.toggle_visibility',
+        ToggleStorePerkUsable: 'admin.store_perk.toggle_usable',
         SaveStorePerk: 'admin.store_perk.save',
 
         GetServerLogs: 'admin.get_server_logs',

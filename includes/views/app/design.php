@@ -197,7 +197,7 @@ extract($designData);
                 <?php if (!$isSnapshot): ?>
                 <div class="component-badge <?php echo ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit) ? 'disabled' : ''; ?>" data-ref="cooldown-badge">
                     <span class="material-symbols-rounded">bolt</span>
-                    <span data-ref="cooldown-counter">--/--</span>
+                    <span data-ref="cooldown-counter"><?php echo htmlspecialchars($canvasBatchLimit ?? '5'); ?>/<?php echo htmlspecialchars($canvasBatchLimit ?? '5'); ?></span>
                     
                     <span>|</span>
                     

@@ -1718,6 +1718,9 @@ export const DesignInteractions = {
                         grouped[p.perk_id] = { ...p, count: 0 };
                     }
                     grouped[p.perk_id].count += parseInt(p.count) || 1;
+                    if (p.is_usable !== undefined) {
+                        grouped[p.perk_id].is_usable = p.is_usable;
+                    }
                 });
                 this.inventoryPerks = Object.values(grouped);
                 if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
@@ -1729,8 +1732,14 @@ export const DesignInteractions = {
     async activatePerk(perkId, btn) {
         if (!perkId) return;
 
+        const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
+        if (owned && owned.is_usable === false) {
+            const msg = (typeof window.__ === 'function' ? window.__('err_perk_temporarily_disabled') : null) || 'Esta ventaja se encuentra temporalmente deshabilitada para su uso.';
+            if (typeof showMessage === 'function') showMessage(msg, 'warning');
+            return;
+        }
+
         if (perkId === 'mines_1') {
-            const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
             const count = owned ? parseInt(owned.count, 10) : 0;
             if (count <= 0) {
                 if (typeof showMessage === 'function') showMessage(window.__('err_perk_not_owned'), 'warning');
@@ -1756,7 +1765,6 @@ export const DesignInteractions = {
         }
 
         if (perkId === 'pixel_shield_1') {
-            const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
             const count = owned ? parseInt(owned.count, 10) : 0;
             if (count <= 0) {
                 if (typeof showMessage === 'function') showMessage(window.__('err_perk_not_owned'), 'warning');
@@ -1785,7 +1793,6 @@ export const DesignInteractions = {
         }
 
         if (PerksRegistry.isBomb(perkId)) {
-            const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
             const count = owned ? parseInt(owned.count, 10) : 0;
             if (count <= 0) {
                 if (typeof showMessage === 'function') showMessage(window.__('err_perk_not_owned'), 'warning');
@@ -1858,6 +1865,7 @@ export const DesignInteractions = {
             if (PerksRegistry.isBomb(perkId) && perkId !== 'mines_1') {
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 const totalAmount = owned ? parseInt(owned.count, 10) : 0;
+                const isUsable = !owned || owned.is_usable !== false;
                 
                 isActive = (this.activeBomb === perkId && this.interactionMode === 'bombing');
                 
@@ -1877,8 +1885,14 @@ export const DesignInteractions = {
                     isActive = true; 
                     isToggledOn = false;
                     const titleText = PerksRegistry.getLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    const statusSuffix = !isUsable ? ' <span class="material-symbols-rounded" style="font-size:13px;opacity:0.7;">block</span>' : '';
+                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})${statusSuffix}</span>`;
                     clickHandler = () => {
+                        if (!isUsable) {
+                            const msg = (typeof window.__ === 'function' ? window.__('err_perk_temporarily_disabled') : null) || 'Esta ventaja se encuentra temporalmente deshabilitada para su uso.';
+                            if (typeof showMessage === 'function') showMessage(msg, 'warning');
+                            return;
+                        }
                         this.activatePerk(perkId);
                     };
                     renderedInventoryCount++;
@@ -1886,6 +1900,7 @@ export const DesignInteractions = {
             } else if (perkId === 'mines_1') {
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 const totalAmount = owned ? parseInt(owned.count, 10) : 0;
+                const isUsable = !owned || owned.is_usable !== false;
                 
                 isActive = (this.interactionMode === 'placing_mines');
                 
@@ -1906,8 +1921,14 @@ export const DesignInteractions = {
                     isActive = true;
                     isToggledOn = false;
                     const titleText = PerksRegistry.getLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    const statusSuffix = !isUsable ? ' <span class="material-symbols-rounded" style="font-size:13px;opacity:0.7;">block</span>' : '';
+                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})${statusSuffix}</span>`;
                     clickHandler = () => {
+                        if (!isUsable) {
+                            const msg = (typeof window.__ === 'function' ? window.__('err_perk_temporarily_disabled') : null) || 'Esta ventaja se encuentra temporalmente deshabilitada para su uso.';
+                            if (typeof showMessage === 'function') showMessage(msg, 'warning');
+                            return;
+                        }
                         this.activatePerk(perkId);
                     };
                     renderedInventoryCount++;
@@ -1915,6 +1936,7 @@ export const DesignInteractions = {
             } else if (perkId === 'pixel_shield_1') {
                 const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
                 const totalAmount = owned ? parseInt(owned.count, 10) : 0;
+                const isUsable = !owned || owned.is_usable !== false;
                 const myProtectedZonesCount = this.myProtectedPixels ? this.myProtectedPixels.size : 0;
                 const isHighlighting = !!this.showMyProtectionsHighlight;
                 
@@ -1951,8 +1973,14 @@ export const DesignInteractions = {
                     isActive = true;
                     isToggledOn = false;
                     const titleText = PerksRegistry.getLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    const statusSuffix = !isUsable ? ' <span class="material-symbols-rounded" style="font-size:13px;opacity:0.7;">block</span>' : '';
+                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})${statusSuffix}</span>`;
                     clickHandler = () => {
+                        if (!isUsable) {
+                            const msg = (typeof window.__ === 'function' ? window.__('err_perk_temporarily_disabled') : null) || 'Esta ventaja se encuentra temporalmente deshabilitada para su uso.';
+                            if (typeof showMessage === 'function') showMessage(msg, 'warning');
+                            return;
+                        }
                         this.activatePerk(perkId);
                     };
                     renderedInventoryCount++;
@@ -1960,13 +1988,17 @@ export const DesignInteractions = {
             }
 
             const invItem = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
+            const isUsable = !invItem || invItem.is_usable !== false;
             
             if (isActive) {
                 const badge = document.createElement('div');
                 badge.className = 'component-badge';
-                badge.style.cursor = 'pointer';
+                badge.style.cursor = isUsable ? 'pointer' : 'not-allowed';
+                if (!isUsable) {
+                    badge.style.opacity = '0.6';
+                }
                 badge.innerHTML = activeHtml;
-                if (isGlobalCooldown) {
+                if (isGlobalCooldown && isUsable) {
                     badge.classList.add('disable-interaction');
                 }
                 if (isToggledOn) {
@@ -1983,14 +2015,25 @@ export const DesignInteractions = {
             } 
             else if (invItem && parseInt(invItem.count, 10) > 0 && this.showInventoryPerks) {
                 const badge = document.createElement('div');
-                badge.className = 'component-badge inventory-badge-temp';
-                badge.style.cursor = 'pointer';
-                if (isGlobalCooldown) {
+                badge.className = `component-badge inventory-badge-temp ${!isUsable ? 'component-badge--disabled' : ''}`;
+                badge.style.cursor = isUsable ? 'pointer' : 'not-allowed';
+                if (!isUsable) {
+                    badge.style.opacity = '0.55';
+                    badge.setAttribute('data-tooltip', (typeof window.__ === 'function' ? window.__('err_perk_temporarily_disabled') : null) || 'Ventaja temporalmente deshabilitada');
+                    badge.setAttribute('data-position', 'top');
+                }
+                if (isGlobalCooldown && isUsable) {
                     badge.classList.add('disable-interaction');
                 }
                 const titleText = PerksRegistry.getLabel(perkId);
-                badge.innerHTML = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${invItem.count})</span>`;
+                const statusSuffix = !isUsable ? ' <span class="material-symbols-rounded" style="font-size:13px;opacity:0.7;">block</span>' : '';
+                badge.innerHTML = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${invItem.count})${statusSuffix}</span>`;
                 badge.addEventListener('click', () => {
+                    if (!isUsable) {
+                        const msg = (typeof window.__ === 'function' ? window.__('err_perk_temporarily_disabled') : null) || 'Esta ventaja se encuentra temporalmente deshabilitada para su uso.';
+                        if (typeof showMessage === 'function') showMessage(msg, 'warning');
+                        return;
+                    }
                     this.activatePerk(perkId, badge);
                 });
                 badgesRight.appendChild(badge);

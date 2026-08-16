@@ -174,7 +174,7 @@ class StorePackagesConfig {
         try {
             $db = new \App\Config\Database\DatabaseManager();
             $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $stmt = $pdo->query("SELECT uuid, perk_id, price_coins, is_single_use FROM store_perk_packages WHERE is_active = 1 ORDER BY price_coins ASC");
+            $stmt = $pdo->query("SELECT uuid, perk_id, price_coins, is_single_use, is_active, is_usable FROM store_perk_packages ORDER BY price_coins ASC");
             while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
                 $perkId = $row['perk_id'];
                 $meta = self::getPerkVisualMetadata($perkId);
@@ -187,6 +187,8 @@ class StorePackagesConfig {
                     'price_coins' => (int)$row['price_coins'],
                     'icon' => $meta['icon'],
                     'is_single_use' => (bool)$row['is_single_use'],
+                    'is_active' => (bool)$row['is_active'],
+                    'is_usable' => (bool)$row['is_usable'],
                 ];
             }
 

@@ -328,12 +328,24 @@ export const DesignNetwork = {
                     if (typeof this.syncMinesToWorker === 'function') this.syncMinesToWorker();
                     if (typeof showMessage === 'function') showMessage('¡Una de tus minas terrestres ha detonado!', 'info');
                 }
-                else if (data.type === 'pixel_protected_error') {
-                    
+                else if (data.type === 'pixel_protected_error' || data.type === 'perk_error') {
+                    const rawMsg = data.message || 'Este píxel está protegido';
+                    const msg = (typeof window.__ === 'function' ? window.__(rawMsg) : null) || rawMsg;
+
                     if (!this.lastProtectedToastTime || (Date.now() - this.lastProtectedToastTime > 2000)) {
-                        showMessage(data.message || 'Este píxel está protegido', 'warning');
+                        if (typeof showMessage === 'function') showMessage(msg, 'warning');
                         this.lastProtectedToastTime = Date.now();
                     }
+
+                    // Limpiar badges de preparación activos y restaurar interactividad
+                    const badgesLeft = document.querySelector('[data-ref="badges-left"]');
+                    if (badgesLeft) {
+                        const preparingBadges = badgesLeft.querySelectorAll('[data-preparing-key]');
+                        preparingBadges.forEach(b => b.remove());
+                    }
+                    this.perkGlobalCooldownUntil = 0;
+                    if (typeof this.loadUserPerks === 'function') this.loadUserPerks();
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
 
                     if (data.balance !== undefined) {
                         this.handleCooldownSync(data);
@@ -672,10 +684,8 @@ export const DesignNetwork = {
                 this.setupCanvas();
                 this.centerBoard();
 
-                this.isPrivateBlocked = false;
                 const role = response.data.role || 'spectator';
-                this.isSpectator = !(role === 'admin' || role === 'editor');
-                this.setRoleUI(role, response.data);
+                this.applyCanvasRoleState(role, response.data);
 
                 if (this.loadedChunks) {
                     this.loadedChunks.clear();
@@ -1349,16 +1359,12 @@ export const DesignNetwork = {
             console.log(`[Network] Connected to WebSocket server: ${data.node_id}`);
         }
 
-        if (this.isSpectator) {
-            return;
-        }
-
         this.isCooldownSynced = true;
-        if (data.balance !== undefined) this.cooldownBalance = data.balance;
-        if (data.max_batch !== undefined) this.cooldownMax = data.max_batch;
-        if (data.cooldown_sec !== undefined) this.cooldownSec = data.cooldown_sec;
+        if (data.balance !== undefined) this.cooldownBalance = Number(data.balance);
+        if (data.max_batch !== undefined) this.cooldownMax = Number(data.max_batch);
+        if (data.cooldown_sec !== undefined) this.cooldownSec = Number(data.cooldown_sec);
         if (data.next_replenish_in !== undefined) {
-            this.cooldownNextIn = data.next_replenish_in;
+            this.cooldownNextIn = Number(data.next_replenish_in);
             this.lastSyncTime = Date.now();
         }
 
@@ -1426,7 +1432,6 @@ export const DesignNetwork = {
 
         try {
             let response;
-            const startTime = performance.now();
             if (window.__INITIAL_CANVAS_DATA__ && window.__INITIAL_CANVAS_DATA__.data && String(window.__INITIAL_CANVAS_DATA__.data.id) === String(this.canvasIntId)) {
                 response = window.__INITIAL_CANVAS_DATA__;
                 window.__INITIAL_CANVAS_DATA__ = null; // Clean up memory
@@ -1436,56 +1441,92 @@ export const DesignNetwork = {
             if (response.aborted) return;
             
             const isPremiumLocked = response.locked_requires_downgrade || (response.data && response.data.locked_requires_downgrade);
-            if (isPremiumLocked && response.data) {
-                this.isSubscriptionLocked = true;
-                this.isPrivateBlocked = false;
-                this.isSpectator = true;
-                this.setRoleUI('premium_locked', response.data);
-                
-                if (typeof this.initCanvasData === 'function') {
-                    this.initCanvasData(response.data);
-                } else if (response.data.state_base64) {
-                    this.hydrateCanvasState(response.data.state_base64);
+            if (isPremiumLocked) {
+                this.applyCanvasRoleState('premium_locked', response.data || null);
+                if (response.data) {
+                    if (typeof this.initCanvasData === 'function') {
+                        this.initCanvasData(response.data);
+                    } else if (response.data.state_base64) {
+                        this.hydrateCanvasState(response.data.state_base64);
+                    }
                 }
-                return;
-            } else if (isPremiumLocked) {
-                this.isSubscriptionLocked = true;
-                this.isPrivateBlocked = true;
-                this.setRoleUI('blocked');
                 return;
             }
 
             if (response.success && response.data) {
-                this.isSubscriptionLocked = false;
-                this.isPrivateBlocked = false;
                 const role = response.data.role || 'spectator';
-                
-                if (role === 'admin' || role === 'editor') {
-                    this.isSpectator = false;
-                } else {
-                    this.isSpectator = true;
-                }
-                
-                this.setRoleUI(role, response.data);
+                this.applyCanvasRoleState(role, response.data);
 
                 if (typeof this.initCanvasData === 'function') {
                     this.initCanvasData(response.data);
                 } else if (response.data.state_base64) {
                     this.hydrateCanvasState(response.data.state_base64);
                 }
-
             } else {
-                this.isSpectator = true;
                 if (this.canvasPrivacy === 'private') {
-                    this.isPrivateBlocked = true;
-                    this.setRoleUI('blocked');
+                    this.applyCanvasRoleState('blocked', null);
                 } else {
-                    this.setRoleUI('spectator');
+                    this.applyCanvasRoleState('spectator', null);
                 }
             }
         } catch (error) {
+            this.applyCanvasRoleState(this.canvasPrivacy === 'private' ? 'blocked' : 'spectator', null);
+        }
+    },
+
+    applyCanvasRoleState(role, data = null) {
+        const prevSpectator = this.isSpectator;
+        const isPremiumLocked = !!(data?.locked_requires_downgrade || this.isSubscriptionLocked);
+        
+        if (isPremiumLocked) {
+            this.isSubscriptionLocked = true;
             this.isSpectator = true;
-            this.setRoleUI(this.canvasPrivacy === 'private' ? 'blocked' : 'spectator');
+            this.isPrivateBlocked = (role === 'blocked');
+            this.canvasRole = 'premium_locked';
+        } else if (role === 'blocked') {
+            this.isSubscriptionLocked = false;
+            this.isSpectator = true;
+            this.isPrivateBlocked = true;
+            this.canvasRole = 'blocked';
+        } else if (role === 'editor' || role === 'admin' || role === 'owner') {
+            this.isSubscriptionLocked = false;
+            this.isSpectator = false;
+            this.isPrivateBlocked = false;
+            this.isOwner = (role === 'admin' || role === 'owner' || !!data?.is_owner);
+            this.canvasRole = role;
+        } else {
+            this.isSubscriptionLocked = false;
+            this.isSpectator = true;
+            this.isPrivateBlocked = (this.canvasPrivacy === 'private' && !data?.is_member);
+            this.canvasRole = 'spectator';
+        }
+
+        // Reconciliar elementos de interfaz
+        this.setRoleUI(this.canvasRole, data);
+
+        // Notificar y sincronizar con el Web Worker de Renderizado
+        if (typeof this.requestRender === 'function') {
+            this.requestRender();
+        }
+
+        // Si el usuario transitó de espectador a miembro autorizado:
+        if (prevSpectator && !this.isSpectator) {
+            // 1. Handshake WebSocket inmediato con credenciales del usuario para sincronizar cooldown y balance
+            if (this.wsManager) {
+                const uid = window.activeUserId || '';
+                this.wsManager.send({ type: 'init', userId: uid, version: '2.0.3' });
+            }
+
+            // 2. Cargar inventario de ventajas del usuario
+            if (typeof this.loadUserPerks === 'function') {
+                this.loadUserPerks();
+            }
+
+            // 3. Reconciliar selección e interfaz
+            this.updateSelectionUI();
+            if (typeof this.updatePerkBadges === 'function') {
+                this.updatePerkBadges();
+            }
         }
     },
 
@@ -1501,6 +1542,7 @@ export const DesignNetwork = {
         const privBadge = document.querySelector('[data-ref="private-status-badge"]');
         const premBadge = document.querySelector('[data-ref="premium-status-badge"]');
         const cooldownBadge = document.querySelector('[data-ref="cooldown-badge"]');
+        const btnOwnerTools = document.querySelector('[data-ref="btn-owner-tools"]');
 
         this.updateLockBadges(); 
 
@@ -1562,46 +1604,60 @@ export const DesignNetwork = {
 
             if (btnJoin) btnJoin.classList.add('disabled');
             if (btnRequest) btnRequest.classList.add('disabled');
-        } else {
+        } else if (role === 'spectator') {
             if (this.canvas) {
                 this.canvas.classList.remove('component-canvas-blocked');
                 this.canvas.classList.remove('disabled-interaction');
             }
 
-            if (role === 'spectator') {
-                if (specControls) {
-                    specControls.classList.remove('disabled');
-                    specControls.classList.add('active');
-                }
-                if (designTools) {
-                    designTools.classList.replace('active', 'disabled');
-                }
-                if (actionPill) actionPill.classList.add('disabled');
-                
-                if (specBadge) specBadge.classList.remove('disabled');
-                if (cooldownBadge) cooldownBadge.classList.add('disabled');
-                if (privBadge) privBadge.classList.add('disabled');
-                if (premBadge) premBadge.classList.add('disabled');
+            if (specControls) {
+                specControls.classList.remove('disabled');
+                specControls.classList.add('active');
+            }
+            if (designTools) {
+                designTools.classList.remove('active');
+                designTools.classList.add('disabled');
+            }
+            if (actionPill) actionPill.classList.add('disabled');
+            
+            if (specBadge) specBadge.classList.remove('disabled');
+            if (cooldownBadge) cooldownBadge.classList.add('disabled');
+            if (privBadge) privBadge.classList.add('disabled');
+            if (premBadge) premBadge.classList.add('disabled');
 
-                if (this.canvasApproval) {
-                    if (btnJoin) btnJoin.classList.add('disabled');
-                    if (btnRequest) btnRequest.classList.remove('disabled');
+            if (this.canvasApproval) {
+                if (btnJoin) btnJoin.classList.add('disabled');
+                if (btnRequest) btnRequest.classList.remove('disabled');
+            } else {
+                if (btnJoin) btnJoin.classList.remove('disabled');
+                if (btnRequest) btnRequest.classList.add('disabled');
+            }
+        } else if (role === 'editor' || role === 'admin' || role === 'owner') {
+            if (this.canvas) {
+                this.canvas.classList.remove('component-canvas-blocked');
+                this.canvas.classList.remove('disabled-interaction');
+            }
+
+            if (specControls) {
+                specControls.classList.remove('active');
+                specControls.classList.add('disabled');
+            }
+            if (designTools) {
+                designTools.classList.remove('disabled');
+                designTools.classList.add('active');
+            }
+            if (actionPill) actionPill.classList.remove('disabled');
+            if (cooldownBadge) cooldownBadge.classList.remove('disabled');
+            if (specBadge) specBadge.classList.add('disabled');
+            if (privBadge) privBadge.classList.add('disabled');
+            if (premBadge) premBadge.classList.add('disabled');
+
+            if (btnOwnerTools) {
+                if (this.isOwner) {
+                    btnOwnerTools.classList.remove('disabled');
                 } else {
-                    if (btnJoin) btnJoin.classList.remove('disabled');
-                    if (btnRequest) btnRequest.classList.add('disabled');
+                    btnOwnerTools.classList.add('disabled');
                 }
-            } 
-            else if (role === 'editor' || role === 'admin') {
-                if (specControls) {
-                    specControls.classList.add('disabled');
-                    specControls.classList.remove('active');
-                }
-                if (designTools) {
-                    designTools.classList.replace('disabled', 'active');
-                }
-                if (actionPill) actionPill.classList.remove('disabled');
-                if (cooldownBadge) cooldownBadge.classList.remove('disabled');
-                if (specBadge) specBadge.classList.add('disabled');
             }
         }
     },
@@ -1626,7 +1682,9 @@ export const DesignNetwork = {
         if (response.success) {
             showMessage(response.message, 'success');
             
-            if (response.joined || response.message.toLowerCase().includes('unido')) {
+            if (response.joined || (response.message && response.message.toLowerCase().includes('unido'))) {
+                // Sincronización instantánea a miembro en tiempo real
+                this.applyCanvasRoleState('editor', { is_member: true });
                 this.checkCanvasAccess();
             } else {
                 btn.classList.add('disabled-interaction');

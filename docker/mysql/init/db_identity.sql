@@ -439,22 +439,23 @@ CREATE TABLE IF NOT EXISTS `store_perk_packages` (
   `price_coins` INT NOT NULL DEFAULT 0,
   `is_single_use` tinyint(1) NOT NULL DEFAULT 1,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `is_usable` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
-INSERT IGNORE INTO `store_perk_packages` (uuid, perk_id, price_coins, is_single_use, is_active) VALUES
-('e0000000-0000-0000-0000-000000000002', 'pixel_missile_1', 500, 1, 1),
-('e0000000-0000-0000-0000-000000000003', 'pixel_bomb_1', 1000, 1, 1),
-('e0000000-0000-0000-0000-000000000004', 'cluster_bomb_1', 2500, 1, 1),
-('e0000000-0000-0000-0000-000000000005', 'atomic_bomb_1', 5000, 1, 1),
-('e0000000-0000-0000-0000-000000000006', 'meteor_shower_1', 10000, 1, 1),
-('e0000000-0000-0000-0000-000000000007', 'orbital_cannon_1', 15000, 1, 1),
-('e0000000-0000-0000-0000-000000000008', 'black_hole_1', 20000, 1, 1),
-('e0000000-0000-0000-0000-000000000009', 'mines_1', 1500, 1, 1),
-('e0000000-0000-0000-0000-000000000010', 'supernova_blast', 12000, 1, 1),
-('e0000000-0000-0000-0000-000000000011', 'ion_strike', 8000, 1, 1);
+INSERT IGNORE INTO `store_perk_packages` (uuid, perk_id, price_coins, is_single_use, is_active, is_usable) VALUES
+('e0000000-0000-0000-0000-000000000002', 'pixel_missile_1', 500, 1, 1, 1),
+('e0000000-0000-0000-0000-000000000003', 'pixel_bomb_1', 1000, 1, 1, 1),
+('e0000000-0000-0000-0000-000000000004', 'cluster_bomb_1', 2500, 1, 1, 1),
+('e0000000-0000-0000-0000-000000000005', 'atomic_bomb_1', 5000, 1, 1, 1),
+('e0000000-0000-0000-0000-000000000006', 'meteor_shower_1', 10000, 1, 1, 1),
+('e0000000-0000-0000-0000-000000000007', 'orbital_cannon_1', 15000, 1, 1, 1),
+('e0000000-0000-0000-0000-000000000008', 'black_hole_1', 20000, 1, 1, 1),
+('e0000000-0000-0000-0000-000000000009', 'mines_1', 1500, 1, 1, 1),
+('e0000000-0000-0000-0000-000000000010', 'supernova_blast', 12000, 1, 1, 1),
+('e0000000-0000-0000-0000-000000000011', 'ion_strike', 8000, 1, 1, 1);
 
 CREATE TABLE IF NOT EXISTS `user_coin_transactions` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,

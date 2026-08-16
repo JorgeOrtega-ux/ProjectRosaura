@@ -334,7 +334,8 @@ class AdminController extends BaseController {
                 'price_coins' => $input['price_coins'] ?? null,
                 'description' => $input['description'] ?? null,
                 'icon' => $input['icon'] ?? null,
-                'is_active' => $input['is_active'] ?? null
+                'is_active' => $input['is_active'] ?? null,
+                'is_usable' => $input['is_usable'] ?? null
             ];
             return $this->respond($this->adminServices->saveStorePerk($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -345,6 +346,14 @@ class AdminController extends BaseController {
             $this->requirePermission(PermissionsConstants::MANAGE_STORE_PERKS);
             $safeInput = ['uuid' => $input['uuid'] ?? null];
             return $this->respond($this->adminServices->toggleStorePerkVisibility($safeInput));
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function toggle_store_perk_usable($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PERKS);
+            $safeInput = ['uuid' => $input['uuid'] ?? null];
+            return $this->respond($this->adminServices->toggleStorePerkUsable($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 

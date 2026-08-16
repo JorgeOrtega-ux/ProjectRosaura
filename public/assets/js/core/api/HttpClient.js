@@ -291,6 +291,7 @@ export class HttpClient {
             ...options,
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
+                'X-SPA-Request': '1',
                 'Accept': 'text/html',
                 'X-CSRF-Token': this._getCsrfToken(),
                 ...(options.headers || {})

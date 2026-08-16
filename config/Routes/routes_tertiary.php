@@ -467,6 +467,14 @@ return [
             ['type' => 'RateLimit', 'key' => 'adm_toggle_perk', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
         ],
     ],
+    'admin.store_perk.toggle_usable' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'toggle_store_perk_usable',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_usable_perk', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
     'admin.store_perk.delete' => [
         'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
         'action' => 'delete_store_perk',

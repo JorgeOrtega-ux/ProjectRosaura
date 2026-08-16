@@ -1071,16 +1071,19 @@ class AdminServices {
         try {
             $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
             
+            $isUsable = isset($data['is_usable']) ? (int)(bool)$data['is_usable'] : 1;
+            $isActive = isset($data['is_active']) ? (int)(bool)$data['is_active'] : 1;
+
             if ($uuid) {
                 // Update
-                $stmt = $pdo->prepare("UPDATE store_perk_packages SET perk_id = ?, price_coins = ? WHERE uuid = ?");
-                $stmt->execute([$perkId, $priceCoins, $uuid]);
+                $stmt = $pdo->prepare("UPDATE store_perk_packages SET perk_id = ?, price_coins = ?, is_active = ?, is_usable = ? WHERE uuid = ?");
+                $stmt->execute([$perkId, $priceCoins, $isActive, $isUsable, $uuid]);
                 $msg = __('msg_perk_updated_success');
             } else {
                 // Insert
                 $uuid = Utils::generateUUID();
-                $stmt = $pdo->prepare("INSERT INTO store_perk_packages (uuid, perk_id, price_coins, is_active) VALUES (?, ?, ?, 1)");
-                $stmt->execute([$uuid, $perkId, $priceCoins]);
+                $stmt = $pdo->prepare("INSERT INTO store_perk_packages (uuid, perk_id, price_coins, is_active, is_usable) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$uuid, $perkId, $priceCoins, $isActive, $isUsable]);
                 $msg = __('msg_perk_created_success');
             }
 
@@ -1109,7 +1112,26 @@ class AdminServices {
                 (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePerkPackages();
             } catch (\Throwable $t) {}
 
-            return ['success' => true, 'message' => __('msg_perk_visibility_updated')];
+            return ['success' => true, 'message' => __('msg_perk_purchasable_updated')];
+        } catch (\PDOException $e) {
+            return ['success' => false, 'message' => __('err_db_error')];
+        }
+    }
+
+    public function toggleStorePerkUsable($data) {
+        $uuid = $data['uuid'] ?? '';
+        if (empty($uuid)) return ['success' => false, 'message' => __('err_missing_uuid')];
+        try {
+            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
+            $stmt = $pdo->prepare("UPDATE store_perk_packages SET is_usable = 1 - is_usable WHERE uuid = ?");
+            $stmt->execute([$uuid]);
+
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePerkPackages();
+            } catch (\Throwable $t) {}
+
+            return ['success' => true, 'message' => __('msg_perk_usable_updated')];
         } catch (\PDOException $e) {
             return ['success' => false, 'message' => __('err_db_error')];
         }

@@ -35,7 +35,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
                         <span class="material-symbols-rounded">edit</span>
                     </button>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleVisibilityPackage" data-tooltip="<?php echo __('btn_toggle_visibility'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">visibility</span>
+                        <span class="material-symbols-rounded">shopping_bag</span>
                     </button>
                     <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deletePackage" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
@@ -91,7 +91,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
                             <th><?php echo __('th_package'); ?></th>
                             <th data-width="120"><?php echo __('th_amount'); ?></th>
                             <th data-width="120"><?php echo __('th_price'); ?></th>
-                            <th data-width="140"><?php echo __('lbl_visibility'); ?></th>
+                            <th data-width="140"><?php echo __('lbl_allow_purchase'); ?></th>
                         </tr>
                     </thead>
                     <tbody data-ref="packages-table-body">
@@ -128,12 +128,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-packages?page=' . (
                                 <?php if ($pkg['is_active']): ?>
                                     <div class="component-badge component-badge--sm component-badge--success">
                                         <span class="material-symbols-rounded component-icon-sm">check_circle</span>
-                                        <span><?php echo __('admin_tier_status_active'); ?></span>
+                                        <span><?php echo __('admin_status_purchasable'); ?></span>
                                     </div>
                                 <?php else: ?>
                                     <div class="component-badge component-badge--sm component-badge--danger">
                                         <span class="material-symbols-rounded component-icon-sm">cancel</span>
-                                        <span><?php echo __('admin_tier_status_inactive'); ?></span>
+                                        <span><?php echo __('admin_status_not_purchasable'); ?></span>
                                     </div>
                                 <?php endif; ?>
                             </td>

@@ -33,7 +33,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                         <span class="material-symbols-rounded">edit</span>
                     </button>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleVisibilityTier" data-tooltip="<?php echo __('btn_toggle_visibility'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">visibility</span>
+                        <span class="material-symbols-rounded">shopping_bag</span>
                     </button>
                     <button class="component-button component-button--icon component-button--h40" data-action="setPopularTier" data-tooltip="<?php echo __('btn_set_popular'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">star</span>
@@ -160,12 +160,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                                 <?php if ($tier['is_active']): ?>
                                     <div class="component-badge component-badge--sm component-badge--success">
                                         <span class="material-symbols-rounded component-icon-sm">check_circle</span>
-                                        <span><?php echo __('admin_tier_status_active'); ?></span>
+                                        <span><?php echo __('admin_status_purchasable'); ?></span>
                                     </div>
                                 <?php else: ?>
                                     <div class="component-badge component-badge--sm component-badge--danger">
                                         <span class="material-symbols-rounded component-icon-sm">cancel</span>
-                                        <span><?php echo __('admin_tier_status_inactive'); ?></span>
+                                        <span><?php echo __('admin_status_not_purchasable'); ?></span>
                                     </div>
                                 <?php endif; ?>
                             </td>

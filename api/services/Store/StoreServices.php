@@ -205,8 +205,10 @@ class StoreServices {
             $perkId = $perk['perk_id'];
             if (isset($contentPackages[$perkId])) {
                 $perk['description'] = $contentPackages[$perkId]['description'];
+                $perk['is_usable'] = (bool)($contentPackages[$perkId]['is_usable'] ?? true);
             } else {
                 $perk['description'] = __('lbl_no_description');
+                $perk['is_usable'] = true;
             }
         }
 

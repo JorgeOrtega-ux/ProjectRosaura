@@ -35,7 +35,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
                         <span class="material-symbols-rounded">edit</span>
                     </button>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleVisibilityPerk" data-tooltip="<?php echo __('btn_toggle_visibility'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">visibility</span>
+                        <span class="material-symbols-rounded">shopping_bag</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleUsablePerk" data-tooltip="<?php echo __('btn_toggle_usable'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">play_circle</span>
                     </button>
                     <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deletePerk" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
@@ -91,18 +94,22 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
                             <th><?php echo __('th_item'); ?></th>
                             <th><?php echo __('th_perk_id'); ?></th>
                             <th data-width="120"><?php echo __('th_price'); ?></th>
-                            <th data-width="140"><?php echo __('lbl_visibility'); ?></th>
+                            <th data-width="140"><?php echo __('th_perk_purchasable'); ?></th>
+                            <th data-width="140"><?php echo __('th_perk_usable'); ?></th>
                         </tr>
                     </thead>
                     <tbody data-ref="perks-table-body">
                         <?php foreach ($perks as $pkg): 
                             $rawName = __($pkg['name']);
                             $icon = !empty($pkg['icon']) ? $pkg['icon'] : 'shield';
+                            $isUsable = isset($pkg['is_usable']) ? (int)$pkg['is_usable'] : 1;
                         ?>
                         <tr class="component-table-row clickable" 
                             data-action="selectPerkRow" 
                             data-perk-id="<?php echo htmlspecialchars($pkg['uuid']); ?>" 
-                            data-perk-name="<?php echo htmlspecialchars($rawName); ?>">
+                            data-perk-name="<?php echo htmlspecialchars($rawName); ?>"
+                            data-perk-active="<?php echo (int)$pkg['is_active']; ?>"
+                            data-perk-usable="<?php echo $isUsable; ?>">
                             <td>
                                 <div class="td-user-info">
                                     <div class="component-card__icon-container component-card__icon-container--bordered component-card__icon-container--round">
@@ -128,12 +135,25 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
                                 <?php if ($pkg['is_active']): ?>
                                     <div class="component-badge component-badge--sm component-badge--success">
                                         <span class="material-symbols-rounded component-icon-sm">check_circle</span>
-                                        <span><?php echo __('admin_tier_status_active'); ?></span>
+                                        <span><?php echo __('admin_status_purchasable'); ?></span>
                                     </div>
                                 <?php else: ?>
                                     <div class="component-badge component-badge--sm component-badge--danger">
                                         <span class="material-symbols-rounded component-icon-sm">cancel</span>
-                                        <span><?php echo __('admin_tier_status_inactive'); ?></span>
+                                        <span><?php echo __('admin_status_not_purchasable'); ?></span>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if ($isUsable): ?>
+                                    <div class="component-badge component-badge--sm component-badge--success">
+                                        <span class="material-symbols-rounded component-icon-sm">check_circle</span>
+                                        <span><?php echo __('admin_status_usable'); ?></span>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="component-badge component-badge--sm component-badge--danger">
+                                        <span class="material-symbols-rounded component-icon-sm">cancel</span>
+                                        <span><?php echo __('admin_status_not_usable'); ?></span>
                                     </div>
                                 <?php endif; ?>
                             </td>
@@ -141,7 +161,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/store-perks?page=' . ($pa
                         <?php endforeach; ?>
                         
                         <tr class="disabled" data-ref="empty-search-table">
-                            <td colspan="4" class="component-empty-table-cell">
+                            <td colspan="5" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
                                     <p class="component-empty-state-text"><?php echo __('msg_no_results_found'); ?></p>

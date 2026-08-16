@@ -62,10 +62,32 @@ class AdminPackagesController extends BaseListController {
         } catch (error) {
             if (error.name !== 'AbortError') {
                 console.error('Pagination error:', error);
-                showMessage(window.__('err_load_canvases'), 'error');
+                showMessage(window.__('err_server_connection') || 'Error al actualizar', 'error');
             }
         } finally {
             if (containerToDisable) containerToDisable.classList.remove('disabled-interaction');
+        }
+    }
+
+    initializeFiltersFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchInput = document.querySelector('[data-ref="package-search-input"]');
+        if (searchInput) searchInput.value = urlParams.get('q') || '';
+
+        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
+        if (searchToolbar && searchInput && searchInput.value.trim() !== '') {
+            searchToolbar.classList.remove('disabled');
+            searchToolbar.classList.add('active');
+        }
+        this.updateFilterButtonsState();
+        if (typeof this.deselectAll === 'function') this.deselectAll();
+    }
+
+    updateFilterButtonsState() {
+        const searchInput = document.querySelector('[data-ref="package-search-input"]');
+        const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
+        if (searchBtn && searchInput) {
+            searchBtn.classList.toggle('has-active-filter', searchInput.value.trim() !== '');
         }
     }
 
