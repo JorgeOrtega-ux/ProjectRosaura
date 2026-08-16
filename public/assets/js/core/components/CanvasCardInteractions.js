@@ -1,6 +1,8 @@
 import { ApiRoutes } from '../api/ApiRoutes.js';
 import { showMessage, renderSkeleton, getLockDetails, closeAllDropdowns, toggleDropdown } from '../utils/uiUtils.js';
 import { CanvasApiService } from '../api/CanvasApiService.js';
+import { CardTemplates } from './CardTemplates.js';
+import { PromoService } from '../services/PromoCardService.js';
 
 export class CanvasCardInteractions {
     constructor(apiService, basePath, abortController) {
@@ -740,6 +742,18 @@ export class CanvasCardInteractions {
             if (contentEl) {
                 contentEl.classList.remove('disabled');
                 contentEl.classList.add('active');
+            }
+            this.renderInfoPromo(moduleEl);
+        }
+    }
+
+    renderInfoPromo(moduleEl) {
+        if (!moduleEl || PromoService.isExempt()) return;
+        const container = moduleEl.querySelector('[data-ref="module-promo-bottom-info"]');
+        if (container && !container.hasChildNodes()) {
+            const promo = PromoService.getModulePromo('info');
+            if (promo) {
+                container.innerHTML = CardTemplates.promoCard(promo, { basePath: this.basePath });
             }
         }
     }

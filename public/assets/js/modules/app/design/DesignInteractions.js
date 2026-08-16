@@ -46,6 +46,15 @@ export const DesignInteractions = {
     },
 
     handleClick(e) {
+        const btnExternalPromo = e.target.closest('[data-action="openExternalPromo"]');
+        if (btnExternalPromo) {
+            e.preventDefault();
+            const targetUrl = btnExternalPromo.getAttribute('data-target-url');
+            if (targetUrl) {
+                window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            }
+            return;
+        }
         
         if (typeof this.handleTemplateModals === 'function' && this.handleTemplateModals(e)) {
             return; 

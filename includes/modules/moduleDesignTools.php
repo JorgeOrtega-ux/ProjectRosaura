@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Core\System\SubscriptionPlanConstants;
 $userTier = (int) ($userTier ?? $_SESSION['subscription_tier'] ?? $_SESSION['tier'] ?? $_SESSION['user_tier'] ?? 0);
@@ -39,6 +39,8 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                 </div>
             </div>
         </div>
+
+        <div class="component-menu-bottom component-menu-bottom--no-border" data-ref="module-promo-bottom-colors"></div>
     </div>
 
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding disabled" data-ref="menu-templates">
@@ -79,6 +81,8 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                 </div>
             </div>
         </div>
+
+        <div class="component-menu-bottom component-menu-bottom--no-border" data-ref="module-promo-bottom-templates"></div>
     </div>
 
 </div>

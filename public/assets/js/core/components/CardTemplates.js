@@ -61,6 +61,113 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             </div>
         `;
     },
+    promoCard: (promo, config = {}) => {
+        const sponsorName = escapeHTML(promo.sponsor || 'Patrocinador');
+        const description = escapeHTML(promo.description || promo.title || '');
+        const basePath = config.basePath || '';
+        const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
+        const targetUrl = promo.url ? escapeHTML(promo.url) : `${basePath}/upgrade`;
+        const sponsoredLabel = (window.__ ? window.__('sponsored') : null) || 'Patrocinado';
+
+        const mediaList = Array.isArray(promo.media) && promo.media.length > 0
+            ? promo.media
+            : [{ type: 'image', url: promo.thumbnail_url || promo.image_url || `${basePath}/assets/img/showcase/creative_tools.jpg` }];
+
+        const hasMultipleMedia = mediaList.length > 1;
+
+        let mediaItemsHtml = '';
+        if (!hasMultipleMedia) {
+            const single = mediaList[0];
+            const singleUrl = single.url ? escapeHTML(single.url) : fallbackImg;
+            if (single.type === 'video') {
+                mediaItemsHtml = `
+                    <video src="${singleUrl}" 
+                           class="component-gallery-card__image component-gallery-card__video active" 
+                           muted 
+                           playsinline 
+                           loop 
+                           preload="metadata"></video>
+                `;
+            } else {
+                mediaItemsHtml = `
+                    <img src="${singleUrl}" 
+                         alt="${sponsorName}" 
+                         class="component-gallery-card__image image-lazy-fade active" 
+                         loading="lazy" 
+                         decoding="async" 
+                         onload="this.classList.add('image-loaded')" 
+                         onerror="this.onerror=null; this.src='${fallbackImg}'; this.classList.add('image-loaded');">
+                `;
+            }
+        } else {
+            mediaItemsHtml = `
+                <div class="component-gallery-media-track">
+                    ${mediaList.map((item, idx) => {
+                        const isFirst = idx === 0;
+                        const itemUrl = item.url ? escapeHTML(item.url) : fallbackImg;
+                        const activeClass = isFirst ? 'active image-loaded' : '';
+                        if (item.type === 'video') {
+                            return `
+                                <video src="${itemUrl}" 
+                                       class="component-gallery-card__image component-gallery-media-item component-gallery-card__video ${activeClass}" 
+                                       muted 
+                                       playsinline 
+                                       loop 
+                                       preload="metadata"
+                                       data-media-index="${idx}"></video>
+                            `;
+                        }
+                        return `
+                            <img src="${itemUrl}" 
+                                 alt="${sponsorName}" 
+                                 class="component-gallery-card__image component-gallery-media-item ${activeClass}" 
+                                 loading="lazy" 
+                                 decoding="async" 
+                                 onerror="this.onerror=null; this.src='${fallbackImg}';"
+                                 data-media-index="${idx}">
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        let dotsHtml = '';
+        if (hasMultipleMedia) {
+            dotsHtml = `
+                <div class="component-gallery-dots">
+                    ${mediaList.map((_, idx) => `
+                        <span class="component-gallery-dot ${idx === 0 ? 'active' : ''}" data-index="${idx}"></span>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        const actionAttr = (targetUrl && (targetUrl.startsWith('http://') || targetUrl.startsWith('https://'))) 
+            ? `data-action="openExternalPromo" data-target-url="${targetUrl}"`
+            : '';
+
+        return `
+            <div class="component-gallery-card component-gallery-card--featured" data-card-role="promo" data-promo-id="${escapeHTML(promo.id || '')}">
+                ${mediaItemsHtml}
+
+                <div class="component-badge component-badge--glass component-badge--absolute-tl">
+                    <span class="material-symbols-rounded component-icon--14">verified</span>
+                    <span>${escapeHTML(sponsoredLabel)}</span>
+                </div>
+
+                <div class="component-badge component-badge--glass component-badge--absolute-tr">
+                    <span class="material-symbols-rounded component-icon--14">business</span>
+                    <span>${sponsorName}</span>
+                </div>
+
+                ${dotsHtml}
+
+                <div class="component-gallery-link" ${actionAttr}>
+                    <h3 class="component-gallery-title">${description}</h3>
+                </div>
+            </div>
+        `;
+    },
 
     snapshotCard: (snapshot, config = {}) => {
         const canvasName = escapeHTML(config.canvasName);

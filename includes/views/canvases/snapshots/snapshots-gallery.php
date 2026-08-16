@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Canvas\CanvasViewService;
+use App\Core\System\SubscriptionPlanConstants;
 
 $canvasService = new CanvasViewService();
 $galleryData = $canvasService->getSnapshotsGalleryData($_GET['uuid'] ?? null);
@@ -17,6 +18,50 @@ $isOwner = $galleryData['isOwner'] ?? false;
 
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 $isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions);
+
+$userTier = (int)($_SESSION['subscription_tier'] ?? $_SESSION['tier'] ?? $_SESSION['user_tier'] ?? 0);
+$isAdFree = SubscriptionPlanConstants::hasFeature($userTier, 'no_ads');
+
+$promoCatalog = [
+    [
+        'id' => 'promo-tools-01',
+        'sponsor' => 'PixelCraft Pro',
+        'description' => 'Pinceles inteligentes, capas avanzadas y exportación de spritesheets en tiempo real.',
+        'media' => [
+            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/creative_tools.jpg', 'alt' => 'PixelCraft Tools'],
+            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/drawing_pad.jpg', 'alt' => 'ChromaPad Studio'],
+            ['type' => 'video', 'url' => $appUrl . '/assets/media/sample_promo.mp4', 'alt' => 'PixelCraft Demo']
+        ]
+    ],
+    [
+        'id' => 'promo-tablet-02',
+        'sponsor' => 'ChromaPad X',
+        'description' => 'Sensibilidad de presión de 8192 niveles con control RGB para artistas de pixel.',
+        'media' => [
+            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/drawing_pad.jpg', 'alt' => 'ChromaPad X'],
+            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/palette_master.jpg', 'alt' => 'Color Match']
+        ]
+    ],
+    [
+        'id' => 'promo-palette-03',
+        'sponsor' => 'Palette Master AI',
+        'description' => 'Extracción instantánea de degradados y paletas cromáticas para tu lienzo.',
+        'media' => [
+            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/palette_master.jpg', 'alt' => 'Palette Master'],
+            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/templates_pro.jpg', 'alt' => 'Templates Pro'],
+            ['type' => 'video', 'url' => $appUrl . '/assets/media/sample_promo.mp4', 'alt' => 'Palette Demo']
+        ]
+    ],
+    [
+        'id' => 'promo-templates-04',
+        'sponsor' => 'NeoRetro Assets',
+        'description' => 'Más de 5,000 mapas isométricos, tilesets y planos listos para colocar.',
+        'media' => [
+            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/templates_pro.jpg', 'alt' => 'NeoRetro Assets'],
+            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/creative_tools.jpg', 'alt' => 'Creative Studio']
+        ]
+    ]
+];
 ?>
 
 <div class="view-content">
@@ -45,13 +90,16 @@ $isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PAN
                 </div>
             <?php else: ?>
                 <div class="component-grid" data-ref="gallery-grid">
-                    <?php foreach ($snapshots as $snapshot): ?>
-                        <?php
+                    <?php 
+                    $realCount = 0;
+                    $promoIdx = 0;
+                    foreach ($snapshots as $snapshot): 
+                        $realCount++;
                         $imageUrl = htmlspecialchars($snapshot['url']);
                         $viewUrl = $appUrl . '/snapshot/view/' . htmlspecialchars($snapshot['snapshot_uuid']);
                         $dateLabel = htmlspecialchars($snapshot['date']);
                         $nameLabel = htmlspecialchars($canvasName);
-                        ?>
+                    ?>
                         <div class="component-gallery-card">
                             <img src="<?php echo $imageUrl; ?>" 
                                  alt="<?php echo __('alt_captura'); ?>" 
@@ -122,6 +170,64 @@ $isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PAN
                             </div>
 
                         </div>
+
+                        <?php if (!$isAdFree && ($realCount % 2 === 0)): 
+                            $promo = $promoCatalog[$promoIdx % count($promoCatalog)];
+                            $promoIdx++;
+                            $sponsorName = htmlspecialchars($promo['sponsor']);
+                            $description = htmlspecialchars($promo['description']);
+                            $mediaList = $promo['media'];
+                            $hasMultiple = count($mediaList) > 1;
+                        ?>
+                            <div class="component-gallery-card component-gallery-card--featured" data-card-role="promo" data-promo-id="<?php echo htmlspecialchars($promo['id']); ?>">
+                                <div class="component-gallery-media-track">
+                                    <?php foreach ($mediaList as $mIdx => $mItem): 
+                                        $isFirst = ($mIdx === 0);
+                                        $activeClass = $isFirst ? 'active' : '';
+                                        $mUrl = htmlspecialchars($mItem['url']);
+                                        if ($mItem['type'] === 'video'): ?>
+                                            <video src="<?php echo $mUrl; ?>" 
+                                                   class="component-gallery-card__image component-gallery-media-item component-gallery-card__video <?php echo $activeClass; ?>" 
+                                                   muted 
+                                                   playsinline 
+                                                   loop 
+                                                   preload="metadata" 
+                                                   data-media-index="<?php echo $mIdx; ?>"></video>
+                                        <?php else: ?>
+                                            <img src="<?php echo $mUrl; ?>" 
+                                                 alt="<?php echo $sponsorName; ?>" 
+                                                 class="component-gallery-card__image component-gallery-media-item <?php echo $activeClass; ?>" 
+                                                 loading="lazy" 
+                                                 decoding="async" 
+                                                 onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/canvas-default.png';" 
+                                                 data-media-index="<?php echo $mIdx; ?>">
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
+
+                                <div class="component-badge component-badge--glass component-badge--absolute-tl">
+                                    <span class="material-symbols-rounded component-icon--14">verified</span>
+                                    <span><?php echo __('sponsored', 'Patrocinado'); ?></span>
+                                </div>
+
+                                <div class="component-badge component-badge--glass component-badge--absolute-tr">
+                                    <span class="material-symbols-rounded component-icon--14">business</span>
+                                    <span><?php echo $sponsorName; ?></span>
+                                </div>
+
+                                <?php if ($hasMultiple): ?>
+                                    <div class="component-gallery-dots">
+                                        <?php foreach ($mediaList as $dIdx => $dItem): ?>
+                                            <span class="component-gallery-dot <?php echo $dIdx === 0 ? 'active' : ''; ?>" data-index="<?php echo $dIdx; ?>"></span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="component-gallery-link">
+                                    <h3 class="component-gallery-title"><?php echo $description; ?></h3>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>

@@ -2,6 +2,7 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
+import { PromoService } from '../../../core/services/PromoCardService.js';
 import { 
     renderSkeleton, 
     appendInfiniteScrollSkeletons, 
@@ -40,8 +41,11 @@ export class SearchController {
         this.abortController = new AbortController();
         this.cardInteractions = new CanvasCardInteractions(this.api, this.basePath, this.abortController);
 
-        this.virtualObserver = new VirtualGridObserver((canvas) => {
-            return CardTemplates.canvasCard(canvas, { basePath: this.basePath });
+        this.virtualObserver = new VirtualGridObserver((item) => {
+            if (item && item.is_promo) {
+                return CardTemplates.promoCard(item, { basePath: this.basePath });
+            }
+            return CardTemplates.canvasCard(item, { basePath: this.basePath });
         });
 
         this.contentArea = document.querySelector('[data-ref="dynamic-content-area"]');
@@ -130,9 +134,11 @@ export class SearchController {
                     return;
                 }
 
-                renderVirtualGridItems(this.contentArea, newCanvases, this.virtualObserver, isLoadMore, 'home-all-canvases');
+                const itemsWithPromos = PromoService.injectFeedCards(newCanvases, this.allCanvases.length);
 
-                this.allCanvases = this.allCanvases.concat(newCanvases);
+                renderVirtualGridItems(this.contentArea, itemsWithPromos, this.virtualObserver, isLoadMore, 'home-all-canvases');
+
+                this.allCanvases = this.allCanvases.concat(itemsWithPromos);
 
                 if (typeof resData.has_more === 'boolean') {
                     this.hasMore = resData.has_more;
@@ -180,6 +186,8 @@ export class SearchController {
         if (!grid) return;
 
         if (window.app && typeof window.app.initModules === 'function') window.app.initModules(grid);
+
+        PromoService.initCardInteractions(this.contentArea);
     }
 
     bindEvents() {
@@ -191,6 +199,15 @@ export class SearchController {
         if (!actionBtn) return;
 
         const action = actionBtn.getAttribute('data-action');
+
+        if (action === 'openExternalPromo') {
+            e.preventDefault();
+            const targetUrl = actionBtn.getAttribute('data-target-url');
+            if (targetUrl) {
+                window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            }
+            return;
+        }
 
         if (this.cardInteractions && this.cardInteractions.handleAction(action, actionBtn)) {
             return;

@@ -1,5 +1,7 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { CardTemplates } from '../../../core/components/CardTemplates.js';
+import { PromoService } from '../../../core/services/PromoCardService.js';
 import { DesignChat } from './DesignChat.js';
 import { DesignInteractions } from './DesignInteractions.js?v=4';
 import { DesignNetwork } from './DesignNetwork.js?v=4';
@@ -237,6 +239,29 @@ class DesignController {
         }
         if (typeof this.updateTemplateUI === 'function') {
             this.updateTemplateUI();
+        }
+        this.renderModulePromos();
+    }
+
+    renderModulePromos() {
+        if (PromoService.isExempt()) return;
+
+        const colorsContainer = document.querySelector('[data-ref="module-promo-bottom-colors"]');
+        if (colorsContainer) {
+            const promoColors = PromoService.getModulePromo('colors');
+            if (promoColors) {
+                colorsContainer.innerHTML = CardTemplates.promoCard(promoColors, { basePath: this.basePath });
+                PromoService.initCardInteractions(colorsContainer);
+            }
+        }
+
+        const templatesContainer = document.querySelector('[data-ref="module-promo-bottom-templates"]');
+        if (templatesContainer) {
+            const promoTemplates = PromoService.getModulePromo('templates');
+            if (promoTemplates) {
+                templatesContainer.innerHTML = CardTemplates.promoCard(promoTemplates, { basePath: this.basePath });
+                PromoService.initCardInteractions(templatesContainer);
+            }
         }
     }
 

@@ -5,6 +5,7 @@ import { MainController } from './MainController.js';
 import { ModalSystem } from './core/components/ModalSystem.js';
 import { NoticeSystem } from './core/components/NoticeSystem.js';
 import { OnboardingTourManager } from './core/managers/OnboardingTourManager.js';
+import { PromoService } from './core/services/PromoCardService.js';
 import { RouteModulesMap } from './core/router/RouteModulesMap.js';
 import { SpaRouter } from './core/router/SpaRouter.js';
 import { TelemetryTracker } from './core/telemetry/TelemetryTracker.js';

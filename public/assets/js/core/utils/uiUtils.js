@@ -99,6 +99,18 @@ function getLowestTierForFeature(featureKey) {
     return match ? match.name : '';
 }
 
+function isAdFreeUser() {
+    const userTier = window.appUserTier ?? 0;
+    if (userTier <= 0) return false;
+    if (window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+        const userTierObj = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === userTier);
+        if (userTierObj) {
+            return tierHasFeature(userTierObj, 'feat_no_ads') || tierHasFeature(userTierObj, 'no_ads');
+        }
+    }
+    return userTier > 0;
+}
+
 function getLockDetails(featureKey, elementType = 'button') {
     const userTier = window.appUserTier ?? 0;
     
@@ -750,6 +762,7 @@ export {
     findTierForFeature,
     getDynamicTierName, 
     getLowestTierForFeature,
+    isAdFreeUser,
     getLockDetails,
     hexToHsv,
     hsvToHex,

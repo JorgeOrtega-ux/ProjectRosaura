@@ -2,6 +2,7 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
+import { PromoService } from '../../../core/services/PromoCardService.js';
 import { 
     renderSkeleton, 
     initCarouselScroll, 
@@ -37,8 +38,11 @@ class HomeController {
         this.abortController = new AbortController();
         this.cardInteractions = new CanvasCardInteractions(this.api, this.basePath, this.abortController);
         
-        this.virtualObserver = new VirtualGridObserver((canvas) => {
-            return CardTemplates.canvasCard(canvas, { basePath: this.basePath });
+        this.virtualObserver = new VirtualGridObserver((item) => {
+            if (item && item.is_promo) {
+                return CardTemplates.promoCard(item, { basePath: this.basePath });
+            }
+            return CardTemplates.canvasCard(item, { basePath: this.basePath });
         });
         
         this.bindEvents();
@@ -201,6 +205,15 @@ class HomeController {
             return;
         }
 
+        if (action === 'openExternalPromo') {
+            e.preventDefault();
+            const targetUrl = actionBtn.getAttribute('data-target-url');
+            if (targetUrl) {
+                window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            }
+            return;
+        }
+
         if (this.cardInteractions && this.cardInteractions.handleAction(action, actionBtn)) {
             return;
         }
@@ -256,9 +269,11 @@ class HomeController {
 
         removeInfiniteScrollSkeletons(this.contentArea);
 
-        if (newCanvases.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
-            renderVirtualGridItems(this.contentArea, isLoadMore ? newCanvases : (this.allCanvases.length ? this.allCanvases.concat(newCanvases) : newCanvases), this.virtualObserver, isLoadMore, 'home-all-canvases');
-            this.allCanvases = this.allCanvases.concat(newCanvases);
+        const itemsWithPromos = PromoService.injectFeedCards(newCanvases, this.currentOffset);
+
+        if (itemsWithPromos.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
+            renderVirtualGridItems(this.contentArea, isLoadMore ? itemsWithPromos : (this.allCanvases.length ? this.allCanvases.concat(itemsWithPromos) : itemsWithPromos), this.virtualObserver, isLoadMore, 'home-all-canvases');
+            this.allCanvases = this.allCanvases.concat(itemsWithPromos);
         } else if (isError && !isLoadMore) {
             this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
         } else if (!isLoadMore) {
@@ -301,6 +316,8 @@ class HomeController {
         if (window.app && typeof window.app.initModules === 'function') window.app.initModules(grid);
         
         if (window.router && typeof window.router.bindLinks === 'function') window.router.bindLinks(grid);
+
+        PromoService.initCardInteractions(this.contentArea);
     }
 
     async checkCheckoutSuccess() {

@@ -76,5 +76,7 @@
                 </div>
             </div>
         </div>
+
+        <div class="component-menu-bottom component-menu-bottom--no-border" data-ref="module-promo-bottom-info"></div>
     </div>
 </div>

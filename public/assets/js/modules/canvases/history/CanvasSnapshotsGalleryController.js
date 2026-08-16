@@ -169,7 +169,7 @@ class CanvasSnapshotsGalleryController {
                 const grid = card.closest('.component-grid');
                 card.remove();
 
-                if (grid && grid.querySelectorAll('.component-gallery-card').length === 0) {
+                if (grid && grid.querySelectorAll('.component-gallery-card:not([data-card-role="promo"])').length === 0) {
                     const bottomArea = document.querySelector('[data-ref="dynamic-content-area"]');
                     if (bottomArea) {
                         bottomArea.innerHTML = `
