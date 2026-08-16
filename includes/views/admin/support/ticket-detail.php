@@ -156,47 +156,55 @@ $trackingDisplay = '[' . htmlspecialchars($trackingCode) . ']';
                                 <h2 class="component-card__title"><?php echo __('lbl_reply_ticket_heading'); ?></h2>
                                 <p class="component-card__description"><?php echo __('lbl_reply_ticket_desc'); ?></p>
                             </div>
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger component-dropdown-trigger--h36" data-action="toggleModule" data-target="moduleTicketReplyTemplates">
-                                    <span class="material-symbols-rounded">quickreply</span>
-                                    <span class="component-dropdown-text" data-ref="ticket-selected-template-label"><?php echo __('lbl_select_email_template', [], 'Plantillas de Correo'); ?></span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown disabled" data-module="moduleTicketReplyTemplates">
-                                    <div class="component-menu component-menu--w320 component-menu--h-auto active">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
-                                            <div class="component-menu-link active" data-action="applyTicketTemplate" data-template-key="blank">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">edit_note</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_blank', [], 'Respuesta Personalizada / Libre'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="applyTicketTemplate" data-template-key="resolved">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">check_circle</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_resolved', [], 'Resolución y Cierre de Incidencia'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="applyTicketTemplate" data-template-key="request_details">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">screenshot</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_request_details', [], 'Solicitud de Más Información / Capturas'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="applyTicketTemplate" data-template-key="investigating">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">engineering</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_investigating', [], 'En Investigación Técnica / Escalamiento'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="applyTicketTemplate" data-template-key="billing">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">credit_card</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_billing', [], 'Facturación, Membresía y Pagos'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="applyTicketTemplate" data-template-key="security">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">security</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_security', [], 'Verificación y Seguridad de Cuenta'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="applyTicketTemplate" data-template-key="follow_up">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_follow_up', [], 'Actualización de Estado / En Progreso'); ?></span></div>
+                            <div class="component-actions-group" style="display: flex; align-items: center; gap: 8px;">
+                                <div class="component-dropdown-wrapper">
+                                    <div class="component-dropdown-trigger component-dropdown-trigger--h36" data-action="toggleModule" data-target="moduleTicketReplyTemplates">
+                                        <span class="material-symbols-rounded">quickreply</span>
+                                        <span class="component-dropdown-text" data-ref="ticket-selected-template-label"><?php echo __('lbl_select_email_template', [], 'Plantillas de Correo'); ?></span>
+                                        <span class="material-symbols-rounded">expand_more</span>
+                                    </div>
+                                    <div class="component-module component-module--dropdown disabled" data-module="moduleTicketReplyTemplates">
+                                        <div class="component-menu component-menu--w320 component-menu--h-auto active">
+                                            <div class="pill-container"><div class="drag-handle"></div></div>
+                                            <div class="component-menu-list component-menu-list--scrollable">
+                                                <div class="component-menu-link active" data-action="applyTicketTemplate" data-template-key="blank">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">edit_note</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_blank', [], 'Respuesta Personalizada / Libre'); ?></span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="applyTicketTemplate" data-template-key="resolved">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">check_circle</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_resolved', [], 'Resolución y Cierre de Incidencia'); ?></span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="applyTicketTemplate" data-template-key="request_details">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">screenshot</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_request_details', [], 'Solicitud de Más Información / Capturas'); ?></span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="applyTicketTemplate" data-template-key="investigating">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">engineering</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_investigating', [], 'En Investigación Técnica / Escalamiento'); ?></span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="applyTicketTemplate" data-template-key="billing">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">credit_card</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_billing', [], 'Facturación, Membresía y Pagos'); ?></span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="applyTicketTemplate" data-template-key="security">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">security</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_security', [], 'Verificación y Seguridad de Cuenta'); ?></span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="applyTicketTemplate" data-template-key="follow_up">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('tpl_ticket_follow_up', [], 'Actualización de Estado / En Progreso'); ?></span></div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                                <button class="component-button component-button--icon component-button--h36" data-action="aiImproveTicketReply" data-tooltip="<?php echo __('btn_ai_improve'); ?>" data-position="top" type="button">
+                                    <span class="material-symbols-rounded">auto_fix_high</span>
+                                </button>
+                                <button class="component-button component-button--icon component-button--h36 component-button--primary" data-action="submitTicketReply" data-tooltip="<?php echo __('btn_send_reply'); ?>" data-position="top" type="button">
+                                    <span class="material-symbols-rounded">send</span>
+                                </button>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--stretch component-mt-3">
@@ -209,12 +217,6 @@ $trackingDisplay = '[' . htmlspecialchars($trackingCode) . ']';
                             <span class="component-card__description" data-ref="ticket-reply-hint">
                                 <span class="material-symbols-rounded component-icon--inline">info</span> <?php echo __('lbl_template_editable_hint', [], 'Puedes modificar los detalles entre corchetes antes de enviar.'); ?>
                             </span>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <button class="component-button component-button--h40" data-action="submitTicketReply" type="button">
-                                <span class="material-symbols-rounded">send</span>
-                                <span><?php echo __('btn_send_reply'); ?></span>
-                            </button>
                         </div>
                     </div>
                 </div>

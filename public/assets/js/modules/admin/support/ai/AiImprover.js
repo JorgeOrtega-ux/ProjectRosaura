@@ -51,9 +51,11 @@ export class AiImprover {
         };
 
         const clickHandler = async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            await this._handleImproveClick(targetElement);
+            // En chat, permitimos que el evento suba para que el controlador gestione el toggle de auto-mejora
+            if (context !== 'chat') {
+                e.preventDefault();
+                await this._handleImproveClick(targetElement);
+            }
         };
 
         targetElement.addEventListener('input', inputHandler);

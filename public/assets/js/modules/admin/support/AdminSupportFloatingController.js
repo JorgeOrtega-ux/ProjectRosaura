@@ -9,6 +9,10 @@ export class AdminSupportFloatingController {
     constructor() {
         this.api = new ApiService();
         this.aiImprover = null;
+        this.isAutoImproveActive = false;
+        try {
+            this.isAutoImproveActive = localStorage.getItem('pr_support_ai_auto_improve') === 'true';
+        } catch (e) {}
         this.activeSession = null;
         this.activeSessionUuid = null;
         this.myActiveSessions = [];
@@ -125,8 +129,11 @@ export class AdminSupportFloatingController {
         const lang = sessionData.language || 'es-419';
         const input = document.querySelector('[data-ref="admin-support-floating-chat-input"]');
         if (input && this.aiImprover) {
-            this.aiImprover.attachButton(input, lang, 'chat');
+            const btn = this.aiImprover.attachButton(input, lang, 'chat');
             this.aiImprover.setVisibility(input, !this.isInternalNoteMode);
+            if (this.isAutoImproveActive && btn) {
+                btn.classList.add('is-auto-active');
+            }
         }
 
         this._connectWebSocket();
@@ -750,6 +757,13 @@ export class AdminSupportFloatingController {
             return;
         }
 
+        const improveBtn = e.target.closest('[data-action="aiImproveFloatingText"], [data-action="aiImproveText"]');
+        if (improveBtn) {
+            e.preventDefault();
+            this._toggleAutoImprove(improveBtn);
+            return;
+        }
+
         const attachTrigger = e.target.closest('[data-action="triggerAdminFloatingChatAttach"]');
         if (attachTrigger) {
             e.preventDefault();
@@ -909,11 +923,39 @@ export class AdminSupportFloatingController {
         }
     }
 
+    _toggleAutoImprove(btn = null) {
+        this.isAutoImproveActive = !this.isAutoImproveActive;
+        try {
+            localStorage.setItem('pr_support_ai_auto_improve', this.isAutoImproveActive ? 'true' : 'false');
+        } catch (e) {}
+
+        const allButtons = document.querySelectorAll('[data-action="aiImproveFloatingText"], [data-action="aiImproveText"]');
+        allButtons.forEach(b => {
+            if (this.isAutoImproveActive) {
+                b.classList.add('is-auto-active');
+            } else {
+                b.classList.remove('is-auto-active');
+            }
+        });
+
+        const input = document.querySelector('[data-ref="admin-support-floating-chat-input"]');
+        const text = (input?.value || '').trim();
+
+        if (this.isAutoImproveActive) {
+            showMessage(window.__('msg_ai_auto_improve_enabled', [], '✨ Auto-mejora con IA activada para las respuestas'), 'info');
+            if (text.length >= 2 && this.aiImprover && input) {
+                this.aiImprover._handleImproveClick(input);
+            }
+        } else {
+            showMessage(window.__('msg_ai_auto_improve_disabled', [], 'Auto-mejora con IA desactivada'), 'info');
+        }
+    }
+
     async _sendMessage() {
         const input = document.querySelector('[data-ref="admin-support-floating-chat-input"]');
         if (!input || !this.activeSessionUuid) return;
 
-        const text = input.value.trim();
+        let text = input.value.trim();
         const hasFiles = this.selectedFiles && this.selectedFiles.length > 0;
 
         if (!text && !hasFiles) return;
@@ -922,6 +964,19 @@ export class AdminSupportFloatingController {
         this.selectedFiles = [];
         this._renderAttachmentPreviews();
         input.value = '';
+
+        // Si la auto-mejora está activa y no es nota interna, procesar con IA antes de despachar
+        if (this.isAutoImproveActive && !this.isInternalNoteMode && text.length >= 2 && this.aiImprover) {
+            try {
+                const lang = this.activeSession?.language || 'es-419';
+                const improved = await this.aiImprover.provider.improve(text, lang, 'chat');
+                if (improved && improved.trim().length > 0) {
+                    text = improved.trim();
+                }
+            } catch (e) {
+                // Fallback silencioso al texto original
+            }
+        }
 
         try {
             const route = this.isInternalNoteMode

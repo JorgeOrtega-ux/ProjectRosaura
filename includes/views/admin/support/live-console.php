@@ -190,7 +190,7 @@ $fallbackAvatar = $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
             <div class="component-column-box component-column-box--chat" data-ref="support-column-chat">
                 <?php 
                 $hasChat = !empty($currentSession);
-                $isPendingSession = $hasChat && ($currentSession['status'] === 'waiting_in_queue' || $currentSession['status'] === 'escalated' || empty($currentSession['assigned_agent_id']));
+                $isPendingSession = $hasChat && ($currentSession['status'] === 'waiting_in_queue' || ($currentSession['status'] === 'escalated' && empty($currentSession['assigned_agent_id'])));
                 $currClientName = $currentSession['client_username'] ?? $currentSession['guest_name'] ?? __('lbl_guest');
                 $currSubColorRaw = !empty($currentSession['client_subscription_color']) ? $currentSession['client_subscription_color'] : '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}';
                 $currSubColorCSS = AdminViewService::parseSubscriptionColor($currSubColorRaw);
@@ -358,8 +358,11 @@ $fallbackAvatar = $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
                             ?>
                             <div class="component-chat-message <?php echo $bubbleClass; ?>">
                                 <div class="component-chat-message__content">
+                                    <div class="chat-message-header">
+                                        <span class="chat-message-username"><?php echo htmlspecialchars($msg['sender_name'] ?? ($isAgent ? 'Tú' : 'Cliente')); ?><?php if ($isInternal): ?> (Nota Interna)<?php endif; ?></span>
+                                        <span class="component-chat-message__time"><?php echo htmlspecialchars($msg['created_at']); ?></span>
+                                    </div>
                                     <p><?php echo nl2br(htmlspecialchars($msg['message'])); ?></p>
-                                    <span class="component-chat-message__time"><?php echo htmlspecialchars($msg['created_at']); ?></span>
                                 </div>
                             </div>
                             <?php endforeach; ?>

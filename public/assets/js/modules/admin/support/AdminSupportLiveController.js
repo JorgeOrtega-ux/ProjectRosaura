@@ -23,6 +23,11 @@ export class AdminSupportLiveController {
         this.lastActiveList = null;
         this.selectedFiles = [];
 
+        this.isAutoImproveActive = false;
+        try {
+            this.isAutoImproveActive = localStorage.getItem('pr_support_ai_auto_improve') === 'true';
+        } catch (e) {}
+
         this.ws = null;
         this.wsReconnectTimeout = null;
         this.wsHeartbeatInterval = null;
@@ -70,7 +75,10 @@ export class AdminSupportLiveController {
 
         const chatInput = document.querySelector('[data-ref="admin-support-chat-input"]');
         if (chatInput && this.aiImprover) {
-            this.aiImprover.attachButton(chatInput, this.currentSession?.language || 'es-419', 'chat');
+            const btn = this.aiImprover.attachButton(chatInput, this.currentSession?.language || 'es-419', 'chat');
+            if (this.isAutoImproveActive && btn) {
+                btn.classList.add('is-auto-active');
+            }
         }
     }
 
@@ -383,6 +391,13 @@ export class AdminSupportLiveController {
         if (toggleNoteBtn) {
             e.preventDefault();
             this._toggleInternalNoteMode();
+            return;
+        }
+
+        const improveBtn = e.target.closest('[data-action="aiImproveText"]');
+        if (improveBtn) {
+            e.preventDefault();
+            this._toggleAutoImprove(improveBtn);
             return;
         }
 
@@ -1063,7 +1078,7 @@ export class AdminSupportLiveController {
             if (res && res.success && res.session) {
                 this.currentSession = res.session;
 
-                const isMyActive = (this.lastActiveList && this.lastActiveList.some(s => s.uuid === this.currentSessionUuid)) || (res.session.status === 'active' && !!res.session.assigned_agent_id);
+                const isMyActive = res.session.status === 'active' || (this.lastActiveList && this.lastActiveList.some(s => s.uuid === this.currentSessionUuid));
                 if (isMyActive) {
                     this.activeTab = 'active';
                     try {
@@ -1085,7 +1100,7 @@ export class AdminSupportLiveController {
                     header.classList.remove('disabled');
                 }
 
-                const isPending = !isMyActive && (res.session.status === 'waiting_in_queue' || res.session.status === 'escalated' || !res.session.assigned_agent_id);
+                const isPending = !isMyActive && (res.session.status === 'waiting_in_queue' || (res.session.status === 'escalated' && !res.session.assigned_agent_id));
 
                 this._renderActiveChatHeader(res.session, isPending);
 
@@ -1111,8 +1126,11 @@ export class AdminSupportLiveController {
                         const lang = res.session.language || 'es-419';
                         const chatInput = document.querySelector('[data-ref="admin-support-chat-input"]');
                         if (chatInput && this.aiImprover) {
-                            this.aiImprover.attachButton(chatInput, lang, 'chat');
+                            const btn = this.aiImprover.attachButton(chatInput, lang, 'chat');
                             this.aiImprover.setVisibility(chatInput, !this.isInternalNoteMode);
+                            if (this.isAutoImproveActive && btn) {
+                                btn.classList.add('is-auto-active');
+                            }
                         }
                     }
                 }
@@ -1566,11 +1584,39 @@ export class AdminSupportLiveController {
         }
     }
 
+    _toggleAutoImprove(btn = null) {
+        this.isAutoImproveActive = !this.isAutoImproveActive;
+        try {
+            localStorage.setItem('pr_support_ai_auto_improve', this.isAutoImproveActive ? 'true' : 'false');
+        } catch (e) {}
+
+        const allButtons = document.querySelectorAll('[data-action="aiImproveText"]');
+        allButtons.forEach(b => {
+            if (this.isAutoImproveActive) {
+                b.classList.add('is-auto-active');
+            } else {
+                b.classList.remove('is-auto-active');
+            }
+        });
+
+        const input = document.querySelector('[data-ref="admin-support-chat-input"]');
+        const text = (input?.value || '').trim();
+
+        if (this.isAutoImproveActive) {
+            showMessage(window.__('msg_ai_auto_improve_enabled', [], '✨ Auto-mejora con IA activada para las respuestas'), 'info');
+            if (text.length >= 2 && this.aiImprover && input) {
+                this.aiImprover._handleImproveClick(input);
+            }
+        } else {
+            showMessage(window.__('msg_ai_auto_improve_disabled', [], 'Auto-mejora con IA desactivada'), 'info');
+        }
+    }
+
     async _sendMessage() {
         const input = document.querySelector('[data-ref="admin-support-chat-input"]');
         if (!input || !this.currentSessionUuid) return;
 
-        const text = input.value.trim();
+        let text = input.value.trim();
         const hasFiles = this.selectedFiles && this.selectedFiles.length > 0;
 
         if (!text && !hasFiles) return;
@@ -1580,6 +1626,19 @@ export class AdminSupportLiveController {
         this._renderAttachmentPreviews();
 
         input.value = '';
+
+        // Si la auto-mejora está activa y no es nota interna, mejorar antes de enviar
+        if (this.isAutoImproveActive && !this.isInternalNoteMode && text.length >= 2 && this.aiImprover) {
+            try {
+                const lang = this.currentSession?.language || 'es-419';
+                const improved = await this.aiImprover.provider.improve(text, lang, 'chat', this.abortController ? this.abortController.signal : null);
+                if (improved && improved.trim().length > 0) {
+                    text = improved.trim();
+                }
+            } catch (e) {
+                // Fallback silencioso al texto original si falla la IA
+            }
+        }
 
         try {
             const route = this.isInternalNoteMode

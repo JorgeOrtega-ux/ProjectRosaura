@@ -26,11 +26,6 @@ export class AdminSupportTicketDetailController {
             this.ticketUuid = match[1];
         }
 
-        const textarea = document.querySelector('[data-ref="ticket-reply-text"]');
-        if (textarea && this.aiImprover) {
-            this.aiImprover.attachButton(textarea, 'es-419', 'ticket');
-        }
-
         this.bindEvents();
     }
 
@@ -44,16 +39,18 @@ export class AdminSupportTicketDetailController {
             this.abortController = null;
         }
 
-        const textarea = document.querySelector('[data-ref="ticket-reply-text"]');
-        if (textarea && this.aiImprover) {
-            this.aiImprover.detachButton(textarea);
-            this.aiImprover = null;
-        }
-
+        this.aiImprover = null;
         document.body.removeEventListener('click', this._boundClick);
     }
 
     handleClick(e) {
+        const improveBtn = e.target.closest('[data-action="aiImproveTicketReply"]');
+        if (improveBtn) {
+            e.preventDefault();
+            this._improveReplyText(improveBtn);
+            return;
+        }
+
         const replyBtn = e.target.closest('[data-action="submitTicketReply"]');
         if (replyBtn) {
             e.preventDefault();
@@ -481,6 +478,41 @@ Continuamos gestionando tu caso de manera prioritaria y te notificaremos a la br
             }
         } catch (e) {}
         return 'transparent';
+    }
+
+    async _improveReplyText(btn) {
+        const textarea = document.querySelector('[data-ref="ticket-reply-text"]');
+        if (!textarea || !this.aiImprover) return;
+
+        const currentText = (textarea.value || '').trim();
+        if (currentText.length < 2) {
+            textarea.focus();
+            return;
+        }
+
+        setButtonLoading(btn);
+        textarea.readOnly = true;
+
+        try {
+            const provider = this.aiImprover.provider;
+            const improved = await provider.improve(currentText, 'es-419', 'ticket', this.abortController ? this.abortController.signal : null);
+            if (improved) {
+                textarea.value = improved;
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                textarea.dispatchEvent(new Event('change', { bubbles: true }));
+
+                textarea.classList.remove('ai-improve-flash-success');
+                void textarea.offsetWidth;
+                textarea.classList.add('ai-improve-flash-success');
+            }
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+            showMessage(window.__('err_ai_unavailable', [], '⚠ IA no disponible'), 'error');
+        } finally {
+            restoreButton(btn);
+            textarea.readOnly = false;
+            textarea.focus();
+        }
     }
 
     _escapeHtml(str) {

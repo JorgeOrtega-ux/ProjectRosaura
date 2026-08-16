@@ -384,6 +384,10 @@ export const AdminModalTemplates = {
                 </div>
 
                 <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h40" data-action="aiImproveCannedContent">
+                        <span class="material-symbols-rounded">auto_fix_high</span>
+                        <span>${(typeof window.__ === 'function' && window.__('btn_ai_improve') !== 'btn_ai_improve') ? window.__('btn_ai_improve') : '✨ Mejorar'}</span>
+                    </button>
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
                     <button class="component-button component-button--h40 component-button--dark" data-action="submitCannedForm">${__('btn_save')}</button>
                 </div>

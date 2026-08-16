@@ -626,9 +626,11 @@ class AdminSupportService {
                 'client_email' => $session['client_email'] ?? null,
                 'client_subscription_color' => $session['client_subscription_color'] ?? null,
                 'client_tier' => $session['client_tier'] ?? null,
+                'assigned_agent_id' => !empty($session['assigned_agent_id']) ? (int)$session['assigned_agent_id'] : null,
                 'agent_name' => $session['agent_username'] ?? null,
                 'agent_avatar' => $session['agent_avatar'] ?? null,
                 'agent_subscription_color' => $session['agent_subscription_color'] ?? null,
+                'language' => $session['language'] ?? 'es-419',
                 'started_at' => $session['started_at'],
                 'user_rating' => $session['user_rating'] ? (int)$session['user_rating'] : null
             ],

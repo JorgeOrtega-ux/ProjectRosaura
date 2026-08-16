@@ -157,11 +157,56 @@ export class AdminSupportCannedController {
             return;
         }
 
+        const improveBtn = e.target.closest('[data-action="aiImproveCannedContent"]');
+        if (improveBtn) {
+            e.preventDefault();
+            this._improveCannedContent(improveBtn);
+            return;
+        }
+
         const submitBtn = e.target.closest('[data-action="submitCannedForm"]');
         if (submitBtn) {
             e.preventDefault();
             this._submitCannedForm(submitBtn);
             return;
+        }
+    }
+
+    async _improveCannedContent(btn) {
+        const textarea = document.querySelector('[data-ref="canned-content-input"]');
+        const langEl = document.querySelector('[data-ref="canned-lang-text"]');
+        if (!textarea || !this.aiImprover) return;
+
+        const currentText = (textarea.value || '').trim();
+        if (currentText.length < 2) {
+            textarea.focus();
+            return;
+        }
+
+        const targetLang = langEl?.getAttribute('data-value') || 'es-419';
+
+        setButtonLoading(btn);
+        textarea.readOnly = true;
+
+        try {
+            const provider = this.aiImprover.provider;
+            const improved = await provider.improve(currentText, targetLang, 'canned', this.abortController ? this.abortController.signal : null);
+            if (improved) {
+                textarea.value = improved;
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                textarea.dispatchEvent(new Event('change', { bubbles: true }));
+
+                textarea.classList.remove('ai-improve-flash-success');
+                void textarea.offsetWidth;
+                textarea.classList.add('ai-improve-flash-success');
+            }
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+            showMessage(window.__('err_ai_unavailable', [], '⚠ IA no disponible'), 'error');
+        } finally {
+            restoreButton(btn);
+            textarea.readOnly = false;
+            textarea.focus();
         }
     }
 
@@ -204,11 +249,6 @@ export class AdminSupportCannedController {
         window.modalSystem.show('cannedResponseModal', {
             item: item || {}
         });
-
-        const textarea = document.querySelector('[data-ref="canned-content-input"]');
-        if (textarea && this.aiImprover) {
-            this.aiImprover.attachButton(textarea, 'es-419', 'canned');
-        }
     }
 
     _handleSelectLevel(item) {
