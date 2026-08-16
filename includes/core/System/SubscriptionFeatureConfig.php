@@ -50,6 +50,12 @@ class SubscriptionFeatureConfig {
                 'title_key'       => 'plan_feat_live_share_title',
                 'title_short_key' => 'plan_feat_live_share_short',
                 'desc_key'        => 'plan_feat_live_share_desc'
+            ],
+            'feat_no_ads' => [
+                'icon'            => 'block',
+                'title_key'       => 'plan_feat_no_ads_title',
+                'title_short_key' => 'plan_feat_no_ads_short',
+                'desc_key'        => 'plan_feat_no_ads_desc'
             ]
         ];
     }

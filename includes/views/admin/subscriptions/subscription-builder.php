@@ -174,6 +174,7 @@ $featuresData = [
     'feat_beta_access' => $tierData['feat_beta_access'] ?? 0,
     'feat_inject_templates' => $tierData['feat_inject_templates'] ?? 0,
     'feat_live_share' => $tierData['feat_live_share'] ?? 0,
+    'feat_no_ads' => $tierData['feat_no_ads'] ?? 0,
 ];
 
 ?>

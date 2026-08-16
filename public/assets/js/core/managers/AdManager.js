@@ -5,7 +5,6 @@ export class AdManager {
         this.cooldownMs = 180000;
         this.defaultDuration = 5;
         this.totalAdsInPod = 1;
-        this.exemptTiers = [1, 2, 3];
         this.adSenseConfig = {
             client: 'ca-pub-0000000000000000',
             slot: '0000000000'
@@ -25,12 +24,31 @@ export class AdManager {
     }
 
     isExempt() {
-        if (typeof window.appUserTier === 'number' && window.appUserTier > 0) {
+        // Check if user has feat_no_ads or no_ads enabled in plan limits
+        if (window.APP_LIMITS && (window.APP_LIMITS.feat_no_ads === true || window.APP_LIMITS.no_ads === true)) {
             return true;
         }
-        if (window.APP_USER && typeof window.APP_USER.subscription_tier === 'number' && window.APP_USER.subscription_tier > 0) {
+
+        // Check if user's current tier in APP_TIERS has feat_no_ads enabled
+        if (window.APP_USER && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+            const userTierLevel = window.APP_USER.subscription_tier;
+            const currentTierObj = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === parseInt(userTierLevel, 10));
+            if (currentTierObj && (currentTierObj.feat_no_ads === 1 || currentTierObj.feat_no_ads === true || currentTierObj.feat_no_ads === '1')) {
+                return true;
+            }
+        }
+
+        // Check user session / config permissions if defined
+        const perms = (window.APP_CONFIG && Array.isArray(window.APP_CONFIG.permissions))
+            ? window.APP_CONFIG.permissions
+            : (window.APP_USER && Array.isArray(window.APP_USER.permissions)
+                ? window.APP_USER.permissions
+                : (Array.isArray(window.userPermissions) ? window.userPermissions : []));
+
+        if (perms.includes('no_ads') || perms.includes('feat_no_ads')) {
             return true;
         }
+
         return false;
     }
 
@@ -62,7 +80,7 @@ export class AdManager {
             }
             return {
                 shown: false,
-                reason: this.isExempt() ? 'tier_exempt' : 'cooldown'
+                reason: this.isExempt() ? 'permission_exempt' : 'cooldown'
             };
         }
 
